@@ -35,6 +35,7 @@ assert.equal(agent.deck?.title, 'Smoke')
 assert.equal(agent.deck?.slides.length, 1)
 assert.ok(events.some((e) => e.type === 'tool' && e.name === 'add_slides' && e.status === 'done'), 'Tool-Chip')
 assert.ok(events.some((e) => e.type === 'deck'), 'Deck-Event für die Live-Vorschau')
+if (cli !== 'claude') assert.ok(events.some((e) => e.type === 'tool' && e.name === 'cli_run' && e.status === 'done'), 'Status, solange das CLI arbeitet')
 assert.equal(events.at(-1)?.type, 'done')
 
 events = []

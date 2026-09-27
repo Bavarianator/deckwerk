@@ -140,6 +140,8 @@ export class CliAgent {
       mkdirSync(cwd, { recursive: true })
       const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')))
       const child = (this.child = spawn(this.bin, run.args, { cwd, env: { ...process.env, ...run.env }, stdio: ['pipe', 'pipe', 'pipe'] }))
+      // Vibe und Codex denken oft minutenlang, bevor das erste Werkzeug läuft: Status zeigen, solange das CLI arbeitet
+      if (this.cli !== 'claude') emit({ type: 'tool', name: 'cli_run', status: 'start', summary: `${CLI_NAME[this.cli]} braucht oft ein paar Minuten` })
       child.stdin.end(run.stdin) // Prompt über stdin: kein Flag-Parsing von Nutzertext, nicht in `ps`
       let stderr = ''
       child.stderr.on('data', (d) => (stderr = (stderr + d).slice(-2000)))
@@ -156,6 +158,7 @@ export class CliAgent {
       emit({ type: 'error', message: e instanceof Error ? e.message : String(e) })
     } finally {
       this.child = null
+      if (this.cli !== 'claude') emit({ type: 'tool', name: 'cli_run', status: 'done' })
       emit({ type: 'done' })
     }
   }

@@ -46,13 +46,10 @@ npm run build          # danach starten mit ./scripts/deckwerk.sh
 **Entfernen:**
 
 ```sh
-rm -rf ~/deckwerk ~/.local/share/applications/deckwerk.desktop
-claude mcp remove -s user deckwerk
-vibe mcp remove deckwerk
-codex mcp remove deckwerk
+~/deckwerk/scripts/uninstall.sh
 ```
 
-Deine Decks unter `~/Deckwerk` bleiben dabei erhalten.
+Das Skript entfernt den Programmordner, den Startmenü-Eintrag, die Dateizuordnung und die Einträge in Claude Code, Vibe und Codex. Deine Decks unter `~/Deckwerk` bleiben erhalten.
 
 ## Erste Schritte
 
@@ -103,7 +100,7 @@ Deckwerk speichert automatisch. Jede Änderung, ob von dir oder von der KI, land
 
 Höchstens alle 10 Minuten legt Deckwerk den vorigen Stand unter `<deck>/versions/` ab, pro Deck bis zu 100 Versionen. Um zu einer Version zurückzukehren, öffnest du sie über „Deck öffnen“. Sie wird wieder zum Deck, und der bisherige Stand wandert selbst in die Versionen.
 
-Ein Deck-Ordner lässt sich weitergeben: Bildpfade relativ zur deck.json (`assets/foto.jpg`) löst Deckwerk beim Öffnen auf.
+Ein Doppelklick auf eine `deck.json` im Dateimanager öffnet sie in Deckwerk, auch wenn die App schon läuft. Ein Deck-Ordner lässt sich weitergeben: Bildpfade relativ zur deck.json (`assets/foto.jpg`) löst Deckwerk beim Öffnen auf.
 
 ### Präsentieren
 
@@ -232,13 +229,13 @@ Der Main-Prozess lädt Engine und IPC erst nach dem ersten Fenster, damit der St
 
 ### Chat über Claude Code, Codex und Vibe
 
-Ohne API-Key läuft der Chat über ein Agenten-CLI mit dessen Login: `claude -p`, `codex exec` oder `vibe -p`. Gewählt wird das CLI aus der Einrichtung, sonst das erste gefundene. `src/main/claude-agent.ts` öffnet dafür einen MCP-Server auf `127.0.0.1`: zufälliger Port, Bearer-Token nie auf der Kommandozeile (für Claude Code in einer 0600-Datei, die beim Beenden gelöscht wird, für Codex und Vibe in einer Umgebungsvariable des Kindprozesses). So sieht die Live-Vorschau jede Änderung sofort. Der Prompt geht über stdin.
+Der Chat läuft über die API oder über ein Agenten-CLI mit dessen Login: `claude -p`, `codex exec` oder `vibe -p`. Den Weg bestimmt das Modell-Dropdown: Claude-Modelle gehen über den API-Key (hat Vorrang) oder Claude Code, `vibe:<modell>` und `codex:<modell>` über das jeweilige CLI (`routeOf` in `src/shared/models.ts`, Liste über den IPC-Kanal `chat:models`). `src/main/claude-agent.ts` öffnet dafür einen MCP-Server auf `127.0.0.1`: zufälliger Port, Bearer-Token nie auf der Kommandozeile (für Claude Code in einer 0600-Datei, die beim Beenden gelöscht wird, für Codex und Vibe in einer Umgebungsvariable des Kindprozesses). So sieht die Live-Vorschau jede Änderung sofort. Der Prompt geht über stdin.
 
 Jedes CLI bekommt nur die Deckwerk-Werkzeuge und die Web-Recherche:
 
 - **Claude Code:** `--tools WebSearch,WebFetch`, `--strict-mcp-config`, ohne Hooks, Plugins und Skills aus deinen Einstellungen (`--setting-sources ""`). Folgenachrichten per `--resume`, Modell per `--model`.
-- **Codex:** `--ignore-user-config` (weder deine MCP-Server noch Profile, der Login bleibt), `shell_tool`, `unified_exec` und `hooks` aus, `sandbox_mode="read-only"`, `approval_policy="never"`, Systemprompt als `developer_instructions`. Folgenachrichten per `exec resume`. Das Modell nimmt Codex aus seiner eigenen Einstellung. Nicht mit angemeldetem Codex getestet.
-- **Vibe:** `VIBE_MCP_SERVERS` ersetzt deine MCP-Server, `--enabled-tools deckwerk_*` (plus `web_search`, `web_fetch`) sperrt alle anderen Werkzeuge, auch Shell und Dateien, `--auto-approve` gilt nur für die freigegebenen. Der Systemprompt steht vor der ersten Nachricht, Folgenachrichten per `--resume`. Das Modell nimmt Vibe aus seiner eigenen Einstellung.
+- **Codex:** `--ignore-user-config` (weder deine MCP-Server noch Profile, der Login bleibt), `shell_tool`, `unified_exec` und `hooks` aus, `sandbox_mode="read-only"`, `approval_policy="never"`, Systemprompt als `developer_instructions`. Folgenachrichten per `exec resume`, Modell per `-c model=…` (Liste aus `codex debug models`). Nicht mit angemeldetem Codex getestet.
+- **Vibe:** `VIBE_MCP_SERVERS` ersetzt deine MCP-Server, `--enabled-tools deckwerk_*` (plus `web_search`, `web_fetch`) sperrt alle anderen Werkzeuge, auch Shell und Dateien, `--auto-approve` gilt nur für die freigegebenen. Der Systemprompt steht vor der ersten Nachricht, weil Vibe eigene Prompts nur aus `VIBE_HOME` liest. Folgenachrichten per `--resume`; die dabei erneut ausgespielten Antworten filtert Deckwerk über ihre ID. Modell per `VIBE_ACTIVE_MODEL` (Liste aus Vibes `config.toml`), `--legacy-harness`, wenn die Vibe-Version es kennt: Sie bietet die Werkzeuge direkt an statt über eine Werkzeugsuche.
 
 ### PPTX-Treue-Check
 

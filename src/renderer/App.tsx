@@ -194,6 +194,7 @@ export default function App() {
     setTarget(null)
     turnStart.current = null
   }
+  useEffect(() => api.onDeckOpened((s) => load(s.deck, s.path)), []) // Doppelklick auf eine deck.json bei laufender App
   const actions = {
     onNew: () => guard(async () => {
       await api.newDeck() // Main speichert offene Änderungen vorher (flush)

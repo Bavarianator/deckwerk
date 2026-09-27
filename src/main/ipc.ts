@@ -87,16 +87,34 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   }
   const outDir = () => (path ? dirname(path) : join(HOME, 'out'))
 
-  // electron . --open <deck.json>: startet direkt mit diesem Deck im Editor
-  const arg = process.argv.indexOf('--open')
-  if (arg >= 0 && process.argv[arg + 1]) {
-    const file = resolve(process.argv[arg + 1])
+  // Deck aus der Kommandozeile: --open <datei> oder eine .json-Datei als Argument (Doppelklick im Dateimanager, %f im
+  // Startmenü-Eintrag). Beim Start sofort; läuft die App schon, kommt es über second-instance ins offene Fenster.
+  const deckArg = (argv: string[], cwd = process.cwd()) => {
+    const i = argv.indexOf('--open')
+    const f = i >= 0 ? argv[i + 1] : argv.slice(1).find((a) => !a.startsWith('-') && a.endsWith('.json'))
+    return f ? resolve(cwd, f) : null
+  }
+  const first = deckArg(process.argv)
+  if (first) {
     try {
-      reset(readDeck(file), file)
+      reset(readDeck(first), first)
     } catch (e) {
-      console.error(`[ipc] --open ${file}:`, e instanceof Error ? e.message : e)
+      console.error(`[ipc] --open ${first}:`, e instanceof Error ? e.message : e)
     }
   }
+  app.on('second-instance', async (_, argv, cwd) => {
+    const f = deckArg(argv, cwd)
+    if (!f) return
+    try {
+      readDeck(f) // ungültig → nichts anfassen
+      flush()
+      const file = await restore(f)
+      reset(readDeck(file), file)
+      if (!win.isDestroyed()) win.webContents.send('deck:opened', state())
+    } catch (e) {
+      console.error(`[ipc] Öffnen von außen ${f}:`, e instanceof Error ? e.message : e)
+    }
+  })
 
   ipcMain.handle('state', state)
   ipcMain.handle('deck:set', (_, d: Deck) => {

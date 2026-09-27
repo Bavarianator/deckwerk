@@ -41,6 +41,12 @@ const api = {
   remoteStop: (): Promise<void> => invoke('remote:stop'),
   /** aktuelle Folie und Notizen für die Handy-Seite */
   remoteState: (s: { i: number; n: number; title: string; notes: string }): Promise<void> => invoke('remote:state', s),
+  /** Deck, das von außen kam (Doppelklick auf eine deck.json, während Deckwerk schon läuft) */
+  onDeckOpened(cb: (s: AppState) => void): () => void {
+    const h = (_: unknown, s: AppState) => cb(s)
+    ipcRenderer.on('deck:opened', h)
+    return () => void ipcRenderer.off('deck:opened', h)
+  },
   onRemote(cb: (c: 'next' | 'prev') => void): () => void {
     const h = (_: unknown, c: 'next' | 'prev') => cb(c)
     ipcRenderer.on('present:remote', h)

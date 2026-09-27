@@ -39,24 +39,38 @@ echo "→ Baue die App"
 npx electron-vite build
 chmod +x scripts/deckwerk.sh
 
-# Startmenü-Eintrag (Linux)
+# Startmenü-Eintrag und Dateizuordnung (Linux): Doppelklick auf eine deck.json öffnet sie in Deckwerk
 if [ "$(uname)" = Linux ]; then
-  mkdir -p "$HOME/.local/share/applications"
+  mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/mime/packages"
+  cat > "$HOME/.local/share/mime/packages/deckwerk.xml" <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-deckwerk">
+    <comment>Deckwerk-Präsentation</comment>
+    <sub-class-of type="application/json"/>
+    <glob pattern="deck.json" weight="60"/>
+  </mime-type>
+</mime-info>
+XML
   cat > "$HOME/.local/share/applications/deckwerk.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Deckwerk
 GenericName=KI-Präsentationsstudio
 Comment=Präsentationen mit KI erstellen, prüfen und als PowerPoint exportieren
-Exec=$DIR/scripts/deckwerk.sh
+Exec=$DIR/scripts/deckwerk.sh %f
 Icon=$DIR/assets/icon.png
+MimeType=application/x-deckwerk;
 Terminal=false
 Categories=Office;Presentation;
 Keywords=Präsentation;Folien;PowerPoint;PPTX;KI;Pitch;
 StartupWMClass=deckwerk
 StartupNotify=true
 EOF
-  echo "→ Startmenü-Eintrag angelegt"
+  command -v update-mime-database >/dev/null 2>&1 && update-mime-database "$HOME/.local/share/mime" >/dev/null 2>&1 || true
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+  command -v xdg-mime >/dev/null 2>&1 && xdg-mime default deckwerk.desktop application/x-deckwerk 2>/dev/null || true
+  echo "→ Startmenü-Eintrag und Dateizuordnung (deck.json) angelegt"
 fi
 
 # Claude Code: Deckwerk als MCP-Server für alle Projekte (sonst später im Einrichtungsassistenten der App)
