@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { Deck } from '../shared/deck'
+import type { CustomFont, Deck } from '../shared/deck'
 import type { AgentEvent } from '../main/agent'
 
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean }
@@ -65,6 +65,8 @@ const api = {
   },
   /** Video- oder Audiodatei wählen → asset://-URL oder null */
   pickMedia: (kind: 'video' | 'audio'): Promise<string | null> => invoke('media:pick', kind),
+  /** TTF wählen (Regular, optional Bold); Familienname aus der Datei; null = abgebrochen */
+  pickFont: (): Promise<CustomFont | null> => invoke('font:pick'),
   /** data-URL (PNG/JPEG/WebP) unter ~/Deckwerk/assets speichern → asset://-URL */
   saveAsset: (dataUrl: string, name: string): Promise<string> => invoke('asset:save', dataUrl, name),
   /** Text aus TXT/MD/CSV/DOCX/PPTX/PDF lesen; ohne Pfad per Dialog, null = abgebrochen */

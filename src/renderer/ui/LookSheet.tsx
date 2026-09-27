@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Sparkles, X } from 'lucide-react'
 import { TRANSITIONS, sizeOf, type BrandKit, type Deck, type Transition } from '../../shared/deck'
-import { FONT_NAMES, THEMES, themeFromSpec } from '../../shared/themes'
+import { FONT_NAMES, FONT_PAIRS, THEMES, themeFromSpec } from '../../shared/themes'
 import { SlideView } from '../slide'
 import { OWN_DESIGN } from './Chat'
 import { Select } from './kit'
@@ -153,6 +153,17 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
               <option value="">Wie im Theme</option>
               {FONT_NAMES.map((f) => <option key={f}>{f}</option>)}
             </Select>
+          </div>
+          <div className="look-group">
+            <b>Mischen</b>
+            <button className="pill" title="Farbvariante des Themes: Akzente tauschen, Hell/Dunkel tauschen, Grund tönen"
+              onClick={() => patchDeck({ theme: { ...deck.theme, shuffle: ((deck.theme.shuffle ?? 0) + 1) % 6 || undefined } }, 'look-shuffle')}>Farben mischen</button>
+            <button className="pill" title="Nächstes kuratiertes Schriftpaar (Titel + Text)"
+              onClick={() => { const i = FONT_PAIRS.findIndex(([h, b]) => h === deck.theme.fonts?.[0] && b === deck.theme.fonts?.[1]); patchDeck({ theme: { ...deck.theme, fonts: FONT_PAIRS[(i + 1) % FONT_PAIRS.length] } }, 'look-fonts') }}>Schriften mischen</button>
+            <button className="pill" title="Eigene Schrift (TTF, Regular und optional Bold) für die Überschriften; wird in die PPTX eingebettet"
+              onClick={async () => { const f = await window.api.pickFont(); if (f) patchDeck({ theme: { ...deck.theme, customFont: f, fonts: [f.family, deck.theme.fonts?.[1] ?? ''] } }) }}>
+              {deck.theme.customFont ? deck.theme.customFont.family : 'Eigene Schrift …'}
+            </button>
           </div>
           <div className="look-group">
             <b>Hausstil</b>

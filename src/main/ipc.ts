@@ -161,6 +161,16 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const err = await shell.openPath(STYLE_FILE)
     if (err) throw new Error(err)
   })
+  // eigene Schrift: 1–2 TTF (Regular, Bold am Dateinamen erkannt); Familienname aus der name-Tabelle, damit PowerPoint sie zuordnet
+  ipcMain.handle('font:pick', async () => {
+    const r = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'TrueType-Schrift', extensions: ['ttf'] }] })
+    if (r.canceled || !r.filePaths.length) return null
+    const { fontFamilyOf } = await import('./embed-fonts')
+    const bold = r.filePaths.find((f) => /bold/i.test(f)), regular = r.filePaths.find((f) => f !== bold) ?? bold!
+    const family = fontFamilyOf(readFileSync(regular))
+    if (!family) throw new Error('Keine gültige TrueType-Schrift')
+    return { family, regular: assetUrl(regular), bold: bold && bold !== regular ? assetUrl(bold) : undefined }
+  })
   // erzeugte Bilder (Video-Poster, Freisteller) als Datei unter ~/Deckwerk/assets ablegen
   ipcMain.handle('asset:save', async (_, dataUrl: string, name: string) => {
     const m = dataUrl.match(/^data:image\/(png|jpeg|webp);base64,(.+)$/)
