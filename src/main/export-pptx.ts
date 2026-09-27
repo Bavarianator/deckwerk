@@ -233,7 +233,13 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
 function embedList(fonts: FontRef[]): EmbedFont[] {
   const out = new Map<string, EmbedFont>()
   for (const f of fonts) {
-    if (!f.embed || out.has(f.pptx)) continue
+    if ((!f.embed && !f.files) || out.has(f.pptx)) continue
+    const file = (url?: string) => { const p = url && assetPath(url); return p && existsSync(p) ? readFileSync(p) : undefined }
+    if (f.files) { // eigene Schrift des Nutzers
+      const regular = file(f.files.regular)
+      if (regular) out.set(f.pptx, { family: f.pptx, regular, bold: file(f.files.bold), serif: f.serif })
+      continue
+    }
     const face = (name: string) => { const p = join(app.getAppPath(), 'assets/fonts', `${f.embed}-${name}.ttf`); return existsSync(p) ? readFileSync(p) : undefined }
     const regular = face('Regular')
     if (!regular) { console.warn(`[export] ${f.embed}-Regular.ttf fehlt (npm run fonts:fetch), Schrift wird nicht eingebettet`); continue }

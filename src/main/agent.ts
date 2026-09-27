@@ -9,7 +9,7 @@ import type { Issue } from '../shared/lint'
 import { LAYOUTS, LAYOUT_IDS } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf } from '../shared/models'
 import guide from './design-guide.md?raw'
-import { buildCatalog, buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
+import { buildCatalog, buildTools, houseStyle, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
 export interface Engine {
@@ -17,7 +17,7 @@ export interface Engine {
   renderPng(deck: Deck, indices: number[], width?: number): Promise<Buffer[]> // PNG pro Folie (default 1024 px breit)
   renderOverview(deck: Deck): Promise<Buffer> // Kontaktbogen aller Folien, 1 PNG
   lint(deck: Deck): Promise<Issue[]>
-  exportDeck(deck: Deck, format: 'pptx' | 'pdf' | 'png', outDir: string): Promise<string[]>
+  exportDeck(deck: Deck, format: 'pptx' | 'pdf' | 'png' | 'md', outDir: string): Promise<string[]>
 }
 
 export type AgentEvent =
@@ -51,7 +51,8 @@ const WORKFLOW = `## Arbeitsablauf
 Antworte auf Deutsch, knapp.`
 
 export function buildSystemPrompt(): string {
-  return [guide.trim(), buildCatalog(), WORKFLOW].join('\n\n')
+  const style = houseStyle()
+  return [guide.trim(), buildCatalog(), WORKFLOW, ...(style ? [`## Hausstil des Nutzers (gilt für jedes Deck, hat Vorrang vor dem Design-Guide)\n${style}`] : [])].join('\n\n')
 }
 
 const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { type: 'base64', media_type: mimeOf(buf), data: buf.toString('base64') } })
@@ -148,7 +149,10 @@ export class DeckAgent {
             ? { thinking: { type: 'enabled' as const, budget_tokens: 16000 } }
             : { thinking: { type: 'adaptive' as const, ...('updates' in m && { display: 'updates' as const }) }, output_config: { effort: 'high' as const } }),
           system: [{ type: 'text', text: this.system, cache_control: { type: 'ephemeral' } }],
-          tools: this.tools,
+          // Web-Recherche (Canva „Web Research“) läuft serverseitig; Haiku bekommt nur die Basis-Suche
+          tools: [...this.tools, ...('legacyThinking' in m
+            ? [{ type: 'web_search_20250305' as const, name: 'web_search' as const, max_uses: 5 }]
+            : [{ type: 'web_search_20260209' as const, name: 'web_search' as const, max_uses: 5 }, { type: 'web_fetch_20260209' as const, name: 'web_fetch' as const, max_uses: 5 }])],
           messages: this.history,
         },
         { signal: this.ctl.signal },

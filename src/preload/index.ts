@@ -39,7 +39,7 @@ const api = {
   recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
-  exportDeck: (format: 'pptx' | 'pdf' | 'png'): Promise<string> => invoke('deck:export', format),
+  exportDeck: (format: 'pptx' | 'pdf' | 'png' | 'md'): Promise<string> => invoke('deck:export', format),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),
@@ -67,6 +67,10 @@ const api = {
   pickMedia: (kind: 'video' | 'audio'): Promise<string | null> => invoke('media:pick', kind),
   /** data-URL (PNG/JPEG/WebP) unter ~/Deckwerk/assets speichern → asset://-URL */
   saveAsset: (dataUrl: string, name: string): Promise<string> => invoke('asset:save', dataUrl, name),
+  /** Text aus TXT/MD/CSV/DOCX/PPTX/PDF lesen; ohne Pfad per Dialog, null = abgebrochen */
+  readSource: (path?: string): Promise<{ name: string; text: string; cut: boolean } | null> => invoke('source:read', path),
+  /** ~/Deckwerk/hausstil.md im Standard-Editor öffnen (legt sie bei Bedarf an) */
+  openStyle: (): Promise<void> => invoke('style:open'),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code */
   setupStatus: (): Promise<{ claude: boolean; key: boolean; mcp: boolean }> => invoke('setup:status'),
   setupMcp: (): Promise<void> => invoke('setup:mcp'),

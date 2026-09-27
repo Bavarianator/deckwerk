@@ -15,7 +15,9 @@ export type DecorId = (typeof DECORS)[number]
 export const FRAMES = ['top', 'split', 'band', 'center'] as const
 export type FrameId = (typeof FRAMES)[number]
 
-export interface ThemeRef { id: string; brand?: BrandKit; custom?: ThemeSpec; shuffle?: number; fonts?: [string, string] }
+export interface ThemeRef { id: string; brand?: BrandKit; custom?: ThemeSpec; shuffle?: number; fonts?: [string, string]; customFont?: CustomFont }
+// Eigene Schrift (TTF, vom Nutzer gewählt): im Renderer per FontFace, in der PPTX eingebettet. Pfade als asset://-URL.
+export interface CustomFont { family: string; regular: string; bold?: string }
 
 export interface BrandKit {
   primary: string // #RRGGBB

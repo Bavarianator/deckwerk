@@ -87,9 +87,9 @@ export class ClaudeAgent {
       const cwd = join(homedir(), 'Deckwerk') // Sitzungen tauchen in Claude Code unter ~/Deckwerk auf
       mkdirSync(cwd, { recursive: true })
       // --setting-sources "": keine Hooks/Plugins aus den Settings des Nutzers, Login bleibt (--safe-mode würde auch unseren
-      // MCP-Server abschalten, --bare den Abo-Login). --tools "": nur die Deck-Tools.
+      // MCP-Server abschalten, --bare den Abo-Login). --tools: nur Deck-Tools plus Web-Recherche.
       const args = ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--setting-sources', '', '--disable-slash-commands',
-        '--mcp-config', mcpConfig, '--strict-mcp-config', '--tools', '', '--allowedTools', 'mcp__deckwerk',
+        '--mcp-config', mcpConfig, '--strict-mcp-config', '--tools', 'WebSearch,WebFetch', '--allowedTools', 'mcp__deckwerk,WebSearch,WebFetch',
         '--system-prompt', buildSystemPrompt(), '--model', this.model, ...(this.session ? ['--resume', this.session] : [])]
       const child = (this.child = spawn(this.claude, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] }))
       child.stdin.end(userText) // Prompt über stdin: kein Flag-Parsing von Nutzertext

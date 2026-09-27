@@ -1,8 +1,9 @@
 // Die 12 KI-Tools, SDK-frei: DeckAgent (agent.ts) und MCP-Server hängen an derselben Definition.
 // Fehler werfen ein Error mit konkreter Meldung; der Aufrufer macht daraus is_error / isError.
 import { randomBytes } from 'node:crypto'
-import { mkdirSync, readdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { icons } from 'lucide-react'
@@ -24,6 +25,10 @@ export interface ToolContext {
   storyline?(slides: { title: string; layout: string }[]): void // nur im App-Chat: geplante Folien für die Entstehen-Ansicht
   choice?(c: { question: string; options: { label: string; image: string }[] }): void // nur im App-Chat: Auswahl-Karten (image = PNG als data:-URL)
 }
+// Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt
+export const STYLE_FILE = join(homedir(), 'Deckwerk', 'hausstil.md')
+export const houseStyle = () => { try { return readFileSync(STYLE_FILE, 'utf8').trim() } catch { return '' } }
+
 export interface ToolOutput { text: string; images?: Buffer[] } // PNG oder JPEG, siehe mimeOf
 export const mimeOf = (b: Buffer): 'image/png' | 'image/jpeg' => (b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : 'image/png')
 export const assetUrl = (abs: string) => `asset://local${pathToFileURL(abs).pathname}` // Format wie ipc.ts
@@ -449,13 +454,24 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), pdf (pixelgenau) oder png (eine Datei pro Folie).',
-      inputSchema: z.object({ format: z.enum(['pptx', 'pdf', 'png']) }),
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), pdf (pixelgenau), png (eine Datei pro Folie) oder md (Handout: Titel, Inhalte, Notizen).',
+      inputSchema: z.object({ format: z.enum(['pptx', 'pdf', 'png', 'md']) }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
         const paths = await ctx.engine.exportDeck(deck, i.format, ctx.outDir)
         return { text: `Exportiert (${i.format}):\n${paths.join('\n')}` }
+      },
+    }),
+    tool({
+      name: 'remember',
+      description: 'Dauerhafte Vorliebe des Nutzers in den Hausstil schreiben; gilt für alle künftigen Decks (Tonfall, Anrede, Farben, Dinge, die er nicht will). Nur bei ausdrücklichem Wunsch („merk dir …“, „immer …“, „nie …“) oder wenn er dieselbe Korrektur zum zweiten Mal verlangt. Ein kurzer Satz pro Aufruf.',
+      inputSchema: z.object({ note: z.string().min(3).max(200) }),
+      async run(i) {
+        if (houseStyle().includes(i.note.trim())) return { text: 'Steht schon im Hausstil.' }
+        mkdirSync(dirname(STYLE_FILE), { recursive: true })
+        appendFileSync(STYLE_FILE, `- ${i.note.trim()}\n`)
+        return { text: `Gemerkt (${STYLE_FILE}). Gilt ab jetzt für jedes Deck; sag dem Nutzer kurz Bescheid.` }
       },
     }),
     ...(ctx.storyline ? [tool({

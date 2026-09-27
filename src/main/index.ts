@@ -43,7 +43,7 @@ async function renderCli(engine: ReturnType<typeof createEngine>, file: string, 
       else if (o[k] && typeof o[k] === 'object') walk(o[k])
     }
   }
-  deck.slides.forEach((s) => walk(s.content))
+  deck.slides.forEach((s) => { walk(s.content); walk(s.items); walk(s.bg) })
   const issues = await engine.lint(deck)
   for (const i of issues) console.log(`${i.severity === 'error' ? '✗' : '!'} Folie ${i.slide + 1} [${i.rule}] ${i.message}`)
   console.log(`${issues.filter((i) => i.severity === 'error').length} Fehler, ${issues.filter((i) => i.severity === 'warn').length} Warnungen`)

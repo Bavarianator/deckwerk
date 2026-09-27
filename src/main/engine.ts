@@ -2,6 +2,7 @@ import { nativeImage } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Deck, Measured } from '../shared/deck'
+import { handout } from '../shared/handout'
 import { lintDeck } from '../shared/lint'
 import type { Engine } from './agent'
 import { buildPptx } from './export-pptx'
@@ -45,6 +46,10 @@ export function createEngine(): Engine {
     async exportDeck(deck, format, outDir) {
       await mkdir(outDir, { recursive: true })
       const base = join(outDir, slug(deck.title))
+      if (format === 'md') {
+        await writeFile(`${base}.md`, handout(deck))
+        return [`${base}.md`]
+      }
       if (format === 'pdf') {
         await writeFile(`${base}.pdf`, await renderPdf(deck))
         return [`${base}.pdf`]

@@ -14,7 +14,7 @@ export const TOOL: Record<string, string> = {
   plan_storyline: 'Storyline planen', propose_looks: 'Looks entwerfen', create_deck: 'Deck anlegen', update_deck: 'Deck ändern', add_slides: 'Folien bauen', update_slide: 'Folie ändern',
   reorder_slides: 'Folien sortieren', delete_slides: 'Folien löschen', render_slides: 'Folien ansehen',
   render_overview: 'Übersicht prüfen', lint_deck: 'Qualität prüfen', search_icons: 'Icons suchen',
-  find_images: 'Bilder suchen', export_deck: 'Exportieren',
+  find_images: 'Bilder suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken',
 }
 
 // Modellwahl; gilt ab der nächsten Nachricht, auch mitten im Gespräch

@@ -154,6 +154,11 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
               {FONT_NAMES.map((f) => <option key={f}>{f}</option>)}
             </Select>
           </div>
+          <div className="look-group">
+            <b>Hausstil</b>
+            <button className="pill" title="Vorlieben für alle Decks (Tonfall, Anrede, No-Gos). Die KI ergänzt sie, wenn du „merk dir …“ sagst."
+              onClick={() => void window.api.openStyle()}>Bearbeiten …</button>
+          </div>
         </div>
       </section>
     </div>

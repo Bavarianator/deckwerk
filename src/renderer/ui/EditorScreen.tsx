@@ -1,5 +1,7 @@
 // Arbeitsansicht: Folienübersicht | Folie mit Notizen und KI-Leiste | Panel „Einfügen“ oder „Anpassen“ (ausblendbar).
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Sparkles } from 'lucide-react'
+import { fmtSec, speakSec } from '../../shared/handout'
 import { sizeOf, type ChartSpec, type Deck, type Item, type Slide } from '../../shared/deck'
 import type { LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
@@ -111,7 +113,13 @@ export function EditorScreen(p: Props) {
         <Stage deck={p.deck} index={p.index} busy={p.busy} sel={p.picked} onSel={p.onPick} onItems={p.onItems} onEdit={p.onEdit} onTarget={p.onTarget} />
         {slide && (
           <div className="work-notes">
-            <label htmlFor="slide-notes">Notizen</label>
+            <div className="work-notes-head">
+              <label htmlFor="slide-notes">Notizen</label>
+              {!!slide.notes?.trim() && <span title="Geschätzte Sprechzeit dieser Folie · des ganzen Decks">≈ {fmtSec(speakSec(slide.notes))} · Deck ≈ {fmtSec(p.deck!.slides.reduce((t, s) => t + speakSec(s.notes), 0))}</span>}
+              <button type="button" className="plain tint" disabled={p.busy} onClick={() => p.onSend(`Schreibe die Sprechernotizen für Folie ${p.index + 1} neu: was ich dazu sage, 30–60 Sekunden, frei gesprochen, ohne den Folientext zu wiederholen. Ändere nur notes.`)}>
+                <Sparkles size={13} />{slide.notes?.trim() ? 'Überarbeiten' : 'Schreiben lassen'}
+              </button>
+            </div>
             <textarea
               id="slide-notes"
               rows={2}

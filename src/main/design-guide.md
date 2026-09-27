@@ -133,7 +133,8 @@ Wähle das Layout nach der Form der Aussage, nicht nach Abwechslung um jeden Pre
 - **Bildrahmen (`mask`):** Freistehende Fotos (image-text, gallery, quote, team, big-number) in Form schneiden: `arch` (Bogen) wirkt editorial und warm, `circle` für Porträts, `hexagon` technisch. Pro Deck eine Rahmenform, nicht mischen. Nie bei Vollbildfotos.
 - **Stile mischen:** Gefällt das Theme nicht ganz, `update_deck.shuffle` (1–5) probieren: Akzente tauschen, Hell/Dunkel tauschen oder Grund tönen. `update_deck.fonts` legt ein anderes Schriftpaar darüber. Jede Änderung liefert eine Vorschau.
 - **Galerie:** `look` auf Folienebene hält alle Fotos einer Galerie in derselben Bildsprache.
-- **Akzente (`decorate_slide`):** Auf luftigen Folien (Cover, Statement, Kapitel, große Zahl, Zitat, Abschluss) ein einzelner Sticker (`star12` mit Zweitakzent), Funkeln (`star4`) oder Ring in eine freie Ecke. Die Engine findet den Platz. Höchstens auf jeder dritten Folie, nie auf Daten- und Tabellenfolien.
+- **Akzente (`decorate_slide`):** Auf luftigen Folien (Cover, Statement, Kapitel, große Zahl, Zitat, Abschluss) ein einzelner Sticker (`star12` mit Zweitakzent), eine handgezeichnete Grafik (`graphic`: sparkle, squiggle, burst) oder ein Ring in eine freie Ecke. Handgezeichnetes nur bei freundlichen, lockeren Decks. Die Engine findet den Platz. Höchstens auf jeder dritten Folie, nie auf Daten- und Tabellenfolien.
+- **QR-Code:** Auf der Abschlussfolie `closing.qr` mit dem Link zu Unterlagen, Termin oder Anmeldung. Immer schwarz auf weiß.
 - **Freie Formen** (nur `blank` oder auf Wunsch): Chevron, Etikett, Siegel (`star12`), Ring, Linien mit Pfeilspitzen. Sparsam, eine Akzentform pro Folie.
 
 ## 7. Text

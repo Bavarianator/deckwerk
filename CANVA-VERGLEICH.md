@@ -11,19 +11,19 @@ Stand: 27.09.2026. Grundlage: Code in `src/` (Phase 4 umgesetzt, Freiform-Canvas
 | 1.1 Kompositionen `frame` (top, split, band, center) | fertig, Lint `monotone`, Stresstest über alle erlaubten Frames | `deck.ts` FRAMES, `slide.tsx` Frame, `slide.css` fr-*, `tools.ts` checkFrame |
 | 1.2 Layout-Politur | fertig: kpi-grid `focus` + Variante `plain`, Donut schmaler, Galerie-`look`, Prozess/Zeitstrahl größer | `layouts.tsx`, `slide.css` |
 | 1.3 Tranche A | fertig: table, big-number, icon-grid, pros-cons, problem-solution, team | `layouts-extra.ts/.tsx/.css` |
-| 1.3 Tranche B | fertig: pricing, funnel, market-size, logos; offen: contact (braucht QR), agenda-visual | dto. |
+| 1.3 Tranche B | fertig: pricing, funnel, market-size, logos; `closing` hat QR statt eigenem contact-Layout; agenda-visual weggelassen | dto. |
 | 1.4 Formen und Linien | fertig: 13 neue native Formen, Linien mit Pfeil/Spitze/Punkt, Strichart | `slide.tsx` shapePath, `export-pptx.ts` SHAPE_TYPE/lineOf |
-| 1.4 SVG-Grafikbibliothek, Illustrationen | offen (Akzente laufen über native Formen und Icons) | – |
+| 1.4 SVG-Grafikbibliothek | fertig: 8 handgezeichnete Grafiken (Kringel, Unterstreichung, Kreis-Markierung, Pfeil, Strahlen, Wellen, Funkeln, Klecks) als Item `graphic`, auch in `decorate_slide`; Illustrationssets weggelassen | `items.ts` GRAPHICS |
 | 1.5 Bildrahmen | fertig: circle, arch, hexagon, diamond, octagon, star, heart; nativ als Bildgeometrie | `useMask`, `patch-xml.ts` maskShape |
 | 1.5 Zuschneiden, Grids, Freisteller | von deckwerk-f3/89 umgesetzt | – |
 | 1.6 Stile mischen | fertig: `theme.shuffle` (6 Farbvarianten), `theme.fonts` (11 Paare), per `update_deck` | `themes.ts` shuffled/FONT_PAIRS |
 | 1.6 Drei Vorschläge | von deckwerk-44 umgesetzt (`propose_looks`) | – |
-| 1.6 „Andere Gestaltung“ pro Folie | offen | – |
+| 1.6 „Andere Gestaltung“ pro Folie | fertig: Knopf im Inspector schaltet Variante × Komposition × Ton durch; „Farben/Schriften mischen“ im Look-Panel | `layouts.ts` nextLook, `LookSheet.tsx` |
 | 1.7 Folienhintergrund mit Verlauf | fertig (`bg.gradient`, `bg.angle`) | `slide.tsx` Frame |
 | 2.1 Tabellen | fertig als Layout `table` (native Textboxen, keine PowerPoint-Tabelle) | `layouts-extra.tsx` |
 | 2.2 Texteffekte | fertig: shadow, lift, hollow, neon für freie Texte | `effectCss`, `patch-xml.ts` textEffect |
-| 2.3 Schriften | fertig: +6 OFL-Familien (Playfair Display, Source Sans 3, Plus Jakarta Sans, Lora, Instrument Serif, Archivo); offen: eigene Schrift hochladen | `fetch-fonts.ts`, `themes.ts`, `fonts.css` |
-| 2.4 Medien | Video/Audio von deckwerk-f3; offen: QR (Dependency-Frage), Links | – |
+| 2.3 Schriften | fertig: +6 OFL-Familien (Playfair Display, Source Sans 3, Plus Jakarta Sans, Lora, Instrument Serif, Archivo); eigene Schrift (TTF) im Look-Panel, eingebettet in die PPTX | `fetch-fonts.ts`, `themes.ts`, `slide.tsx` loadCustomFont, `ipc.ts` font:pick |
+| 2.4 Medien | Video/Audio von deckwerk-f3; QR-Code (Item `qr`, `closing.qr`, Dependency `qrcode`); Links per `[Text](url)` als native Hyperlinks | `slide.tsx` QrCode, rich |
 | 2.5 Übergänge und Bewegung | fertig: dissolve, wipe, cover, split, circle, zoom; `motion` calm/standard/lively | `animations.ts`, `layouts.ts` buildOf, `PresentScreen.tsx` |
 | 2.6 Bildanpassung | fertig: Helligkeit, Kontrast, Sättigung, Weichzeichnen | `adjustCss`, `patch-xml.ts` adjustBlip |
 | 2.7 Akzente per KI | fertig: Tool `decorate_slide` (Engine sucht freien Platz), Design-Guide „Canva-Wirkung“ | `tools.ts` |
@@ -33,7 +33,7 @@ Stand: 27.09.2026. Grundlage: Code in `src/` (Phase 4 umgesetzt, Freiform-Canvas
 
 Nebenbei behoben: PDF-Export hing unter Wayland (Electron jetzt mit `--ozone-platform=x11` in allen Startskripten), Renderer-Fehler kamen als leeres `{}` an, Karten auf Akzent-Folien und gedämpfter Text auf Akzentflächen hatten zu wenig Kontrast, zentriertes Cover mit Foto ohne Overlay.
 
-**PowerPoint-Abnahme offen:** LibreOffice zeigt Neon und Masken korrekt, ignoriert aber Kontur-Text (hollow), weiche Schatten (lift) sowie Sättigung und Weichzeichner im Bild. Das XML entspricht dem PowerPoint-Schema, sichtbar prüfen lässt es sich nur in PowerPoint.
+**PowerPoint-Abnahme:** `npm run render examples/abnahme.json` erzeugt `exports/powerpoint-abnahme.pptx`. Jede Folie enthält die offenen Effekte (Kontur, Schweben, Sättigung, Weichzeichner, Masken, Formen, Pfeile, QR, Link, eingebettete Schriften), die Sprechernotizen sagen, was in PowerPoint zu prüfen ist. LibreOffice zeigt Neon und Masken bereits korrekt, ignoriert aber Kontur, weiche Schatten, Sättigung und Weichzeichner.
 
 ---
 

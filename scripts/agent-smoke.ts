@@ -21,7 +21,7 @@ const T = Object.fromEntries(tools.map((t) => [t.name, t])) as Record<string, To
 const run = (name: string, input: unknown) => T[name].run(T[name].inputSchema.parse(input))
 const fails = async (p: Promise<unknown>, re: RegExp) => { try { await p } catch (e) { assert.match((e as Error).message, re); return } assert.fail('sollte werfen') }
 
-assert.equal(tools.length, 14)
+assert.equal(tools.length, 15)
 const look = (name: string, bg: string) => ({ name, bg, accent: '#C4552D', headFont: 'Fraunces', bodyFont: 'Manrope', radius: 4, decor: 'rings' })
 const looks = await run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel', '#12261E')] }) as { text: string; images: Buffer[] }
 assert.equal(looks.images.length, 2); assert.match(looks.text, /Hell[\s\S]*Dunkel/)

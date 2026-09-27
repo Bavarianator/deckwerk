@@ -92,6 +92,8 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 .home-field:focus-within { box-shadow: 0 0 0 4px rgb(79 82 217 / 0.12), 0 1px 2px rgb(22 22 26 / 0.04), 0 16px 40px rgb(22 22 26 / 0.08); }
 .home-field textarea { border: 0; padding: 0 10px 0 0; background: transparent; font-size: 18px; line-height: 1.5; resize: none; outline: none; }
 .home-field-bar { display: flex; align-items: center; justify-content: space-between; }
+.home-field-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.home-err { font-size: 13px; }
 .home-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
 .home-chips .pill { height: 34px; padding: 0 16px; font-weight: 400; font-size: 13.5px; }
 .home-blank { margin-top: 14px; }
@@ -123,6 +125,8 @@ select.model-select { color: var(--muted); }
 .work-center .stage-sel { outline-color: var(--on-slide); }
 .work-center .stage-sel span { background: var(--accent); color: #fff; border-radius: 999px; padding: 1px 9px; }
 .work-notes { display: flex; flex-direction: column; gap: 2px; width: min(960px, calc(100% - 64px)); margin: 0 auto; padding: 6px 0 0; }
+.work-notes-head { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--faint); }
+.work-notes-head button { margin-left: auto; height: 24px; font-size: 12px; }
 .work-notes label { font-size: 12px; font-weight: 600; color: var(--faint); }
 .work-notes textarea { padding: 0; border: 0; background: transparent; font-size: 15px; line-height: 1.5; color: var(--muted); resize: none; outline: none; }
 .work-panel { flex: none; width: 300px; min-height: 0; overflow-y: auto; margin: 0 12px 12px 0; border-radius: 16px; background: var(--panel); box-shadow: 0 1px 2px rgb(22 22 26 / 0.05), 0 12px 32px rgb(22 22 26 / 0.08); }

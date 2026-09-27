@@ -1,0 +1,46 @@
+{
+ "title": "PowerPoint-Abnahme",
+ "theme": { "id": "signal" },
+ "transition": "circle",
+ "motion": "lively",
+ "mode": "click",
+ "slides": [
+  { "id": "text", "layout": "blank", "content": {}, "bg": { "gradient": ["#0B0D12", "#2A1F5C"], "angle": 120 },
+    "notes": "PRÜFEN: 1) Schatten unten rechts sichtbar. 2) Schweben: weicher Schatten nach unten. 3) Kontur: nur Umriss in Orange, innen durchsichtig (Start → Textkontur). 4) Neon: grünes Leuchten (Formformat → Leuchten). 5) Hintergrund-Verlauf (Hintergrund formatieren zeigt ein Bild). 6) Übergang Kreis beim Wechsel zur nächsten Folie. Alle Texte bleiben editierbar.",
+    "items": [
+      { "id": "t0", "kind": "text", "text": "Schatten", "x": 80, "y": 60, "w": 800, "h": 110, "size": 84, "bold": true, "color": "#F5F7FA", "effect": "shadow" },
+      { "id": "t1", "kind": "text", "text": "Schweben", "x": 80, "y": 210, "w": 800, "h": 110, "size": 84, "bold": true, "color": "#F5F7FA", "effect": "lift" },
+      { "id": "t2", "kind": "text", "text": "Kontur", "x": 80, "y": 360, "w": 800, "h": 110, "size": 84, "bold": true, "color": "#E4572E", "effect": "hollow" },
+      { "id": "t3", "kind": "text", "text": "Neon", "x": 80, "y": 510, "w": 800, "h": 110, "size": 84, "bold": true, "color": "#F5F7FA", "effect": "neon", "effectColor": "#7CFFB2" }
+    ] },
+  { "id": "bild", "layout": "blank", "content": {},
+    "notes": "PRÜFEN (Bildformat → Bildkorrekturen / Farbe / Künstlerische Effekte): 1) Heller und kontrastreicher. 2) Sättigung −60 %: fast grau. 3) Weichgezeichnet. 4) Duotone (Neu einfärben). 5) Bildrahmen Bogen, Sechseck, Stern: Bild → Zuschneiden → Auf Form zuschneiden zeigt die Form. Über Bild ändern austauschbar.",
+    "items": [
+      { "id": "b0", "kind": "image", "src": "assets/tee.jpg", "x": 60, "y": 80, "w": 260, "h": 260, "adjust": { "bright": 15, "contrast": 30 } },
+      { "id": "b1", "kind": "image", "src": "assets/tee.jpg", "x": 360, "y": 80, "w": 260, "h": 260, "adjust": { "sat": -60 } },
+      { "id": "b2", "kind": "image", "src": "assets/tee.jpg", "x": 660, "y": 80, "w": 260, "h": 260, "adjust": { "blur": 50 } },
+      { "id": "b3", "kind": "image", "src": "assets/tee.jpg", "x": 960, "y": 80, "w": 260, "h": 260, "look": "duotone" },
+      { "id": "m0", "kind": "image", "src": "assets/portraet.jpg", "x": 160, "y": 400, "w": 220, "h": 280, "mask": "arch" },
+      { "id": "m1", "kind": "image", "src": "assets/portraet.jpg", "x": 520, "y": 400, "w": 240, "h": 280, "mask": "hexagon" },
+      { "id": "m2", "kind": "image", "src": "assets/portraet.jpg", "x": 880, "y": 400, "w": 280, "h": 280, "mask": "star" }
+    ] },
+  { "id": "formen", "layout": "blank", "content": {},
+    "notes": "PRÜFEN: 1) Formen sind native PowerPoint-Formen (Form ändern zeigt Chevron, Etikett, Ring, Siegel …). 2) Linie mit offener Pfeilspitze, gestrichelte Linie mit Punkt und Spitze (Formformat → Linie → Pfeiltyp / Strichtyp). 3) QR-Code mit dem Handy scannen: öffnet https://example.com. 4) Handgezeichnete Grafiken erscheinen als Bild.",
+    "items": [
+      { "id": "f0", "kind": "shape", "shape": "chevron", "x": 60, "y": 60, "w": 200, "h": 110, "fill": "#C6FF3D" },
+      { "id": "f1", "kind": "shape", "shape": "pentagon", "x": 300, "y": 60, "w": 220, "h": 110, "fill": "#7C5CFF" },
+      { "id": "f2", "kind": "shape", "shape": "donut", "x": 560, "y": 50, "w": 130, "h": 130, "fill": "#3DD6F5" },
+      { "id": "f3", "kind": "shape", "shape": "star12", "x": 730, "y": 50, "w": 130, "h": 130, "fill": "#FF8A4C" },
+      { "id": "f4", "kind": "shape", "shape": "heart", "x": 900, "y": 55, "w": 130, "h": 120, "fill": "#FF6B6B" },
+      { "id": "l0", "kind": "shape", "shape": "line", "x": 60, "y": 260, "w": 420, "h": 20, "stroke": "#F5F7FA", "strokeW": 4, "lineEnd": "arrow" },
+      { "id": "l1", "kind": "shape", "shape": "line", "x": 60, "y": 340, "w": 420, "h": 20, "stroke": "#C6FF3D", "strokeW": 6, "lineStart": "dot", "lineEnd": "triangle", "dash": "dash" },
+      { "id": "q0", "kind": "qr", "text": "https://example.com", "x": 600, "y": 240, "w": 220, "h": 220 },
+      { "id": "g0", "kind": "graphic", "graphic": "squiggle", "x": 60, "y": 460, "w": 300, "h": 90, "color": "#C6FF3D" },
+      { "id": "g1", "kind": "graphic", "graphic": "sparkle", "x": 420, "y": 470, "w": 110, "h": 110, "color": "#7C5CFF" },
+      { "id": "g2", "kind": "graphic", "graphic": "scribble", "x": 900, "y": 260, "w": 260, "h": 200, "color": "#FF8A4C" }
+    ] },
+  { "id": "ende", "layout": "closing",
+    "notes": "PRÜFEN: 1) QR-Code unten rechts scannbar. 2) Link in der Unterzeile anklickbar (Bildschirmpräsentation). 3) Datei öffnet ohne Reparaturdialog; Schriften unter Datei → Informationen eingebettet (Space Grotesk, Inter).",
+    "content": { "title": "Alles geprüft? Rückmeldung an das Team", "subtitle": "Unterlagen unter [example.com](https://example.com)", "qr": "https://example.com" } }
+ ]
+}

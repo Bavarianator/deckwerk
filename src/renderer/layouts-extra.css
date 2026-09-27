@@ -4,7 +4,7 @@
 .sum { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 44px; }
 .sum.with-rec { grid-template-columns: 1fr 340px; }
 .sum-list { min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
-.sum-row { display: flex; gap: 28px; align-items: baseline; padding: 20px 0; border-top: 1px solid var(--border); }
+.sum-row { display: flex; gap: 28px; align-items: baseline; padding: 14px 0; border-top: 1px solid var(--border); }
 .sum-row:last-child { border-bottom: 1px solid var(--border); }
 .sum-num { flex: none; width: 48px; color: var(--accent); font-variant-numeric: tabular-nums; }
 .sum-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }

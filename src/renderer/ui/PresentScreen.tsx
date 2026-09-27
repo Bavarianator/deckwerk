@@ -1,6 +1,7 @@
 // Präsentationsmodus: Vollbild, Builds per Web Animations API mit denselben Presets wie der PPTX-Export.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { sizeOf, type BuildPreset, type Deck } from '../../shared/deck'
+import { fmtSec, speakSec } from '../../shared/handout'
 import { LAYOUTS, buildOf, type LayoutId } from '../../shared/layouts'
 import { SlideView } from '../slide'
 import { chaptersOf, titleOf } from './story'
@@ -181,11 +182,12 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
     return <div className="present" onClick={next} onContextMenu={(e) => { e.preventDefault(); go(view.i - 1) }}>{stage}</div>
 
   const notes = deck.slides[view.i].notes?.trim()
+  const plan = deck.slides.reduce((t, s) => t + speakSec(s.notes), 0)
   return (
     <div className="pv">
       <div className="pv-top">
         <button className="pill" onClick={onExit}>Beenden</button>
-        <div className="pv-meta"><span>Folie {view.i + 1} von {last + 1}</span><Clock /></div>
+        <div className="pv-meta"><span>Folie {view.i + 1} von {last + 1}</span>{plan > 0 && <span title="Geschätzte Sprechzeit laut Notizen">Plan ≈ {fmtSec(plan)}</span>}<Clock /></div>
       </div>
       <div className="pv-now" onClick={next}>{stage}</div>
       <aside className="pv-side">

@@ -26,7 +26,7 @@ const call = async (name: string, args: Record<string, unknown> = {}) => {
 const t0 = Date.now()
 const lap = (what: string) => console.log(`${String(Date.now() - t0).padStart(6)} ms  ${what}`)
 
-assert.equal((await client.listTools()).tools.length, 17)
+assert.equal((await client.listTools()).tools.length, 18)
 await call('create_deck', { title: 'E2E Test', theme: 'corporate', brand: { primary: '#0A7C66' } })
 let r = await call('add_slides', { slides: [
   { layout: 'cover', content: { eyebrow: 'E2E', title: 'Der MCP-Server rendert echte Folien', subtitle: 'Offscreen-Chromium im Electron-Main-Prozess' }, notes: 'Testfolie' },

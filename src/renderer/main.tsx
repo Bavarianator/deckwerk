@@ -12,7 +12,7 @@ import '@fontsource/gelasio/700.css'
 import '@fontsource/gelasio/400-italic.css'
 import './fonts.css'
 import type { Deck, Measured } from '../shared/deck'
-import { SlideView } from './slide'
+import { SlideView, loadCustomFont } from './slide'
 import { PresentScreen } from './ui/PresentScreen'
 import { autofit, extract } from './measure'
 import { FONTS } from '../shared/themes'
@@ -49,6 +49,7 @@ function Host({ mode }: { mode: string }) {
     },
     async render(deck: Deck, index: number): Promise<Measured> {
       await fontsLoaded()
+      await loadCustomFont(deck)
       flushSync(() => setState({ deck, index }))
       await frames()
       const root = document.querySelector<HTMLElement>('.slide')!
@@ -63,6 +64,7 @@ function Host({ mode }: { mode: string }) {
     },
     async renderAll(deck: Deck) {
       await fontsLoaded()
+      await loadCustomFont(deck)
       flushSync(() => setState({ deck, index: -1 }))
       await frames(3)
     },

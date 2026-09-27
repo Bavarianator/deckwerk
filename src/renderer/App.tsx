@@ -201,7 +201,7 @@ export default function App() {
       setSaved(true)
       setStatus({ text: `Gespeichert: ${p}` })
     }),
-    onExport: (format: 'pptx' | 'pdf' | 'png') => guard(async () => {
+    onExport: (format: 'pptx' | 'pdf' | 'png' | 'md') => guard(async () => {
       setStatus({ text: `Exportiere ${format.toUpperCase()} …` })
       setStatus({ text: `Exportiert: ${await api.exportDeck(format)}` })
     }),

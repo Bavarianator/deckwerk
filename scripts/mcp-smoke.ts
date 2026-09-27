@@ -26,7 +26,7 @@ await client.connect(b)
 
 assert.match(client.getInstructions() ?? '', /### kpi-grid/)
 const names = (await client.listTools()).tools.map((t) => t.name).sort()
-assert.equal(names.length, 17)
+assert.equal(names.length, 18)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }

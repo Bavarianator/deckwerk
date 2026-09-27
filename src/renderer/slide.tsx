@@ -468,6 +468,21 @@ export function QrCode(p: { text: string; slot: string; color: string; bg: strin
   )
 }
 
+// Eigene Schrift (theme.customFont) einmal pro Datei registrieren; Messen erst danach, sonst misst Autofit die Ersatzschrift
+const customFonts = new Map<string, Promise<void>>()
+export function loadCustomFont(deck: Deck): Promise<void> {
+  const cf = deck.theme.customFont
+  if (!cf) return Promise.resolve()
+  const key = `${cf.family}|${cf.regular}|${cf.bold ?? ''}`
+  let p = customFonts.get(key)
+  if (!p) {
+    const faces = [new FontFace(cf.family, `url("${cf.regular}")`, { weight: '400' }), ...(cf.bold ? [new FontFace(cf.family, `url("${cf.bold}")`, { weight: '700' })] : [])]
+    p = Promise.all(faces.map((f) => f.load().then((ff) => void document.fonts.add(ff)))).then(() => {}, (e) => console.warn('[font] eigene Schrift lädt nicht', e))
+    customFonts.set(key, p)
+  }
+  return p
+}
+
 export const fontCss = (it: Item) => (it.font === 'head' || !it.font ? 'var(--font-head)' : it.font === 'body' ? 'var(--font-body)' : `'${FONTS[it.font as FontName]?.css ?? it.font}'`)
 
 // Audio: runder Lautsprecher-Knopf; beim Präsentieren spielt ein Klick ab bzw. pausiert (Klick blättert dann nicht weiter)
@@ -599,7 +614,7 @@ export function SlideView(p: { deck: Deck; index: number; width?: number; editab
       if (key !== last.current) (last.current = key), p.onFit?.(fit)
     }
     run()
-    document.fonts.ready.then(run)
+    Promise.all([document.fonts.ready, loadCustomFont(p.deck)]).then(run)
   })
 
   const ctx: Ctx = { theme, deck: p.deck, index: p.index, editable: !!p.editable, onEdit: p.onEdit, print: !!p.print, editing: p.editing, live: p.live }

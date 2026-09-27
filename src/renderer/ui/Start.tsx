@@ -1,10 +1,20 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“ und die zuletzt bearbeiteten Decks.
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUp, Settings } from 'lucide-react'
+import { ArrowUp, Paperclip, Settings, X } from 'lucide-react'
 import type { Deck } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Logo } from './Logo'
+
+// Angehängtes Dokument (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateiname
+export type Source = { name: string; text: string; cut: boolean }
+export const sourceContext = (s: Source) => `Quellmaterial aus „${s.name}“${s.cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden:\n<quelle>\n${s.text}\n</quelle>`
+export function useSource() {
+  const [src, setSrc] = useState<Source | null>(null)
+  const [err, setErr] = useState('')
+  const attach = (path?: string) => { setErr(''); window.api.readSource(path).then((s) => s && setSrc(s), (e: Error) => setErr(e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, ''))) }
+  return { src, setSrc, err, attach }
+}
 
 interface Recent { path: string; title: string; mtime: number; deck: Deck }
 
@@ -21,7 +31,7 @@ const when = (t: number) => {
 }
 
 interface Props {
-  onSubmit: (text: string) => boolean
+  onSubmit: (text: string, context?: string) => boolean
   model: string
   onModel: (id: string) => void
   onBlank: () => void
@@ -35,7 +45,13 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   const [recent, setRecent] = useState<Recent[]>([])
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { window.api.recent(8).then(setRecent, () => setRecent([])) }, [])
-  const submit = () => { if (onSubmit(text)) setText('') }
+  const { src, setSrc, err, attach } = useSource()
+  const submit = () => {
+    const ask = text.trim() || (!src ? '' : /\.pptx$/i.test(src.name)
+      ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, passende Layouts und ein stimmiges Design.'
+      : 'Mach aus diesem Dokument eine Präsentation.')
+    if (onSubmit(src ? `${ask} · ${src.name}` : ask, src ? sourceContext(src) : undefined)) { setText(''); setSrc(null) }
+  }
 
   return (
     <div className="home">
@@ -51,7 +67,9 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
       <main className="home-main">
         <h1>Was möchtest du zeigen?</h1>
         <p className="home-sub">Ein Satz genügt. Deckwerk schreibt die Storyline, baut die Folien und prüft jede einzelne.</p>
-        <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}>
+        <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => { const f = e.dataTransfer.files[0]; if (f) { e.preventDefault(); attach(window.api.pathOf(f)) } }}>
           <textarea
             ref={ref}
             autoFocus
@@ -63,8 +81,14 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
           />
           <div className="home-field-bar">
-            <ModelSelect value={model} onChange={onModel} />
-            <button type="submit" className="round" aria-label="Deck erstellen" disabled={!text.trim()}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            <div className="home-field-l">
+              <ModelSelect value={model} onChange={onModel} />
+              {src
+                ? <span className="pill" title={src.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}><Paperclip size={13} />{src.name}<button type="button" className="plain" aria-label="Anhang entfernen" onClick={() => setSrc(null)}><X size={13} /></button></span>
+                : <button type="button" className="plain" title="Dokument als Grundlage anhängen: Text, Markdown, Word, PowerPoint, PDF (oder hierher ziehen)" onClick={() => attach()}><Paperclip size={16} />Datei</button>}
+              {err && <span className="home-err error" role="alert">{err}</span>}
+            </div>
+            <button type="submit" className="round" aria-label="Deck erstellen" disabled={!text.trim() && !src}><ArrowUp size={18} strokeWidth={2.4} /></button>
           </div>
         </form>
         <div className="home-chips">

@@ -3,7 +3,7 @@ import type { BrandKit, DecorId, ThemeRef, ThemeSpec, Tone } from './deck'
 import { EXTRA_THEMES } from './themes-extra'
 
 // embed: Dateistamm in assets/fonts (<embed>-Regular|Bold|Italic|BoldItalic.ttf); dieselbe TTF misst im Renderer und wird in die PPTX eingebettet.
-export interface FontRef { css: string; pptx: string; embed?: string; serif?: boolean; single?: boolean } // single: nur ein Schnitt (Titel in 400)
+export interface FontRef { css: string; pptx: string; embed?: string; serif?: boolean; single?: boolean; files?: { regular: string; bold?: string } } // files: eigene Schrift (asset://) // single: nur ein Schnitt (Titel in 400)
 export interface Theme {
   id: string
   name: string
@@ -181,8 +181,12 @@ export function resolveTheme(ref: ThemeRef): Theme {
   let t = withBrand(ref.custom ? themeFromSpec(ref.custom) : THEMES.find((x) => x.id === ref.id) ?? THEMES[0], ref.brand)
   if (ref.shuffle) t = shuffled(t, ref.shuffle)
   const [hf, bf] = ref.fonts ?? []
-  if (hf && hf in FONTS) t = { ...t, head: headRef(FONTS[hf as FontName]) }
-  if (bf && bf in FONTS) t = { ...t, body: FONTS[bf as FontName] }
+  const cf = ref.customFont
+  const font = (n?: string): FontRef | undefined =>
+    n && cf && n === cf.family ? { css: n, pptx: n, files: { regular: cf.regular, bold: cf.bold }, single: !cf.bold } : n && n in FONTS ? FONTS[n as FontName] : undefined
+  const hRef = font(hf), bRef = font(bf)
+  if (hRef) t = { ...t, head: headRef(hRef) }
+  if (bRef) t = { ...t, body: bRef }
   const c = t.c
   return {
     ...t,

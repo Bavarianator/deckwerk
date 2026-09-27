@@ -5,9 +5,9 @@ import { ChevronLeft, LayoutGrid, PanelLeft, Palette, Play, Plus, RectangleHoriz
 export interface Status { text: string; error?: boolean }
 export type Panel = 'insert' | 'format' | null
 export type View = 'slide' | 'grid'
-type Format = 'pptx' | 'pdf' | 'png'
+type Format = 'pptx' | 'pdf' | 'png' | 'md'
 
-const FORMAT: Record<Format, string> = { pptx: 'PowerPoint (.pptx)', pdf: 'PDF', png: 'Bilder (.png)' }
+const FORMAT: Record<Format, string> = { pptx: 'PowerPoint (.pptx)', pdf: 'PDF', png: 'Bilder (.png)', md: 'Handout (.md)' }
 
 interface Props {
   title: string
