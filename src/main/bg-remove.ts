@@ -1,6 +1,7 @@
 // Freisteller im Main-Prozess: BiRefNet-lite (MIT) über onnxruntime-node (nativ, mehrere Kerne). Das Modell lädt beim
 // ersten Einsatz von Hugging Face nach ~/Deckwerk/models und bleibt dort. Bildverarbeitung mit nativeImage, ohne sharp.
 import { nativeImage } from 'electron'
+import { createHash } from 'node:crypto'
 import { createWriteStream, existsSync } from 'node:fs'
 import { mkdir, rename, rm } from 'node:fs/promises'
 import { freemem } from 'node:os'
@@ -9,7 +10,9 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import type { InferenceSession } from 'onnxruntime-node'
 
-const MODEL_URL = 'https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model.onnx'
+// fester Commit + Prüfsumme: ein nachträglich verändertes Modell landet nie im nativen ONNX-Parser
+const MODEL_URL = 'https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/de15b22ba131738a16dff04aab8bdf8dc32e3ac1/onnx/model.onnx'
+const MODEL_SHA256 = '5600024376f572a557870a5eb0afb1e5961636bef4e1e22132025467d0f03333'
 const S = 1024 // Eingabegröße des Modells (preprocessor_config.json)
 const MEAN = [0.485, 0.456, 0.406], STD = [0.229, 0.224, 0.225]
 
@@ -20,13 +23,18 @@ async function download(file: string, onProgress: (pct: number) => void) {
   if (!res.ok || !res.body) throw new Error(`Modell-Download fehlgeschlagen (${res.status})`)
   const total = Number(res.headers.get('content-length')) || 0
   let got = 0, last = -1
+  const hash = createHash('sha256')
   const counted = Readable.fromWeb(res.body as never).on('data', (c: Buffer) => {
+    hash.update(c)
     got += c.length
     const pct = total ? Math.floor((got / total) * 100) : 0
     if (pct !== last) onProgress((last = pct))
   })
   const part = `${file}.part` // erst nach vollständigem Download umbenennen, sonst bliebe ein kaputtes Modell liegen
-  try { await pipeline(counted, createWriteStream(part)) } catch (e) { await rm(part, { force: true }); throw e }
+  try {
+    await pipeline(counted, createWriteStream(part))
+    if (hash.digest('hex') !== MODEL_SHA256) throw new Error('Modell-Download beschädigt (Prüfsumme stimmt nicht). Bitte noch einmal versuchen.')
+  } catch (e) { await rm(part, { force: true }); throw e }
   await rename(part, file)
 }
 
@@ -36,15 +44,17 @@ function load(dir: string, onProgress: (pct: number) => void): Promise<Inference
     if (!existsSync(file)) { await mkdir(dir, { recursive: true }); await download(file, onProgress) }
     const ort = await import('onnxruntime-node')
     // Speicher sparen statt Tempo: ohne Arena/Memory-Pattern werden Zwischenpuffer sofort freigegeben (Spitze deutlich kleiner)
-    return ort.InferenceSession.create(file, { executionProviders: ['cpu'], graphOptimizationLevel: 'basic', enableCpuMemArena: false, enableMemPattern: false, executionMode: 'sequential' })
+    const create = (executionProviders: string[]) => ort.InferenceSession.create(file, { executionProviders, graphOptimizationLevel: 'basic', enableCpuMemArena: false, enableMemPattern: false, executionMode: 'sequential' })
+    return process.platform === 'darwin' ? create(['coreml', 'cpu']).catch(() => create(['cpu'])) : create(['cpu'])
   })().catch((e) => { session = null; throw e }))
 }
 
 /** Hintergrund entfernen → PNG mit Transparenz in Originalgröße. onProgress: Modell-Download in % (nur beim ersten Mal). */
 export async function removeBackground(imagePath: string, modelDir: string, onProgress: (pct: number) => void): Promise<Buffer> {
   // Schutz vor dem OOM-Killer: gemessene Spitze ~2 GB (Eingabe fest 1024×1024, auch mit sparsamen Session-Optionen).
-  // Unter Linux beendet der Kernel sonst womöglich die ganze Terminal-/App-Gruppe.
-  if (freemem() < 2.5 * 1024 ** 3) throw new Error(`Zu wenig freier Arbeitsspeicher für den Freisteller (${(freemem() / 1024 ** 3).toFixed(1)} GB frei, nötig ca. 2,5 GB). Andere Programme schließen und erneut versuchen.`)
+  // Unter Linux beendet der Kernel sonst womöglich die ganze Terminal-/App-Gruppe. macOS zählt den Datei-Cache als belegt
+  // (freemem fast immer < 1 GB) und lagert aus, statt Prozesse zu beenden; dort also nicht sperren.
+  if (process.platform === 'linux' && freemem() < 2.5 * 1024 ** 3) throw new Error(`Zu wenig freier Arbeitsspeicher für den Freisteller (${(freemem() / 1024 ** 3).toFixed(1)} GB frei, nötig ca. 2,5 GB). Andere Programme schließen und erneut versuchen.`)
   const img = nativeImage.createFromPath(imagePath)
   if (img.isEmpty()) throw new Error('Bild lässt sich nicht lesen')
   const { width, height } = img.getSize()

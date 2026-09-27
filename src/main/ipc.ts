@@ -2,9 +2,9 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage, screen, shell } from 'electron'
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { copyFile, mkdir, readdir, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { Deck } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine } from './agent'
@@ -17,14 +17,26 @@ import { assetUrl, buildTools, localizeDeck, STYLE_FILE } from './tools'
 const HOME = join(homedir(), 'Deckwerk')
 
 // Versionen (Canva „Versionsverlauf“): vor dem Überschreiben den alten Stand nach <deck>/versions/<zeit>.json,
-// höchstens alle 10 min, weil der Autosave alle paar Sekunden speichert. Zurück geht es über „Deck öffnen“.
-async function snapshot(file: string) {
+// höchstens alle 10 min (force: immer), weil der Autosave alle paar Sekunden speichert; die ältesten ab 100 fallen weg.
+async function snapshot(file: string, force = false) {
   if (!existsSync(file)) return
   const dir = join(dirname(file), 'versions')
-  const last = (await readdir(dir).catch(() => [] as string[])).sort().at(-1)
-  if (last && Date.now() - (await stat(join(dir, last))).mtimeMs < 600_000) return
+  const all = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith('.json')).sort()
+  if (!force && all.length && Date.now() - (await stat(join(dir, all.at(-1)!))).mtimeMs < 600_000) return
   await mkdir(dir, { recursive: true })
-  await copyFile(file, join(dir, `${new Date().toLocaleString('sv').replace(' ', 'T').replace(/:/g, '-')}.json`))
+  await writeFile(join(dir, `${new Date().toLocaleString('sv').replace(' ', 'T').replace(/:/g, '-')}.json`), await readFile(file))
+  for (const old of all.slice(0, Math.max(0, all.length + 1 - 100))) await rm(join(dir, old), { force: true })
+}
+
+// Zurück zu einer Version: eine Datei aus <deck>/versions/ öffnen macht sie wieder zum Deck; der bisherige Stand
+// wandert vorher selbst in die Versionen. Andere Dateien bleiben, wie sie sind.
+async function restore(file: string): Promise<string> {
+  const main = join(dirname(dirname(file)), 'deck.json')
+  if (basename(dirname(file)) !== 'versions' || !existsSync(main)) return file
+  const json = await readFile(file)
+  await snapshot(main, true)
+  await writeFile(main, json)
+  return main
 }
 
 export function registerIpc(win: BrowserWindow, engine: Engine): void {
@@ -92,14 +104,19 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   ipcMain.handle('deck:open', async () => {
     await mkdir(HOME, { recursive: true })
     const r = await dialog.showOpenDialog(win, { defaultPath: HOME, properties: ['openFile'], filters: [{ name: 'Deckwerk-Deck', extensions: ['json'] }] })
-    const file = r.filePaths[0]
-    if (r.canceled || !file) return null
+    if (r.canceled || !r.filePaths[0]) return null
+    readDeck(r.filePaths[0]) // keine gültige deck.json → Fehler, bevor restore() etwas überschreibt
+    flush() // offene Änderungen zuerst, sonst überschriebe reset() eine gerade wiederhergestellte Version
+    const file = await restore(r.filePaths[0])
     reset(readDeck(file), file)
     return state()
   })
 
-  ipcMain.handle('deck:openPath', (_, file: string) => {
-    reset(readDeck(resolve(file)), resolve(file))
+  ipcMain.handle('deck:openPath', async (_, f: string) => {
+    readDeck(resolve(f))
+    flush()
+    const file = await restore(resolve(f))
+    reset(readDeck(file), file)
     return state()
   })
   // zuletzt geänderte Decks unter ~/Deckwerk/*/deck.json, neueste zuerst
@@ -275,9 +292,12 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Einrichtung: KI-Zugang prüfen und Deckwerk als MCP-Server in Claude Code eintragen (User-Scope, alle Projekte).
   // Status aus ~/.claude.json lesen, weil `claude mcp get` den Server testweise startet und dafür zu lange braucht.
   // Start-Befehl für Claude Code: das Skript im Projekt (baut bei Bedarf neu), sonst Electron direkt mit dem App-Ordner
-  // (z. B. wenn die App aus einer Kopie ohne scripts/ läuft). x11: printToPDF hängt unter Wayland.
+  // (z. B. wenn die App aus einer Kopie ohne scripts/ läuft); gepackte App (macOS): das Programm selbst, ohne app.asar-Pfad.
+  // x11: printToPDF hängt unter Wayland.
   const script = join(app.getAppPath(), 'scripts', 'deckwerk.sh')
-  const mcpCmd = existsSync(script) ? { command: script, args: ['--mcp'] } : { command: process.execPath, args: [app.getAppPath(), '--ozone-platform=x11', '--mcp'] }
+  const mcpCmd = app.isPackaged ? { command: process.execPath, args: ['--mcp'] }
+    : existsSync(script) ? { command: script, args: ['--mcp'] }
+    : { command: process.execPath, args: [app.getAppPath(), ...(process.platform === 'linux' ? ['--ozone-platform=x11'] : []), '--mcp'] }
   ipcMain.handle('setup:done', () => writeFile(setupFile, ''))
   ipcMain.handle('setup:status', () => {
     let mcp = false

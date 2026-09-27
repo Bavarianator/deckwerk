@@ -255,7 +255,7 @@ export default function App() {
       else if (e.key === 'Escape' && panel === 'insert') setPanel(null)
       else if (mod && k === 'z' && !typing && !busy) e.shiftKey ? redo() : undo()
       else if (mod && k === 'y' && !typing && !busy) redo()
-      else if (e.key === 'F5' && deck?.slides.length) present(e.shiftKey ? index : 0)
+      else if ((e.key === 'F5' || (e.metaKey && e.altKey && e.code === 'KeyP')) && deck?.slides.length) present(e.shiftKey ? index : 0) // ⌥⌘P: Mac-Tastaturen brauchen für F5 fn
       else if (!typing && !mod && deck?.slides.length && ['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) setSel(Math.max(0, index - 1))
       else if (!typing && !mod && deck?.slides.length && ['ArrowRight', 'ArrowDown', 'PageDown'].includes(e.key)) setSel(Math.min(deck.slides.length - 1, index + 1))
       else return

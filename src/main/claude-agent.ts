@@ -2,7 +2,7 @@
 // MCP-Server (HTTP auf 127.0.0.1, Bearer-Token) im Main-Prozess. Gleiche Schnittstelle wie DeckAgent.
 import { spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { homedir, tmpdir } from 'node:os'
@@ -46,7 +46,9 @@ function serve(): Promise<string> {
     http.on('error', fail)
     http.listen(0, '127.0.0.1', () => {
       const url = `http://127.0.0.1:${(http.address() as AddressInfo).port}/mcp`
-      const file = join(mkdtempSync(join(tmpdir(), 'deckwerk-')), 'mcp.json')
+      const dir = mkdtempSync(join(tmpdir(), 'deckwerk-'))
+      process.once('exit', () => rmSync(dir, { recursive: true, force: true })) // Token-Datei nicht in /tmp liegen lassen
+      const file = join(dir, 'mcp.json')
       writeFileSync(file, JSON.stringify({ mcpServers: { deckwerk: { type: 'http', url, headers: { Authorization: `Bearer ${token}` } } } }), { mode: 0o600 })
       ok(file)
     })

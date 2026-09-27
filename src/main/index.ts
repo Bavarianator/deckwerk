@@ -1,5 +1,6 @@
 import { app, BrowserWindow, net, protocol } from 'electron'
 import { readFile, writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { MEDIA_EXT } from '../shared/deck'
@@ -8,6 +9,9 @@ import type { createEngine } from './engine'
 // Schwere Module (Engine, Agent, MCP, pptxgenjs, lucide …) erst nach dem Fenster laden: der Splash erscheint sofort,
 // und der Renderer lädt parallel zum Main-Prozess. Die Preload-Brücke wiederholt Aufrufe, bis registerIpc steht.
 const loadEngine = async () => (await import('./engine')).createEngine()
+
+// macOS: aus dem Finder gestartete Apps erben den PATH der Shell nicht, claude/node/pdftotext wären sonst unauffindbar
+if (process.platform === 'darwin') process.env.PATH = [process.env.PATH, '/opt/homebrew/bin', '/usr/local/bin', join(homedir(), '.local/bin')].filter(Boolean).join(':')
 
 // Kein Fenster navigiert weg oder öffnet neue (z. B. ein auf die Folie gezogener Link): fremde Seiten bekämen sonst die Preload-API
 app.on('web-contents-created', (_, wc) => {
@@ -71,6 +75,7 @@ app.whenReady().then(async () => {
     const [engine, { registerIpc }] = await Promise.all([loadEngine(), import('./ipc')])
     return registerIpc(win, engine)
   }
+  app.dock?.hide() // CLI/MCP: kein Dock-Symbol (macOS)
   const engine = await loadEngine()
   if (argv.includes('--mcp')) return (await import('./mcp')).startMcp(engine) // no window; stdout belongs to the MCP protocol
   try {
@@ -86,6 +91,5 @@ app.whenReady().then(async () => {
   }
 })
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
-})
+// auch unter macOS beenden: die IPC hängt am einen Hauptfenster, ein neues Fenster per Dock-Klick hätte keine
+app.on('window-all-closed', () => app.quit())

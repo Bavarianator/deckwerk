@@ -11,7 +11,7 @@
       "bg": { "color": "#101624" },
       "items": [
         { "id": "grad", "kind": "shape", "shape": "rect", "x": 0, "y": 0, "w": 520, "h": 720, "fill": "#7A86FF", "fill2": "#FF4FA3" },
-        { "id": "foto", "kind": "image", "src": "asset://local/home/bayernator/deckwerk/examples/assets/arbeitsplatz.jpg", "x": 640, "y": 110, "w": 500, "h": 500, "round": true, "look": "duotone" },
+        { "id": "foto", "kind": "image", "src": "assets/arbeitsplatz.jpg", "x": 640, "y": 110, "w": 500, "h": 500, "round": true, "look": "duotone" },
         { "id": "h1", "kind": "text", "text": "Freiform wie\nin Canva", "x": 64, "y": 180, "w": 420, "h": 160, "size": 64, "bold": true, "font": "Fraunces", "color": "#FFFFFF" },
         { "id": "sub", "kind": "text", "text": "Texte, Formen, Fotos, Icons und Diagramme frei platzieren.", "x": 64, "y": 360, "w": 400, "h": 60, "size": 22, "font": "body", "color": "#F2F2F2", "underline": true, "anim": "fade" },
         { "id": "stern", "kind": "shape", "shape": "star", "x": 560, "y": 70, "w": 110, "h": 110, "fill": "#FFD166", "rot": 15, "anim": "zoom" },

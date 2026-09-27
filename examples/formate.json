@@ -29,7 +29,7 @@
         {
           "id": "crop",
           "kind": "image",
-          "src": "asset://local/home/bayernator/deckwerk/examples/assets/arbeitsplatz.jpg",
+          "src": "assets/arbeitsplatz.jpg",
           "x": 49,
           "y": 63,
           "w": 258,
@@ -45,8 +45,8 @@
         {
           "id": "vid",
           "kind": "video",
-          "src": "asset://local/home/bayernator/deckwerk/examples/assets/test-video.mp4",
-          "poster": "asset://local/home/bayernator/deckwerk/examples/assets/test-video-poster.jpg",
+          "src": "assets/test-video.mp4",
+          "poster": "assets/test-video-poster.jpg",
           "x": 560,
           "y": 60,
           "w": 460,
@@ -57,7 +57,7 @@
         {
           "id": "aud",
           "kind": "audio",
-          "src": "asset://local/home/bayernator/deckwerk/examples/assets/test-audio.mp3",
+          "src": "assets/test-audio.mp3",
           "x": 900,
           "y": 360,
           "w": 120,

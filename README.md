@@ -4,7 +4,7 @@ KI-Präsentationsstudio als Desktop-App (Electron): Ein Satz genügt, Deckwerk s
 
 ## Installation
 
-Voraussetzungen: Git und Node.js 22 oder neuer. Läuft unter Linux und macOS, unter Windows in WSL.
+Voraussetzungen: Git und Node.js 22 oder neuer. Läuft unter Linux, unter Windows in WSL. Für macOS gibt es eine eigene Fassung: [deckwerk-macos](https://github.com/Bavarianator/deckwerk-macos), Installation dort mit `curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-macos/main/install.sh | sh`.
 
 **Per curl (ein Befehl):**
 
