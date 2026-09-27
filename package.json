@@ -4,6 +4,7 @@
   "description": "KI-Präsentationsstudio",
   "main": "out/main/index.js",
   "scripts": {
+    "postinstall": "node node_modules/electron/install.js",
     "dev": "electron-vite dev -- --ozone-platform=x11",
     "build": "electron-vite build",
     "start": "electron-vite preview -- --ozone-platform=x11",
