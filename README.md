@@ -1,0 +1,98 @@
+# Deckwerk
+
+KI-Präsentationsstudio als Desktop-App (Electron). Plan: `~/.claude/plans/proud-moseying-quasar.md`.
+
+## Skripte
+
+| Befehl | Zweck |
+|---|---|
+| `npm run dev` | App im Entwicklungsmodus |
+| `npm run render examples/pitch.json` | Deck rendern → `exports/<slug>.pptx`, `.pdf`, `<slug>/NN.png` + Lint-Report |
+| `npm run check:layouts` | Stresstest: jedes Layout × Variante × Sample × Theme |
+| `npm run smoke` | Agent-Tools und MCP-Server gegen eine Mock-Engine (ohne Electron, ohne API-Key) |
+| `npm run mcp:e2e` | MCP-Server end-to-end gegen die echte Engine (startet `electron . --mcp`) |
+| `npm run smoke:claude` | App-Chat über Claude Code gegen eine Mock-Engine (braucht Claude-Code-Login, drei kleine Anfragen) |
+| `npm run verify:pptx -- exports/<slug>.pptx` | PPTX-Treue-Check gegen LibreOffice (siehe unten) |
+| `npm run open [-- exports/<datei>]` | Export in LibreOffice Impress öffnen (ohne Argument: neueste PPTX) |
+
+## MCP-Server für Claude Code
+
+Claude Code bekommt dieselben Tools wie der Chat-Agent (`create_deck`, `add_slides`, `render_slides`, `export_deck` …) plus `get_deck`, `save_deck`, `open_deck`. Der Layout-Katalog und der Design-Guide liegen in den Server-Instructions. Decks landen unter `~/Deckwerk/<titel>/deck.json` (Umgebungsvariable `DECKWERK_HOME` überschreibt den Ordner). Registriert für alle Projekte:
+
+```sh
+claude mcp add -s user deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp
+```
+
+`deckwerk.sh --mcp` startet `electron . --mcp` mit dem vorhandenen Build und baut nicht neu, weil Claude Code nur 30 s auf den Server wartet. Nach Code-Änderungen also einmal `npm run build` oder die App starten. Der Server beendet sich, wenn Claude Code stdin schließt.
+
+## Chat ohne API-Key (über Claude Code)
+
+Ohne gespeicherten Key und ohne `ANTHROPIC_API_KEY` läuft der Chat in der App über `claude -p` mit deinem Claude-Code-Login, und es erscheint kein Key-Dialog. Ein eingetragener Key hat Vorrang. `src/main/claude-agent.ts` öffnet dafür einen MCP-Server auf `127.0.0.1` (zufälliger Port, Bearer-Token in einer 0600-Datei unter `/tmp`), der die Tools des aktuellen App-Decks bereitstellt. So zeigt die Live-Vorschau jede Änderung sofort. Claude Code läuft dabei ohne eingebaute Tools, ohne Hooks, Plugins und Skills aus deinen Settings (`--setting-sources ""`) und mit dem Deckwerk-Systemprompt. Folgenachrichten setzen die Sitzung per `--resume` fort. Die Sitzungen erscheinen in Claude Code unter `~/Deckwerk`.
+
+## Modellauswahl und Canvas
+
+Im Chat (und auf dem Startbildschirm) wählt ein Dropdown das Modell: Opus 5.5 (Standard), Fable 5.1, Sonnet 5, Haiku 4.5. Die Liste steht in `src/shared/models.ts`. Die Wahl gilt ab der nächsten Nachricht, auch mitten im Gespräch, und bleibt gespeichert. Auf dem API-Weg bekommen Opus 5.5 und Fable 5.1 Effort `high`, Refusal-Fallback und `display: "updates"`, damit die Notizen zwischen Tool-Aufrufen im Chat erscheinen. Haiku 4.5 läuft mit `budget_tokens`. Über Claude Code geht das Modell per `--model` raus.
+
+Die Canvas im Editor (`src/renderer/ui/Stage.tsx`): Ein Klick auf ein Element der Folie zeigt Rahmen, Namen und eine schwebende KI-Leiste. Der Wunsch geht mit Folie, Element und aktuellem Text an den Chat. Text bleibt direkt bearbeitbar. Überlaufende Elemente sind rot umrandet. Unten sitzt eine Leiste mit ‹ Folie › und Zoom (auch Strg + Mausrad, Klick auf die Prozentzahl wechselt zwischen 100 % und Einpassen). ←/→ blättern, Esc hebt die Auswahl auf. Jede Chat-Nachricht nennt der KI die gerade angezeigte Folie.
+
+## Frei gestalten wie in Canva
+
+Neben den Layouts trägt jede Folie freie Elemente (`slide.items`: Text, Form, Bild, Icon, Diagramm mit x/y/w/h in px auf 1280×720, Drehung, Deckkraft, Auftritt) und optional einen eigenen Hintergrund (`slide.bg`: Farbe oder Bild). Das Layout `blank` ist eine leere Folie; „Leer beginnen“ auf dem Startbildschirm legt ein Deck damit an. Schema und Fabriken: `src/shared/items.ts`.
+
+- Canvas (`ui/Stage.tsx`): Klick wählt aus, Umschalt-Klick oder Rahmen aufziehen wählt mehrere. Ziehen verschiebt und rastet an Folienrand, Mitte und anderen Elementen ein (Alt: ohne Einrasten, Umschalt: nur waagrecht/senkrecht). 8 Griffe skalieren (Ecken bei Bild/Icon/Text proportional, Text-Ecken skalieren die Schrift), der runde Griff dreht (Umschalt: 15°). Doppelklick oder Enter bearbeitet Text. Tastatur: Pfeile (Umschalt: 10 px), Entf, Strg+C/X/V/D/A/L, Strg+]/[ (mit Umschalt: ganz nach vorne/hinten). Strg+V ohne kopierte Elemente fügt ein Bild aus der System-Zwischenablage ein. Bilddateien lassen sich auf die Folie ziehen. Rechtsklick öffnet das Kontextmenü.
+- Elemente-Panel (`ui/Elements.tsx`): Text-Presets, 8 Formen, Icon-Suche (lucide), Foto-Upload und Fotosuche (eigene Bilder in `~/Deckwerk/assets`, sonst Unsplash mit `UNSPLASH_ACCESS_KEY`), Diagramme, Folienvorlagen aus dem Layout-Katalog. Klicken fügt mittig ein, Ziehen legt an der Mausposition ab.
+- Element-Inspector (`ui/ItemInspector.tsx`): Sperren, Duplizieren, Löschen, Ausrichten (einzeln an der Folie, mehrere aneinander), Verteilen, Ebenen, Position/Größe/Drehung/Deckkraft, Auftritt beim Präsentieren. Dazu je nach Art Schrift, Größe, Stil und Farbe, Füllung mit Verlauf, Rahmen, Radius und Schatten, Bildlook (Duotone/Schwarzweiß), Kreis-Maske und Spiegeln sowie Diagrammtyp und Daten als Tabelle.
+- Export: Freie Elemente nutzen dieselben `data-pptx`-Primitive wie die Layouts und landen als native, editierbare PowerPoint-Objekte in der PPTX (Formen als Preset-Shapes, Drehung, Spiegeln, Verlauf per XML-Patch, Auftritte als Animationen). PDF und PNG sind pixelgenau. Die KI kann `items`/`bg` über `add_slides`/`update_slide` setzen.
+- Test: `npm run render examples/canva.json` (alle Elementarten).
+
+Grenzen: nur 16:9 (kein Magic Resize), keine Video-/Audio-Elemente, keine Gruppen (Mehrfachauswahl statt dessen), kein Zuschneiden von Bildern (Fokus/Cover), Text-Deckkraft wird nicht nach PowerPoint übertragen, keine Echtzeit-Zusammenarbeit.
+
+## PPTX-Treue-Check
+
+PowerPoint bricht Text nur dann wie Chromium um, wenn Schriftmetriken und Boxbreiten passen. `scripts/verify-pptx.ts` prüft das ohne PowerPoint:
+
+1. LibreOffice rendert unsere PPTX headless nach PDF, `pdftoppm` macht daraus PNGs (2560×1440, wie der eigene PNG-Export).
+2. Pro Folie wird das LibreOffice-Bild mit unserem Chromium-PNG verglichen: mittlerer Grauwert-Unterschied und Anteil deutlich veränderter Fläche (auf 1/4 verkleinert, damit Antialiasing nicht zählt).
+3. Aus der PPTX werden alle Textboxen (`dw:<slot>`) samt Schriftgröße gelesen. Für jede Box wird in beiden Bildern die Texthöhe (erste bis letzte Tinte-Zeile) und der vertikale Versatz der ersten Tinte-Zeile gemessen; Tinte im Streifen unter der Box, die nur LibreOffice hat, gilt als Überlauf. Abweichende Texthöhe (> 0,6 × Schriftgröße) = anderer Umbruch. Am Ende steht der Median des Versatzes je Schriftgröße, die Kalibrierzahl für den Zeilenabstand im Export.
+4. Ergebnis auf der Konsole und als `exports/verify/<slug>/report.json`; die LibreOffice-Bilder liegen daneben (`lo-NN.png`).
+
+Voraussetzungen: `pdftoppm` (poppler) und LibreOffice, entweder `soffice` im PATH oder als User-Flatpak:
+
+```sh
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install --user flathub org.libreoffice.LibreOffice
+```
+
+Schriften: Arial und Calibri ersetzt LibreOffice selbst durch die metrischen Zwillinge Liberation Sans und Carlito (im Flatpak enthalten). Georgia fehlt, deshalb Gelasio (metrisch kompatibel) als User-Font plus fontconfig-Alias einrichten. Das Flatpak sieht `~/.local/share/fonts` und `~/.config/fontconfig` automatisch:
+
+```sh
+mkdir -p ~/.local/share/fonts/gelasio ~/.config/fontconfig
+curl -sSfL -o ~/.local/share/fonts/gelasio/Gelasio.ttf "https://github.com/google/fonts/raw/main/ofl/gelasio/Gelasio%5Bwght%5D.ttf"
+curl -sSfL -o ~/.local/share/fonts/gelasio/Gelasio-Italic.ttf "https://github.com/google/fonts/raw/main/ofl/gelasio/Gelasio-Italic%5Bwght%5D.ttf"
+cat > ~/.config/fontconfig/fonts.conf <<'XML'
+<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <alias binding="same"><family>Georgia</family><prefer><family>Gelasio</family></prefer></alias>
+</fontconfig>
+XML
+fc-cache -f ~/.local/share/fonts
+flatpak run --command=fc-match org.libreoffice.LibreOffice Georgia   # → Gelasio
+```
+
+Ablauf:
+
+```sh
+npm run render examples/quartal.json
+npm run verify:pptx -- exports/q3-update-vertrieb.pptx
+```
+
+Kalibriert werden damit `WRAP_SLACK` (Breitenreserve der Textboxen) und die Zeilenabstände in `src/main/export-pptx.ts`. Grenzen: Charts sind in der PPTX nativ und weichen vom Chart.js-Bild immer ab (Folien mit `!` sind meist Chart-Folien). LibreOffice ist nicht PowerPoint; die endgültige Abnahme von Umbruch, Animationen und Morph bleibt echtes PowerPoint.
+
+## Spike: Schriften in die PPTX einbetten
+
+`src/main/embed-fonts.ts` wandelt TTF in unkomprimiertes EOT (`.fntdata`) um und trägt die Schrift in `ppt/presentation.xml` (`embeddedFontLst`, `embedTrueTypeFonts="1"`), die Relationships und die Content-Types ein. `npm run spike:fonts -- Regular.ttf [Bold.ttf]` baut `out/spike-fonts.pptx` und prüft mit LibreOffice und `pdffonts`, ob die eingebettete Schrift wirklich benutzt wird.
+
+Ergebnis (26.09.2026): LibreOffice rendert eine eingebettete Familie, die auf dem System nicht existiert, in Regular und Bold aus der PPTX. Die Abnahme in PowerPoint (Datei → Informationen → eingebettete Schriften, Anzeige ohne Reparatur) steht noch aus.
+
+Randbedingungen: nur statische TTF (keine variablen Fonts), der `fontFace` im Text muss exakt dem Familiennamen der Schrift entsprechen, `fsType` „restricted“ wird beim Einbetten ausmaskiert, die Lizenz muss Einbettung erlauben. Für Premium-Themes liegen die TTFs dann unter `assets/fonts/` und werden nach `injectAnimations` per `embedFonts(buf, [{ family, regular, bold, serif }])` eingebettet.

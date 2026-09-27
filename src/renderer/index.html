@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: asset:; media-src 'self' blob: asset:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' data: blob: asset:" />
+    <title>Deckwerk</title>
+  </head>
+  <body>
+    <!-- Startanimation: sofort sichtbar, bevor das JS-Bundle geladen ist; React ersetzt den Inhalt von #root beim ersten Rendern -->
+    <div id="root"><div id="splash">
+      <style>
+        #splash { position: fixed; inset: 0; display: grid; place-items: center; background: #fff; }
+        #splash svg { width: 132px; height: 132px; overflow: visible; }
+        #splash g use { opacity: 0; animation: dw-card .6s cubic-bezier(.2, .9, .3, 1.2) forwards; }
+        #splash g use:nth-child(2) { animation-delay: .12s; }
+        #splash g use:nth-child(3) { animation-delay: .24s; }
+        #splash svg { animation: dw-breathe 1.8s ease-in-out .9s infinite; }
+        @keyframes dw-card { from { opacity: 0; transform: translate(-160px, -70px) scale(.9); } to { opacity: 1; transform: none; } }
+        @keyframes dw-breathe { 50% { transform: scale(1.05); filter: drop-shadow(0 6px 18px rgb(79 82 217 / .35)); } }
+        @media (prefers-reduced-motion: reduce) { #splash g use, #splash svg { animation: none; opacity: 1; } }
+      </style>
+      <svg viewBox="270 253 720 720" aria-label="Deckwerk wird geladen" role="img">
+        <defs>
+          <path id="c1" d="M392 312H630A205 205 0 0 1 835 517V600H700V498H392A30 30 0 0 1 362 468V342A30 30 0 0 1 392 312Z"/>
+          <path id="c2" d="M424 520H740A157 186 0 0 1 897 706A97 94 0 0 1 800 800H700V706H424A30 30 0 0 1 394 676V550A30 30 0 0 1 424 520Z"/>
+          <path id="c3" d="M456 728H790A87 86 0 0 1 877 814A147 100 0 0 1 730 914H456A30 30 0 0 1 426 884V758A30 30 0 0 1 456 728Z"/>
+          <mask id="m1"><rect width="1254" height="1254" fill="#fff"/><use href="#c2" fill="#000" stroke="#000" stroke-width="44" stroke-linejoin="round"/></mask>
+          <mask id="m2"><rect width="1254" height="1254" fill="#fff"/><use href="#c3" fill="#000" stroke="#000" stroke-width="44" stroke-linejoin="round"/></mask>
+        </defs>
+        <g fill="#7A86FF">
+          <use href="#c1" mask="url(#m1)"/>
+          <use href="#c2" mask="url(#m2)"/>
+          <use href="#c3"/>
+        </g>
+      </svg>
+    </div></div>
+    <script type="module" src="./boot.ts"></script>
+  </body>
+</html>

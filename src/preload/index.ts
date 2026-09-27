@@ -1,0 +1,85 @@
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import type { Deck } from '../shared/deck'
+import type { AgentEvent } from '../main/agent'
+
+export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean }
+/** Steuerbefehl vom Referenten an das Publikumsfenster */
+export type PresentCmd = { type: 'next' } | { type: 'go'; i: number }
+
+// Main lädt Engine und IPC erst nach dem Fenster; bis registerIpc steht, Aufrufe kurz später wiederholen
+const invoke = (channel: string, ...args: unknown[]): Promise<any> =>
+  ipcRenderer.invoke(channel, ...args).catch((e: Error) =>
+    /No handler registered/.test(e.message) ? new Promise((r) => setTimeout(r, 50)).then(() => invoke(channel, ...args)) : Promise.reject(e),
+  )
+
+const api = {
+  state: (): Promise<AppState> => invoke('state'),
+  /** Lokale Änderung (Edit, Inspector, Undo) an Main und Agent melden */
+  setDeck: (deck: Deck): Promise<void> => invoke('deck:set', deck),
+  newDeck: (): Promise<void> => invoke('deck:new'),
+  /** null = Dialog abgebrochen */
+  open: (): Promise<AppState | null> => invoke('deck:open'),
+  /** wie open, aber ohne Dialog */
+  openPath: (path: string): Promise<AppState> => invoke('deck:openPath', path),
+  /** Kopie als neues Deck unter ~/Deckwerk speichern, liefert den Pfad */
+  saveCopy: (deck: Deck): Promise<string> => invoke('deck:saveCopy', deck),
+  /** Publikumsfenster auf dem zweiten Bildschirm; false = nur ein Bildschirm */
+  presentOpen: (deck: Deck, start: number): Promise<boolean> => invoke('present:open', deck, start),
+  presentDeck: (): Promise<{ deck: Deck; start: number } | null> => invoke('present:deck'),
+  presentCmd: (cmd: PresentCmd): Promise<void> => invoke('present:cmd', cmd),
+  presentClose: (): Promise<void> => invoke('present:close'),
+  onPresent(cb: (e: PresentCmd | 'ended') => void): () => void {
+    const h = (_: unknown, c: PresentCmd) => cb(c)
+    const end = () => cb('ended')
+    ipcRenderer.on('present:cmd', h)
+    ipcRenderer.on('present:ended', end)
+    return () => { ipcRenderer.off('present:cmd', h); ipcRenderer.off('present:ended', end) }
+  },
+  /** zuletzt geänderte Decks unter ~/Deckwerk, neueste zuerst */
+  recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
+  /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
+  save: (): Promise<string> => invoke('deck:save'),
+  exportDeck: (format: 'pptx' | 'pdf' | 'png'): Promise<string> => invoke('deck:export', format),
+  /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
+  send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
+  abort: (): Promise<void> => invoke('agent:abort'),
+  onEvent(cb: (e: AgentEvent) => void): () => void {
+    const h = (_: unknown, e: AgentEvent) => cb(e)
+    ipcRenderer.on('agent:event', h)
+    return () => void ipcRenderer.off('agent:event', h)
+  },
+  setApiKey: (key: string): Promise<void> => invoke('key:set', key),
+  /** liefert asset://local/<absoluter Pfad> oder null */
+  pickImage: (): Promise<string | null> => invoke('image:pick'),
+  /** Bild aus der System-Zwischenablage als PNG unter ~/Deckwerk/assets speichern; null = keins drin */
+  pasteImage: (): Promise<string | null> => invoke('image:paste'),
+  /** Fotos suchen: eigene Bilder unter ~/Deckwerk/assets, sonst Unsplash (wenn UNSPLASH_ACCESS_KEY gesetzt) */
+  findImages: (query: string): Promise<{ urls: string[]; note?: string }> => invoke('image:find', query),
+  /** Hintergrund entfernen (nativ im Main-Prozess) → asset://-URL eines PNG mit Transparenz */
+  removeBg: (src: string): Promise<string> => ipcRenderer.invoke('image:removeBg', src),
+  /** Fortschritt des einmaligen Modell-Downloads in % */
+  onBgProgress(cb: (pct: number) => void): () => void {
+    const h = (_: unknown, pct: number) => cb(pct)
+    ipcRenderer.on('bg:progress', h)
+    return () => void ipcRenderer.off('bg:progress', h)
+  },
+  /** Video- oder Audiodatei wählen → asset://-URL oder null */
+  pickMedia: (kind: 'video' | 'audio'): Promise<string | null> => invoke('media:pick', kind),
+  /** data-URL (PNG/JPEG/WebP) unter ~/Deckwerk/assets speichern → asset://-URL */
+  saveAsset: (dataUrl: string, name: string): Promise<string> => invoke('asset:save', dataUrl, name),
+  /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code */
+  setupStatus: (): Promise<{ claude: boolean; key: boolean; mcp: boolean }> => invoke('setup:status'),
+  setupMcp: (): Promise<void> => invoke('setup:mcp'),
+  /** startet den MCP-Server wie Claude Code und liefert die Anzahl seiner Werkzeuge */
+  setupMcpTest: (): Promise<number> => invoke('setup:mcpTest'),
+  /** absoluter Pfad einer per Drag & Drop abgelegten Datei */
+  pathOf: (file: File): string => webUtils.getPathForFile(file),
+}
+
+export type Api = typeof api
+
+declare global {
+  interface Window { api: Api }
+}
+
+contextBridge.exposeInMainWorld('api', api)

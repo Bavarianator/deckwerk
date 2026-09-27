@@ -1,0 +1,41 @@
+/* Premium-Schriften: dieselben TTF werden in die PPTX eingebettet (src/main/export-pptx.ts). Erzeugt aus assets/fonts (npm run fonts:fetch). */
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/Fraunces-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/Fraunces-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Fraunces'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/Fraunces-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Fraunces'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/Fraunces-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/Manrope-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Manrope'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/Manrope-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/SpaceGrotesk-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/SpaceGrotesk-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/Inter-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/Inter-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/Inter-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/Inter-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'DM Serif Display'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/DMSerifDisplay-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'DM Serif Display'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/DMSerifDisplay-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/DMSans-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/DMSans-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'DM Sans'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/DMSans-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'DM Sans'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/DMSans-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/PlayfairDisplay-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/PlayfairDisplay-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/PlayfairDisplay-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/PlayfairDisplay-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Source Sans 3'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/SourceSans3-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Source Sans 3'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/SourceSans3-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Source Sans 3'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/SourceSans3-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Source Sans 3'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/SourceSans3-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/PlusJakartaSans-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/PlusJakartaSans-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/PlusJakartaSans-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/PlusJakartaSans-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/Lora-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/Lora-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/Lora-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/Lora-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Instrument Serif'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/InstrumentSerif-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Instrument Serif'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/InstrumentSerif-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/Archivo-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Archivo'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/Archivo-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Archivo'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/Archivo-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Archivo'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/Archivo-BoldItalic.ttf') format('truetype'); }

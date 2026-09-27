@@ -1,0 +1,103 @@
+/* UI-Bausteine nach dem Canvas „Deckwerk – UI-Bausteine“. Nutzt die Tokens aus shell.css (--accent, --panel …).
+   Die globalen Regeln unten (Häkchen, Optionsfelder, Regler, Zahlen, Fokus) gelten für die App-Oberfläche, nicht für Folien. */
+
+/* ---------- Dropdown ---------- */
+.kit-select {
+  display: flex; align-items: center; gap: 8px; width: 100%; height: 32px; padding: 0 10px 0 12px; box-sizing: border-box;
+  background: var(--panel); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text);
+  font: inherit; font-size: 13px; text-align: left; cursor: pointer; transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+.kit-select:hover:not(:disabled) { background: var(--panel-2); border-color: rgb(22 22 26 / 0.24); }
+.kit-select:focus-visible, .kit-select.open { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.kit-select.open .kit-chev { color: var(--accent); transform: rotate(180deg); }
+.kit-select:disabled { background: var(--panel-2); border-color: var(--border); color: #9a9aa2; cursor: default; }
+.kit-select-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kit-chev { flex: none; color: var(--muted); transition: transform 0.15s; }
+/* kompakt ohne Rahmen (z. B. Modellwahl im Eingabefeld) */
+.kit-select.ghost { width: auto; height: 28px; padding: 0 8px; border: 0; background: var(--hover); font-size: 12px; }
+.kit-select.ghost:focus-visible, .kit-select.ghost.open { box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.kit-menu {
+  position: fixed; z-index: 1000; max-height: 340px; overflow-y: auto; padding: 4px; box-sizing: border-box;
+  background: rgb(255 255 255 / 0.96); backdrop-filter: saturate(180%) blur(24px);
+  border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-float);
+  display: flex; flex-direction: column; gap: 1px; font-size: 13px; color: var(--text);
+}
+.kit-group { padding: 8px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.kit-group.sep { margin-top: 4px; border-top: 1px solid var(--border); }
+.kit-opt { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 10px; box-sizing: border-box; border-radius: 8px; cursor: pointer; }
+.kit-opt.active { background: var(--hover); }
+.kit-opt.on { background: var(--accent); color: #fff; }
+.kit-opt.on .kit-hint { color: rgb(255 255 255 / 0.85); }
+.kit-opt.dis { opacity: 0.4; cursor: default; }
+.kit-opt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.kit-hint { font-size: 12px; color: var(--muted); }
+.kit-check { flex: none; }
+.kit-swatch { flex: none; width: 16px; height: 16px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(22 22 26 / 0.14); }
+
+/* ---------- Schalter ---------- */
+.kit-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 4px 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--text); text-align: left; cursor: pointer; }
+.kit-switch:disabled { opacity: 0.45; cursor: default; }
+.kit-switch-text { display: flex; flex-direction: column; gap: 2px; }
+.kit-track { flex: none; display: flex; align-items: center; width: 36px; height: 22px; padding: 2px; box-sizing: border-box; border-radius: 11px; background: rgb(22 22 26 / 0.18); transition: background 0.15s; }
+.kit-track.on { background: var(--accent); }
+.kit-knob { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(22 22 26 / 0.3); transition: transform 0.15s; }
+.kit-track.on .kit-knob { transform: translateX(14px); }
+.kit-switch:focus-visible { outline: none; }
+.kit-switch:focus-visible .kit-track { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* ---------- Bestätigung ---------- */
+.kit-dialog { width: min(400px, calc(100vw - 32px)); padding: 20px; border: 0; border-radius: 16px; background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgb(22 22 26 / 0.06), 0 24px 60px rgb(22 22 26 / 0.18); }
+.kit-dialog::backdrop { background: rgb(22 22 26 / 0.32); }
+.kit-dialog h2 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+.kit-dialog p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.kit-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.kit-btn { height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--hover); color: var(--text); font: inherit; font-weight: 500; cursor: pointer; }
+.kit-btn:hover { background: rgb(22 22 26 / 0.1); }
+.kit-btn.primary { background: var(--accent); color: #fff; font-weight: 600; }
+.kit-btn.primary:hover { background: var(--accent-hover); }
+.kit-btn.danger { background: var(--danger); color: #fff; font-weight: 600; }
+.kit-btn.danger:hover { background: #a92822; }
+
+/* ---------- global: Häkchen, Optionsfelder, Regler, Zahlen, Fokus (nur App-Oberfläche) ---------- */
+.app input[type='checkbox'], .app input[type='radio'] {
+  appearance: none; flex: none; width: 18px; height: 18px; margin: 0; background: var(--panel); cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgb(22 22 26 / 0.28); transition: box-shadow 0.12s, background 0.12s;
+}
+.app input[type='checkbox'] { border-radius: 5px; }
+.app input[type='checkbox']:checked {
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 12px no-repeat;
+  box-shadow: none;
+}
+.app input[type='radio'] { border-radius: 50%; }
+.app input[type='radio']:checked { box-shadow: inset 0 0 0 5px var(--accent); }
+.app input[type='checkbox']:focus-visible, .app input[type='radio']:focus-visible { outline: none; box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 3px var(--accent-soft); }
+.app input[type='checkbox']:checked:focus-visible { box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.app input[type='range'] { appearance: none; height: 18px; background: transparent; cursor: pointer; --pct: 50%; }
+.app input[type='range']::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: rgb(22 22 26 / 0.1); }
+.app input[type='range']::-webkit-slider-thumb {
+  appearance: none; width: 18px; height: 18px; margin-top: -7px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 1px rgb(22 22 26 / 0.1), 0 1px 4px rgb(22 22 26 / 0.3);
+}
+.app input[type='range']:focus-visible { outline: none; }
+.app input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1px var(--accent), 0 0 0 4px var(--accent-soft); }
+
+.app input[type='number'] { font-variant-numeric: tabular-nums; }
+.app input[type='number']::-webkit-inner-spin-button, .app input[type='number']::-webkit-outer-spin-button { display: none; }
+.app input[type='text'], .app input[type='number'], .app textarea { transition: border-color 0.12s, box-shadow 0.12s; }
+.app input[type='text']:focus, .app input[type='number']:focus, .app textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.app input[aria-invalid='true'] { border-color: var(--danger); box-shadow: 0 0 0 3px #fdecea; }
+
+/* Tooltip über data-tip (dunkel, nach kurzer Verzögerung) */
+.app [data-tip] { position: relative; }
+.app [data-tip]:hover::after {
+  content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); z-index: 50;
+  padding: 5px 9px; border-radius: 7px; background: #16161a; color: #fff; font-size: 12px; font-weight: 400; white-space: nowrap;
+  pointer-events: none; animation: kit-tip 0.12s 0.5s both;
+}
+@keyframes kit-tip { from { opacity: 0; } to { opacity: 1; } }
+
+/* Anpassungen an bestehende Leisten (Ersatz für die alten select-Regeln in shell.css) */
+.cap .kit-select.ghost { flex: none; }
+.chart-ed-row .kit-select { width: 180px; height: 30px; }

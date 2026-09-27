@@ -1,0 +1,319 @@
+{
+ "title": "Ortho-Bot – Pitch",
+ "brief": {
+  "audience": "Geschäftsführung eines Schulbuchverlags",
+  "goal": "Zusage für einen Pilot mit 20 Schulen",
+  "tone": "sachlich, zuversichtlich"
+ },
+ "theme": {
+  "id": "midnight"
+ },
+ "transition": "fade",
+ "mode": "click",
+ "slides": [
+  {
+   "id": "cover",
+   "layout": "cover",
+   "content": {
+    "eyebrow": "Pitch · Oktober 2026",
+    "title": "Ortho-Bot bringt faire Rechtschreibförderung an jede Schule",
+    "subtitle": "KI-Rechtschreibtool für Schulen – datensparsam, lehrplankonform, sofort einsetzbar",
+    "meta": "Ortho-Bot GmbH"
+   },
+   "notes": "Begrüßung, 30 Sekunden. Kernversprechen nennen: faire Förderung für jedes Kind, ohne Mehrarbeit für Lehrkräfte."
+  },
+  {
+   "id": "agenda",
+   "layout": "agenda",
+   "content": {
+    "title": "Agenda",
+    "items": [
+     {
+      "title": "Problem",
+      "desc": "Warum Rechtschreibung heute nicht gefördert wird"
+     },
+     {
+      "title": "Lösung und Produkt",
+      "desc": "So arbeitet Ortho-Bot im Unterricht"
+     },
+     {
+      "title": "Markt und Traction",
+      "desc": "Zahlen aus den ersten Pilotschulen"
+     },
+     {
+      "title": "Plan und Ask",
+      "desc": "Was wir bis Sommer 2027 erreichen"
+     }
+    ]
+   },
+   "notes": "Vier Blöcke, insgesamt 15 Minuten plus Diskussion. Fragen gern zwischendurch.",
+   "build": "stagger"
+  },
+  {
+   "id": "sec1",
+   "layout": "section",
+   "content": {
+    "number": "01",
+    "title": "Das Problem",
+    "subtitle": "Rechtschreibung wird bewertet, aber kaum gefördert"
+   },
+   "notes": "Kurz innehalten: Rechtschreibung wird in jeder Klassenarbeit bewertet, aber fast nirgends systematisch geübt."
+  },
+  {
+   "id": "problem",
+   "layout": "statement",
+   "build": "fade",
+   "content": {
+    "eyebrow": "Ausgangslage",
+    "text": "Jedes vierte Kind verlässt die Grundschule mit **erheblichen Rechtschreibschwächen** – und Lehrkräfte haben keine Zeit für Einzelförderung.",
+    "source": "IQB-Bildungstrend 2024"
+   },
+   "notes": "Quelle IQB 2024: 24 % der Viertklässler verfehlen den Mindeststandard Orthografie. Lehrkräfte nennen fehlende Zeit als Hauptgrund."
+  },
+  {
+   "id": "market",
+   "layout": "kpi-grid",
+   "content": {
+    "eyebrow": "Markt",
+    "title": "Ein Markt mit 32.000 Schulen wartet auf ein bezahlbares Werkzeug",
+    "kpis": [
+     {
+      "value": "32.000",
+      "label": "allgemeinbildende Schulen in Deutschland"
+     },
+     {
+      "value": "8,7 Mio",
+      "label": "Schülerinnen und Schüler",
+      "delta": "+1,2 % p. a.",
+      "sentiment": "positive"
+     },
+     {
+      "value": "2,1 Mrd",
+      "label": "Ausgaben für digitale Lernmittel 2025",
+      "delta": "+18 % ggü. 2023",
+      "sentiment": "positive"
+     },
+     {
+      "value": "< 5 %",
+      "label": "Schulen mit KI-gestützter Rechtschreibförderung",
+      "sentiment": "neutral"
+     }
+    ],
+    "source": "Destatis, KMK, eigene Erhebung 2026"
+   },
+   "notes": "Marktgröße einordnen: Wir zielen zunächst auf Grundschulen und Sekundarstufe I, das sind rund 20.000 Schulen.",
+   "build": "stagger"
+  },
+  {
+   "id": "sec2",
+   "layout": "section",
+   "content": {
+    "number": "02",
+    "title": "Die Lösung",
+    "subtitle": "Üben, Korrigieren, Verstehen – in drei Schritten"
+   },
+   "notes": "Übergang zur Lösung. Demo-Video liegt bereit, falls gewünscht (3 Minuten)."
+  },
+  {
+   "id": "how",
+   "layout": "process",
+   "content": {
+    "eyebrow": "Produkt",
+    "title": "Ortho-Bot erkennt Fehlerarten und übt gezielt die Regel dahinter",
+    "steps": [
+     {
+      "title": "Schreiben",
+      "desc": "Kinder schreiben freie Texte im Unterricht oder zu Hause.",
+      "icon": "pencil-line"
+     },
+     {
+      "title": "Analysieren",
+      "desc": "Die KI ordnet jeden Fehler einer Rechtschreibregel zu.",
+      "icon": "scan-search"
+     },
+     {
+      "title": "Üben",
+      "desc": "Passende Übungen erscheinen, angepasst an das Niveau.",
+      "icon": "dumbbell"
+     },
+     {
+      "title": "Berichten",
+      "desc": "Lehrkräfte sehen Fortschritt pro Kind und Klasse.",
+      "icon": "chart-line"
+     }
+    ]
+   },
+   "notes": "Wichtig: Kein zusätzliches Übungsheft, die Kinder schreiben ihre normalen Texte. Die Analyse läuft im Hintergrund.",
+   "build": "stagger"
+  },
+  {
+   "id": "traction",
+   "layout": "chart",
+   "content": {
+    "eyebrow": "Traction",
+    "title": "Die Fehlerquote sinkt in Pilotklassen innerhalb eines Halbjahrs um 41 %",
+    "chart": {
+     "type": "line",
+     "categories": [
+      "Sep",
+      "Okt",
+      "Nov",
+      "Dez",
+      "Jan",
+      "Feb"
+     ],
+     "series": [
+      {
+       "name": "Pilotklassen",
+       "values": [
+        12.4,
+        11.1,
+        9.8,
+        8.9,
+        7.9,
+        7.3
+       ]
+      },
+      {
+       "name": "Vergleichsklassen",
+       "values": [
+        12.1,
+        11.9,
+        11.6,
+        11.8,
+        11.4,
+        11.2
+       ]
+      }
+     ],
+     "unit": "%"
+    },
+    "takeaway": {
+     "value": "−41 %",
+     "text": "Fehler je 100 Wörter in sechs Monaten – bei gleicher Unterrichtszeit."
+    },
+    "source": "Pilot mit 6 Schulen, 412 Kinder, Schuljahr 2025/26"
+   },
+   "notes": "Vergleichsklassen hatten dieselben Lehrkräfte und dasselbe Lehrwerk. Effekt bei schwachen Schreibern am größten (−52 %)."
+  },
+  {
+   "id": "competition",
+   "layout": "two-column",
+   "variant": "highlight-right",
+   "content": {
+    "eyebrow": "Wettbewerb",
+    "title": "Kein Anbieter verbindet Fehlerdiagnose mit Übung und Datenschutz",
+    "left": {
+     "heading": "Bisherige Tools",
+     "points": [
+      "Markieren nur Fehler, erklären nicht",
+      "Cloud-Verarbeitung in Drittländern",
+      "Keine Lehrplan-Zuordnung",
+      "Lizenz pro Kind, teuer für Schulen"
+     ]
+    },
+    "right": {
+     "heading": "Ortho-Bot",
+     "points": [
+      "Diagnose nach Fehlerart und Regel",
+      "Hosting in Deutschland, DSGVO-konform",
+      "Zuordnung zu allen 16 Lehrplänen",
+      "Schullizenz zum Festpreis"
+     ]
+    }
+   },
+   "notes": "Namen der Wettbewerber nur auf Nachfrage nennen. Datenschutz ist bei Schulträgern das entscheidende Kriterium.",
+   "build": "stagger"
+  },
+  {
+   "id": "model",
+   "layout": "bullets",
+   "content": {
+    "eyebrow": "Geschäftsmodell",
+    "title": "Eine Schullizenz kostet weniger als ein Klassensatz Arbeitshefte",
+    "items": [
+     {
+      "text": "Schullizenz 1.900 € pro Jahr, unbegrenzte Klassen",
+      "sub": "Vergleich: Arbeitshefte kosten je Schule rund 2.400 € jährlich",
+      "icon": "school"
+     },
+     {
+      "text": "Verlagspartner vertreiben und bündeln mit Lehrwerken",
+      "sub": "Umsatzteilung 70/30 zugunsten von Ortho-Bot",
+      "icon": "handshake"
+     },
+     {
+      "text": "Landeslizenzen ab 2027 als zweiter Kanal",
+      "sub": "Gespräche mit zwei Kultusministerien laufen",
+      "icon": "landmark"
+     }
+    ]
+   },
+   "notes": "Preis bewusst unter dem Arbeitsheft-Budget. Verlagspartner bekommt 30 % und spart eigenen Vertrieb.",
+   "build": "list"
+  },
+  {
+   "id": "roadmap",
+   "layout": "timeline",
+   "build": "wipe",
+   "content": {
+    "eyebrow": "Plan",
+    "title": "Bis Sommer 2027 sind 200 Schulen an Bord",
+    "items": [
+     {
+      "date": "Q4 2026",
+      "title": "Pilot 20 Schulen",
+      "desc": "Mit Ihrem Verlag als Vertriebspartner"
+     },
+     {
+      "date": "Q1 2027",
+      "title": "Lehrwerk-Bundle",
+      "desc": "Ortho-Bot im Deutsch-Lehrwerk Klasse 3/4"
+     },
+     {
+      "date": "Q2 2027",
+      "title": "Landeslizenz",
+      "desc": "Erstes Bundesland unter Vertrag"
+     },
+     {
+      "date": "Q3 2027",
+      "title": "200 Schulen",
+      "desc": "Break-even bei 180 Schullizenzen"
+     }
+    ]
+   },
+   "notes": "Break-even bei 180 Lizenzen entspricht 342.000 € Jahresumsatz bei aktueller Kostenbasis."
+  },
+  {
+   "id": "team",
+   "layout": "image-text",
+   "content": {
+    "eyebrow": "Team",
+    "title": "Ein Team aus Schule, Sprachwissenschaft und KI",
+    "text": "Zwei ehemalige Lehrkräfte, eine Computerlinguistin und ein KI-Entwickler mit Erfahrung aus zwei Bildungs-Start-ups.",
+    "points": [
+     "12 Jahre Unterrichtserfahrung im Team",
+     "Promotion in Computerlinguistik",
+     "Exit mit Lern-App 2023"
+    ],
+    "image": ""
+   },
+   "notes": "Team seit 2024 zusammen, vier Vollzeitstellen, Sitz in München.",
+   "build": "fade",
+   "variant": "image-left"
+  },
+  {
+   "id": "ask",
+   "layout": "closing",
+   "content": {
+    "title": "Starten wir im November den Pilot mit 20 Partnerschulen",
+    "subtitle": "Entscheidung bis 15. Oktober · Pilotbudget 38.000 € · Ergebnisbericht im März 2027",
+    "contact": [
+     "Gründungsteam",
+     "Ortho-Bot GmbH"
+    ]
+   },
+   "notes": "Konkrete Bitte: Entscheidung bis 15. Oktober, damit der Pilot zum Halbjahreswechsel läuft. Pilotbudget deckt Onboarding und Schulungen."
+  }
+ ]
+}

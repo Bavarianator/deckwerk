@@ -1,0 +1,67 @@
+{
+ "title": "Ortho-Bot – Pilot für 20 Schulen",
+ "brief": { "audience": "Schulträger und Förderstiftung", "goal": "Freigabe des Pilots mit 20 Grundschulen", "tone": "warm, klar, zuversichtlich" },
+ "theme": { "id": "atelier" },
+ "transition": "dissolve",
+ "motion": "lively",
+ "mode": "click",
+ "slides": [
+  { "id": "cover", "layout": "cover", "variant": "left",
+    "content": { "eyebrow": "Pilotantrag 2027", "title": "Mit Ortho-Bot lernen Kinder Rechtschreibung, die bleibt", "subtitle": "Pilot mit 20 Grundschulen ab November", "meta": "Oktober 2026", "image": { "src": "assets/schreibtisch.jpg", "focus": "right" } },
+    "items": [{ "id": "accent", "kind": "shape", "shape": "star12", "x": 1080, "y": 60, "w": 112, "h": 112, "fill": "#5C6B3C", "rot": 12 }] },
+  { "id": "summary", "layout": "summary", "frame": "band",
+    "content": { "eyebrow": "Auf einen Blick", "title": "Wir empfehlen, den Pilot im November mit 20 Schulen zu starten",
+      "points": [
+        { "title": "Jedes vierte Kind verlässt die Grundschule mit Rechtschreibschwächen", "text": "Lehrkräften fehlt die Zeit für Einzelförderung." },
+        { "title": "Ortho-Bot senkt die Fehlerquote in sechs Monaten um 41 %", "text": "Vorpilot mit 412 Kindern an 6 Schulen." },
+        { "title": "Eine Schullizenz kostet weniger als ein Klassensatz Hefte", "text": "149 € im Monat für alle Klassen." }
+      ],
+      "recommendation": "Pilot mit 20 Schulen ab November freigeben – Budget 38.000 €." } },
+  { "id": "wirkung", "layout": "big-number",
+    "content": { "eyebrow": "Wirkung", "value": "−41 %", "label": "So viel weniger Fehler machen Kinder nach sechs Monaten mit Ortho-Bot", "context": "Vorpilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.", "source": "Auswertung Vorpilot 2026", "image": { "src": "assets/portraet.jpg", "mask": "arch", "look": "duotone" } } },
+  { "id": "gruende", "layout": "icon-grid", "frame": "center",
+    "content": { "eyebrow": "Vorteile", "title": "Sechs Gründe, warum Schulen nach dem Vorpilot bleiben wollen",
+      "items": [
+        { "icon": "zap", "head": "Sofort startklar", "sub": "Läuft im Browser, ohne Installation" },
+        { "icon": "shield-check", "head": "DSGVO-konform", "sub": "Server in Deutschland, keine Werbung" },
+        { "icon": "users", "head": "Für jede Klasse", "sub": "Passt sich dem Niveau jedes Kindes an" },
+        { "icon": "chart-line", "head": "Fortschritt sichtbar", "sub": "Wochenbericht für Lehrkräfte" },
+        { "icon": "clock", "head": "10 Minuten am Tag", "sub": "Fügt sich in den Unterricht ein" },
+        { "icon": "heart", "head": "Motivierend", "sub": "Kleine Erfolge statt roter Striche" }
+      ] } },
+  { "id": "kpis", "layout": "kpi-grid", "frame": "band",
+    "content": { "eyebrow": "Vorpilot", "title": "Nach sechs Monaten liegen alle drei Ziele über Plan",
+      "kpis": [
+        { "value": "−41 %", "label": "Fehler pro 100 Wörter", "delta": "Ziel −25 %", "sentiment": "positive" },
+        { "value": "87 %", "label": "Kinder nutzen es wöchentlich", "delta": "Ziel 70 %", "sentiment": "positive" },
+        { "value": "4,6", "label": "Bewertung durch Lehrkräfte", "delta": "von 5", "sentiment": "neutral" }
+      ], "focus": 0, "source": "Auswertung Vorpilot, März–August 2026" } },
+  { "id": "vorher", "layout": "problem-solution",
+    "content": { "eyebrow": "Unterricht", "title": "Aus roten Strichen wird Üben mit sofortiger Rückmeldung",
+      "problem": { "heading": "Heute", "text": "Korrekturen kommen Tage später zurück.", "points": ["Ø 4 Tage bis zur Rückmeldung", "Kinder sehen nur Fehler", "Keine Zeit für Einzelförderung"] },
+      "solution": { "heading": "Mit Ortho-Bot", "text": "Jedes Kind übt genau die Wörter, die es braucht.", "points": ["Rückmeldung in Sekunden", "Übungen passend zum Fehler", "Lehrkraft sieht, wer Hilfe braucht"] } } },
+  { "id": "standorte", "layout": "gallery", "variant": "row",
+    "content": { "eyebrow": "Vorpilot", "title": "Sechs Schulen in drei Städten haben es im Alltag erprobt", "look": "duotone",
+      "images": [
+        { "image": { "src": "assets/arbeitsplatz.jpg", "mask": "arch" }, "caption": "Grundschule Nord" },
+        { "image": { "src": "assets/laptop-gast.jpg", "mask": "arch" }, "caption": "Realschule Mitte" },
+        { "image": { "src": "assets/schreibtisch.jpg", "mask": "arch" }, "caption": "Schule am Park" }
+      ] } },
+  { "id": "preise", "layout": "pricing",
+    "content": { "eyebrow": "Kosten", "title": "Die Schullizenz rechnet sich schon ab vier Klassen",
+      "tiers": [
+        { "name": "Klasse", "price": "19 €", "period": "pro Monat", "features": ["Eine Klasse bis 30 Kinder", "Wochenbericht", "E-Mail-Support"] },
+        { "name": "Schule", "price": "149 €", "period": "pro Monat", "features": ["Alle Klassen", "Schulung fürs Kollegium", "Auswertung pro Jahrgang"], "highlight": true },
+        { "name": "Träger", "price": "auf Anfrage", "features": ["Mehrere Schulen", "Zentrale Verwaltung", "Eigener Ansprechpartner"] }
+      ], "note": "Pilotphase: 6 Monate kostenfrei, danach Schullizenz" } },
+  { "id": "team", "layout": "team", "frame": "center",
+    "content": { "eyebrow": "Team", "title": "Ein Team aus Schule, Sprachforschung und Software",
+      "people": [
+        { "name": "Julia", "role": "Leitung · Lehrerin a. D.", "line": "12 Jahre Grundschule" },
+        { "name": "Emre", "role": "Forschung", "line": "Promotion in Sprachdidaktik" },
+        { "name": "Lena", "role": "Technik", "line": "Lernapps für 2 Mio Nutzer" }
+      ] } },
+  { "id": "ende", "layout": "closing",
+    "content": { "title": "Geben Sie den Pilot bis 15. Oktober frei", "subtitle": "20 Schulen, 38.000 €, Start im November", "contact": ["Projektteam Pilot", "Ortho-Bot GmbH"] } }
+ ]
+}

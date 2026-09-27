@@ -1,0 +1,36 @@
+{
+  "title": "Freies Design",
+  "theme": { "id": "midnight" },
+  "transition": "fade",
+  "mode": "click",
+  "slides": [
+    {
+      "id": "frei",
+      "layout": "blank",
+      "content": {},
+      "bg": { "color": "#101624" },
+      "items": [
+        { "id": "grad", "kind": "shape", "shape": "rect", "x": 0, "y": 0, "w": 520, "h": 720, "fill": "#7A86FF", "fill2": "#FF4FA3" },
+        { "id": "foto", "kind": "image", "src": "asset://local/home/bayernator/deckwerk/examples/assets/arbeitsplatz.jpg", "x": 640, "y": 110, "w": 500, "h": 500, "round": true, "look": "duotone" },
+        { "id": "h1", "kind": "text", "text": "Freiform wie\nin Canva", "x": 64, "y": 180, "w": 420, "h": 160, "size": 64, "bold": true, "font": "Fraunces", "color": "#FFFFFF" },
+        { "id": "sub", "kind": "text", "text": "Texte, Formen, Fotos, Icons und Diagramme frei platzieren.", "x": 64, "y": 360, "w": 400, "h": 60, "size": 22, "font": "body", "color": "#F2F2F2", "underline": true, "anim": "fade" },
+        { "id": "stern", "kind": "shape", "shape": "star", "x": 560, "y": 70, "w": 110, "h": 110, "fill": "#FFD166", "rot": 15, "anim": "zoom" },
+        { "id": "tri", "kind": "shape", "shape": "triangle", "x": 1110, "y": 560, "w": 120, "h": 100, "fill": "#06D6A0", "stroke": "#FFFFFF", "strokeW": 3, "rot": -20 },
+        { "id": "hex", "kind": "shape", "shape": "hexagon", "x": 560, "y": 560, "w": 110, "h": 96, "fill": "#EF476F", "opacity": 0.7 },
+        { "id": "pfeil", "kind": "shape", "shape": "arrow", "x": 90, "y": 520, "w": 180, "h": 70, "fill": "#FFFFFF" },
+        { "id": "linie", "kind": "shape", "shape": "line", "x": 64, "y": 440, "w": 300, "h": 10, "stroke": "#FFD166", "strokeW": 4, "rot": -8 },
+        { "id": "icon", "kind": "icon", "icon": "rocket", "x": 1120, "y": 60, "w": 100, "h": 100, "color": "#FFD166", "rot": 30 },
+        { "id": "schraeg", "kind": "text", "text": "NEU", "x": 330, "y": 520, "w": 150, "h": 60, "size": 40, "bold": true, "color": "#101624", "rot": -12, "align": "center", "upper": true }
+      ]
+    },
+    {
+      "id": "mix",
+      "layout": "statement",
+      "content": { "text": "Freie Elemente liegen **über jedem Layout**" },
+      "items": [
+        { "id": "chart", "kind": "chart", "x": 700, "y": 400, "w": 480, "h": 260, "spec": { "type": "bar", "categories": ["Q1","Q2","Q3","Q4"], "series": [{ "name": "Umsatz", "values": [12, 18, 23, 31] }] } },
+        { "id": "kreis", "kind": "shape", "shape": "ellipse", "x": 80, "y": 480, "w": 160, "h": 160, "fill": "#7A86FF", "shadow": true, "stroke": "#FFFFFF", "strokeW": 4 }
+      ]
+    }
+  ]
+}

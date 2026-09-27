@@ -1,0 +1,112 @@
+{
+  "title": "Formate und Medien",
+  "size": {
+    "w": 1080,
+    "h": 1080
+  },
+  "theme": {
+    "id": "custom",
+    "custom": {
+      "name": "Testbild Studio",
+      "bg": "#F7F4EE",
+      "text": "#1B1D22",
+      "accent": "#0A7B83",
+      "accent2": "#FF5A36",
+      "headFont": "DM Serif Display",
+      "bodyFont": "Inter",
+      "radius": 8,
+      "decor": "grid"
+    }
+  },
+  "transition": "fade",
+  "mode": "click",
+  "slides": [
+    {
+      "id": "quadrat",
+      "layout": "blank",
+      "content": {},
+      "items": [
+        {
+          "id": "crop",
+          "kind": "image",
+          "src": "asset://local/home/bayernator/deckwerk/examples/assets/arbeitsplatz.jpg",
+          "x": 49,
+          "y": 63,
+          "w": 258,
+          "h": 460,
+          "crop": {
+            "x": 0.3013,
+            "y": 0.0622,
+            "w": 0.2525,
+            "h": 0.8
+          },
+          "radius": 24
+        },
+        {
+          "id": "vid",
+          "kind": "video",
+          "src": "asset://local/home/bayernator/deckwerk/examples/assets/test-video.mp4",
+          "poster": "asset://local/home/bayernator/deckwerk/examples/assets/test-video-poster.jpg",
+          "x": 560,
+          "y": 60,
+          "w": 460,
+          "h": 259,
+          "radius": 16,
+          "muted": true
+        },
+        {
+          "id": "aud",
+          "kind": "audio",
+          "src": "asset://local/home/bayernator/deckwerk/examples/assets/test-audio.mp3",
+          "x": 900,
+          "y": 360,
+          "w": 120,
+          "h": 120
+        },
+        {
+          "id": "g1",
+          "group": "dgpfv8yo",
+          "kind": "shape",
+          "shape": "rect",
+          "x": 60,
+          "y": 600,
+          "w": 960,
+          "h": 400,
+          "fill": "#7A86FF",
+          "radius": 32
+        },
+        {
+          "id": "g2",
+          "kind": "text",
+          "text": "Quadrat 1080 × 1080",
+          "x": 110,
+          "y": 650,
+          "w": 860,
+          "h": 80,
+          "size": 64,
+          "bold": true,
+          "color": "#FFFFFF"
+        },
+        {
+          "id": "g3",
+          "group": "dgpfv8yo",
+          "kind": "icon",
+          "icon": "sparkles",
+          "x": 880,
+          "y": 860,
+          "w": 100,
+          "h": 100,
+          "color": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "layout",
+      "layout": "statement",
+      "content": {
+        "text": "Auch Layouts ordnen sich im **neuen Format** an"
+      },
+      "tone": "invert"
+    }
+  ]
+}

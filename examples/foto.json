@@ -1,0 +1,32 @@
+{
+ "title": "Café Kollektiv – Expansion 2027",
+ "brief": { "audience": "Gesellschafter und Bank", "goal": "Freigabe für drei neue Standorte", "tone": "warm, klar, selbstbewusst" },
+ "theme": { "id": "atelier" },
+ "transition": "fade",
+ "mode": "click",
+ "slides": [
+  { "id": "cover", "layout": "cover", "variant": "left", "notes": "Einstieg über das Gefühl im Café. Foto: Luke Chesser / Unsplash.",
+    "content": { "eyebrow": "Expansion 2027", "title": "Drei neue Standorte machen das Kollektiv zur Marke der Stadt", "subtitle": "Plan und Finanzierung für die Gesellschafterrunde", "meta": "Oktober 2026", "image": { "src": "assets/cafe-tisch.jpg", "focus": "right" } } },
+  { "id": "warum", "layout": "photo", "variant": "text-bottom", "build": "fade", "notes": "Warum wir wachsen: Die Nachfrage ist da, die Plätze fehlen. Foto: Jeff Sheldon / Unsplash.",
+    "content": { "eyebrow": "Ausgangslage", "title": "Mittags fehlen uns jeden Tag rund 60 Plätze", "subtitle": "Beide Häuser sind zwischen 11 und 15 Uhr voll – Gäste gehen wieder, bevor sie bestellt haben.", "image": { "src": "assets/cafe-fenster.jpg" } } },
+  { "id": "zahlen", "layout": "kpi-grid", "tone": "invert", "build": "stagger", "notes": "Die Zahlen des laufenden Jahres, Stand September.",
+    "content": { "eyebrow": "Das Jahr in Zahlen", "title": "Beide Häuser sind profitabel und wachsen zweistellig", "kpis": [
+      { "value": "1,9 Mio", "label": "Umsatz 2026 (Prognose)", "delta": "+18 % ggü. Vorjahr", "sentiment": "positive" },
+      { "value": "14,2 %", "label": "EBITDA-Marge", "delta": "+2,1 Pkt.", "sentiment": "positive" },
+      { "value": "92 %", "label": "Auslastung mittags", "delta": "Ziel: 75 %", "sentiment": "negative" } ],
+      "source": "Kassensystem und BWA, Stand 30.09.2026" } },
+  { "id": "kapitel", "layout": "section", "notes": "Kapitel: die drei Standorte. Foto: Aleks Dorohovich / Unsplash.",
+    "content": { "number": "02", "title": "Drei Orte, ein Konzept", "subtitle": "Alle in Laufweite von Uni, Büros und Wohnvierteln", "image": { "src": "assets/schreibtisch.jpg" } } },
+  { "id": "orte", "layout": "gallery", "variant": "mosaic", "build": "stagger", "notes": "Eckhaus am Markt ist der Anker, die beiden kleineren Flächen folgen. Fotos: Bonnie Meisels, Vee O, Galymzhan Abdugalimov / Unsplash.",
+    "content": { "eyebrow": "Standorte", "title": "Das Eckhaus am Markt wird unser neues Flaggschiff", "images": [
+      { "image": { "src": "assets/standort-ecke.jpg" }, "caption": "Eckhaus am Markt · 140 Plätze" },
+      { "image": { "src": "assets/tee.jpg", "look": "duotone" }, "caption": "Teebar Uni-Viertel · 40 Plätze" },
+      { "image": { "src": "assets/arbeitsplatz.jpg", "look": "duotone" }, "caption": "Studio Hafen · 60 Plätze" } ] } },
+  { "id": "gaeste", "layout": "photo", "variant": "card", "build": "fade", "notes": "Stammgäste arbeiten bei uns: Das Tagesgeschäft ist planbar. Foto: Alejandro Escamilla / Unsplash.",
+    "content": { "eyebrow": "Unsere Gäste", "title": "Zwei Drittel kommen mehrmals pro Woche und bleiben über zwei Stunden", "subtitle": "Deshalb planen wir Arbeitsplätze mit Strom an jedem Tisch ein.", "image": { "src": "assets/laptop-gast.jpg", "focus": "left" } } },
+  { "id": "stimme", "layout": "quote", "tone": "invert", "build": "fade", "notes": "Zitat aus der Gästebefragung, mit Freigabe. Foto: Alexander Shustov / Unsplash.",
+    "content": { "text": "Das Kollektiv ist mein zweites Büro – nur mit besserem Kaffee und netteren Kollegen.", "author": "Mara", "role": "Stammgast seit 2023, Designerin", "image": { "src": "assets/portraet.jpg", "focus": "top" } } },
+  { "id": "ask", "layout": "closing", "notes": "Klare Bitte am Ende. Foto: Forrest Cavale / Unsplash.",
+    "content": { "title": "Bitte um Freigabe: 1,2 Mio € für drei Standorte", "subtitle": "Eröffnungen im März, Juni und September 2027 · Amortisation nach 38 Monaten", "contact": ["Geschäftsführung"], "image": { "src": "assets/strasse-abend.jpg" } } }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "deckwerk",
+  "version": "0.1.0",
+  "description": "KI-Präsentationsstudio",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev -- --ozone-platform=x11",
+    "build": "electron-vite build",
+    "start": "electron-vite preview -- --ozone-platform=x11",
+    "render": "electron-vite build && electron . --ozone-platform=x11 --render",
+    "check:layouts": "electron-vite build && electron . --ozone-platform=x11 --check",
+    "typecheck": "tsc -p .",
+    "mcp": "electron-vite build -l silent && electron . --ozone-platform=x11 --mcp",
+    "smoke": "esbuild scripts/agent-smoke.ts scripts/mcp-smoke.ts --bundle --platform=node --format=esm --loader:.md=text --outdir=out --out-extension:.js=.mjs --log-level=warning && node out/agent-smoke.mjs && node out/mcp-smoke.mjs",
+    "smoke:claude": "esbuild scripts/claude-smoke.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/claude-smoke.mjs --log-level=warning && node out/claude-smoke.mjs",
+    "mcp:e2e": "electron-vite build -l silent && esbuild scripts/mcp-e2e.ts --bundle --packages=external --platform=node --format=esm --outfile=out/mcp-e2e.mjs --log-level=warning && node out/mcp-e2e.mjs",
+    "verify:pptx": "esbuild scripts/verify-pptx.ts --bundle --packages=external --platform=node --format=esm --outfile=out/verify-pptx.mjs --log-level=warning && node out/verify-pptx.mjs",
+    "spike:fonts": "esbuild scripts/spike-embed-fonts.ts --bundle --packages=external --platform=node --format=esm --outfile=out/spike-embed-fonts.mjs --log-level=warning && node out/spike-embed-fonts.mjs",
+    "open": "node scripts/open.mjs",
+    "fonts:fetch": "esbuild scripts/fetch-fonts.ts --bundle --packages=external --platform=node --format=esm --outfile=out/fetch-fonts.mjs --log-level=warning && node out/fetch-fonts.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource/arimo": "^5.3.0",
+    "@fontsource/carlito": "^5.3.0",
+    "@fontsource/gelasio": "^5.3.0",
+    "@modelcontextprotocol/sdk": "^1.30.1",
+    "chart.js": "^4.5.1",
+    "culori": "^4.0.2",
+    "jszip": "^3.10.2",
+    "lucide-react": "^1.48.0",
+    "onnxruntime-node": "^1.30.0",
+    "pptxgenjs": "^4.0.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/culori": "^4.0.1",
+    "@types/node": "^26.6.3",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^44.4.5",
+    "electron-vite": "^5.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6"
+  },
+  "private": true
+}

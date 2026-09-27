@@ -1,0 +1,146 @@
+/* Profi-Layouts (layouts-extra.tsx). Linien auf Elementen ohne data-pptx landen im Hintergrundbild der PPTX. */
+
+/* ---------- Executive Summary ---------- */
+.sum { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 44px; }
+.sum.with-rec { grid-template-columns: 1fr 340px; }
+.sum-list { min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.sum-row { display: flex; gap: 28px; align-items: baseline; padding: 20px 0; border-top: 1px solid var(--border); }
+.sum-row:last-child { border-bottom: 1px solid var(--border); }
+.sum-num { flex: none; width: 48px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.sum-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.sum-rec { align-self: center; display: flex; flex-direction: column; gap: 14px; padding: 32px; border-radius: var(--radius); background: var(--fill); --text: var(--on-accent); --muted: var(--on-accent-soft); color: var(--on-accent); }
+.sum-rec .r-eyebrow { color: var(--on-accent); }
+
+/* ---------- Optionsvergleich ---------- */
+.opt { flex: 1; min-height: 0; display: grid; column-gap: 14px; }
+.opt-hl { border: 2px solid var(--accent); border-radius: var(--radius); margin-top: -8px; }
+.opt-head { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 12px 14px; text-align: center; border-bottom: 1.5px solid var(--text); }
+.opt-badge { padding: 5px 12px; border-radius: 999px; background: var(--fill); }
+.opt-badge .r-eyebrow { color: var(--on-accent); letter-spacing: 0.1em; }
+.opt-crit { display: flex; align-items: center; padding: 0 12px 0 2px; border-bottom: 1px solid var(--border); }
+.opt-cell { display: grid; place-items: center; border-bottom: 1px solid var(--border); }
+.opt-note { padding: 14px 12px 12px; text-align: center; }
+.harvey { display: inline-flex; width: 30px; height: 30px; color: var(--text); }
+.harvey svg { display: block; }
+
+/* ---------- 2×2-Matrix ---------- */
+.mx { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 40px; }
+.mx.with-take { grid-template-columns: 1fr 300px; }
+.mx-area { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.mx-axis { flex: none; font-weight: 700; color: var(--text); }
+.mx-x { align-self: flex-end; }
+.mx-plot { flex: 1; min-height: 0; position: relative; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px; }
+/* Quadrant-Namen in den Außenecken, damit die Mitte frei für die Punkte bleibt; Zielquadrant oben rechts */
+.mx-q { display: flex; align-items: flex-start; padding: 12px 14px; background: var(--surface); border-radius: 4px; }
+.mx-q.q1 { background: var(--accent-tint); justify-content: flex-end; }
+.mx-q.q2 { align-items: flex-end; }
+.mx-q.q3 { align-items: flex-end; justify-content: flex-end; }
+.mx-qlabel { font-weight: 700; }
+.mx-q.q1 .mx-qlabel { color: var(--text); }
+.mx-item { position: absolute; width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; transform: translateY(-9px); }
+.mx-item.up { flex-direction: column-reverse; transform: translateY(calc(-100% + 9px)); }
+.mx-item.start { align-items: flex-start; }
+.mx-item.end { align-items: flex-end; }
+.mx-item.start > * { margin-left: -9px; }
+.mx-item.end > * { margin-right: -9px; }
+.mx-dot { flex: none; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); }
+.mx-dot.hl { background: var(--accent); }
+.mx-item .mx-lbl { white-space: nowrap; } /* spezifischer als .t (pre-line), sonst bricht jedes Wort in der 0-breiten Hülle um */
+.mx-item .mx-lbl.hl { font-weight: 700; }
+.mx-take { align-self: center; }
+
+/* ---------- Tabelle ---------- */
+.tb { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.tb-row { display: grid; column-gap: 20px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.tb-head { border-bottom: 2px solid var(--text); padding-top: 0; }
+.tb-head .t { font-weight: 700; color: var(--muted); }
+.tb-hl { background: var(--accent-tint); border-radius: var(--radius); border-bottom-color: transparent; }
+.tb-hl .t { font-weight: 700; }
+.tb-cell.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tb-cell.first { font-weight: 700; }
+.tb-cell.hl { color: var(--accent); font-weight: 700; }
+
+/* ---------- Große Zahl ---------- */
+.bign { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 22px; max-width: 980px; }
+.bign-value { color: var(--accent); line-height: 0.95; }
+.bign-label { max-width: 900px; }
+
+/* ---------- Icon-Raster ---------- */
+.ig { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 40px 48px; align-content: center; }
+.ig-item { display: flex; gap: 22px; align-items: flex-start; min-width: 0; }
+.ig-badge { flex: none; width: 68px; height: 68px; border-radius: 50%; background: var(--accent-tint); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.ig-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
+
+/* ---------- Pro und Contra ---------- */
+.pc { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+.pc-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+.pc-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.pc-col > .r-h2 { padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+.pc-item { display: flex; gap: 16px; align-items: flex-start; }
+.pc-item > .t { flex: 1; }
+.pc-badge { flex: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: calc(var(--fs-body) * 0.69 - 16px); color: #fff; }
+.pc-pros .pc-badge { background: var(--good); }
+.pc-cons .pc-badge { background: var(--bad); }
+.pc-verdict { display: flex; align-items: center; gap: 18px; padding: 22px 28px; border-radius: var(--radius); background: var(--fill); --text: var(--on-accent); color: var(--on-accent); }
+
+/* ---------- Problem und Lösung ---------- */
+.psol { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 64px 1fr; gap: 20px; align-items: center; }
+.ps-card { align-self: stretch; justify-content: center; gap: 18px; padding: 40px 36px; }
+.card.ps-problem { background: var(--surface2); }
+.ps-problem .r-eyebrow { color: var(--text); }
+.ps-problem .r-h2 { color: var(--muted); }
+.card.ps-solution { background: var(--fill); --text: var(--on-accent); --muted: var(--on-accent-soft); --accent: var(--on-accent); color: var(--text); }
+.ps-solution .pdot { background: var(--on-accent); }
+.ps-arrow { width: 64px; height: 64px; border-radius: 50%; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; }
+
+/* ---------- Team ---------- */
+.team { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 24px 32px; align-content: center; justify-items: center; text-align: center; }
+.tm { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; max-width: 300px; }
+.tm-pic { position: relative; width: 176px; height: 176px; border-radius: 50%; overflow: hidden; margin-bottom: 12px; flex: none; }
+.team.n5 .tm-pic, .team.n6 .tm-pic { width: 104px; height: 104px; margin-bottom: 4px; }
+.tm-ini { background: var(--accent-tint); display: flex; align-items: center; justify-content: center; }
+.tm-ini .t { color: var(--accent); }
+.tm-role { color: var(--accent); font-weight: 700; }
+
+/* ---------- Preise ---------- */
+.pr { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 24px; align-content: center; align-items: stretch; }
+.pr-card { gap: 18px; padding: 34px 30px; }
+.pr-card.hl { background: var(--fill); --text: var(--on-accent); --muted: var(--on-accent-soft); --accent: var(--on-accent); color: var(--text); }
+.pr-card .r-eyebrow { color: var(--accent); }
+.pr-price { display: flex; flex-direction: column; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.pr-card.hl .pr-price { border-bottom-color: color-mix(in srgb, var(--on-accent) 30%, transparent); }
+.pr-feat { display: flex; flex-direction: column; gap: 10px; }
+.pr-chk { color: var(--accent); margin-top: 3px; }
+
+/* ---------- Trichter ---------- */
+.fn { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
+.fn.with-take { grid-template-columns: 1fr 320px; }
+.fn-bars { min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.fn-row { display: grid; grid-template-columns: 1fr 220px; align-items: center; gap: 20px; }
+.fn-bar { justify-self: center; height: 64px; border-radius: var(--radius); background: var(--fill); display: flex; align-items: center; justify-content: center; }
+.fn-val { color: var(--on-accent); white-space: nowrap; }
+.fn-label { font-weight: 700; }
+
+/* ---------- Marktgröße ---------- */
+.ms { flex: 1; min-height: 0; display: grid; grid-template-columns: auto 1fr; gap: 64px; align-items: center; }
+.ms-rings { position: relative; height: min(440px, 100%); aspect-ratio: 1; }
+.ms-ring { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); border-radius: 50%; }
+.ms-r-tam { width: 100%; height: 100%; background: var(--surface2); }
+.ms-r-sam { width: 64%; height: 64%; background: var(--accent-tint); }
+.ms-r-som { width: 30%; height: 30%; background: var(--fill); }
+.ms-legend { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 28px; justify-content: center; }
+.ms-item { display: flex; gap: 20px; align-items: flex-start; }
+.ms-dot { flex: none; width: 22px; height: 22px; border-radius: 50%; margin-top: 16px; }
+.ms-item.ms-tam .ms-dot { background: var(--surface2); border: 1px solid var(--border); }
+.ms-item.ms-sam .ms-dot { background: var(--accent-tint); }
+.ms-item.ms-som .ms-dot { background: var(--fill); }
+.ms-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ms-val { color: var(--text); }
+.ms-item.ms-som .ms-val { color: var(--accent); }
+.ms-text .r-label strong { color: var(--accent); }
+
+/* ---------- Logo-Wand ---------- */
+.lg { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 20px; align-content: center; }
+.lg-tile { height: 110px; border-radius: var(--radius); background: var(--surface); display: flex; align-items: center; justify-content: center; padding: 20px 24px; min-width: 0; }
+.lg-img { width: 100%; height: 100%; }
+.lg-name { text-align: center; color: var(--muted); }

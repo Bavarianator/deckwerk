@@ -1,0 +1,37 @@
+{
+ "title": "Strategie 2027",
+ "brief": { "audience": "Führungskreis und Beirat", "goal": "Verabschiedung der drei strategischen Schwerpunkte", "tone": "klar, ruhig, ambitioniert" },
+ "theme": { "id": "editorial" },
+ "transition": "fade",
+ "mode": "click",
+ "slides": [
+  { "id": "cover", "layout": "cover", "variant": "left", "notes": "Einstieg: Die Strategie ist das Ergebnis von drei Workshops mit allen Bereichsleitungen.", "content": { "eyebrow": "Strategie 2027", "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche", "subtitle": "Drei Schwerpunkte, ein gemeinsamer Plan für den Führungskreis", "meta": "Beiratssitzung · 14. Oktober 2026" } },
+  { "id": "agenda", "layout": "agenda", "build": "stagger", "notes": "Die Agenda kehrt vor jedem Kapitel zurück, der aktive Punkt wandert mit.", "content": { "title": "Agenda", "active": 0, "items": [
+   { "title": "Ausgangslage", "desc": "Wo wir stehen und was sich verändert hat" },
+   { "title": "Drei Schwerpunkte", "desc": "Verlässlichkeit, Digitalisierung, Nachwuchs" },
+   { "title": "Weg bis 2027", "desc": "Meilensteine und Vorgehen" },
+   { "title": "Entscheidung", "desc": "Was der Beirat heute verabschiedet" } ] } },
+  { "id": "sec1", "layout": "section", "notes": "Kapitel 1. Kurz halten.", "content": { "number": "01", "title": "Ausgangslage", "subtitle": "Stabiles Geschäft, aber ein Markt, der sich schneller dreht als wir" } },
+  { "id": "these", "layout": "statement", "build": "fade", "notes": "Zahl stammt aus der Kundenbefragung 2026 (n = 412). Verlässlichkeit schlägt Preis deutlich.", "content": { "eyebrow": "Was Kunden sagen", "text": "Für **83 % unserer Kunden** zählt Verlässlichkeit mehr als der Preis – und genau dort verlieren wir zuletzt Punkte.", "source": "Kundenbefragung Frühjahr 2026, 412 Antworten" } },
+  { "id": "anteile", "layout": "chart", "notes": "Der Anteil der Dienstleistungen wächst, das Projektgeschäft schrumpft. Das prägt die Schwerpunkte.", "content": { "eyebrow": "Umsatzstruktur 2026", "title": "Dienstleistungen machen bereits die Hälfte des Umsatzes aus", "chart": { "type": "donut", "categories": ["Service", "Produkte", "Projekte", "Schulung"], "series": [ { "name": "Umsatzanteil", "values": [50, 28, 15, 7] } ], "unit": "%" }, "takeaway": { "value": "50 %", "text": "Serviceanteil – 2023 waren es 31 %. Unsere Organisation ist noch auf Projekte ausgelegt." }, "source": "Controlling, Geschäftsjahr 2025/26" } },
+  { "id": "sec2", "layout": "section", "notes": "Kapitel 2. Die drei Schwerpunkte sind das Herz der Präsentation.", "content": { "number": "02", "title": "Drei Schwerpunkte", "subtitle": "Verlässlichkeit, Digitalisierung, Nachwuchs" } },
+  { "id": "schwerpunkte", "layout": "bullets", "variant": "cards", "build": "stagger", "notes": "Jeder Schwerpunkt hat eine verantwortliche Person aus der Bereichsleitung und ein messbares Ziel.", "content": { "eyebrow": "Schwerpunkte", "title": "Drei Schwerpunkte machen uns bis 2027 messbar verlässlicher", "items": [
+   { "text": "Verlässlichkeit: Liefertreue von 91 auf 98 %", "sub": "Servicelevel je Kunde vereinbaren und wöchentlich messen", "icon": "shield-check" },
+   { "text": "Digitalisierung: Ein Kundenportal statt vier Kanälen", "sub": "Aufträge, Status und Rechnungen an einem Ort", "icon": "monitor-smartphone" },
+   { "text": "Nachwuchs: 20 Ausbildungsplätze pro Jahr", "sub": "Eigene Akademie mit zwei Partnerschulen", "icon": "graduation-cap" } ] } },
+  { "id": "portal", "layout": "image-text", "variant": "image-right", "build": "fade", "notes": "Screenshot des Portal-Prototyps folgt im November. Bis dahin Platzhalter.", "content": { "eyebrow": "Digitalisierung", "title": "Das Kundenportal ersetzt vier Kanäle durch einen", "text": "Heute erreichen uns Aufträge per Telefon, Fax, E-Mail und Formular. Das Portal bündelt alles und zeigt den Status in Echtzeit.", "points": ["Start mit 30 Pilotkunden im Januar", "Anbindung an das ERP bis März", "Alle Kunden bis Ende 2027"], "image": "" } },
+  { "id": "sec3", "layout": "section", "notes": "Kapitel 3: Wie wir vorgehen.", "content": { "number": "03", "title": "Weg bis 2027", "subtitle": "Vier Meilensteine, ein Vorgehen in vier Schritten" } },
+  { "id": "vorgehen", "layout": "process", "build": "stagger", "notes": "Das Vorgehen gilt für alle drei Schwerpunkte gleich. Quartalsweise Review im Führungskreis.", "content": { "eyebrow": "Vorgehen", "title": "Jeder Schwerpunkt durchläuft dieselben vier Schritte", "steps": [
+   { "title": "Messen", "desc": "Ausgangswert und Ziel je Schwerpunkt festlegen", "icon": "gauge" },
+   { "title": "Pilotieren", "desc": "Mit einem Bereich starten, in 90 Tagen lernen", "icon": "flask-conical" },
+   { "title": "Ausrollen", "desc": "Auf alle Bereiche übertragen, Verantwortliche benennen", "icon": "rocket" },
+   { "title": "Verankern", "desc": "In Zielvereinbarungen und Prozesse übernehmen", "icon": "anchor" } ] } },
+  { "id": "meilensteine", "layout": "timeline", "build": "wipe", "notes": "Der Beirat sieht den Fortschritt in jeder Sitzung anhand dieser vier Meilensteine.", "content": { "eyebrow": "Meilensteine", "title": "Bis Ende 2027 sind alle drei Schwerpunkte im Alltag verankert", "items": [
+   { "date": "Q4 2026", "title": "Verantwortliche", "desc": "Drei Teams stehen, Kennzahlen sind definiert" },
+   { "date": "Q1 2027", "title": "Piloten laufen", "desc": "Portal mit 30 Kunden, Akademie mit erster Klasse" },
+   { "date": "Q3 2027", "title": "Rollout", "desc": "Liefertreue bei 96 %, Portal für alle Kunden" },
+   { "date": "Q4 2027", "title": "Verankert", "desc": "98 % Liefertreue, 20 Auszubildende, ein Kanal" } ] } },
+  { "id": "entscheidung", "layout": "two-column", "variant": "highlight-right", "build": "stagger", "notes": "Links, was heute beschlossen wird. Rechts, was wir dafür vom Beirat brauchen.", "content": { "eyebrow": "Entscheidung", "title": "Der Beirat verabschiedet heute drei Schwerpunkte und ein Budget", "left": { "heading": "Zur Verabschiedung", "points": ["Drei Schwerpunkte mit Zielwerten 2027", "Verantwortliche aus der Bereichsleitung", "Quartalsweises Review im Führungskreis"] }, "right": { "heading": "Dafür brauchen wir", "text": "Ein Investitionsbudget von 1,4 Mio € über zwei Jahre, davon 0,9 Mio € für das Kundenportal und 0,5 Mio € für die Akademie." } } },
+  { "id": "closing", "layout": "closing", "notes": "Abstimmung einholen, danach Ausblick auf die nächste Sitzung im Januar.", "content": { "title": "Bitte um Verabschiedung der Strategie 2027", "subtitle": "Drei Schwerpunkte · 1,4 Mio € über zwei Jahre · erstes Review im Januar 2027", "contact": ["Geschäftsführung"] } }
+ ]
+}

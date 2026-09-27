@@ -1,0 +1,32 @@
+{
+ "title": "Q3-Update Vertrieb",
+ "brief": { "audience": "Geschäftsführung", "goal": "Freigabe für zwei zusätzliche Außendienststellen", "tone": "knapp, faktenbasiert" },
+ "theme": { "id": "corporate", "brand": { "primary": "#0A7C66" } },
+ "transition": "morph",
+ "mode": "click",
+ "slides": [
+  { "id": "cover", "layout": "cover", "variant": "center", "notes": "Zehn Minuten, dann Entscheidung. Alles Wichtige steht auf Folie 2.", "content": { "eyebrow": "Vertrieb · Q3 2026", "title": "Der Vertrieb liegt 9 % über Plan und braucht jetzt zwei Stellen mehr", "subtitle": "Quartalsupdate für die Geschäftsführung", "meta": "2. Oktober 2026" } },
+  { "id": "summary", "layout": "bullets", "variant": "cards", "build": "stagger", "notes": "Executive Summary: Wer nur diese Folie sieht, kennt Lage, Ursache und Bitte.", "content": { "eyebrow": "Executive Summary", "title": "Drei Punkte entscheiden über das vierte Quartal", "items": [
+   { "text": "Auftragseingang 9 % über Plan, getragen von Bestandskunden", "sub": "Neukundenanteil sinkt, das Wachstum ist nicht nachhaltig", "icon": "trending-up" },
+   { "text": "Der Außendienst ist seit Juli an der Kapazitätsgrenze", "sub": "Durchschnittlich 62 offene Leads pro Mitarbeiter, Ziel sind 35", "icon": "users" },
+   { "text": "Bitte: zwei Stellen ab 1. November freigeben", "sub": "Amortisation nach sieben Monaten, Details auf Folie 6", "icon": "circle-check" } ] } },
+  { "id": "kpis", "layout": "kpi-grid", "build": "stagger", "notes": "Alle Zahlen gegenüber Plan Q3. Deckungsbeitrag inklusive Rabatte.", "content": { "eyebrow": "Lage in Zahlen", "title": "Umsatz und Marge liegen über Plan, die Neukundenquote darunter", "kpis": [
+   { "value": "4,8 Mio", "label": "Auftragseingang Q3", "delta": "+9 % vs. Plan", "sentiment": "positive" },
+   { "value": "31,4 %", "label": "Deckungsbeitrag", "delta": "+1,2 Pkt.", "sentiment": "positive" },
+   { "value": "18 %", "label": "Neukundenanteil am Umsatz", "delta": "−7 Pkt. vs. Plan", "sentiment": "negative" },
+   { "value": "62", "label": "offene Leads je Außendienstler", "delta": "Ziel: 35", "sentiment": "negative" } ],
+   "source": "CRM-Auswertung, Stand 30.09.2026" } },
+  { "id": "trend", "layout": "chart", "build": "wipe", "notes": "Q3 ist saisonal stark, aber der Abstand zum Vorjahr wächst seit Q1.", "content": { "eyebrow": "Entwicklung", "title": "Der Auftragseingang wächst seit Q1 in jedem Quartal schneller als 2025", "chart": { "type": "bar", "categories": ["Q1", "Q2", "Q3"], "series": [ { "name": "2025", "values": [3.6, 3.9, 4.1] }, { "name": "2026", "values": [3.9, 4.4, 4.8] } ], "unit": "Mio €" }, "takeaway": { "value": "+17 %", "text": "Auftragseingang Q3 gegenüber Vorjahresquartal – ohne zusätzliches Personal." }, "source": "Finanzbuchhaltung, vorläufig" } },
+  { "id": "gutschlecht", "layout": "two-column", "variant": "equal", "build": "stagger", "notes": "Links die Erfolge, rechts die Risiken. Neukunden sind das eigentliche Problem.", "content": { "eyebrow": "Bewertung", "title": "Bestandskunden tragen das Quartal, Neukunden bleiben liegen", "left": { "heading": "Was gut läuft", "points": ["Bestandskunden bestellen 14 % mehr", "Rabattquote auf 6,1 % gesenkt", "Zwei Rahmenverträge verlängert", "Reklamationsquote bei 0,8 %"] }, "right": { "heading": "Was nicht läuft", "points": ["41 Neukunden-Leads älter als 30 Tage", "Angebotsdauer im Schnitt 11 Tage", "Region Süd seit Juli unbesetzt", "Messe-Leads noch nicht kontaktiert"] } } },
+  { "id": "entscheidung", "layout": "bullets", "variant": "list", "build": "list", "notes": "Empfehlung ist Option B. Option A verschiebt das Problem, Option C dauert zu lange.", "content": { "eyebrow": "Entscheidungsbedarf", "title": "Zwei Außendienststellen zahlen sich nach sieben Monaten aus", "items": [
+   { "text": "Option A: Nichts tun", "sub": "Leads verfallen weiter, geschätzter Verlust 0,6 Mio € Auftragseingang bis Q2 2027" },
+   { "text": "Option B: Zwei Stellen ab 1. November (Empfehlung)", "sub": "Kosten 190.000 € p. a., erwarteter Zusatzumsatz 1,1 Mio € im ersten Jahr" },
+   { "text": "Option C: Externer Vertriebspartner", "sub": "Marge sinkt um 8 Punkte, Aufbau dauert bis Q2 2027" } ] } },
+  { "id": "next", "layout": "timeline", "build": "wipe", "notes": "Wer, was, bis wann. Stellenausschreibung ist vorbereitet und geht nach Freigabe sofort raus.", "content": { "eyebrow": "Nächste Schritte", "title": "Bei Freigabe heute sind beide Stellen zum Jahreswechsel besetzt", "items": [
+   { "date": "3. Okt", "title": "Ausschreibung", "desc": "Personal veröffentlicht beide Stellen" },
+   { "date": "Okt", "title": "Lead-Triage", "desc": "Innendienst kontaktiert alle Messe-Leads" },
+   { "date": "Nov", "title": "Einstellung", "desc": "Verträge unterschrieben, Onboarding-Plan steht" },
+   { "date": "Jan 2027", "title": "Start Region Süd", "desc": "Beide Stellen produktiv, erstes Review im März" } ] } },
+  { "id": "closing", "layout": "closing", "notes": "Um die Freigabe bitten, dann Fragen.", "content": { "title": "Bitte um Freigabe: zwei Außendienststellen ab 1. November", "subtitle": "Budget 190.000 € pro Jahr · Amortisation nach sieben Monaten · Review im März 2027", "contact": ["Leitung Vertrieb", "Durchwahl 4711"] } }
+ ]
+}
