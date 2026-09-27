@@ -91,6 +91,8 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 }
 .home-field:focus-within { box-shadow: 0 0 0 4px rgb(79 82 217 / 0.12), 0 1px 2px rgb(22 22 26 / 0.04), 0 16px 40px rgb(22 22 26 / 0.08); }
 .home-field textarea { border: 0; padding: 0 10px 0 0; background: transparent; font-size: 18px; line-height: 1.5; resize: none; outline: none; }
+/* randlose Felder: Fokus zeigt der Rahmen außen, nicht der Ring aus kit.css (.app textarea:focus) */
+.app .home-field textarea:focus, .app .work-notes textarea:focus { border-color: transparent; box-shadow: none; }
 .home-field-bar { display: flex; align-items: center; justify-content: space-between; }
 .home-field-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .home-err { font-size: 13px; }
