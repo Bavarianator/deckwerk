@@ -234,7 +234,7 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .item-insp { background: var(--panel-2); }
 .h3-acts { display: flex; gap: 2px; }
 .h3-acts .icon-btn { width: 26px; height: 26px; }
-fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.plain { display: block; height: auto; border: 0; margin: 0; padding: 0; min-width: 0; background: none; white-space: normal; cursor: auto; } /* .plain (shell.css) ist ein Button-Stil */
 .btn-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-bottom: 10px; }
 .icon-btn.on { background: var(--accent-soft); color: var(--accent); }
 .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }

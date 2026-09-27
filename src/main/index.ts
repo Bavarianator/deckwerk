@@ -66,7 +66,10 @@ app.whenReady().then(async () => {
   const at = (flag: string) => (argv.includes(flag) ? argv[argv.indexOf(flag) + 1] : undefined)
   const cli = argv.includes('--render') || argv.includes('--check')
   if (!cli && !argv.includes('--mcp')) {
+    // Zweiter Klick aufs Symbol holt das offene Fenster nach vorn statt einer zweiten Instanz (CLI/MCP dürfen parallel laufen)
+    if (!app.requestSingleInstanceLock()) return app.quit()
     const win = createWindow()
+    app.on('second-instance', () => { if (win.isMinimized()) win.restore(); win.show(); win.focus() })
     const [engine, { registerIpc }] = await Promise.all([loadEngine(), import('./ipc')])
     return registerIpc(win, engine)
   }
