@@ -16,44 +16,46 @@ Den KI-Zugang liefert der Login deines Agenten-CLIs (Claude Code, Codex oder Mis
 
 ## Installation
 
-Voraussetzungen: Git und Node.js 22 oder neuer. Deckwerk läuft unter Linux und unter Windows in WSL. Für macOS gibt es eine eigene Fassung: [deckwerk-macos](https://github.com/Bavarianator/deckwerk-macos).
+Deckwerk läuft unter Linux (x86_64) und unter Windows in WSL. Für macOS gibt es eine eigene Fassung: [deckwerk-macos](https://github.com/Bavarianator/deckwerk-macos). Auf dem Mac leitet der Befehl unten automatisch dorthin weiter.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh
 ```
 
-Der Installer lädt Deckwerk nach `~/deckwerk`, installiert die Abhängigkeiten samt Electron und baut die App. Unter Linux legt er einen Startmenü-Eintrag an. Ist Claude Code installiert, trägt er Deckwerk dort als MCP-Server ein. Einen anderen Zielordner wählst du mit `curl … | DECKWERK_DIR=~/apps/deckwerk sh`.
+Der Installer lädt die fertige App aus dem neuesten Release nach `~/.local/share/deckwerk`. Git und Node.js brauchst du dafür nicht. Er legt einen Startmenü-Eintrag an und öffnet `deck.json`-Dateien per Doppelklick mit Deckwerk. Sind Claude Code, Codex oder Vibe installiert, trägt er Deckwerk dort als MCP-Server ein.
 
-<details>
-<summary>Andere Wege: wget, Git-Checkout, von Hand</summary>
-
-```sh
-# mit wget
-wget -qO- https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh
-
-# aus einem Git-Checkout
-git clone https://github.com/Bavarianator/deckwerk.git && cd deckwerk && ./scripts/install.sh
-
-# von Hand
-npm ci                 # lädt auch das Electron-Programm
-npm run build          # danach starten mit ./scripts/deckwerk.sh
-```
-
-</details>
-
-**Aktualisieren:** Den Installer erneut ausführen. Er holt den neuen Stand per `git pull` und baut neu. Startest du Deckwerk über das Startmenü, baut es nach einem Update selbst neu (etwa eine Minute).
+**Aktualisieren:** Den Befehl erneut ausführen. Er holt den neuesten Release und ersetzt die App; deine Decks und Einstellungen bleiben.
 
 **Entfernen:**
 
 ```sh
-~/deckwerk/scripts/uninstall.sh
+curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/uninstall.sh | sh
 ```
 
-Das Skript entfernt den Programmordner, den Startmenü-Eintrag, die Dateizuordnung und die Einträge in Claude Code, Vibe und Codex. Deine Decks unter `~/Deckwerk` bleiben erhalten.
+Das Skript entfernt die App, den Startmenü-Eintrag, die Dateizuordnung und die Einträge in Claude Code, Vibe und Codex. Deine Decks unter `~/Deckwerk` bleiben erhalten.
+
+<details>
+<summary>Andere Wege: AppImage, aus dem Quellcode, wget</summary>
+
+**AppImage:** `Deckwerk-x86_64.AppImage` aus den [Releases](https://github.com/Bavarianator/deckwerk/releases/latest) laden, ausführbar machen und starten. Das braucht FUSE 2 (`libfuse2`). Der Installer oben braucht es nicht, weil er das AppImage entpackt.
+
+**Aus dem Quellcode** (Git und Node.js 22 oder neuer):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | DECKWERK_SOURCE=1 sh
+```
+
+Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_DIR`, anderer Stand: `DECKWERK_REF=master`), installiert die Abhängigkeiten und baut. Ein erneuter Aufruf aktualisiert auf den neuesten Release. Ein Checkout auf einem Zweig wird dabei nur vorgespult, nie umgestellt. Aus einem eigenen Checkout: `./scripts/install.sh`; entfernen mit `~/deckwerk/scripts/uninstall.sh`. Startest du eine Quellcode-Installation über das Startmenü, baut sie nach einem Update selbst neu (etwa eine Minute).
+
+**Mit wget:** `wget -qO- https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh`
+
+**Sandbox:** Erlaubt das System keine User-Namespaces (etwa Ubuntu 24.04 mit AppArmor-Sperre), startet Deckwerk ohne Chromium-Sandbox, statt gar nicht. Wer das nicht möchte, gibt die Namespaces frei (`sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0`) oder richtet ein AppArmor-Profil ein.
+
+</details>
 
 ## Erste Schritte
 
-1. Starte Deckwerk über das Startmenü oder mit `~/deckwerk/scripts/deckwerk.sh`.
+1. Starte Deckwerk über das Startmenü.
 2. Beim ersten Start führt dich die Einrichtung durch den KI-Zugang. Sie findet Claude Code, Codex und Vibe von selbst. Ist eines davon installiert und angemeldet, brauchst du nichts einzutragen: Der Chat nutzt dessen Login, bei mehreren wählst du per Klick. Unter „Agenten“ trägst du Deckwerk mit einem Klick in alle gefundenen CLIs ein. Alternativ trägst du einen Anthropic-API-Key ein oder setzt `ANTHROPIC_API_KEY`. Ein eingetragener Key hat Vorrang. Die Einrichtung erreichst du später über das Zahnrad.
 3. Beschreibe auf dem Startbildschirm in einem Satz, was du zeigen willst, zum Beispiel „Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum“. Über „Datei“ hängst du Quellmaterial an.
 4. Oder beginne mit einer Vorlage (du bearbeitest eine Kopie) oder mit „Leer beginnen und frei gestalten“.
@@ -156,7 +158,7 @@ Vibe und Codex starten den Server ohne Bildschirm. Deckwerk rendert dann headles
 
 Claude Code bekommt dieselben Werkzeuge wie der Chat in der App: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen, Fotos und Icons suchen, rendern und exportieren. Dazu kommen `get_deck`, `save_deck` und `open_deck`. Layout-Katalog und Design-Guide stehen in den Server-Anweisungen. Decks landen unter `~/Deckwerk/<titel>/deck.json`; die Umgebungsvariable `DECKWERK_HOME` wählt einen anderen Ordner.
 
-Der Server nutzt den vorhandenen Build und baut nicht neu, weil Claude Code nur 30 Sekunden auf ihn wartet. Nach einem Update deshalb einmal die App starten oder `npm run build` ausführen.
+Bei einer Quellcode-Installation nutzt der Server den vorhandenen Build und baut nicht neu, weil Claude Code nur 30 Sekunden auf ihn wartet. Nach einem Update dort deshalb einmal die App starten oder `npm run build` ausführen. Die fertige App braucht das nicht.
 
 ## Wo liegt was
 
@@ -203,13 +205,16 @@ Unter Wayland hängt Chromiums PDF-Druck, deshalb starten alle Skripte Electron 
 |---|---|
 | `npm run render examples/pitch.json` | Deck rendern → `exports/<slug>.pptx`, `.pdf`, `<slug>/NN.png` und Lint-Report |
 | `npm run check:layouts` | Stresstest: jedes Layout × Variante × Beispiel × Theme (dauert rund eine Stunde) |
+| `npm run dist:linux` | AppImage bauen → `dist/Deckwerk-x86_64.AppImage` |
 | `npm run smoke` | KI-Werkzeuge und MCP-Server gegen eine Mock-Engine (ohne Electron, ohne API-Key) |
-| `npm run mcp:e2e` | MCP-Server Ende-zu-Ende gegen die echte Engine |
+| `npm run mcp:e2e` | MCP-Server Ende-zu-Ende gegen die echte Engine; `E2E_HEADLESS=1` ohne Bildschirm wie Vibe und Codex, `E2E_APP=<AppRun>` gegen das Paket |
 | `npm run smoke:claude` | App-Chat über Claude Code gegen eine Mock-Engine, samt Sperre für Shell und Dateien (braucht den Login, vier kleine Anfragen). `DECKWERK_CLI=vibe` oder `codex` testet die anderen CLIs |
 | `npm run verify:pptx -- exports/<slug>.pptx` | PPTX-Treue-Check gegen LibreOffice (siehe unten) |
 | `npm run open [-- exports/<datei>]` | Export in LibreOffice Impress öffnen (ohne Argument: neueste PPTX) |
 
 Kleinere Selbsttests stehen als Kommentar im Kopf der jeweiligen Datei unter `scripts/check-*.ts`, `scripts/story-check.ts` und `scripts/validate-examples.ts`.
+
+GitHub Actions prüft jeden Push (`.github/workflows/ci.yml`): Typecheck, Smoke-Tests, Selbsttests, Rendern und Export, den MCP-Server mit und ohne Bildschirm, das AppImage und den Installer mit dieser App. Ein Tag `v*` baut das AppImage und hängt es an den Release (`release.yml`). Der Installer holt immer den neuesten Release.
 
 ### Aufbau
 

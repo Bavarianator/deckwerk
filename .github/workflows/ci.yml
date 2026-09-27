@@ -1,0 +1,46 @@
+# Prüft jeden Push auf master und jeden Pull Request: Typen, Smoke-Tests, Rendern und Export, MCP-Server (mit und ohne
+# Bildschirm), das AppImage und den Installer mit dieser fertigen App.
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run smoke
+      - name: Selbsttests
+        run: |
+          E="npx esbuild --bundle --platform=node --log-level=warning"
+          $E scripts/validate-examples.ts --format=esm --outfile=out/validate-examples.mjs && node out/validate-examples.mjs
+          for c in check-recolor check-handout story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
+          $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
+      - name: Bildschirm und Chromium-Sandbox
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
+          # Ubuntu 24.04 sperrt unprivilegierte User-Namespaces per AppArmor; die Sandbox braucht sie
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Rendern und Export (PPTX, PDF, PNG)
+        run: xvfb-run -a npm run render examples/pitch.json
+      - name: MCP-Server Ende-zu-Ende
+        run: xvfb-run -a npm run mcp:e2e
+      - name: MCP-Server ohne Bildschirm (wie Vibe und Codex)
+        run: E2E_HEADLESS=1 node out/mcp-e2e.mjs
+      - name: AppImage bauen
+        run: npx electron-builder --linux --publish never
+      - name: Installer mit dem AppImage, danach MCP aus der installierten App
+        run: |
+          cat scripts/install.sh | HOME="$RUNNER_TEMP/home" DECKWERK_APPIMAGE="$PWD/dist/Deckwerk-x86_64.AppImage" sh
+          E2E_HEADLESS=1 E2E_APP="$RUNNER_TEMP/home/.local/share/deckwerk/AppRun" node out/mcp-e2e.mjs
+          cat scripts/uninstall.sh | HOME="$RUNNER_TEMP/home" sh
+          test ! -e "$RUNNER_TEMP/home/.local/share/deckwerk"

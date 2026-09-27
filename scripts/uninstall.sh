@@ -1,11 +1,18 @@
 #!/bin/sh
-# Deckwerk entfernen: Programmordner, Startmenü-Eintrag, Dateizuordnung und die Einträge in Claude Code, Vibe und Codex.
-# Deine Decks unter ~/Deckwerk bleiben erhalten. Aufruf: ~/deckwerk/scripts/uninstall.sh
+# Deckwerk entfernen: die App (~/.local/share/deckwerk bzw. den Quellcode-Ordner, aus dem dieses Skript läuft),
+# Startmenü-Eintrag, Dateizuordnung und die Einträge in Claude Code, Vibe und Codex. Deine Decks unter ~/Deckwerk bleiben.
+#   curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/uninstall.sh | sh
+#   oder aus einer Quellcode-Installation: ~/deckwerk/scripts/uninstall.sh
 set -u
-DIR="$(cd "$(dirname "$0")/.." && pwd)"
-grep -q '"name": "deckwerk"' "$DIR/package.json" 2>/dev/null || { echo "$DIR ist kein Deckwerk-Ordner, breche ab." >&2; exit 1; }
+APP="${DECKWERK_APP:-$HOME/.local/share/deckwerk}"
+SRC=
+case "$0" in */uninstall.sh)
+  SRC="$(cd "$(dirname "$0")/.." && pwd)"
+  grep -q '"name": "deckwerk"' "$SRC/package.json" 2>/dev/null || { echo "$SRC ist kein Deckwerk-Ordner, breche ab." >&2; exit 1; } ;;
+esac
+[ -x "$APP/AppRun" ] || APP=
 if [ -t 0 ]; then
-  printf 'Deckwerk aus %s entfernen? Deine Decks unter ~/Deckwerk bleiben. [j/N] ' "$DIR"
+  printf 'Deckwerk entfernen (%s)? Deine Decks unter ~/Deckwerk bleiben. [j/N] ' "${SRC:-$APP}"
   read -r ok
   case "$ok" in j|J|ja|Ja) ;; *) echo "Abgebrochen."; exit 0 ;; esac
 fi
@@ -19,5 +26,5 @@ command -v update-mime-database >/dev/null 2>&1 && update-mime-database "$HOME/.
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1
 echo "→ Startmenü-Eintrag und Dateizuordnung entfernt"
 
-rm -rf "$DIR" && echo "→ $DIR entfernt"
+for d in "$APP" "$SRC"; do [ -n "$d" ] && rm -rf "$d" && echo "→ $d entfernt"; done
 echo "Fertig. Deine Decks unter ~/Deckwerk sind noch da."

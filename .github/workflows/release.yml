@@ -1,0 +1,34 @@
+# Tag v* → AppImage bauen, ohne Bildschirm als MCP-Server prüfen und an den Release hängen. Der feste Dateiname ohne
+# Version ist Absicht: install.sh lädt …/releases/latest/download/Deckwerk-x86_64.AppImage.
+name: Release
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  appimage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run dist:linux
+      - name: Paket prüfen (MCP ohne Bildschirm)
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          (cd dist && ./Deckwerk-x86_64.AppImage --appimage-extract >/dev/null)
+          npx esbuild scripts/mcp-e2e.ts --bundle --packages=external --platform=node --format=esm --outfile=out/mcp-e2e.mjs --log-level=warning
+          E2E_HEADLESS=1 E2E_APP="$PWD/dist/squashfs-root/AppRun" node out/mcp-e2e.mjs
+      - name: An den Release hängen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Deckwerk ${GITHUB_REF_NAME#v}" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" dist/Deckwerk-x86_64.AppImage --clobber

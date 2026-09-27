@@ -4,6 +4,8 @@ cd "$(dirname "$(readlink -f "$0")")/.." || exit 1
 # Wayland: das verborgene Druckfenster malt nie, printToPDF hängt → Electron immer über XWayland starten.
 # MCP-Clients wie Vibe oder Codex geben dem Server eine Umgebung ohne DISPLAY: dann ohne Bildschirm rendern (etwas langsamer)
 if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then set -- --ozone-platform=x11 "$@"; else set -- --ozone-platform=headless --disable-gpu "$@"; fi
+# Ohne User-Namespaces (z. B. Ubuntu 24.04 mit AppArmor-Sperre) bricht Chromiums Sandbox den Start ab; wie AppRun im AppImage
+command -v unshare >/dev/null 2>&1 && ! unshare -Ur true 2>/dev/null && set -- --no-sandbox "$@"
 # --mcp: Claude Code wartet höchstens 30 s auf den Server, ein Build dauert länger → vorhandenen Build nehmen
 case " $* " in *" --mcp "*) [ -f out/main/index.js ] && exec ./node_modules/.bin/electron . "$@" ;; esac
 # Zweiter Klick während eines Builds: nicht parallel bauen (leert out/ unter dem ersten weg), das erste Fenster kommt gleich

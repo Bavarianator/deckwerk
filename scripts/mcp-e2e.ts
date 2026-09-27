@@ -1,5 +1,7 @@
 // End-to-End: startet `electron . --mcp` (echte Engine, Offscreen-Chromium), baut per Tools ein Deck,
 // lintet, rendert und exportiert eine PPTX. Aufruf: npm run mcp:e2e  (baut vorher)
+// E2E_HEADLESS=1: ohne DISPLAY über scripts/deckwerk.sh, so wie Vibe und Codex den Server starten.
+// E2E_APP=<AppRun oder AppImage>: das Linux-Paket mit demselben sh-Aufruf wie mcpCmd in src/main/ipc.ts.
 import assert from 'node:assert/strict'
 import { existsSync, mkdtempSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -8,12 +10,13 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 const home = mkdtempSync(join(tmpdir(), 'deckwerk-e2e-'))
-const transport = new StdioClientTransport({
-  command: join(process.cwd(), 'node_modules/.bin/electron'),
-  args: ['.', '--ozone-platform=x11', '--mcp'],
-  env: { ...process.env, DECKWERK_HOME: home } as Record<string, string>,
-  stderr: 'inherit',
-})
+const env = { ...process.env, DECKWERK_HOME: home } as Record<string, string>
+if (process.env.E2E_HEADLESS) { delete env.DISPLAY; delete env.WAYLAND_DISPLAY }
+const wrap = 'if [ -n "$DISPLAY$WAYLAND_DISPLAY" ]; then exec "$0" --ozone-platform=x11 --mcp; else exec "$0" --ozone-platform=headless --disable-gpu --mcp; fi'
+const [command, args] = process.env.E2E_APP ? ['/bin/sh', ['-c', wrap, process.env.E2E_APP]]
+  : process.env.E2E_HEADLESS ? ['sh', ['scripts/deckwerk.sh', '--mcp']]
+  : [join(process.cwd(), 'node_modules/.bin/electron'), ['.', '--ozone-platform=x11', '--mcp']]
+const transport = new StdioClientTransport({ command, args, env, stderr: 'inherit' })
 const client = new Client({ name: 'e2e', version: '0' })
 await client.connect(transport)
 

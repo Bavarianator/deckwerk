@@ -1,4 +1,5 @@
 import { app, BrowserWindow, net, protocol } from 'electron'
+import { spawn } from 'node:child_process'
 import { readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -12,6 +13,16 @@ const loadEngine = async () => (await import('./engine')).createEngine()
 
 // macOS: aus dem Finder gestartete Apps erben den PATH der Shell nicht, claude/node/pdftotext wären sonst unauffindbar
 if (process.platform === 'darwin') process.env.PATH = [process.env.PATH, '/opt/homebrew/bin', '/usr/local/bin', join(homedir(), '.local/bin')].filter(Boolean).join(':')
+
+// Linux-Paket (AppImage) ohne Startskript: unter Wayland hängt printToPDF, deshalb einmal über XWayland neu starten.
+// Nur die App; CLI und MCP bekommen die Flags über ihren Aufruf (MCP-Eintrag in ipc.ts wählt x11 oder headless).
+const argv0 = process.argv
+if (process.platform === 'linux' && app.isPackaged && process.env.WAYLAND_DISPLAY && !argv0.some((a) => a.startsWith('--ozone-platform'))
+  && !['--mcp', '--render', '--check'].some((f) => argv0.includes(f))) {
+  // eigener Prozess statt app.relaunch (greift so früh nicht); das neue AppImage hängt sich selbst ein
+  spawn(process.env.APPIMAGE ?? process.execPath, [...argv0.slice(1), '--ozone-platform=x11'], { detached: true, stdio: 'ignore' }).unref()
+  app.exit(0)
+}
 
 // Kein Fenster navigiert weg oder öffnet neue (z. B. ein auf die Folie gezogener Link): fremde Seiten bekämen sonst die Preload-API
 app.on('web-contents-created', (_, wc) => {
