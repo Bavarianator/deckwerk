@@ -1,8 +1,8 @@
 // KI-Verlauf: Nachrichtentypen, Tool-Namen, Modellwahl und die Liste der Nachrichten (für die KI-Leiste).
-import { useEffect, useRef } from 'react'
+import { createContext, useContext, useEffect, useRef } from 'react'
 import { Select } from './kit'
 import { Check, CircleAlert, LoaderCircle, Sparkles } from 'lucide-react'
-import { MODELS } from '../../shared/models'
+import { MODELS, type ChatModels } from '../../shared/models'
 
 export type Msg =
   | { kind: 'user' | 'ai' | 'error'; text: string }
@@ -17,11 +17,20 @@ export const TOOL: Record<string, string> = {
   find_images: 'Bilder suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
 }
 
-// Modellwahl; gilt ab der nächsten Nachricht, auch mitten im Gespräch
+// Was das Modell-Dropdown anbietet (App lädt es aus Main); null = noch nicht geladen, dann nur Claude
+export const ChatChoices = createContext<ChatModels | null>(null)
+
+// Modellwahl und damit der Chat-Weg (Claude, Vibe, Codex); gilt ab der nächsten Nachricht, auch mitten im Gespräch.
+// Ein Wechsel zu einem anderen Weg beginnt ein neues Gespräch, das Deck bleibt.
 export function ModelSelect({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const c = useContext(ChatChoices)
+  const claude = !c || c.claude
+  const all = [...(claude ? MODELS : []), ...(c?.vibe ?? []), ...(c?.codex ?? [])]
   return (
-    <Select className="model-select ghost" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Modell" title={MODELS.find((m) => m.id === value)?.hint}>
-      {MODELS.map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}
+    <Select className="model-select ghost" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Modell" title={all.find((m) => m.id === value)?.hint}>
+      {claude && <optgroup label="Claude">{MODELS.map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}</optgroup>}
+      {!!c?.vibe.length && <optgroup label="Vibe (Mistral)">{c.vibe.map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}</optgroup>}
+      {!!c?.codex.length && <optgroup label="Codex (OpenAI)">{c.codex.map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}</optgroup>}
     </Select>
   )
 }

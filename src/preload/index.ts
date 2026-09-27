@@ -1,7 +1,13 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { CustomFont, Deck } from '../shared/deck'
+import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
 
+/** Agenten-CLI, über das der Chat ohne API-Key läuft und in das sich Deckwerk als MCP-Server einträgt */
+export type ChatCli = 'claude' | 'codex' | 'vibe'
+/** login: angemeldet (nur Codex prüfbar), null = unbekannt */
+export interface CliStatus { id: ChatCli; name: string; found: boolean; mcp: boolean; login: boolean | null }
+/** hasKey: irgendein KI-Zugang (API-Key oder ein Agenten-CLI) */
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
 export type PresentCmd = { type: 'next' } | { type: 'go'; i: number } | { type: 'ink'; ink: Ink }
@@ -87,12 +93,14 @@ const api = {
   readSource: (path?: string): Promise<{ name: string; text: string; cut: boolean } | null> => invoke('source:read', path),
   /** ~/Deckwerk/hausstil.md im Standard-Editor öffnen (legt sie bei Bedarf an) */
   openStyle: (): Promise<void> => invoke('style:open'),
-  /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code */
-  setupStatus: (): Promise<{ claude: boolean; key: boolean; mcp: boolean }> => invoke('setup:status'),
-  setupMcp: (): Promise<void> => invoke('setup:mcp'),
+  /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
+  setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
+  setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),
+  /** Einträge fürs Modell-Dropdown: Claude, Vibe, Codex (je nachdem, was installiert ist) */
+  chatModels: (): Promise<ChatModels> => invoke('chat:models'),
   /** Einrichtung abgeschlossen oder übersprungen: erscheint nicht mehr von selbst */
   setupDone: (): Promise<void> => invoke('setup:done'),
-  /** startet den MCP-Server wie Claude Code und liefert die Anzahl seiner Werkzeuge */
+  /** startet den MCP-Server wie die Agenten-CLIs und liefert die Anzahl seiner Werkzeuge */
   setupMcpTest: (): Promise<number> => invoke('setup:mcpTest'),
   /** absoluter Pfad einer per Drag & Drop abgelegten Datei */
   pathOf: (file: File): string => webUtils.getPathForFile(file),

@@ -2,7 +2,7 @@
 
 KI-Präsentationsstudio für den Desktop. Ein Satz genügt: Deckwerk schreibt die Storyline, baut die Folien, prüft jede einzelne als Bild und exportiert nach PowerPoint (editierbar), PDF und PNG. Danach gestaltest du frei weiter wie in Canva, per Chat oder direkt auf der Folie.
 
-Den KI-Zugang liefert dein Claude-Code-Login oder ein Anthropic-API-Key.
+Den KI-Zugang liefert der Login deines Agenten-CLIs (Claude Code, Codex oder Mistral Vibe) oder ein Anthropic-API-Key.
 
 ## Was Deckwerk kann
 
@@ -48,6 +48,8 @@ npm run build          # danach starten mit ./scripts/deckwerk.sh
 ```sh
 rm -rf ~/deckwerk ~/.local/share/applications/deckwerk.desktop
 claude mcp remove -s user deckwerk
+vibe mcp remove deckwerk
+codex mcp remove deckwerk
 ```
 
 Deine Decks unter `~/Deckwerk` bleiben dabei erhalten.
@@ -55,7 +57,7 @@ Deine Decks unter `~/Deckwerk` bleiben dabei erhalten.
 ## Erste Schritte
 
 1. Starte Deckwerk über das Startmenü oder mit `~/deckwerk/scripts/deckwerk.sh`.
-2. Beim ersten Start führt dich die Einrichtung durch den KI-Zugang. Mit Claude Code brauchst du nichts einzutragen, der Chat nutzt deinen Claude-Code-Login. Alternativ trägst du einen Anthropic-API-Key ein oder setzt `ANTHROPIC_API_KEY`. Ein eingetragener Key hat Vorrang. Die Einrichtung erreichst du später über das Zahnrad.
+2. Beim ersten Start führt dich die Einrichtung durch den KI-Zugang. Sie findet Claude Code, Codex und Vibe von selbst. Ist eines davon installiert und angemeldet, brauchst du nichts einzutragen: Der Chat nutzt dessen Login, bei mehreren wählst du per Klick. Unter „Agenten“ trägst du Deckwerk mit einem Klick in alle gefundenen CLIs ein. Alternativ trägst du einen Anthropic-API-Key ein oder setzt `ANTHROPIC_API_KEY`. Ein eingetragener Key hat Vorrang. Die Einrichtung erreichst du später über das Zahnrad.
 3. Beschreibe auf dem Startbildschirm in einem Satz, was du zeigen willst, zum Beispiel „Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum“. Über „Datei“ hängst du Quellmaterial an.
 4. Oder beginne mit einer Vorlage (du bearbeitest eine Kopie) oder mit „Leer beginnen und frei gestalten“.
 
@@ -65,7 +67,12 @@ Deine Decks unter `~/Deckwerk` bleiben dabei erhalten.
 
 - Der Chat unten im Editor nimmt Wünsche fürs ganze Deck entgegen. Er weiß immer, welche Folie du gerade ansiehst.
 - Ein Klick auf ein Element der Folie zeigt eine KI-Leiste. Dein Wunsch geht dann mit Folie, Element und Text an die KI.
-- Das Modell wählst du im Dropdown neben dem Eingabefeld: Opus 5.5 (Standard), Fable 5.1, Sonnet 5 oder Haiku 4.5. Die Wahl gilt ab der nächsten Nachricht und bleibt gespeichert.
+- Das Modell wählst du im Dropdown neben dem Eingabefeld. Es bestimmt auch, worüber der Chat läuft:
+  - **Claude:** Opus 5.5 (Standard), Fable 5.1, Sonnet 5 oder Haiku 4.5, über den API-Key oder Claude Code.
+  - **Vibe:** die Modelle aus deiner Vibe-Einstellung.
+  - **Codex:** die Modelle aus dessen Katalog.
+
+  Angeboten wird nur, was installiert ist. Steht das gespeicherte Modell nicht mehr zur Verfügung, nimmt Deckwerk das erste verfügbare. Die Wahl gilt ab der nächsten Nachricht und bleibt gespeichert. Wechselst du den Anbieter, beginnt ein neues Gespräch; das Deck bleibt. Vibe und Codex antworten spürbar langsamer als Claude.
 - Unter den Notizen schreibt „Schreiben lassen“ die Sprechernotizen, „Überarbeiten“ verbessert vorhandene. Daneben steht die geschätzte Sprechzeit.
 - **Hausstil:** Sag „merk dir …“, und die KI trägt die Vorliebe in `~/Deckwerk/hausstil.md` ein. Die Datei gilt für jedes künftige Deck und lässt sich von Hand bearbeiten.
 - **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/Deckwerk/assets`. Findet sie dort nichts Passendes und ist `UNSPLASH_ACCESS_KEY` gesetzt, sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
@@ -133,13 +140,22 @@ In der PowerPoint-Datei sind Texte, Formen, Bilder, Diagramme, Video und Audio n
 | | P | Referentenansicht umschalten |
 | | Esc | Beenden |
 
-## Deckwerk in Claude Code
+## Deckwerk in Claude Code, Vibe und Codex
 
-Der Installer trägt Deckwerk als MCP-Server in Claude Code ein, für alle Projekte. Von Hand geht das so:
+Der Installer trägt Deckwerk als MCP-Server in Claude Code ein, für alle Projekte. Die Einrichtung in der App kann das ebenfalls, für jedes gefundene CLI mit einem Klick. Von Hand geht das so:
 
 ```sh
 claude mcp add -s user deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp
 ```
+
+Sind Vibe oder Codex installiert, trägt der Installer Deckwerk dort ebenfalls ein. Von Hand:
+
+```sh
+vibe mcp add --transport stdio --command ~/deckwerk/scripts/deckwerk.sh --arg=--mcp --startup-timeout-sec 90 --tool-timeout-sec 300 deckwerk
+codex mcp add deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp   # danach in ~/.codex/config.toml unter [mcp_servers.deckwerk]: startup_timeout_sec = 90
+```
+
+Vibe und Codex starten den Server ohne Bildschirm. Deckwerk rendert dann headless, deshalb dauert der erste Aufruf etwas länger.
 
 Claude Code bekommt dieselben Werkzeuge wie der Chat in der App: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen, Fotos und Icons suchen, rendern und exportieren. Dazu kommen `get_deck`, `save_deck` und `open_deck`. Layout-Katalog und Design-Guide stehen in den Server-Anweisungen. Decks landen unter `~/Deckwerk/<titel>/deck.json`; die Umgebungsvariable `DECKWERK_HOME` wählt einen anderen Ordner.
 
@@ -158,7 +174,8 @@ Der Server nutzt den vorhandenen Build und baut nicht neu, weil Claude Code nur 
 
 ## Datenschutz und Sicherheit
 
-- **Was an die KI geht:** Deine Wünsche, der Inhalt des Decks, angehängtes Quellmaterial und gerenderte Folienbilder gehen an Anthropic, direkt über die API oder über Claude Code. Bei einer Web-Recherche ruft die KI Webseiten ab.
+- **Was an die KI geht:** Deine Wünsche, der Inhalt des Decks, angehängtes Quellmaterial und gerenderte Folienbilder gehen an den Anbieter deines KI-Zugangs: Anthropic (API oder Claude Code), OpenAI (Codex) oder Mistral (Vibe). Bei einer Web-Recherche ruft die KI Webseiten ab.
+- **Chat über Claude Code, Codex oder Vibe:** Das CLI bekommt nur die Deckwerk-Werkzeuge (dazu Web-Recherche), keine Shell und keine Dateiwerkzeuge. Ein präpariertes Quelldokument kann so keine Befehle auf deinem Rechner ausführen.
 - **Was lokal bleibt:** Freisteller, Rendering und Export laufen auf deinem Rechner.
 - **Fremde Decks:** Decks binden nur Bilder (PNG, JPEG, GIF, WebP, SVG, AVIF, BMP), Video, Audio und Schriften ein. Andere Dateien verweigert Deckwerk. So kann ein fremdes Deck keine privaten Dateien in einen Export ziehen.
 - **App-Fenster:** Alle Fenster laufen in der Chromium-Sandbox und können nicht auf fremde Seiten wechseln.
@@ -172,6 +189,7 @@ Der Server nutzt den vorhandenen Build und baut nicht neu, weil Claude Code nur 
 - Gedrehte Bilder lassen sich erst nach Drehung auf 0° zuschneiden.
 - Es gibt keine Echtzeit-Zusammenarbeit.
 - Windows läuft nur über WSL.
+- Codex ist mit einem angemeldeten Konto noch nicht getestet, weder als Chat noch als MCP-Client. Getestet sind Einrichtung und Modellliste.
 
 ## Entwicklung
 
@@ -190,7 +208,7 @@ Unter Wayland hängt Chromiums PDF-Druck, deshalb starten alle Skripte Electron 
 | `npm run check:layouts` | Stresstest: jedes Layout × Variante × Beispiel × Theme (dauert rund eine Stunde) |
 | `npm run smoke` | KI-Werkzeuge und MCP-Server gegen eine Mock-Engine (ohne Electron, ohne API-Key) |
 | `npm run mcp:e2e` | MCP-Server Ende-zu-Ende gegen die echte Engine |
-| `npm run smoke:claude` | App-Chat über Claude Code gegen eine Mock-Engine (braucht den Claude-Code-Login, drei kleine Anfragen) |
+| `npm run smoke:claude` | App-Chat über Claude Code gegen eine Mock-Engine, samt Sperre für Shell und Dateien (braucht den Login, vier kleine Anfragen). `DECKWERK_CLI=vibe` oder `codex` testet die anderen CLIs |
 | `npm run verify:pptx -- exports/<slug>.pptx` | PPTX-Treue-Check gegen LibreOffice (siehe unten) |
 | `npm run open [-- exports/<datei>]` | Export in LibreOffice Impress öffnen (ohne Argument: neueste PPTX) |
 
@@ -212,11 +230,15 @@ Kleinere Selbsttests stehen als Kommentar im Kopf der jeweiligen Datei unter `sc
 
 Der Main-Prozess lädt Engine und IPC erst nach dem ersten Fenster, damit der Start schnell bleibt. Neue IPC-Kanäle laufen deshalb über den `invoke()`-Wrapper in `src/preload/index.ts`. Das Preload läuft in der Sandbox und darf nur `electron` importieren.
 
-### Chat über Claude Code
+### Chat über Claude Code, Codex und Vibe
 
-Ohne API-Key läuft der Chat über `claude -p` mit dem Claude-Code-Login. `src/main/claude-agent.ts` öffnet dafür einen MCP-Server auf `127.0.0.1`: zufälliger Port, Bearer-Token in einer 0600-Datei, die beim Beenden gelöscht wird. So sieht die Live-Vorschau jede Änderung sofort.
+Ohne API-Key läuft der Chat über ein Agenten-CLI mit dessen Login: `claude -p`, `codex exec` oder `vibe -p`. Gewählt wird das CLI aus der Einrichtung, sonst das erste gefundene. `src/main/claude-agent.ts` öffnet dafür einen MCP-Server auf `127.0.0.1`: zufälliger Port, Bearer-Token nie auf der Kommandozeile (für Claude Code in einer 0600-Datei, die beim Beenden gelöscht wird, für Codex und Vibe in einer Umgebungsvariable des Kindprozesses). So sieht die Live-Vorschau jede Änderung sofort. Der Prompt geht über stdin.
 
-Claude Code läuft dabei ohne eingebaute Werkzeuge außer der Web-Recherche und ohne Hooks, Plugins und Skills aus deinen Einstellungen (`--setting-sources ""`). Es bekommt den Deckwerk-Systemprompt, und Folgenachrichten setzen die Sitzung per `--resume` fort.
+Jedes CLI bekommt nur die Deckwerk-Werkzeuge und die Web-Recherche:
+
+- **Claude Code:** `--tools WebSearch,WebFetch`, `--strict-mcp-config`, ohne Hooks, Plugins und Skills aus deinen Einstellungen (`--setting-sources ""`). Folgenachrichten per `--resume`, Modell per `--model`.
+- **Codex:** `--ignore-user-config` (weder deine MCP-Server noch Profile, der Login bleibt), `shell_tool`, `unified_exec` und `hooks` aus, `sandbox_mode="read-only"`, `approval_policy="never"`, Systemprompt als `developer_instructions`. Folgenachrichten per `exec resume`. Das Modell nimmt Codex aus seiner eigenen Einstellung. Nicht mit angemeldetem Codex getestet.
+- **Vibe:** `VIBE_MCP_SERVERS` ersetzt deine MCP-Server, `--enabled-tools deckwerk_*` (plus `web_search`, `web_fetch`) sperrt alle anderen Werkzeuge, auch Shell und Dateien, `--auto-approve` gilt nur für die freigegebenen. Der Systemprompt steht vor der ersten Nachricht, Folgenachrichten per `--resume`. Das Modell nimmt Vibe aus seiner eigenen Einstellung.
 
 ### PPTX-Treue-Check
 

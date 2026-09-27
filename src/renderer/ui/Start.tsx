@@ -62,7 +62,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         <span />
         <div className="top-r">
           <button className="plain tint" onClick={onOpen}>Deck öffnen …</button>
-          <button className="plain" aria-label="Einrichtung" title="Einrichtung: KI-Zugang und Claude Code" onClick={onKey}><Settings size={17} /></button>
+          <button className="plain" aria-label="Einrichtung" title="Einrichtung: KI-Zugang, Modelle und Agenten" onClick={onKey}><Settings size={17} /></button>
         </div>
       </header>
 

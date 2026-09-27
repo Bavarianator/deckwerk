@@ -374,6 +374,8 @@ select.model-select { color: var(--muted); }
 .setup-steps button.done { border-color: var(--accent); color: var(--muted); }
 .setup-steps button.on { border-color: var(--accent); color: var(--text); font-weight: 600; }
 .setup-page { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; animation: arrive 0.4s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.setup-page > * { flex-shrink: 0; } /* scrollen statt Knöpfe und Kästen zu stauchen */
+.setup-group { margin: 0; padding: 10px 16px 6px; border-bottom: 1px solid var(--border); font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); text-align: left; }
 .setup-page h1 { margin: 8px 0 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
 .setup-sub { max-width: 460px; margin: 0 0 10px; font-size: 14.5px; line-height: 1.5; color: var(--muted); }
 .setup-feats { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 460px; margin: 6px 0 0; padding: 0; list-style: none; text-align: left; }
