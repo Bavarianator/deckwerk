@@ -8,7 +8,7 @@ import { Logo } from './Logo'
 
 // Angehängtes Dokument (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateiname
 export type Source = { name: string; text: string; cut: boolean }
-export const sourceContext = (s: Source) => `Quellmaterial aus „${s.name}“${s.cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden:\n<quelle>\n${s.text}\n</quelle>`
+export const sourceContext = (s: Source) => `Quellmaterial aus „${s.name}“${s.cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden; genannte Bilder (asset://…) direkt als Bildquelle nutzen:\n<quelle>\n${s.text}\n</quelle>`
 export function useSource() {
   const [src, setSrc] = useState<Source | null>(null)
   const [err, setErr] = useState('')
@@ -48,7 +48,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   const { src, setSrc, err, attach } = useSource()
   const submit = () => {
     const ask = text.trim() || (!src ? '' : /\.pptx$/i.test(src.name)
-      ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, passende Layouts und ein stimmiges Design.'
+      ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
       : 'Mach aus diesem Dokument eine Präsentation.')
     if (onSubmit(src ? `${ask} · ${src.name}` : ask, src ? sourceContext(src) : undefined)) { setText(''); setSrc(null) }
   }

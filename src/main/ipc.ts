@@ -153,7 +153,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       if (r.canceled || !r.filePaths[0]) return null
       path = r.filePaths[0]
     }
-    const text = (await sourceText(path)).trim()
+    const text = (await sourceText(path, join(HOME, 'assets'))).trim()
     if (!text) throw new Error('In der Datei steht kein lesbarer Text (gescanntes PDF?).')
     return { name: path.split('/').pop()!, text: text.slice(0, SOURCE_MAX), cut: text.length > SOURCE_MAX }
   })

@@ -96,9 +96,14 @@ export class ClaudeAgent {
       let stderr = ''
       let result = false
       child.stderr.on('data', (d) => (stderr = (stderr + d).slice(-2000)))
+      let web: string | null = null
       for await (const line of createInterface({ input: child.stdout })) {
         const m = parse(line)
         if (m?.session_id) this.session = m.session_id
+        // WebSearch/WebFetch sind eingebaute Tools, nicht über den MCP-Server: Status-Chip aus dem Stream
+        const b = m?.type === 'stream_event' && m.event?.type === 'content_block_start' ? m.event.content_block : undefined
+        if (b?.type === 'tool_use' && WEB[b.name!]) emit({ type: 'tool', name: (web = WEB[b.name!]), status: 'start' })
+        if (m?.type === 'user' && web) { emit({ type: 'tool', name: web, status: 'done' }); web = null }
         if (m?.type === 'stream_event' && m.event?.type === 'content_block_delta' && m.event.delta?.type === 'text_delta') emit({ type: 'text', delta: m.event.delta.text })
         if (m?.type === 'result') {
           result = true
@@ -125,8 +130,9 @@ export class ClaudeAgent {
 
 type StreamMsg = {
   type?: string; subtype?: string; session_id?: string; is_error?: boolean; result?: string; errors?: string[]
-  event?: { type?: string; delta?: { type?: string; text: string } }
+  event?: { type?: string; delta?: { type?: string; text: string }; content_block?: { type?: string; name?: string } }
 }
+const WEB: Record<string, string> = { WebSearch: 'web_search', WebFetch: 'web_fetch' }
 function parse(line: string): StreamMsg | null {
   try { return JSON.parse(line) } catch { return null }
 }

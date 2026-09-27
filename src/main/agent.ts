@@ -162,6 +162,13 @@ export class DeckAgent {
         for await (const stream of runner) {
           let said = false
           stream.on('text', (delta) => { said = true; emit({ type: 'text', delta }) })
+          // Web-Recherche läuft serverseitig und nicht über withEvents: Status-Chip aus den Stream-Blöcken
+          stream.on('streamEvent', (ev) => {
+            if (ev.type !== 'content_block_start') return
+            const b = ev.content_block
+            if (b.type === 'server_tool_use' && (b.name === 'web_search' || b.name === 'web_fetch')) emit({ type: 'tool', name: b.name, status: 'start' })
+            else if (b.type === 'web_search_tool_result' || b.type === 'web_fetch_tool_result') emit({ type: 'tool', name: b.type.replace('_tool_result', ''), status: 'done' })
+          })
           // display "updates": Zwischennotizen vor Tool-Aufrufen kommen als thinking, nicht als text
           stream.on('thinking', (delta, snap) => delta && emit({ type: 'text', delta: said && snap === delta ? `\n\n${delta}` : delta }))
           last = await stream.finalMessage()

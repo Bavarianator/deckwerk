@@ -62,10 +62,12 @@ Stand: 27.09.2026. Ergänzt `CANVA-VERGLEICH.md` (dort: Design, Layouts, Effekte
 | L5 + L6 | fertig als **Hausstil**: `~/Deckwerk/hausstil.md` gilt für jedes Deck und steht im Systemprompt (App-Chat, Claude-Code-Chat, MCP). Die KI ergänzt ihn per Tool `remember` („merk dir …“ oder zweimal dieselbe Korrektur). Look-Panel → Hausstil „Bearbeiten …“ öffnet die Datei. Ein eigenes Brand-Voice-Feld war unnötig, pro Deck gibt es schon `brief.tone` | `tools.ts` remember/STYLE_FILE, `agent.ts` buildSystemPrompt, `LookSheet.tsx` |
 | L7 | fertig: App-Chat mit API-Key hat die Server-Tools `web_search` und `web_fetch` (Haiku nur Suche), der Chat über Claude Code hat `WebSearch`/`WebFetch` (vorher per `--tools ''` gesperrt). Mit `claude -p` getestet; den API-Weg nicht, weil kein Key hinterlegt ist | `agent.ts`, `claude-agent.ts` |
 | L1 (Editor) | fertig: Büroklammer und Drop auch in der KI-Leiste, gemeinsamer Hook `useSource` | `Start.tsx`, `AskBar.tsx` |
-| L9 | schlank fertig: PowerPoint anhängen ohne weiteren Text → „Übernimm diese PowerPoint als Deck“; die KI baut Folie für Folie in Deckwerk-Layouts nach. Kein pixelgenauer Import von Positionen, Bildern und Formen | `Start.tsx` |
+| L9 | schlank fertig: PowerPoint anhängen ohne weiteren Text → „Übernimm diese PowerPoint als Deck“; die KI baut Folie für Folie in Deckwerk-Layouts nach. Die Bilder jeder Folie (PNG, JPG, GIF, WebP, SVG) landen unter `~/Deckwerk/assets/import-<name>/` und stehen als `Bild: asset://…` im Text der Folie, die KI übernimmt sie direkt. Kein pixelgenauer Import von Positionen und Formen; EMF/WMF-Grafiken fehlen | `source-text.ts` slideImages, `Start.tsx` |
 | L8, L10–L12 | vorhanden bzw. weggelassen wie oben | – |
 
-Nicht geprüft: die Anhang-Pill nach echtem Drag & Drop (per CDP nicht auslösbar); IPC und Extraktion sind getestet. Die Web-Recherche erscheint im Chat nicht als eigener Status-Chip.
+Drag & Drop per CDP (`Input.dispatchDragEvent`) geprüft, auf dem Startbildschirm und in der KI-Leiste. Web-Recherche zeigt im Chat die Chips „Im Web suchen“ und „Webseite lesen“ (API: `server_tool_use`-Blöcke; Claude Code: `tool_use` WebSearch/WebFetch im Stream, am echten Stream geprüft). Der Chip im API-Weg ist ungetestet (kein Key).
+
+**Offen:** nur noch Dinge, die bewusst draußen bleiben (L10–L12) oder groß sind: pixelgenauer PPTX-Import mit Positionen und Formen. Nur auf ausdrücklichen Wunsch.
 
 ## Quellen
 
