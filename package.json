@@ -20,7 +20,10 @@
     "spike:fonts": "esbuild scripts/spike-embed-fonts.ts --bundle --packages=external --platform=node --format=esm --outfile=out/spike-embed-fonts.mjs --log-level=warning && node out/spike-embed-fonts.mjs",
     "open": "node scripts/open.mjs",
     "fonts:fetch": "esbuild scripts/fetch-fonts.ts --bundle --packages=external --platform=node --format=esm --outfile=out/fetch-fonts.mjs --log-level=warning && node out/fetch-fonts.mjs",
-    "dist:linux": "electron-vite build && electron-builder --linux --publish never"
+    "dist:linux": "electron-vite build && electron-builder --linux --publish never",
+    "check:theme-lint": "esbuild --bundle --platform=node --format=esm --log-level=warning scripts/check-theme-lint.ts --outfile=out/check-theme-lint.mjs && node out/check-theme-lint.mjs",
+    "fonts:curate": "esbuild --bundle --platform=node --format=esm --log-level=warning scripts/curate-fonts.ts --outfile=out/curate-fonts.mjs && node out/curate-fonts.mjs",
+    "fonts:repair": "esbuild --bundle --platform=node --format=esm --log-level=warning scripts/repair-font-names.ts --outfile=out/repair-font-names.mjs && node out/repair-font-names.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
