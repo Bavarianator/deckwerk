@@ -18,7 +18,7 @@ major=$(node -p 'process.versions.node.split(".")[0]')
 
 if [ -d "$DIR/.git" ]; then
   echo "→ Aktualisiere $DIR"
-  git -C "$DIR" pull --ff-only
+  git -C "$DIR" pull --ff-only || echo "  Hinweis: Update nicht geladen (offline oder lokale Änderungen), baue den vorhandenen Stand."
 else
   echo "→ Lade Deckwerk nach $DIR"
   git clone --depth 1 "$REPO" "$DIR"

@@ -2,6 +2,46 @@
 
 KI-Präsentationsstudio als Desktop-App (Electron). Plan: `~/.claude/plans/proud-moseying-quasar.md`.
 
+## Installation
+
+Voraussetzungen: Git und Node.js 22 oder neuer. Läuft unter Linux und macOS, unter Windows in WSL.
+
+**Per curl (ein Befehl):**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh
+```
+
+Der Installer lädt Deckwerk nach `~/deckwerk`, installiert die Abhängigkeiten, baut die App, legt unter Linux einen Startmenü-Eintrag an und trägt Deckwerk als MCP-Server in Claude Code ein (falls `claude` installiert ist). Anderer Zielordner: `curl … | DECKWERK_DIR=~/apps/deckwerk sh`.
+
+**Mit wget:** `wget -qO- https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh`
+
+**Aus einem Git-Checkout** (auch für private Repos, denn `raw.githubusercontent.com` liefert nur öffentliche):
+
+```sh
+git clone https://github.com/Bavarianator/deckwerk.git   # oder: gh repo clone Bavarianator/deckwerk
+cd deckwerk && ./scripts/install.sh
+```
+
+**Von Hand:**
+
+```sh
+npm ci
+npm run build          # danach starten mit ./scripts/deckwerk.sh
+npm run dev            # oder: Entwicklungsmodus mit Hot Reload
+```
+
+**Aktualisieren:** den Installer erneut ausführen (holt den neuen Stand per `git pull` und baut neu).
+
+**Entfernen:**
+
+```sh
+rm -rf ~/deckwerk ~/.local/share/applications/deckwerk.desktop
+claude mcp remove -s user deckwerk
+```
+
+Deine Decks unter `~/Deckwerk` bleiben dabei erhalten.
+
 ## Skripte
 
 | Befehl | Zweck |
