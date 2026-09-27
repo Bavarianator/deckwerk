@@ -1,8 +1,9 @@
 #!/bin/sh
 # Startet Deckwerk (Desktop-Eintrag; mit --mcp als MCP-Server für Claude Code, daher Build-Ausgabe nach stderr). Baut vorher neu, wenn sich Quellen seit dem letzten Build geändert haben.
 cd "$(dirname "$(readlink -f "$0")")/.." || exit 1
-# Wayland: das verborgene Druckfenster malt nie, printToPDF hängt → Electron immer über XWayland starten
-set -- --ozone-platform=x11 "$@"
+# Wayland: das verborgene Druckfenster malt nie, printToPDF hängt → Electron immer über XWayland starten.
+# MCP-Clients wie Vibe oder Codex geben dem Server eine Umgebung ohne DISPLAY: dann ohne Bildschirm rendern (etwas langsamer)
+if [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]; then set -- --ozone-platform=x11 "$@"; else set -- --ozone-platform=headless --disable-gpu "$@"; fi
 # --mcp: Claude Code wartet höchstens 30 s auf den Server, ein Build dauert länger → vorhandenen Build nehmen
 case " $* " in *" --mcp "*) [ -f out/main/index.js ] && exec ./node_modules/.bin/electron . "$@" ;; esac
 # Zweiter Klick während eines Builds: nicht parallel bauen (leert out/ unter dem ersten weg), das erste Fenster kommt gleich

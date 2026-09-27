@@ -56,5 +56,16 @@ if command -v claude >/dev/null 2>&1; then
   claude mcp remove -s user deckwerk >/dev/null 2>&1 || true
   claude mcp add -s user deckwerk -- "$DIR/scripts/deckwerk.sh" --mcp >/dev/null && echo "→ In Claude Code eingerichtet (neue Sitzung starten)"
 fi
+# Vibe und Codex ebenso. Beide starten den Server ohne Bildschirm (deckwerk.sh rendert dann headless, dauert länger)
+# und warten von sich aus nur kurz; Codex kann die Wartezeit nicht per `mcp add` setzen, daher in der config.toml
+if command -v vibe >/dev/null 2>&1; then
+  vibe mcp remove deckwerk >/dev/null 2>&1 || true
+  vibe mcp add --transport stdio --command "$DIR/scripts/deckwerk.sh" --arg=--mcp --startup-timeout-sec 90 --tool-timeout-sec 300 deckwerk >/dev/null && echo "→ In Vibe eingerichtet"
+fi
+if command -v codex >/dev/null 2>&1; then
+  codex mcp remove deckwerk >/dev/null 2>&1 || true
+  codex mcp add deckwerk -- "$DIR/scripts/deckwerk.sh" --mcp >/dev/null 2>&1 &&
+    sed -i '/^\[mcp_servers\.deckwerk\]$/a startup_timeout_sec = 90\ntool_timeout_sec = 300' "${CODEX_HOME:-$HOME/.codex}/config.toml" && echo "→ In Codex eingerichtet"
+fi
 
 echo "Fertig. Starten: Startmenü „Deckwerk“ oder $DIR/scripts/deckwerk.sh"
