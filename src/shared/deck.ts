@@ -18,7 +18,13 @@ export type DecorId = (typeof DECORS)[number]
 export const FRAMES = ['top', 'split', 'band', 'center'] as const
 export type FrameId = (typeof FRAMES)[number]
 
-export interface ThemeRef { id: string; brand?: BrandKit; custom?: ThemeSpec; shuffle?: number; fonts?: [string, string]; customFont?: CustomFont }
+export interface ThemeRef {
+  id: string; brand?: BrandKit; custom?: ThemeSpec; shuffle?: number; fonts?: [string, string]; customFont?: CustomFont
+  // Schriften aus dem Katalog (src/shared/font-catalog.ts), in ~/Deckwerk/fonts geladen: Familie → Schnitte als asset://-URL.
+  // Zwischengewichte sind eigene Familien („Inter SemiBold“, nur regular). Fehlt ein Eintrag, greift der gebündelte Ersatz.
+  fontFiles?: Record<string, FontFiles>
+}
+export interface FontFiles { regular: string; bold?: string; italic?: string; boldItalic?: string }
 // Eigene Schrift (TTF, vom Nutzer gewählt): im Renderer per FontFace, in der PPTX eingebettet. Pfade als asset://-URL.
 export interface CustomFont { family: string; regular: string; bold?: string }
 
@@ -39,7 +45,7 @@ export interface ThemeSpec {
   text?: string
   accent: string
   accent2?: string
-  headFont: string // FontName aus src/shared/themes.ts
+  headFont: string // Name aus FONT_LIST (gebündelt) oder dem Schriftkatalog
   bodyFont: string
   radius: number
   decor: DecorId
@@ -52,6 +58,44 @@ export interface ThemeSpec {
   vivid?: boolean // kräftiger Farbgrund (Stil mutig); sonst dämpft themeFromSpec den Grund auf Papier- bzw. Dunkeltöne
   labelFont?: 'body' | 'mono' // mono = Eyebrow und Fußzeile in IBM Plex Mono
   elements?: 'line' | 'plain' | 'solid' // Bauteile: line = offen mit Kopflinien, keine Flächen (Standard); plain = nur Typografie und Weißraum, keine Linien und Flächen; solid = Farbflächen (Stil mutig)
+  // Themes-Fundament (theme-lint.ts, theme-refs.ts): noch nicht in themeFromSpec, tools.ts und Guide verdrahtet
+  field?: string // Farbe großer Flächen (Kapitel, split/band, hervorgehobene Karten); Standard = accent
+  headWeight?: HeadWeight
+  headTracking?: number // em, −0.05 … +0.02
+  leading?: Leading
+  labels?: Labels
+  margin?: Margin
+  measure?: Measure
+  signature?: Signature
+  heroTone?: HeroTone
+  chart?: ChartStrategy
+  images?: ImageStyle
+}
+export const HEAD_WEIGHTS = [300, 400, 500, 600, 700, 800, 900] as const
+export type HeadWeight = (typeof HEAD_WEIGHTS)[number]
+export type TitleSize = NonNullable<ThemeSpec['titleSize']>
+export const LEADINGS = ['tight', 'normal', 'open'] as const
+export type Leading = (typeof LEADINGS)[number]
+export const LABELS = ['sentence', 'caps'] as const
+export type Labels = (typeof LABELS)[number]
+export const MARGINS = ['standard', 'generous', 'asymmetric'] as const
+export type Margin = (typeof MARGINS)[number]
+export const MEASURES = ['narrow', 'standard', 'wide'] as const
+export type Measure = (typeof MEASURES)[number]
+export const HERO_TONES = ['normal', 'field', 'invert'] as const
+export type HeroTone = (typeof HERO_TONES)[number]
+export const CHART_STRATEGIES = ['focus', 'duo', 'tonal'] as const
+export type ChartStrategy = (typeof CHART_STRATEGIES)[number]
+export const IMAGE_STYLES = ['natural', 'mono', 'duotone'] as const
+export type ImageStyle = (typeof IMAGE_STYLES)[number]
+// Genau ein wiederkehrendes Element statt Motiven: Haarlinie über dem Titel, Kante am Folienrand oder Rahmen mit Abstand
+export const SIGNATURES = ['none', 'rule', 'edge', 'passepartout'] as const
+export interface Signature {
+  kind: (typeof SIGNATURES)[number]
+  color?: 'accent' | 'field' | 'text'
+  size?: number // px: Linienstärke bzw. Kantenbreite
+  length?: 'short' | 'full' // rule: 64 px oder volle Satzbreite
+  side?: 'left' | 'top' // edge
 }
 
 export interface Slide {
