@@ -16,6 +16,7 @@ function createWindow() {
     width: 1600, height: 960, minWidth: 1200, minHeight: 760, backgroundColor: '#ffffff', title: 'Deckwerk',
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false },
   })
+  win.removeMenu() // keine native Menüleiste (File/Edit/View) unter Linux/Windows; macOS behält sein App-Menü
   // DW_SHOT=<file.png>: screenshot the real app once it has settled, then quit (visual verification)
   const shot = process.env.DW_SHOT
   if (shot)

@@ -17,6 +17,8 @@ const HOME = join(homedir(), 'Deckwerk')
 
 export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const keyFile = join(app.getPath('userData'), 'api-key.bin')
+  // Einrichtung erledigt: Datei statt localStorage, das bei hartem Beenden oder mehreren Instanzen verloren geht
+  const setupFile = join(app.getPath('userData'), 'setup-done')
   let deck: Deck | null = null
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
   let agent: DeckAgent | ClaudeAgent | null = null
@@ -34,7 +36,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     }
     return process.env.ANTHROPIC_API_KEY
   }
-  const state = () => ({ deck, path, hasKey: existsSync(keyFile) || !!process.env.ANTHROPIC_API_KEY || !!claude })
+  const state = () => ({ deck, path, hasKey: existsSync(keyFile) || !!process.env.ANTHROPIC_API_KEY || !!claude, setupDone: existsSync(setupFile) })
   const reset = (d: Deck | null, p: string | null) => {
     agent?.abort()
     agent = null // neues Deck = neues Gespräch
@@ -237,6 +239,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // (z. B. wenn die App aus einer Kopie ohne scripts/ läuft). x11: printToPDF hängt unter Wayland.
   const script = join(app.getAppPath(), 'scripts', 'deckwerk.sh')
   const mcpCmd = existsSync(script) ? { command: script, args: ['--mcp'] } : { command: process.execPath, args: [app.getAppPath(), '--ozone-platform=x11', '--mcp'] }
+  ipcMain.handle('setup:done', () => writeFile(setupFile, ''))
   ipcMain.handle('setup:status', () => {
     let mcp = false
     try { mcp = JSON.parse(readFileSync(join(homedir(), '.claude.json'), 'utf8')).mcpServers?.deckwerk?.command === mcpCmd.command } catch { /* keine Datei = nicht eingerichtet */ }

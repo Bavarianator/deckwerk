@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { CustomFont, Deck } from '../shared/deck'
 import type { AgentEvent } from '../main/agent'
 
-export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean }
+export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
 export type PresentCmd = { type: 'next' } | { type: 'go'; i: number }
 
@@ -76,6 +76,8 @@ const api = {
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code */
   setupStatus: (): Promise<{ claude: boolean; key: boolean; mcp: boolean }> => invoke('setup:status'),
   setupMcp: (): Promise<void> => invoke('setup:mcp'),
+  /** Einrichtung abgeschlossen oder übersprungen: erscheint nicht mehr von selbst */
+  setupDone: (): Promise<void> => invoke('setup:done'),
   /** startet den MCP-Server wie Claude Code und liefert die Anzahl seiner Werkzeuge */
   setupMcpTest: (): Promise<number> => invoke('setup:mcpTest'),
   /** absoluter Pfad einer per Drag & Drop abgelegten Datei */

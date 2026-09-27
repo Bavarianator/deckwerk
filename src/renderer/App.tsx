@@ -45,7 +45,7 @@ export default function App() {
   const [nav, setNav] = useState(true) // Folienübersicht links
   const [panel, setPanel] = useState<Panel>(null) // rechts: Einfügen oder Anpassen
   const [look, setLook] = useState(false)
-  const [setup, setSetup] = useState(() => { try { return !localStorage.getItem('dw.setup') } catch { return false } }) // Einrichtung beim ersten Start
+  const [setup, setSetup] = useState(false) // Einrichtung: beim ersten Start von selbst (state().setupDone), sonst über das Zahnrad
   const [formats, setFormats] = useState(false)
   const [view, setView] = useState<View>('slide') // einzelne Folie oder Übersicht aller Folien
   const [target, setTarget] = useState<Target | null>(null) // gewähltes Element als Bezug für die KI-Leiste
@@ -68,7 +68,8 @@ export default function App() {
       setDoc(fresh(s.deck))
       setPath(s.path)
       setHasKey(s.hasKey)
-      if (!setup) setAskKey(!s.hasKey && !s.deck) // mit geöffnetem Deck erst beim ersten Senden fragen; beim ersten Start übernimmt die Einrichtung
+      if (s.setupDone) setAskKey(!s.hasKey && !s.deck) // mit geöffnetem Deck erst beim ersten Senden fragen; beim ersten Start übernimmt die Einrichtung
+      else setSetup(true)
     })
     return api.onEvent((e) => {
       if (e.type === 'text')
@@ -351,7 +352,7 @@ export default function App() {
       {home && status?.error && <div className="toast material" role="alert">{status.text}</div>}
       {formats && deck && <FormatSheet deck={deck} index={index} onApply={(id) => commit((d) => resizeDeck(d, id))} onCopies={saveCopies} onClose={() => setFormats(false)} />}
       {look && deck && <LookSheet deck={deck} busy={busy} patchDeck={patchDeck} pickImage={api.pickImage} onAsk={(t) => send(t)} onClose={() => setLook(false)} />}
-      {setup && <SetupSheet model={model} onModel={pickModel} onKeySaved={() => setHasKey(true)} onClose={() => { setSetup(false); try { localStorage.setItem('dw.setup', '1') } catch { /* dann erscheint sie beim nächsten Start wieder */ } }} />}
+      {setup && <SetupSheet model={model} onModel={pickModel} onKeySaved={() => setHasKey(true)} onClose={() => { setSetup(false); void api.setupDone() }} />}
       {askKey && (
         <KeyDialog
           onClose={() => setAskKey(false)}
