@@ -110,7 +110,7 @@ export function EditorScreen(p: Props) {
             onAsk={() => document.querySelector<HTMLInputElement>('.cap input')?.focus()}
           />
         )}
-        <Stage deck={p.deck} index={p.index} busy={p.busy} sel={p.picked} onSel={p.onPick} onItems={p.onItems} onEdit={p.onEdit} onTarget={p.onTarget} />
+        <Stage deck={p.deck} index={p.index} busy={p.busy} sel={p.picked} onSel={p.onPick} onItems={p.onItems} patchSlide={p.patchSlide} onEdit={p.onEdit} onTarget={p.onTarget} />
         {slide && (
           <div className="work-notes">
             <div className="work-notes-head">

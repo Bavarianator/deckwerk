@@ -3,8 +3,9 @@
 // Rechtsklick öffnet das Kontextmenü, Dateien per Drag & Drop. Layout-Elemente anklicken → KI-Leiste.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as RPE } from 'react'
 import { LoaderCircle, TriangleAlert } from 'lucide-react'
-import { sizeOf, type Box, type Deck, type Item, type Measured } from '../../shared/deck'
-import { newImage, newMedia } from '../../shared/items'
+import { sizeOf, type Box, type Deck, type Item, type Measured, type Slide } from '../../shared/deck'
+import { elsToItems, newImage, newMedia } from '../../shared/items'
+import { extract, eyebrowRules } from '../measure'
 import { videoPoster } from './media'
 import { SlideView } from '../slide'
 import type { Target } from './AskBar'
@@ -17,6 +18,7 @@ interface Props {
   sel: string[]
   onSel: (ids: string[]) => void
   onItems: (fn: (items: Item[]) => Item[], tag?: string) => void
+  patchSlide: (i: number, p: Partial<Slide>, tag?: string) => void
   onEdit: (slot: string, text: string) => void
   onTarget: (t: Target | null) => void // gewähltes Element als Bezug für die KI-Leiste
 }
@@ -45,8 +47,9 @@ type Drag =
   | { kind: 'gresize'; start: Map<string, Geo>; bb: Box; hx: number; hy: number; x0: number; y0: number } // Mehrfachauswahl/Gruppe skalieren
   | { kind: 'crop-pan'; x0: number; y0: number; full: Box }
   | { kind: 'crop-size'; hx: number; hy: number; x0: number; y0: number; box: Box }
+  | { kind: 'detach'; slot: string; x0: number; y0: number; cx: number; cy: number } // Layout-Text gegriffen: Klick oder Ziehen?
 
-export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItems, onEdit, onTarget }: Props) {
+export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItems, patchSlide, onEdit, onTarget }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -180,7 +183,14 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
       if (it?.locked || !ids.includes(id)) return
       const start = new Map(ids.flatMap((x) => { const i = byId(x); return i && !i.locked ? [[x, geoOf(i)] as const] : [] }))
       drag.current = { kind: 'move', ids: [...start.keys()], start, x0: p.x, y0: p.y, moved: false, click: !e.shiftKey && sel.length > 1 ? id : undefined }
-    } else if (target.closest('[contenteditable]')) return // Layout-Text: Cursor setzen und markieren wie gewohnt
+    } else if (target.closest('[contenteditable]')) {
+      const t = target.closest<HTMLElement>('[data-slot]')!
+      if (t.contains(document.activeElement)) return // wird schon bearbeitet: Cursor setzen und markieren wie gewohnt
+      // Wie in Canva: Layout-Text lässt sich greifen und ziehen. Erst eine Bewegung löst die Folie in freie Elemente,
+      // ein einfacher Klick bearbeitet den Text wie bisher (onUp setzt den Cursor)
+      e.preventDefault()
+      drag.current = { kind: 'detach', slot: t.dataset.slot!, x0: p.x, y0: p.y, cx: e.clientX, cy: e.clientY }
+    }
     else drag.current = { kind: 'marquee', x0: p.x, y0: p.y, x1: p.x, y1: p.y, target, add: e.shiftKey }
     canvas.current!.setPointerCapture(e.pointerId)
   }
@@ -225,6 +235,20 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     if (d.kind === 'marquee') {
       d.x1 = p.x, d.y1 = p.y
       if (Math.hypot(d.x1 - d.x0, d.y1 - d.y0) * k > 4) setMarquee({ x: Math.min(d.x0, d.x1), y: Math.min(d.y0, d.y1), w: Math.abs(d.x1 - d.x0), h: Math.abs(d.y1 - d.y0) })
+      return
+    }
+    if (d.kind === 'detach') { // wie „In freie Elemente umwandeln“, danach zieht das gegriffene Element weiter
+      if (Math.hypot(p.x - d.x0, p.y - d.y0) * k < 4) return
+      const root = canvas.current?.querySelector<HTMLElement>('.slide')
+      if (!root) return
+      ;(document.activeElement as HTMLElement | null)?.blur() // gerade bearbeiteten Text vorher übernehmen
+      let pick: Item | undefined
+      const free = [...eyebrowRules(root), ...extract(root)].flatMap((el) => { const r = elsToItems([el]); if (el.slot === d.slot) pick ??= r[0]; return r })
+      patchSlide(index, { layout: 'blank', variant: undefined, frame: undefined, content: {}, items: [...free, ...items] })
+      if (!pick) return void (drag.current = null)
+      onSel([pick.id])
+      setSlot(null)
+      drag.current = { kind: 'move', ids: [pick.id], start: new Map([[pick.id, geoOf(pick)]]), x0: d.x0, y0: d.y0, moved: false }
       return
     }
     if (d.kind === 'crop-pan') { // Bild unter dem Ausschnitt verschieben, Ausschnitt bleibt innerhalb
@@ -304,6 +328,12 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     drag.current = null
     setGuides({ x: [], y: [] })
     if (!d || d.kind === 'crop-pan' || d.kind === 'crop-size') return
+    if (d.kind === 'detach') { // nicht gezogen: Text bearbeiten, Cursor an die Klickstelle
+      canvas.current?.querySelector<HTMLElement>(`.stage-slide [data-slot="${CSS.escape(d.slot)}"]`)?.focus()
+      const r = document.caretRangeFromPoint(d.cx, d.cy)
+      if (r) { getSelection()?.removeAllRanges(); getSelection()?.addRange(r) }
+      return
+    }
     if (d.kind === 'marquee') {
       setMarquee(null)
       const r = { x: Math.min(d.x0, d.x1), y: Math.min(d.y0, d.y1), w: Math.abs(d.x1 - d.x0), h: Math.abs(d.y1 - d.y0) }
