@@ -38,6 +38,8 @@ jobs:
         run: E2E_HEADLESS=1 node out/mcp-e2e.mjs
       - name: AppImage bauen
         run: npx electron-builder --linux --publish never
+      - name: Paketgröße (fängt versehentlich mitgepackte Bibliotheken, z. B. CUDA von onnxruntime)
+        run: test "$(stat -c%s dist/Deckwerk-x86_64.AppImage)" -lt 250000000
       - name: Installer mit dem AppImage, danach MCP aus der installierten App
         run: |
           cat scripts/install.sh | HOME="$RUNNER_TEMP/home" DECKWERK_APPIMAGE="$PWD/dist/Deckwerk-x86_64.AppImage" sh

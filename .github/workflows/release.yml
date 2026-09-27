@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run dist:linux
+      - name: Paketgröße (fängt versehentlich mitgepackte Bibliotheken, z. B. CUDA von onnxruntime)
+        run: test "$(stat -c%s dist/Deckwerk-x86_64.AppImage)" -lt 250000000
       - name: Paket prüfen (MCP ohne Bildschirm)
         run: |
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
