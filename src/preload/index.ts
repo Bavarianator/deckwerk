@@ -56,7 +56,7 @@ const api = {
   /** Fotos suchen: eigene Bilder unter ~/Deckwerk/assets, sonst Unsplash (wenn UNSPLASH_ACCESS_KEY gesetzt) */
   findImages: (query: string): Promise<{ urls: string[]; note?: string }> => invoke('image:find', query),
   /** Hintergrund entfernen (nativ im Main-Prozess) → asset://-URL eines PNG mit Transparenz */
-  removeBg: (src: string): Promise<string> => ipcRenderer.invoke('image:removeBg', src),
+  removeBg: (src: string): Promise<string> => invoke('image:removeBg', src),
   /** Fortschritt des einmaligen Modell-Downloads in % */
   onBgProgress(cb: (pct: number) => void): () => void {
     const h = (_: unknown, pct: number) => cb(pct)
