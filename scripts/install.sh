@@ -1,9 +1,17 @@
 #!/bin/sh
-# Deckwerk installieren oder aktualisieren (Linux, macOS; Windows über WSL):
+# Deckwerk installieren oder aktualisieren (Linux; Windows über WSL; auf dem Mac geht es zu deckwerk-macos weiter):
 #   curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh
 # Aus einem vorhandenen Checkout heraus (./scripts/install.sh) wird dieser Ordner benutzt.
 # DECKWERK_DIR (Zielordner, Standard ~/deckwerk) und DECKWERK_REPO (Git-URL) überschreiben die Voreinstellungen.
 set -eu
+
+# macOS hat eine eigene Fassung (fertige, signierte App): an deren Installer übergeben
+if [ "$(uname)" = Darwin ]; then
+  MAC=https://raw.githubusercontent.com/Bavarianator/deckwerk-macos/main/install.sh
+  echo "→ macOS: Deckwerk für den Mac kommt aus github.com/Bavarianator/deckwerk-macos"
+  script=$(curl -fsSL "$MAC") || { echo "Mac-Installer nicht erreichbar: $MAC" >&2; exit 1; }
+  exec sh -c "$script"
+fi
 
 REPO="${DECKWERK_REPO:-https://github.com/Bavarianator/deckwerk.git}"
 DIR="${DECKWERK_DIR:-$HOME/deckwerk}"
