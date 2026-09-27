@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import type { z } from 'zod'
 import { LAYOUTS } from '../shared/layouts'
-import { Backdrop, Box, ChartBox, Frame, Icon, Img, T, onPhoto, photoOf, rgba, useSlide } from './slide'
+import { Backdrop, Box, ChartBox, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, rgba, useSlide } from './slide'
 import { annotation } from '../shared/charts'
 import { EXTRA_COMPONENTS } from './layouts-extra'
 
@@ -334,7 +334,10 @@ function Closing({ c }: Props<'closing'>) {
               {c.contact.map((x, i) => <T key={i} role="label" slot={`contact.${i}`}>{x}</T>)}
             </div>
           ) : <div />}
-          {theme.logo && <Img src={theme.logo} slot="_logo" className="cover-logo" contain />}
+          <div className="closing-right">
+            {theme.logo && <Img src={theme.logo} slot="_logo" className="cover-logo" contain />}
+            {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="closing-qr" />}
+          </div>
         </div>
       </div>
     </Frame>

@@ -27,7 +27,7 @@ const SLOT_NAMES: Record<string, string> = {
   title: 'Titel', subtitle: 'Untertitel', eyebrow: 'Dachzeile', text: 'Text', items: 'Liste', value: 'Wert', label: 'Beschriftung',
   chart: 'Diagramm', image: 'Bild', quote: 'Zitat', author: 'Autor', delta: 'Veränderung', note: 'Hinweis', takeaway: 'Kernaussage',
 }
-const KIND_NAMES: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio' }
+const KIND_NAMES: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio', qr: 'QR-Code', graphic: 'Grafik' }
 // „kpis.1.value“ → „kpis 2 · Wert“
 const slotName = (slot: string) => slot.split('.').map((p) => (/^\d+$/.test(p) ? String(+p + 1) : SLOT_NAMES[p] ?? p)).join(' ').replace(/ (?=\D)/g, ' · ')
 const tf = (rot: number, flip?: boolean) => [rot && `rotate(${rot}deg)`, flip && 'scaleX(-1)'].filter(Boolean).join(' ')

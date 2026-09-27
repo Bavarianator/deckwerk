@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { icons } from 'lucide-react'
 import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, type Deck, type FormatId, type FrameId, type Item, type Slide } from '../shared/deck'
-import { itemSchema, newId, resizeDeck } from '../shared/items'
+import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import { FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
 import type { Issue } from '../shared/lint'
@@ -328,7 +328,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       inputSchema: z.object({
         id: z.string(),
         accent: z.object({
-          kind: z.enum(['shape', 'icon']),
+          kind: z.enum(['shape', 'icon', 'graphic']),
+          graphic: z.enum(Object.keys(GRAPHICS) as [string, ...string[]]).optional().describe('handgezeichnet: sparkle = Funkeln, squiggle = Kringel, burst = Strahlen, blob = Klecks, arrow, scribble, swoosh, waves'),
           shape: z.enum(['star12', 'star8', 'star4', 'donut', 'plus', 'heart', 'ellipse']).optional().describe('star12 = Siegel/Sticker, star4 = Funkeln, donut = Ring'),
           icon: z.string().max(40).optional().describe('lucide-Name, z. B. "sparkles"'),
           zone: z.enum(['top-right', 'bottom-right', 'bottom-left', 'top-left']),
@@ -347,6 +348,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           const a = i.accent
           if (a.kind === 'shape' && !a.shape) throw new Error('accent.shape fehlt')
           if (a.kind === 'icon' && !a.icon) throw new Error('accent.icon fehlt')
+          if (a.kind === 'graphic' && !a.graphic) throw new Error('accent.graphic fehlt')
           const [m] = await ctx.engine.measure(deck, [idx])
           const { w: W, h: H } = sizeOf(deck)
           const px = { s: 72, m: 112, l: 160 }[a.size], gap = 16, edge = 28
@@ -361,9 +363,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           const at = cands.find(([x, y]) => free(x, y))
           if (!at) throw new Error(`In der Ecke ${a.zone} ist kein Platz für Größe ${a.size}. Kleinere Größe oder andere Ecke wählen.`)
           const color = a.color ?? resolveTheme(deck.theme).c.accent2
-          s.items.push(a.kind === 'shape'
-            ? { id: 'accent', kind: 'shape', shape: a.shape, x: at[0], y: at[1], w: px, h: px, fill: color, rot: a.rot }
-            : { id: 'accent', kind: 'icon', icon: a.icon, x: at[0], y: at[1], w: px, h: px, color, rot: a.rot })
+          const box = { id: 'accent', x: at[0], y: at[1], w: px, h: px, rot: a.rot }
+          s.items.push(a.kind === 'shape' ? { ...box, kind: 'shape', shape: a.shape, fill: color } : a.kind === 'graphic' ? { ...box, kind: 'graphic', graphic: a.graphic, color } : { ...box, kind: 'icon', icon: a.icon, color })
           where = `gesetzt bei x=${at[0]}, y=${at[1]} (${px} px)`
         }
         ctx.setDeck(deck)

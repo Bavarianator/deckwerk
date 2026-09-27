@@ -5,7 +5,7 @@ import { ImagePlus, X } from 'lucide-react'
 import { BUILDS, DECORS, TONES, type BuildPreset, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
 import { ItemInspector } from './ItemInspector'
 import { Select } from './kit'
-import { LAYOUTS, type LayoutId } from '../../shared/layouts'
+import { LAYOUTS, nextLook, type LayoutId } from '../../shared/layouts'
 import { THEMES, themeFromSpec } from '../../shared/themes'
 
 const FRAME: Record<FrameId, string> = { top: 'Titel oben', split: 'Titel links auf Farbfläche', band: 'Titel im Farbband', center: 'Zentriert' }
@@ -37,6 +37,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
         {slide && (
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
+            {(def?.variants || def?.frames) && <button type="button" className="btn wide" title="Nächste Kombination aus Variante, Komposition und Ton" onClick={() => patchSlide(index, nextLook(slide))}>Andere Gestaltung</button>}
             {def?.variants && (
               <Field label="Variante">
                 <Select value={slide.variant ?? def.variants[0]} onChange={(e) => patchSlide(index, { variant: e.target.value })}>

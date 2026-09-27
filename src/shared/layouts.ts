@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { BuildPreset, Deck, FrameId, Tone } from './deck'
+import type { BuildPreset, Deck, FrameId, Slide, Tone } from './deck'
 import { EXTRA_LAYOUTS, FOCI, LOOKS, photo } from './layouts-extra' // Foto-Schema liegt dort, weil beide Kataloge es brauchen
 export { FOCI, LOOKS, photo }
 
@@ -376,6 +376,19 @@ export const LAYOUTS = {
 } satisfies Record<string, LayoutDef<any>>
 
 export type LayoutId = keyof typeof LAYOUTS
+
+// Canva „Andere Gestaltung“: nächste Kombination aus Variante × Komposition × Ton, Inhalt bleibt gleich.
+// Layouts mit eigenem Standard-Ton (section) wechseln nur Variante und Komposition.
+export function nextLook(s: Slide): Pick<Slide, 'variant' | 'frame' | 'tone'> {
+  const def = LAYOUTS[s.layout as LayoutId] as LayoutDef | undefined
+  if (!def) return {}
+  const looks: Pick<Slide, 'variant' | 'frame' | 'tone'>[] = []
+  for (const variant of def.variants ?? [undefined])
+    for (const frame of [undefined, ...(def.frames ?? [])])
+      for (const tone of def.tone ? [undefined] : [undefined, 'invert' as const]) looks.push({ variant, frame, tone })
+  const key = (l: Pick<Slide, 'variant' | 'frame' | 'tone'>) => `${l.variant ?? def.variants?.[0]}|${l.frame ?? 'top'}|${l.tone ?? ''}`
+  return looks[(looks.findIndex((l) => key(l) === key(s)) + 1) % looks.length]
+}
 
 // Build einer Folie: eigener build > Bewegungsstil des Decks > Standard des Layouts.
 // calm = alles nur einblenden, lively = Karten nacheinander, Zahlen zoomen, auch Titelfolien blenden ein.

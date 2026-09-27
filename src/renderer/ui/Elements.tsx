@@ -1,9 +1,9 @@
 // Seitenpanel „Elemente“ wie in Canva: Text, Formen, Icons, Fotos (Upload und Suche), Diagramme, Folienvorlagen.
 // Klick fügt in die Mitte der Folie ein, Ziehen legt das Element an der Mausposition ab.
 import { useMemo, useState, type ReactNode } from 'react'
-import { Film, icons, ImagePlus, Music, Search } from 'lucide-react'
+import { Film, icons, ImagePlus, Music, QrCode as QrCodeIcon, Search } from 'lucide-react'
 import { SHAPES, type ChartSpec, type Deck, type Item } from '../../shared/deck'
-import { TEXT_PRESETS, newChart, newIcon, newImage, newMedia, newShape, newText } from '../../shared/items'
+import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newMedia, newQr, newShape, newText } from '../../shared/items'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { SHAPE_PATHS } from '../slide'
@@ -114,6 +114,18 @@ export function Elements({ deck, disabled, onAdd, onAddSlide, pickImage }: Props
           <button type="button" className="btn" disabled={disabled} onClick={() => addMedia('audio')}><Music size={14} /> Audio</button>
         </div>
         <p className="muted small">MP4/WebM, MP3/WAV/M4A. Auch per Drag &amp; Drop auf die Folie.</p>
+      </section>
+
+      <section>
+        <h3>Grafiken</h3>
+        <div className="el-grid">
+          {Object.entries(GRAPHICS).map(([id, g]) => (
+            <Tile key={id} {...tile} make={() => newGraphic(id, t.c.accent)} title={g.name}>
+              <svg viewBox="-6 -6 112 112" width="36" height="36"><path d={g.d} fill={g.fill ? 'currentColor' : 'none'} stroke={g.fill ? 'none' : 'currentColor'} strokeWidth="8" strokeLinecap="round" /></svg>
+            </Tile>
+          ))}
+          <Tile {...tile} make={newQr} title="QR-Code (Inhalt im Inspector eintragen)"><QrCodeIcon size={22} /></Tile>
+        </div>
       </section>
 
       <section>

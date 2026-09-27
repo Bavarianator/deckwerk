@@ -85,7 +85,14 @@ Neben den Layouts trägt jede Folie freie Elemente (`slide.items`: Text, Form, B
 - Export: Freie Elemente nutzen dieselben `data-pptx`-Primitive wie die Layouts und landen als native, editierbare PowerPoint-Objekte in der PPTX (Formen als Preset-Shapes, Drehung, Spiegeln, Verlauf per XML-Patch, Auftritte als Animationen). PDF und PNG sind pixelgenau. Die KI kann `items`/`bg` über `add_slides`/`update_slide` setzen.
 - Test: `npm run render examples/canva.json` (alle Elementarten).
 
-Grenzen: nur 16:9 (kein Magic Resize), keine Video-/Audio-Elemente, keine Gruppen (Mehrfachauswahl statt dessen), kein Zuschneiden von Bildern (Fokus/Cover), Text-Deckkraft wird nicht nach PowerPoint übertragen, keine Echtzeit-Zusammenarbeit.
+- Formate (Magic Resize): `deck.size` (Standard 1280×720), Liste in `FORMATS` (src/shared/deck.ts), Umrechnung mit `resizeDeck()` (src/shared/items.ts). Freie Elemente wandern mit, Layouts ordnen sich neu an. PDF, PNG, PPTX und Canvas richten sich nach der Größe.
+- Video und Audio: Elemente `video`/`audio` (Knöpfe im Elemente-Panel oder Datei auf die Folie ziehen). Beim Präsentieren spielen sie ab (automatisch, endlos, stumm wählbar). In der PPTX sind sie eingebettet, im PDF erscheint das Vorschaubild.
+- Gruppen: Strg+G / Strg+Umschalt+G oder Kontextmenü. Ein Klick wählt die ganze Gruppe, ein Doppelklick ein Mitglied. Gruppen und Mehrfachauswahl skalieren gemeinsam über einen Rahmen.
+- Zuschneiden: Doppelklick auf ein Bild (oder „Zuschneiden“ im Inspector). Griffe ändern den Ausschnitt, Ziehen verschiebt das Bild, Enter übernimmt, Esc verwirft. Als `item.crop` gespeichert und in der PPTX nativ zugeschnitten.
+- Freisteller: „Hintergrund entfernen“ rechnet BiRefNet-lite (MIT) mit onnxruntime-node im Main-Prozess (`src/main/bg-remove.ts`). Das Modell (224 MB) lädt beim ersten Mal nach `~/Deckwerk/models`. Die Berechnung braucht ca. 2 GB Arbeitsspeicher; ist weniger als 2,5 GB frei, bricht sie mit einer Meldung ab (Schutz vor dem OOM-Killer).
+- UI-Bausteine (`src/renderer/ui/kit.tsx`, `kit.css`, Design: Canvas „Deckwerk – UI-Bausteine“): `Select` als Drop-in für `<select>` (optional `data-swatch`, `data-hint`, `style` je Option; `className="ghost"` kompakt), `Switch`, `confirmDialog()` statt `window.confirm()`. `kit.css` stylt Häkchen, Optionsfelder, Regler, Zahlenfelder, Fokus und `data-tip`-Tooltips in der ganzen App.
+
+Grenzen: Text-Deckkraft wird nicht nach PowerPoint übertragen, Gruppen landen in der PPTX als Einzelobjekte, gedrehte Bilder lassen sich erst nach Drehung 0° zuschneiden, keine Echtzeit-Zusammenarbeit.
 
 ## PPTX-Treue-Check
 

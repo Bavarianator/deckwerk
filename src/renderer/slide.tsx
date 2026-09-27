@@ -1,5 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { icons } from 'lucide-react'
+import QRCode from 'qrcode'
+import { GRAPHICS } from '../shared/items'
 import { Chart, registerables, type ChartConfiguration, type Plugin } from 'chart.js'
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
 import { sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
@@ -447,6 +449,25 @@ function effectCss(effect: Item['effect'], color: string): CSSProperties {
   }
 }
 
+// QR-Code als SVG mit hellem Rand (Ruhezone); Export wie Icons als gerastertes Bild (measure.ts svgOf)
+export function QrCode(p: { text: string; slot: string; color: string; bg: string; className?: string; build?: number; style?: CSSProperties; attrs?: Record<string, string | undefined> }) {
+  const d = useMemo(() => {
+    if (!p.text) return { n: 1, path: '' }
+    const m = QRCode.create(p.text, { errorCorrectionLevel: 'M' }).modules
+    let path = ''
+    for (let y = 0; y < m.size; y++) for (let x = 0; x < m.size; x++) if (m.get(x, y)) path += `M${x + 2} ${y + 2}h1v1h-1z`
+    return { n: m.size + 4, path }
+  }, [p.text])
+  return (
+    <span {...p.attrs} className={`icon ${p.className ?? ''}`} data-pptx="icon" data-slot={p.slot} data-build={p.build} style={p.style}>
+      <svg viewBox={`0 0 ${d.n} ${d.n}`} width="100%" height="100%" shapeRendering="crispEdges">
+        <rect width={d.n} height={d.n} fill={p.bg} />
+        <path d={d.path} fill={p.color} />
+      </svg>
+    </span>
+  )
+}
+
 export const fontCss = (it: Item) => (it.font === 'head' || !it.font ? 'var(--font-head)' : it.font === 'body' ? 'var(--font-body)' : `'${FONTS[it.font as FontName]?.css ?? it.font}'`)
 
 // Audio: runder Lautsprecher-Knopf; beim Präsentieren spielt ein Klick ab bzw. pausiert (Klick blättert dann nicht weiter)
@@ -506,6 +527,18 @@ function FreeItem({ it }: { it: Item }) {
       )
     case 'audio':
       return <AudioItem it={it} attrs={attrs} pos={pos} slot={slot} live={live} color={it.color ?? theme.c.accent} />
+    case 'qr':
+      return <QrCode text={it.text ?? ''} slot={slot} color={it.color ?? '#000000'} bg={it.fill ?? '#FFFFFF'} attrs={attrs} style={{ ...pos, opacity: alpha < 1 ? alpha : undefined }} />
+    case 'graphic': {
+      const g = GRAPHICS[it.graphic ?? ''] ?? GRAPHICS.squiggle
+      return (
+        <span {...attrs} className="icon" data-pptx="icon" data-slot={slot} style={{ ...pos, color: it.color ?? theme.c.accent, opacity: alpha < 1 ? alpha : undefined }}>
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100%" height="100%" style={{ overflow: 'visible' }}>
+            <path d={g.d} fill={g.fill ? 'currentColor' : 'none'} stroke={g.fill ? 'none' : 'currentColor'} strokeWidth={it.strokeW ?? 6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </svg>
+        </span>
+      )
+    }
     case 'icon': {
       const Cmp = icons[pascal(it.icon ?? 'star') as keyof typeof icons] ?? icons.Star
       return (

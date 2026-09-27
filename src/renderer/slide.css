@@ -85,6 +85,8 @@
 .cover.center .cover-bottom { justify-content: center; }
 .closing-bottom { flex: none; display: flex; justify-content: space-between; align-items: flex-end; min-height: 40px; }
 .closing-bottom .cover-logo { background-position: right center; }
+.closing-right { display: flex; align-items: flex-end; gap: 28px; }
+.closing-qr { display: block; width: 132px; height: 132px; border-radius: 6px; overflow: hidden; }
 .contact { display: flex; gap: 40px; }
 .contact .t { color: var(--muted); }
 

@@ -7,7 +7,7 @@ import {
   ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
 import { DASHES, ITEM_ANIMS, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
-import { csvToSpec, specToCsv } from '../../shared/items'
+import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
 import { FONT_NAMES, resolveTheme } from '../../shared/themes'
 import { align, cloneItems, distribute, groupItems, isGroup, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
 import { Select } from './kit'
@@ -15,7 +15,7 @@ import { removeBackground } from './media'
 
 interface Props { deck: Deck; picked: string[]; onItems: (fn: (items: Item[]) => Item[], tag?: string) => void; pickImage: () => Promise<string | null> }
 
-const KIND: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio' }
+const KIND: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio', qr: 'QR-Code', graphic: 'Grafik' }
 const MASK_NAME: Record<MaskId, string> = { circle: 'Kreis', arch: 'Bogen', hexagon: 'Sechseck', diamond: 'Raute', octagon: 'Achteck', star: 'Stern', heart: 'Herz' }
 const EFFECT_NAME: Record<TextEffect, string> = { none: 'Ohne', shadow: 'Schatten', lift: 'Schweben', hollow: 'Kontur', neon: 'Neon' }
 const ADJUST_NAME = { bright: 'Helligkeit', contrast: 'Kontrast', sat: 'Sättigung', blur: 'Weichzeichnen' }
@@ -280,6 +280,27 @@ export function ItemInspector({ deck, picked, onItems, pickImage }: Props) {
             {it.kind === 'audio' && <Field label="Farbe"><Color value={it.color ?? t.c.accent} onChange={(color, tag) => set({ color }, tag)} swatches={swatches} tag={`color-${it.id}`} /></Field>}
             {it.kind === 'video' && <Field label="Eckenradius"><Num value={it.radius ?? 0} min={0} max={400} suffix="px" onChange={(radius) => set({ radius: radius || undefined }, `r-${it.id}`)} /></Field>}
             <p className="muted small">In der PPTX wird die Datei eingebettet und startet per Klick; im PDF erscheint das Vorschaubild.</p>
+          </>
+        )}
+
+        {it?.kind === 'qr' && (
+          <>
+            <Field label="Inhalt (Link oder Text)"><textarea rows={2} value={it.text ?? ''} onChange={(e) => set({ text: e.target.value }, `qr-${it.id}`)} /></Field>
+            <p className="muted small">Schwarz auf Weiß lässt sich am sichersten scannen.</p>
+            <Field label="Farbe"><Color value={it.color ?? '#000000'} onChange={(color, tag) => set({ color }, tag)} swatches={swatches} tag={`color-${it.id}`} /></Field>
+            <Field label="Hintergrund"><Color value={it.fill ?? '#FFFFFF'} onChange={(fill, tag) => set({ fill }, tag)} swatches={swatches} tag={`fill-${it.id}`} /></Field>
+          </>
+        )}
+
+        {it?.kind === 'graphic' && (
+          <>
+            <Field label="Grafik">
+              <Select value={it.graphic ?? 'squiggle'} onChange={(e) => set({ graphic: e.target.value })}>
+                {Object.entries(GRAPHICS).map(([id, g]) => <option key={id} value={id}>{g.name}</option>)}
+              </Select>
+            </Field>
+            <Field label="Farbe"><Color value={it.color ?? t.c.accent} onChange={(color, tag) => set({ color }, tag)} swatches={swatches} tag={`color-${it.id}`} /></Field>
+            {!GRAPHICS[it.graphic ?? '']?.fill && <Field label="Strichstärke"><Num value={it.strokeW ?? 6} min={1} max={24} suffix="px" onChange={(strokeW) => set({ strokeW }, `sw-${it.id}`)} /></Field>}
           </>
         )}
 

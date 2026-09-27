@@ -35,14 +35,16 @@ function load(dir: string, onProgress: (pct: number) => void): Promise<Inference
     const file = join(dir, 'birefnet-lite.onnx')
     if (!existsSync(file)) { await mkdir(dir, { recursive: true }); await download(file, onProgress) }
     const ort = await import('onnxruntime-node')
-    return ort.InferenceSession.create(file, { executionProviders: ['cpu'], graphOptimizationLevel: 'all' })
+    // Speicher sparen statt Tempo: ohne Arena/Memory-Pattern werden Zwischenpuffer sofort freigegeben (Spitze deutlich kleiner)
+    return ort.InferenceSession.create(file, { executionProviders: ['cpu'], graphOptimizationLevel: 'basic', enableCpuMemArena: false, enableMemPattern: false, executionMode: 'sequential' })
   })().catch((e) => { session = null; throw e }))
 }
 
 /** Hintergrund entfernen → PNG mit Transparenz in Originalgröße. onProgress: Modell-Download in % (nur beim ersten Mal). */
 export async function removeBackground(imagePath: string, modelDir: string, onProgress: (pct: number) => void): Promise<Buffer> {
-  // ponytail: grobe Schwelle gegen den OOM-Killer (Modell + Aktivierungen brauchen gut 1,5 GB); genauer messen, falls sie zu streng ist
-  if (freemem() < 1.5 * 1024 ** 3 && !session) throw new Error('Zu wenig freier Arbeitsspeicher für den Freisteller (mind. 1,5 GB). Andere Programme schließen und erneut versuchen.')
+  // Schutz vor dem OOM-Killer: gemessene Spitze ~2 GB (Eingabe fest 1024×1024, auch mit sparsamen Session-Optionen).
+  // Unter Linux beendet der Kernel sonst womöglich die ganze Terminal-/App-Gruppe.
+  if (freemem() < 2.5 * 1024 ** 3) throw new Error(`Zu wenig freier Arbeitsspeicher für den Freisteller (${(freemem() / 1024 ** 3).toFixed(1)} GB frei, nötig ca. 2,5 GB). Andere Programme schließen und erneut versuchen.`)
   const img = nativeImage.createFromPath(imagePath)
   if (img.isEmpty()) throw new Error('Bild lässt sich nicht lesen')
   const { width, height } = img.getSize()

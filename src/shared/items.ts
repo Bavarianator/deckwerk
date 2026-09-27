@@ -34,7 +34,7 @@ export const itemSchema = z.object({
   crop: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().min(0.01).max(1), h: z.number().min(0.01).max(1) }).optional().describe('Bildausschnitt in Anteilen; w/h des Elements sollte zum Ausschnitt passen'),
   poster: z.string().optional(), autoplay: z.boolean().optional(), loop: z.boolean().optional(), muted: z.boolean().optional(),
   icon: z.string().max(40).optional().describe('lucide-Name in kebab-case'),
-  graphic: z.string().max(20).optional().describe(`Deko-Grafik: ${'squiggle, swoosh, scribble, arrow, burst, waves, sparkle, blob'}`),
+  graphic: z.string().max(20).optional().describe('Deko-Grafik: squiggle, swoosh, scribble, arrow, burst, waves, sparkle, blob (siehe GRAPHICS)'),
   spec: z.object({
     type: z.enum(['bar', 'hbar', 'stacked', 'waterfall', 'line', 'donut']),
     categories: z.array(z.string()).min(1).max(24),
@@ -74,6 +74,8 @@ export const newText = (p: keyof typeof TEXT_PRESETS): Item => {
 export const newShape = (shape: Item['shape'], fill: string): Item =>
   shape === 'line' ? { ...at(400, 20), kind: 'shape', shape, stroke: fill, strokeW: 4 } : { ...at(280, 280), kind: 'shape', shape, fill }
 export const newIcon = (icon: string, color: string): Item => ({ ...at(160, 160), kind: 'icon', icon, color })
+export const newGraphic = (graphic: string, color: string): Item => ({ ...at(240, GRAPHICS[graphic]?.fill ? 240 : 120), kind: 'graphic', graphic, color })
+export const newQr = (): Item => ({ ...at(200, 200), kind: 'qr', text: 'https://example.com' })
 export const newMedia = (kind: 'video' | 'audio', src: string, ratio = 16 / 9, poster?: string): Item =>
   kind === 'audio' ? { ...at(120, 120), kind, src } : { ...at(Math.round(360 * Math.min(ratio, 2.2)), 360), kind, src, poster, muted: true }
 export const newImage = (src: string, ratio = 1.5): Item => ({ ...at(Math.round(420 * Math.min(ratio, 1.8)), 420), kind: 'image', src })
