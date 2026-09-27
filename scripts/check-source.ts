@@ -1,4 +1,5 @@
-// Quellmaterial lesen: npx esbuild scripts/check-source.ts --bundle --packages=external --platform=node --outfile=out/check-source.cjs && node out/check-source.cjs
+// Quellmaterial lesen (braucht vorher `npm run render examples/quartal.json` und `examples/foto.json` für die Dateien unter exports/):
+// npx esbuild scripts/check-source.ts --bundle --packages=external --platform=node --format=esm --outfile=out/check-source.mjs && node out/check-source.mjs
 import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

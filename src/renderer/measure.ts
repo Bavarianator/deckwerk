@@ -215,7 +215,7 @@ export function extract(root: HTMLElement): El[] {
         els.push({ ...base, kind: 'media', media: el.dataset.media === 'audio' ? 'audio' : 'video', src: el.dataset.src ?? '', poster: el.dataset.poster })
         break
       case 'icon':
-        els.push({ ...base, kind: 'icon', svg: svgOf(el) })
+        els.push({ ...base, kind: 'icon', svg: svgOf(el), name: el.dataset.icon, qr: el.dataset.qr, color: parseColor(cs.color)?.color })
         break
       case 'chart':
         els.push({ ...base, kind: 'chart', spec: JSON.parse(el.dataset.chart ?? '{}') })
@@ -223,4 +223,17 @@ export function extract(root: HTMLElement): El[] {
     }
   }
   return els
+}
+
+// Striche vor Eyebrows sind ein CSS-::before (im PPTX-Export Teil des Hintergrundbilds). Für „In freie Elemente
+// umwandeln“ als Flächen liefern, sonst fehlen sie auf der leeren Folie.
+export function eyebrowRules(root: HTMLElement): El[] {
+  const o = root.getBoundingClientRect(), k = root.offsetWidth / o.width
+  return [...root.querySelectorAll<HTMLElement>('.eyebrow-wrap')].flatMap((wrap): El[] => {
+    const t = wrap.querySelector<HTMLElement>('[data-pptx]'), bs = getComputedStyle(wrap, '::before')
+    const w = parseFloat(bs.width), h = parseFloat(bs.height), fill = parseColor(bs.backgroundColor)
+    if (!t || !w || !h || !fill) return []
+    const r = t.getBoundingClientRect(), gap = parseFloat(getComputedStyle(wrap).columnGap) || 0
+    return [{ slot: '_eyebrow', kind: 'box', box: { x: (r.left - o.left) * k - gap - w, y: (r.top - o.top) * k + (r.height * k - h) / 2, w, h }, fill, radius: parseFloat(bs.borderRadius) || 0, ellipse: false }]
+  })
 }

@@ -22,7 +22,6 @@ import { Start } from './ui/Start'
 import { Overview } from './ui/Overview'
 import { TopBar, type Panel, type Status, type View } from './ui/TopBar'
 import { setAt } from './slide'
-import { confirmDialog } from './ui/kit'
 
 const api = window.api
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
@@ -99,6 +98,13 @@ export default function App() {
     const t = setTimeout(() => api.save().then((p) => { setPath(p); setSaved(true) }, (e) => setStatus({ text: errText(e), error: true })), 1500)
     return () => clearTimeout(t)
   }, [doc.deck])
+
+  // Beim Schließen: Text, der gerade auf der Folie bearbeitet wird, übernehmen (onBlur); Main speichert ihn danach
+  useEffect(() => {
+    const blur = () => (document.activeElement as HTMLElement | null)?.blur()
+    addEventListener('beforeunload', blur)
+    return () => removeEventListener('beforeunload', blur)
+  }, [])
 
   // UI-Änderungen an Main (und damit an den Agenten) weitergeben
   useEffect(() => {
@@ -184,8 +190,7 @@ export default function App() {
   }
   const actions = {
     onNew: () => guard(async () => {
-      if (deck && !saved && !(await confirmDialog({ title: 'Aktuelles Deck verwerfen?', text: 'Nicht gespeicherte Änderungen gehen verloren.', ok: 'Verwerfen', danger: true }))) return
-      await api.newDeck()
+      await api.newDeck() // Main speichert offene Änderungen vorher (flush)
       load(null, null)
     }),
     onOpen: () => guard(async () => {

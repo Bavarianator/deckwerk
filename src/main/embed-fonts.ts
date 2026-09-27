@@ -82,7 +82,7 @@ export async function embedFonts(pptx: Buffer, fonts: EmbedFont[]): Promise<Buff
       rels = rels.replace('</Relationships>', `<Relationship Id="${id}" Type="${REL_FONT}" Target="${file}"/></Relationships>`)
       return `<p:${face} r:id="${id}"/>`
     })
-    return `<p:embeddedFont><p:font typeface="${f.family}" pitchFamily="${f.serif ? 18 : 34}" charset="0"/>${refs.join('')}</p:embeddedFont>`
+    return `<p:embeddedFont><p:font typeface="${f.family.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}" pitchFamily="${f.serif ? 18 : 34}" charset="0"/>${refs.join('')}</p:embeddedFont>`
   })
   const lst = `<p:embeddedFontLst>${entries.join('')}</p:embeddedFontLst>`
   // Schema-Reihenfolge: … notesSz, smartTags, embeddedFontLst, custShowLst, …, defaultTextStyle

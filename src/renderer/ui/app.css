@@ -157,6 +157,12 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .present { position: fixed; inset: 0; display: grid; place-items: center; background: #000; }
 .present-stage { position: relative; overflow: hidden; }
 .present-layer { position: absolute; inset: 0; }
+.present-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.present-ink.laser, .present-ink.pen { pointer-events: auto; }
+.present-ink.laser { cursor: none; }
+.present-ink.pen { cursor: crosshair; }
+.present-ink polyline { fill: none; stroke: var(--danger); stroke-width: 4px; stroke-linecap: round; stroke-linejoin: round; }
+.present-laser { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--danger); box-shadow: 0 0 12px 4px var(--danger); pointer-events: none; }
 
 /* Rückfrage der KI (ask_user) mit Antwort-Buttons */
 .msg-ask { font-weight: 500; }
@@ -220,6 +226,8 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .guide { position: absolute; pointer-events: none; background: #ff4fa3; }
 .guide.v { top: 0; bottom: 0; width: 1px; }
 .guide.h { left: 0; right: 0; height: 1px; }
+.guide.own { background: var(--accent); opacity: 0.7; }
+.stage-margins { position: absolute; pointer-events: none; outline: 1px dashed var(--accent); opacity: 0.6; } /* ponytail: Ränder fest wie .safe (72/60/72 px), auch in anderen Formaten */
 .marquee { position: absolute; pointer-events: none; border: 1px solid var(--accent); background: var(--accent-soft); }
 .ctx-menu {
   position: absolute; z-index: 5; min-width: 230px; padding: 4px; display: flex; flex-direction: column;
@@ -241,7 +249,9 @@ fieldset.plain { display: block; height: auto; border: 0; margin: 0; padding: 0;
 .num { position: relative; display: block; }
 .num input { width: 100%; height: 30px; padding: 0 6px; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 6px; font-variant-numeric: tabular-nums; }
 .num em { position: absolute; right: 8px; top: 6px; font-style: normal; font-size: 11px; color: var(--faint); pointer-events: none; }
-.color { display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: center; }
+.color { display: flex; gap: 8px; align-items: flex-start; } /* Farbfeld, Pipette (nur wo EyeDropper existiert), Muster */
+.color > input[type="color"] { flex: none; width: 44px; }
+.color .swatches { flex: 1; min-width: 0; }
 .swatches { display: flex; flex-wrap: wrap; gap: 4px; }
 .swatch { width: 18px; height: 18px; padding: 0; border: 1px solid var(--border-strong); border-radius: 50%; cursor: pointer; }
 .swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; }

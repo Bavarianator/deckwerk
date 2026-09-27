@@ -3,7 +3,7 @@
 import { randomBytes } from 'node:crypto'
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { icons } from 'lucide-react'
@@ -32,6 +32,18 @@ export const houseStyle = () => { try { return readFileSync(STYLE_FILE, 'utf8').
 export interface ToolOutput { text: string; images?: Buffer[] } // PNG oder JPEG, siehe mimeOf
 export const mimeOf = (b: Buffer): 'image/png' | 'image/jpeg' => (b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : 'image/png')
 export const assetUrl = (abs: string) => `asset://local${pathToFileURL(abs).pathname}` // Format wie ipc.ts
+// Relative Bildpfade im Deck (z. B. "assets/foto.jpg" in examples/) gegen den Ordner der JSON-Datei auflösen
+export function localizeDeck(deck: Deck, dir: string): Deck {
+  const walk = (o: any): void => {
+    for (const k of Object.keys(o ?? {})) {
+      const v = o[k]
+      if ((k === 'src' || k === 'image') && typeof v === 'string' && v && !/^(asset|data|file|https?):/.test(v)) o[k] = assetUrl(resolve(dir, v))
+      else if (v && typeof v === 'object') walk(v)
+    }
+  }
+  deck.slides.forEach((s) => { walk(s.content); walk(s.items); walk(s.bg) })
+  return deck
+}
 export interface ToolDef<S extends z.ZodType = z.ZodType> {
   name: string
   description: string

@@ -2,19 +2,25 @@ import { app, BrowserWindow, net, protocol } from 'electron'
 import { readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { Deck } from '../shared/deck'
+import { MEDIA_EXT } from '../shared/deck'
 import type { createEngine } from './engine'
 
 // Schwere Module (Engine, Agent, MCP, pptxgenjs, lucide …) erst nach dem Fenster laden: der Splash erscheint sofort,
 // und der Renderer lädt parallel zum Main-Prozess. Die Preload-Brücke wiederholt Aufrufe, bis registerIpc steht.
 const loadEngine = async () => (await import('./engine')).createEngine()
 
+// Kein Fenster navigiert weg oder öffnet neue (z. B. ein auf die Folie gezogener Link): fremde Seiten bekämen sonst die Preload-API
+app.on('web-contents-created', (_, wc) => {
+  wc.on('will-navigate', (e) => e.preventDefault())
+  wc.setWindowOpenHandler(() => ({ action: 'deny' }))
+})
+
 protocol.registerSchemesAsPrivileged([{ scheme: 'asset', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }])
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1600, height: 960, minWidth: 1200, minHeight: 760, backgroundColor: '#ffffff', title: 'Deckwerk',
-    webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false },
+    webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true },
   })
   win.removeMenu() // keine native Menüleiste (File/Edit/View) unter Linux/Windows; macOS behält sein App-Menü
   // DW_SHOT=<file.png>: screenshot the real app once it has settled, then quit (visual verification)
@@ -33,18 +39,8 @@ function createWindow() {
 
 // CLI: electron . --render examples/pitch.json [--out exports]   → pptx + pdf + pngs + lint report
 async function renderCli(engine: ReturnType<typeof createEngine>, file: string, outDir: string) {
-  const { assetUrl } = await import('./tools')
-  const deck: Deck = JSON.parse(await readFile(resolve(file), 'utf8'))
-  // Relative Bildpfade im Deck (z. B. "assets/foto.jpg" in examples/) gegen den Ordner der JSON-Datei auflösen
-  const local = (v: unknown): unknown =>
-    typeof v === 'string' && v && !/^(asset|data|file|https?):/.test(v) ? assetUrl(resolve(dirname(resolve(file)), v)) : v
-  const walk = (o: any): void => {
-    for (const k of Object.keys(o ?? {})) {
-      if ((k === 'src' || k === 'image') && typeof o[k] === 'string') o[k] = local(o[k])
-      else if (o[k] && typeof o[k] === 'object') walk(o[k])
-    }
-  }
-  deck.slides.forEach((s) => { walk(s.content); walk(s.items); walk(s.bg) })
+  const { localizeDeck } = await import('./tools')
+  const deck = localizeDeck(JSON.parse(await readFile(resolve(file), 'utf8')), dirname(resolve(file)))
   const issues = await engine.lint(deck)
   for (const i of issues) console.log(`${i.severity === 'error' ? '✗' : '!'} Folie ${i.slide + 1} [${i.rule}] ${i.message}`)
   console.log(`${issues.filter((i) => i.severity === 'error').length} Fehler, ${issues.filter((i) => i.severity === 'warn').length} Warnungen`)
@@ -57,7 +53,9 @@ async function renderCli(engine: ReturnType<typeof createEngine>, file: string, 
 app.whenReady().then(async () => {
   // CORS-Header, damit Canvas Pixel lesen darf (Video-Poster, Freisteller); stream + Range für Video/Audio
   protocol.handle('asset', async (req) => {
-    const res = await net.fetch(pathToFileURL(decodeURIComponent(new URL(req.url).pathname)).toString(), { headers: req.headers })
+    const file = decodeURIComponent(new URL(req.url).pathname)
+    if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
+    const res = await net.fetch(pathToFileURL(file).toString(), { headers: req.headers })
     const headers = new Headers(res.headers)
     headers.set('Access-Control-Allow-Origin', '*')
     return new Response(res.body, { status: res.status, headers })

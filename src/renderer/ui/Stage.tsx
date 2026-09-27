@@ -58,7 +58,11 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
   const [geos, setGeos] = useState<Record<string, Geo>>({})
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] })
   const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
+  const [menu, setMenu] = useState<{ x: number; y: number; at: { x: number; y: number } } | null>(null)
+  // Ansicht wie in Canva: sichere Ränder (.safe in slide.css) und eigene Hilfslinien (Folien-px, nur in dieser Sitzung)
+  const [margins, setMargins] = useState(() => { try { return localStorage.getItem('dw.margins') === '1' } catch { return false } })
+  useEffect(() => { try { localStorage.setItem('dw.margins', margins ? '1' : '') } catch { /* nur für diese Sitzung */ } }, [margins])
+  const [lines, setLines] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] })
   const drag = useRef<Drag | null>(null)
   const live = useRef<Record<string, Geo>>({}) // Geometrie während des Ziehens (State ist beim Loslassen evtl. noch nicht gerendert)
   const setLive = (g: Record<string, Geo>) => { live.current = g; setGeos(g) }
@@ -144,8 +148,8 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
   // Einrasten an Folienrand/-mitte und an Kanten/Mitten der anderen Elemente
   const snap = (b: { x: number; y: number; w: number; h: number }, skip: string[]) => {
     const others = items.filter((it) => !skip.includes(it.id)).map(geoOf)
-    const xs = [0, W / 2, W, ...others.flatMap((o) => [o.x, o.x + o.w / 2, o.x + o.w])]
-    const ys = [0, H / 2, H, ...others.flatMap((o) => [o.y, o.y + o.h / 2, o.y + o.h])]
+    const xs = [0, W / 2, W, ...lines.x, ...others.flatMap((o) => [o.x, o.x + o.w / 2, o.x + o.w])]
+    const ys = [0, H / 2, H, ...lines.y, ...others.flatMap((o) => [o.y, o.y + o.h / 2, o.y + o.h])]
     const best = (edges: number[], cands: number[]) => {
       let d = Infinity, line: number | null = null
       for (const e of edges) for (const c of cands) if (Math.abs(c - e) < Math.abs(d) && Math.abs(c - e) <= SNAP / k) (d = c - e), (line = c)
@@ -433,7 +437,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     if (id && !sel.includes(id)) onSel([id])
     const r = canvas.current!.getBoundingClientRect()
     // im sichtbaren Bereich halten (Menü ca. 240 × 340 px)
-    setMenu({ x: Math.max(0, Math.min(e.clientX - r.left, r.width - 240)), y: Math.max(0, Math.min(e.clientY - r.top, r.height - 340)) })
+    setMenu({ x: Math.max(0, Math.min(e.clientX - r.left, r.width - 240)), y: Math.max(0, Math.min(e.clientY - r.top, r.height - 440)), at: toSlide(e.clientX, e.clientY) })
   }
 
   // Dateien aus dem Dateimanager oder Elemente aus dem Seitenpanel fallen lassen
@@ -565,6 +569,9 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
                   </div>
                 </>
               )}
+              {margins && <div className="stage-margins" style={{ left: 72 * k, top: 60 * k, width: (W - 144) * k, height: (H - 132) * k }} />}
+              {lines.x.map((x) => <div key={`lx${x}`} className="guide v own" style={{ left: x * k }} />)}
+              {lines.y.map((y) => <div key={`ly${y}`} className="guide h own" style={{ top: y * k }} />)}
               {guides.x.map((x) => <div key={`gx${x}`} className="guide v" style={{ left: x * k }} />)}
               {guides.y.map((y) => <div key={`gy${y}`} className="guide h" style={{ top: y * k }} />)}
               {marquee && <div className="marquee" style={{ left: marquee.x * k, top: marquee.y * k, width: marquee.w * k, height: marquee.h * k }} />}
@@ -592,6 +599,11 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
                     <button onClick={() => act('lock')}>{items.filter((it) => sel.includes(it.id)).every((it) => it.locked) ? 'Entsperren' : 'Sperren'} <kbd>Strg+L</kbd></button>
                     <button className="danger" onClick={() => act('delete')}>Löschen <kbd>Entf</kbd></button>
                   </>}
+                  <hr />
+                  <button onClick={() => { setMenu(null); setMargins(!margins) }}>{margins ? 'Ränder ausblenden' : 'Ränder anzeigen'}</button>
+                  <button onClick={() => { setMenu(null); setLines({ ...lines, x: [...lines.x, Math.round(menu.at.x)] }) }}>Hilfslinie senkrecht hier</button>
+                  <button onClick={() => { setMenu(null); setLines({ ...lines, y: [...lines.y, Math.round(menu.at.y)] }) }}>Hilfslinie waagerecht hier</button>
+                  {lines.x.length + lines.y.length > 0 && <button onClick={() => { setMenu(null); setLines({ x: [], y: [] }) }}>Hilfslinien entfernen</button>}
                 </div>
               )}
             </div>

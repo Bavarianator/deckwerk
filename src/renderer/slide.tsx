@@ -128,7 +128,7 @@ export const hasIcon = (name: string) => pascal(name) in icons
 export function Icon(p: { name: string; slot: string; size: number; build?: number; className?: string }) {
   const Cmp = icons[pascal(p.name) as keyof typeof icons] ?? icons.Sparkles
   return (
-    <span className={`icon ${p.className ?? ''}`} data-pptx="icon" data-slot={p.slot} data-build={p.build} style={{ width: p.size, height: p.size }}>
+    <span className={`icon ${p.className ?? ''}`} data-pptx="icon" data-icon={p.name} data-slot={p.slot} data-build={p.build} style={{ width: p.size, height: p.size }}>
       <Cmp size={p.size} strokeWidth={1.75} />
     </span>
   )
@@ -459,7 +459,7 @@ export function QrCode(p: { text: string; slot: string; color: string; bg: strin
     return { n: m.size + 4, path }
   }, [p.text])
   return (
-    <span {...p.attrs} className={`icon ${p.className ?? ''}`} data-pptx="icon" data-slot={p.slot} data-build={p.build} style={p.style}>
+    <span {...p.attrs} className={`icon ${p.className ?? ''}`} data-pptx="icon" data-qr={p.text} data-slot={p.slot} data-build={p.build} style={p.style}>
       <svg viewBox={`0 0 ${d.n} ${d.n}`} width="100%" height="100%" shapeRendering="crispEdges">
         <rect width={d.n} height={d.n} fill={p.bg} />
         <path d={d.path} fill={p.color} />

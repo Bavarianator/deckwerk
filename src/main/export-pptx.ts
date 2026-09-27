@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
-import { sizeOf, type BoxEl, type BuildPreset, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
+import { MEDIA_EXT, sizeOf, type BoxEl, type BuildPreset, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
 import { injectAnimations, type AnimStep, type SlideAnim } from './animations'
@@ -24,9 +24,8 @@ const WRAP_SLACK = 0.015
 export interface ExportSlide { measured: Measured; background: Buffer }
 
 export function assetPath(src: string): string | undefined {
-  if (src.startsWith('asset://')) return decodeURIComponent(new URL(src).pathname)
-  if (src.startsWith('file://')) return fileURLToPath(src)
-  return undefined
+  const p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src.startsWith('file://') ? fileURLToPath(src) : undefined
+  return p && MEDIA_EXT.test(p) ? p : undefined
 }
 
 // Contained image rect inside its box, honoring the CSS background-position the layout used.

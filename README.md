@@ -1,6 +1,6 @@
 # Deckwerk
 
-KI-Präsentationsstudio als Desktop-App (Electron). Plan: `~/.claude/plans/proud-moseying-quasar.md`.
+KI-Präsentationsstudio als Desktop-App (Electron): Ein Satz genügt, Deckwerk schreibt die Storyline, baut die Folien, prüft jede einzelne als Bild und exportiert nach PowerPoint (editierbar), PDF und PNG. Den KI-Zugang liefert entweder dein Claude-Code-Login oder ein Anthropic-API-Key.
 
 ## Installation
 
@@ -75,6 +75,12 @@ Im Chat (und auf dem Startbildschirm) wählt ein Dropdown das Modell: Opus 5.5 (
 
 Die Canvas im Editor (`src/renderer/ui/Stage.tsx`): Ein Klick auf ein Element der Folie zeigt Rahmen, Namen und eine schwebende KI-Leiste. Der Wunsch geht mit Folie, Element und aktuellem Text an den Chat. Text bleibt direkt bearbeitbar. Überlaufende Elemente sind rot umrandet. Unten sitzt eine Leiste mit ‹ Folie › und Zoom (auch Strg + Mausrad, Klick auf die Prozentzahl wechselt zwischen 100 % und Einpassen). ←/→ blättern, Esc hebt die Auswahl auf. Jede Chat-Nachricht nennt der KI die gerade angezeigte Folie.
 
+## Speichern, Vorlagen, Präsentieren
+
+- Auto-Speichern: Jede Änderung, ob von dir oder von der KI, landet nach 1,5 s in `~/Deckwerk/<titel>/deck.json`. Offene Änderungen werden auch dann gesichert, wenn du das Fenster schließt oder ein anderes Deck öffnest, samt gerade bearbeitetem Folientext. Höchstens alle 10 Minuten legt Deckwerk den vorigen Stand unter `<deck>/versions/` ab; zurück geht es über „Deck öffnen“.
+- Vorlagen: Der Startbildschirm zeigt kuratierte Decks aus `examples/`. Ein Klick öffnet eine Kopie, die Vorlage bleibt unverändert. Relative Bildpfade (`assets/foto.jpg`) löst Deckwerk beim Öffnen gegen den Ordner der deck.json auf, so lässt sich ein Deck-Ordner samt Bildern weitergeben.
+- Präsentieren: Die Referentenansicht zeigt Notizen, Uhr und die nächste Folie. L schaltet den Laserpointer, D den Stift und E löscht die Striche; beides erscheint auch im Publikumsfenster. „Handy als Fernbedienung“ zeigt einen QR-Code: Das Handy blättert und zeigt die Notizen. Handy und Rechner müssen im selben WLAN sein. Die Verbindung läuft über HTTP mit Zufallstoken und ist unverschlüsselt, in fremden WLANs also mitlesbar.
+
 ## Frei gestalten wie in Canva
 
 Neben den Layouts trägt jede Folie freie Elemente (`slide.items`: Text, Form, Bild, Icon, Diagramm mit x/y/w/h in px auf 1280×720, Drehung, Deckkraft, Auftritt) und optional einen eigenen Hintergrund (`slide.bg`: Farbe oder Bild). Das Layout `blank` ist eine leere Folie; „Leer beginnen“ auf dem Startbildschirm legt ein Deck damit an. Schema und Fabriken: `src/shared/items.ts`.
@@ -84,6 +90,7 @@ Neben den Layouts trägt jede Folie freie Elemente (`slide.items`: Text, Form, B
 - Element-Inspector (`ui/ItemInspector.tsx`): Sperren, Duplizieren, Löschen, Ausrichten (einzeln an der Folie, mehrere aneinander), Verteilen, Ebenen, Position/Größe/Drehung/Deckkraft, Auftritt beim Präsentieren. Dazu je nach Art Schrift, Größe, Stil und Farbe, Füllung mit Verlauf, Rahmen, Radius und Schatten, Bildlook (Duotone/Schwarzweiß), Kreis-Maske und Spiegeln sowie Diagrammtyp und Daten als Tabelle.
 - Export: Freie Elemente nutzen dieselben `data-pptx`-Primitive wie die Layouts und landen als native, editierbare PowerPoint-Objekte in der PPTX (Formen als Preset-Shapes, Drehung, Spiegeln, Verlauf per XML-Patch, Auftritte als Animationen). PDF und PNG sind pixelgenau. Die KI kann `items`/`bg` über `add_slides`/`update_slide` setzen.
 - Test: `npm run render examples/canva.json` (alle Elementarten).
+- Layout-Folien lösen: „In freie Elemente umwandeln“ im Inspector macht alle Texte, Formen, Bilder und Icons einer Layout-Folie frei verschiebbar (Strg+Z macht es rückgängig). „Farben dieser Folie“ ersetzt eine Farbe überall auf der Folie, „Schrift aller Texte“ setzt eine Schrift für alle Texte. Über das Kontextmenü der Canvas lassen sich die sicheren Ränder einblenden und eigene Hilfslinien setzen, an denen Elemente einrasten.
 
 - Formate (Magic Resize): `deck.size` (Standard 1280×720), Liste in `FORMATS` (src/shared/deck.ts), Umrechnung mit `resizeDeck()` (src/shared/items.ts). Freie Elemente wandern mit, Layouts ordnen sich neu an. PDF, PNG, PPTX und Canvas richten sich nach der Größe.
 - Video und Audio: Elemente `video`/`audio` (Knöpfe im Elemente-Panel oder Datei auf die Folie ziehen). Beim Präsentieren spielen sie ab (automatisch, endlos, stumm wählbar). In der PPTX sind sie eingebettet, im PDF erscheint das Vorschaubild.
@@ -91,6 +98,8 @@ Neben den Layouts trägt jede Folie freie Elemente (`slide.items`: Text, Form, B
 - Zuschneiden: Doppelklick auf ein Bild (oder „Zuschneiden“ im Inspector). Griffe ändern den Ausschnitt, Ziehen verschiebt das Bild, Enter übernimmt, Esc verwirft. Als `item.crop` gespeichert und in der PPTX nativ zugeschnitten.
 - Freisteller: „Hintergrund entfernen“ rechnet BiRefNet-lite (MIT) mit onnxruntime-node im Main-Prozess (`src/main/bg-remove.ts`). Das Modell (224 MB) lädt beim ersten Mal nach `~/Deckwerk/models`. Die Berechnung braucht ca. 2 GB Arbeitsspeicher; ist weniger als 2,5 GB frei, bricht sie mit einer Meldung ab (Schutz vor dem OOM-Killer).
 - UI-Bausteine (`src/renderer/ui/kit.tsx`, `kit.css`, Design: Canvas „Deckwerk – UI-Bausteine“): `Select` als Drop-in für `<select>` (optional `data-swatch`, `data-hint`, `style` je Option; `className="ghost"` kompakt), `Switch`, `confirmDialog()` statt `window.confirm()`. `kit.css` stylt Häkchen, Optionsfelder, Regler, Zahlenfelder, Fokus und `data-tip`-Tooltips in der ganzen App.
+
+Decks binden nur Bilder (PNG, JPEG, GIF, WebP, SVG, AVIF, BMP), Video, Audio und Schriften ein. Andere Dateien verweigert Deckwerk, damit ein fremdes Deck keine privaten Dateien in einen Export zieht.
 
 Grenzen: Text-Deckkraft wird nicht nach PowerPoint übertragen, Gruppen landen in der PPTX als Einzelobjekte, gedrehte Bilder lassen sich erst nach Drehung 0° zuschneiden, keine Echtzeit-Zusammenarbeit.
 

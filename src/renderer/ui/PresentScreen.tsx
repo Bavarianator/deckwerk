@@ -3,7 +3,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { sizeOf, type BuildPreset, type Deck } from '../../shared/deck'
 import { fmtSec, speakSec } from '../../shared/handout'
 import { LAYOUTS, buildOf, type LayoutId } from '../../shared/layouts'
-import { SlideView } from '../slide'
+import type { Ink } from '../../preload'
+import { QrCode, SlideView } from '../slide'
 import { chaptersOf, titleOf } from './story'
 
 const DUR = 400
@@ -18,6 +19,10 @@ const KF: Record<Exclude<BuildPreset, 'none'>, Keyframe[]> = {
 }
 
 const presetOf = (deck: Deck, i: number): BuildPreset => buildOf(deck, i)
+const inkPos = (e: { clientX: number; clientY: number; currentTarget: Element }): [number, number] => {
+  const r = e.currentTarget.getBoundingClientRect()
+  return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]
+}
 
 // Legt pausierte Animationen an (fill: both → Elemente sind sofort versteckt) und liefert die Klick-Schritte.
 function prepare(root: HTMLElement, preset: BuildPreset, mode: Deck['mode']): Animation[][] {
@@ -98,11 +103,32 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
   // Referent: jeden Schritt ans Publikumsfenster schicken; beide Fenster rechnen denselben Ablauf
   const go = (i: number) => { move(i); if (mode === 'presenter') void window.api.presentCmd({ type: 'go', i }) }
   const next = () => { step(); if (mode === 'presenter') void window.api.presentCmd({ type: 'next' }) }
-  const remote = useRef({ step, move })
-  remote.current = { step, move }
+  // Laserpointer und Stift (Canva „Zeichnen“): L / D schalten um, E löscht; nur Anzeige, nichts landet im Deck
+  const [tool, setTool] = useState<'laser' | 'pen' | null>(null)
+  const [ink, setInk] = useState<Ink>({ laser: null, strokes: [] })
+  const share = (n: Ink) => { setInk(n); if (mode === 'presenter') void window.api.presentCmd({ type: 'ink', ink: n }) }
+  useEffect(() => { if (mode !== 'audience') share({ laser: null, strokes: [] }) }, [view.i])
+  const prev = () => go(view.i - 1)
+  const remote = useRef({ step, move, next, prev })
+  remote.current = { step, move, next, prev }
+  // Handy als Fernbedienung: Weiter/Zurück wie Tasten, die Seite zeigt Folie und Notizen
+  const [phone, setPhone] = useState<{ url?: string; error?: string } | null>(null)
+  useEffect(() => {
+    if (mode === 'audience') return
+    const off = window.api.onRemote((c) => (c === 'next' ? remote.current.next() : remote.current.prev()))
+    return () => { off(); void window.api.remoteStop() }
+  }, [])
+  useEffect(() => {
+    if (mode !== 'audience') void window.api.remoteState({ i: view.i, n: last + 1, title: titleOf(deck, view.i), notes: deck.slides[view.i].notes ?? '' })
+  }, [view.i])
   useEffect(() => {
     if (mode !== 'audience') return
-    return window.api.onPresent((c) => { if (c === 'ended') return; if (c.type === 'next') remote.current.step(); else remote.current.move(c.i) })
+    return window.api.onPresent((c) => {
+      if (c === 'ended') return
+      if (c.type === 'next') remote.current.step()
+      else if (c.type === 'ink') setInk(c.ink)
+      else remote.current.move(c.i)
+    })
   }, [])
 
   useLayoutEffect(() => {
@@ -149,6 +175,9 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
       else if (e.key === 'End') go(last)
       else if (e.key === 'Escape') onExit()
       else if (e.key.toLowerCase() === 'p') setPv(!pv)
+      else if (e.key.toLowerCase() === 'l') { setTool(tool === 'laser' ? null : 'laser'); share({ ...ink, laser: null }) }
+      else if (e.key.toLowerCase() === 'd') setTool(tool === 'pen' ? null : 'pen')
+      else if (e.key.toLowerCase() === 'e') share({ laser: null, strokes: [] })
       else return
       e.preventDefault()
     }
@@ -174,6 +203,19 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
         <div ref={outRef} className="present-layer"><SlideView deck={deck} index={view.from} width={w} live /></div>
       )}
       <div ref={inRef} key={view.i} className="present-layer"><SlideView deck={deck} index={view.i} width={w} live /></div>
+      <svg
+        className={`present-ink ${tool ?? ''}`} viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden
+        onClick={(e) => tool && e.stopPropagation()} // mit Werkzeug kein Weiterblättern per Klick
+        onPointerDown={(e) => { if (tool !== 'pen') return; e.currentTarget.setPointerCapture(e.pointerId); share({ ...ink, strokes: [...ink.strokes, [inkPos(e)]] }) }}
+        onPointerMove={(e) => {
+          if (tool === 'laser') share({ ...ink, laser: inkPos(e) })
+          else if (tool === 'pen' && e.buttons) share({ ...ink, strokes: [...ink.strokes.slice(0, -1), [...(ink.strokes.at(-1) ?? []), inkPos(e)]] })
+        }}
+        onPointerLeave={() => tool === 'laser' && share({ ...ink, laser: null })}
+      >
+        {ink.strokes.map((s, i) => <polyline key={i} points={s.map((p) => p.join(',')).join(' ')} vectorEffect="non-scaling-stroke" />)}
+      </svg>
+      {ink.laser && <div className="present-laser" style={{ left: `${ink.laser[0] * 100}%`, top: `${ink.laser[1] * 100}%` }} />}
     </div>
   )
 
@@ -186,7 +228,20 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
   return (
     <div className="pv">
       <div className="pv-top">
-        <button className="pill" onClick={onExit}>Beenden</button>
+        <div className="pv-l">
+          <button className="pill" onClick={onExit}>Beenden</button>
+          <button className="pill" aria-expanded={!!phone} onClick={() => {
+            if (phone) return setPhone(null)
+            setPhone({})
+            window.api.remoteStart().then((url) => setPhone({ url }), (e: Error) => setPhone({ error: e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') }))
+          }}>Handy als Fernbedienung</button>
+          {phone && (
+            <div className="pv-phone material" role="dialog" aria-label="Handy als Fernbedienung">
+              {phone.url ? <QrCode text={phone.url} slot="" color="#16161a" bg="#fff" className="pv-qr" /> : <p>{phone.error ?? 'Starte …'}</p>}
+              <p>Mit der Handy-Kamera scannen. Handy und Rechner müssen im selben WLAN sein.</p>
+            </div>
+          )}
+        </div>
         <div className="pv-meta"><span>Folie {view.i + 1} von {last + 1}</span>{plan > 0 && <span title="Geschätzte Sprechzeit laut Notizen">Plan ≈ {fmtSec(plan)}</span>}<Clock /></div>
       </div>
       <div className="pv-now" onClick={next}>{stage}</div>
@@ -215,7 +270,7 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
             </div>
           ))}
         </div>
-        <div className="pv-foot"><b>{titleOf(deck, view.i)}</b><span>Leertaste oder → weiter · ← zurück · P Ansicht · Esc beendet</span></div>
+        <div className="pv-foot"><b>{titleOf(deck, view.i)}</b><span>Leertaste oder → weiter · ← zurück · L Laser · D Zeichnen · E löschen · P Ansicht · Esc beendet</span></div>
       </div>
     </div>
   )

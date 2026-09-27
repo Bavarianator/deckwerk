@@ -22,8 +22,9 @@ async function slideImages(zip: JSZip, slide: string, dir: string): Promise<stri
     const f = zip.file(`ppt/media/${n}`)
     if (!f) return '' // verlinktes, nicht eingebettetes Bild
     await mkdir(dir, { recursive: true })
-    await writeFile(join(dir, n), await f.async('nodebuffer'))
-    return assetUrl(join(dir, n))
+    const file = join(dir, basename(n.replace(/\\/g, '/'))) // Name kommt aus der fremden PPTX: nie als Pfad nutzen
+    await writeFile(file, await f.async('nodebuffer'))
+    return assetUrl(file)
   }))
   return urls.filter(Boolean)
 }

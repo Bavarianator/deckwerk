@@ -1,6 +1,6 @@
 // Freie Elemente (Slide.items): Schema für KI-Tools und Fabriken für die Canvas. Positionen in px auf 1280x720.
 import { z } from 'zod'
-import { DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type FormatId, type Item, type Size } from './deck'
+import { DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
 import { FONT_NAMES } from './themes'
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/)
@@ -141,4 +141,50 @@ if (typeof process !== 'undefined' && process.env.DW_ITEMS_SELFTEST) {
   if (d.size?.w !== 1080 || it.w !== 84.38 || Math.abs(it.x + it.w / 2 - 1230 * (1080 / 1280)) > 0.1 || Math.abs(it.y + it.h / 2 - 670 * 1.5) > 0.1) throw new Error('resize ' + JSON.stringify(it))
   if (resizeDeck(d, '16:9').size !== undefined) throw new Error('resize back')
   console.log('items ok')
+}
+
+// Folienweit umfärben wie in Canva („alle ersetzen“): jede Farbe der freien Elemente einer Folie, und die Ersetzung.
+const COLOR_KEYS = ['color', 'fill', 'fill2', 'stroke', 'effectColor'] as const
+export const colorsOf = (items: Item[]) => [...new Set(items.flatMap((it) => COLOR_KEYS.map((k) => it[k]?.toUpperCase()).filter((c): c is string => !!c)))]
+export const recolor = (items: Item[], from: string, to: string) =>
+  items.map((it) => COLOR_KEYS.reduce((a, k) => (a[k]?.toUpperCase() === from ? { ...a, [k]: to } : a), it))
+
+// Layout-Folie lösen (Canva: alles frei verschiebbar): gemessene Elemente der Folie → freie Elemente.
+// Freie Elemente (slot items.*) bleiben wie sie sind. Icons liegen nur als SVG vor und werden zu Bildern.
+// ponytail: Bildausschnitt (focus) geht verloren, Bilder füllen danach mittig; Builds werden nicht übernommen
+export function elsToItems(els: El[]): Item[] {
+  return els.filter((e) => !e.slot.startsWith('items.')).flatMap((e): Item[] => {
+    const at = { id: newId(), x: Math.round(e.box.x), y: Math.round(e.box.y), w: Math.round(e.box.w), h: Math.round(e.box.h), rot: e.rot }
+    switch (e.kind) {
+      case 'text': {
+        const bold = e.runs.every((r) => r.bold || !r.text.trim())
+        const text = e.runs.map((r) => {
+          const t = r.link ? `[${r.text}](${r.link})` : r.bold && !bold && r.text.trim() ? `**${r.text}**` : r.text
+          return t + (r.breakAfter ? '\n' : '')
+        }).join('')
+        if (!text.trim()) return []
+        // 8 px Reserve: frei gesetzter Text läuft minimal breiter und bräche sonst um; x so, dass die Ausrichtung bleibt
+        return [{ ...at, x: at.x - (e.align === 'right' ? 8 : e.align === 'center' ? 4 : 0), w: at.w + 8, kind: 'text', text, font: e.fontFace ?? e.font, size: Math.round(e.sizePx), color: e.runs.find((r) => r.text.trim())?.color, bold, italic: e.runs.every((r) => r.italic) || undefined,
+          align: e.align, upper: e.upper || undefined, lineHeight: +(e.lineHeightPx / e.sizePx).toFixed(2), spacing: e.trackingPx ? +(e.trackingPx / e.sizePx).toFixed(3) : undefined,
+          effect: e.effect?.type, effectColor: e.effect?.color }]
+      }
+      case 'box': {
+        const g = e.gradient?.stops
+        if (!e.fill && !e.border && !g) return []
+        return [{ ...at, kind: 'shape', shape: e.ellipse ? 'ellipse' : e.shape ?? 'rect', fill: g ? g[0].color : e.fill?.color, fill2: g && g.length > 1 ? g[g.length - 1].color : undefined,
+          opacity: e.fill && e.fill.alpha < 1 ? e.fill.alpha : undefined, stroke: e.border?.color, strokeW: e.border?.width, radius: e.radius || undefined, shadow: e.shadow ? true : undefined,
+          lineStart: e.lineStart, lineEnd: e.lineEnd, dash: e.dash }]
+      }
+      case 'img':
+        return [{ ...at, kind: 'image', src: e.src, look: e.look, mask: e.mask, adjust: e.adjust, round: e.round, flipX: e.flip, crop: e.crop, opacity: e.alpha }]
+      case 'icon':
+        if (e.name) return [{ ...at, kind: 'icon', icon: e.name, color: e.color }]
+        if (e.qr) return [{ ...at, kind: 'qr', text: e.qr, color: e.color }]
+        return [{ ...at, kind: 'image', src: `data:image/svg+xml;utf8,${encodeURIComponent(e.svg)}` }] // ponytail: seltener Rest, SVG-Bild
+      case 'chart':
+        return [{ ...at, kind: 'chart', spec: e.spec }]
+      case 'media':
+        return [{ ...at, kind: e.media, src: e.src, poster: e.poster }]
+    }
+  })
 }

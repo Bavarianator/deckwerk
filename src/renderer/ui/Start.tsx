@@ -43,6 +43,8 @@ interface Props {
 export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey }: Props) {
   const [text, setText] = useState('')
   const [recent, setRecent] = useState<Recent[]>([])
+  const [templates, setTemplates] = useState<Deck[]>([])
+  useEffect(() => { window.api.templates().then(setTemplates, () => setTemplates([])) }, [])
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { window.api.recent(8).then(setRecent, () => setRecent([])) }, [])
   const { src, setSrc, err, attach } = useSource()
@@ -96,6 +98,21 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         </div>
         <button className="plain tint home-blank" onClick={onBlank}>Leer beginnen und frei gestalten</button>
       </main>
+
+      {templates.length > 0 && (
+        <section className="home-recent" aria-label="Vorlagen">
+          <h2>Mit einer Vorlage beginnen</h2>
+          <div className="home-shelf">
+            {templates.map((d) => (
+              <button key={d.title} className="home-deck" title="Öffnet eine Kopie, die Vorlage bleibt unverändert" onClick={() => window.api.saveCopy(d).then(onOpenPath)}>
+                <div className="home-deck-cover"><SlideView deck={d} index={0} width={232} /></div>
+                <b>{d.title}</b>
+                <span>{d.slides.length} Folien</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {recent.length > 0 && (
         <section className="home-recent" aria-label="Zuletzt">

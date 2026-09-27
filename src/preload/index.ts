@@ -4,7 +4,9 @@ import type { AgentEvent } from '../main/agent'
 
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
-export type PresentCmd = { type: 'next' } | { type: 'go'; i: number }
+export type PresentCmd = { type: 'next' } | { type: 'go'; i: number } | { type: 'ink'; ink: Ink }
+/** Laserpunkt und Stiftstriche über der Folie, Koordinaten 0–1 (gleich auf jedem Bildschirm) */
+export interface Ink { laser: [number, number] | null; strokes: [number, number][][] }
 
 // Main lädt Engine und IPC erst nach dem Fenster; bis registerIpc steht, Aufrufe kurz später wiederholen
 const invoke = (channel: string, ...args: unknown[]): Promise<any> =>
@@ -28,6 +30,16 @@ const api = {
   presentDeck: (): Promise<{ deck: Deck; start: number } | null> => invoke('present:deck'),
   presentCmd: (cmd: PresentCmd): Promise<void> => invoke('present:cmd', cmd),
   presentClose: (): Promise<void> => invoke('present:close'),
+  /** Handy-Fernbedienung starten → URL mit Token (für den QR-Code) */
+  remoteStart: (): Promise<string> => invoke('remote:start'),
+  remoteStop: (): Promise<void> => invoke('remote:stop'),
+  /** aktuelle Folie und Notizen für die Handy-Seite */
+  remoteState: (s: { i: number; n: number; title: string; notes: string }): Promise<void> => invoke('remote:state', s),
+  onRemote(cb: (c: 'next' | 'prev') => void): () => void {
+    const h = (_: unknown, c: 'next' | 'prev') => cb(c)
+    ipcRenderer.on('present:remote', h)
+    return () => void ipcRenderer.off('present:remote', h)
+  },
   onPresent(cb: (e: PresentCmd | 'ended') => void): () => void {
     const h = (_: unknown, c: PresentCmd) => cb(c)
     const end = () => cb('ended')
@@ -35,6 +47,8 @@ const api = {
     ipcRenderer.on('present:ended', end)
     return () => { ipcRenderer.off('present:cmd', h); ipcRenderer.off('present:ended', end) }
   },
+  /** Vorlagen für den Startbildschirm; zum Bearbeiten per saveCopy kopieren */
+  templates: (): Promise<Deck[]> => invoke('templates:list'),
   /** zuletzt geänderte Decks unter ~/Deckwerk, neueste zuerst */
   recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */

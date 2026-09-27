@@ -6,7 +6,9 @@ import { BUILDS, DECORS, TONES, type BuildPreset, type DecorId, type Deck, type 
 import { ItemInspector } from './ItemInspector'
 import { Select } from './kit'
 import { LAYOUTS, nextLook, type LayoutId } from '../../shared/layouts'
-import { THEMES, themeFromSpec } from '../../shared/themes'
+import { extract, eyebrowRules } from '../measure'
+import { FONT_NAMES, THEMES, themeFromSpec } from '../../shared/themes'
+import { colorsOf, elsToItems, recolor } from '../../shared/items'
 
 const FRAME: Record<FrameId, string> = { top: 'Titel oben', split: 'Titel links auf Farbfläche', band: 'Titel im Farbband', center: 'Zentriert' }
 const BUILD: Record<BuildPreset, string> ={ none: 'Keine', fade: 'Einblenden', list: 'Liste (Punkt für Punkt)', stagger: 'Nacheinander', wipe: 'Wischen', 'zoom-kpi': 'Zoom' }
@@ -28,6 +30,9 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
 export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked, onItems }: Props) {
   const slide = deck.slides[index]
   const def = slide && LAYOUTS[slide.layout as LayoutId]
+  const items = slide?.items ?? []
+  const colors = colorsOf(items)
+  const texts = items.filter((it) => it.kind === 'text')
   const base = deck.theme.custom ? themeFromSpec(deck.theme.custom) : THEMES.find((t) => t.id === deck.theme.id) ?? THEMES[0]
 
   return (
@@ -38,6 +43,13 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
             {(def?.variants || def?.frames) && <button type="button" className="btn wide" title="Nächste Kombination aus Variante, Komposition und Ton" onClick={() => patchSlide(index, nextLook(slide))}>Andere Gestaltung</button>}
+            {slide.layout !== 'blank' && (
+              <button type="button" className="btn wide" title="Alle Texte, Formen, Bilder und Icons der Folie werden frei verschiebbar wie in Canva. Rückgängig mit Strg+Z."
+                onClick={() => {
+                  const root = document.querySelector<HTMLElement>('.stage-canvas .slide')
+                  if (root) patchSlide(index, { layout: 'blank', variant: undefined, frame: undefined, content: {}, items: [...elsToItems([...eyebrowRules(root), ...extract(root)]), ...items] })
+                }}>In freie Elemente umwandeln</button>
+            )}
             {def?.variants && (
               <Field label="Variante">
                 <Select value={slide.variant ?? def.variants[0]} onChange={(e) => patchSlide(index, { variant: e.target.value })}>
@@ -49,6 +61,24 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
               <Field label="Komposition">
                 <Select value={slide.frame ?? 'top'} onChange={(e) => patchSlide(index, { frame: e.target.value === 'top' ? undefined : (e.target.value as FrameId) })}>
                   {(['top', ...def.frames] as FrameId[]).map((f) => <option key={f} value={f}>{FRAME[f]}</option>)}
+                </Select>
+              </Field>
+            )}
+            {colors.length > 0 && (
+              <div className="field">
+                <span>Farben dieser Folie</span>
+                <div className="swatches">
+                  {colors.map((c, i) => <input key={i} type="color" aria-label={`Farbe ${c} überall auf der Folie ersetzen`} title="Überall auf der Folie ersetzen" value={c.toLowerCase()} onChange={(e) => onItems((l) => recolor(l, c, e.target.value.toUpperCase()), `recolor-${slide.id}-${i}`)} />)}
+                </div>
+              </div>
+            )}
+            {texts.length > 1 && (
+              <Field label="Schrift aller Texte">
+                <Select value={texts.every((it) => it.font === texts[0].font) ? texts[0].font ?? 'head' : ''} onChange={(e) => onItems((l) => l.map((it) => (it.kind === 'text' ? { ...it, font: e.target.value } : it)))}>
+                  <option value="" disabled>Gemischt</option>
+                  <option value="head">Theme: Titel</option>
+                  <option value="body">Theme: Text</option>
+                  {FONT_NAMES.map((f) => <option key={f} value={f}>{f}</option>)}
                 </Select>
               </Field>
             )}
