@@ -24,7 +24,7 @@ export async function postProcess(pptx: Buffer, deck?: Deck): Promise<Buffer> {
       await patch(rels, (xml) => xml.replace('</Relationships>',
         links.map(([, to], k) => `<Relationship Id="${ids[k]}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slide${to + 1}.xml"/>`).join('') + '</Relationships>'))
       await patch(`ppt/slides/slide${i + 1}.xml`, (xml) => links.reduce((x, [item], k) =>
-        x.replace(new RegExp(`(<p:cNvPr id="\\d+" name="dw:items\\.${item}\\.title">)`), `$1<a:hlinkClick r:id="${ids[k]}" action="ppaction://hlinksldjump"/>`), xml))
+        x.replace(new RegExp(`(<p:cNvPr id="\\d+" name="(?:!!)?dw:items\\.${item}\\.title">)`), `$1<a:hlinkClick r:id="${ids[k]}" action="ppaction://hlinksldjump"/>`), xml))
     }
   }
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })

@@ -6,14 +6,14 @@ import { Chart, registerables, type ChartConfiguration, type Plugin } from 'char
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
 import { sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
 import { FONTS, HEAD_ROLES, SCALE, duotoneOf, ensureContrast, mix, resolveTheme, withTone, type FontName, type Theme } from '../shared/themes'
-import { LAYOUTS } from '../shared/layouts'
+import { LAYOUTS, buildOf } from '../shared/layouts'
 import { COMPONENTS } from './layouts'
 import { autofit } from './measure'
 import './slide.css'
 
 Chart.register(...registerables)
 
-interface Ctx { theme: Theme; deck: Deck; index: number; editable: boolean; onEdit?: (slot: string, text: string) => void; print: boolean; editing?: string; live?: boolean }
+interface Ctx { theme: Theme; deck: Deck; index: number; editable: boolean; onEdit?: (slot: string, text: string) => void; print: boolean; editing?: string; live?: boolean; words?: boolean }
 const SlideCtx = createContext<Ctx>(null!)
 export const useSlide = () => useContext(SlideCtx)
 
@@ -29,8 +29,16 @@ const rich = (text: string) =>
     return part.startsWith('**') && part.endsWith('**') && part.length > 4 ? <strong key={i}>{part.slice(2, -2)}</strong> : part
   })
 
+// Präsentieren mit Wort- bzw. Buchstaben-Animation: Text als einzelne .dw-part-Spans, die PresentScreen nacheinander
+// zeigt. Nur live; Messen und Export sehen den ganzen Text.
+export const splitParts = (nodes: ReactNode[], by: 'word' | 'letter'): ReactNode[] =>
+  nodes.flatMap((n, i) =>
+    typeof n !== 'string' ? [<span key={i} className="dw-part dw-word">{n}</span>]
+      : by === 'letter' ? [...n].map((c, j) => <span key={`${i}.${j}`} className="dw-part">{c}</span>)
+        : n.split(/(\s+)/).map((w, j) => (!w.trim() ? w : <span key={`${i}.${j}`} className="dw-part dw-word">{w}</span>)))
+
 export function T(p: { role: keyof typeof SCALE; slot: string; children: string; maxLines?: number; build?: number; className?: string; style?: CSSProperties }) {
-  const { editable, onEdit } = useSlide()
+  const { editable, onEdit, words } = useSlide()
   const head = HEAD_ROLES.includes(p.role) || p.role === 'h2' || p.role === 'h3'
   const canEdit = editable && !p.slot.startsWith('_')
   return (
@@ -48,7 +56,7 @@ export function T(p: { role: keyof typeof SCALE; slot: string; children: string;
       suppressContentEditableWarning
       onBlur={canEdit ? (e) => e.currentTarget.innerText.trim() !== plain(p.children) && onEdit?.(p.slot, e.currentTarget.innerText.trim()) : undefined}
     >
-      {rich(p.children)}
+      {words && p.build !== undefined ? splitParts(rich(p.children), 'word') : rich(p.children)}
     </div>
   )
 }
@@ -201,7 +209,21 @@ function chartConfig(spec: ChartSpec, t: Theme, print: boolean): ChartConfigurat
       ctx.restore()
     },
   }
-  const cat = { grid: { display: false }, border: { color: t.c.border }, ticks: { font, color: t.c.muted }, stacked }
+  // Negative Werte: Nulllinie quer durchs Diagramm statt Grundlinie am unteren Rand, sonst schweben die Balken
+  const negative = !wf && !line && spec.series.some((s) => s.values.some((v) => v < 0))
+  const zero: Plugin = {
+    id: 'dwZero',
+    beforeDatasetsDraw(chart) {
+      const s = chart.scales[horizontal ? 'x' : 'y'], a = chart.chartArea, ctx = chart.ctx
+      if (!negative || !s) return
+      const z = s.getPixelForValue(0)
+      ctx.save(), (ctx.strokeStyle = t.c.muted), (ctx.lineWidth = 1.5), ctx.beginPath()
+      if (horizontal) ctx.moveTo(z, a.top), ctx.lineTo(z, a.bottom)
+      else ctx.moveTo(a.left, z), ctx.lineTo(a.right, z)
+      ctx.stroke(), ctx.restore()
+    },
+  }
+  const cat = { grid: { display: false }, border: { color: t.c.border, display: !negative }, ticks: { font, color: t.c.muted }, stacked }
   const val = { display: !labels, stacked, beginAtZero: true, grid: { color: t.c.border }, border: { display: false }, ticks: { font, color: t.c.muted, callback: (v: string | number) => fmtNum(Number(v)) } }
   const longest = Math.max(...spec.series.map((s) => s.name.length))
   return {
@@ -214,7 +236,7 @@ function chartConfig(spec: ChartSpec, t: Theme, print: boolean): ChartConfigurat
       scales: horizontal ? { y: cat, x: val } : { x: cat, y: val },
       plugins: { legend: { display: !line && !wf && spec.series.length > 1, position: 'top', align: 'end', labels: { font, color: t.c.text, boxWidth: 12, boxHeight: 12, padding: 16 } } },
     },
-    plugins: [dwLabels],
+    plugins: [zero, dwLabels],
   } as ChartConfiguration
 }
 
@@ -261,7 +283,6 @@ const MOTIFS: Record<DecorId, (m: Motif) => ReactNode> = {
     <>
       {hero && div('ring', { width: 620, height: 620, right: -180, bottom: -260, borderColor: mix(t.c.bg, a, 0.35) })}
       {hero && div('ring', { width: 420, height: 420, right: -80, bottom: -160, borderColor: mix(t.c.bg, b, 0.3) })}
-      {div('rule', { background: a })}
     </>
   ),
   grid: ({ hero, line }) => div('grid-lines', { '--line': line, maskImage: hero ? 'radial-gradient(ellipse at 70% 40%, #000 0%, transparent 75%)' : corner } as CSSProperties),
@@ -284,10 +305,9 @@ const MOTIFS: Record<DecorId, (m: Motif) => ReactNode> = {
 
 function Decor({ kind, id }: { kind: DecorKind; id: DecorId }) {
   const { theme: t } = useSlide()
-  // Akzentfläche (Ton accent): leichter Verlauf in accent2, darüber das Motiv
-  const base = t.tone === 'accent' ? { background: `linear-gradient(120deg, ${t.c.bg} 0%, ${t.c.bg} 45%, ${mix(t.c.bg, t.c.accent2, 0.35)} 100%)` } : undefined
+  // Akzentfläche (Ton accent) bleibt flach: Verläufe sind ein typisches Merkmal generierter Folien
   return (
-    <div className={['decor', id === 'rings' && 'paper', t.texture].filter(Boolean).join(' ')} style={base}>
+    <div className={['decor', t.texture].filter(Boolean).join(' ')}>
       {MOTIFS[id]?.({ t, a: t.c.accent, b: t.c.accent2, hero: kind === 'hero', line: mix(t.c.bg, t.c.text, 0.08) })}
     </div>
   )
@@ -303,7 +323,7 @@ function themeVars(t: Theme): CSSProperties {
     '--fill': t.c.fill!,
     '--on-accent-soft': ensureContrast(mix(t.c.fill!, t.c.onAccent, 0.85), t.c.fill!, 4.6),
     '--font-head': `'${t.head.css}'`, '--font-body': `'${t.body.css}'`, '--head-weight': t.head.weight, '--head-tracking': `${t.head.tracking}em`,
-    '--radius': `${t.radius}px`,
+    '--radius': `${t.radius}px`, '--head-scale': t.headScale ?? 1,
   }
   for (const [role, steps] of Object.entries(SCALE)) v[`--fs-${role}`] = `${steps[0]}px`
   return v as CSSProperties
@@ -344,11 +364,11 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
   const { deck, index } = ctx
   const s = deck.slides[index]
   const def = LAYOUTS[s.layout as keyof typeof LAYOUTS] as { tone?: Tone; footer: boolean; frames?: FrameId[] } | undefined
-  const theme = withTone(ctx.theme, s.tone ?? p.tone ?? def?.tone)
+  const theme = withTone(ctx.theme, s.tone ?? p.tone ?? (def?.tone && (ctx.theme.sectionTone ?? def.tone)))
   const frame = s.frame && def?.frames?.includes(s.frame) ? s.frame : 'top'
   return (
     <SlideCtx.Provider value={{ ...ctx, theme }}>
-      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
+      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} ${theme.rule ? `rule-${theme.rule}` : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
         {s.bg?.image ? <div className="backdrop"><Img src={s.bg.image} slot="_bg" under /></div> : <Decor kind={p.decor ?? 'content'} id={s.decor ?? theme.decor} />}
         {p.media}
         <div className={`safe ${p.safeClass ?? ''}`} data-fit data-slot="_slide">
@@ -502,7 +522,7 @@ function AudioItem({ it, attrs, pos, slot, live, color }: { it: Item; attrs: Rec
 function FreeItem({ it }: { it: Item }) {
   const { theme, editable, editing, onEdit, live } = useSlide()
   const slot = `items.${it.id}`
-  const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined }
+  const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined, 'data-anim-dir': it.animDir, 'data-anim-speed': it.animSpeed }
   const pos: CSSProperties = { position: 'absolute', left: it.x, top: it.y, width: it.w, height: it.h, transform: it.rot ? `rotate(${it.rot}deg)` : undefined }
   const alpha = it.opacity ?? 1
   switch (it.kind) {
@@ -525,7 +545,7 @@ function FreeItem({ it }: { it: Item }) {
             ...effectCss(it.effect, it.effectColor ?? it.color ?? theme.c.text),
           }}
         >
-          {it.text ?? ''}
+          {live && (it.anim === 'typewriter' || it.anim === 'ascend') ? splitParts([it.text ?? ''], it.anim === 'ascend' ? 'word' : 'letter') : it.text ?? ''}
         </div>
       )
     }
@@ -617,7 +637,7 @@ export function SlideView(p: { deck: Deck; index: number; width?: number; editab
     Promise.all([document.fonts.ready, loadCustomFont(p.deck)]).then(run)
   })
 
-  const ctx: Ctx = { theme, deck: p.deck, index: p.index, editable: !!p.editable, onEdit: p.onEdit, print: !!p.print, editing: p.editing, live: p.live }
+  const ctx: Ctx = { theme, deck: p.deck, index: p.index, editable: !!p.editable, onEdit: p.onEdit, print: !!p.print, editing: p.editing, live: p.live, words: !!p.live && !!slide && buildOf(p.deck, p.index) === 'words' }
   return (
     <div className="slide-host" style={{ width, height: (width * size.h) / size.w }} ref={host}>
       <div style={{ transform: `scale(${width / size.w})`, transformOrigin: '0 0', width: size.w, height: size.h }}>

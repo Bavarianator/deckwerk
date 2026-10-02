@@ -5,7 +5,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
-import { MEDIA_EXT, sizeOf, type BoxEl, type BuildPreset, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
+import { webpSize } from './tools'
+import { MEDIA_EXT, morphKey, morphNames, sizeOf, transitionOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
 import { injectAnimations, type AnimStep, type SlideAnim } from './animations'
@@ -28,9 +29,15 @@ export function assetPath(src: string): string | undefined {
   return p && MEDIA_EXT.test(p) ? p : undefined
 }
 
+// Bildmaße: nativeImage kennt nur PNG/JPEG; WebP (Netzbilder, eigene Dateien) wurde ohne Maße auf die Box gestreckt
+function imageSize(path: string): { width: number; height: number } {
+  const n = nativeImage.createFromPath(path).getSize()
+  return n.width ? n : webpSize(readFileSync(path).subarray(0, 32)) ?? n
+}
+
 // Contained image rect inside its box, honoring the CSS background-position the layout used.
 function containRect(el: ImgEl, path: string) {
-  const { width, height } = nativeImage.createFromPath(path).getSize()
+  const { width, height } = imageSize(path)
   const b = el.box
   if (!width || !height) return b
   const k = Math.min(b.w / width, b.h / height)
@@ -68,6 +75,8 @@ function addChart(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: ChartEl, t: Theme
     catAxisLabelColor: hex(t.c.muted), valAxisLabelColor: hex(t.c.muted),
     catAxisLabelFontFace: font.fontFace, valAxisLabelFontFace: font.fontFace, catAxisLabelFontSize: font.size, valAxisLabelFontSize: font.size,
     catAxisLineShow: true, catAxisLineColor: hex(t.c.border), valAxisLineShow: false,
+    // negative Werte: Achse (Nulllinie) bleibt bei 0, Beschriftung unten statt mitten in den Balken (wie in der Vorschau)
+    catAxisLabelPos: !wf && !line && s.series.some((x) => x.values.some((v) => v < 0)) ? 'low' : undefined,
     valAxisHidden: labels, valGridLine: labels ? { style: 'none' } : { color: hex(t.c.border), size: 0.75 }, catGridLine: { style: 'none' },
     showValue: labels, dataLabelPosition: stacked ? 'ctr' : 'outEnd', dataLabelFormatCode: decimals(s) ? '#,##0.0' : '#,##0',
     dataLabelColor: hex(t.c.text), dataLabelFontFace: font.fontFace, dataLabelFontSize: font.size, dataLabelFontBold: true,
@@ -128,7 +137,7 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
         slide.addImage({ path, x: IN(r.x), y: IN(r.y), w: IN(r.w), h: IN(r.h), objectName: name, rotate: el.rot, flipH: el.flip })
       } else {
         // Cover: auf volle Bildgröße skalieren und per srcRect nach focus zuschneiden (nicht strecken). Ersetzbar über „Bild ändern“.
-        const { width: iw, height: ih } = path ? nativeImage.createFromPath(path).getSize() : { width: 0, height: 0 }
+        const { width: iw, height: ih } = path ? imageSize(path) : { width: 0, height: 0 }
         const k = iw && ih ? Math.max(b.w / iw, b.h / ih) : 0
         const src = path ? { path } : { data: el.src.slice(5) }
         const extra = { rotate: el.rot, flipH: el.flip, rounding: el.round, transparency: el.alpha !== undefined ? Math.round((1 - el.alpha) * 100) : undefined, objectName: name }
@@ -167,6 +176,7 @@ function stepsFor(preset: BuildPreset, groups: Map<number, string[]>, mode: Deck
     groups.get(g)!.forEach((shape, j) => steps.push({ shape, ...(j ? rest : first) }))
   switch (preset) {
     case 'fade':
+    case 'photo': // Fotos zoomen zusätzlich (buildPptx)
       order.forEach((g, i) => group(g, { effect: 'fade', trigger: i ? 'with' : 'after', durMs: 600 }))
       break
     case 'list':
@@ -174,16 +184,30 @@ function stepsFor(preset: BuildPreset, groups: Map<number, string[]>, mode: Deck
       break
     case 'stagger':
     case 'zoom-kpi':
+    case 'pan':
+    case 'pop':
       order.forEach((g, i) => {
-        const fx = { effect: preset === 'stagger' ? ('float' as const) : ('zoom' as const), durMs: 450, delayMs: i * 150 }
+        const fx = { effect: ({ stagger: 'float', 'zoom-kpi': 'zoom', pan: 'pan', pop: 'pop' } as const)[preset], durMs: 450, delayMs: i * 150 }
         group(g, { ...fx, trigger: i ? 'with' : 'after', delayMs: i ? i * 150 : 0 }, { ...fx, trigger: 'with' })
       })
       break
     case 'wipe':
       order.forEach((g) => group(g, { effect: 'wipe', trigger: 'after', durMs: 500 }))
       break
+    case 'words': // Canva „Aufstieg“: Text Wort für Wort, Flächen und Bilder blenden mit ein
+      order.forEach((g) => group(g, { effect: 'float', by: 'word', trigger: 'after', durMs: 400 }))
+      break
   }
   return steps
+}
+
+// Element-Animationen (Canva) → PowerPoint. Purzeln wird zum Zoom: eine relative Drehung kann PowerPoint nicht verlässlich.
+const ITEM_FX: Record<Exclude<ItemAnim, 'none'>, Omit<AnimStep, 'shape' | 'trigger'>> = {
+  fade: { effect: 'fade' }, float: { effect: 'float' }, pan: { effect: 'pan' }, drift: { effect: 'drift', durMs: 1200 },
+  pop: { effect: 'pop', durMs: 450 }, zoom: { effect: 'zoom' }, tumble: { effect: 'zoom', durMs: 700 }, stomp: { effect: 'stomp' },
+  baseline: { effect: 'baseline', durMs: 600 }, wipe: { effect: 'wipe' },
+  typewriter: { effect: 'appear', by: 'letter', durMs: 1 }, ascend: { effect: 'float', by: 'word', durMs: 400 },
+  breathe: { effect: 'pulse', durMs: 1200 },
 }
 
 export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buffer> {
@@ -197,17 +221,26 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
 
   const anims: SlideAnim[] = []
   const patches: ShapePatch[] = []
+  let before: MorphEl[] = [] // Morph-Namen der vorigen Folie
   deck.slides.forEach((s, i) => {
     const { measured, background } = slides[i]
     const slide = pptx.addSlide()
     slide.background = { data: `image/png;base64,${background.toString('base64')}` }
     const groups = new Map<number, string[]>()
+    const pulses: AnimStep[] = []
+    const photos: string[] = []
     const itemSteps: AnimStep[] = [] // freie Elemente: je eins pro Klick (Selbstlauf: nacheinander) nach dem Layout-Aufbau
     const used = new Set<string>()
     const ts = withTone(t, s.tone ?? LAYOUTS[s.layout as keyof typeof LAYOUTS]?.tone) // Chart-Farben der Folie
-    for (const el of measured.els) {
-      let name = `dw:${el.slot}`.replace(/[&<>"']/g, '')
-      for (let n = 2; used.has(name); n++) name = `dw:${el.slot}#${n}`
+    // Morph in PowerPoint ordnet Formen mit gleichem „!!“-Namen einander zu – dieselbe Zuordnung wie in der App (morphNames)
+    const pre = transitionOf(deck, i) === 'morph' || transitionOf(deck, i + 1) === 'morph' ? '!!dw:' : 'dw:'
+    const own = measured.els.map((e) => ({ slot: e.slot, key: morphKey(e) }))
+    const morphed = transitionOf(deck, i) === 'morph' ? morphNames(before, own) : own.map((e) => e.slot)
+    const prevNames = new Set(transitionOf(deck, i) === 'morph' ? before.map((e) => e.slot) : [])
+    before = own.map((e, k) => ({ slot: morphed[k], key: e.key }))
+    for (const [k, el] of measured.els.entries()) {
+      let name = `${pre}${morphed[k]}`.replace(/[&<>"']/g, '')
+      for (let n = 2; used.has(name); n++) name = `${pre}${morphed[k]}#${n}`
       used.add(name)
       addEl(pptx, slide, el, ts, name)
       if (el.kind === 'box' && el.gradient) patches.push({ slide: i + 1, name, fn: gradFill(el.gradient) })
@@ -216,12 +249,21 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
       else if (el.kind === 'img' && el.fit === 'cover' && !el.round && el.radius > 0.5) patches.push({ slide: i + 1, name, fn: roundRect(el.radius, el.box.w, el.box.h) })
       if (el.kind === 'img' && el.adjust) patches.push({ slide: i + 1, name, fn: adjustBlip(el.adjust) })
       if (el.kind === 'img' && el.look) patches.push({ slide: i + 1, name, fn: recolor(el.look, duotoneOf(ts)) })
+      if (prevNames.has(morphed[k])) continue // herübergewandert: tritt nicht noch einmal auf (sonst morpht PowerPoint ins Unsichtbare)
       if (el.build !== undefined && !(el.kind === 'img' && !assetPath(el.src))) groups.set(el.build, [...(groups.get(el.build) ?? []), name])
-      if (el.anim && el.anim !== 'none') itemSteps.push({ shape: name, effect: el.anim, trigger: deck.mode === 'click' ? 'click' : 'after', durMs: 500 })
+      // Canva-Foto-Zoom: randlose (under) und halbseitige Fotos (volle Höhe) vergrößern sich langsam ab Folienbeginn
+      if (el.kind === 'img' && (el.under || (el.box.y <= 1 && el.box.y + el.box.h >= sizeOf(deck).h - 1))) photos.push(name)
+      if (el.anim && el.anim !== 'none') {
+        const fx = ITEM_FX[el.anim], f = el.animSpeed === 'slow' ? 1.6 : el.animSpeed === 'fast' ? 0.6 : 1
+        const step: AnimStep = { shape: name, ...fx, durMs: Math.round((fx.durMs ?? 500) * f), dir: el.animDir, gapMs: fx.by ? Math.round((fx.by === 'word' ? 120 : 45) * f) : undefined, trigger: deck.mode === 'click' ? 'click' : 'after' }
+        if (el.anim === 'breathe') pulses.push({ ...step, trigger: 'with' }) // läuft ab Folienbeginn, ohne Klick
+        else itemSteps.push(step)
+      }
     }
     if (s.notes) slide.addNotes(s.notes)
     const preset = buildOf(deck, i)
-    anims.push({ transition: i === 0 ? 'none' : deck.transition, steps: [...stepsFor(preset, groups, deck.mode), ...itemSteps] })
+    if (preset === 'photo') pulses.push(...photos.map((shape): AnimStep => ({ shape, effect: 'grow', trigger: 'with', durMs: 12000 })))
+    anims.push({ transition: transitionOf(deck, i), steps: [...pulses, ...stepsFor(preset, groups, deck.mode), ...itemSteps] })
   })
   const buf = await patchShapes((await pptx.write({ outputType: 'nodebuffer' })) as Buffer, patches)
   const free = deck.slides.flatMap((s) => s.items ?? []).flatMap((it) => (it.font && it.font in FONTS ? [FONTS[it.font as FontName]] : []))

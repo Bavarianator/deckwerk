@@ -18,13 +18,37 @@ export interface McpOptions {
   onDeck?: (deck: Deck) => void // z. B. Live-Vorschau im App-Fenster
 }
 
+// Claude Code nimmt Tool-Ergebnisse nur bis zu einer Token-Grenze an (61.000 Zeichen am Stück waren zu viel): Teile an Abschnittsgrenzen
+export function guideParts(max = 20000): string[] {
+  const parts = ['']
+  for (const block of buildSystemPrompt().split(/\n(?=##+ )/)) {
+    if (parts.at(-1) && parts.at(-1)!.length + block.length > max) parts.push('')
+    parts[parts.length - 1] += (parts.at(-1) ? '\n' : '') + block
+  }
+  return parts
+}
+
+// Claude Code kürzt Server-Anweisungen auf rund 2.000 Zeichen: das Wesentliche zuerst, der volle Guide per read_guide
+const INTRO = `# Deckwerk: Präsentationen aus einem Layout-Katalog
+Du wählst Layouts und füllst ihre Felder; Positionen, Schriftgrößen und Farben setzt die Engine. Setze nie Koordinaten.
+
+**Kommen diese Anweisungen bei dir gekürzt an, lies zuerst \`read_guide\` (alle Teile: part 1, 2, …).** Er enthält den Design-Guide und den Layout-Katalog mit allen Feldnamen; ohne ihn rätst du Felder und Gestaltung.
+
+Ablauf: Briefing klären → Storyline als Liste von Action Titles → \`propose_looks\` oder direkt \`create_deck\` mit eigenem Design → \`add_slides\` in Batches von 4–6 Folien, Rückmeldungen (Autofit, Lint) sofort beheben → \`render_overview\` und \`lint_deck\`, schwächste Folien verbessern → \`save_deck\`.
+
+Kernregeln:
+- Eine Botschaft pro Folie. Der Titel ist diese Botschaft als Satz (max. ~80 Zeichen); die Titel allein erzählen die Geschichte.
+- Zurückhaltung statt Deko: keine Karten-Raster, keine Icons als Schmuck, keine Verläufe oder Sticker. Hierarchie über Größe und Weißraum, eine Akzentfarbe.
+- Auf 4 Inhaltsfolien mindestens eine luftige Folie (statement, big-number, photo).
+- Höchstens ~40 Wörter pro Folie, Details in die Speaker Notes.`
+
 export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServer {
   const home = opts.home ?? join(homedir(), 'Deckwerk')
   let deck: Deck | null = opts.deck ?? null
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
   const outDir = () => (path ? dirname(path) : join(home, 'out'))
 
-  const server = new McpServer({ name: 'deckwerk', version: '0.1.0' }, { instructions: buildSystemPrompt() })
+  const server = new McpServer({ name: 'deckwerk', version: '0.1.0' }, { instructions: `${INTRO}\n\n${buildSystemPrompt()}` })
 
   const tools: ToolDef[] = [
     ...buildTools({
@@ -35,6 +59,16 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       outDir: outDir(),
       unsplashKey: process.env.UNSPLASH_ACCESS_KEY, // ponytail: Wert beim Start; nach save_deck exportiert export_deck weiter nach ~/Deckwerk/out
     }),
+    {
+      name: 'read_guide',
+      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen.',
+      inputSchema: z.object({ part: z.number().int().min(1).default(1).describe('Teil 1, 2, … – die Antwort nennt die Anzahl') }),
+      async run(i: { part: number }) {
+        const parts = guideParts()
+        const k = Math.min(i.part, parts.length)
+        return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }
+      },
+    },
     {
       name: 'get_deck',
       description: 'Aktuelles Deck als JSON (IDs, Layouts, Inhalte) – zum Nachsehen, was gerade drin ist.',
@@ -78,7 +112,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
 // auch für den App-Chat über Claude Code (claude-agent.ts)
 export function serveTools(server: McpServer, tools: ToolDef[]): void {
   for (const t of tools) {
-    server.registerTool(t.name, { description: t.description, inputSchema: t.inputSchema as z.ZodObject }, async (args) => {
+    server.registerTool(t.name, { description: t.description, inputSchema: t.inputSchema as z.ZodObject, ...(t.readOnly && { annotations: { readOnlyHint: true } }) }, async (args) => {
       try {
         return toResult(await t.run(args))
       } catch (e) {

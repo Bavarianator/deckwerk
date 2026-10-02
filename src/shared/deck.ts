@@ -1,8 +1,11 @@
-export const BUILDS = ['none', 'fade', 'list', 'stagger', 'wipe', 'zoom-kpi'] as const
-export const TRANSITIONS = ['none', 'fade', 'push', 'morph', 'dissolve', 'wipe', 'cover', 'split', 'circle', 'zoom'] as const
+// pan, pop, words: Canva-Seitenanimationen (Schwenken, Pop, Wort für Wort)
+// photo: Canva „Foto-Zoom“ – randlose Fotos zoomen langsam, Text blendet ein
+export const BUILDS = ['none', 'fade', 'list', 'stagger', 'wipe', 'zoom-kpi', 'pan', 'pop', 'words', 'photo'] as const
+// slide, stack, color: Canva-Übergänge (Slide, Stapel, Farbwischen)
+export const TRANSITIONS = ['none', 'fade', 'push', 'morph', 'dissolve', 'wipe', 'cover', 'split', 'circle', 'zoom', 'slide', 'stack', 'color'] as const
 export type BuildPreset = (typeof BUILDS)[number]
 export type Transition = (typeof TRANSITIONS)[number]
-export const MOTIONS = ['calm', 'standard', 'lively'] as const
+export const MOTIONS = ['none', 'calm', 'standard', 'lively'] as const // none = keine Aufbauten (Canva Magic Animate „Keine“)
 export type Motion = (typeof MOTIONS)[number]
 // Folien-Ton: normal = Theme wie definiert, accent = Akzentfläche, invert = Hell/Dunkel getauscht (Rhythmus ohne zweite Palette).
 export const TONES = ['normal', 'accent', 'invert'] as const
@@ -39,6 +42,12 @@ export interface ThemeSpec {
   radius: number
   decor: DecorId
   texture?: 'grain'
+  // Struktur statt nur Farbe: damit eigene Designs sich wirklich unterscheiden
+  titleSize?: 'normal' | 'large' // large = Plakat-Titel (rund 1,2×)
+  titleWeight?: 'regular' | 'bold'
+  rule?: 'none' | 'over' | 'under' // feine Linie über bzw. unter dem Folienkopf
+  sectionTone?: Tone // Kapiteltrenner: accent (Standard), invert oder normal
+  vivid?: boolean // kräftiger Farbgrund statt fast Weiß/Schwarz (Stil mutig); sonst dämpft themeFromSpec den Grund
 }
 
 export interface Slide {
@@ -47,6 +56,7 @@ export interface Slide {
   variant?: string
   content: any // validated by the layout's zod schema (src/shared/layouts.ts)
   build?: BuildPreset // default comes from the layout
+  transition?: Transition // Übergang zu dieser Folie (meist morph); ohne = Deck-Übergang
   tone?: Tone // default comes from the layout (section: accent)
   decor?: DecorId // default comes from the theme
   frame?: FrameId // Komposition; default top
@@ -71,8 +81,13 @@ export type LineEnd = (typeof LINE_ENDS)[number]
 export const DASHES = ['solid', 'dash', 'dot'] as const
 export type Dash = (typeof DASHES)[number]
 export type ShapeId = (typeof SHAPES)[number]
-export const ITEM_ANIMS = ['none', 'fade', 'float', 'zoom', 'wipe'] as const
+// wie Canva: float = Aufsteigen (Rise); typewriter/ascend nur für Text (Buchstabe/Wort einzeln); breathe = Dauerpuls ohne Klick
+export const ITEM_ANIMS = ['none', 'fade', 'float', 'pan', 'drift', 'pop', 'zoom', 'tumble', 'stomp', 'baseline', 'wipe', 'typewriter', 'ascend', 'breathe'] as const
 export type ItemAnim = (typeof ITEM_ANIMS)[number]
+// Richtung der Bewegung (Canva: Schwenken, Treiben, Wischen, Aufsteigen); ohne = Standard des Stils
+export const ANIM_DIRS = ['right', 'left', 'up', 'down'] as const
+export type AnimDir = (typeof ANIM_DIRS)[number]
+export type AnimSpeed = 'slow' | 'fast' // ohne = normal
 export interface Item {
   id: string
   kind: 'text' | 'shape' | 'image' | 'icon' | 'chart' | 'video' | 'audio' | 'qr' | 'graphic' // qr: text = Inhalt; graphic: Name aus GRAPHICS
@@ -82,6 +97,7 @@ export interface Item {
   opacity?: number // 0..1
   locked?: boolean
   anim?: ItemAnim // Auftritt beim Präsentieren (nacheinander per Klick)
+  animDir?: AnimDir; animSpeed?: AnimSpeed
   // text
   text?: string
   font?: 'head' | 'body' | string // head/body = Theme-Schrift, sonst FontName
@@ -143,8 +159,35 @@ export interface Deck {
   theme: ThemeRef
   transition: Transition
   motion?: Motion // Bewegungsstil des Decks (Canva „Magic Animate“); einzelne Folien-builds haben Vorrang
+  style?: 'mutig' // Gestaltungsstil für die KI; ohne = sachlich (Zurückhaltung, Design-Guide §6 „Stil des Decks“)
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
   slides: Slide[]
+}
+// Übergang an der Grenze zu Folie i (die erste Folie hat keinen)
+export const transitionOf = (deck: Deck, i: number): Transition => (i <= 0 ? 'none' : deck.slides[i]?.transition ?? deck.transition)
+
+// Morph-Zuordnung, gleich in App (PresentScreen), PPTX und Lint. key = Text bzw. Bildquelle: Gleicher Inhalt wandert zuerst
+// (Agenda-Punkt → Kapiteltitel, Kennzahl → große Zahl, Galeriebild → Vollbild), danach gleicher Slot. Liefert für jedes
+// Element von next den gemeinsamen Namen; gepaart ist es, wenn der Name auf prev vorkommt. Slots je Liste eindeutig.
+export interface MorphEl { slot: string; key?: string }
+export const morphText = (t: string): string | undefined => { const k = t.replace(/\s+/g, '').toLowerCase(); return k.length > 1 ? k : undefined }
+export const morphKey = (e: El): string | undefined => (e.kind === 'text' ? morphText(e.runs.map((r) => r.text).join('')) : e.kind === 'img' ? `img:${e.src}` : undefined)
+export function morphNames(prev: MorphEl[], next: MorphEl[]): string[] {
+  const slots = new Set(prev.map((e) => e.slot))
+  const taken = new Set<string>()
+  const byKey = next.map((e) => {
+    const cands = prev.filter((p) => p.key && p.key === e.key && !taken.has(p.slot)).map((p) => p.slot)
+    const s = cands.includes(e.slot) ? e.slot : cands[0]
+    if (s !== undefined) taken.add(s)
+    return s
+  })
+  return next.map((e, k) => {
+    if (byKey[k] !== undefined) return byKey[k]
+    if (!slots.has(e.slot)) return e.slot
+    if (taken.has(e.slot)) return `${e.slot}~` // eigener Slot wandert schon in ein anderes Element
+    taken.add(e.slot)
+    return e.slot
+  })
 }
 
 // ---- what the renderer measures and hands to lint + PPTX export (all px, relative to the 1280x720 slide) ----
@@ -156,7 +199,7 @@ export interface Box { x: number; y: number; w: number; h: number }
 
 export interface Run { text: string; bold: boolean; italic: boolean; underline?: boolean; color: string; breakAfter?: boolean; link?: string }
 
-interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim }
+interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim; animDir?: AnimDir; animSpeed?: AnimSpeed }
 export interface TextEl extends Base {
   kind: 'text'
   font: 'head' | 'body'

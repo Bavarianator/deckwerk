@@ -9,10 +9,11 @@ import { pathToFileURL } from 'node:url'
 import type { Deck } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
-import { modelOf, routeOf, type ChatModels } from '../shared/models'
+import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { assetUrl, buildTools, localizeDeck, STYLE_FILE } from './tools'
+import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -41,8 +42,10 @@ async function restore(file: string): Promise<string> {
 
 export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const keyFile = join(app.getPath('userData'), 'api-key.bin')
-  // Einrichtung erledigt: Datei statt localStorage, das bei hartem Beenden oder mehreren Instanzen verloren geht
-  const setupFile = join(app.getPath('userData'), 'setup-done')
+  // Einrichtung erledigt: einmal pro Rechner, nicht pro Chromium-Profil. userData wechselt zwischen Entwicklung (deckwerk),
+  // installierter App (Deckwerk) und jedem Lauf mit --user-data-dir; dort kam der Assistent sonst jedes Mal neu.
+  const setupFile = join(app.getPath('appData'), 'deckwerk', 'setup-done')
+  const setupDone = () => existsSync(setupFile) || existsSync(join(app.getPath('userData'), 'setup-done')) // alte Markierung im Profil
   let deck: Deck | null = null
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
   let dirty = false // Änderungen (UI oder KI) seit dem letzten Speichern
@@ -53,6 +56,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const detect = () => { for (const c of CLIS) clis[c] = findCli(c) } // erneut in Einrichtung und Modell-Liste: frisch Installiertes zählt sofort
   detect()
   const hasApiKey = () => existsSync(keyFile) || !!process.env.ANTHROPIC_API_KEY
+  loadImageSettings()
 
   const emit = (e: AgentEvent) => {
     if (e.type === 'deck') { deck = e.deck; dirty = true }
@@ -66,7 +70,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     }
     return process.env.ANTHROPIC_API_KEY
   }
-  const state = () => ({ deck, path, hasKey: hasApiKey() || CLIS.some((c) => !!clis[c]), setupDone: existsSync(setupFile) })
+  const state = () => ({ deck, path, hasKey: hasApiKey() || CLIS.some((c) => !!clis[c]), setupDone: setupDone() })
   // Auto-Speichern: der Renderer speichert 1,5 s nach jeder Änderung. Was in diesem Fenster noch offen ist, sichert
   // flush() synchron, bevor ein anderes Deck geladen oder das Fenster geschlossen wird.
   const flush = () => {
@@ -183,7 +187,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const opts = { engine, onEvent: emit, apiKey: key, deck: deck ?? undefined, outDir: outDir() }
     agent ??= kind === 'api' ? new DeckAgent(opts) : new CliAgent(kind, clis[kind]!, opts)
     agentKind = kind
-    agent.model = r ? r.model : modelOf(model).id // unbekannte Claude-ID → Standardmodell
+    const auto = !r && model === AUTO ? autoPick(text, !!deck?.slides.length) : null
+    agent.model = r ? r.model : auto?.model ?? modelOf(model).id // unbekannte Claude-ID → Standardmodell
+    agent.effort = auto?.effort ?? 'high'
+    if (auto) emit({ type: 'tool', name: 'auto_model', status: 'done', summary: `${modelOf(auto.model).name} (${auto.why})` })
     await agent.send(text)
   })
   ipcMain.handle('agent:abort', () => agent?.abort())
@@ -196,6 +203,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     agent?.abort()
     agent = null // nächster send nutzt den neuen Key
   })
+
+  // KI-Bilder (Einrichtung → Bilder): Keys bleiben im Main-Prozess, generate_image liest sie beim Aufruf
+  ipcMain.handle('imageSettings:get', () => imageStatus())
+  ipcMain.handle('imageSettings:set', (_, patch: unknown) => saveImageSettings(patch))
 
   ipcMain.handle('image:pick', async () => {
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'svg'] }] })
@@ -335,12 +346,17 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     : existsSync(script) ? { command: script, args: ['--mcp'] }
     // Vibe und Codex starten den Server ohne DISPLAY: unter Linux headless statt x11 (x11 bräche dann ab)
     : { command: process.execPath, args: [app.getAppPath(), ...(process.platform === 'linux' ? ['--ozone-platform=headless', '--disable-gpu'] : []), '--mcp'] }
-  ipcMain.handle('setup:done', () => writeFile(setupFile, ''))
+  ipcMain.handle('setup:done', async () => { await mkdir(dirname(setupFile), { recursive: true }); await writeFile(setupFile, '') })
   const config: Record<Cli, string> = {
     claude: join(homedir(), '.claude.json'),
     codex: join(process.env.CODEX_HOME ?? join(homedir(), '.codex'), 'config.toml'),
     vibe: join(process.env.VIBE_HOME ?? join(homedir(), '.vibe'), 'config.toml'),
   }
+  // Skill (skills/deckwerk/SKILL.md) für Claude Code und Codex, beide lesen dasselbe Format; Vibe kennt keine Skills.
+  // Eingerichtet heißt dort: MCP-Eintrag und Skill in genau der Fassung dieser App (nach Updates erneut einrichten)
+  const skillFile = (cli: Cli) => cli === 'vibe' ? null : join(cli === 'claude' ? join(homedir(), '.claude') : dirname(config.codex), 'skills', 'deckwerk', 'SKILL.md')
+  const skill = () => readFileSync(join(app.getAppPath(), 'skills', 'deckwerk', 'SKILL.md'), 'utf8')
+  const skillOk = (cli: Cli) => { const f = skillFile(cli); try { return !f || readFileSync(f, 'utf8') === skill() } catch { return false } }
   // Eingetragen heißt: ein deckwerk-Eintrag mit genau unserem Start-Befehl samt letztem Argument (ein alter Pfad zählt
   // nicht; beim AppImage ist der Befehl immer /bin/sh, der Pfad steht im letzten Argument)
   const registered = (cli: Cli): boolean => {
@@ -363,7 +379,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     : new Promise((ok) => execFile(clis.codex!, ['login', 'status'], { timeout: 10_000 }, (e) => ok(!e)))
   ipcMain.handle('setup:status', async () => (detect(), {
     key: hasApiKey(),
-    clis: await Promise.all(CLIS.map(async (c) => ({ id: c, name: CLI_NAME[c], found: !!clis[c], mcp: registered(c), login: await loggedIn(c) }))),
+    clis: await Promise.all(CLIS.map(async (c) => ({ id: c, name: CLI_NAME[c], found: !!clis[c], mcp: registered(c) && skillOk(c), login: await loggedIn(c) }))),
   }))
   // Modell-Dropdown: Claude (Key oder Claude Code), Vibe mit den Modellen aus seiner config.toml (die aktive zuerst),
   // Codex mit den sichtbaren Modellen seines Katalogs. Ohne Liste bleibt die Voreinstellung des CLI („vibe:“, „codex:“).
@@ -408,6 +424,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     }[cli]
     await run(remove).catch(() => {}) // alter Eintrag mit anderem Pfad
     await run(add)
+    const f = skillFile(cli)
+    if (f) { await mkdir(dirname(f), { recursive: true }); await writeFile(f, skill()) }
     // Electron braucht zum Starten länger als die 10 s, die Codex wartet, und Rendern länger als dessen Tool-Timeout;
     // `codex mcp add` kann beides nicht setzen
     if (cli === 'codex') {

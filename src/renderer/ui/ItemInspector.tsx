@@ -3,17 +3,18 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import {
   AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight,
-  AlignStartHorizontal, AlignStartVertical, ArrowDownToLine, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
+  AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
   ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
-import { DASHES, ITEM_ANIMS, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
+import { ANIM_DIRS, DASHES, ITEM_ANIMS, type AnimDir, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
 import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
 import { FONT_NAMES, resolveTheme } from '../../shared/themes'
 import { align, cloneItems, distribute, groupItems, isGroup, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
 import { Select } from './kit'
+import { animateItem } from './PresentScreen'
 import { removeBackground } from './media'
 
-interface Props { deck: Deck; picked: string[]; onItems: (fn: (items: Item[]) => Item[], tag?: string) => void; pickImage: () => Promise<string | null> }
+interface Props { deck: Deck; index: number; picked: string[]; onItems: (fn: (items: Item[]) => Item[], tag?: string) => void; pickImage: () => Promise<string | null> }
 
 const KIND: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio', qr: 'QR-Code', graphic: 'Grafik' }
 const MASK_NAME: Record<MaskId, string> = { circle: 'Kreis', arch: 'Bogen', hexagon: 'Sechseck', diamond: 'Raute', octagon: 'Achteck', star: 'Stern', heart: 'Herz' }
@@ -21,7 +22,14 @@ const EFFECT_NAME: Record<TextEffect, string> = { none: 'Ohne', shadow: 'Schatte
 const ADJUST_NAME = { bright: 'Helligkeit', contrast: 'Kontrast', sat: 'Sättigung', blur: 'Weichzeichnen' }
 const DASH_NAME: Record<Dash, string> = { solid: 'Durchgehend', dash: 'Gestrichelt', dot: 'Gepunktet' }
 const END_NAME: Record<LineEnd, string> = { none: 'Ohne', arrow: 'Pfeil', triangle: 'Spitze', dot: 'Punkt' }
-const ANIM: Record<ItemAnim, string> = { none: 'Keine', fade: 'Einblenden', float: 'Einschweben', zoom: 'Zoomen', wipe: 'Wischen' }
+// Namen wie in Canva; Schreibmaschine und Wort für Wort nur für Text, Atmen pulsiert ohne Klick
+const DIRECTED: ItemAnim[] = ['float', 'pan', 'drift', 'wipe'] // Animationen mit Richtung (Canva-Pfeile)
+const DIR_ICON: Record<AnimDir, LucideIcon> = { right: ArrowRight, left: ArrowLeft, up: ArrowUp, down: ArrowDown }
+const DIR_NAME: Record<AnimDir, string> = { right: 'Nach rechts', left: 'Nach links', up: 'Nach oben', down: 'Nach unten' }
+const ANIM: Record<ItemAnim, string> = {
+  none: 'Keine', fade: 'Einblenden', float: 'Aufsteigen', pan: 'Schwenken', drift: 'Treiben', pop: 'Pop', zoom: 'Zoomen', tumble: 'Purzeln',
+  stomp: 'Stampfen', baseline: 'Grundlinie', wipe: 'Wischen', typewriter: 'Schreibmaschine', ascend: 'Wort für Wort', breathe: 'Atmen (pulsiert ohne Klick)',
+}
 const ALIGNS: [Align, LucideIcon, string][] = [
   ['left', AlignStartVertical, 'Links'], ['hcenter', AlignCenterVertical, 'Mittig'], ['right', AlignEndVertical, 'Rechts'],
   ['top', AlignStartHorizontal, 'Oben'], ['vcenter', AlignCenterHorizontal, 'Mitte'], ['bottom', AlignEndHorizontal, 'Unten'],
@@ -101,8 +109,8 @@ function BgRemove({ it, set }: { it: Item; set: (p: Partial<Item>) => void }) {
   )
 }
 
-export function ItemInspector({ deck, picked, onItems, pickImage }: Props) {
-  const slide = deck.slides.find((s) => s.items?.some((it) => picked.includes(it.id)))
+export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props) {
+  const slide = deck.slides[index] // IDs sind nur je Folie eindeutig (duplizierte Folien behalten sie für Morph)
   const items = slide?.items ?? []
   const chosen = items.filter((it) => picked.includes(it.id))
   const [, bump] = useState(0) // neu zeichnen, sobald ein Stil kopiert ist
@@ -114,6 +122,14 @@ export function ItemInspector({ deck, picked, onItems, pickImage }: Props) {
   const swatches = [...new Set([t.c.text, t.c.accent, t.c.accent2, t.c.bg, t.c.surface, t.c.muted, '#FFFFFF', '#000000', deck.theme.brand?.primary, deck.theme.brand?.secondary, ...docColors].filter((c): c is string => !!c).map((c) => c.toUpperCase()))]
   const it = chosen.length === 1 ? chosen[0] : undefined
   const set = (p: Partial<Item>, tag?: string) => onItems((l) => l.map((x) => (picked.includes(x.id) ? { ...x, ...p } : x)), tag)
+  // Vorschau wie in Canva: einmal auf der Folie abspielen (Atmen nur kurz)
+  const preview = (anim: ItemAnim, dir?: AnimDir, speed?: AnimSpeed) => {
+    for (const c of chosen) {
+      const el = document.querySelector<HTMLElement>(`.stage-slide [data-item="${CSS.escape(c.id)}"]`)
+      const as = el ? animateItem(el, anim, 0, dir, speed) : []
+      if (anim === 'breathe') as.forEach((a) => setTimeout(() => a.cancel(), 2400))
+    }
+  }
   const all = (f: (x: Item) => boolean) => chosen.every(f)
   const locked = all((x) => !!x.locked)
 
@@ -162,10 +178,32 @@ export function ItemInspector({ deck, picked, onItems, pickImage }: Props) {
           </Field>
         </div>
         <Field label="Animation beim Präsentieren">
-          <Select value={chosen[0].anim ?? 'none'} onChange={(e) => set({ anim: e.target.value === 'none' ? undefined : (e.target.value as ItemAnim) })}>
-            {ITEM_ANIMS.map((a) => <option key={a} value={a}>{ANIM[a]}</option>)}
+          <Select value={chosen[0].anim ?? 'none'} onChange={(e) => {
+            const anim = e.target.value as ItemAnim
+            set({ anim: anim === 'none' ? undefined : anim })
+            preview(anim, chosen[0].animDir, chosen[0].animSpeed)
+          }}>
+            {ITEM_ANIMS.filter((a) => chosen.every((c) => c.kind === 'text') || (a !== 'typewriter' && a !== 'ascend')).map((a) => <option key={a} value={a}>{ANIM[a]}</option>)}
           </Select>
         </Field>
+        {chosen[0].anim && (
+          <div className="anim-opts">
+            {DIRECTED.includes(chosen[0].anim) && (
+              <div className="seg icons" role="group" aria-label="Richtung">
+                {ANIM_DIRS.map((d) => {
+                  const Arrow = DIR_ICON[d]
+                  const on = (chosen[0].animDir ?? (chosen[0].anim === 'float' ? 'up' : 'right')) === d
+                  return <button key={d} type="button" title={DIR_NAME[d]} aria-label={DIR_NAME[d]} aria-pressed={on} onClick={() => { set({ animDir: d }); preview(chosen[0].anim!, d, chosen[0].animSpeed) }}><Arrow size={14} /></button>
+                })}
+              </div>
+            )}
+            <div className="seg" role="group" aria-label="Tempo">
+              {(['slow', undefined, 'fast'] as const).map((sp) => (
+                <button key={sp ?? 'normal'} type="button" aria-pressed={chosen[0].animSpeed === sp} onClick={() => { set({ animSpeed: sp }); preview(chosen[0].anim!, chosen[0].animDir, sp) }}>{sp === 'slow' ? 'Langsam' : sp === 'fast' ? 'Schnell' : 'Normal'}</button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {it?.kind === 'text' && (
           <>

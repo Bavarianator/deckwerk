@@ -2,12 +2,19 @@
 // Die XML-Struktur folgt dem, was PowerPoint selbst schreibt (mainSeq → Klick-Gruppe → after-Kette → Effekt).
 import JSZip from 'jszip'
 
-export type Effect = 'fade' | 'float' | 'wipe' | 'zoom' // float = „Einschweben“ (von unten), wipe = von links
+// float = „Einschweben“ (von unten), wipe = von links, pan/drift = von links (Canva Schwenken/Treiben), baseline = steigt
+// von unten auf, appear = sofort sichtbar (mit by: 'letter' die Schreibmaschine), pulse = Betonung im Dauerlauf (Canva Atmen)
+// grow = langsames Vergrößern als Betonung (Canva Foto-Zoom)
+export type Effect = 'fade' | 'float' | 'pan' | 'drift' | 'pop' | 'zoom' | 'stomp' | 'baseline' | 'wipe' | 'appear' | 'pulse' | 'grow'
+export type Dir = 'right' | 'left' | 'up' | 'down' // Bewegungsrichtung (wie AnimDir in deck.ts)
 export interface AnimStep {
   shape: string // cNvPr name, z. B. "dw:kpi-0" (PptxGenJS `objectName`)
   effect: Effect
   trigger: 'click' | 'after' | 'with'
   paragraph?: number // nur diesen Absatz (0-basiert) animieren
+  by?: 'word' | 'letter' // Text Wort für Wort bzw. Buchstabe für Buchstabe (p:iterate)
+  gapMs?: number // Abstand zwischen Wörtern/Buchstaben; default GAP
+  dir?: Dir // für float, pan, drift, wipe; default float nach oben, sonst nach rechts
   durMs?: number // default 500
   delayMs?: number // default 0
 }
@@ -27,26 +34,35 @@ export async function injectAnimations(pptx: Buffer, slides: SlideAnim[]): Promi
 
 const TRANSITION = {
   none: '',
+  // Canva Slide und Stapel: waagerecht hereinschieben bzw. überdecken; Farbwischen gibt es in PowerPoint nicht, dort Wischen
+  slide: '<p:transition spd="fast"><p:push dir="l"/></p:transition>',
+  stack: '<p:transition spd="fast"><p:cover dir="l"/></p:transition>',
+  color: '<p:transition spd="fast"><p:wipe dir="r"/></p:transition>',
   fade: '<p:transition spd="fast"><p:fade/></p:transition>',
   push: '<p:transition spd="fast"><p:push dir="u"/></p:transition>',
-  // Canva-Übergänge als PowerPoint-2007-Übergänge (laufen in jeder Version, auch LibreOffice)
-  dissolve: '<p:transition spd="med"><p:dissolve/></p:transition>',
-  wipe: '<p:transition spd="med"><p:wipe dir="r"/></p:transition>',
+  // Canva-Übergänge als PowerPoint-2007-Übergänge (laufen in jeder Version, auch LibreOffice); fast = 0,5 s wie Design-Guide §8
+  dissolve: '<p:transition spd="fast"><p:dissolve/></p:transition>',
+  wipe: '<p:transition spd="fast"><p:wipe dir="r"/></p:transition>',
   cover: '<p:transition spd="fast"><p:cover dir="l"/></p:transition>',
-  split: '<p:transition spd="med"><p:split orient="vert" dir="out"/></p:transition>',
-  circle: '<p:transition spd="med"><p:circle/></p:transition>',
-  zoom: '<p:transition spd="med"><p:zoom/></p:transition>',
+  split: '<p:transition spd="fast"><p:split orient="vert" dir="out"/></p:transition>',
+  circle: '<p:transition spd="fast"><p:circle/></p:transition>',
+  zoom: '<p:transition spd="fast"><p:zoom/></p:transition>',
   morph: '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
     '<mc:Choice xmlns:p159="http://schemas.microsoft.com/office/powerpoint/2015/09/main" Requires="p159">' +
     '<p:transition spd="slow"><p159:morph option="byObject"/></p:transition></mc:Choice>' +
     '<mc:Fallback><p:transition spd="slow"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>',
 }
 // [presetID, presetSubtype] wie in PowerPoints Effektkatalog
-const PRESET: Record<Effect, [number, number]> = { fade: [10, 0], float: [42, 0], wipe: [22, 8], zoom: [53, 16] }
+const PRESET: Record<Effect, [number, number]> = {
+  fade: [10, 0], float: [42, 0], pan: [2, 8], drift: [2, 8], pop: [53, 16], zoom: [53, 16], stomp: [53, 16], baseline: [22, 4], wipe: [22, 8], appear: [1, 0], pulse: [26, 0], grow: [6, 0],
+}
+// Fly In/Wipe: Subtyp und Filter nach der Seite, von der es kommt (Bewegung nach rechts = von links)
+const FROM: Record<Dir, { sub: number; wipe: string }> = { right: { sub: 8, wipe: 'left' }, left: { sub: 2, wipe: 'right' }, up: { sub: 4, wipe: 'down' }, down: { sub: 1, wipe: 'up' } }
+const GAP = { word: 120, letter: 45 } // ms zwischen Wörtern bzw. Buchstaben (p:iterate tmAbs)
 const NODE = { click: 'clickEffect', after: 'afterEffect', with: 'withEffect' }
 
-interface Shape { id: string; kind: string; txBox: boolean; paras: number; hasText: boolean; chart: boolean }
-interface Step extends Required<Omit<AnimStep, 'paragraph'>> { paragraph?: number; sh: Shape }
+interface Shape { id: string; kind: string; txBox: boolean; paras: number; hasText: boolean; chart: boolean; words: number; letters: number }
+interface Step extends Required<Omit<AnimStep, 'paragraph' | 'by' | 'gapMs' | 'dir'>> { paragraph?: number; by?: AnimStep['by']; gapMs?: number; dir?: Dir; sh: Shape }
 
 function injectSlide(xml: string, anim: SlideAnim, path: string): string {
   if (/<p:(timing|transition)\b/.test(xml)) { console.warn(`[animations] ${path} hat schon Animationen, übersprungen`); return xml }
@@ -58,8 +74,9 @@ function injectSlide(xml: string, anim: SlideAnim, path: string): string {
     const id = attrs.match(/\bid="(\d+)"/)?.[1]
     const name = attrs.match(/\bname="([^"]*)"/)?.[1]
     if (!id || !name || shapes.has(name)) continue
+    const text = [...el.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1]).join(' ')
     shapes.set(name, {
-      id, kind,
+      id, kind, words: text.split(/\s+/).filter(Boolean).length, letters: text.length,
       txBox: /<p:cNvSpPr\b[^>]*\btxBox="1"/.test(el),
       paras: el.match(/<a:p[\s/>]/g)?.length ?? 0,
       hasText: /<a:t>[^<]*\S/.test(el),
@@ -93,7 +110,7 @@ function injectSlide(xml: string, anim: SlideAnim, path: string): string {
     const inner = chains.map(chain => {
       const cid = ++n
       const start = t
-      t += Math.max(...chain.map(s => s.delayMs + s.durMs))
+      t += Math.max(...chain.map(span))
       return `<p:par><p:cTn id="${cid}" fill="hold"><p:stCondLst><p:cond delay="${start}"/></p:stCondLst>` +
         `<p:childTnLst>${chain.map(s => effect(s, () => ++n)).join('')}</p:childTnLst></p:cTn></p:par>`
     }).join('')
@@ -122,10 +139,15 @@ function injectSlide(xml: string, anim: SlideAnim, path: string): string {
   return xml.replace(anchor, () => anchor + TRANSITION[anim.transition] + timing)
 }
 
+// Zeit, die ein Schritt in seiner after-Kette belegt: iterierter Text läuft Wort für Wort nach, Dauerpuls blockiert nichts
+const gap = (s: Step) => (s.by ? s.gapMs ?? GAP[s.by] : 0)
+const span = (s: Step) => s.effect === 'pulse' || s.effect === 'grow' ? s.delayMs : s.delayMs + s.durMs + (s.by && s.sh.hasText ? (s.by === 'word' ? s.sh.words : s.sh.letters) - 1 : 0) * gap(s)
+
 function effect(s: Step, next: () => number): string {
   const { sh, durMs: dur } = s
   const id = next()
-  const [preset, subtype] = PRESET[s.effect]
+  const [preset, sub] = PRESET[s.effect]
+  const subtype = (s.effect === 'pan' || s.effect === 'drift' || s.effect === 'wipe') && s.dir ? FROM[s.dir].sub : sub
   const grp = sh.kind === 'sp' || sh.chart ? ' grpId="0"' : ''
   const txEl = s.paragraph !== undefined ? `<p:txEl><p:pRg st="${s.paragraph}" end="${s.paragraph}"/></p:txEl>` : ''
   const tgt = `<p:tgtEl><p:spTgt spid="${sh.id}"${txEl ? `>${txEl}</p:spTgt>` : '/>'}</p:tgtEl>`
@@ -134,17 +156,31 @@ function effect(s: Step, next: () => number): string {
     '<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>'
   const fx = (filter: string) => `<p:animEffect transition="in" filter="${filter}"><p:cBhvr><p:cTn id="${next()}" dur="${dur}"/>${tgt}</p:cBhvr></p:animEffect>`
   const val = (v: string) => v.startsWith('#') ? `<p:strVal val="${v}"/>` : `<p:fltVal val="${v}"/>`
-  const anim = (attr: string, from: string, to: string) => `<p:anim calcmode="lin" valueType="num"><p:cBhvr>` +
+  // Werte an Zeitpunkten (tm in Tausendstel Prozent), z. B. Pop: 0 → 106 % bei 70 % → 100 %
+  const anim = (attr: string, ...tavs: [number, string][]) => `<p:anim calcmode="lin" valueType="num"><p:cBhvr>` +
     `<p:cTn id="${next()}" dur="${dur}" fill="hold"/>${tgt}<p:attrNameLst><p:attrName>${attr}</p:attrName></p:attrNameLst></p:cBhvr>` +
-    `<p:tavLst><p:tav tm="0"><p:val>${val(from)}</p:val></p:tav><p:tav tm="100000"><p:val>${val(to)}</p:val></p:tav></p:tavLst></p:anim>`
+    `<p:tavLst>${tavs.map(([tm, v]) => `<p:tav tm="${tm}"><p:val>${val(v)}</p:val></p:tav>`).join('')}</p:tavLst></p:anim>`
+  const size = (...tavs: [number, string][]) => anim('ppt_w', ...tavs) + anim('ppt_h', ...tavs.map(([tm, v]): [number, string] => [tm, v.replace('ppt_w', 'ppt_h')]))
+  const move = (dx: string, dy: string) => anim('ppt_x', [0, `#ppt_x${dx}`], [100000, '#ppt_x']) + anim('ppt_y', [0, `#ppt_y${dy}`], [100000, '#ppt_y'])
+  // Start versetzt gegen die Bewegungsrichtung, in Folienanteilen
+  const toward = (d: Dir, by: string) => ({ right: () => move(`-${by}`, ''), left: () => move(`+${by}`, ''), up: () => move('', `+${by}`), down: () => move('', `-${by}`) })[d]()
 
   const body = {
     fade: () => set() + fx('fade'),
-    float: () => set() + fx('fade') + anim('ppt_x', '#ppt_x', '#ppt_x') + anim('ppt_y', '#ppt_y+.1', '#ppt_y'),
-    wipe: () => set() + fx('wipe(left)'),
-    zoom: () => set() + anim('ppt_w', '0', '#ppt_w') + anim('ppt_h', '0', '#ppt_h') + fx('fade'),
+    float: () => set() + fx('fade') + toward(s.dir ?? 'up', '.1'),
+    pan: () => set() + fx('fade') + toward(s.dir ?? 'right', '.05'),
+    drift: () => set() + fx('fade') + toward(s.dir ?? 'right', '.1'),
+    pop: () => set() + size([0, '0'], [70000, '#ppt_w*1.06'], [100000, '#ppt_w']) + fx('fade'),
+    zoom: () => set() + size([0, '0'], [100000, '#ppt_w']) + fx('fade'),
+    stomp: () => set() + size([0, '#ppt_w*1.6'], [100000, '#ppt_w']) + fx('fade'),
+    baseline: () => set() + fx('wipe(down)') + move('', '+.05'),
+    wipe: () => set() + fx(`wipe(${FROM[s.dir ?? 'right'].wipe})`),
+    appear: () => set(),
+    grow: () => `<p:animScale><p:cBhvr><p:cTn id="${next()}" dur="${dur}" fill="hold"/>${tgt}</p:cBhvr><p:by x="108000" y="108000"/></p:animScale>`,
+    pulse: () => `<p:animScale><p:cBhvr><p:cTn id="${next()}" dur="${dur}" autoRev="1" repeatCount="indefinite" fill="hold"/>${tgt}</p:cBhvr><p:by x="104000" y="104000"/></p:animScale>`,
   }[s.effect]()
 
-  return `<p:par><p:cTn id="${id}" presetID="${preset}" presetClass="entr" presetSubtype="${subtype}" fill="hold"${grp} nodeType="${NODE[s.trigger]}">` +
-    `<p:stCondLst><p:cond delay="${s.delayMs}"/></p:stCondLst><p:childTnLst>${body}</p:childTnLst></p:cTn></p:par>`
+  const iterate = s.by && sh.hasText ? `<p:iterate type="${s.by === 'word' ? 'wd' : 'lt'}"><p:tmAbs val="${gap(s)}"/></p:iterate>` : ''
+  return `<p:par><p:cTn id="${id}" presetID="${preset}" presetClass="${s.effect === 'pulse' || s.effect === 'grow' ? 'emph' : 'entr'}" presetSubtype="${subtype}" fill="hold"${grp} nodeType="${NODE[s.trigger]}">` +
+    `<p:stCondLst><p:cond delay="${s.delayMs}"/></p:stCondLst>${iterate}<p:childTnLst>${body}</p:childTnLst></p:cTn></p:par>`
 }

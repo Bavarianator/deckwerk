@@ -269,7 +269,7 @@ export const EXTRA_LAYOUTS = {
   }),
   'icon-grid': L({
     id: 'icon-grid', name: 'Icon-Raster',
-    when: '3–6 gleichrangige Merkmale, Vorteile oder Leistungen mit je einem Icon. Luftiger und bildhafter als bullets.',
+    when: '3–6 gleichrangige Merkmale mit je einem Icon, das selbst Information trägt (z. B. Kanal, Gerät, Ort). Sparsam: Icon-Raster sind ein typisches Merkmal generierter Folien, im Zweifel bullets.',
     frames: ['band', 'center'], schema: iconGrid, defaultBuild: 'stagger', footer: true,
     samples: {
       min: { title: 'Drei Gründe', items: [{ icon: 'zap', head: 'Schnell' }, { icon: 'shield-check', head: 'Sicher' }, { icon: 'smile', head: 'Einfach' }] },

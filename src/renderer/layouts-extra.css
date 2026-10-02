@@ -50,9 +50,10 @@
 .mx-take { align-self: center; }
 
 /* ---------- Tabelle ---------- */
-.tb { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.tb { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
 .tb-row { display: grid; column-gap: 20px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
 .tb-head { border-bottom: 2px solid var(--text); padding-top: 0; }
+.tb.roomy .tb-row:not(.tb-head) { padding-top: 16px; padding-bottom: 16px; }
 .tb-head .t { font-weight: 700; color: var(--muted); }
 .tb-hl { background: var(--accent-tint); border-radius: var(--radius); border-bottom-color: transparent; }
 .tb-hl .t { font-weight: 700; }
@@ -66,13 +67,13 @@
 .bign-label { max-width: 900px; }
 
 /* ---------- Icon-Raster ---------- */
-.ig { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 40px 48px; align-content: center; }
+.ig { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 40px 48px; align-content: start; }
 .ig-item { display: flex; gap: 22px; align-items: flex-start; min-width: 0; }
-.ig-badge { flex: none; width: 68px; height: 68px; border-radius: 50%; background: var(--accent-tint); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.ig-badge { flex: none; width: 48px; height: 48px; color: var(--text); display: flex; align-items: center; justify-content: center; }
 .ig-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 6px; }
 
 /* ---------- Pro und Contra ---------- */
-.pc { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+.pc { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; gap: 24px; }
 .pc-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
 .pc-col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .pc-col > .r-h2 { padding-bottom: 12px; border-bottom: 2px solid var(--border); }
@@ -94,7 +95,7 @@
 .ps-arrow { width: 64px; height: 64px; border-radius: 50%; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; }
 
 /* ---------- Team ---------- */
-.team { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 24px 32px; align-content: center; justify-items: center; text-align: center; }
+.team { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 24px 32px; align-content: start; justify-items: center; text-align: center; }
 .tm { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; max-width: 300px; }
 .tm-pic { position: relative; width: 176px; height: 176px; border-radius: 50%; overflow: hidden; margin-bottom: 12px; flex: none; }
 .team.n5 .tm-pic, .team.n6 .tm-pic { width: 104px; height: 104px; margin-bottom: 4px; }
@@ -103,7 +104,7 @@
 .tm-role { color: var(--accent); font-weight: 700; }
 
 /* ---------- Preise ---------- */
-.pr { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 24px; align-content: center; align-items: stretch; }
+.pr { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 24px; align-content: start; align-items: stretch; }
 .pr-card { gap: 18px; padding: 34px 30px; }
 .pr-card.hl { background: var(--fill); --text: var(--on-accent); --muted: var(--on-accent-soft); --accent: var(--on-accent); color: var(--text); }
 .pr-card .r-eyebrow { color: var(--accent); }
@@ -140,7 +141,7 @@
 .ms-text .r-label strong { color: var(--accent); }
 
 /* ---------- Logo-Wand ---------- */
-.lg { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 20px; align-content: center; }
+.lg { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 20px; align-content: start; }
 .lg-tile { height: 110px; border-radius: var(--radius); background: var(--surface); display: flex; align-items: center; justify-content: center; padding: 20px 24px; min-width: 0; }
 .lg-img { width: 100%; height: 100%; }
 .lg-name { text-align: center; color: var(--muted); }

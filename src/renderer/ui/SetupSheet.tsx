@@ -1,14 +1,20 @@
 // Einrichtung beim ersten Start (und später über das Zahnrad): Willkommen → KI-Zugang → Modell → Agenten (Claude Code, Codex, Vibe) →
-// Verbindung testen → Fertig. Jeder Schritt zeigt, was schon erledigt ist; nichts davon ist Pflicht.
+// Verbindung testen → Bilder (KI-Bilder über Mammouth, OpenAI oder Codex) → Fertig. Jeder Schritt zeigt, was schon erledigt ist; nichts davon ist Pflicht.
 import { useContext, useEffect, useState, type ReactNode } from 'react'
 import { ArrowLeft, Check, Copy, KeyRound, LayoutGrid, LoaderCircle, Palette, Sparkles, Terminal, Wand2 } from 'lucide-react'
-import { DEFAULT_MODEL, MODELS, routeOf } from '../../shared/models'
+import { AUTO, AUTO_CHOICE, MODELS, routeOf } from '../../shared/models'
 import { ChatChoices } from './Chat'
+import { Select } from './kit'
 import { Logo } from './Logo'
-import type { ChatCli, CliStatus } from '../../preload'
+import type { ChatCli, CliStatus, ImageProvider, ImageStatus } from '../../preload'
 
 type Status = { key: boolean; clis: CliStatus[] }
-const STEPS = ['Willkommen', 'KI-Zugang', 'Modell', 'Agenten', 'Testen', 'Fertig']
+const STEPS = ['Willkommen', 'KI-Zugang', 'Modell', 'Agenten', 'Testen', 'Bilder', 'Fertig']
+const IMG_APIS = [
+  { id: 'mammouth', name: 'Mammouth', env: 'MAMMOUTH_API_KEY', placeholder: 'sk-…', hint: 'API-Key aus deinem Mammouth-Konto: ein Abo, viele Bildmodelle.' },
+  { id: 'openai', name: 'OpenAI', env: 'OPENAI_API_KEY', placeholder: 'sk-…', hint: 'API-Key von platform.openai.com, abgerechnet pro Bild.' },
+] as const
+const IMAGE_MODELS = ['gpt-image-2', 'gemini-3-pro-image-preview', 'gemini-3.1-flash-image-preview']
 const INSTALL: Record<ChatCli, string> = {
   claude: 'npm install -g @anthropic-ai/claude-code',
   codex: 'npm install -g @openai/codex',
@@ -27,12 +33,16 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
   const [step, setStep] = useState(0)
   const [s, setS] = useState<Status | null>(null)
   const [key, setKey] = useState('')
-  const [busy, setBusy] = useState<'' | 'key' | 'test' | 'all' | ChatCli>('')
+  const [busy, setBusy] = useState<'' | 'key' | 'test' | 'all' | 'img' | ChatCli>('')
   const [err, setErr] = useState('')
   const [tools, setTools] = useState<number | null>(null)
   const [copied, setCopied] = useState(-1)
+  const [img, setImg] = useState<ImageStatus | null>(null)
+  const [imgKeys, setImgKeys] = useState({ mammouth: '', openai: '' })
+  const [imgModel, setImgModel] = useState('')
+  const showImg = (x: ImageStatus) => { setImg(x); setImgModel(x.model) }
   const load = () => window.api.setupStatus().then(setS)
-  useEffect(() => { void load() }, [])
+  useEffect(() => { void load(); void window.api.imageSettings().then(showImg) }, [])
   useEffect(() => setErr(''), [step])
 
   const run = async (what: typeof busy, fn: () => Promise<void>) => {
@@ -42,15 +52,16 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
     setBusy('')
   }
   const saveKey = () => run('key', async () => { await window.api.setApiKey(key); setKey(''); onKeySaved(); await load() })
+  const saveImg = (patch: Parameters<typeof window.api.setImageSettings>[0]) => run('img', async () => showImg(await window.api.setImageSettings(patch)))
   const install = (cli: ChatCli) => run(cli, async () => { await window.api.setupMcp(cli); await load() })
   const open = s?.clis.filter((c) => c.found && !c.mcp) ?? [] // gefunden, aber Deckwerk noch nicht eingetragen
   const installAll = () => run('all', async () => { for (const c of open) await window.api.setupMcp(c.id); await load() })
   // Chat-Weg = Gruppe im Modell-Dropdown: Klick auf ein CLI wählt dessen erstes Modell (Claude: das bisherige Claude-Modell)
   const choices = useContext(ChatChoices)
   const kind = routeOf(model)?.cli ?? 'claude'
-  const useCli = (cli: ChatCli) => onModel(cli === 'claude' ? (kind === 'claude' ? model : DEFAULT_MODEL) : choices?.[cli][0]?.id ?? `${cli}:`)
+  const useCli = (cli: ChatCli) => onModel(cli === 'claude' ? (kind === 'claude' ? model : AUTO) : choices?.[cli][0]?.id ?? `${cli}:`)
   const groups = [
-    ...(!choices || choices.claude ? [{ label: 'Claude', items: MODELS.map((m) => ({ id: m.id as string, name: m.name as string, hint: m.hint as string | undefined })) }] : []),
+    ...(!choices || choices.claude ? [{ label: 'Claude', items: [AUTO_CHOICE, ...MODELS].map((m) => ({ id: m.id as string, name: m.name as string, hint: m.hint as string | undefined })) }] : []),
     ...(choices?.vibe.length ? [{ label: 'Vibe (Mistral)', items: choices.vibe }] : []),
     ...(choices?.codex.length ? [{ label: 'Codex (OpenAI)', items: choices.codex }] : []),
   ]
@@ -59,6 +70,7 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
   const next = () => setStep((x) => Math.min(STEPS.length - 1, x + 1))
   const on = (cli: ChatCli) => kind === cli && !(cli === 'claude' && s?.key) // Claude mit Key läuft über die API
   const mcp = s?.clis.filter((c) => c.mcp).map((c) => c.name).join(', ') // wo Deckwerk eingetragen ist
+  const codex = s?.clis.find((c) => c.id === 'codex'), codexReady = !!codex?.found && codex.login !== false
   const ok = <span className="setup-ok" aria-label="erledigt"><Check size={14} strokeWidth={3} /></span>
   const spin = <LoaderCircle size={14} className="spin" />
 
@@ -120,7 +132,7 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
     </>,
     <>
       <h1 id="setup-title">Deckwerk in deinen Agenten</h1>
-      <p className="setup-sub">Claude Code, Codex und Vibe bekommen die Werkzeuge von Deckwerk und bauen Decks direkt aus dem Terminal, in jedem Projekt.</p>
+      <p className="setup-sub">Claude Code, Codex und Vibe bekommen die Werkzeuge von Deckwerk und bauen Decks direkt aus dem Terminal, in jedem Projekt. Claude Code und Codex lernen dazu per Skill den Arbeitsablauf.</p>
       {open.length > 1 && <button className="pill tint" disabled={!!busy} onClick={installAll}>{busy === 'all' ? <>{spin}Richte ein …</> : `In allen einrichten (${open.map((c) => c.name).join(', ')})`}</button>}
       {!s ? <p>{spin} Wird geprüft …</p> : s.clis.map((c) => !c.found ? (
         <div key={c.id} className="setup-box">
@@ -147,6 +159,58 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
             <p>{mcp ? 'Dauert etwa zehn Sekunden.' : 'Tipp: Richte Deckwerk zuerst in Schritt 4 ein. Der Test funktioniert aber auch ohne.'}</p>
             <button className="pill tint" disabled={busy === 'test'} onClick={test}>{busy === 'test' ? <>{spin}Teste …</> : 'Jetzt testen'}</button>
           </>}
+      </div>
+    </>,
+    <>
+      <h1 id="setup-title">Bilder per KI</h1>
+      <p className="setup-sub">Die KI kann Fotos und Illustrationen für deine Folien erzeugen. Ein Zugang reicht. Keys werden verschlüsselt auf diesem Rechner gespeichert.</p>
+      <div className="setup-choice">
+        {IMG_APIS.map((a) => (
+          <div key={a.id} className={`setup-opt ${img?.[a.id] ? 'on' : ''}`}>
+            {img?.[a.id] ? ok : <span className="setup-num" />}
+            <span>
+              <b>{a.name}</b>
+              {img?.[a.id] === 'app' ? <span>Hinterlegt. <button className="plain" disabled={!!busy} onClick={() => saveImg({ [a.id]: null })}>Entfernen</button></span>
+                : img?.[a.id] === 'env' ? <span>Aus der Umgebungsvariable <code>{a.env}</code>. Ein Key hier hat Vorrang.</span> : a.hint}
+              {img?.[a.id] !== 'app' && (
+                <form className="setup-key" onSubmit={(e) => { e.preventDefault(); if (imgKeys[a.id].trim()) { saveImg({ [a.id]: imgKeys[a.id] }); setImgKeys((k) => ({ ...k, [a.id]: '' })) } }}>
+                  <KeyRound size={15} />
+                  <input type="password" placeholder={a.placeholder} value={imgKeys[a.id]} onChange={(e) => setImgKeys((k) => ({ ...k, [a.id]: e.target.value }))} aria-label={`${a.name}-API-Key`} />
+                  <button className="pill tint" disabled={!imgKeys[a.id].trim() || !!busy}>{busy === 'img' ? spin : 'Speichern'}</button>
+                </form>
+              )}
+            </span>
+          </div>
+        ))}
+        <div className={`setup-opt ${codexReady ? 'on' : ''}`}>
+          {codexReady ? ok : <span className="setup-num" />}
+          <span><b>Codex</b>{!codex?.found ? 'Nicht installiert (siehe Schritt 4). Braucht keinen Key, läuft über dein ChatGPT-Abo.'
+            : codex.login === false ? <span>Gefunden, aber nicht angemeldet. Einmal im Terminal <code>codex login</code> ausführen.</span>
+            : 'Bereit. Braucht keinen Key, läuft über dein ChatGPT-Abo.'}</span>
+        </div>
+      </div>
+      <div className="setup-choice">
+        <div className="setup-opt">
+          <span>
+            <b>Bevorzugter Anbieter</b>
+            <Select value={img?.provider ?? ''} disabled={!!busy} onChange={(e) => saveImg({ provider: (e.target.value || null) as ImageProvider | null })} aria-label="Bevorzugter Anbieter">
+              <option value="">Automatisch: der erste eingerichtete (Mammouth, OpenAI, Codex)</option>
+              <option value="mammouth">Mammouth</option>
+              <option value="openai">OpenAI</option>
+              <option value="codex">Codex</option>
+            </Select>
+          </span>
+        </div>
+        <div className="setup-opt">
+          <span>
+            <b>Modell</b>Gilt für Mammouth und OpenAI (Gemini-Modelle nur über Mammouth). Leer = gpt-image-2.
+            <form className="setup-key" onSubmit={(e) => { e.preventDefault(); saveImg({ model: imgModel || null }) }}>
+              <input list="image-models" placeholder="gpt-image-2" value={imgModel} onChange={(e) => setImgModel(e.target.value)} aria-label="Bildmodell" />
+              <datalist id="image-models">{IMAGE_MODELS.map((m) => <option key={m} value={m} />)}</datalist>
+              <button className="pill" disabled={!!busy || imgModel === (img?.model ?? '')}>Übernehmen</button>
+            </form>
+          </span>
+        </div>
       </div>
     </>,
     <>

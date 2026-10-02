@@ -95,7 +95,7 @@ async function textBoxes(pptx: Buffer): Promise<Box[][]> {
     for (const [sp] of xml.matchAll(/<p:sp>[\s\S]*?<\/p:sp>/g)) {
       const name = sp.match(/<p:cNvPr[^>]*\bname="(dw:[^"]*)"/)?.[1]
       const off = sp.match(/<a:off x="(-?\d+)" y="(-?\d+)"/), ext = sp.match(/<a:ext cx="(\d+)" cy="(\d+)"/)
-      if (!name || !off || !ext || !/<a:t>[^<]*\S/.test(sp) || name.startsWith('dw:_')) continue
+      if (!name || !off || !ext || !/<a:t>[^<]*\S/.test(sp) || /^(!!)?dw:_/.test(name)) continue
       const sz = sp.match(/<a:rPr[^>]*\bsz="(\d+)"/)?.[1]
       boxes.push({ name, x: +off[1] / EMU, y: +off[2] / EMU, w: +ext[1] / EMU, h: +ext[2] / EMU, fontPx: sz ? +sz / 100 / 0.75 : 20 })
     }

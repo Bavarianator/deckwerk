@@ -47,6 +47,7 @@ if [ -z "$SOURCE" ]; then
   rm -rf "$APP.alt" && { [ ! -e "$APP" ] || mv "$APP" "$APP.alt"; } && mv "$tmp/squashfs-root" "$APP" && rm -rf "$APP.alt"
   RUN="$APP/AppRun"
   ICON="$APP/deckwerk.png"
+  SKILL="$APP/resources/app.asar.unpacked/skills/deckwerk/SKILL.md"
   # MCP-Server: Vibe und Codex starten ihn ohne DISPLAY, dann headless (gleicher Aufruf wie mcpCmd in src/main/ipc.ts)
   WRAP='if [ -n "$DISPLAY$WAYLAND_DISPLAY" ]; then exec "$0" --ozone-platform=x11 --mcp; else exec "$0" --ozone-platform=headless --disable-gpu --mcp; fi'
   set -- /bin/sh -c "$WRAP" "$RUN"
@@ -82,6 +83,7 @@ else
   chmod +x scripts/deckwerk.sh
   RUN="$DIR/scripts/deckwerk.sh"
   ICON="$DIR/assets/icon.png"
+  SKILL="$DIR/skills/deckwerk/SKILL.md"
   set -- "$RUN" --mcp
 fi
 
@@ -118,10 +120,12 @@ command -v xdg-mime >/dev/null 2>&1 && xdg-mime default deckwerk.desktop applica
 echo "→ Startmenü-Eintrag und Dateizuordnung (deck.json) angelegt"
 
 # Deckwerk als MCP-Server in Claude Code, Vibe und Codex (für alle Projekte; "$@" = Befehl und Argumente des Servers).
-# Vibe und Codex warten von sich aus nur kurz; Codex kann die Wartezeit nicht per `mcp add` setzen, daher in der config.toml
+# Vibe und Codex warten von sich aus nur kurz; Codex kann die Wartezeit nicht per `mcp add` setzen, daher in der config.toml.
+# Claude Code und Codex bekommen dazu den Skill mit dem Arbeitsablauf (gleiches SKILL.md-Format, wie die Einrichtung in ipc.ts)
+skill_to() { [ -f "$SKILL" ] && mkdir -p "$1/deckwerk" && cp "$SKILL" "$1/deckwerk/SKILL.md"; }
 if command -v claude >/dev/null 2>&1; then
   claude mcp remove -s user deckwerk >/dev/null 2>&1 || true
-  claude mcp add -s user deckwerk -- "$@" >/dev/null && echo "→ In Claude Code eingerichtet (neue Sitzung starten)"
+  claude mcp add -s user deckwerk -- "$@" >/dev/null && { skill_to "$HOME/.claude/skills" || true; } && echo "→ In Claude Code eingerichtet, mit Skill (neue Sitzung starten)"
 fi
 vibe_add() { # --arg=… je Argument; mit Leerzeichen hielte Vibe „--mcp“ für eine eigene Option
   cmd=$1; shift; n=$#
@@ -136,7 +140,8 @@ fi
 if command -v codex >/dev/null 2>&1; then
   codex mcp remove deckwerk >/dev/null 2>&1 || true
   codex mcp add deckwerk -- "$@" >/dev/null 2>&1 &&
-    sed -i '/^\[mcp_servers\.deckwerk\]$/a startup_timeout_sec = 90\ntool_timeout_sec = 300' "${CODEX_HOME:-$HOME/.codex}/config.toml" && echo "→ In Codex eingerichtet"
+    sed -i '/^\[mcp_servers\.deckwerk\]$/a startup_timeout_sec = 90\ntool_timeout_sec = 300' "${CODEX_HOME:-$HOME/.codex}/config.toml" &&
+    { skill_to "${CODEX_HOME:-$HOME/.codex}/skills" || true; } && echo "→ In Codex eingerichtet, mit Skill"
 fi
 
 echo "Fertig. Starten: Startmenü „Deckwerk“ oder $RUN"

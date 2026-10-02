@@ -1,7 +1,7 @@
 import { wcagContrast } from 'culori'
 import type { Box, BoxEl, Deck, El, Gradient, ImgEl, Measured, TextEl } from './deck'
-import { sizeOf } from './deck'
-import { LAYOUTS } from './layouts'
+import { morphKey, morphNames, sizeOf, transitionOf } from './deck'
+import { LAYOUTS, buildOf } from './layouts'
 
 export interface Issue {
   slide: number // 0-based index
@@ -13,6 +13,8 @@ export interface Issue {
 }
 
 const MARGIN = 24 // no text closer to the slide edge than this
+const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank'] // absichtlich luftig
+const SPARSE = 0.67 // Füllgrad des Satzspiegels, darunter wirkt eine Inhaltsfolie leer (kalibriert an echten KI-Decks: Prozess 65 %, Zeitstrahl 58 % leer; Tabelle 72 %, Pro/Contra 77 % gut)
 const overlapArea = (a: Box, b: Box) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
 const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).filter(Boolean)
@@ -105,12 +107,27 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
         add('error', 'overlap', `"${solids[a].slot}" überlappt "${solids[b].slot}".`, solids[a].slot)
 
   const count = texts.filter((t) => !t.slot.startsWith('footer')).reduce((n, t) => n + wordsOf(t).length, 0)
-  if (count > 70) add('warn', 'density', `${count} Wörter auf der Folie – für eine Präsentation zu viel (Ziel: unter 50).`)
+  if (count > 50) add('warn', 'density', `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`)
   if (/"(src|image)":""/.test(JSON.stringify(s.content ?? {}))) add('warn', 'image', 'Kein Bild gesetzt – es wird ein Platzhalter angezeigt. Mit find_images ein Foto suchen oder eigenes Bild einsetzen.')
   // Live-Test: die KI lässt highlight trotz Schema-Hinweis weg, dann trägt keine Farbe die Aussage des Titels
   const chart = s.content?.chart
   if (chart && !chart.highlight && chart.categories?.length > 2 && chart.type !== 'waterfall')
     add('warn', 'highlight', 'Diagramm ohne highlight: Alle Werte sind gleich stark. Die Kategorie oder Serie, die der Titel meint, als highlight setzen.', 'chart')
+  // Wirkt leer: Die Hülle aller Inhalte samt Titel (ohne Fußzeile, Fußnoten wie source/note, die unten stehen, und randlose
+  // Hintergründe) bedeckt nur einen kleinen Teil des Satzspiegels. Der Nutzer empfand solche Folien als „sehr leer“; die KI sieht sie sonst nur im Bild.
+  // Agenda ist Navigation; bei split füllt die Akzentfläche links, die nicht als Element gemessen wird; ein Bildfeld füllt seine
+  // Hälfte auch als Platzhalter (dafür gibt es die Regel image)
+  // Nicht zusammen mit density: Dann ist zu viel Text klein gesetzt, nicht zu wenig Inhalt da
+  if (!AIRY.includes(s.layout) && s.layout !== 'agenda' && s.frame !== 'split' && !('image' in (s.content ?? {})) && count <= 50) {
+    const { w: W, h: H } = sizeOf(deck)
+    const used = m.els.filter((e) => !/^(_footer|source$|note$)/.test(e.slot) && e.box.w * e.box.h < 0.6 * W * H)
+    if (used.length) {
+      const [x0, y0] = [Math.min(...used.map((e) => e.box.x)), Math.min(...used.map((e) => e.box.y))]
+      const [x1, y1] = [Math.max(...used.map((e) => e.box.x + e.box.w)), Math.max(...used.map((e) => e.box.y + e.box.h))]
+      const fill = ((Math.min(x1, W - 72) - Math.max(x0, 72)) * (Math.min(y1, H - 72) - Math.max(y0, 60))) / ((W - 144) * (H - 132))
+      if (fill < SPARSE) add('warn', 'sparse', `Folie wirkt leer: Titel und Inhalt füllen nur ${Math.round(fill * 100)} % des Satzspiegels. Mehr Substanz ergänzen (Zahl, Beispiel, Beleg), ein Foto dazunehmen (image-text), auf eine luftige Form wechseln (statement, big-number) oder mit der Nachbarfolie zusammenlegen.`)
+    }
+  }
   return out
 }
 
@@ -127,6 +144,41 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   const look = (x: (typeof s)[number]) => !(LAYOUTS[x.layout as keyof typeof LAYOUTS] as { frames?: unknown })?.frames ? `-${x.id}` : `${x.frame ?? 'top'}|${x.tone ?? ''}|${JSON.stringify(x.content ?? {}).includes('"src":"asset') || !!x.bg?.image}`
   for (let i = 2; i < s.length; i++)
     if (look(s[i]).endsWith('false') && look(s[i]) === look(s[i - 1]) && look(s[i]) === look(s[i - 2]))
-      warn(i, 'monotone', 'Dritte Folie in Folge mit gleicher Komposition, gleichem Ton und ohne Foto – frame (split/band/center), tone oder ein Bild einsetzen.')
+      warn(i, 'monotone', 'Dritte Folie in Folge mit gleicher Komposition, gleichem Ton und ohne Foto – ein Foto, eine luftige Folie (statement, big-number) oder einen anderen frame einsetzen.')
+  // Merkmale generierter Decks: Kartenraster hintereinander, Icons als Schmuck, keine luftigen Folien
+  const cards = (x: (typeof s)[number]) => x.variant === 'cards' || ['icon-grid', 'process', 'pricing', 'team'].includes(x.layout)
+  for (let i = 1; i < s.length; i++)
+    if (cards(s[i]) && cards(s[i - 1])) warn(i, 'cards', 'Zweites Kartenraster in Folge – wirkt wie generiert. Eine der Folien als Liste, Zahlenzeile, Statement oder Chart setzen.')
+  const iconSlides = s.map((x, i) => (JSON.stringify(x.content ?? {}).includes('"icon":') ? i : -1)).filter((i) => i >= 0)
+  if (iconSlides.length > 2) warn(iconSlides[2], 'icons', `Icons auf ${iconSlides.length} Folien – als Schmuck wirken sie generiert. Nur behalten, wo das Symbol selbst Information trägt.`)
+  for (let i = 0, run = 0; i < s.length; i++) {
+    run = AIRY.includes(s[i].layout) ? 0 : run + 1
+    if (run === 5) warn(i, 'breath', 'Fünf dichte Folien in Folge – eine luftige Folie einschieben (statement, big-number oder photo mit einem Satz).')
+  }
+  return [...out, ...lintMotion(deck, measured)]
+}
+
+// Animation: Morph braucht gemeinsame Elemente, ein Übergangstyp pro Deck, der Vortrag soll nicht im Klicken stocken
+export function lintMotion(deck: Deck, measured: Measured[]): Issue[] {
+  const out: Issue[] = []
+  const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: deck.slides[i].id, severity: 'warn', rule, message })
+  const own = (k: number) => measured[k].els.map((e) => ({ slot: e.slot, key: morphKey(e) }))
+  deck.slides.forEach((s, i) => {
+    const t = transitionOf(deck, i)
+    if (t === 'morph' && i > 0 && measured[i] && measured[i - 1]) {
+      // Zuordnung wie in App und PPTX; Titel und Rahmen (Fußzeile) zählen nicht, die hat fast jede Folie
+      const prev = own(i - 1)
+      const before = new Set(prev.map((e) => e.slot))
+      if (!morphNames(prev, own(i)).some((n) => before.has(n) && n !== 'title' && !n.startsWith('_')))
+        warn(i, 'morph', 'Morph ohne gemeinsames Element mit der vorigen Folie (außer dem Titel) – wirkt nur wie Überblenden. Morph braucht wörtlich denselben Text (Agenda-Punkt = Kapiteltitel, Kennzahl = große Zahl), dasselbe Foto oder dasselbe Layout mit anderem focus/highlight; sonst transition weglassen.')
+    }
+    if (s.transition && !['morph', 'none', deck.transition].includes(s.transition))
+      warn(i, 'transition', `Übergang ${s.transition} weicht vom Deck-Übergang ${deck.transition} ab. Ein Übergangstyp pro Deck; pro Folie nur morph.`)
+    const m = measured[i]
+    if (deck.mode !== 'click' || !m) return
+    const groups = new Set(m.els.flatMap((e) => (e.build === undefined ? [] : [e.build]))).size
+    const clicks = (buildOf(deck, i) === 'list' ? groups : 0) + m.els.filter((e) => e.anim && e.anim !== 'none' && e.anim !== 'breathe').length
+    if (clicks > 5) warn(i, 'clicks', `${clicks} Klicks, bis die Folie steht – der Vortrag stockt. Aufbau stagger statt list, weniger animierte Elemente oder Folie teilen.`)
+  })
   return out
 }

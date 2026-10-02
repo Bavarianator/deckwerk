@@ -1,5 +1,6 @@
 import { app, BrowserWindow, net, protocol } from 'electron'
 import { spawn } from 'node:child_process'
+import { setDefaultResultOrder } from 'node:dns'
 import { readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -10,6 +11,10 @@ import type { createEngine } from './engine'
 // Schwere Module (Engine, Agent, MCP, pptxgenjs, lucide …) erst nach dem Fenster laden: der Splash erscheint sofort,
 // und der Renderer lädt parallel zum Main-Prozess. Die Preload-Brücke wiederholt Aufrufe, bis registerIpc steht.
 const loadEngine = async () => (await import('./engine')).createEngine()
+
+// IPv4 zuerst: mit kaputtem IPv6 (häufig im Heimnetz) hing jede Verbindung bis zum Timeout; Bildsuche und Bild-KI brauchten so
+// Minuten statt Sekunden. Reine IPv6-Netze liefern keine IPv4-Adresse und gehen weiter über IPv6.
+setDefaultResultOrder('ipv4first')
 
 // macOS: aus dem Finder gestartete Apps erben den PATH der Shell nicht, claude/node/pdftotext wären sonst unauffindbar
 if (process.platform === 'darwin') process.env.PATH = [process.env.PATH, '/opt/homebrew/bin', '/usr/local/bin', join(homedir(), '.local/bin')].filter(Boolean).join(':')
@@ -82,13 +87,20 @@ app.whenReady().then(async () => {
     // Zweiter Klick aufs Symbol holt das offene Fenster nach vorn statt einer zweiten Instanz (CLI/MCP dürfen parallel laufen)
     if (!app.requestSingleInstanceLock()) return app.quit()
     const win = createWindow()
-    app.on('second-instance', () => { if (win.isMinimized()) win.restore(); win.show(); win.focus() })
+    // Die versteckten Render-Fenster (render.ts) halten die App sonst nach dem Schließen am Leben: window-all-closed kommt nie,
+    // und ein zweiter Start griff auf das zerstörte Fenster zu („Object has been destroyed“). Speichern (ipc.ts flush) läuft vorher.
+    win.on('closed', () => app.quit())
+    app.on('second-instance', () => { if (win.isDestroyed()) return; if (win.isMinimized()) win.restore(); win.show(); win.focus() })
     const [engine, { registerIpc }] = await Promise.all([loadEngine(), import('./ipc')])
     return registerIpc(win, engine)
   }
   app.dock?.hide() // CLI/MCP: kein Dock-Symbol (macOS)
   const engine = await loadEngine()
-  if (argv.includes('--mcp')) return (await import('./mcp')).startMcp(engine) // no window; stdout belongs to the MCP protocol
+  if (argv.includes('--mcp')) {
+    // ponytail: Bild-Einstellungen nur beim Start; Änderungen in der App gelten im Agenten ab dessen nächster Sitzung
+    ;(await import('./image-settings')).loadImageSettings()
+    return (await import('./mcp')).startMcp(engine) // no window; stdout belongs to the MCP protocol
+  }
   try {
     if (argv.includes('--render')) await renderCli(engine, at('--render')!, at('--out') ?? 'exports')
     else if (argv.includes('--check')) process.exitCode = (await (await import('./check')).checkLayouts(engine)) ? 0 : 1

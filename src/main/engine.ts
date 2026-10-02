@@ -40,6 +40,10 @@ export function createEngine(): Engine {
       const png = await renderOverview(deck)
       return nativeImage.createFromBuffer(png).resize({ width: 1600, quality: 'best' }).toPNG()
     },
+    thumbnail(img, width) {
+      const n = nativeImage.createFromBuffer(img)
+      return n.isEmpty() ? null : n.resize({ width, quality: 'good' }).toJPEG(80)
+    },
     async lint(deck) {
       return lintDeck(deck, await measure(deck))
     },

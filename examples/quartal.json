@@ -1,15 +1,15 @@
 {
  "title": "Q3-Update Vertrieb",
  "brief": { "audience": "Geschäftsführung", "goal": "Freigabe für zwei zusätzliche Außendienststellen", "tone": "knapp, faktenbasiert" },
- "theme": { "id": "corporate", "brand": { "primary": "#0A7C66" } },
+ "theme": { "id": "beratung", "brand": { "primary": "#0A7C66" } },
  "transition": "morph",
  "mode": "click",
  "slides": [
   { "id": "cover", "layout": "cover", "variant": "center", "notes": "Zehn Minuten, dann Entscheidung. Alles Wichtige steht auf Folie 2.", "content": { "eyebrow": "Vertrieb · Q3 2026", "title": "Der Vertrieb liegt 9 % über Plan und braucht jetzt zwei Stellen mehr", "subtitle": "Quartalsupdate für die Geschäftsführung", "meta": "2. Oktober 2026" } },
-  { "id": "summary", "layout": "bullets", "variant": "cards", "build": "stagger", "notes": "Executive Summary: Wer nur diese Folie sieht, kennt Lage, Ursache und Bitte.", "content": { "eyebrow": "Executive Summary", "title": "Drei Punkte entscheiden über das vierte Quartal", "items": [
-   { "text": "Auftragseingang 9 % über Plan, getragen von Bestandskunden", "sub": "Neukundenanteil sinkt, das Wachstum ist nicht nachhaltig", "icon": "trending-up" },
-   { "text": "Der Außendienst ist seit Juli an der Kapazitätsgrenze", "sub": "Durchschnittlich 62 offene Leads pro Mitarbeiter, Ziel sind 35", "icon": "users" },
-   { "text": "Bitte: zwei Stellen ab 1. November freigeben", "sub": "Amortisation nach sieben Monaten, Details auf Folie 6", "icon": "circle-check" } ] } },
+  { "id": "summary", "layout": "bullets", "variant": "list", "build": "list", "notes": "Executive Summary: Wer nur diese Folie sieht, kennt Lage, Ursache und Bitte.", "content": { "eyebrow": "Executive Summary", "title": "Drei Punkte entscheiden über das vierte Quartal", "items": [
+   { "text": "Auftragseingang 9 % über Plan, getragen von Bestandskunden", "sub": "Neukundenanteil sinkt, das Wachstum ist nicht nachhaltig" },
+   { "text": "Der Außendienst ist seit Juli an der Kapazitätsgrenze", "sub": "Durchschnittlich 62 offene Leads pro Mitarbeiter, Ziel sind 35" },
+   { "text": "Bitte: zwei Stellen ab 1. November freigeben", "sub": "Amortisation nach sieben Monaten, Details auf Folie 6" } ] } },
   { "id": "kpis", "layout": "kpi-grid", "build": "stagger", "notes": "Alle Zahlen gegenüber Plan Q3. Deckungsbeitrag inklusive Rabatte.", "content": { "eyebrow": "Lage in Zahlen", "title": "Umsatz und Marge liegen über Plan, die Neukundenquote darunter", "kpis": [
    { "value": "4,8 Mio", "label": "Auftragseingang Q3", "delta": "+9 % vs. Plan", "sentiment": "positive" },
    { "value": "31,4 %", "label": "Deckungsbeitrag", "delta": "+1,2 Pkt.", "sentiment": "positive" },

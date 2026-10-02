@@ -13,7 +13,7 @@ import { createInterface } from 'node:readline'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { Deck } from '../shared/deck'
-import { DEFAULT_MODEL } from '../shared/models'
+import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
 import { buildSystemPrompt, withEvents, type DeckAgentOptions } from './agent'
 import { serveTools } from './mcp'
 import { buildTools, type ToolDef } from './tools'
@@ -76,13 +76,15 @@ const hasFlag = async (bin: string, flag: string) => {
 
 // Aufruf je CLI. Alles, was die Werkzeuge einschränkt, steht hier; bei einer neuen CLI-Version zuerst das prüfen.
 // model: Claude-Modell-ID bzw. Modell von Codex/Vibe (leer = deren Voreinstellung)
-function invocation(cli: Cli, m: Mcp, session: string | null, model: string, text: string, legacy: boolean): { args: string[]; env: NodeJS.ProcessEnv; stdin: string } {
+function invocation(cli: Cli, m: Mcp, session: string | null, model: string, text: string, legacy: boolean, effort: Effort): { args: string[]; env: NodeJS.ProcessEnv; stdin: string } {
   if (cli === 'claude')
     // --setting-sources "": keine Hooks/Plugins aus den Settings des Nutzers, Login bleibt (--safe-mode würde auch unseren
     // MCP-Server abschalten, --bare den Abo-Login). --tools: nur Deck-Tools plus Web-Recherche.
     return { env: {}, stdin: text, args: ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--setting-sources', '', '--disable-slash-commands',
       '--mcp-config', m.file, '--strict-mcp-config', '--tools', 'WebSearch,WebFetch', '--allowedTools', 'mcp__deckwerk,WebSearch,WebFetch',
-      '--system-prompt', buildSystemPrompt(), '--model', model, ...(session ? ['--resume', session] : [])] }
+      '--system-prompt', buildSystemPrompt(), '--model', model, ...(session ? ['--resume', session] : []),
+      // ohne --effort nimmt Claude Code seine Voreinstellung (xhigh): für Decks unnötig langsam; Haiku kennt kein effort
+      ...('legacyThinking' in modelOf(model) ? [] : ['--effort', effort])] }
   if (cli === 'codex')
     // --ignore-user-config: weder MCP-Server noch Profile des Nutzers, nur unser Server (der Login bleibt). Shell- und
     // Exec-Werkzeuge aus, Sandbox nur lesen, nie nachfragen. `exec resume` kennt --sandbox nicht, daher sandbox_mode per -c.
@@ -108,6 +110,7 @@ function invocation(cli: Cli, m: Mcp, session: string | null, model: string, tex
 export class CliAgent {
   deck: Deck | null
   model: string // Claude-Modell-ID bzw. Modell von Codex/Vibe, pro Nachricht umschaltbar (leer = deren Voreinstellung)
+  effort: Effort = 'high' // nur Claude Code; Auto setzt medium für kleine Änderungen
   private tools: ToolDef[]
   private session: string | null = null // Gesprächsverlauf liegt beim CLI (--resume bzw. exec resume)
   private seen = new Set<string>() // Vibe: IDs schon gezeigter Antworten; --resume spielt sie erneut aus (alte Harness mit neuer Zeit)
@@ -138,7 +141,7 @@ export class CliAgent {
       current = this.tools
       const cwd = join(homedir(), 'Deckwerk') // Sitzungen tauchen im jeweiligen CLI unter ~/Deckwerk auf
       mkdirSync(cwd, { recursive: true })
-      const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')))
+      const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')), this.effort)
       const child = (this.child = spawn(this.bin, run.args, { cwd, env: { ...process.env, ...run.env }, stdio: ['pipe', 'pipe', 'pipe'] }))
       // Vibe und Codex denken oft minutenlang, bevor das erste Werkzeug läuft: Status zeigen, solange das CLI arbeitet
       if (this.cli !== 'claude') emit({ type: 'tool', name: 'cli_run', status: 'start', summary: `${CLI_NAME[this.cli]} braucht oft ein paar Minuten` })

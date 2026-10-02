@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
-import type { Engine } from '../src/main/agent'
-import { createMcpServer } from '../src/main/mcp'
+import { buildSystemPrompt, type Engine } from '../src/main/agent'
+import { createMcpServer, guideParts } from '../src/main/mcp'
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 const engine: Engine = {
@@ -25,9 +25,18 @@ const client = new Client({ name: 'smoke', version: '0' })
 await client.connect(b)
 
 assert.match(client.getInstructions() ?? '', /### kpi-grid/)
-const names = (await client.listTools()).tools.map((t) => t.name).sort()
-assert.equal(names.length, 18)
+assert.match((client.getInstructions() ?? '').slice(0, 2000), /read_guide/, 'Claude Code kürzt auf ~2.000 Zeichen: Hinweis auf read_guide muss vorn stehen')
+const listed = (await client.listTools()).tools
+const names = listed.map((t) => t.name).sort()
+// ohne readOnlyHint führt Claude Code Aufrufe nacheinander aus (4 KI-Bilder dauerten so über 6 min)
+assert.equal(listed.find((t) => t.name === 'generate_image')?.annotations?.readOnlyHint, true)
+assert.equal(listed.find((t) => t.name === 'add_slides')?.annotations?.readOnlyHint, undefined, 'Deck-Änderungen bleiben seriell')
+assert.equal(names.length, 20)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
+// read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
+const parts = guideParts()
+assert.ok(parts.length > 1 && parts.every((p) => p.length <= 20000), `Teile: ${parts.map((p) => p.length)}`)
+assert.equal(parts.join('\n'), buildSystemPrompt())
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }
 const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<Res>

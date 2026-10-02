@@ -7,7 +7,7 @@ import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBloc
 import type { Deck, Measured } from '../shared/deck'
 import type { Issue } from '../shared/lint'
 import { LAYOUTS, LAYOUT_IDS } from '../shared/layouts'
-import { DEFAULT_MODEL, modelOf } from '../shared/models'
+import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
 import guide from './design-guide.md?raw'
 import { buildCatalog, buildTools, houseStyle, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
@@ -18,6 +18,7 @@ export interface Engine {
   renderOverview(deck: Deck): Promise<Buffer> // Kontaktbogen aller Folien, 1 PNG
   lint(deck: Deck): Promise<Issue[]>
   exportDeck(deck: Deck, format: 'pptx' | 'pdf' | 'png' | 'md', outDir: string): Promise<string[]>
+  thumbnail?(img: Buffer, width: number): Buffer | null // JPEG-Vorschau eines Bildes ohne Rendern; null = Format unbekannt (WebP)
 }
 
 export type AgentEvent =
@@ -44,7 +45,7 @@ export interface DeckAgentOptions {
 
 const WORKFLOW = `## Arbeitsablauf
 1. Höchstens 2–3 Rückfragen (mit ask_user, falls vorhanden), sonst sinnvolle Defaults annehmen.
-2. Storyline zuerst als Liste von Action Titles (mit plan_storyline, falls vorhanden, sonst im Chat), dann create_deck und add_slides in Batches.
+2. Erst die Leitidee in einem Satz (Guide §2 „Die Idee“: Bild für das Ganze, Haken, ein mutiger Höhepunkt), dann die Storyline als Liste von Action Titles (mit plan_storyline, falls vorhanden, sonst im Chat), dann create_deck und add_slides in Batches.
 3. QA-Schleife (max. 3 Runden): Fehler aus den Tool-Rückmeldungen und lint_deck beheben → render_overview kritisch prüfen (Rhythmus, Dichte, Konsistenz) → nachbessern.
 4. Animationen prüfen (ein Übergangstyp, maximal ein Build pro Folie, keine Animation auf Titeln), Speaker Notes ergänzen.
 5. Kurze Zusammenfassung; exportieren nur, wenn der Nutzer es wünscht.
@@ -60,7 +61,7 @@ const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { 
 // Ein Beispiel-Deck (typ-Sample pro Layout) rendern → Bilder für den ersten User-Turn. Stabil → cachebar.
 async function catalogThumbnails(engine: Engine): Promise<BetaContentBlockParam[]> {
   const deck: Deck = {
-    title: 'Katalog', theme: { id: 'corporate' }, transition: 'none', mode: 'click',
+    title: 'Katalog', theme: { id: 'beratung' }, transition: 'none', mode: 'click',
     slides: LAYOUT_IDS.map((id) => ({ id: `cat-${id}`, layout: id, content: LAYOUTS[id].samples.typ })),
   }
   const pngs = await engine.renderPng(deck, deck.slides.map((_, i) => i), 512)
@@ -86,13 +87,16 @@ export function withEvents(t: ToolDef, emit: (e: AgentEvent) => void): ToolDef {
   }
 }
 
-function toRunnable(t: ToolDef, emit: (e: AgentEvent) => void) {
+// Der SDK-Runner führt alle Tool-Aufrufe einer Antwort gleichzeitig aus. Deck-Änderungen klonen das Deck und setzen es nach
+// einem await zurück; parallel ginge eine davon verloren. Deshalb wie in Claude Code: readOnly parallel, alles andere der Reihe nach.
+export function toRunnable(t: ToolDef, emit: (e: AgentEvent) => void, lock: { tail: Promise<unknown> }) {
   const runnable = betaZodTool({
     name: t.name,
     description: t.description,
     inputSchema: t.inputSchema,
     async run(input): Promise<string | BetaToolResultContentBlockParam[]> {
-      const out = await withEvents(t, emit).run(input) // Fehler macht der Runner zu tool_result mit is_error
+      const go = () => withEvents(t, emit).run(input) // Fehler macht der Runner zu tool_result mit is_error
+      const out = await (t.readOnly ? go() : (lock.tail = lock.tail.catch(() => {}).then(go)) as ReturnType<typeof go>)
       if (!out.images?.length) return out.text
       return [{ type: 'text', text: out.text }, ...out.images.map(img)] as BetaToolResultContentBlockParam[]
     },
@@ -103,12 +107,14 @@ function toRunnable(t: ToolDef, emit: (e: AgentEvent) => void) {
 export class DeckAgent {
   deck: Deck | null
   model: string // pro Nachricht umschaltbar (Auswahl im Chat)
+  effort: Effort = 'high' // Auto setzt medium für kleine Änderungen
   private history: BetaMessageParam[] = []
   private client: Anthropic
   private tools
   private system = buildSystemPrompt()
   private ctl: AbortController | null = null
   private thumbs: Promise<BetaContentBlockParam[]> | null = null
+  private lock = { tail: Promise.resolve() as Promise<unknown> } // Deck-Tools nacheinander (toRunnable)
 
   constructor(private opts: DeckAgentOptions) {
     this.deck = opts.deck ?? null
@@ -124,7 +130,7 @@ export class DeckAgent {
       ask: (q) => opts.onEvent({ type: 'ask', ...q }),
       storyline: (slides) => opts.onEvent({ type: 'storyline', slides }),
       choice: (c) => opts.onEvent({ type: 'choice', ...c }),
-    }).map((t) => toRunnable(t, opts.onEvent))
+    }).map((t) => toRunnable(t, opts.onEvent, this.lock))
   }
 
   // Tool-Loop bis end_turn; History bleibt im Speicher.
@@ -144,10 +150,10 @@ export class DeckAgent {
           max_iterations: 80,
           betas: [...('fallback' in m ? ['server-side-fallback-2026-07-01'] : []), ...('updates' in m ? ['thinking-display-updates-2026-08-18'] : [])],
           ...('fallback' in m && { fallbacks: 'default' as const }),
-          // Opus 5.5 hat effort-Default medium, deshalb explizit high; Haiku 4.5 kennt weder adaptive noch effort
+          // Opus 5.5 hat effort-Default medium, deshalb explizit setzen; Haiku 4.5 kennt weder adaptive noch effort
           ...('legacyThinking' in m
             ? { thinking: { type: 'enabled' as const, budget_tokens: 16000 } }
-            : { thinking: { type: 'adaptive' as const, ...('updates' in m && { display: 'updates' as const }) }, output_config: { effort: 'high' as const } }),
+            : { thinking: { type: 'adaptive' as const, ...('updates' in m && { display: 'updates' as const }) }, output_config: { effort: this.effort } }),
           system: [{ type: 'text', text: this.system, cache_control: { type: 'ephemeral' } }],
           // Web-Recherche (Canva „Web Research“) läuft serverseitig; Haiku bekommt nur die Basis-Suche
           tools: [...this.tools, ...('legacyThinking' in m
@@ -201,7 +207,7 @@ export class DeckAgent {
     this.thumbs ??= catalogThumbnails(this.opts.engine).catch((e) => { console.warn('[agent] Thumbnails übersprungen:', (e as Error).message); return [] })
     const blocks = await this.thumbs
     if (!blocks.length) return []
-    const tail = { type: 'text', text: 'Vorschau der Layouts (typische Füllung, Theme corporate). Nur zur Orientierung, nicht kommentieren.', cache_control: { type: 'ephemeral' } } as BetaContentBlockParam
+    const tail = { type: 'text', text: 'Vorschau der Layouts (typische Füllung, Theme beratung). Zeigt nur die Anordnung; Farbe, Schrift und Struktur kommen aus deinem eigenen Design. Nicht kommentieren.', cache_control: { type: 'ephemeral' } } as BetaContentBlockParam
     return [{ role: 'user', content: [...blocks, tail] }]
   }
 }

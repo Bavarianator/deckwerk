@@ -20,6 +20,11 @@ export interface Theme {
   decor: DecorId // Standard-Motiv, Folien können es überschreiben
   texture?: 'grain' // feine Körnung über dem Dekor
   tone?: Tone // gesetzt von withTone
+  legacy?: boolean // alte Themes: laden weiter, werden aber nicht mehr angeboten
+  headScale?: number // Titelgröße (display, statement, h1) relativ zur Skala; >1 = Plakat-Titel
+  rule?: 'over' | 'under' // feine Linie über bzw. unter dem Folienkopf
+  sectionTone?: Tone // Ton der Kapiteltrenner, Standard accent
+  vivid?: boolean // kräftiger Farbgrund erlaubt (Stil mutig): calmBg greift nicht
   logo?: string
 }
 
@@ -41,6 +46,9 @@ const FONT_LIST = {
   Lora: { css: 'Lora', pptx: 'Lora', embed: 'Lora', serif: true },
   'Instrument Serif': { css: 'Instrument Serif', pptx: 'Instrument Serif', embed: 'InstrumentSerif', serif: true, single: true },
   Archivo: { css: 'Archivo', pptx: 'Archivo', embed: 'Archivo' },
+  'IBM Plex Sans': { css: 'IBM Plex Sans', pptx: 'IBM Plex Sans', embed: 'IBMPlexSans' },
+  'IBM Plex Serif': { css: 'IBM Plex Serif', pptx: 'IBM Plex Serif', embed: 'IBMPlexSerif', serif: true },
+  'Source Serif 4': { css: 'Source Serif 4', pptx: 'Source Serif 4', embed: 'SourceSerif4', serif: true },
 } satisfies Record<string, FontRef>
 export type FontName = keyof typeof FONT_LIST
 export const FONTS: Record<FontName, FontRef> = FONT_LIST
@@ -63,6 +71,57 @@ export const SCALE: Record<string, number[]> = {
 }
 export const HEAD_ROLES = ['hero', 'display', 'statement', 'h1', 'kpi']
 
+// Katalog-Themes nach Vorbildern guter Decks (Beratung, Keynote, Swiss Style, Editorial, Presentation Zen):
+// flache Gründe, kein Dekor, eine Akzentfarbe, Zweitakzent neutral grau, kaum Radius.
+const CORE_THEMES: Theme[] = [
+  {
+    id: 'beratung', name: 'Beratung', dark: false,
+    c: {
+      bg: '#FFFFFF', surface: '#F4F5F6', surface2: '#E9EBED', text: '#16202B', muted: '#5A6470',
+      accent: '#0B5563', accent2: '#8A939C', onAccent: '#FFFFFF', border: '#DDE1E5', good: '#1E7A45', bad: '#B83227',
+      chart: ['#0B5563', '#A3ABB3', '#C9CED3', '#5B7F8C', '#3E4C59'],
+    },
+    head: { ...FONTS['IBM Plex Sans'], weight: 700, tracking: -0.015 }, body: FONTS['IBM Plex Sans'], radius: 2, decor: 'none', rule: 'under',
+  },
+  {
+    id: 'keynote', name: 'Keynote', dark: true,
+    c: {
+      bg: '#111113', surface: '#1B1B1E', surface2: '#252529', text: '#F5F5F7', muted: '#8E8E93',
+      accent: '#3D9BFF', accent2: '#6E6E73', onAccent: '#0B0B0C', border: '#2C2C30', good: '#5BD08A', bad: '#FF6B5E',
+      chart: ['#3D9BFF', '#6E6E73', '#A1A1A6', '#48484D', '#D1D1D6'],
+    },
+    head: { ...FONTS.Inter, weight: 700, tracking: -0.03 }, body: FONTS.Inter, radius: 4, decor: 'none', headScale: 1.22, sectionTone: 'normal',
+  },
+  {
+    id: 'schweiz', name: 'Schweiz', dark: false,
+    c: {
+      bg: '#FAFAF8', surface: '#F0F0EE', surface2: '#E4E4E1', text: '#111111', muted: '#5C5C5C',
+      accent: '#D7261E', accent2: '#8C8C8C', onAccent: '#FFFFFF', border: '#DADAD6', good: '#1E7A3C', bad: '#D7261E',
+      chart: ['#D7261E', '#8C8C8C', '#BDBDBA', '#111111', '#5C5C5C'],
+    },
+    head: { ...FONTS.Archivo, weight: 700, tracking: -0.03 }, body: FONTS.Archivo, radius: 0, decor: 'none', headScale: 1.22, rule: 'over',
+  },
+  {
+    id: 'redaktion', name: 'Redaktion', dark: false,
+    c: {
+      bg: '#FBFAF7', surface: '#F3F1EC', surface2: '#E8E5DE', text: '#1A1D24', muted: '#5E6168',
+      accent: '#1F3A8A', accent2: '#9A9CA3', onAccent: '#FFFFFF', border: '#E0DDD5', good: '#2F6B3F', bad: '#A8321F',
+      chart: ['#1F3A8A', '#A3A6AD', '#C8CAD0', '#5A6B99', '#3A3D45'],
+    },
+    head: { ...FONTS['Source Serif 4'], weight: 400, tracking: -0.012 }, body: FONTS['Source Sans 3'], radius: 2, decor: 'none', headScale: 1.22, rule: 'over', sectionTone: 'invert',
+  },
+  {
+    id: 'zen', name: 'Zen', dark: true,
+    c: {
+      bg: '#1C1D1F', surface: '#242528', surface2: '#2D2F32', text: '#EDEBE6', muted: '#A09D96',
+      accent: '#E3A857', accent2: '#7D7B76', onAccent: '#1C1D1F', border: '#35373A', good: '#8CC99A', bad: '#E88A7A',
+      chart: ['#E3A857', '#7D7B76', '#B5B2AB', '#55575B', '#D8D5CE'],
+    },
+    head: { ...FONTS['IBM Plex Serif'], weight: 400, tracking: -0.012 }, body: FONTS['IBM Plex Sans'], radius: 0, decor: 'none', headScale: 1.22, sectionTone: 'normal',
+  },
+]
+
+// Frühere Themes (Blobs, Glow, Verläufe): bestehende Decks laden weiter, neue bekommen sie nicht mehr angeboten.
 const BASE_THEMES: Theme[] = [
   {
     id: 'corporate', name: 'Corporate Clean', dark: false,
@@ -93,7 +152,8 @@ const BASE_THEMES: Theme[] = [
   },
 ]
 
-export const THEMES: Theme[] = [...BASE_THEMES, ...EXTRA_THEMES]
+export const THEMES: Theme[] = [...CORE_THEMES, ...[...BASE_THEMES, ...EXTRA_THEMES].map((t) => ({ ...t, legacy: true }))]
+export const CATALOG_THEMES = THEMES.filter((t) => !t.legacy)
 
 const oklch = converter('oklch')
 
@@ -110,15 +170,10 @@ export function ensureContrast(color: string, bg: string, min: number): string {
   return out
 }
 
-function rotateHue(color: string, deg: number): string {
-  const c = oklch(color)!
-  return formatHex(clampChroma({ ...c, h: ((c.h ?? 0) + deg) % 360 }, 'oklch'))!
-}
-
 function withBrand(base: Theme, b?: BrandKit): Theme {
   if (!b) return base
   const accent = ensureContrast(b.primary, base.c.bg, 4.5)
-  const accent2 = ensureContrast(b.secondary ?? rotateHue(accent, 150), base.c.bg, 3)
+  const accent2 = ensureContrast(b.secondary ?? base.c.accent2, base.c.bg, 3)
   const onAccent = wcagContrast('#FFFFFF', accent) >= 3 ? '#FFFFFF' : '#0B0B0B'
   return {
     ...base,
@@ -130,15 +185,31 @@ function withBrand(base: Theme, b?: BrandKit): Theme {
 }
 
 // Titelschrift mit passendem Gewicht und Laufweite (Einschnitt-Schriften nur 400)
-const headRef = (f: FontRef) => ({ ...f, weight: f.single ? 400 : 700, tracking: f.serif ? -0.012 : -0.022 })
+const headRef = (f: FontRef, weight = 700) => ({ ...f, weight: f.single ? 400 : weight, tracking: f.serif ? -0.012 : -0.022 })
+
+// Grund nur fast weiß oder fast schwarz und kaum bunt: mittlere, pastellige oder kräftige Gründe verraten Laien-Design sofort.
+function calmBg(hex: string): string {
+  const c = oklch(hex)
+  if (!c) return hex
+  const dark = c.l < 0.6
+  return formatHex(clampChroma({ ...c, l: dark ? Math.min(c.l, 0.24) : Math.max(c.l, 0.955), c: Math.min(c.c ?? 0, dark ? 0.045 : 0.01) }, 'oklch'))!
+}
+
+// Stil mutig: kräftiger Grund bleibt in Farbton und Sättigung, verlässt aber das mittlere Helligkeitsband. Dort hielte weder
+// weißer noch schwarzer Text (samt gedämpftem Sekundärtext) genug Kontrast.
+function vividBg(hex: string): string {
+  const c = oklch(hex)
+  if (!c) return hex
+  return formatHex(clampChroma({ ...c, l: c.l < 0.57 ? Math.min(c.l, 0.42) : Math.max(c.l, 0.74) }, 'oklch'))!
+}
 
 // Eigenes Theme aus wenigen Vorgaben (KI oder Nutzer): Flächen und Ränder als Mischung von Grund und Text, Akzente mit Mindestkontrast.
 export function themeFromSpec(s: ThemeSpec): Theme {
-  const bg = s.bg
+  const bg = s.vivid ? vividBg(s.bg) : calmBg(s.bg)
   const dark = wcagContrast(bg, '#FFFFFF') > wcagContrast(bg, '#000000')
-  const text = ensureContrast(s.text ?? mix(bg, dark ? '#FFFFFF' : '#000000', 0.92), bg, 10)
+  const text = ensureContrast(s.text ?? mix(bg, dark ? '#FFFFFF' : mix('#000000', s.accent, 0.15), 0.92), bg, 10) // Schwarz mit einer Spur Akzent, nie reines #000
   const accent = ensureContrast(s.accent, bg, 3)
-  const accent2 = ensureContrast(s.accent2 ?? rotateHue(accent, 150), bg, 3)
+  const accent2 = ensureContrast(s.accent2 ?? mix(bg, text, 0.5), bg, 3) // ohne Vorgabe neutral: eine Akzentfarbe reicht
   const head = FONTS[s.headFont as FontName] ?? FONTS.Arial
   return {
     id: 'custom', name: s.name, dark,
@@ -148,20 +219,24 @@ export function themeFromSpec(s: ThemeSpec): Theme {
       muted: mix(bg, text, 0.62),
       onAccent: wcagContrast('#FFFFFF', accent) >= wcagContrast('#0B0B0B', accent) ? '#FFFFFF' : '#0B0B0B',
       good: dark ? '#5BD08A' : '#1E7A45', bad: dark ? '#F07A6B' : '#B83227',
-      chart: [accent, accent2, rotateHue(accent, 60), mix(text, bg, 0.45), rotateHue(accent2, 70)].map((c) => ensureContrast(c, bg, 2.5)),
+      chart: [accent, mix(bg, text, 0.45), mix(bg, text, 0.28), accent2, mix(bg, text, 0.7)].map((c) => ensureContrast(c, bg, 2.5)), // grau + ein Akzent
     },
-    head: headRef(head),
+    head: headRef(head, s.titleWeight === 'regular' ? 400 : 700),
     body: FONTS[s.bodyFont as FontName] ?? FONTS.Calibri,
     radius: s.radius, decor: s.decor, texture: s.texture,
+    headScale: s.titleSize === 'large' ? 1.22 : undefined,
+    rule: s.rule === 'none' ? undefined : s.rule,
+    sectionTone: s.sectionTone,
+    vivid: s.vivid,
   }
 }
 
 // Base theme (+ brand kit), with every text colour pushed to WCAG AA on the surfaces it is used on.
 // Kuratierte Schriftpaare [Titel, Text] für „Schriften mischen“
 export const FONT_PAIRS: [FontName, FontName][] = [
-  ['Fraunces', 'Manrope'], ['Space Grotesk', 'Inter'], ['DM Serif Display', 'DM Sans'], ['Inter', 'Inter'],
-  ['Fraunces', 'DM Sans'], ['Manrope', 'Manrope'], ['Playfair Display', 'Source Sans 3'], ['Instrument Serif', 'Inter'],
-  ['Lora', 'Plus Jakarta Sans'], ['Archivo', 'Archivo'], ['Plus Jakarta Sans', 'Plus Jakarta Sans'], ['Georgia', 'Calibri'], ['Arial', 'Calibri'],
+  ['IBM Plex Sans', 'IBM Plex Sans'], ['Source Serif 4', 'Source Sans 3'], ['IBM Plex Serif', 'IBM Plex Sans'], ['Inter', 'Inter'],
+  ['Archivo', 'Archivo'], ['Fraunces', 'DM Sans'], ['DM Serif Display', 'DM Sans'], ['Lora', 'Source Sans 3'],
+  ['Playfair Display', 'Source Sans 3'], ['Manrope', 'Manrope'], ['Georgia', 'Calibri'], ['Arial', 'Calibri'],
 ]
 
 // Farbvariante desselben Themes: 1 = Akzente getauscht, 2 = Hell/Dunkel getauscht, 3 = beides, 4/5 = Grund in Akzentfarbe getönt.
@@ -173,8 +248,8 @@ function shuffled(t: Theme, n: number): Theme {
   if (v % 2) [accent, accent2] = [accent2, accent]
   if (v === 2 || v === 3) [bg, text] = [text, bg]
   if (v >= 4) bg = mix(bg, accent, t.dark ? 0.16 : 0.09)
-  const s = themeFromSpec({ name: t.name, bg, text, accent, accent2, headFont: 'Arial', bodyFont: 'Calibri', radius: t.radius, decor: t.decor, texture: t.texture })
-  return { ...s, id: t.id, head: t.head, body: t.body, logo: t.logo }
+  const s = themeFromSpec({ name: t.name, bg, text, accent, accent2, headFont: 'Arial', bodyFont: 'Calibri', radius: t.radius, decor: t.decor, texture: t.texture, vivid: t.vivid })
+  return { ...t, dark: s.dark, c: s.c }
 }
 
 export function resolveTheme(ref: ThemeRef): Theme {
@@ -185,7 +260,7 @@ export function resolveTheme(ref: ThemeRef): Theme {
   const font = (n?: string): FontRef | undefined =>
     n && cf && n === cf.family ? { css: n, pptx: n, files: { regular: cf.regular, bold: cf.bold }, single: !cf.bold } : n && n in FONTS ? FONTS[n as FontName] : undefined
   const hRef = font(hf), bRef = font(bf)
-  if (hRef) t = { ...t, head: headRef(hRef) }
+  if (hRef) t = { ...t, head: headRef(hRef, t.head.single ? 700 : t.head.weight) } // Gewicht des Designs behalten
   if (bRef) t = { ...t, body: bRef }
   const c = t.c
   return {
@@ -201,7 +276,8 @@ export function resolveTheme(ref: ThemeRef): Theme {
   }
 }
 
-export const mix = (a: string, b: string, t: number) => formatHex(interpolate([a, b], 'oklch')(t))!
+// oklab statt oklch: fast unbunte Gründe haben einen zufälligen Farbton, in oklch kippten Tönungen dadurch ins Gelb-Oliv
+export const mix = (a: string, b: string, t: number) => formatHex(interpolate([a, b], 'oklab')(t))!
 
 // Duotone-Farben für Fotos [dunkel, hell], aus der Akzentfarbe (auf Akzentflächen aus deren Grund). Vorschau (CSS) und PPTX nutzen dieselben Werte.
 export function duotoneOf(t: Theme): [string, string] {

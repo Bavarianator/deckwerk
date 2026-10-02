@@ -1,7 +1,7 @@
 {
  "title": "Strategie 2027",
  "brief": { "audience": "Führungskreis und Beirat", "goal": "Verabschiedung der drei strategischen Schwerpunkte", "tone": "klar, ruhig, ambitioniert" },
- "theme": { "id": "editorial" },
+ "theme": { "id": "redaktion" },
  "transition": "fade",
  "mode": "click",
  "slides": [

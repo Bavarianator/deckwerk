@@ -28,6 +28,14 @@ async function fontsLoaded() {
   await document.fonts.ready
 }
 
+// Fotos sind CSS-Hintergründe und laden nebenher: abwarten, sonst nimmt der Snapshot ein frisch erzeugtes Bild leer auf
+async function imagesLoaded(root: ParentNode) {
+  const urls = [...root.querySelectorAll<HTMLElement>('[style*="url("]')].flatMap((el) => [...el.style.backgroundImage.matchAll(/url\("(.+?)"\)/g)].map((m) => m[1]))
+  if (!urls.length) return
+  await Promise.all(urls.map((src) => Object.assign(new Image(), { src }).decode().catch(() => {})))
+  await frames()
+}
+
 async function svgToPng(svg: string, w: number, h: number): Promise<string> {
   const img = new Image(w, h)
   img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
@@ -53,6 +61,7 @@ function Host({ mode }: { mode: string }) {
       flushSync(() => setState({ deck, index }))
       await frames()
       const root = document.querySelector<HTMLElement>('.slide')!
+      await imagesLoaded(root)
       const fit = autofit(root) // idempotent; SlideView already ran it, this returns the settled result
       const els = extract(root)
       for (const e of els) if (e.kind === 'icon' && e.svg) e.png = await svgToPng(e.svg, e.box.w * 4, e.box.h * 4)
@@ -67,6 +76,7 @@ function Host({ mode }: { mode: string }) {
       await loadCustomFont(deck)
       flushSync(() => setState({ deck, index: -1 }))
       await frames(3)
+      await imagesLoaded(document)
     },
   }
   if (!state) return null

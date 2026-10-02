@@ -1,16 +1,22 @@
 // Look: Themes an der eigenen Titelfolie durchblättern; dazu Übergang, Ablauf, Markenfarben, Logo und Überschriften.
 // Jede Wahl gilt sofort (Undo-fähig), „Abbrechen“ stellt den Stand beim Öffnen wieder her.
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Sparkles, X } from 'lucide-react'
-import { TRANSITIONS, sizeOf, type BrandKit, type Deck, type Transition } from '../../shared/deck'
+import { MOTIONS, TRANSITIONS, sizeOf, type BrandKit, type Deck, type Motion, type Transition } from '../../shared/deck'
 import { FONT_NAMES, FONT_PAIRS, THEMES, themeFromSpec } from '../../shared/themes'
 import { SlideView } from '../slide'
 import { OWN_DESIGN } from './Chat'
+import { playTransition } from './PresentScreen'
 import { Select } from './kit'
 
-const PROPOSE = 'Schlage mir 3 Looks für dieses Deck vor, passend zu Thema und Publikum, darunter mindestens ein ganz eigenes Design.'
+const BOLD = 'Gestalte das Deck im Stil mutig neu (Design-Guide §6 „Stil des Decks“): ein eigenes mutiges Design, dann die Folien mit mehr Farbflächen, Plakat-Typo und starken Bildern überarbeiten. Aussagen und Zahlen bleiben.'
+const PROPOSE = 'Schlage mir 3 eigene Looks für dieses Deck vor, passend zu Thema und Publikum und deutlich verschieden in Struktur, nicht nur in der Farbe.'
 
-const TRANSITION: Record<Transition, string> = { none: 'Keiner', fade: 'Überblenden', push: 'Schieben', morph: 'Morph', dissolve: 'Auflösen', wipe: 'Wischen', cover: 'Überdecken', split: 'Teilen', circle: 'Kreis', zoom: 'Zoom' }
+const MOTION: Record<Motion, string> = { none: 'Keine', calm: 'Ruhig', standard: 'Standard', lively: 'Lebhaft' }
+export const TRANSITION: Record<Transition, string> = {
+  none: 'Keiner', fade: 'Überblenden', push: 'Schieben', morph: 'Morph', dissolve: 'Auflösen', wipe: 'Wischen', cover: 'Überdecken', split: 'Teilen',
+  circle: 'Kreis', zoom: 'Zoom', slide: 'Slide', stack: 'Stapel', color: 'Farbwischen',
+}
 
 interface Props {
   deck: Deck
@@ -22,7 +28,7 @@ interface Props {
 }
 
 export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: Props) {
-  const [orig] = useState(() => ({ theme: deck.theme, transition: deck.transition, mode: deck.mode }))
+  const [orig] = useState(() => ({ theme: deck.theme, transition: deck.transition, mode: deck.mode, motion: deck.motion, builds: new Map(deck.slides.map((s) => [s.id, s.build])) }))
   const sheet = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(720)
   useLayoutEffect(() => {
@@ -35,17 +41,38 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   }, [deck.size?.w, deck.size?.h]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // eigenes Theme (von der KI angelegt) bleibt als erster Eintrag wählbar
-  const ids = [...(orig.theme.custom ? ['custom'] : []), ...THEMES.map((t) => t.id)]
+  // alte Themes nur, wenn das Deck gerade eins nutzt
+  const ids = [...(orig.theme.custom ? ['custom'] : []), ...THEMES.filter((t) => !t.legacy || t.id === orig.theme.id).map((t) => t.id)]
   const at = Math.max(0, ids.indexOf(deck.theme.custom ? 'custom' : deck.theme.id))
   const themeRef = (id: string) => (id === 'custom' ? { ...orig.theme, brand: deck.theme.brand } : { id, brand: deck.theme.brand })
   const themeOf = (id: string) => (id === 'custom' ? themeFromSpec(orig.theme.custom!) : THEMES.find((t) => t.id === id) ?? THEMES[0])
   const pick = (i: number) => patchDeck({ theme: themeRef(ids[(i + ids.length) % ids.length]) }, 'look-theme')
   const preview = (i: number) => ({ ...deck, theme: themeRef(ids[(i + ids.length) % ids.length]) })
 
+  // Übergang wählen spielt ihn auf der großen Karte vor: Folie 2 kommt über Folie 1 (wie beim Präsentieren)
+  const [demo, setDemo] = useState<{ t: Transition; n: number } | null>(null)
+  const base = useRef<HTMLDivElement>(null)
+  const incoming = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!demo || !incoming.current) return
+    const a = playTransition(demo.t, 1, incoming.current, base.current)
+    let timer = 0
+    a.finished.then(() => { timer = window.setTimeout(() => setDemo(null), 900) }, () => {})
+    return () => { clearTimeout(timer); a.cancel(); base.current?.getAnimations().forEach((x) => x.cancel()) }
+  }, [demo])
+  const chooseTransition = (x: Transition) => {
+    patchDeck({ transition: x })
+    setDemo(x !== 'none' && x !== 'morph' && deck.slides.length > 1 ? { t: x, n: Date.now() } : null)
+  }
+
   const t = themeOf(ids[at])
   const brand = deck.theme.brand
   const setBrand = (p: Partial<BrandKit>, tag?: string) => patchDeck({ theme: { ...deck.theme, brand: { primary: t.c.accent, ...brand, ...p } } }, tag)
-  const cancel = () => { patchDeck(orig); onClose() }
+  const cancel = () => {
+    const { builds, ...rest } = orig
+    patchDeck({ ...rest, slides: deck.slides.map((s) => ({ ...s, build: builds.get(s.id) })) }) // auch Magic Animate zurück
+    onClose()
+  }
 
   return (
     <div
@@ -73,7 +100,10 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
             <div className="look-card"><SlideView deck={preview(at - 1)} index={0} width={Math.round(w * 0.66)} /></div>
           </button>
         )}
-        <div className="look-card"><SlideView deck={deck} index={0} width={w} /></div>
+        <div className="look-card look-main">
+          <div ref={base}><SlideView deck={deck} index={0} width={w} /></div>
+          {demo && <div ref={incoming} key={demo.n} className="look-demo"><SlideView deck={deck} index={1} width={w} /></div>}
+        </div>
         {ids.length > 1 && (
           <button className="look-side" aria-label={`Theme ${themeOf(ids[(at + 1) % ids.length]).name}`} onClick={() => pick(at + 1)}>
             <div className="look-card"><SlideView deck={preview(at + 1)} index={0} width={Math.round(w * 0.66)} /></div>
@@ -110,9 +140,10 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
         <div className="look-row">
           <div className="look-group">
             <b>Übergang</b>
-            <div className="seg">
-              {TRANSITIONS.map((x) => <button key={x} aria-pressed={deck.transition === x} onClick={() => patchDeck({ transition: x })}>{TRANSITION[x]}</button>)}
-            </div>
+            {/* 13 Übergänge passen nicht in eine Knopfleiste; jede Wahl spielt die Vorschau auf der Karte */}
+            <Select value={deck.transition} aria-label="Übergang" onChange={(e) => chooseTransition(e.target.value as Transition)}>
+              {TRANSITIONS.map((x) => <option key={x} value={x}>{TRANSITION[x]}</option>)}
+            </Select>
           </div>
           <div className="look-group">
             <b>Ablauf</b>
@@ -121,8 +152,29 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
               <button aria-pressed={deck.mode === 'auto'} onClick={() => patchDeck({ mode: 'auto' })}>Selbstlauf</button>
             </div>
           </div>
+          <div className="look-group">
+            <b>Stil</b>
+            <div className="seg" title="Wie mutig die KI gestaltet: sachlich = zurückhaltend, mutig = kräftige Farben, Plakat-Typo, starke Bilder">
+              <button aria-pressed={deck.style !== 'mutig'} onClick={() => patchDeck({ style: undefined })}>Sachlich</button>
+              <button aria-pressed={deck.style === 'mutig'} onClick={() => patchDeck({ style: 'mutig' })}>Mutig</button>
+            </div>
+          </div>
+          <div className="look-group">
+            <b>Animation</b>
+            <div className="seg" title="Wie Canva Magic Animate: setzt die Aufbauten aller Folien auf einen Stil (einzelne Folien danach unter Anpassen)">
+              {MOTIONS.map((m) => (
+                <button key={m} aria-pressed={(deck.motion ?? 'standard') === m}
+                  onClick={() => patchDeck({ motion: m === 'standard' ? undefined : m, slides: deck.slides.map((x) => (x.build ? { ...x, build: undefined } : x)) })}>{MOTION[m]}</button>
+              ))}
+            </div>
+          </div>
         </div>
-        {deck.transition === 'morph' && <p className="look-note">Morph läuft in PowerPoint. In der Vorschau blendet Deckwerk über.</p>}
+        {deck.style === 'mutig' && (
+          <p className="look-note">Mutig: kräftige Farben, Plakat-Typo, mehr Farbflächen und markante Bilder. Gilt für alles, was die KI ab jetzt gestaltet.{' '}
+            <button className="plain tint" disabled={busy} onClick={() => { if (onAsk(BOLD)) onClose() }}>Jetzt mutig neu gestalten</button>
+          </p>
+        )}
+        {deck.transition === 'morph' && <p className="look-note">Morph lässt gleiche Elemente an ihren neuen Platz wandern (Präsentieren und PowerPoint). Meist besser nur für einzelne Folien: Folie wählen, Anpassen → Übergang.</p>}
         <div className="look-row">
           <div className="look-group">
             <b>Markenfarben</b>

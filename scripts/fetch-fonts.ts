@@ -20,12 +20,16 @@ const FAMILIES: Record<string, string> = {
   Lora: 'ital,wght@0,400;0,700;1,400;1,700',
   'Instrument Serif': 'ital@0;1',
   Archivo: 'ital,wght@0,400;0,700;1,400;1,700',
+  'IBM Plex Sans': 'ital,wght@0,400;0,700;1,400;1,700',
+  'IBM Plex Serif': 'ital,wght@0,400;0,700;1,400;1,700',
+  'Source Serif 4': 'ital,wght@0,400;0,700;1,400;1,700',
 }
 const DIR = 'assets/fonts'
 const face = (weight: string, style: string) => (weight === '700' ? 'Bold' : 'Regular').replace(/^Regular$/, style === 'italic' ? 'Italic' : 'Regular') + (weight === '700' && style === 'italic' ? 'Italic' : '')
 
 mkdirSync(DIR, { recursive: true })
-for (const [family, axes] of Object.entries(FAMILIES)) {
+const only = process.argv.slice(2) // optional: nur diese Familien laden, z. B. npm run fonts:fetch -- "IBM Plex Sans"
+for (const [family, axes] of Object.entries(FAMILIES).filter(([f]) => !only.length || only.includes(f))) {
   const stem = family.replace(/ /g, '')
   const css = await (await fetch(`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}:${axes}`, { headers: { 'User-Agent': 'deckwerk' } })).text()
   const faces = [...css.matchAll(/font-style: (\w+);\s*font-weight: (\d+);[\s\S]*?src: url\((\S+?\.ttf)\)/g)]

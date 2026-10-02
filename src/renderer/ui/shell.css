@@ -118,6 +118,7 @@ select.model-select { color: var(--muted); }
 .work-nav .thumb { display: grid; grid-template-columns: 22px 160px; gap: 6px; align-items: start; padding: 0; border: 0; border-radius: 6px; }
 .work-nav .thumb-num { position: static; min-width: 0; padding: 1px 0 0; background: none; color: var(--faint); font-size: 11px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
 .work-nav .thumb.active .thumb-num { color: var(--accent); font-weight: 700; }
+.work-nav .thumb-tr { display: block; margin-top: 4px; color: var(--accent); } /* eigener Übergang (meist Morph) */
 .work-nav .thumb-slide { border-radius: 6px; box-shadow: 0 0 0 1px var(--border), 0 1px 3px rgb(22 22 26 / 0.08); }
 .work-nav .thumb.active .thumb-slide { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4.5px var(--accent); }
 .work-nav .thumb-add { align-self: center; }
@@ -240,6 +241,8 @@ select.model-select { color: var(--muted); }
 .look-stage { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; gap: 40px; overflow: hidden; }
 .look-card { flex: none; border-radius: 12px; overflow: hidden; box-shadow: 0 16px 48px rgb(22 22 26 / 0.16), 0 48px 96px -24px rgb(22 22 26 / 0.28); }
 .look-card > * { pointer-events: none; }
+.look-main { position: relative; }
+.look-demo { position: absolute; inset: 0; } /* Vorschau des gewählten Übergangs (LookSheet) */
 .look-side { padding: 0; border: 0; background: none; opacity: 0.55; cursor: pointer; transition: opacity 0.2s; }
 .look-side:hover { opacity: 0.8; }
 .look-name { display: flex; flex-direction: column; align-items: center; gap: 6px; }

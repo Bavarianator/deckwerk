@@ -1,6 +1,7 @@
 // Präsentationsmodus: Vollbild, Builds per Web Animations API mit denselben Presets wie der PPTX-Export.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
-import { sizeOf, type BuildPreset, type Deck } from '../../shared/deck'
+import { flushSync } from 'react-dom'
+import { morphNames, morphText, sizeOf, transitionOf, type AnimDir, type AnimSpeed, type BuildPreset, type Deck, type ItemAnim, type MorphEl, type Transition } from '../../shared/deck'
 import { fmtSec, speakSec } from '../../shared/handout'
 import { LAYOUTS, buildOf, type LayoutId } from '../../shared/layouts'
 import type { Ink } from '../../preload'
@@ -10,12 +11,95 @@ import { chaptersOf, titleOf } from './story'
 const DUR = 400
 const EASE = 'cubic-bezier(.2,.7,.2,1)'
 // translate/scale statt transform, damit eigene Transforms der Layouts erhalten bleiben
+const POP: Keyframe[] = [{ opacity: 0, scale: '.5' }, { opacity: 1, scale: '1.06', offset: 0.7 }, { opacity: 1, scale: '1' }]
 const KF: Record<Exclude<BuildPreset, 'none'>, Keyframe[]> = {
   fade: [{ opacity: 0 }, { opacity: 1 }],
   list: [{ opacity: 0, translate: '0 12px' }, { opacity: 1, translate: '0 0' }],
   stagger: [{ opacity: 0, translate: '0 24px' }, { opacity: 1, translate: '0 0' }],
   wipe: [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
   'zoom-kpi': [{ opacity: 0, scale: '.6' }, { opacity: 1, scale: '1' }],
+  pan: [{ opacity: 0, translate: '-40px 0' }, { opacity: 1, translate: '0 0' }],
+  pop: POP,
+  words: [{ opacity: 0 }, { opacity: 1 }], // Flächen und Bilder; Text läuft Wort für Wort (prepareBuilds)
+  photo: [{ opacity: 0 }, { opacity: 1 }], // Text und Flächen blenden ein, Fotos zoomen (photoZoom)
+}
+
+// Canva „Foto-Zoom“: randlose und halbseitige Fotos zoomen über 12 s langsam auf 108 % (beschnitten von Folie bzw. .media).
+// Läuft ab Folienbeginn ohne Klick; PowerPoint: Betonung „Vergrößern“ (export-pptx.ts)
+const photoZoom = (root: HTMLElement) =>
+  root.querySelectorAll<HTMLElement>('.backdrop [data-pptx="img"], .media [data-pptx="img"]').forEach((el) =>
+    el.animate([{ scale: '1' }, { scale: '1.08' }], { duration: 12000, easing: 'cubic-bezier(.3,.1,.3,1)', fill: 'forwards' }))
+
+// Richtung = Bewegungsrichtung wie die Pfeile in Canva; Versatz des Startpunkts bzw. Startausschnitt beim Wischen
+const offset = (dir: AnimDir, d: string) => ({ right: `-${d} 0`, left: `${d} 0`, up: `0 ${d}`, down: `0 -${d}` })[dir]
+const WIPE_FROM: Record<AnimDir, string> = { right: 'inset(0 100% 0 0)', left: 'inset(0 0 0 100%)', up: 'inset(100% 0 0 0)', down: 'inset(0 0 100% 0)' }
+const SPEED: Record<AnimSpeed, number> = { slow: 1.6, fast: 0.6 }
+
+// Canva-Element-Animationen, Gegenstücke in PowerPoint: export-pptx.ts ITEM_FX. typewriter/ascend laufen über die
+// Buchstaben bzw. Wörter (.dw-part, im Präsentationsmodus von slide.tsx erzeugt), Abstand wie p:iterate in animations.ts
+const ITEM_MOTION: Record<Exclude<ItemAnim, 'none'>, { kf: Keyframe[]; ms: number; easing?: string }> = {
+  fade: { kf: KF.fade, ms: 500 },
+  float: { kf: KF.stagger, ms: 500 },
+  pan: { kf: KF.pan, ms: 500 },
+  drift: { kf: [{ opacity: 0, translate: '-90px 0' }, { opacity: 1, translate: '0 0' }], ms: 1200, easing: 'cubic-bezier(.25,.6,.3,1)' },
+  pop: { kf: POP, ms: 450 },
+  zoom: { kf: KF['zoom-kpi'], ms: 500 },
+  tumble: { kf: [{ opacity: 0, rotate: '-90deg', scale: '.6' }, { opacity: 1, rotate: '0deg', scale: '1' }], ms: 700 },
+  stomp: { kf: [{ opacity: 0, scale: '1.6' }, { opacity: 1, scale: '.97', offset: 0.75 }, { opacity: 1, scale: '1' }], ms: 500 },
+  // steigt hinter einer gedachten Linie (der eigenen Unterkante) auf: Ausschnitt bleibt auf der Endposition stehen
+  baseline: { kf: [{ translate: '0 100%', clipPath: 'inset(-100% 0 100% 0)' }, { translate: '0 0', clipPath: 'inset(0 0 0 0)' }], ms: 600 },
+  wipe: { kf: KF.wipe, ms: 500 },
+  typewriter: { kf: [{ opacity: 0 }, { opacity: 1 }], ms: 1 },
+  ascend: { kf: [{ opacity: 0, translate: '0 .5em' }, { opacity: 1, translate: '0 0' }], ms: 400 },
+  breathe: { kf: [{ scale: '1' }, { scale: '1.04' }], ms: 1200 },
+}
+const GAP = { typewriter: 45, ascend: 120 }
+const motionOf = (anim: Exclude<ItemAnim, 'none'>, dir?: AnimDir): Keyframe[] => {
+  const move = (d: AnimDir, by: string): Keyframe[] => [{ opacity: 0, translate: offset(d, by) }, { opacity: 1, translate: '0 0' }]
+  if (anim === 'float') return move(dir ?? 'up', '24px')
+  if (anim === 'pan') return move(dir ?? 'right', '40px')
+  if (anim === 'drift') return move(dir ?? 'right', '90px')
+  if (anim === 'wipe') return [{ clipPath: WIPE_FROM[dir ?? 'right'] }, { clipPath: 'inset(0 0 0 0)' }]
+  return ITEM_MOTION[anim].kf
+}
+
+// Ein Element auftreten lassen (Präsentieren und Vorschau im Editor). Liefert die Animationen, pausiert nichts.
+// Richtung und Tempo kommen aus data-anim-dir/-speed, die Vorschau reicht sie direkt (der State ist noch nicht gerendert).
+export function animateItem(el: HTMLElement, anim: ItemAnim, delay = 0, dir = el.dataset.animDir as AnimDir | undefined, speed = el.dataset.animSpeed as AnimSpeed | undefined): Animation[] {
+  if (anim === 'none') return []
+  const m = ITEM_MOTION[anim], f = speed ? SPEED[speed] : 1, kf = motionOf(anim, dir)
+  if (anim === 'breathe') return [el.animate(kf, { duration: m.ms * f, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' })]
+  const parts = anim === 'typewriter' || anim === 'ascend' ? [...el.querySelectorAll<HTMLElement>('.dw-part')] : []
+  if (!parts.length) return [el.animate(m.ms > 1 ? kf : KF.fade, { duration: Math.max(m.ms, 500) * f, delay, easing: m.easing ?? EASE, fill: 'both' })]
+  return parts.map((p, k) => p.animate(kf, { duration: m.ms * f, delay: delay + k * GAP[anim as keyof typeof GAP] * f, easing: EASE, fill: 'both' }))
+}
+
+// Übergänge wie in PowerPoint (animations.ts): neue Folie wird aufgedeckt oder hereingeschoben, push schiebt die alte mit
+// hinaus. d = Richtung (1 vorwärts, −1 rückwärts). Morph läuft getrennt (nameSlots); hier wird es zum Überblenden.
+export function playTransition(t: Transition, d: number, incoming: HTMLElement, outgoing?: HTMLElement | null): Animation {
+  const frames: Partial<Record<Transition, Keyframe[]>> = {
+    fade: [{ opacity: 0 }, { opacity: 1 }], dissolve: [{ opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0)' }],
+    push: [{ translate: `0 ${100 * d}%` }, { translate: '0 0' }], cover: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }],
+    wipe: [{ clipPath: d > 0 ? 'inset(0 100% 0 0)' : 'inset(0 0 0 100%)' }, { clipPath: 'inset(0 0 0 0)' }],
+    split: [{ clipPath: 'inset(0 50%)' }, { clipPath: 'inset(0 0%)' }],
+    circle: [{ clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(75% at 50% 50%)' }],
+    zoom: [{ scale: '0.6', opacity: 0 }, { scale: '1', opacity: 1 }],
+    slide: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }], stack: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }],
+  }
+  const opts = { duration: DUR, easing: EASE }
+  if (t === 'push') outgoing?.animate([{ translate: '0 0' }, { translate: `0 ${-100 * d}%` }], { ...opts, fill: 'forwards' })
+  if (t === 'slide') outgoing?.animate([{ translate: '0 0' }, { translate: `${-100 * d}% 0` }], { ...opts, fill: 'forwards' })
+  if (t === 'stack') outgoing?.animate([{ scale: '1', opacity: 1 }, { scale: '.9', opacity: 0.4 }], { ...opts, fill: 'forwards' }) // alte Folie tritt zurück
+  if (t === 'color') {
+    // Farbwischen: eine Fläche in der Akzentfarbe zieht über die Folie, dahinter wechselt sie
+    const band = incoming.parentElement!.appendChild(document.createElement('div'))
+    band.style.cssText = `position:absolute;inset:0;z-index:2;background:${getComputedStyle(incoming.querySelector('.slide') ?? incoming).getPropertyValue('--accent') || '#16161a'}`
+    const [from, to] = d > 0 ? ['inset(0 100% 0 0)', 'inset(0 0 0 100%)'] : ['inset(0 0 0 100%)', 'inset(0 100% 0 0)']
+    const long = { duration: DUR * 2, easing: 'cubic-bezier(.6,0,.4,1)' }
+    band.animate([{ clipPath: from }, { clipPath: 'inset(0 0 0 0)', offset: 0.5 }, { clipPath: to }], long).finished.finally(() => band.remove())
+    return incoming.animate([{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1, offset: 0.5 }, { opacity: 1 }], long)
+  }
+  return incoming.animate(frames[t] ?? frames.fade!, opts)
 }
 
 const presetOf = (deck: Deck, i: number): BuildPreset => buildOf(deck, i)
@@ -25,32 +109,82 @@ const inkPos = (e: { clientX: number; clientY: number; currentTarget: Element })
 }
 
 // Legt pausierte Animationen an (fill: both → Elemente sind sofort versteckt) und liefert die Klick-Schritte.
-function prepare(root: HTMLElement, preset: BuildPreset, mode: Deck['mode']): Animation[][] {
-  return [...prepareBuilds(root, preset, mode), ...prepareItems(root, mode)]
+// keep = Slots, die per Morph schon von der vorigen Folie herübergewandert sind: die treten nicht noch einmal auf.
+function prepare(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>): Animation[][] {
+  return [...prepareBuilds(root, preset, mode, keep), ...prepareItems(root, mode, keep)]
 }
 
-// Freie Elemente mit Auftritt: je ein Klick (Selbstlauf: nacheinander, alles in einem Schritt)
-const ITEM_KF: Record<string, Keyframe[]> = { fade: KF.fade, float: KF.stagger, zoom: KF['zoom-kpi'], wipe: KF.wipe }
-function prepareItems(root: HTMLElement, mode: Deck['mode']): Animation[][] {
-  const steps = [...root.querySelectorAll<HTMLElement>('[data-anim]')].map((el, i) => {
-    const a = el.animate(ITEM_KF[el.dataset.anim!] ?? KF.fade, { duration: 500, delay: mode === 'click' ? 0 : i * 500, easing: EASE, fill: 'both' })
-    a.pause()
-    return [a]
+// Morph wie in PowerPoint/Keynote: zugeordnete Elemente (morphNames: gleicher Text/Bild, sonst gleicher Slot) bekommen auf
+// beiden Folien denselben view-transition-name; Chromium animiert Lage, Größe und Inhalt, der Rest blendet über.
+// Liefert die Namen dieser Folie (für den nächsten Schritt) und die Slots, die von prev herübergewandert sind.
+// Text wandert in natürlicher Größe und wächst nach dem Verhältnis der Schriftgrößen (app.css .dw-text): Textboxen sind oft
+// spaltenbreit, ein Strecken auf die neue Boxbreite verzerrt sonst die Schrift.
+type Named = MorphEl & { fs?: number }
+function nameSlots(root: HTMLElement, prev?: Named[]): { list: Named[]; came: Set<string> } {
+  const r = root.getBoundingClientRect()
+  const seen = new Set<string>()
+  const els = [...root.querySelectorAll<HTMLElement>('[data-pptx][data-slot]')].filter((el) => {
+    const b = el.getBoundingClientRect()
+    // Namen müssen eindeutig sein (sonst bricht der Übergang ab); Randabfallendes bliebe beim Wandern ungeschnitten
+    if (seen.has(el.dataset.slot!) || b.left < r.left - 1 || b.top < r.top - 1 || b.right > r.right + 1 || b.bottom > r.bottom + 1) return false
+    return seen.add(el.dataset.slot!)
+  })
+  const own = els.map((el) => {
+    const css = el.dataset.pptx === 'text' ? getComputedStyle(el) : undefined
+    el.style.setProperty('view-transition-class', css ? (css.textAlign === 'center' ? 'dw-text dw-center' : 'dw-text') : 'none')
+    return { slot: el.dataset.slot!, key: css ? morphText(el.innerText) : el.dataset.src && `img:${el.dataset.src}`, fs: css && parseFloat(css.fontSize) }
+  })
+  const names = prev ? morphNames(prev, own) : own.map((e) => e.slot)
+  const before = new Map(prev?.map((e) => [e.slot, e.fs]))
+  els.forEach((el, k) => (el.style.viewTransitionName = `dw-${CSS.escape(names[k])}`))
+  const grow = own.flatMap((e, k) => {
+    const from = before.get(names[k])
+    return from && e.fs ? [`::view-transition-old(dw-${CSS.escape(names[k])}),::view-transition-new(dw-${CSS.escape(names[k])}){--dw-r:${e.fs / from}}`] : []
+  })
+  const style = document.getElementById('dw-morph') ?? document.head.appendChild(Object.assign(document.createElement('style'), { id: 'dw-morph' }))
+  style.textContent = grow.join('\n')
+  return { list: own.map((e, k) => ({ ...e, slot: names[k] })), came: new Set(own.filter((_, k) => before.has(names[k])).map((e) => e.slot)) }
+}
+
+// Freie Elemente mit Auftritt: je ein Klick (Selbstlauf: nacheinander, alles in einem Schritt). Atmen läuft sofort und
+// ohne Ende mit, ist also kein Schritt (finish() auf einer endlosen Animation würfe).
+function prepareItems(root: HTMLElement, mode: Deck['mode'], keep: Set<string>): Animation[][] {
+  const els = [...root.querySelectorAll<HTMLElement>('[data-anim]')].filter((el) => !keep.has(el.dataset.slot!))
+  els.filter((el) => el.dataset.anim === 'breathe').forEach((el) => animateItem(el, 'breathe'))
+  const steps = els.filter((el) => el.dataset.anim !== 'breathe').map((el, i) => {
+    const as = animateItem(el, el.dataset.anim as ItemAnim, mode === 'click' ? 0 : i * 500)
+    as.forEach((a) => a.pause())
+    return as
   })
   return mode === 'click' || !steps.length ? steps : [steps.flat()]
 }
 
-function prepareBuilds(root: HTMLElement, preset: BuildPreset, mode: Deck['mode']): Animation[][] {
+function prepareBuilds(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>): Animation[][] {
   if (preset === 'none') return []
+  if (preset === 'photo') photoZoom(root)
   const groups = new Map<number, HTMLElement[]>()
   for (const el of root.querySelectorAll<HTMLElement>('[data-build]')) {
+    if (keep.has(el.dataset.slot!)) continue
     const n = Number(el.dataset.build)
     groups.set(n, [...(groups.get(n) ?? []), el])
   }
+  const sorted = [...groups.entries()].sort((a, b) => a[0] - b[0])
+  if (preset === 'words') {
+    // Canva „Aufstieg“: Text Wort für Wort (.dw-part aus slide.tsx), Gruppen nacheinander, Flächen blenden mit ein
+    let t = 0
+    const all = sorted.flatMap(([, els]) => {
+      const start = t
+      const as = els.flatMap((el) => (el.querySelector('.dw-part') ? animateItem(el, 'ascend', start) : [el.animate(KF.fade, { duration: DUR, delay: start, easing: EASE, fill: 'both' })]))
+      t = Math.max(start + DUR, ...as.map((a) => Number(a.effect?.getTiming().delay ?? 0) + 400))
+      return as
+    })
+    all.forEach((a) => a.pause())
+    return [all]
+  }
   const perClick = preset === 'list' && mode === 'click'
-  const steps = [...groups.entries()].sort((a, b) => a[0] - b[0]).map(([, els], gi) =>
+  const steps = sorted.map(([, els], gi) =>
     els.map((el) => {
-      const delay = perClick || preset === 'fade' ? 0 : gi * 150
+      const delay = perClick || preset === 'fade' || preset === 'photo' ? 0 : gi * 150
       const a = el.animate(KF[preset], { duration: DUR, delay, easing: EASE, fill: 'both' })
       a.pause()
       return a
@@ -89,11 +223,20 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
   const inRef = useRef<HTMLDivElement>(null)
   const outRef = useRef<HTMLDivElement>(null)
   const pending = useRef<Animation[][]>([])
+  const morph = useRef<{ old: Named[]; done: Promise<unknown> } | null>(null)
   const last = deck.slides.length - 1
 
   const move = (i: number) => {
     if (i < 0 || i > last || i === view.i) return
-    setView({ i, from: view.i, dir: i > view.i ? 1 : -1 })
+    const dir = i > view.i ? 1 : -1
+    // Übergang der Grenze zwischen beiden Folien, rückwärts gespiegelt
+    if (transitionOf(deck, Math.max(i, view.i)) === 'morph' && document.startViewTransition && inRef.current) {
+      const old = nameSlots(inRef.current).list
+      const vt = document.startViewTransition(() => flushSync(() => setView({ i, from: null, dir })))
+      morph.current = { old, done: vt.finished }
+      return
+    }
+    setView({ i, from: view.i, dir })
   }
   const step = () => {
     const s = pending.current.shift()
@@ -133,7 +276,10 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
 
   useLayoutEffect(() => {
     const root = inRef.current!
-    const steps = prepare(root, presetOf(deck, view.i), deck.mode)
+    const m = morph.current
+    morph.current = null
+    const keep = m ? nameSlots(root, m.old).came : new Set<string>()
+    const steps = prepare(root, presetOf(deck, view.i), deck.mode, keep)
     if (view.dir < 0) {
       steps.flat().forEach((a) => a.finish()) // rückwärts: Folie fertig aufgebaut zeigen
       pending.current = []
@@ -145,24 +291,13 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
       if (deck.mode === 'auto') pending.current.splice(0).flat().forEach((a) => a.play()) // Selbstlauf: auch freie Elemente ohne Klick
     }
 
-    const t = deck.transition === 'morph' ? 'fade' : deck.transition // ponytail: Morph im App-Modus als Fade, echtes Morph nur in PowerPoint
+    if (m) return void m.done.then(begin) // Aufbau erst, wenn die Elemente angekommen sind
+    const t = transitionOf(deck, Math.max(view.i, view.from ?? 0))
     if (view.from === null || t === 'none') {
       setView((v) => ({ ...v, from: null }))
       return begin()
     }
-    const opts = { duration: DUR, easing: EASE }
-    // Vorschau der PowerPoint-Übergänge (animations.ts): neue Folie wird aufgedeckt oder hereingeschoben
-    const d = view.dir
-    const frames: Record<string, Keyframe[]> = {
-      fade: [{ opacity: 0 }, { opacity: 1 }], dissolve: [{ opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0)' }],
-      push: [{ translate: `0 ${100 * d}%` }, { translate: '0 0' }], cover: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }],
-      wipe: [{ clipPath: d > 0 ? 'inset(0 100% 0 0)' : 'inset(0 0 0 100%)' }, { clipPath: 'inset(0 0 0 0)' }],
-      split: [{ clipPath: 'inset(0 50%)' }, { clipPath: 'inset(0 0%)' }],
-      circle: [{ clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(75% at 50% 50%)' }],
-      zoom: [{ scale: '0.6', opacity: 0 }, { scale: '1', opacity: 1 }],
-    }
-    const anim = root.animate(frames[t] ?? frames.fade, opts)
-    if (t === 'push') outRef.current?.animate([{ translate: '0 0' }, { translate: `0 ${-100 * view.dir}%` }], { ...opts, fill: 'forwards' })
+    const anim = playTransition(t, view.dir, root, outRef.current)
     anim.finished.then(() => { setView((v) => ({ ...v, from: null })); begin() }, () => {})
   }, [view.i])
 

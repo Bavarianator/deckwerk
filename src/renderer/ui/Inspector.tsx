@@ -2,8 +2,9 @@
 // Deck-weite Einstellungen (Theme, Übergang, Ablauf, Marke) stehen im Look, die Notizen unter der Folie.
 import type { ReactNode } from 'react'
 import { ImagePlus, X } from 'lucide-react'
-import { BUILDS, DECORS, TONES, type BuildPreset, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
+import { BUILDS, DECORS, TONES, TRANSITIONS, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
 import { ItemInspector } from './ItemInspector'
+import { TRANSITION } from './LookSheet'
 import { Select } from './kit'
 import { LAYOUTS, nextLook, type LayoutId } from '../../shared/layouts'
 import { extract, eyebrowRules } from '../measure'
@@ -11,7 +12,10 @@ import { FONT_NAMES, THEMES, themeFromSpec } from '../../shared/themes'
 import { colorsOf, elsToItems, recolor } from '../../shared/items'
 
 const FRAME: Record<FrameId, string> = { top: 'Titel oben', split: 'Titel links auf Farbfläche', band: 'Titel im Farbband', center: 'Zentriert' }
-const BUILD: Record<BuildPreset, string> ={ none: 'Keine', fade: 'Einblenden', list: 'Liste (Punkt für Punkt)', stagger: 'Nacheinander', wipe: 'Wischen', 'zoom-kpi': 'Zoom' }
+const BUILD: Record<BuildPreset, string> = {
+  none: 'Keine', fade: 'Einblenden', list: 'Liste (Punkt für Punkt)', stagger: 'Aufsteigen (nacheinander)', wipe: 'Wischen', 'zoom-kpi': 'Zoom',
+  pan: 'Schwenken (nacheinander)', pop: 'Pop (nacheinander)', words: 'Wort für Wort', photo: 'Foto-Zoom',
+}
 
 interface Props {
   deck: Deck
@@ -38,7 +42,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
   return (
     <aside className="inspector">
       <fieldset disabled={disabled}>
-        {picked.length > 0 && <ItemInspector deck={deck} picked={picked} onItems={onItems} pickImage={pickImage} />}
+        {picked.length > 0 && <ItemInspector deck={deck} index={index} picked={picked} onItems={onItems} pickImage={pickImage} />}
         {slide && (
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
@@ -109,6 +113,14 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
                 {BUILDS.map((b) => <option key={b} value={b}>{BUILD[b]}</option>)}
               </Select>
             </Field>
+            {index > 0 && (
+              <Field label="Übergang zu dieser Folie">
+                <Select value={slide.transition ?? ''} onChange={(e) => patchSlide(index, { transition: (e.target.value || undefined) as Transition | undefined })}>
+                  <option value="">Wie im Deck ({TRANSITION[deck.transition]})</option>
+                  {TRANSITIONS.map((x) => <option key={x} value={x}>{TRANSITION[x]}</option>)}
+                </Select>
+              </Field>
+            )}
           </section>
         )}
       </fieldset>

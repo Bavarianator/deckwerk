@@ -7,6 +7,9 @@ import type { AgentEvent } from '../main/agent'
 export type ChatCli = 'claude' | 'codex' | 'vibe'
 /** login: angemeldet (nur Codex prüfbar), null = unbekannt */
 export interface CliStatus { id: ChatCli; name: string; found: boolean; mcp: boolean; login: boolean | null }
+export type ImageProvider = 'mammouth' | 'openai' | 'codex'
+/** KI-Bilder: woher die Keys kommen (app = in Deckwerk gespeichert, env = Umgebungsvariable), nie die Keys selbst */
+export interface ImageStatus { mammouth: 'app' | 'env' | null; openai: 'app' | 'env' | null; provider: ImageProvider | null; model: string }
 /** hasKey: irgendein KI-Zugang (API-Key oder ein Agenten-CLI) */
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
@@ -108,6 +111,9 @@ const api = {
   setupDone: (): Promise<void> => invoke('setup:done'),
   /** startet den MCP-Server wie die Agenten-CLIs und liefert die Anzahl seiner Werkzeuge */
   setupMcpTest: (): Promise<number> => invoke('setup:mcpTest'),
+  /** KI-Bilder: Keys (Mammouth, OpenAI), bevorzugter Anbieter, Modell; null oder '' löscht ein Feld */
+  imageSettings: (): Promise<ImageStatus> => invoke('imageSettings:get'),
+  setImageSettings: (patch: { mammouth?: string | null; openai?: string | null; provider?: ImageProvider | null; model?: string | null }): Promise<ImageStatus> => invoke('imageSettings:set', patch),
   /** absoluter Pfad einer per Drag & Drop abgelegten Datei */
   pathOf: (file: File): string => webUtils.getPathForFile(file),
 }

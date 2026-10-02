@@ -42,10 +42,13 @@ export async function checkLayouts(engine: Engine, outDir = 'exports/check'): Pr
   // Katalog-Themes plus zwei eigene Themes (wie die KI sie entwirft), damit themeFromSpec in hell und dunkel geprüft ist
   const refs: { id: string; name: string; custom?: ThemeSpec }[] = [
     ...THEMES.map((t) => ({ id: t.id, name: t.id })),
-    { id: 'custom', name: 'custom-hell', custom: { name: 'Koralle', bg: '#FFF8F0', accent: '#E4572E', accent2: '#2E86AB', headFont: 'Space Grotesk', bodyFont: 'Inter', radius: 18, decor: 'dots' } },
-    { id: 'custom', name: 'custom-dunkel', custom: { name: 'Tiefsee', bg: '#0C1B2A', accent: '#2EC4B6', headFont: 'Fraunces', bodyFont: 'Manrope', radius: 6, decor: 'rings', texture: 'grain' } },
+    { id: 'custom', name: 'custom-hell', custom: { name: 'Sudhaus', bg: '#FFF8F0', accent: '#9A4A1C', headFont: 'Fraunces', bodyFont: 'DM Sans', radius: 0, decor: 'none', titleSize: 'large', titleWeight: 'regular', rule: 'over', sectionTone: 'invert' } },
+    { id: 'custom', name: 'custom-dunkel', custom: { name: 'Tiefsee', bg: '#0C1B2A', accent: '#2EC4B6', headFont: 'Archivo', bodyFont: 'Manrope', radius: 6, decor: 'rings', texture: 'grain', titleSize: 'large', rule: 'under' } },
+    // Stil mutig: kräftiger Grund mittlerer Helligkeit (vividBg muss ihn lesbar machen) und zweiter Akzent
+    { id: 'custom', name: 'custom-mutig', custom: { name: 'Koralle', bg: '#E4572E', accent: '#111111', accent2: '#FFD100', headFont: 'DM Serif Display', bodyFont: 'DM Sans', radius: 0, decor: 'none', titleSize: 'large', sectionTone: 'invert', vivid: true } },
   ]
   for (const theme of refs) {
+    if (process.env.DW_THEMES && !process.env.DW_THEMES.split(',').includes(theme.name)) continue // z. B. DW_THEMES=keynote,custom-hell
     const deck: Deck = { title: 'Deckwerk Stresstest', theme: { id: theme.id, custom: theme.custom }, transition: 'fade', mode: 'click', slides }
     const measured = await engine.measure(deck)
     for (let i = 0; i < slides.length; i++) {

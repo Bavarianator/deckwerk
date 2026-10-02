@@ -62,9 +62,10 @@ function Cover({ c, v }: Props<'cover'>) {
 }
 
 function Agenda({ c }: Props<'agenda'>) {
+  const few = c.items.length <= 4 // wenige Punkte: große Nummern, Beschreibung in Textgröße – sonst bleibt die Folie halb leer
   return (
     <Frame>
-      <div className="agenda">
+      <div className={`agenda ${few ? 'few' : ''}`}>
         <div className="agenda-side">
           <T role="h1" slot="title" maxLines={2}>{c.title}</T>
         </div>
@@ -72,15 +73,15 @@ function Agenda({ c }: Props<'agenda'>) {
           {c.items.map((it, i) => {
             const inner = (
               <>
-                <T role="h2" slot={`_num.${i}`} className="agenda-num" build={i}>{String(i + 1).padStart(2, '0')}</T>
+                <T role={few ? 'kpi' : 'h2'} slot={`_num.${i}`} className="agenda-num" build={i}>{String(i + 1).padStart(2, '0')}</T>
                 <div className="agenda-text">
                   <T role="h2" slot={`items.${i}.title`} build={i}>{it.title}</T>
-                  {it.desc && <T role="small" slot={`items.${i}.desc`} build={i}>{it.desc}</T>}
+                  {it.desc && <T role={few ? 'body' : 'small'} slot={`items.${i}.desc`} build={i}>{it.desc}</T>}
                 </div>
               </>
             )
             return c.active === i ? (
-              <Box key={i} slot={`_active.${i}`} className="agenda-row active" build={i}>{inner}</Box>
+              <Box key={i} slot="_active" className="agenda-row active" build={i}>{inner}</Box> // fester Slot: beim Morph wandert die Markierung
             ) : (
               <div key={i} className="agenda-row">{inner}</div>
             )
@@ -96,7 +97,7 @@ function Section({ c }: Props<'section'>) {
   const photo = !!img?.src
   return (
     <Frame decor="hero" safeClass={photo ? 'safe-left' : undefined} media={photo && (
-      <div className="media right section-media"><Img src={img!.src} focus={img!.focus} look={img!.look ?? 'duotone'} slot="image" /></div>
+      <div className="media right section-media"><Img src={img!.src} focus={img!.focus} look={img!.look} slot="image" /></div>
     )}>
       <div className="section">
         {c.number && <T role="display" slot="number" className="section-num">{c.number}</T>}
@@ -126,12 +127,11 @@ function Statement({ c }: Props<'statement'>) {
 
 function Bullets({ c, v }: Props<'bullets'>) {
   const sub = c.items.some((it) => it.sub)
-  // auto: 2–4 points that all have a sub line read better as a row of cards than as a left-heavy list
-  const cards = c.items.length <= 4 && (v === 'cards' || (v !== 'list' && c.items.every((it) => it.sub)))
+  const cards = c.items.length <= 4 && v === 'cards'
   return (
     <Frame>
       <Header c={c} />
-      <div className={`bullets ${sub ? 'has-sub' : ''} ${cards ? 'as-cards' : ''}`} data-fit data-slot="items" style={cards ? { gridTemplateColumns: `repeat(${c.items.length}, 1fr)` } : undefined}>
+      <div className={`bullets ${sub ? 'has-sub' : ''} ${cards ? 'as-cards' : c.items.length <= 3 ? 'few' : ''}`} data-fit data-slot="items" style={cards ? { gridTemplateColumns: `repeat(${c.items.length}, 1fr)` } : undefined}>
         {c.items.map((it, i) => {
           const mark = it.icon ? (
             <Box slot={`_ib.${i}`} className="bullet-icon" build={i}>
@@ -147,7 +147,7 @@ function Bullets({ c, v }: Props<'bullets'>) {
           const text = (
             <div className="bullet-text">
               <T role={cards ? 'h3' : 'body'} slot={`items.${i}.text`} build={i} className="bullet-main">{it.text}</T>
-              {it.sub && <T role="small" slot={`items.${i}.sub`} build={i}>{it.sub}</T>}
+              {it.sub && <T role={c.items.length <= 4 ? 'label' : 'small'} slot={`items.${i}.sub`} build={i} className="muted">{it.sub}</T>}
             </div>
           )
           return cards ? (
@@ -182,12 +182,7 @@ function TwoColumn({ c, v }: Props<'two-column'>) {
 }
 
 function Placeholder() {
-  return (
-    <div className="placeholder">
-      <div className="ph-circle" />
-      <div className="ph-circle two" />
-    </div>
-  )
+  return <div className="placeholder" />
 }
 
 function ImageText({ c, v }: Props<'image-text'>) {
@@ -206,21 +201,22 @@ function ImageText({ c, v }: Props<'image-text'>) {
 const arrow = (delta?: string) => (!delta ? undefined : /^[−-]/.test(delta.trim()) ? 'arrow-down-right' : /^\+/.test(delta.trim()) ? 'arrow-up-right' : undefined)
 
 function KpiGrid({ c, v }: Props<'kpi-grid'>) {
-  const plain = v === 'plain'
-  const focus = c.focus !== undefined && c.focus < c.kpis.length ? c.focus : -1
+  const plain = v !== 'cards' // Standard: Zahlenzeile ohne Kästen; gleich große Karten wirken generiert
+  const f = c.focus ?? (plain ? 0 : -1)
+  const focus = f < c.kpis.length ? f : -1
   // Fokus-Karte ist 1,3-mal so breit
   const cols = c.kpis.map((_, i) => (i === focus ? 'minmax(0, 1.3fr)' : 'minmax(0, 1fr)')).join(' ')
   return (
     <Frame>
       <Header c={c} />
-      <div className={`kpis n${c.kpis.length} ${plain ? 'plain' : ''}`} style={{ gridTemplateColumns: cols }}>
+      <div className={`kpis n${c.kpis.length} ${plain ? 'kpi-row' : ''}`} style={{ gridTemplateColumns: cols }}>
         {c.kpis.map((k, i) => {
           const dir = arrow(k.delta)
           return (
             <Box key={i} slot={`_card.${i}`} className={`${plain ? 'kpi-plain' : 'card'} kpi-card ${i === focus ? (plain ? 'big' : 'hl') : ''}`} build={i} fit>
-              {plain ? i > 0 && <Box slot={`_rule.${i}`} className="kpi-rule" build={i} /> : <Box slot={`_bar.${i}`} className="kpi-bar" build={i} />}
+              {plain && i > 0 && <Box slot={`_rule.${i}`} className="kpi-rule" build={i} />}
               <T role="kpi" slot={`kpis.${i}.value`} build={i} className="kpi-value">{k.value}</T>
-              <T role="label" slot={`kpis.${i}.label`} build={i} className="kpi-label">{k.label}</T>
+              <T role={c.kpis.length <= 3 ? 'body' : 'label'} slot={`kpis.${i}.label`} build={i} className="kpi-label">{k.label}</T>
               {k.delta && (
                 <div className={`kpi-delta ${k.sentiment ?? 'neutral'}`}>
                   {dir && <Icon name={dir} slot={`_arrow.${i}`} size={18} build={i} />}
@@ -267,7 +263,10 @@ function ChartSlide({ c }: Props<'chart'>) {
   )
 }
 
+// Wenige Einträge groß setzen: kleine graue Texte in viel Fläche wirken wie eine Webseite, nicht wie eine Folie.
+// Autofit verkleinert bei Bedarf wie immer.
 function Timeline({ c }: Props<'timeline'>) {
+  const roomy = c.items.length <= 4
   return (
     <Frame>
       <Header c={c} />
@@ -278,8 +277,8 @@ function Timeline({ c }: Props<'timeline'>) {
             <Box slot={`_dot.${i}`} className="tl-dot" ellipse build={i} />
             <Box slot={`_card.${i}`} className="card tl-card" build={i} fit>
               <T role="label" slot={`items.${i}.date`} build={i} className="tl-date">{it.date}</T>
-              <T role="h3" slot={`items.${i}.title`} build={i}>{it.title}</T>
-              {it.desc && <T role="label" slot={`items.${i}.desc`} build={i} className="muted">{it.desc}</T>}
+              <T role={roomy ? 'h2' : 'h3'} slot={`items.${i}.title`} build={i}>{it.title}</T>
+              {it.desc && <T role="body" slot={`items.${i}.desc`} build={i} className="muted">{it.desc}</T>}
             </Box>
           </div>
         ))}
@@ -307,8 +306,8 @@ function Process({ c }: Props<'process'>) {
                 </Box>
                 {s.icon && <Icon name={s.icon} slot={`_icon.${i}`} size={28} build={i} className="proc-icon" />}
               </div>
-              <T role="h3" slot={`steps.${i}.title`} build={i}>{s.title}</T>
-              {s.desc && <T role="label" slot={`steps.${i}.desc`} build={i} className="muted">{s.desc}</T>}
+              <T role="h2" slot={`steps.${i}.title`} build={i}>{s.title}</T>
+              {s.desc && <T role="body" slot={`steps.${i}.desc`} build={i} className="muted">{s.desc}</T>}
             </Box>
           </Fragment>
         ))}

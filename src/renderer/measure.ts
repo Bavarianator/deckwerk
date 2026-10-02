@@ -1,5 +1,5 @@
 import { FONTS, HEAD_ROLES, SCALE, type FontName } from '../shared/themes'
-import { type BoxEl, type El, type Gradient, type ImgEl, type ItemAnim, type Measured, type Overflow, type Run } from '../shared/deck'
+import { type BoxEl, type El, type Gradient, type ImgEl, type ItemAnim, type AnimDir, type AnimSpeed, type Measured, type Overflow, type Run } from '../shared/deck'
 
 // ---------- autofit: walk the type scale down until nothing overflows ----------
 
@@ -7,6 +7,7 @@ import { type BoxEl, type El, type Gradient, type ImgEl, type ItemAnim, type Mea
 const COMBOS = Array.from({ length: 16 }, (_, i) => [i >> 2, i & 3]).sort((a, b) => a[0] + a[1] - (b[0] + b[1]) || a[0] - b[0])
 
 function applySteps(root: HTMLElement, head: number, body: number) {
+  root.style.setProperty('--head-fit', String(1 - head / 3)) // Plakat-Titel des Themes stufenweise auf Normalgröße
   for (const [role, steps] of Object.entries(SCALE))
     root.style.setProperty(`--fs-${role}`, `${steps[HEAD_ROLES.includes(role) ? head : body]}px`)
 }
@@ -39,11 +40,16 @@ export function findOverflow(root: HTMLElement): Overflow[] {
 }
 
 export function autofit(root: HTMLElement): Measured['fit'] {
-  for (const [head, body] of COMBOS) {
-    applySteps(root, head, body)
-    if (!findOverflow(root).length) return { ok: true, head, body, overflow: [] }
+  root.classList.add('dw-fitting')
+  try {
+    for (const [head, body] of COMBOS) {
+      applySteps(root, head, body)
+      if (!findOverflow(root).length) return { ok: true, head, body, overflow: [] }
+    }
+    return { ok: false, head: 3, body: 3, overflow: findOverflow(root) }
+  } finally {
+    root.classList.remove('dw-fitting')
   }
-  return { ok: false, head: 3, body: 3, overflow: findOverflow(root) }
 }
 
 // ---------- extraction: DOM → exportable elements (px on the 1280x720 slide) ----------
@@ -144,6 +150,8 @@ export function extract(root: HTMLElement): El[] {
       build: el.dataset.build === undefined ? undefined : Number(el.dataset.build),
       rot: el.dataset.rot ? Number(el.dataset.rot) : undefined,
       anim: (el.dataset.anim as ItemAnim | undefined) || undefined,
+      animDir: (el.dataset.animDir as AnimDir | undefined) || undefined,
+      animSpeed: (el.dataset.animSpeed as AnimSpeed | undefined) || undefined,
     }
     switch (el.dataset.pptx) {
       case 'text': {

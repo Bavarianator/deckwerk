@@ -1,9 +1,10 @@
 // Filmstreifen: kleine Folien, Klick wählt aus, Drag & Drop sortiert um, Folien anlegen/duplizieren/löschen.
 import { memo, useEffect, useRef, useState } from 'react'
 import { confirmDialog } from './kit'
-import { Copy, Plus, Trash2 } from 'lucide-react'
+import { Blend, Copy, Plus, Trash2 } from 'lucide-react'
 import type { Deck } from '../../shared/deck'
 import { SlideView } from '../slide'
+import { TRANSITION } from './LookSheet'
 
 interface Props { deck: Deck; sel: number; disabled: boolean; onSelect: (i: number) => void; onMove: (from: number, to: number) => void; onAdd: () => void; onDup: (i: number) => void; onDel: (i: number) => void }
 
@@ -32,7 +33,10 @@ export const Filmstrip = memo(function Filmstrip({ deck, sel, disabled, onSelect
           onDrop={() => { if (from.current !== null && from.current !== i) onMove(from.current, i); end() }}
           onDragEnd={end}
         >
-          <span className="thumb-num">{i + 1}</span>
+          <span className="thumb-num">
+            {i + 1}
+            {i > 0 && s.transition && <span className="thumb-tr" title={`Übergang zu dieser Folie: ${TRANSITION[s.transition]}`}><Blend size={11} /></span>}
+          </span>
           {!disabled && (
             <span className="thumb-acts">
               <button className="icon-btn" title="Folie duplizieren" aria-label="Folie duplizieren" onClick={(e) => (e.stopPropagation(), onDup(i))}><Copy size={12} /></button>

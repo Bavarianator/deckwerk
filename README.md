@@ -75,6 +75,7 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 - Unter den Notizen schreibt „Schreiben lassen“ die Sprechernotizen, „Überarbeiten“ verbessert vorhandene. Daneben steht die geschätzte Sprechzeit.
 - **Hausstil:** Sag „merk dir …“, und die KI trägt die Vorliebe in `~/Deckwerk/hausstil.md` ein. Die Datei gilt für jedes künftige Deck und lässt sich von Hand bearbeiten.
 - **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/Deckwerk/assets`. Findet sie dort nichts Passendes und ist `UNSPLASH_ACCESS_KEY` gesetzt, sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
+- **KI-Bilder:** Die KI kann Bilder auch selbst erzeugen, mit `gpt-image-2` über [Mammouth](https://mammouth.ai) oder OpenAI, ohne Key auch über Codex mit deinem ChatGPT-Login (einmal `codex login`). Eingerichtet wird das unter Zahnrad → Einrichtung → **Bilder**: Keys (verschlüsselt gespeichert), bevorzugter Anbieter und Modell, z. B. `gemini-3-pro-image-preview` bei Mammouth. Ohne Vorgabe nimmt die KI den ersten eingerichteten Anbieter in der Reihenfolge Mammouth, OpenAI, Codex; „mach das Bild mit Codex“ wählt gezielt. Alternativ gelten `MAMMOUTH_API_KEY`, `OPENAI_API_KEY` und `IMAGE_MODEL` aus der Umgebung. Die Bilder landen in `~/Deckwerk/assets`.
 
 ### Folien frei gestalten
 
@@ -109,6 +110,8 @@ Ein Doppelklick auf eine `deck.json` im Dateimanager öffnet sie in Deckwerk, au
 **Präsentieren** (oder F5) startet mit der ersten Folie, Umschalt+F5 mit der aktuellen. Mit zweitem Bildschirm erscheint das Publikumsfenster dort, und du siehst die Referentenansicht mit Notizen, Uhr, Sprechzeit und der nächsten Folie.
 
 - L schaltet den Laserpointer, D den Stift, E löscht die Striche. Beides sieht auch das Publikum.
+- **Morph** setzt du pro Folie unter Anpassen → „Übergang zu dieser Folie“. Gleicher Text, dasselbe Foto oder derselbe Platz im Layout wandern dann von der vorigen Folie herüber, etwa ein Agenda-Punkt in den Kapiteltitel. Das läuft beim Präsentieren und in PowerPoint.
+- **Animationen wie in Canva:** Freie Elemente können einblenden, aufsteigen, schwenken, treiben, ploppen, purzeln, stampfen, von der Grundlinie aufsteigen oder wischen. Text kann wie mit der Schreibmaschine oder Wort für Wort erscheinen, und „Atmen“ lässt einen Knopf dauerhaft pulsieren. Für Schwenken, Treiben, Wischen und Aufsteigen wählst du die Richtung per Pfeil, für alle das Tempo. Für ganze Folien gibt es dazu Schwenken, Pop, Wort für Wort und den Foto-Zoom (das Foto zoomt langsam heran), als Übergänge Slide, Stapel und Farbwischen. Unter Look → Animation setzt du wie bei Canvas Magic Animate einen Stil für alle Folien: Keine, Ruhig, Standard oder Lebhaft. Beim Wählen spielt die Animation einmal zur Vorschau; in PowerPoint laufen alle mit (Purzeln als Zoom, Farbwischen als Wischen).
 - **Handy als Fernbedienung** (in der Referentenansicht) zeigt einen QR-Code. Das Handy blättert dann und zeigt die Notizen. Handy und Rechner müssen im selben WLAN sein.
 
 ### Exportieren
@@ -155,6 +158,8 @@ codex mcp add deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp   # danach in ~/.
 ```
 
 Vibe und Codex starten den Server ohne Bildschirm. Deckwerk rendert dann headless, deshalb dauert der erste Aufruf etwas länger.
+
+Claude Code und Codex bekommen dazu den Skill `deckwerk` (`skills/deckwerk/SKILL.md`, abgelegt unter `~/.claude/skills/` bzw. `~/.codex/skills/`). Er bringt dem Agenten den Arbeitsablauf bei: Guide lesen, Briefing und Quellmaterial, Storyline, Look, Bildplan, Folien in Etappen mit Korrekturen nach dem Lint, Prüfrunden, Speichern und Export. Der Agent lädt ihn von selbst, sobald du eine Präsentation willst. Nach einem Update zeigt die Einrichtung den Schritt wieder als offen; ein Klick erneuert den Skill.
 
 Claude Code bekommt dieselben Werkzeuge wie der Chat in der App: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen, Fotos und Icons suchen, rendern und exportieren. Dazu kommen `get_deck`, `save_deck` und `open_deck`. Layout-Katalog und Design-Guide stehen in den Server-Anweisungen. Decks landen unter `~/Deckwerk/<titel>/deck.json`; die Umgebungsvariable `DECKWERK_HOME` wählt einen anderen Ordner.
 

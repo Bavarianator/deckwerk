@@ -134,14 +134,15 @@ const isNum = (v: string) => /^[−+-]?[\d.,\s]+(%|€|Mio|Mrd|Pkt\.?|Tsd\.?|k|M
 function Table({ c }: Props<'table'>) {
   const cols = `minmax(0, 1.4fr) repeat(${c.columns.length - 1}, minmax(0, 1fr))`
   const hl = c.highlight ?? {}
+  const roomy = c.rows.length <= 4 && c.columns.length <= 4 // wenige Zeilen: Lesegröße statt Fußnotengröße
   const cell = (v: string, r: number, i: number) => (
-    <T key={i} role="label" slot={r < 0 ? `columns.${i}` : `rows.${r}.${i}`} build={r < 0 ? 0 : r + 1}
+    <T key={i} role={roomy && r >= 0 ? 'body' : 'label'} slot={r < 0 ? `columns.${i}` : `rows.${r}.${i}`} build={r < 0 ? 0 : r + 1}
       className={`tb-cell ${i > 0 && isNum(r < 0 ? (c.rows[0]?.[i] ?? '') : v) ? 'num' : ''} ${i === hl.col ? 'hl' : ''} ${i === 0 ? 'first' : ''}`}>{v}</T>
   )
   return (
     <Frame>
       <Header c={c} />
-      <div className="tb" data-fit data-slot="rows">
+      <div className={`tb ${roomy ? 'roomy' : ''}`} data-fit data-slot="rows">
         <div className="tb-row tb-head" style={{ gridTemplateColumns: cols }}>{c.columns.map((v, i) => cell(v, -1, i))}</div>
         {c.rows.map((row, r) =>
           r === hl.row ? (
@@ -183,8 +184,8 @@ function IconGrid({ c }: Props<'icon-grid'>) {
           <div className="ig-item" key={i}>
             <Box slot={`_badge.${i}`} className="ig-badge" ellipse build={i}><Icon name={it.icon} slot={`_icon.${i}`} size={30} build={i} /></Box>
             <div className="ig-text">
-              <T role="h3" slot={`items.${i}.head`} build={i}>{it.head}</T>
-              {it.sub && <T role="small" slot={`items.${i}.sub`} build={i}>{it.sub}</T>}
+              <T role={n <= 4 ? 'h2' : 'h3'} slot={`items.${i}.head`} build={i}>{it.head}</T>
+              {it.sub && <T role={n <= 4 ? 'body' : 'label'} slot={`items.${i}.sub`} build={i} className="muted">{it.sub}</T>}
             </div>
           </div>
         ))}
@@ -262,9 +263,9 @@ function Team({ c }: Props<'team'>) {
             <div className="tm" key={i}>
               {img?.src ? <Img {...img} slot={`people.${i}.image`} className="tm-pic" round={!img.mask} build={i} />
                 : <Box slot={`_ini.${i}`} className="tm-pic tm-ini" ellipse build={i}><T role="h2" slot={`_ini.${i}.t`} build={i}>{initials(p.name)}</T></Box>}
-              <T role="h3" slot={`people.${i}.name`} build={i}>{p.name}</T>
-              <T role="small" slot={`people.${i}.role`} build={i} className="tm-role">{p.role}</T>
-              {p.line && <T role="small" slot={`people.${i}.line`} build={i}>{p.line}</T>}
+              <T role={n <= 4 ? 'h2' : 'h3'} slot={`people.${i}.name`} build={i}>{p.name}</T>
+              <T role={n <= 4 ? 'label' : 'small'} slot={`people.${i}.role`} build={i} className="tm-role">{p.role}</T>
+              {p.line && <T role={n <= 4 ? 'label' : 'small'} slot={`people.${i}.line`} build={i} className="muted">{p.line}</T>}
             </div>
           )
         })}

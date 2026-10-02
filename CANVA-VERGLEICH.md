@@ -2,6 +2,13 @@
 
 Stand: 27.09.2026. Grundlage: Code in `src/` (Phase 4 umgesetzt, Freiform-Canvas vorhanden), die Renderings unter `exports/` (Ortho-Bot, Q3-Update, Strategie 2027, Café Kollektiv, Freies Design) und eine Recherche zu Canva, Gamma und Beautiful.ai (Quellen am Ende).
 
+> **Kurswechsel (27.09.2026): Zurückhaltung statt Canva-Deko.** Der Nutzer empfand die Decks als „KI-Look“. Die Recherche (Apple-Keynotes, YC/Kevin Hale, McKinsey/BCG, Presentation Zen, Duarte Glance Test, Swiss Style, Storytelling with Data; Kritiken zu „AI slop design“ u. a. [925studios](https://www.925studios.co/blog/ai-slop-design-tells), [Plus AI](https://plusai.com/blog/how-to-make-ai-slides-that-dont-look-like-ai-slop/), [avoid-ai-design](https://github.com/funboy322/avoid-ai-design)) zeigt: Karten im Raster, Icon-Kacheln, Akzentbalken, Versalien-Eyebrows mit Strich, Blobs/Glow, Verläufe, Creme + Terrakotta und Säuregrün sind genau die Muster, an denen man generierte Folien erkennt. Deshalb:
+> - Neue Katalog-Themes `beratung` (Default), `keynote`, `schweiz`, `redaktion`, `zen`: flach, `decor: none`, eine Akzentfarbe, IBM Plex / Source Serif 4. Alte Themes laden weiter (`legacy`), werden aber nicht mehr angeboten.
+> - Engine: keine Kartenschatten, kein Auto-Kartenraster bei bullets, kpi-grid standardmäßig als Zahlenzeile, Eyebrow ruhig ohne Strich, Icons ohne Kachel, Prozess/Zeitstrahl als offene Spalten, keine Verläufe auf Akzentflächen.
+> - Guide §6 neu („Was KI-Folien verrät“), Lint `cards`, `icons`, `breath`, `density` ab 50 Wörtern.
+> - Die Canva-Mittel unten (Sticker, Grafiken, Motive, Texteffekte, Shuffle) bleiben, werden aber nur auf ausdrücklichen Wunsch eingesetzt.
+> - **Eigene Designs (01.10.2026):** Die KI entwirft wieder pro Deck ein eigenes Theme, jetzt mit Struktur statt nur Farbe: `titleSize` (Plakat-Titel), `titleWeight` (regular/bold), `rule` (Kopflinie oben bzw. Trennlinie unter dem Kopf), `sectionTone` (Kapitel als Fläche, invertiert oder ruhig). Die Katalog-Themes nutzen dieselben Hebel und dienen als Vorbilder (Guide §6). Leitplanken der Engine: Grund wird auf fast Weiß/fast Schwarz gedämpft, Text nie reines Schwarz, Tönungen in oklab gemischt.
+
 ---
 
 ## 0. Umsetzungsstand (27.09.2026)
@@ -66,7 +73,7 @@ Deckwerk ist technisch weiter als Canva, sieht aber noch nicht so aus.
 | Freie Elemente | Text, 8 Formen, Icon, Bild, Chart; Drehen, Deckkraft, Verlauf mit 2 Farben, Schatten, Sperren | + Linien mit Pfeilspitzen, Konnektoren, Tabellen, Frames, Grids, Sticker, Illustrationen, Video, Audio, QR | groß |
 | Texteffekte | B/I/U, Versalien, Laufweite, Zeilenhöhe | Shadow, Lift, Hollow, Splice, Echo, Glitch, Neon, Background, Curve | groß |
 | Bildbearbeitung | Zuschnitt per `focus` (nur in Layouts), Kreis, Radius, Duotone, Mono, Spiegeln | Filter, Anpassen, Zuschneiden im Rahmen, Hintergrund entfernen, Magic Eraser/Grab/Expand | groß |
-| Animation | Builds: none, fade, list, stagger, wipe, zoom-kpi; Items: fade, float, zoom, wipe; Übergänge: none, fade, push, morph | ~20 Textanimationen, Seitenanimationen, Magic Animate, 8 Übergänge mit Richtung/Tempo | mittel |
+| Animation | Builds: none, fade, list, stagger, wipe, zoom-kpi, pan, pop, words (Wort für Wort), photo (Foto-Zoom); Magic Animate im Look (Keine/Ruhig/Standard/Lebhaft); Items mit Richtung und Tempo wie Canva: Einblenden, Aufsteigen, Schwenken, Treiben, Pop, Zoomen, Purzeln, Stampfen, Grundlinie, Wischen, Schreibmaschine, Wort für Wort, Atmen (Dauerpuls); Übergänge: fade, push, slide, stack, color (Farbwischen), dissolve, wipe, cover, split, circle, zoom, morph (Text und Bild wandern, pro Folie); alles auch in der PPTX, Vorschau beim Wählen | ~20 Textanimationen, Seitenanimationen, Magic Animate, 8 Übergänge mit Richtung/Tempo | mittel |
 | Editor | Canvas mit Snapping, Ausrichten, Verteilen, Ebenen, Copy/Paste, Nudge, Zoom, Undo | + Gruppieren, Stil übertragen, Lineale, Zuschneiden per Doppelklick, Autosave | mittel |
 | KI | Chat-Agent mit Tools, Element-KI-Leiste, Self-Check | Magic Design (mehrere Vorschläge), Magic Write, Magic Switch (Format/Sprache), Magic Media (Bildgenerierung) | mittel |
 | Präsentieren | Vollbild, Presenter-Ansicht mit Notizen und Uhr | + Fernbedienung per QR, Canva Live (Q&A), Aufnahme | klein |

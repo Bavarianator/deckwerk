@@ -1,6 +1,6 @@
 // Freie Elemente (Slide.items): Schema für KI-Tools und Fabriken für die Canvas. Positionen in px auf 1280x720.
 import { z } from 'zod'
-import { DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
+import { ANIM_DIRS, DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
 import { FONT_NAMES } from './themes'
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/)
@@ -13,7 +13,9 @@ export const itemSchema = z.object({
   rot: z.number().min(-360).max(360).optional(),
   opacity: z.number().min(0).max(1).optional(),
   locked: z.boolean().optional(),
-  anim: z.enum(ITEM_ANIMS).optional().describe('Auftritt beim Präsentieren, je ein Klick'),
+  anim: z.enum(ITEM_ANIMS).optional().describe('Auftritt beim Präsentieren wie in Canva (je ein Klick): typewriter/ascend nur für Text, breathe pulsiert ohne Klick. Design-Guide §8'),
+  animDir: z.enum(ANIM_DIRS).optional().describe('Richtung der Bewegung bei pan, drift, wipe, float (Standard: pan/drift/wipe nach rechts, float nach oben)'),
+  animSpeed: z.enum(['slow', 'fast']).optional().describe('Tempo der Animation; weglassen = normal'),
   text: z.string().max(600).optional(),
   font: z.enum(['head', 'body', ...FONT_NAMES]).optional().describe('head/body = Theme-Schrift'),
   size: z.number().min(8).max(400).optional().describe('Schriftgröße in px (1 px = 0,75 pt)'),

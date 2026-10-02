@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useRef } from 'react'
 import { Select } from './kit'
 import { Check, CircleAlert, LoaderCircle, Sparkles } from 'lucide-react'
-import { MODELS, type ChatModels } from '../../shared/models'
+import { AUTO_CHOICE, MODELS, type ChatModels } from '../../shared/models'
 
 export type Msg =
   | { kind: 'user' | 'ai' | 'error'; text: string }
@@ -16,6 +16,7 @@ export const TOOL: Record<string, string> = {
   render_overview: 'Übersicht prüfen', lint_deck: 'Qualität prüfen', search_icons: 'Icons suchen',
   find_images: 'Bilder suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
   cli_run: 'Denkt nach', // Vibe/Codex laufen (claude-agent.ts)
+  auto_model: 'Modell gewählt', // Auto: welches Modell Deckwerk für diesen Auftrag nimmt
 }
 
 // Was das Modell-Dropdown anbietet (App lädt es aus Main); null = noch nicht geladen, dann nur Claude
@@ -26,10 +27,10 @@ export const ChatChoices = createContext<ChatModels | null>(null)
 export function ModelSelect({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const c = useContext(ChatChoices)
   const claude = !c || c.claude
-  const all = [...(claude ? MODELS : []), ...(c?.vibe ?? []), ...(c?.codex ?? [])]
+  const all = [...(claude ? [AUTO_CHOICE, ...MODELS] : []), ...(c?.vibe ?? []), ...(c?.codex ?? [])]
   return (
     <Select className="model-select ghost" value={value} onChange={(e) => onChange(e.target.value)} aria-label="Modell" title={all.find((m) => m.id === value)?.hint}>
-      {claude && <optgroup label="Claude">{MODELS.map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}</optgroup>}
+      {claude && <optgroup label="Claude">{[AUTO_CHOICE, ...MODELS].map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}</optgroup>}
       {!!c?.vibe.length && <optgroup label="Vibe (Mistral)">{c.vibe.map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}</optgroup>}
       {!!c?.codex.length && <optgroup label="Codex (OpenAI)">{c.codex.map((m) => <option key={m.id} value={m.id} data-hint={m.hint}>{m.name}</option>)}</optgroup>}
     </Select>
@@ -37,7 +38,7 @@ export function ModelSelect({ value, onChange }: { value: string; onChange: (id:
 }
 
 // Wunsch nach einem eigenen Design statt einer Vorlage (Karte unter den Look-Vorschlägen und Knopf im Look)
-export const OWN_DESIGN = 'Entwirf ein ganz eigenes Design für dieses Deck: eigene Farben, Schriften und Stil, passend zu Thema und Publikum – keine der fertigen Vorlagen.'
+export const OWN_DESIGN = 'Entwirf ein ganz eigenes Design für dieses Deck: eigene Farbe, Schriften und Struktur (Titelgröße, Linien, Kapitelfolien), passend zu Thema und Publikum – keine der fertigen Vorlagen.'
 
 // Look-Vorschläge als Karten mit Kontaktbogen; Klick schickt den Namen als Antwort. Dazu immer „Eigenes Design“.
 export function ChoiceCards({ options, disabled, onSend }: { options: { label: string; image: string }[]; disabled: boolean; onSend: (text: string) => boolean }) {

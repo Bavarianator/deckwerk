@@ -1,7 +1,7 @@
 {
  "title": "Café Kollektiv – Expansion 2027",
  "brief": { "audience": "Gesellschafter und Bank", "goal": "Freigabe für drei neue Standorte", "tone": "warm, klar, selbstbewusst" },
- "theme": { "id": "atelier" },
+ "theme": { "id": "zen" },
  "transition": "fade",
  "mode": "click",
  "slides": [

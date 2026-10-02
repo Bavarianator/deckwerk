@@ -1,6 +1,6 @@
 #!/bin/sh
 # Deckwerk entfernen: die App (~/.local/share/deckwerk bzw. den Quellcode-Ordner, aus dem dieses Skript läuft),
-# Startmenü-Eintrag, Dateizuordnung und die Einträge in Claude Code, Vibe und Codex. Deine Decks unter ~/Deckwerk bleiben.
+# Startmenü-Eintrag, Dateizuordnung und die Einträge (MCP-Server, Skill) in Claude Code, Vibe und Codex. Deine Decks unter ~/Deckwerk bleiben.
 #   curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/uninstall.sh | sh
 #   oder aus einer Quellcode-Installation: ~/deckwerk/scripts/uninstall.sh
 set -u
@@ -20,6 +20,7 @@ fi
 command -v claude >/dev/null 2>&1 && claude mcp remove -s user deckwerk >/dev/null 2>&1 && echo "→ Aus Claude Code entfernt"
 command -v vibe >/dev/null 2>&1 && vibe mcp remove deckwerk >/dev/null 2>&1 && echo "→ Aus Vibe entfernt"
 command -v codex >/dev/null 2>&1 && codex mcp remove deckwerk >/dev/null 2>&1 && echo "→ Aus Codex entfernt"
+rm -rf "$HOME/.claude/skills/deckwerk" "${CODEX_HOME:-$HOME/.codex}/skills/deckwerk" && echo "→ Skill aus Claude Code und Codex entfernt"
 
 rm -f "$HOME/.local/share/applications/deckwerk.desktop" "$HOME/.local/share/mime/packages/deckwerk.xml"
 command -v update-mime-database >/dev/null 2>&1 && update-mime-database "$HOME/.local/share/mime" >/dev/null 2>&1

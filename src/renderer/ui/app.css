@@ -126,6 +126,8 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .field { display: grid; gap: 5px; margin-bottom: 10px; }
 .field > span { font-size: 12px; color: var(--muted); }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.anim-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -4px; } /* Richtung und Tempo unter der Animation (ItemInspector) */
+.anim-opts .seg.icons { margin-left: 0; }
 .file { display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 30px; padding: 0 2px 0 8px; border: 1px solid var(--border-strong); border-radius: 6px; }
 .file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inspector fieldset:disabled { opacity: 0.55; }
@@ -157,6 +159,15 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .present { position: fixed; inset: 0; display: grid; place-items: center; background: #000; }
 .present-stage { position: relative; overflow: hidden; }
 .present-layer { position: absolute; inset: 0; }
+/* Morph (PresentScreen.nameSlots): gleiche Elemente wandern an ihren neuen Platz, ruhiger als die übrigen Übergänge */
+::view-transition-group(*) { animation-duration: 0.7s; animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
+/* Text: natürliche Größe statt auf die Boxbreite gestreckt, wächst um --dw-r (Schriftgröße neu/alt, gesetzt in nameSlots) */
+::view-transition-old(.dw-text), ::view-transition-new(.dw-text) { inline-size: auto; block-size: auto; transform-origin: 0 0; animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
+::view-transition-old(.dw-center), ::view-transition-new(.dw-center) { inset-inline-start: 50%; translate: -50% 0; transform-origin: 50% 0; }
+::view-transition-old(.dw-text) { animation-name: dw-text-out; }
+::view-transition-new(.dw-text) { animation-name: dw-text-in; }
+@keyframes dw-text-out { to { opacity: 0; transform: scale(var(--dw-r, 1)); } }
+@keyframes dw-text-in { from { opacity: 0; transform: scale(calc(1 / var(--dw-r, 1))); } }
 .present-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .present-ink.laser, .present-ink.pen { pointer-events: auto; }
 .present-ink.laser { cursor: none; }

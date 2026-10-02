@@ -56,7 +56,7 @@ const agenda = z.object({
 })
 
 const section = z.object({
-  number: z.string().max(3).optional().describe('z. B. "02"'),
+  number: z.string().max(3).optional().describe('Kapitelnummer, z. B. "02"; nur wenn der Nutzer Nummern will'),
   title: z.string().min(3).max(50),
   subtitle: z.string().max(100).optional(),
   image: photo.optional().describe('Foto rechts neben der Akzentfläche (Standard-Look duotone)'),
@@ -202,7 +202,7 @@ export const LAYOUTS = {
     schema: section, defaultBuild: 'none', tone: 'accent', footer: false,
     samples: {
       min: { title: 'Lösung' },
-      typ: { number: '02', title: 'Unser Plan', subtitle: 'Drei Hebel, die sich gegenseitig verstärken' },
+      typ: { title: 'Unser Plan', subtitle: 'Drei Hebel, die sich gegenseitig verstärken' },
       max: { number: '12', title: words(50), subtitle: words(100, 4) },
     },
   }),
@@ -216,7 +216,7 @@ export const LAYOUTS = {
     },
   }),
   bullets: L({
-    id: 'bullets', name: 'Aufzählung', when: '2–5 gleichrangige Punkte. Mit `icon` pro Punkt wirkt es hochwertiger. Kartenreihe nur bis 4 Punkte. Ohne Variante automatisch: 2–4 Punkte, die alle eine `sub`-Zeile haben, werden als Kartenreihe gesetzt.', variants: ['list', 'cards'],
+    id: 'bullets', name: 'Aufzählung', when: '2–5 gleichrangige Punkte als ruhige Liste. `icon` nur, wenn das Symbol selbst Information trägt (nie als Schmuck). Variante cards (Kartenreihe, bis 4 Punkte) nur ausnahmsweise: gleich große Karten wirken generiert.', variants: ['list', 'cards'],
     frames: ['split', 'band', 'center'], schema: bullets, defaultBuild: 'list', footer: true,
     samples: {
       min: { title: 'Zwei Gründe sprechen für den Wechsel', items: [{ text: 'Geringere Kosten' }, { text: 'Schnellere Abläufe' }] },
@@ -224,9 +224,9 @@ export const LAYOUTS = {
         eyebrow: 'Warum jetzt',
         title: 'Drei Entwicklungen machen den Markt jetzt attraktiv',
         items: [
-          { text: 'Regulierung schafft Nachfrage', sub: 'Ab 2027 wird digitale Dokumentation Pflicht', icon: 'scale' },
-          { text: 'Wettbewerb ist fragmentiert', sub: 'Kein Anbieter hat mehr als 8 % Marktanteil', icon: 'puzzle' },
-          { text: 'Kunden sind wechselbereit', sub: '62 % planen einen Anbieterwechsel in 24 Monaten', icon: 'users' },
+          { text: 'Regulierung schafft Nachfrage', sub: 'Ab 2027 wird digitale Dokumentation Pflicht' },
+          { text: 'Wettbewerb ist fragmentiert', sub: 'Kein Anbieter hat mehr als 8 % Marktanteil' },
+          { text: 'Kunden sind wechselbereit', sub: '62 % planen einen Anbieterwechsel in 24 Monaten' },
         ],
       },
       max: { eyebrow: words(28), title: words(90), items: rep(5, (i) => ({ text: words(80, i), sub: words(110, i + 3), icon: 'check' })) },
@@ -259,8 +259,8 @@ export const LAYOUTS = {
     },
   }),
   'kpi-grid': L({
-    id: 'kpi-grid', name: 'Kennzahlen', when: '2–4 Zahlen, die für sich sprechen. Werte kurz halten (max. 8 Zeichen). `focus` hebt die wichtigste Zahl hervor. Variante plain: große Zahlen mit Trennlinien statt Karten.',
-    variants: ['cards', 'plain'],
+    id: 'kpi-grid', name: 'Kennzahlen', when: '2–4 Zahlen, die für sich sprechen. Werte kurz halten (max. 8 Zeichen). Standard: Zahlenzeile mit Trennlinien, die `focus`-Zahl (Standard: die erste) groß und in Akzentfarbe, die übrigen ruhig. Die wichtigste Zahl deshalb nach vorn oder per focus wählen. Variante cards nur ausnahmsweise.',
+    variants: ['plain', 'cards'],
     frames: ['band', 'center'], schema: kpiGrid, defaultBuild: 'stagger', footer: true,
     samples: {
       min: { title: 'Zwei Zahlen zeigen den Erfolg', kpis: [{ value: '98 %', label: 'Verfügbarkeit' }, { value: '4,8', label: 'Kundenbewertung' }] },
@@ -325,10 +325,10 @@ export const LAYOUTS = {
         eyebrow: 'Vorgehen',
         title: 'Vom Erstgespräch zum Go-live in sechs Wochen',
         steps: [
-          { title: 'Analyse', desc: 'Workshops mit allen Fachbereichen', icon: 'search' },
-          { title: 'Konzept', desc: 'Zielbild und Umsetzungsplan', icon: 'pencil-ruler' },
-          { title: 'Umsetzung', desc: 'Einrichtung und Datenübernahme', icon: 'settings' },
-          { title: 'Go-live', desc: 'Schulung und Begleitung im Betrieb', icon: 'rocket' },
+          { title: 'Analyse', desc: 'Workshops mit allen Fachbereichen' },
+          { title: 'Konzept', desc: 'Zielbild und Umsetzungsplan' },
+          { title: 'Umsetzung', desc: 'Einrichtung und Datenübernahme' },
+          { title: 'Go-live', desc: 'Schulung und Begleitung im Betrieb' },
         ],
       },
       max: { eyebrow: words(28), title: words(90), steps: rep(4, (i) => ({ title: words(26, i), desc: words(90, i + 1), icon: 'check' })) },
@@ -396,7 +396,10 @@ export function buildOf(deck: Deck, i: number): BuildPreset {
   const s = deck.slides[i]
   if (s.build) return s.build
   const def = LAYOUTS[s.layout as LayoutId]?.defaultBuild ?? 'none'
+  if (deck.motion === 'none') return 'none'
   if (deck.motion === 'calm') return def === 'none' ? 'none' : 'fade'
+  // lebhaft: Folien mit Foto bekommen den Canva-Foto-Zoom (Galerie ausgenommen, die Bilder stehen dort in Rastern)
+  if (deck.motion === 'lively' && s.layout !== 'gallery' && /"src":"(asset|file|https?):/.test(JSON.stringify(s.content?.image ?? ''))) return 'photo'
   if (deck.motion === 'lively') return def === 'none' ? (s.layout === 'blank' ? 'none' : 'fade') : def === 'fade' && s.layout !== 'statement' && s.layout !== 'quote' ? 'stagger' : def
   return def
 }

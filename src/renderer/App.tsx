@@ -7,7 +7,7 @@ import { FORMATS, type Deck, type FormatId, type Item, type Slide } from '../sha
 import { newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
 import { THEMES } from '../shared/themes'
-import { DEFAULT_MODEL, pickAvailable, type ChatModels } from '../shared/models'
+import { AUTO, pickAvailable, type ChatModels } from '../shared/models'
 import type { Target } from './ui/AskBar'
 import { BuildView, type StoryItem } from './ui/BuildView'
 import { ChatChoices, type Msg } from './ui/Chat'
@@ -55,10 +55,13 @@ export default function App() {
   const [saved, setSaved] = useState(true)
   const skipSave = useRef(true) // frisch geladenes Deck nicht gleich wieder schreiben // Stand vor der letzten KI-Runde, für „Rückgängig“ in der Blase
   // Modell und damit Chat-Weg; „vibe:…“/„codex:…“ unverändert laden, gültig macht es pickAvailable, sobald die Liste da ist
-  const [model, setModel] = useState<string>(() => { try { return localStorage.getItem('dw.model') || DEFAULT_MODEL } catch { return DEFAULT_MODEL } })
+  // dw.chat löst dw.model ab: der alte Standard Opus wird einmalig zu Auto, eine bewusste andere Wahl bleibt
+  const [model, setModel] = useState<string>(() => {
+    try { const old = localStorage.getItem('dw.model'); return localStorage.getItem('dw.chat') || (old && old !== 'claude-opus-5-5' ? old : AUTO) } catch { return AUTO }
+  })
   const pickModel = useCallback((id: string) => {
     setModel(id)
-    try { localStorage.setItem('dw.model', id) } catch { /* ohne Speicher gilt die Wahl nur bis zum Neustart */ }
+    try { localStorage.setItem('dw.chat', id) } catch { /* ohne Speicher gilt die Wahl nur bis zum Neustart */ }
   }, [])
   const loadChoices = useCallback(() => api.chatModels().then(setChoices, () => {}), [])
   useEffect(() => { void loadChoices() }, [])
@@ -74,7 +77,7 @@ export default function App() {
       setPath(s.path)
       setHasKey(s.hasKey)
       if (s.setupDone) setAskKey(!s.hasKey && !s.deck) // mit geöffnetem Deck erst beim ersten Senden fragen; beim ersten Start übernimmt die Einrichtung
-      else setSetup(true)
+      else setSetup(true), void api.setupDone() // nur einmal von selbst, auch wenn die App vor dem Schließen des Assistenten beendet wird
     })
     return api.onEvent((e) => {
       if (e.type === 'text')
@@ -167,7 +170,7 @@ export default function App() {
     commit((d) => {
       const slides = [...d.slides]
       const copy = structuredClone(d.slides[i])
-      slides.splice(i + 1, 0, { ...copy, id: `s-${newId()}`, items: copy.items?.map((it) => ({ ...it, id: newId() })) })
+      slides.splice(i + 1, 0, { ...copy, id: `s-${newId()}` }) // Elemente behalten ihre IDs: so morphen sie wie in PowerPoint
       return { ...d, slides }
     })
     setSel(i + 1)
@@ -230,6 +233,7 @@ export default function App() {
     // Kontext (Canvas-Element oder angezeigte Folie für „diese Folie“) geht nur an die KI, der Chat zeigt den Text
     const slide = deck?.slides[index]
     context ??= slide && `Gerade angezeigt: Folie ${index + 1} (ID „${slide.id}“, Layout ${slide.layout})`
+    if (deck?.style === 'mutig') context = [context, 'Deck-Stil: mutig (Design-Guide §6 „Stil des Decks“)'].filter(Boolean).join(' · ') // Regler im Look-Bereich
     api.send(context ? `${text}\n\n(${context})` : text, model)
       .catch((e) => setMsgs((m) => [...m, { kind: 'error', text: errText(e) }]))
       .finally(() => setBusy(false))
@@ -365,7 +369,7 @@ export default function App() {
       {home && status?.error && <div className="toast material" role="alert">{status.text}</div>}
       {formats && deck && <FormatSheet deck={deck} index={index} onApply={(id) => commit((d) => resizeDeck(d, id))} onCopies={saveCopies} onClose={() => setFormats(false)} />}
       {look && deck && <LookSheet deck={deck} busy={busy} patchDeck={patchDeck} pickImage={api.pickImage} onAsk={(t) => send(t)} onClose={() => setLook(false)} />}
-      {setup && <SetupSheet model={model} onModel={pickModel} onKeySaved={() => { void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} onClose={() => { setSetup(false); void api.setupDone(); void loadChoices() }} />}
+      {setup && <SetupSheet model={model} onModel={pickModel} onKeySaved={() => { void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} onClose={() => { setSetup(false); void loadChoices() }} />}
       {askKey && (
         <KeyDialog
           onClose={() => setAskKey(false)}
