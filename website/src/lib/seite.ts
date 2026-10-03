@@ -10,7 +10,6 @@ export type Deck = { title: string; brief: { audience?: string; goal?: string; t
 const bilder = import.meta.glob<{ default: ImageMetadata }>('../assets/folien/*.webp', { eager: true })
 export const folien = data.folien as Record<string, Folie>
 export const decks = data.decks as Record<string, Deck>
-export const lint = data.lint as string[]
 // Stile in „Stil wechseln“ und im Briefing der Demo; scripts/folien.mjs rendert dieselbe Liste
 export const THEMES: Record<string, string> = { beratung: 'Beratung', keynote: 'Keynote', schweiz: 'Schweiz', redaktion: 'Redaktion', zen: 'Zen' }
 
@@ -32,10 +31,8 @@ const gh = async (path: string) => {
     return null
   }
 }
-const [info, releases] = await Promise.all([gh('deckwerk'), gh('deckwerk/releases?per_page=3')])
+const [info, releases] = await Promise.all([gh('deckwerk'), gh('deckwerk/releases?per_page=1')])
 const datum = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })
-const absatz = (md = '') => (md.split(/\n\s*\n/).find((p) => p.trim() && !/^\s*(#|```|-)/.test(p)) ?? '').replace(/\*\*|`/g, '').trim()
-export const neu = ((releases ?? []) as any[]).map((r) => ({ name: r.name || r.tag_name, url: r.html_url, datum: datum(r.published_at), text: absatz(r.body) }))
 export const mb = (bytes: number) => `${(bytes / 1e6).toLocaleString('de-DE', { maximumFractionDigits: bytes < 1e7 ? 1 : 0 })} MB`
 export const appimage = releases?.[0]?.assets?.find((a: any) => a.name === 'Deckwerk-x86_64.AppImage')
 export const version = releases?.[0] ? `${releases[0].tag_name.replace(/^v/, '')} vom ${datum(releases[0].published_at)}` : ''
@@ -58,8 +55,8 @@ export const beispiel = decks.strategie.dl.find((f) => f.endsWith('.pptx'))
 export const KOPF: [href: string, label: string][] = [
   ['#demo', 'Beispiele'],
   ['#looks', 'Stile'],
+  ['#alles', 'Funktionen'],
   ['#faq', 'Fragen'],
-  [REPO, 'GitHub'],
 ]
 
 export const FUSS: { name: string; links: [href: string, label: string][] }[] = [
@@ -70,9 +67,16 @@ export const FUSS: { name: string; links: [href: string, label: string][] }[] = 
       ['#demo', 'Beispiele'],
       ['#looks', 'Stile'],
       ['#formate', 'Formate'],
-      ['#kosten', 'Kosten und Daten'],
+      ['#alles', 'Funktionen'],
       ['#faq', 'Fragen'],
-      ['#laden', 'Kostenlos laden'],
+    ],
+  },
+  {
+    name: 'Laden',
+    links: [
+      ['#laden', 'Für Mac'],
+      ['#laden', 'Für Linux'],
+      ...(beispiel ? [[`${base}${beispiel}`, 'Beispiel als PowerPoint'] as [string, string]] : []),
     ],
   },
   {
@@ -81,15 +85,7 @@ export const FUSS: { name: string; links: [href: string, label: string][] }[] = 
       [REPO, sterne ? `Quellcode · ★ ${sterne}` : 'Quellcode'],
       [`${REPO}/releases`, version ? `Version ${version.split(' ')[0]}` : 'Versionen'],
       [`${REPO}/issues/new`, 'Fehler melden'],
-      [`${REPO}#entwicklung`, 'Mitentwickeln'],
       [MAC_REPO, 'macOS-Fassung'],
-    ],
-  },
-  {
-    name: 'Mehr',
-    links: [
-      ['#technik', 'Unter der Haube'],
-      ...(beispiel ? [[`${base}${beispiel}`, 'Beispiel als PowerPoint'] as [string, string]] : []),
       [`${REPO}/blob/master/LICENSE`, 'Lizenz (AGPL-3.0)'],
     ],
   },

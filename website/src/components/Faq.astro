@@ -4,10 +4,9 @@ import { UNINSTALL } from '../lib/seite'
 ---
 
 <section class="abschnitt" id="faq">
-  <div class="wrap zwei">
-    <header class="kopfzeile">
-      <p class="vorzeile">Fragen</p>
-      <h2>Was Leute vorher wissen wollen</h2>
+  <div class="wrap">
+    <header class="kopf-mitte">
+      <h2>Fragen?</h2>
     </header>
     <div class="faq">
       <details>
@@ -47,11 +46,11 @@ import { UNINSTALL } from '../lib/seite'
 </section>
 
 <style is:global>
-  .faq details { border-top: 1px solid var(--border); }
-  .faq details:last-child { border-bottom: 1px solid var(--border); }
-  .faq summary { cursor: pointer; list-style: none; padding: 1.1rem 2rem 1.1rem 0; font-weight: 600; position: relative; }
+  .faq { max-width: var(--schmal); margin-inline: auto; }
+  .faq details { border-bottom: 1px solid var(--linie); }
+  .faq summary { cursor: pointer; list-style: none; padding: 1.5rem 2.5rem 1.5rem 0; font-size: clamp(1.1rem, 1.8vw, 1.3rem); font-weight: 600; letter-spacing: -0.02em; position: relative; }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: '+'; position: absolute; right: 0; top: 1rem; font-weight: 400; font-size: 1.3rem; color: var(--muted); }
-  .faq details[open] summary::after { content: '–'; }
-  .faq details > :not(summary) { margin-bottom: 1.1rem; color: var(--muted); }
+  .faq summary::after { content: '+'; position: absolute; right: 0.25rem; top: 1.3rem; font-weight: 300; font-size: 1.6rem; color: var(--muted); transition: transform 0.2s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details > :not(summary) { margin-bottom: 1.5rem; color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
 </style>

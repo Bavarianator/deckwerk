@@ -1,6 +1,6 @@
 ---
 // Startseite: setzt die Abschnitte zusammen. Daten und Helfer in src/lib/seite.ts, Grundstile in src/styles/basis.css,
-// jeder Abschnitt mit eigenem Markup, CSS und Skript in src/components/.
+// jeder Abschnitt mit eigenem Markup, CSS und Skript in src/components/. Flächen wechseln: weiß, grau, weiß …
 import Seite from '../layouts/Seite.astro'
 import Hero from '../components/Hero.astro'
 import Band from '../components/Band.astro'
@@ -8,11 +8,9 @@ import SoGehts from '../components/SoGehts.astro'
 import Demo from '../components/Demo.astro'
 import Looks from '../components/Looks.astro'
 import Formate from '../components/Formate.astro'
-import Vortragen from '../components/Vortragen.astro'
-import KostenDaten from '../components/KostenDaten.astro'
+import Alles from '../components/Alles.astro'
 import Faq from '../components/Faq.astro'
 import Laden from '../components/Laden.astro'
-import Technik from '../components/Technik.astro'
 ---
 
 <Seite>
@@ -22,9 +20,7 @@ import Technik from '../components/Technik.astro'
   <Demo />
   <Looks />
   <Formate />
-  <Vortragen />
-  <KostenDaten />
+  <Alles />
   <Faq />
   <Laden />
-  <Technik />
 </Seite>

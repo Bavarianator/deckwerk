@@ -10,19 +10,19 @@ const band = ['strategie-1', 'pitch-5', 'foto-2', 'quartal-4', 'strategie-4', 'p
   <div class="band-in">
     {
       [0, 1].map((kopie) =>
-        band.map((id) => <Image {...bild(id, '320px', [320, 640])} class="folie" aria-hidden={kopie === 1 ? 'true' : undefined} alt={kopie === 1 ? '' : bild(id, '').alt} />),
+        band.map((id) => <Image {...bild(id, '360px', [360, 720])} class="folie" aria-hidden={kopie === 1 ? 'true' : undefined} alt={kopie === 1 ? '' : bild(id, '').alt} />),
       )
     }
   </div>
-  <p class="wrap band-text">Alle Folien auf dieser Seite hat Deckwerk selbst gebaut.</p>
+  <p class="band-text">Jede Folie auf dieser Seite hat Deckwerk gebaut.</p>
 </section>
 
 <style is:global>
-  .band { padding-block: 1rem 2rem; overflow: hidden; }
-  .band-in { display: flex; gap: 20px; width: max-content; padding-block: 20px 40px; animation: laufen 90s linear infinite; }
-  .band-in .folie { width: 320px; flex: none; }
+  .band { padding-block: 0 clamp(4rem, 8vw, 6rem); overflow: hidden; text-align: center; }
+  .band-in { display: flex; gap: 24px; width: max-content; padding-block: 24px 48px; animation: laufen 120s linear infinite; }
+  .band-in .folie { width: 360px; flex: none; }
   .band:hover .band-in { animation-play-state: paused; }
-  @keyframes laufen { to { transform: translateX(calc(-50% - 10px)); } }
+  @keyframes laufen { to { transform: translateX(calc(-50% - 12px)); } }
   @media (prefers-reduced-motion: reduce) { .band { overflow-x: auto; } .band-in { animation: none; } }
-  .band-text { font-size: 0.88rem; color: var(--muted); }
+  .band-text { font-size: 0.9rem; color: var(--muted); }
 </style>

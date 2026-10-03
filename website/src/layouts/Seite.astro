@@ -34,13 +34,13 @@ const url = new URL(base, Astro.site)
     <header class="kopf">
       <div class="wrap kopf-in">
         <a class="marke" href={base} aria-label="Deckwerk, zum Seitenanfang">
-          <img src={`${base}favicon.svg`} alt="" width="28" height="28" />
+          <img src={`${base}favicon.svg`} alt="" width="22" height="22" />
           <span>Deckwerk</span>
         </a>
         <nav class="menue" aria-label="Hauptmenü">
           {KOPF.map(([href, label]) => <a href={href}>{label}</a>)}
         </nav>
-        <a class="knopf klein" href="#laden"><span class="lang">Kostenlos laden</span><span class="kurz">Laden</span></a>
+        <a class="knopf klein" href="#laden"><span class="lang">Laden</span><span class="kurz">Laden</span></a>
         <details class="handy">
           <summary aria-label="Menü öffnen">Menü</summary>
           <nav class="flyout" aria-label="Menü">
@@ -94,6 +94,21 @@ const url = new URL(base, Astro.site)
           setTimeout(() => (b.textContent = alt), 1600)
         })
 
+      // Apple-artiges Einblenden beim Scrollen; .bewegt startet Mini-Animationen nur, solange sie im Bild sind.
+      // Klassen setzt erst das Skript: ohne JS ist alles sofort sichtbar.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const ziele = document.querySelectorAll<HTMLElement>('.kopf-mitte, .schritte li, .kachel, .formate figure, .plattform, .spieler, .looks, .faq')
+        const zeigen = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && (e.target.classList.add('da'), zeigen.unobserve(e.target))), { rootMargin: '0px 0px -10% 0px' })
+        ziele.forEach((el) => {
+          const geschwister = [...el.parentElement!.children].filter((x) => x.matches('.schritte li, .kachel, .formate figure, .plattform'))
+          el.style.transitionDelay = `${Math.max(0, geschwister.indexOf(el)) * 90}ms` // Kacheln einer Reihe nacheinander
+          el.classList.add('zeigen')
+          zeigen.observe(el)
+        })
+      }
+      const bewegt = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('bewegt', e.isIntersecting)))
+      document.querySelectorAll('.schritte li').forEach((el) => bewegt.observe(el))
+
       // Handy-Menü: schließen bei Klick daneben, auf einen Link oder mit Esc
       const menue = document.querySelector<HTMLDetailsElement>('details.handy')!
       document.addEventListener('click', (e) => {
@@ -108,32 +123,32 @@ const url = new URL(base, Astro.site)
 </html>
 
 <style is:global>
-  .kopf { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-  .kopf-in { display: flex; align-items: center; gap: 1.5rem; height: 64px; }
-  .marke { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; letter-spacing: -0.02em; text-decoration: none; }
-  .marke:hover { color: var(--text); }
-  .menue { display: flex; gap: 0.25rem; margin-left: auto; }
-  .menue a { padding: 8px 12px; border-radius: 8px; font-size: 0.94rem; font-weight: 500; color: var(--muted); text-decoration: none; }
-  .menue a:hover { color: var(--text); background: var(--panel-2); }
+  .kopf { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid color-mix(in srgb, var(--linie) 60%, transparent); }
+  .kopf-in { display: flex; align-items: center; gap: 1.5rem; height: 52px; }
+  .marke { display: inline-flex; align-items: center; gap: 8px; color: var(--text); font-weight: 600; font-size: 1.05rem; letter-spacing: -0.02em; }
+  .marke:hover { color: var(--text); text-decoration: none; }
+  .menue { display: flex; gap: 2rem; margin-left: auto; }
+  .menue a { font-size: 0.8rem; color: var(--text); opacity: 0.8; }
+  .menue a:hover { opacity: 1; text-decoration: none; }
   .handy { display: none; position: relative; }
-  .handy summary { list-style: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; font-size: 0.94rem; font-weight: 500; color: var(--muted); }
+  .handy summary { list-style: none; cursor: pointer; padding: 6px 10px; font-size: 0.85rem; color: var(--text); }
   .handy summary::-webkit-details-marker { display: none; }
-  .handy[open] summary { color: var(--text); background: var(--panel-2); }
-  .handy .flyout { position: absolute; top: calc(100% + 8px); right: 0; z-index: 6; width: min(80vw, 240px); padding: 8px; display: grid; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-float); }
-  .handy .flyout a { padding: 10px 12px; border-radius: 8px; color: var(--text); font-weight: 500; text-decoration: none; }
-  .handy .flyout a:hover { background: var(--panel-2); }
+  .handy .flyout { position: absolute; top: calc(100% + 10px); right: 0; z-index: 6; width: min(80vw, 240px); padding: 8px; display: grid; background: var(--kachel); border-radius: 14px; box-shadow: var(--schatten); }
+  .handy .flyout a { padding: 10px 12px; border-radius: 8px; color: var(--text); font-weight: 500; }
+  .handy .flyout a:hover { background: var(--grau); text-decoration: none; }
   .kurz { display: none; }
-  @media (max-width: 880px) { .menue { display: none; } .kopf .knopf { margin-left: auto; } .handy { display: block; } }
-  @media (max-width: 480px) { .kopf-in { gap: 0.75rem; } .lang { display: none; } .kurz { display: inline; } }
+  @media (max-width: 760px) { .menue { display: none; } .kopf .knopf { margin-left: auto; } .handy { display: block; } }
+  @media (max-width: 480px) { .lang { display: none; } .kurz { display: inline; } }
 
-  .fuss { border-top: 1px solid var(--border); padding-block: 3.5rem; color: var(--muted); font-size: 0.92rem; }
+  .fuss { background: var(--grau); border-top: 1px solid var(--linie); padding-block: 2.5rem 3rem; color: var(--muted); font-size: 0.78rem; line-height: 1.6; }
   .fuss-in { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem 3rem; }
   .fuss-in > * { min-width: 0; }
-  .fuss-in p { margin-top: 0.6rem; }
-  .fuss nav { display: grid; align-content: start; gap: 0.35rem; }
-  .fuss nav p { margin: 0 0 0.3rem; font-weight: 600; color: var(--text); }
-  .fuss nav a { color: var(--muted); text-decoration: none; }
+  .fuss .marke { font-size: 0.9rem; }
+  .fuss-in p { margin-top: 0.5rem; }
+  .fuss nav { display: grid; align-content: start; gap: 0.3rem; }
+  .fuss nav p { margin: 0 0 0.2rem; font-weight: 600; color: var(--text); }
+  .fuss nav a { color: var(--muted); }
   .fuss nav a:hover { color: var(--text); }
-  .fuss .klein { grid-column: 1 / -1; max-width: 80ch; padding-top: 1.5rem; border-top: 1px solid var(--border); }
-  @media (max-width: 880px) { .fuss-in { grid-template-columns: 1fr 1fr; } .fuss-in > div:first-child { grid-column: 1 / -1; } }
+  .fuss .klein { grid-column: 1 / -1; max-width: 90ch; padding-top: 1.25rem; border-top: 1px solid var(--linie); font-size: 0.75rem; }
+  @media (max-width: 760px) { .fuss-in { grid-template-columns: 1fr 1fr; } .fuss-in > div:first-child { grid-column: 1 / -1; } }
 </style>

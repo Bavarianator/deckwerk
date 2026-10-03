@@ -11,12 +11,11 @@ const formate = [
 ]
 ---
 
-<section class="abschnitt flaeche" id="formate">
+<section class="abschnitt" id="formate">
   <div class="wrap">
-    <header class="kopfzeile">
-      <p class="vorzeile">Formate</p>
-      <h2>Aus einer Präsentation wird ein Post, eine Story oder ein Handout</h2>
-      <p class="lede">Deckwerk ordnet die Folien für das neue Format selbst neu an.</p>
+    <header class="kopf-mitte">
+      <h2>Jedes Format.</h2>
+      <p class="unterzeile">Aus der Präsentation wird ein Post, eine Story oder ein Handout. Deckwerk ordnet alles selbst neu an.</p>
     </header>
     <div class="formate">
       {
@@ -35,7 +34,7 @@ const formate = [
 
 <style is:global>
   .formate { display: grid; grid-template-columns: 1.778fr 1fr 0.5625fr 0.707fr; gap: clamp(1rem, 2.5vw, 2rem); align-items: end; }
-  .formate figcaption { margin-top: 0.8rem; font-size: 0.86rem; color: var(--muted); }
-  .formate b { color: var(--text); font-weight: 600; margin-right: 0.3rem; }
+  .formate figcaption { margin-top: 1rem; font-size: 0.9rem; color: var(--muted); text-align: center; }
+  .formate b { display: block; color: var(--text); font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; }
   @media (max-width: 760px) { .formate { grid-template-columns: 1fr 0.5625fr 0.707fr; } .formate figure:first-child { grid-column: 1 / -1; } }
 </style>

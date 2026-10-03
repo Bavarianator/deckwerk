@@ -1,0 +1,63 @@
+---
+// Kachelraster: alles, was sonst in eigenen Textabschnitten stand (Export, Prüfung, Vortrag, Kosten, Daten, Agenten)
+import { MCP, REPO, base, beispiel, groesse } from '../lib/seite'
+---
+
+<section class="abschnitt grau" id="alles">
+  <div class="wrap">
+    <header class="kopf-mitte">
+      <h2>Alles drin.</h2>
+      <p class="unterzeile">Was eine gute Präsentation braucht, macht Deckwerk von selbst.</p>
+    </header>
+    <div class="bento">
+      <article class="kachel breit">
+        <p class="gross">PowerPoint,<br />die sich bearbeiten lässt.</p>
+        <p>Texte, Bilder und Diagramme bleiben einzeln anfassbar, Schriften und Animationen sind dabei. Dazu PDF und Bilder.</p>
+        {beispiel && <a class="pfeil" href={`${base}${beispiel}`} download>Beispiel laden ({groesse(beispiel)})</a>}
+      </article>
+      <article class="kachel">
+        <p class="zahl">29</p>
+        <p><b>Layouts.</b> Ruhig gestaltet, nach den Regeln guter Designer statt bunter Vorlagen.</p>
+      </article>
+      <article class="kachel">
+        <p class="zahl">✓</p>
+        <p><b>Jede Folie geprüft.</b> Nichts läuft über, nichts ist zu klein, nichts steht zu dicht.</p>
+      </article>
+      <article class="kachel">
+        <p class="zahl">0 €</p>
+        <p><b>Kostenlos und offen.</b> Die KI bringst du mit: Claude, ChatGPT oder Mistral.</p>
+      </article>
+      <article class="kachel">
+        <p class="zahl">Lokal</p>
+        <p><b>Kein Konto, keine Cloud von uns.</b> Deine Präsentationen liegen als Datei auf deinem Rechner.</p>
+      </article>
+      <article class="kachel halb">
+        <p class="gross">Vorne stehen.</p>
+        <p>Du siehst Notizen, Uhr und nächste Folie, das Publikum nur die Folien. Das Handy wird zur Fernbedienung, Laserpointer und Stift sind dabei.</p>
+      </article>
+      <article class="kachel halb">
+        <p class="gross">Für Agenten.</p>
+        <p>Ein MCP-Server mit 20 Werkzeugen: Claude Code, Codex und Vibe bauen Decks direkt aus dem Terminal.</p>
+        <div class="befehl">
+          <code>{MCP}</code>
+          <button type="button" data-copy={MCP}>Kopieren</button>
+        </div>
+        <a class="pfeil" href={REPO}>Quellcode auf GitHub</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(0.75rem, 1.5vw, 1.25rem); }
+  .kachel { grid-column: span 2; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; padding: clamp(1.75rem, 3.5vw, 2.75rem); background: var(--kachel); border-radius: 28px; color: var(--muted); font-size: 1.02rem; }
+  .kachel.breit { grid-column: span 4; }
+  .kachel.halb { grid-column: span 3; }
+  .kachel b { color: var(--text); font-weight: 600; }
+  .kachel .gross { color: var(--text); font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.035em; margin-bottom: 0.25rem; }
+  .kachel .zahl { color: var(--accent); font-size: clamp(2.75rem, 5vw, 3.75rem); font-weight: 600; line-height: 1; letter-spacing: -0.05em; margin-bottom: 0.5rem; }
+  .kachel .pfeil { margin-top: auto; padding-top: 0.5rem; font-size: 1rem; }
+  .kachel .befehl { margin-top: 0.5rem; font-size: 0.9rem; }
+  @media (max-width: 980px) { .bento { grid-template-columns: repeat(2, 1fr); } .kachel, .kachel.halb { grid-column: span 1; } .kachel.breit { grid-column: span 2; } }
+  @media (max-width: 620px) { .bento { grid-template-columns: 1fr; } .kachel, .kachel.halb, .kachel.breit { grid-column: auto; } }
+</style>
