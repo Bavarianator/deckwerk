@@ -1,0 +1,990 @@
+---
+import '@fontsource-variable/inter'
+import { Image } from 'astro:assets'
+import type { ImageMetadata } from 'astro'
+import { statSync } from 'node:fs'
+import { join } from 'node:path'
+import data from '../assets/folien/folien.json'
+
+// Echte Renderings aus scripts/folien.mjs; Titel, Notizen und Briefing stehen in folien.json
+type Folie = { title: string; layout: string; theme: string; notes: string }
+type Deck = { title: string; brief: { audience?: string; goal?: string; tone?: string }; theme: string; slides: string[]; dl: string[] }
+const bilder = import.meta.glob<{ default: ImageMetadata }>('../assets/folien/*.webp', { eager: true })
+const folien = data.folien as Record<string, Folie>
+const decks = data.decks as Record<string, Deck>
+const THEMES: Record<string, string> = { beratung: 'Beratung', keynote: 'Keynote', schweiz: 'Schweiz', redaktion: 'Redaktion', zen: 'Zen' }
+const bild = (id: string, sizes: string) => ({
+  src: bilder[`../assets/folien/${id}.webp`].default,
+  alt: folien[id].title ? `Folie „${folien[id].title}“` : `Folie im Layout ${folien[id].layout}`,
+  sizes,
+  widths: [480, 960, 1600],
+  format: 'webp' as const,
+})
+const pick = (deck: string, layout: string) => decks[deck].slides.find((id) => folien[id].layout === layout)!
+
+// GitHub-Daten beim Build (Pages-Workflow baut auch bei Releases und wöchentlich neu); ohne Netz bleiben die Stellen weg
+const gh = async (path: string) => {
+  try {
+    const token = process.env.GITHUB_TOKEN
+    const r = await fetch(`https://api.github.com/repos/Bavarianator/${path}`, { headers: token ? { authorization: `Bearer ${token}` } : {} })
+    return r.ok ? await r.json() : null
+  } catch {
+    return null
+  }
+}
+const [info, releases] = await Promise.all([gh('deckwerk'), gh('deckwerk/releases?per_page=3')])
+const datum = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })
+const absatz = (md = '') => (md.split(/\n\s*\n/).find((p) => p.trim() && !/^\s*(#|```|-)/.test(p)) ?? '').replace(/\*\*|`/g, '').trim()
+const neu = ((releases ?? []) as any[]).map((r) => ({ name: r.name || r.tag_name, url: r.html_url, datum: datum(r.published_at), text: absatz(r.body) }))
+const appimage = releases?.[0]?.assets?.find((a: any) => a.name === 'Deckwerk-x86_64.AppImage')
+const version = releases?.[0] ? `${releases[0].tag_name.replace(/^v/, '')} vom ${datum(releases[0].published_at)}` : ''
+const sterne: number = info?.stargazers_count ?? 0
+const mb = (bytes: number) => `${(bytes / 1e6).toLocaleString('de-DE', { maximumFractionDigits: bytes < 1e7 ? 1 : 0 })} MB`
+const groesse = (f: string) => { try { return mb(statSync(join(process.cwd(), 'public', f)).size) } catch { return '' } }
+
+const REPO = 'https://github.com/Bavarianator/deckwerk'
+const MAC_REPO = 'https://github.com/Bavarianator/deckwerk-macos'
+const APPIMAGE = `${REPO}/releases/latest/download/Deckwerk-x86_64.AppImage`
+const INSTALL = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh'
+const INSTALL_MAC = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-macos/main/install.sh | sh'
+const UNINSTALL = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/uninstall.sh | sh'
+const MCP = 'claude mcp add -s user deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp'
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/')
+const url = new URL(base, Astro.site)
+const beispiel = decks.strategie.dl.find((f) => f.endsWith('.pptx'))
+
+const MENUS: { name: string; links: [href: string, label: string, hint: string][] }[] = [
+  {
+    name: 'Produkt',
+    links: [
+      ['#beispiele', 'Beispiele', 'Echte Folien aus vier Decks'],
+      ['#ablauf', 'Ablauf', 'Vom Satz zum Deck in vier Schritten'],
+      ['#funktionen', 'Funktionen', 'Gestalten, Diagramme, Fotos, Freisteller'],
+      ['#praesentieren', 'Präsentieren', 'Referentenansicht, Morph, Fernbedienung'],
+      ['#export', 'Export', 'PowerPoint, PDF, PNG und Handout'],
+      ['#agenten', 'Agenten', 'MCP-Server für Claude Code, Codex, Vibe'],
+      ['#daten', 'Daten', 'Was deinen Rechner verlässt'],
+      ['#faq', 'FAQ', 'Kosten, Plattformen, Updates'],
+    ],
+  },
+  {
+    name: 'Demos',
+    links: [
+      ['#demo', 'Live-Präsentation', 'Beispiel-Decks im Browser durchblättern'],
+      ['#looks', 'Theme-Umschalter', 'Ein Inhalt in fünf Themes'],
+      ['#formate', 'Formate', '16:9, Post, Story und A4'],
+      ['#pruefung', 'Lint-Prüfung', 'Echte Meldungen der Engine'],
+      ...(beispiel ? [[`${base}${beispiel}`, 'Beispiel als PowerPoint', `${decks.strategie.title}, ${groesse(beispiel)}`] as [string, string, string]] : []),
+    ],
+  },
+  {
+    name: 'GitHub',
+    links: [
+      [REPO, 'Repository', sterne ? `Quellcode und Doku · ★ ${sterne}` : 'Quellcode und Doku'],
+      [`${REPO}/releases`, 'Releases', version ? `Aktuell ${version}` : 'Alle Versionen'],
+      ...(neu.length ? [['#neu', 'Neuigkeiten', 'Was die letzten Versionen gebracht haben'] as [string, string, string]] : []),
+      [`${REPO}/issues/new`, 'Fehler melden', 'Issue auf GitHub öffnen'],
+      [`${REPO}/issues`, 'Ideen und Fragen', 'Offene Issues ansehen'],
+      [`${REPO}#entwicklung`, 'Mitentwickeln', 'Bauen, testen, Layouts ergänzen'],
+      [MAC_REPO, 'macOS-Fassung', 'Für Macs mit Apple Silicon'],
+      [`${REPO}/blob/master/LICENSE`, 'Lizenz', 'AGPL-3.0'],
+    ],
+  },
+]
+
+const halb = '(max-width: 760px) 100vw, 560px'
+const galerie = [pick('strategie', 'cover'), pick('pitch', 'kpi-grid'), pick('quartal', 'chart'), decks.foto.slides[5], pick('strategie', 'statement'), pick('pitch', 'timeline')]
+const formate = [
+  ['16:9', 'Präsentation', 'format-16-9-1'],
+  ['1:1', 'Instagram-Post', 'format-1-1-1'],
+  ['9:16', 'Story', 'format-9-16-1'],
+  ['A4', 'Handout', 'format-a4-1'],
+]
+const BRIEF = { audience: 'Publikum', goal: 'Ziel', tone: 'Ton' } as const
+const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft jede einzelne als Bild und exportiert nach PowerPoint, PDF und PNG. Open Source für Linux und macOS.'
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deckwerk – Präsentationen aus einem Satz</title>
+    <meta name="description" content={beschreibung} />
+    <link rel="canonical" href={url} />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <meta name="theme-color" content="#f2f2f4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c0d10" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:title" content="Deckwerk – Präsentationen aus einem Satz" />
+    <meta property="og:description" content={beschreibung} />
+    <meta property="og:url" content={url} />
+    <meta property="og:image" content={new URL('og.jpg', url)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip" href="#inhalt">Zum Inhalt</a>
+    <header class="kopf">
+      <div class="wrap kopf-in">
+        <a class="marke" href={base} aria-label="Deckwerk, zum Seitenanfang">
+          <img src={`${base}favicon.svg`} alt="" width="28" height="28" />
+          <span>Deckwerk</span>
+        </a>
+        <nav class="menue" aria-label="Hauptmenü">
+          {
+            MENUS.map((m) => (
+              <details class="aufklapp">
+                <summary>{m.name}</summary>
+                <div class="flyout">
+                  {m.links.map(([href, label, hint]) => (
+                    <a href={href}>
+                      <b>{label}</b>
+                      <span>{hint}</span>
+                    </a>
+                  ))}
+                </div>
+              </details>
+            ))
+          }
+        </nav>
+        <a class="knopf klein" href="#installieren">Installieren</a>
+        <details class="aufklapp handy">
+          <summary aria-label="Menü öffnen">Menü</summary>
+          <div class="flyout">
+            {
+              MENUS.map((m) => (
+                <div class="gruppe">
+                  <p>{m.name}</p>
+                  {m.links.map(([href, label]) => (
+                    <a href={href}>
+                      <b>{label}</b>
+                    </a>
+                  ))}
+                </div>
+              ))
+            }
+          </div>
+        </details>
+      </div>
+    </header>
+
+    <main id="inhalt">
+      <section class="hero wrap">
+        <div class="hero-text">
+          <p class="vorzeile">KI-Präsentationsstudio · Open Source</p>
+          <h1>Ein Satz rein.<br />Ein Deck raus.</h1>
+          <p class="lede">
+            Deckwerk schreibt die Storyline, baut die Folien aus 29 Layouts, prüft jede einzelne als Bild und exportiert nach
+            PowerPoint, PDF und PNG. Danach gestaltest du frei weiter, per Chat oder direkt auf der Folie.
+          </p>
+          <div class="befehl">
+            <code>{INSTALL}</code>
+            <button type="button" data-copy={INSTALL}>Kopieren</button>
+          </div>
+          <p class="hinweis">
+            <a class="knopf" href="#demo">Live-Demo ansehen</a>
+            <a href={APPIMAGE}>AppImage{appimage ? ` (${mb(appimage.size)})` : ''}</a>
+            <a href="#installieren">macOS</a>
+          </p>
+        </div>
+        <figure class="hero-bild">
+          <Image {...bild(pick('foto', 'cover'), '(max-width: 980px) 100vw, 620px')} loading="eager" fetchpriority="high" class="folie" />
+          <figcaption>Titelfolie aus dem Beispiel-Deck „{decks.foto.title}“, gerendert von Deckwerk.</figcaption>
+        </figure>
+        <ul class="fakten">
+          <li><b>KI-Zugang</b> über Claude Code, Codex, Mistral Vibe oder einen Anthropic-API-Key</li>
+          <li><b>Lokal</b> gerendert und exportiert, Decks liegen als Datei auf deinem Rechner</li>
+          <li><b>Frei</b> unter der AGPL-3.0{version && `, Version ${version}`}</li>
+        </ul>
+      </section>
+
+      <section class="abschnitt" id="demo">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Live-Demo</p>
+            <h2>Blättere durch Decks, die Deckwerk aus einem Briefing gebaut hat</h2>
+            <p class="lede">
+              Vier Beispiel-Decks, jede Folie von der App gerendert. Daneben Briefing und Storyline: Die Titel allein erzählen die
+              Geschichte. Darunter die Sprechernotiz, die Deckwerk zu jeder Folie schreibt.
+            </p>
+          </header>
+          <div class="demo-wahl" role="group" aria-label="Beispiel-Deck wählen">
+            {
+              Object.entries(decks).map(([name, d], i) => (
+                <button type="button" data-deck={name} aria-pressed={i === 0 ? 'true' : 'false'}>
+                  {d.title}
+                </button>
+              ))
+            }
+          </div>
+          {
+            Object.entries(decks).map(([name, d], i) => (
+              <div class="spieler" data-deck={name} hidden={i > 0}>
+                <div class="spieler-haupt">
+                  <div class="buehne" tabindex="0" aria-label={`${d.title}: Klick oder Pfeiltasten blättern`}>
+                    {d.slides.map((id, n) => (
+                      <Image {...bild(id, '(max-width: 980px) 100vw, 740px')} class="folie" hidden={n > 0} loading={i === 0 && n < 2 ? 'eager' : 'lazy'} />
+                    ))}
+                  </div>
+                  <div class="leiste">
+                    <button type="button" data-schritt="-1" aria-label="Vorige Folie">←</button>
+                    <span class="zaehler" aria-live="polite">1 / {d.slides.length}</span>
+                    <button type="button" data-schritt="1" aria-label="Nächste Folie">→</button>
+                    <button type="button" class="vollbild">Vollbild</button>
+                    <span class="downloads">
+                      {d.dl.map((f) => (
+                        <a href={`${base}${f}`} download>
+                          {f.endsWith('.pptx') ? 'PowerPoint' : 'PDF'} <small>{groesse(f)}</small>
+                        </a>
+                      ))}
+                    </span>
+                  </div>
+                  <div class="notiz">
+                    <b>Sprechernotiz</b>
+                    {d.slides.map((id, n) => <p hidden={n > 0}>{folien[id].notes || '–'}</p>)}
+                  </div>
+                </div>
+                <aside class="storyline" aria-label="Briefing und Storyline">
+                  <dl class="briefing">
+                    {Object.entries(BRIEF).map(([k, label]) => d.brief[k as keyof typeof BRIEF] && (
+                      <div>
+                        <dt>{label}</dt>
+                        <dd>{d.brief[k as keyof typeof BRIEF]}</dd>
+                      </div>
+                    ))}
+                    <div>
+                      <dt>Theme</dt>
+                      <dd>{THEMES[d.theme] ?? d.theme}</dd>
+                    </div>
+                  </dl>
+                  <ol>
+                    {d.slides.map((id, n) => (
+                      <li>
+                        <button type="button" aria-current={n === 0 ? 'true' : undefined}>
+                          {folien[id].title || folien[id].layout}
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                </aside>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="abschnitt" id="beispiele">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Beispiele</p>
+            <h2>Jede Folie auf dieser Seite hat Deckwerk gebaut</h2>
+            <p class="lede">Aus den Beispiel-Decks im Repository und gerendert mit der App selbst. Vier Decks, vier Themes, und jeder Titel sagt, worum es auf der Folie geht.</p>
+          </header>
+          <div class="galerie">
+            {
+              galerie.map((id) => {
+                const f = bild(id, halb)
+                return (
+                  <figure>
+                    <a href={f.src.src} aria-label={`${f.alt} groß anzeigen`}>
+                      <Image {...f} class="folie" />
+                    </a>
+                    <figcaption>
+                      {folien[id].title}
+                      <span>
+                        {folien[id].layout} · {THEMES[folien[id].theme]}
+                      </span>
+                    </figcaption>
+                  </figure>
+                )
+              })
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="ablauf">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Ablauf</p>
+            <h2>Vom ersten Satz zum fertigen Deck in vier Schritten</h2>
+          </header>
+          <ol class="schritte">
+            <li>
+              <h3>Beschreiben</h3>
+              <p>„Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum.“ Im Chat, aus einer Vorlage oder auf einer leeren Folie.</p>
+            </li>
+            <li>
+              <h3>Material anhängen</h3>
+              <p>PDF, Word, PowerPoint, Text, Markdown, CSV oder JSON. Die KI baut das Deck daraus und recherchiert auf Wunsch im Web.</p>
+            </li>
+            <li>
+              <h3>Storyline und Folien</h3>
+              <p>Pyramidenprinzip und Action Titles: Die Titel allein erzählen die Geschichte. Dazu Layouts, Diagramme, Bilder und Sprechernotizen.</p>
+            </li>
+            <li>
+              <h3>Prüfen und exportieren</h3>
+              <p>Jede Folie wird gerendert, vermessen und geprüft. Dann PowerPoint, PDF, PNG oder ein Handout.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="pruefung">
+        <div class="wrap zwei">
+          <header class="kopfzeile">
+            <p class="vorzeile">Prüfung</p>
+            <h2>Jede Folie wird als Bild geprüft, bevor du sie siehst</h2>
+            <p class="lede">
+              Autofit misst jeden Textblock und setzt die Schrift stufenweise kleiner, bis nichts mehr überläuft. Danach prüft der
+              Lint Ränder, Mindestgröße, Überlappung, Textmenge und den Rhythmus des ganzen Decks. Die KI bekommt die Meldungen
+              nach jedem Schritt und bessert selbst nach.
+            </p>
+          </header>
+          <figure class="konsole">
+            <pre><code>{data.lint.length ? data.lint.join('\n') : '0 Fehler, 0 Warnungen'}</code></pre>
+            <figcaption>Echte Ausgabe des Lints für ein Deck, das dreimal hintereinander eine Liste zeigt.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="funktionen">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Funktionen</p>
+            <h2>Ein Studio, in dem du nach der KI weiterarbeitest</h2>
+            <p class="lede">Deckwerk liefert kein fertiges Bild, sondern ein Deck, das du anfassen kannst wie in einem Design-Programm.</p>
+          </header>
+          <dl class="liste">
+            <div>
+              <dt>Frei gestalten</dt>
+              <dd>Texte, Formen, Fotos, Icons, Diagramme, QR-Codes, Video und Audio. Mit Gruppen, Zuschnitt, Hilfslinien und Einrasten.</dd>
+            </div>
+            <div>
+              <dt>Layouts lösen</dt>
+              <dd>Aus einer Layout-Folie werden einzelne Texte und Bilder, die du frei verschiebst. Farben einer Folie lassen sich im ganzen Deck ersetzen.</dd>
+            </div>
+            <div>
+              <dt>Diagramme mit Datentabelle</dt>
+              <dd>Säulen, Balken, gestapelt, Wasserfall, Linie und Ring. Die Zahlen bleiben editierbar, auch in PowerPoint.</dd>
+            </div>
+            <div>
+              <dt>Fotos und KI-Bilder</dt>
+              <dd>Zuerst aus deinem Ordner <code>~/Deckwerk/assets</code>, sonst von Unsplash mit Bildnachweis in den Notizen. Eigene Bilder erzeugt die KI über OpenAI, Mammouth oder den Codex-Login.</dd>
+            </div>
+            <div>
+              <dt>Freisteller auf dem Rechner</dt>
+              <dd>„Hintergrund entfernen“ läuft lokal. Das Modell wird einmal geladen, danach dauert es Sekunden.</dd>
+            </div>
+            <div>
+              <dt>Speichern ohne Speichern</dt>
+              <dd>Jede Änderung landet nach 1,5 Sekunden in der <code>deck.json</code>. Höchstens alle 10 Minuten legt Deckwerk den vorigen Stand ab, bis zu 100 Versionen pro Deck.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="looks">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Looks</p>
+            <h2>Derselbe Inhalt sieht in jedem Theme fertig aus</h2>
+            <p class="lede">
+              Fünf Themes im Katalog, dazu eigene Designs, die die KI passend zum Inhalt entwirft: Farbwelt, Schriften, Struktur.
+              Unten dieselben drei Folien aus dem Strategie-Deck in allen fünf Themes.
+            </p>
+          </header>
+          <div class="looks">
+            <div class="looks-wahl" role="radiogroup" aria-label="Theme wählen">
+              {
+                Object.entries(THEMES).map(([id, name], i) => (
+                  <label>
+                    <input type="radio" name="look" value={id} checked={i === 0} />
+                    <span>{name}</span>
+                  </label>
+                ))
+              }
+            </div>
+            {
+              Object.keys(THEMES).map((id) => (
+                <div class="look" data-look={id}>
+                  {[1, 2, 3].map((n) => (
+                    <Image {...bild(`look-${id}-${n}`, n === 1 ? '(max-width: 760px) 100vw, 740px' : '(max-width: 760px) 100vw, 370px')} class="folie" />
+                  ))}
+                </div>
+              ))
+            }
+          </div>
+          <dl class="liste">
+            <div>
+              <dt>Hausstil</dt>
+              <dd>Sag „merk dir …“, und Deckwerk trägt die Vorliebe in <code>~/Deckwerk/hausstil.md</code> ein. Sie gilt für jedes künftige Deck.</dd>
+            </div>
+            <div>
+              <dt>Schriften im Gepäck</dt>
+              <dd>18 Schriften liegen bei. Die Schriften der Premium-Themes werden in die PowerPoint-Datei eingebettet, beim Empfänger fehlt nichts.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="formate">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Formate</p>
+            <h2>Aus einer Präsentation wird ein Post, eine Story oder ein Handout</h2>
+            <p class="lede">
+              Acht Formate von 16:9 über Instagram bis A4. Deckwerk rechnet ein Deck um oder legt eine Kopie an. Die Layouts ordnen
+              sich neu, freie Elemente wandern mit.
+            </p>
+          </header>
+          <div class="formate">
+            {
+              formate.map(([name, wozu, id]) => (
+                <figure>
+                  <Image {...bild(id, '(max-width: 760px) 50vw, 400px')} class="folie" />
+                  <figcaption>
+                    <b>{name}</b> {wozu}
+                  </figcaption>
+                </figure>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="praesentieren">
+        <div class="wrap zwei">
+          <header class="kopfzeile">
+            <p class="vorzeile">Präsentieren</p>
+            <h2>Vorgetragen wird direkt aus Deckwerk</h2>
+            <p class="lede">
+              Mit einem zweiten Bildschirm erscheint das Publikumsfenster dort. Du siehst die Referentenansicht mit Notizen, Uhr,
+              Sprechzeit und der nächsten Folie.
+            </p>
+          </header>
+          <dl class="liste eng">
+            <div>
+              <dt>Laserpointer und Stift</dt>
+              <dd>Mit <kbd>L</kbd> und <kbd>D</kbd>, das Publikum sieht beides live.</dd>
+            </div>
+            <div>
+              <dt>Morph</dt>
+              <dd>Gleicher Text oder dasselbe Foto wandert von der vorigen Folie herüber, etwa ein Agenda-Punkt in den Kapiteltitel.</dd>
+            </div>
+            <div>
+              <dt>Animationen</dt>
+              <dd>Aufbauten, Übergänge und ein Animationsstil für das ganze Deck: keine, ruhig, standard oder lebhaft.</dd>
+            </div>
+            <div>
+              <dt>Handy als Fernbedienung</dt>
+              <dd>QR-Code scannen, blättern und Notizen lesen. Handy und Rechner müssen im selben WLAN sein.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="export">
+        <div class="wrap zwei">
+          <header class="kopfzeile">
+            <p class="vorzeile">Export</p>
+            <h2>Die PowerPoint-Datei lässt sich weiterbearbeiten</h2>
+            <p class="lede">
+              Keine Bilder von Folien: Texte, Formen, Bilder, Diagramme, Video und Audio kommen als native Objekte an, Animationen
+              und Übergänge laufen mit.
+              {beispiel && <> Probier es aus: <a href={`${base}${beispiel}`} download>„{decks.strategie.title}“ als PowerPoint</a> ({groesse(beispiel)}).</>}
+            </p>
+          </header>
+          <dl class="liste eng">
+            <div>
+              <dt>.pptx</dt>
+              <dd>Editierbare Objekte, Animationen, eingebettete Schriften.</dd>
+            </div>
+            <div>
+              <dt>.pdf und .png</dt>
+              <dd>Pixelgenau wie die Vorschau, eine PNG-Datei pro Folie.</dd>
+            </div>
+            <div>
+              <dt>.md</dt>
+              <dd>Handout mit allen Sprechernotizen.</dd>
+            </div>
+            <div>
+              <dt>Ehrlich gesagt</dt>
+              <dd>Die PowerPoint-Dateien sind gegen LibreOffice geprüft. Die Abnahme in echtem PowerPoint steht noch aus, und Diagramme sehen dort leicht anders aus als in der Vorschau.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="agenten">
+        <div class="wrap zwei">
+          <header class="kopfzeile">
+            <p class="vorzeile">Agenten</p>
+            <h2>Claude Code, Codex und Vibe bauen Decks direkt aus dem Terminal</h2>
+            <p class="lede">
+              Deckwerk ist zugleich ein MCP-Server mit 20 Werkzeugen: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen,
+              Fotos suchen, rendern, exportieren. Der Installer trägt ihn ein, samt Skill, der dem Agenten den Arbeitsablauf
+              beibringt.
+            </p>
+          </header>
+          <figure class="konsole">
+            <pre><code><span class="leise"># von Hand eintragen (macht der Installer schon)</span>
+{MCP}
+
+<span class="leise"># dann im Agenten:</span>
+&gt; Baue ein Deck über unser Q3, 10 Folien,
+  mit Diagrammen aus umsatz.csv</code></pre>
+            <button type="button" data-copy={MCP}>Befehl kopieren</button>
+          </figure>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="daten">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Daten</p>
+            <h2>Nur was die KI wirklich braucht, verlässt deinen Rechner</h2>
+          </header>
+          <dl class="liste">
+            <div>
+              <dt>Geht an deinen KI-Anbieter</dt>
+              <dd>Deine Wünsche, der Inhalt des Decks, angehängtes Material und gerenderte Folienbilder. Je nach Zugang an Anthropic, OpenAI oder Mistral.</dd>
+            </div>
+            <div>
+              <dt>Bleibt auf dem Rechner</dt>
+              <dd>Rendering, Export und Freisteller. Decks liegen als <code>deck.json</code> unter <code>~/Deckwerk</code>, Schlüssel verschlüsselt im System-Schlüsselbund.</dd>
+            </div>
+            <div>
+              <dt>Abgeschirmte Agenten</dt>
+              <dd>Läuft der Chat über Claude Code, Codex oder Vibe, bekommt das CLI nur die Deckwerk-Werkzeuge, keine Shell und keinen Dateizugriff.</dd>
+            </div>
+            <div>
+              <dt>Fernbedienung</dt>
+              <dd>Sie läuft über unverschlüsseltes HTTP mit Token. In fremden WLANs ist sie mitlesbar.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      {
+        neu.length > 0 && (
+          <section class="abschnitt" id="neu">
+            <div class="wrap zwei">
+              <header class="kopfzeile">
+                <p class="vorzeile">Neu</p>
+                <h2>Deckwerk wird laufend besser</h2>
+                <p class="lede">
+                  Die letzten Versionen, direkt aus den <a href={`${REPO}/releases`}>Releases auf GitHub</a>.
+                </p>
+              </header>
+              <ol class="versionen">
+                {neu.map((r) => (
+                  <li>
+                    <a href={r.url}>{r.name}</a>
+                    <span>{r.datum}</span>
+                    <p>{r.text}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        )
+      }
+
+      <section class="abschnitt" id="faq">
+        <div class="wrap zwei">
+          <header class="kopfzeile">
+            <p class="vorzeile">FAQ</p>
+            <h2>Häufige Fragen</h2>
+          </header>
+          <div class="faq">
+            <details>
+              <summary>Was kostet Deckwerk?</summary>
+              <p>Die App ist kostenlos und Open Source (AGPL-3.0). Die KI läuft über dein vorhandenes Abo bei Claude Code, Codex oder Mistral Vibe oder über einen Anthropic-API-Key, den du selbst bezahlst.</p>
+            </details>
+            <details>
+              <summary>Welche Modelle stehen zur Wahl?</summary>
+              <p>Mit Claude: Opus 5.5, Fable 5.1, Sonnet 5 oder Haiku 4.5. Über Codex und Vibe die Modelle dieser CLIs.</p>
+            </details>
+            <details>
+              <summary>Läuft Deckwerk unter Windows oder auf dem Mac?</summary>
+              <p>Unter Windows über WSL. Für Macs mit Apple Silicon gibt es eine eigene Fassung; sie ist nicht von Apple notarisiert, beim DMG-Weg bestätigst du den ersten Start einmal unter „Datenschutz &amp; Sicherheit“.</p>
+            </details>
+            <details>
+              <summary>Brauche ich eine Internetverbindung?</summary>
+              <p>Für die KI, die Fotosuche und den einmaligen Download des Freisteller-Modells ja. Bearbeiten, Präsentieren und Exportieren gehen ohne.</p>
+            </details>
+            <details>
+              <summary>Wie aktualisiere oder entferne ich Deckwerk?</summary>
+              <p>Zum Aktualisieren den Installationsbefehl erneut ausführen. Zum Entfernen:</p>
+              <div class="befehl">
+                <code>{UNINSTALL}</code>
+                <button type="button" data-copy={UNINSTALL}>Kopieren</button>
+              </div>
+              <p>Deine Decks unter <code>~/Deckwerk</code> bleiben erhalten.</p>
+            </details>
+            <details>
+              <summary>Wo melde ich einen Fehler?</summary>
+              <p>Als <a href={`${REPO}/issues/new`}>Issue auf GitHub</a>. Hilfreich sind die Deckwerk-Version, dein System und, wenn möglich, die betroffene <code>deck.json</code>.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="abschnitt" id="installieren">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Installieren</p>
+            <h2>Ein Befehl im Terminal, und Deckwerk ist da</h2>
+          </header>
+          <div class="plattformen">
+            <div>
+              <h3>Linux und Windows (WSL)</h3>
+              <div class="befehl">
+                <code>{INSTALL}</code>
+                <button type="button" data-copy={INSTALL}>Kopieren</button>
+              </div>
+              <p>
+                Lädt die fertige App nach <code>~/.local/share/deckwerk</code>, legt einen Startmenü-Eintrag an und trägt Deckwerk in
+                Claude Code, Codex und Vibe ein. Git und Node.js brauchst du nicht.
+              </p>
+              <p class="links">
+                <a href={APPIMAGE}>AppImage{appimage ? ` (${mb(appimage.size)})` : ''}, braucht libfuse2</a>
+                <a href={`${REPO}#installation`}>Aus dem Quellcode</a>
+              </p>
+            </div>
+            <div>
+              <h3>macOS (Apple Silicon)</h3>
+              <div class="befehl">
+                <code>{INSTALL_MAC}</code>
+                <button type="button" data-copy={INSTALL_MAC}>Kopieren</button>
+              </div>
+              <p>Kopiert Deckwerk nach „Programme“ und trägt es in die Agenten-CLIs ein. Die App ist nicht notarisiert; lies das kurze Skript vorher.</p>
+              <p class="links">
+                <a href={`${MAC_REPO}/releases/latest`}>DMG laden</a>
+                <a href={MAC_REPO}>macOS-Fassung auf GitHub</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="fuss">
+      <div class="wrap fuss-in">
+        <div>
+          <a class="marke" href={base}>
+            <img src={`${base}favicon.svg`} alt="" width="22" height="22" />
+            <span>Deckwerk</span>
+          </a>
+          <p>KI-Präsentationsstudio. Open Source unter der <a href={`${REPO}/blob/master/LICENSE`}>AGPL-3.0</a>.</p>
+        </div>
+        {
+          MENUS.map((m) => (
+            <nav aria-label={m.name}>
+              <p>{m.name}</p>
+              {m.links.map(([href, label]) => (
+                <a href={href}>{label}</a>
+              ))}
+            </nav>
+          ))
+        }
+        <p class="klein">
+          Schriften unter der SIL Open Font License. Fotos in den Beispielen von Unsplash (<a href={`${REPO}/blob/master/examples/assets/CREDITS.md`}>Bildnachweise</a>).
+          Diese Seite setzt keine Cookies, zählt keine Besucher und lädt nichts von Dritten.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // Kopieren-Knöpfe
+      for (const b of document.querySelectorAll<HTMLButtonElement>('[data-copy]'))
+        b.addEventListener('click', async () => {
+          const alt = b.textContent
+          try {
+            await navigator.clipboard.writeText(b.dataset.copy!)
+            b.textContent = 'Kopiert'
+          } catch {
+            b.textContent = 'Bitte von Hand kopieren'
+          }
+          setTimeout(() => (b.textContent = alt), 1600)
+        })
+
+      // Menüs: nur eins offen, schließen bei Klick daneben, auf einen Link oder mit Esc
+      const menues = [...document.querySelectorAll<HTMLDetailsElement>('details.aufklapp')]
+      for (const d of menues) d.addEventListener('toggle', () => d.open && menues.forEach((o) => o !== d && (o.open = false)))
+      document.addEventListener('click', (e) => {
+        const t = e.target as Element
+        for (const d of menues) if (d.open && (!d.contains(t) || t.closest('a'))) d.open = false
+      })
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return
+        for (const d of menues) if (d.open) (d.open = false), d.querySelector('summary')!.focus()
+      })
+
+      // Live-Demo: Deck wählen, blättern per Klick, Pfeiltasten und Storyline, Vollbild
+      const wahl = [...document.querySelectorAll<HTMLButtonElement>('.demo-wahl button')]
+      const spieler = [...document.querySelectorAll<HTMLElement>('.spieler')]
+      for (const b of wahl)
+        b.addEventListener('click', () => {
+          wahl.forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+          spieler.forEach((s) => (s.hidden = s.dataset.deck !== b.dataset.deck))
+        })
+      for (const s of spieler) {
+        const buehne = s.querySelector<HTMLElement>('.buehne')!
+        const folien = [...buehne.querySelectorAll('img')]
+        const notizen = [...s.querySelectorAll<HTMLElement>('.notiz p')]
+        const punkte = [...s.querySelectorAll<HTMLButtonElement>('.storyline button')]
+        const zaehler = s.querySelector('.zaehler')!
+        let i = 0
+        const zeige = (n: number) => {
+          i = (n + folien.length) % folien.length
+          folien.forEach((f, k) => (f.hidden = k !== i))
+          notizen.forEach((p, k) => (p.hidden = k !== i))
+          punkte.forEach((p, k) => (k === i ? p.setAttribute('aria-current', 'true') : p.removeAttribute('aria-current')))
+          zaehler.textContent = `${i + 1} / ${folien.length}`
+          if (folien[i + 1]) folien[i + 1].loading = 'eager' // nächste Folie vorladen
+        }
+        buehne.addEventListener('click', () => zeige(i + 1))
+        s.querySelectorAll<HTMLButtonElement>('[data-schritt]').forEach((b) => b.addEventListener('click', () => zeige(i + Number(b.dataset.schritt))))
+        punkte.forEach((p, k) => p.addEventListener('click', () => zeige(k)))
+        s.querySelector('.vollbild')!.addEventListener('click', () => buehne.requestFullscreen?.())
+        s.addEventListener('keydown', (e) => {
+          const schritt = { ArrowRight: 1, PageDown: 1, ArrowLeft: -1, PageUp: -1 }[e.key]
+          if (!schritt) return
+          e.preventDefault()
+          zeige(i + schritt)
+        })
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* Farben aus der App: hell aus src/renderer/ui/shell.css, dunkel aus ui/app.css */
+  :root {
+    --bg: #f2f2f4;
+    --panel: #ffffff;
+    --panel-2: #f7f7f8;
+    --border: rgb(22 22 26 / 0.09);
+    --border-strong: rgb(22 22 26 / 0.16);
+    --text: #16161a;
+    --muted: #5e5e66;
+    --accent: #4f52d9;
+    --accent-hover: #4346c4;
+    --accent-soft: #eeeffd;
+    --on-accent: #fff;
+    --shadow-slide: 0 1px 1px rgb(22 22 26 / 0.04), 0 12px 40px rgb(22 22 26 / 0.1), 0 40px 80px -24px rgb(22 22 26 / 0.22);
+    --shadow-float: 0 1px 3px rgb(22 22 26 / 0.06), 0 16px 40px rgb(22 22 26 / 0.12);
+    --sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+    --wrap: 1120px;
+    --r: 10px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0d10;
+      --panel: #121317;
+      --panel-2: #181a1f;
+      --border: #23262d;
+      --border-strong: #30343c;
+      --text: #e6e8ec;
+      --muted: #8f95a1;
+      --accent: #7a86ff;
+      --accent-hover: #8d97ff;
+      --accent-soft: rgb(122 134 255 / 0.14);
+      --on-accent: #0b0c10;
+      --shadow-slide: 0 0 0 1px rgb(255 255 255 / 0.04), 0 24px 60px -20px rgb(0 0 0 / 0.7);
+      --shadow-float: 0 0 0 1px var(--border-strong), 0 24px 60px -12px rgb(0 0 0 / 0.6);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  img, picture { display: block; max-width: 100%; height: auto; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:hover { color: var(--accent-hover); }
+  button { font: inherit; color: inherit; }
+  h1, h2, h3 { margin: 0; font-weight: 650; text-wrap: balance; }
+  h1 { font-size: clamp(2.75rem, 6vw, 4.25rem); line-height: 1.02; letter-spacing: -0.04em; }
+  h2 { font-size: clamp(1.75rem, 3.6vw, 2.6rem); line-height: 1.12; letter-spacing: -0.03em; }
+  h3 { font-size: 1.05rem; line-height: 1.3; letter-spacing: -0.01em; }
+  p, dl, dd, figure, ol, ul { margin: 0; }
+  code, kbd, pre { font-family: var(--mono); font-size: 0.86em; }
+  :not(pre) > code, kbd { background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px; padding: 0.05em 0.35em; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  ::selection { background: var(--accent-soft); }
+
+  .wrap { width: min(100% - 32px, var(--wrap)); margin-inline: auto; }
+  /* Grid-Spalten sonst so breit wie der längste Befehl (nowrap) → seitliches Scrollen */
+  .hero > *, .zwei > *, .plattformen > *, .spieler > *, .galerie > * { min-width: 0; }
+  .skip { position: absolute; left: 16px; top: -48px; z-index: 10; padding: 8px 14px; background: var(--panel); border-radius: 6px; }
+  .skip:focus { top: 12px; }
+  .vorzeile { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.9rem; }
+  .lede { color: var(--muted); font-size: clamp(1.02rem, 1.5vw, 1.15rem); max-width: 60ch; margin-top: 1.1rem; }
+  .klein { font-size: 0.86rem; }
+
+  /* Kopf und Menüs */
+  .kopf { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .kopf-in { display: flex; align-items: center; gap: 1.5rem; height: 64px; }
+  .marke { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; letter-spacing: -0.02em; text-decoration: none; }
+  .marke:hover { color: var(--text); }
+  .menue { display: flex; gap: 0.25rem; margin-left: auto; }
+  .aufklapp { position: relative; }
+  .aufklapp summary { list-style: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; font-size: 0.94rem; font-weight: 500; color: var(--muted); user-select: none; white-space: nowrap; }
+  .aufklapp summary::-webkit-details-marker { display: none; }
+  .aufklapp summary::after { content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 8px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: translateY(-3px) rotate(45deg); transition: transform 0.15s; }
+  .aufklapp[open] summary::after { transform: translateY(0) rotate(225deg); }
+  .aufklapp summary:hover, .aufklapp[open] summary { color: var(--text); background: var(--panel-2); }
+  .flyout { position: absolute; top: calc(100% + 8px); left: 0; z-index: 6; width: 320px; padding: 8px; display: grid; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-float); }
+  .flyout a { display: grid; gap: 1px; padding: 9px 12px; border-radius: 8px; color: var(--text); text-decoration: none; }
+  .flyout a:hover, .flyout a:focus-visible { background: var(--panel-2); color: var(--text); }
+  .flyout b { font-weight: 600; font-size: 0.94rem; }
+  .flyout span { font-size: 0.84rem; color: var(--muted); }
+  .menue .aufklapp:last-child .flyout { left: auto; right: 0; }
+  .handy { display: none; }
+  .handy .flyout { left: auto; right: 0; width: min(92vw, 360px); max-height: calc(100vh - 90px); overflow-y: auto; gap: 0.5rem; }
+  .handy .gruppe p { padding: 8px 12px 2px; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  @media (max-width: 880px) { .menue { display: none; } .kopf .knopf { margin-left: auto; } .handy { display: block; } }
+  .knopf { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 0.92rem; text-decoration: none; white-space: nowrap; }
+  .knopf:hover { background: var(--accent-hover); color: var(--on-accent); }
+  .knopf.klein { height: 36px; padding: 0 14px; }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; padding-block: clamp(3rem, 8vw, 6.5rem) clamp(3rem, 6vw, 5rem); }
+  .hero .lede { font-size: clamp(1.08rem, 1.7vw, 1.22rem); }
+  .hero-bild figcaption, .formate figcaption, .konsole figcaption { margin-top: 0.8rem; font-size: 0.84rem; color: var(--muted); }
+  .hinweis { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin-top: 1.5rem; font-size: 0.94rem; }
+  .fakten { grid-column: 1 / -1; list-style: none; padding: 1.6rem 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem 2.5rem; border-top: 1px solid var(--border); font-size: 0.95rem; color: var(--muted); }
+  .fakten b { color: var(--text); font-weight: 600; }
+  @media (max-width: 980px) { .hero { grid-template-columns: 1fr; } .fakten { grid-template-columns: 1fr; } }
+
+  .folie { width: 100%; border-radius: 6px; box-shadow: var(--shadow-slide); background: var(--panel); }
+
+  /* Befehl mit Kopieren */
+  .befehl { display: flex; align-items: center; gap: 10px; margin-top: 2rem; max-width: 100%; padding: 10px 10px 10px 16px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--r); }
+  .befehl code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; color: var(--text); scrollbar-width: none; }
+  button[data-copy] { flex: none; font: 600 0.82rem var(--sans); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+  button[data-copy]:hover { color: var(--accent-hover); }
+
+  /* Abschnitte */
+  .abschnitt { padding-block: clamp(4rem, 9vw, 7rem); border-top: 1px solid var(--border); }
+  .kopfzeile { max-width: 46rem; margin-bottom: clamp(2.25rem, 5vw, 3.5rem); }
+  .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: start; }
+  .zwei .kopfzeile { margin-bottom: 0; }
+  @media (max-width: 880px) { .zwei { grid-template-columns: 1fr; } }
+
+  /* Live-Demo */
+  .demo-wahl { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
+  .demo-wahl button, .looks-wahl span { display: inline-block; padding: 7px 16px; border-radius: 999px; border: 1px solid var(--border-strong); background: none; font-size: 0.92rem; font-weight: 550; color: var(--muted); cursor: pointer; }
+  .demo-wahl button:hover, .looks-wahl label:hover span { color: var(--text); }
+  .demo-wahl [aria-pressed='true'], .looks-wahl input:checked + span { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .spieler { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: clamp(1.5rem, 3vw, 2.5rem); align-items: start; }
+  .buehne { cursor: pointer; border-radius: 6px; }
+  .buehne:fullscreen { display: grid; place-items: center; background: #000; cursor: pointer; }
+  .buehne:fullscreen .folie { width: auto; max-width: 100vw; max-height: 100vh; border-radius: 0; box-shadow: none; }
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.92rem; }
+  .leiste button { height: 36px; min-width: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--panel); cursor: pointer; }
+  .leiste button:hover { border-color: var(--text); }
+  .zaehler { min-width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .downloads { display: flex; gap: 1rem; margin-left: auto; }
+  .downloads small { color: var(--muted); }
+  .notiz { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.95rem; color: var(--muted); max-width: 70ch; }
+  .notiz b { display: block; margin-bottom: 0.3rem; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+  .briefing { display: grid; gap: 0.6rem; padding-bottom: 1.2rem; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .briefing div { display: grid; grid-template-columns: 5.5em 1fr; gap: 0.5rem; }
+  .briefing dt { color: var(--muted); }
+  .storyline ol { list-style: none; padding: 0; counter-reset: folie; max-height: 520px; overflow-y: auto; }
+  .storyline li { counter-increment: folie; }
+  .storyline button { display: grid; grid-template-columns: 2.2em 1fr; width: 100%; padding: 7px 8px; border: 0; border-radius: 7px; background: none; text-align: left; font-size: 0.9rem; line-height: 1.4; color: var(--muted); cursor: pointer; }
+  .storyline button::before { content: counter(folie, decimal-leading-zero); font: 500 0.8rem/1.75 var(--mono); }
+  .storyline button:hover { background: var(--panel-2); color: var(--text); }
+  .storyline button[aria-current] { background: var(--accent-soft); color: var(--text); }
+  .storyline button[aria-current]::before { color: var(--accent); }
+  @media (max-width: 980px) { .spieler { grid-template-columns: 1fr; } .storyline ol { max-height: 320px; } }
+
+  .galerie { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 4vw, 3rem) clamp(1.25rem, 3vw, 2.5rem); }
+  .galerie figcaption { margin-top: 0.9rem; font-weight: 550; line-height: 1.4; }
+  .galerie figcaption span { display: block; margin-top: 0.2rem; font-weight: 400; font-size: 0.84rem; color: var(--muted); }
+  @media (max-width: 760px) { .galerie { grid-template-columns: 1fr; } }
+
+  .schritte { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; counter-reset: schritt; }
+  .schritte li { counter-increment: schritt; padding-top: 1.1rem; border-top: 2px solid var(--text); }
+  .schritte li::before { content: counter(schritt, decimal-leading-zero); display: block; font: 600 0.84rem var(--mono); color: var(--accent); margin-bottom: 0.6rem; }
+  .schritte p { margin-top: 0.5rem; color: var(--muted); font-size: 0.96rem; }
+  @media (max-width: 980px) { .schritte { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .schritte { grid-template-columns: 1fr; } }
+
+  .liste { display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(2rem, 5vw, 4rem); }
+  .liste > div { padding-block: 1.2rem; border-top: 1px solid var(--border); }
+  .liste dt { font-weight: 600; }
+  .liste dd { margin-top: 0.35rem; color: var(--muted); font-size: 0.96rem; }
+  .liste.eng { grid-template-columns: 1fr; }
+  .looks + .liste { margin-top: clamp(2.5rem, 5vw, 3.5rem); }
+  @media (max-width: 760px) { .liste { grid-template-columns: 1fr; } }
+
+  .konsole pre { margin: 0; padding: 1.25rem 1.4rem; overflow-x: auto; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--r); font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; }
+  .konsole .leise { color: var(--muted); }
+  .konsole button { margin-top: 0.8rem; }
+
+  /* Theme-Umschalter ohne JS: Radio + :has() */
+  .looks-wahl { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
+  .looks-wahl label { cursor: pointer; }
+  .looks-wahl input { position: absolute; opacity: 0; pointer-events: none; }
+  .looks-wahl input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .look { display: none; grid-template-columns: 2fr 1fr; gap: clamp(1rem, 2vw, 1.5rem); }
+  .look > :first-child { grid-row: span 2; }
+  .looks:has([value='beratung']:checked) [data-look='beratung'],
+  .looks:has([value='keynote']:checked) [data-look='keynote'],
+  .looks:has([value='schweiz']:checked) [data-look='schweiz'],
+  .looks:has([value='redaktion']:checked) [data-look='redaktion'],
+  .looks:has([value='zen']:checked) [data-look='zen'] { display: grid; }
+  @media (max-width: 760px) { .look { grid-template-columns: 1fr; } .look > :first-child { grid-row: auto; } }
+
+  /* Formate: Spaltenbreite = Seitenverhältnis, damit alle gleich hoch stehen */
+  .formate { display: grid; grid-template-columns: 1.778fr 1fr 0.5625fr 0.707fr; gap: clamp(1rem, 2.5vw, 2rem); align-items: end; }
+  .formate b { color: var(--text); font-weight: 600; margin-right: 0.3rem; }
+  @media (max-width: 760px) { .formate { grid-template-columns: 1fr 0.5625fr 0.707fr; } .formate figure:first-child { grid-column: 1 / -1; } }
+
+  .versionen { list-style: none; padding: 0; }
+  .versionen li { padding-block: 1.2rem; border-top: 1px solid var(--border); }
+  .versionen a { font-weight: 600; }
+  .versionen span { margin-left: 0.75rem; font-size: 0.86rem; color: var(--muted); }
+  .versionen p { margin-top: 0.4rem; color: var(--muted); font-size: 0.96rem; }
+
+  .faq details { border-top: 1px solid var(--border); }
+  .faq details:last-child { border-bottom: 1px solid var(--border); }
+  .faq summary { cursor: pointer; list-style: none; padding: 1.1rem 2rem 1.1rem 0; font-weight: 600; position: relative; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; position: absolute; right: 0; top: 1rem; font-weight: 400; font-size: 1.3rem; color: var(--muted); }
+  .faq details[open] summary::after { content: '–'; }
+  .faq details > :not(summary) { margin-bottom: 1.1rem; color: var(--muted); }
+  .faq .befehl { margin-top: 0; }
+
+  .plattformen { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4rem); }
+  .plattformen > div { padding-top: 1.4rem; border-top: 2px solid var(--text); }
+  .plattformen .befehl { margin-top: 1rem; }
+  .plattformen p { margin-top: 1rem; color: var(--muted); font-size: 0.96rem; }
+  .plattformen .links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; }
+  @media (max-width: 880px) { .plattformen { grid-template-columns: 1fr; } }
+
+  .fuss { border-top: 1px solid var(--border); padding-block: 3rem; color: var(--muted); font-size: 0.92rem; }
+  .fuss-in { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem 3rem; }
+  .fuss-in p { margin-top: 0.6rem; }
+  .fuss nav { display: grid; align-content: start; gap: 0.35rem; }
+  .fuss nav p { margin: 0 0 0.3rem; font-weight: 600; color: var(--text); }
+  .fuss nav a { color: var(--muted); text-decoration: none; }
+  .fuss a { white-space: nowrap; }
+  .fuss nav a:hover { color: var(--text); }
+  .fuss .klein { grid-column: 1 / -1; max-width: 80ch; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  @media (max-width: 880px) { .fuss-in { grid-template-columns: 1fr 1fr; } .fuss-in > div:first-child { grid-column: 1 / -1; } }
+</style>

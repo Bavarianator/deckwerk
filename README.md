@@ -4,6 +4,8 @@ KI-Präsentationsstudio für den Desktop. Ein Satz genügt: Deckwerk schreibt di
 
 Den KI-Zugang liefert der Login deines Agenten-CLIs (Claude Code, Codex oder Mistral Vibe) oder ein Anthropic-API-Key.
 
+Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwerk/) (Quelle in `website/`, Folienbilder neu erzeugen mit `npm run folien` dort)
+
 ## Was Deckwerk kann
 
 - **Aus einem Satz ein Deck.** Storyline nach dem Pyramidenprinzip, Action Titles, 29 Layouts, Diagramme und Animationen. Jede Folie wird gerendert und geprüft: Überlauf, Kontrast, Struktur, Eintönigkeit.

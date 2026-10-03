@@ -1,0 +1,462 @@
+{
+  "decks": {
+    "strategie": {
+      "title": "Strategie 2027",
+      "brief": {
+        "audience": "Führungskreis und Beirat",
+        "goal": "Verabschiedung der drei strategischen Schwerpunkte",
+        "tone": "klar, ruhig, ambitioniert"
+      },
+      "theme": "redaktion",
+      "slides": [
+        "strategie-1",
+        "strategie-2",
+        "strategie-3",
+        "strategie-4",
+        "strategie-5",
+        "strategie-6",
+        "strategie-7",
+        "strategie-8",
+        "strategie-9",
+        "strategie-10",
+        "strategie-11",
+        "strategie-12"
+      ],
+      "dl": [
+        "beispiele/strategie.pptx",
+        "beispiele/strategie.pdf"
+      ]
+    },
+    "pitch": {
+      "title": "Ortho-Bot – Pitch",
+      "brief": {
+        "audience": "Geschäftsführung eines Schulbuchverlags",
+        "goal": "Zusage für einen Pilot mit 20 Schulen",
+        "tone": "sachlich, zuversichtlich"
+      },
+      "theme": "keynote",
+      "slides": [
+        "pitch-1",
+        "pitch-2",
+        "pitch-3",
+        "pitch-4",
+        "pitch-5",
+        "pitch-6",
+        "pitch-7",
+        "pitch-8",
+        "pitch-9",
+        "pitch-10",
+        "pitch-11",
+        "pitch-12"
+      ],
+      "dl": []
+    },
+    "quartal": {
+      "title": "Q3-Update Vertrieb",
+      "brief": {
+        "audience": "Geschäftsführung",
+        "goal": "Freigabe für zwei zusätzliche Außendienststellen",
+        "tone": "knapp, faktenbasiert"
+      },
+      "theme": "beratung",
+      "slides": [
+        "quartal-1",
+        "quartal-2",
+        "quartal-3",
+        "quartal-4",
+        "quartal-5",
+        "quartal-6",
+        "quartal-7",
+        "quartal-8"
+      ],
+      "dl": [
+        "beispiele/quartal.pptx",
+        "beispiele/quartal.pdf"
+      ]
+    },
+    "foto": {
+      "title": "Café Kollektiv – Expansion 2027",
+      "brief": {
+        "audience": "Gesellschafter und Bank",
+        "goal": "Freigabe für drei neue Standorte",
+        "tone": "warm, klar, selbstbewusst"
+      },
+      "theme": "zen",
+      "slides": [
+        "foto-1",
+        "foto-2",
+        "foto-3",
+        "foto-4",
+        "foto-5",
+        "foto-6",
+        "foto-7",
+        "foto-8"
+      ],
+      "dl": []
+    }
+  },
+  "folien": {
+    "strategie-1": {
+      "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche",
+      "layout": "cover",
+      "theme": "redaktion",
+      "notes": "Einstieg: Die Strategie ist das Ergebnis von drei Workshops mit allen Bereichsleitungen."
+    },
+    "strategie-2": {
+      "title": "Agenda",
+      "layout": "agenda",
+      "theme": "redaktion",
+      "notes": "Die Agenda kehrt vor jedem Kapitel zurück, der aktive Punkt wandert mit."
+    },
+    "strategie-3": {
+      "title": "Ausgangslage",
+      "layout": "section",
+      "theme": "redaktion",
+      "notes": "Kapitel 1. Kurz halten."
+    },
+    "strategie-4": {
+      "title": "Für 83 % unserer Kunden zählt Verlässlichkeit mehr als der Preis – und genau dort verlieren wir zuletzt Punkte.",
+      "layout": "statement",
+      "theme": "redaktion",
+      "notes": "Zahl stammt aus der Kundenbefragung 2026 (n = 412). Verlässlichkeit schlägt Preis deutlich."
+    },
+    "strategie-5": {
+      "title": "Dienstleistungen machen bereits die Hälfte des Umsatzes aus",
+      "layout": "chart",
+      "theme": "redaktion",
+      "notes": "Der Anteil der Dienstleistungen wächst, das Projektgeschäft schrumpft. Das prägt die Schwerpunkte."
+    },
+    "strategie-6": {
+      "title": "Drei Schwerpunkte",
+      "layout": "section",
+      "theme": "redaktion",
+      "notes": "Kapitel 2. Die drei Schwerpunkte sind das Herz der Präsentation."
+    },
+    "strategie-7": {
+      "title": "Drei Schwerpunkte machen uns bis 2027 messbar verlässlicher",
+      "layout": "bullets",
+      "theme": "redaktion",
+      "notes": "Jeder Schwerpunkt hat eine verantwortliche Person aus der Bereichsleitung und ein messbares Ziel."
+    },
+    "strategie-8": {
+      "title": "Weg bis 2027",
+      "layout": "section",
+      "theme": "redaktion",
+      "notes": "Kapitel 3: Wie wir vorgehen."
+    },
+    "strategie-9": {
+      "title": "Jeder Schwerpunkt durchläuft dieselben vier Schritte",
+      "layout": "process",
+      "theme": "redaktion",
+      "notes": "Das Vorgehen gilt für alle drei Schwerpunkte gleich. Quartalsweise Review im Führungskreis."
+    },
+    "strategie-10": {
+      "title": "Bis Ende 2027 sind alle drei Schwerpunkte im Alltag verankert",
+      "layout": "timeline",
+      "theme": "redaktion",
+      "notes": "Der Beirat sieht den Fortschritt in jeder Sitzung anhand dieser vier Meilensteine."
+    },
+    "strategie-11": {
+      "title": "Der Beirat verabschiedet heute drei Schwerpunkte und ein Budget",
+      "layout": "two-column",
+      "theme": "redaktion",
+      "notes": "Links, was heute beschlossen wird. Rechts, was wir dafür vom Beirat brauchen."
+    },
+    "strategie-12": {
+      "title": "Bitte um Verabschiedung der Strategie 2027",
+      "layout": "closing",
+      "theme": "redaktion",
+      "notes": "Abstimmung einholen, danach Ausblick auf die nächste Sitzung im Januar."
+    },
+    "pitch-1": {
+      "title": "Ortho-Bot bringt faire Rechtschreibförderung an jede Schule",
+      "layout": "cover",
+      "theme": "keynote",
+      "notes": "Begrüßung, 30 Sekunden. Kernversprechen nennen: faire Förderung für jedes Kind, ohne Mehrarbeit für Lehrkräfte."
+    },
+    "pitch-2": {
+      "title": "Agenda",
+      "layout": "agenda",
+      "theme": "keynote",
+      "notes": "Vier Blöcke, insgesamt 15 Minuten plus Diskussion. Fragen gern zwischendurch."
+    },
+    "pitch-3": {
+      "title": "Das Problem",
+      "layout": "section",
+      "theme": "keynote",
+      "notes": "Kurz innehalten: Rechtschreibung wird in jeder Klassenarbeit bewertet, aber fast nirgends systematisch geübt."
+    },
+    "pitch-4": {
+      "title": "Jedes vierte Kind verlässt die Grundschule mit erheblichen Rechtschreibschwächen – und Lehrkräfte haben keine Zeit für Einzelförderung.",
+      "layout": "statement",
+      "theme": "keynote",
+      "notes": "Quelle IQB 2024: 24 % der Viertklässler verfehlen den Mindeststandard Orthografie. Lehrkräfte nennen fehlende Zeit als Hauptgrund."
+    },
+    "pitch-5": {
+      "title": "Ein Markt mit 32.000 Schulen wartet auf ein bezahlbares Werkzeug",
+      "layout": "kpi-grid",
+      "theme": "keynote",
+      "notes": "Marktgröße einordnen: Wir zielen zunächst auf Grundschulen und Sekundarstufe I, das sind rund 20.000 Schulen."
+    },
+    "pitch-6": {
+      "title": "Die Lösung",
+      "layout": "section",
+      "theme": "keynote",
+      "notes": "Übergang zur Lösung. Demo-Video liegt bereit, falls gewünscht (3 Minuten)."
+    },
+    "pitch-7": {
+      "title": "Ortho-Bot erkennt Fehlerarten und übt gezielt die Regel dahinter",
+      "layout": "process",
+      "theme": "keynote",
+      "notes": "Wichtig: Kein zusätzliches Übungsheft, die Kinder schreiben ihre normalen Texte. Die Analyse läuft im Hintergrund."
+    },
+    "pitch-8": {
+      "title": "Die Fehlerquote sinkt in Pilotklassen innerhalb eines Halbjahrs um 41 %",
+      "layout": "chart",
+      "theme": "keynote",
+      "notes": "Vergleichsklassen hatten dieselben Lehrkräfte und dasselbe Lehrwerk. Effekt bei schwachen Schreibern am größten (−52 %)."
+    },
+    "pitch-9": {
+      "title": "Kein Anbieter verbindet Fehlerdiagnose mit Übung und Datenschutz",
+      "layout": "two-column",
+      "theme": "keynote",
+      "notes": "Namen der Wettbewerber nur auf Nachfrage nennen. Datenschutz ist bei Schulträgern das entscheidende Kriterium."
+    },
+    "pitch-10": {
+      "title": "Eine Schullizenz kostet weniger als ein Klassensatz Arbeitshefte",
+      "layout": "bullets",
+      "theme": "keynote",
+      "notes": "Preis bewusst unter dem Arbeitsheft-Budget. Verlagspartner bekommt 30 % und spart eigenen Vertrieb."
+    },
+    "pitch-11": {
+      "title": "Bis Sommer 2027 sind 200 Schulen an Bord",
+      "layout": "timeline",
+      "theme": "keynote",
+      "notes": "Break-even bei 180 Lizenzen entspricht 342.000 € Jahresumsatz bei aktueller Kostenbasis."
+    },
+    "pitch-12": {
+      "title": "Starten wir im November den Pilot mit 20 Partnerschulen",
+      "layout": "closing",
+      "theme": "keynote",
+      "notes": "Konkrete Bitte: Entscheidung bis 15. Oktober, damit der Pilot zum Halbjahreswechsel läuft. Pilotbudget deckt Onboarding und Schulungen."
+    },
+    "quartal-1": {
+      "title": "Der Vertrieb liegt 9 % über Plan und braucht jetzt zwei Stellen mehr",
+      "layout": "cover",
+      "theme": "beratung",
+      "notes": "Zehn Minuten, dann Entscheidung. Alles Wichtige steht auf Folie 2."
+    },
+    "quartal-2": {
+      "title": "Drei Punkte entscheiden über das vierte Quartal",
+      "layout": "bullets",
+      "theme": "beratung",
+      "notes": "Executive Summary: Wer nur diese Folie sieht, kennt Lage, Ursache und Bitte."
+    },
+    "quartal-3": {
+      "title": "Umsatz und Marge liegen über Plan, die Neukundenquote darunter",
+      "layout": "kpi-grid",
+      "theme": "beratung",
+      "notes": "Alle Zahlen gegenüber Plan Q3. Deckungsbeitrag inklusive Rabatte."
+    },
+    "quartal-4": {
+      "title": "Der Auftragseingang wächst seit Q1 in jedem Quartal schneller als 2025",
+      "layout": "chart",
+      "theme": "beratung",
+      "notes": "Q3 ist saisonal stark, aber der Abstand zum Vorjahr wächst seit Q1."
+    },
+    "quartal-5": {
+      "title": "Bestandskunden tragen das Quartal, Neukunden bleiben liegen",
+      "layout": "two-column",
+      "theme": "beratung",
+      "notes": "Links die Erfolge, rechts die Risiken. Neukunden sind das eigentliche Problem."
+    },
+    "quartal-6": {
+      "title": "Zwei Außendienststellen zahlen sich nach sieben Monaten aus",
+      "layout": "bullets",
+      "theme": "beratung",
+      "notes": "Empfehlung ist Option B. Option A verschiebt das Problem, Option C dauert zu lange."
+    },
+    "quartal-7": {
+      "title": "Bei Freigabe heute sind beide Stellen zum Jahreswechsel besetzt",
+      "layout": "timeline",
+      "theme": "beratung",
+      "notes": "Wer, was, bis wann. Stellenausschreibung ist vorbereitet und geht nach Freigabe sofort raus."
+    },
+    "quartal-8": {
+      "title": "Bitte um Freigabe: zwei Außendienststellen ab 1. November",
+      "layout": "closing",
+      "theme": "beratung",
+      "notes": "Um die Freigabe bitten, dann Fragen."
+    },
+    "foto-1": {
+      "title": "Drei neue Standorte machen das Kollektiv zur Marke der Stadt",
+      "layout": "cover",
+      "theme": "zen",
+      "notes": "Einstieg über das Gefühl im Café. Foto: Luke Chesser / Unsplash."
+    },
+    "foto-2": {
+      "title": "Mittags fehlen uns jeden Tag rund 60 Plätze",
+      "layout": "photo",
+      "theme": "zen",
+      "notes": "Warum wir wachsen: Die Nachfrage ist da, die Plätze fehlen. Foto: Jeff Sheldon / Unsplash."
+    },
+    "foto-3": {
+      "title": "Beide Häuser sind profitabel und wachsen zweistellig",
+      "layout": "kpi-grid",
+      "theme": "zen",
+      "notes": "Die Zahlen des laufenden Jahres, Stand September."
+    },
+    "foto-4": {
+      "title": "Drei Orte, ein Konzept",
+      "layout": "section",
+      "theme": "zen",
+      "notes": "Kapitel: die drei Standorte. Foto: Aleks Dorohovich / Unsplash."
+    },
+    "foto-5": {
+      "title": "Das Eckhaus am Markt wird unser neues Flaggschiff",
+      "layout": "gallery",
+      "theme": "zen",
+      "notes": "Eckhaus am Markt ist der Anker, die beiden kleineren Flächen folgen. Fotos: Bonnie Meisels, Vee O, Galymzhan Abdugalimov / Unsplash."
+    },
+    "foto-6": {
+      "title": "Zwei Drittel kommen mehrmals pro Woche und bleiben über zwei Stunden",
+      "layout": "photo",
+      "theme": "zen",
+      "notes": "Stammgäste arbeiten bei uns: Das Tagesgeschäft ist planbar. Foto: Alejandro Escamilla / Unsplash."
+    },
+    "foto-7": {
+      "title": "Das Kollektiv ist mein zweites Büro – nur mit besserem Kaffee und netteren Kollegen.",
+      "layout": "quote",
+      "theme": "zen",
+      "notes": "Zitat aus der Gästebefragung, mit Freigabe. Foto: Alexander Shustov / Unsplash."
+    },
+    "foto-8": {
+      "title": "Bitte um Freigabe: 1,2 Mio € für drei Standorte",
+      "layout": "closing",
+      "theme": "zen",
+      "notes": "Klare Bitte am Ende. Foto: Forrest Cavale / Unsplash."
+    },
+    "look-beratung-1": {
+      "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche",
+      "layout": "cover",
+      "theme": "beratung",
+      "notes": "Einstieg: Die Strategie ist das Ergebnis von drei Workshops mit allen Bereichsleitungen."
+    },
+    "look-beratung-2": {
+      "title": "Dienstleistungen machen bereits die Hälfte des Umsatzes aus",
+      "layout": "chart",
+      "theme": "beratung",
+      "notes": "Der Anteil der Dienstleistungen wächst, das Projektgeschäft schrumpft. Das prägt die Schwerpunkte."
+    },
+    "look-beratung-3": {
+      "title": "Für 83 % unserer Kunden zählt Verlässlichkeit mehr als der Preis – und genau dort verlieren wir zuletzt Punkte.",
+      "layout": "statement",
+      "theme": "beratung",
+      "notes": "Zahl stammt aus der Kundenbefragung 2026 (n = 412). Verlässlichkeit schlägt Preis deutlich."
+    },
+    "look-keynote-1": {
+      "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche",
+      "layout": "cover",
+      "theme": "keynote",
+      "notes": "Einstieg: Die Strategie ist das Ergebnis von drei Workshops mit allen Bereichsleitungen."
+    },
+    "look-keynote-2": {
+      "title": "Dienstleistungen machen bereits die Hälfte des Umsatzes aus",
+      "layout": "chart",
+      "theme": "keynote",
+      "notes": "Der Anteil der Dienstleistungen wächst, das Projektgeschäft schrumpft. Das prägt die Schwerpunkte."
+    },
+    "look-keynote-3": {
+      "title": "Für 83 % unserer Kunden zählt Verlässlichkeit mehr als der Preis – und genau dort verlieren wir zuletzt Punkte.",
+      "layout": "statement",
+      "theme": "keynote",
+      "notes": "Zahl stammt aus der Kundenbefragung 2026 (n = 412). Verlässlichkeit schlägt Preis deutlich."
+    },
+    "look-schweiz-1": {
+      "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche",
+      "layout": "cover",
+      "theme": "schweiz",
+      "notes": "Einstieg: Die Strategie ist das Ergebnis von drei Workshops mit allen Bereichsleitungen."
+    },
+    "look-schweiz-2": {
+      "title": "Dienstleistungen machen bereits die Hälfte des Umsatzes aus",
+      "layout": "chart",
+      "theme": "schweiz",
+      "notes": "Der Anteil der Dienstleistungen wächst, das Projektgeschäft schrumpft. Das prägt die Schwerpunkte."
+    },
+    "look-schweiz-3": {
+      "title": "Für 83 % unserer Kunden zählt Verlässlichkeit mehr als der Preis – und genau dort verlieren wir zuletzt Punkte.",
+      "layout": "statement",
+      "theme": "schweiz",
+      "notes": "Zahl stammt aus der Kundenbefragung 2026 (n = 412). Verlässlichkeit schlägt Preis deutlich."
+    },
+    "look-redaktion-1": {
+      "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche",
+      "layout": "cover",
+      "theme": "redaktion",
+      "notes": "Einstieg: Die Strategie ist das Ergebnis von drei Workshops mit allen Bereichsleitungen."
+    },
+    "look-redaktion-2": {
+      "title": "Dienstleistungen machen bereits die Hälfte des Umsatzes aus",
+      "layout": "chart",
+      "theme": "redaktion",
+      "notes": "Der Anteil der Dienstleistungen wächst, das Projektgeschäft schrumpft. Das prägt die Schwerpunkte."
+    },
+    "look-redaktion-3": {
+      "title": "Für 83 % unserer Kunden zählt Verlässlichkeit mehr als der Preis – und genau dort verlieren wir zuletzt Punkte.",
+      "layout": "statement",
+      "theme": "redaktion",
+      "notes": "Zahl stammt aus der Kundenbefragung 2026 (n = 412). Verlässlichkeit schlägt Preis deutlich."
+    },
+    "look-zen-1": {
+      "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche",
+      "layout": "cover",
+      "theme": "zen",
+      "notes": "Einstieg: Die Strategie ist das Ergebnis von drei Workshops mit allen Bereichsleitungen."
+    },
+    "look-zen-2": {
+      "title": "Dienstleistungen machen bereits die Hälfte des Umsatzes aus",
+      "layout": "chart",
+      "theme": "zen",
+      "notes": "Der Anteil der Dienstleistungen wächst, das Projektgeschäft schrumpft. Das prägt die Schwerpunkte."
+    },
+    "look-zen-3": {
+      "title": "Für 83 % unserer Kunden zählt Verlässlichkeit mehr als der Preis – und genau dort verlieren wir zuletzt Punkte.",
+      "layout": "statement",
+      "theme": "zen",
+      "notes": "Zahl stammt aus der Kundenbefragung 2026 (n = 412). Verlässlichkeit schlägt Preis deutlich."
+    },
+    "format-16-9-1": {
+      "title": "Mittags fehlen uns jeden Tag rund 60 Plätze",
+      "layout": "photo",
+      "theme": "zen",
+      "notes": "Warum wir wachsen: Die Nachfrage ist da, die Plätze fehlen. Foto: Jeff Sheldon / Unsplash."
+    },
+    "format-1-1-1": {
+      "title": "Mittags fehlen uns jeden Tag rund 60 Plätze",
+      "layout": "photo",
+      "theme": "zen",
+      "notes": "Warum wir wachsen: Die Nachfrage ist da, die Plätze fehlen. Foto: Jeff Sheldon / Unsplash."
+    },
+    "format-9-16-1": {
+      "title": "Mittags fehlen uns jeden Tag rund 60 Plätze",
+      "layout": "photo",
+      "theme": "zen",
+      "notes": "Warum wir wachsen: Die Nachfrage ist da, die Plätze fehlen. Foto: Jeff Sheldon / Unsplash."
+    },
+    "format-a4-1": {
+      "title": "Mittags fehlen uns jeden Tag rund 60 Plätze",
+      "layout": "photo",
+      "theme": "zen",
+      "notes": "Warum wir wachsen: Die Nachfrage ist da, die Plätze fehlen. Foto: Jeff Sheldon / Unsplash."
+    }
+  },
+  "lint": [
+    "! Folie 2 [density] 59 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
+    "! Folie 3 [density] 63 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
+    "! Folie 4 [density] 59 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
+    "! Folie 4 [rhythm] Drittes \"bullets\" in Folge – Layout abwechseln, damit das Deck lebendig bleibt.",
+    "! Folie 4 [monotone] Dritte Folie in Folge mit gleicher Komposition, gleichem Ton und ohne Foto – ein Foto, eine luftige Folie (statement, big-number) oder einen anderen frame einsetzen.",
+    "! Folie 5 [morph] Morph ohne gemeinsames Element mit der vorigen Folie (außer dem Titel) – wirkt nur wie Überblenden. Morph braucht wörtlich denselben Text (Agenda-Punkt = Kapiteltitel, Kennzahl = große Zahl), dasselbe Foto oder dasselbe Layout mit anderem focus/highlight; sonst transition weglassen."
+  ]
+}

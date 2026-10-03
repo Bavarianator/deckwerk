@@ -1,0 +1,43 @@
+# Website (website/, Astro) auf GitHub Pages: https://bavarianator.github.io/deckwerk/
+# Einmalig nötig: Settings → Pages → Source „GitHub Actions“.
+# Baut zusätzlich täglich neu, weil Version, Neuigkeiten und Sterne beim Build von GitHub kommen. Kein release-Trigger:
+# Der liefe auf dem Tag, und die Umgebung github-pages lässt nur den Hauptzweig deployen.
+name: Website
+
+on:
+  push:
+    branches: [master]
+    paths: ['website/**', '.github/workflows/pages.yml']
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: withastro/action@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path: website
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
