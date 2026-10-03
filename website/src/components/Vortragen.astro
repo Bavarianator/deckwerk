@@ -1,0 +1,31 @@
+---
+// Vortragen und weitergeben
+import { base, beispiel, groesse } from '../lib/seite'
+---
+
+<section class="abschnitt" id="vortragen">
+  <div class="wrap zwei">
+    <header class="kopfzeile">
+      <p class="vorzeile">Vortragen und weitergeben</p>
+      <h2>Vorne stehen oder die Datei verschicken</h2>
+      <p class="lede">
+        Das Publikum sieht die Folien, du deine Notizen, die Uhr und die nächste Folie.
+        {beispiel && <> Oder du schickst die Datei: <a href={`${base}${beispiel}`} download>Beispiel als PowerPoint</a> ({groesse(beispiel)}).</>}
+      </p>
+    </header>
+    <dl class="liste eng">
+      <div>
+        <dt>PowerPoint zum Weiterbearbeiten</dt>
+        <dd>Texte, Bilder und Diagramme bleiben einzeln anfassbar, Schriften und Animationen sind dabei. Dazu PDF und Bilder.</dd>
+      </div>
+      <div>
+        <dt>Handy als Fernbedienung</dt>
+        <dd>QR-Code scannen, blättern und Notizen lesen.</dd>
+      </div>
+      <div>
+        <dt>Laserpointer, Stift und weiche Übergänge</dt>
+        <dd>Etwas einkreisen, während das Publikum zusieht; Wörter und Fotos gleiten von Folie zu Folie wie bei „Morph“.</dd>
+      </div>
+    </dl>
+  </div>
+</section>

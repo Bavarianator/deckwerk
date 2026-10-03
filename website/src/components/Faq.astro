@@ -1,0 +1,57 @@
+---
+// Häufige Fragen, zugeklappt
+import { UNINSTALL } from '../lib/seite'
+---
+
+<section class="abschnitt" id="faq">
+  <div class="wrap zwei">
+    <header class="kopfzeile">
+      <p class="vorzeile">Fragen</p>
+      <h2>Was Leute vorher wissen wollen</h2>
+    </header>
+    <div class="faq">
+      <details>
+        <summary>Brauche ich Technikkenntnisse?</summary>
+        <p>Nein. Auf dem Mac lädst du die App wie jede andere. Unter Linux kopierst du einmal einen Befehl ins Terminal. Danach redest du mit Deckwerk wie mit einem Kollegen.</p>
+      </details>
+      <details>
+        <summary>Was, wenn mir eine Folie nicht gefällt?</summary>
+        <p>Sag es einfach, zum Beispiel „Folie 4 bitte mit Foto“. Oder du klickst direkt auf die Folie und änderst Text, Bilder und Farben selbst.</p>
+      </details>
+      <details>
+        <summary>Funktioniert das mit PowerPoint und Keynote?</summary>
+        <p>Deckwerk speichert eine normale PowerPoint-Datei für PowerPoint, Keynote, LibreOffice oder Google Slides. Getestet ist sie bisher mit LibreOffice; Diagramme sehen in PowerPoint leicht anders aus als in der Vorschau.</p>
+      </details>
+      <details>
+        <summary>Kann ich meine Firmenfarben nutzen?</summary>
+        <p>Ja. Sag Deckwerk deine Markenfarbe, und mit „merk dir …“ hältst du Vorlieben für alle künftigen Präsentationen fest.</p>
+      </details>
+      <details>
+        <summary>Läuft Deckwerk unter Windows?</summary>
+        <p>Über WSL, das in Windows eingebaute Linux. Eine eigene Windows-Version gibt es noch nicht.</p>
+      </details>
+      <details>
+        <summary>Brauche ich Internet?</summary>
+        <p>Für die KI und die Fotosuche ja. Bearbeiten, Vortragen und Exportieren gehen auch offline.</p>
+      </details>
+      <details>
+        <summary>Wie werde ich Deckwerk wieder los?</summary>
+        <p>Unter Linux mit diesem Befehl, deine Präsentationen bleiben erhalten:</p>
+        <div class="befehl">
+          <code>{UNINSTALL}</code>
+          <button type="button" data-copy={UNINSTALL}>Kopieren</button>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .faq details { border-top: 1px solid var(--border); }
+  .faq details:last-child { border-bottom: 1px solid var(--border); }
+  .faq summary { cursor: pointer; list-style: none; padding: 1.1rem 2rem 1.1rem 0; font-weight: 600; position: relative; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; position: absolute; right: 0; top: 1rem; font-weight: 400; font-size: 1.3rem; color: var(--muted); }
+  .faq details[open] summary::after { content: '–'; }
+  .faq details > :not(summary) { margin-bottom: 1.1rem; color: var(--muted); }
+</style>

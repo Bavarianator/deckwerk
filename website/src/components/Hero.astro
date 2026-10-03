@@ -1,0 +1,99 @@
+---
+// Hero: ein Satz wird getippt, dann legen sich echte Folien des passenden Beispiel-Decks aufeinander, die Titelfolie zuletzt obenauf
+import { Image } from 'astro:assets'
+import { bild } from '../lib/seite'
+
+const SZENEN = [
+  { satz: 'Quartalsbericht für die Geschäftsführung: Wir liegen 9 % über Plan und brauchen zwei neue Stellen.', deck: 'quartal', folien: [4, 3, 1] },
+  { satz: 'Präsentation für unsere Gesellschafter: drei neue Standorte für unser Café.', deck: 'foto', folien: [3, 2, 1] },
+  { satz: 'Pitch für einen Schulbuchverlag: Unser Rechtschreib-Tool soll an 20 Schulen starten.', deck: 'pitch', folien: [8, 5, 1] },
+]
+---
+
+<section class="hero wrap">
+  <div class="hero-text">
+    <h1>Sag, was du zeigen willst. <span class="akzent">Deckwerk baut die Präsentation.</span></h1>
+    <p class="lede">Ein Satz genügt. Deckwerk schreibt die Geschichte, gestaltet und prüft jede Folie und gibt dir eine PowerPoint, die du weiterbearbeiten kannst.</p>
+    <p class="aktionen">
+      <a class="knopf gross" href="#laden">Kostenlos laden</a>
+      <a class="knopf zweit gross" href="#demo">Beispiele ansehen</a>
+    </p>
+    <p class="hinweis">Für Mac und Linux · Open Source · keine Anmeldung</p>
+  </div>
+  <div class="buehne-hero" aria-label="Beispiel: Aus einem Satz wird eine Präsentation">
+    {
+      SZENEN.map((s, i) => (
+        <div class:list={['szene', { fertig: i === 0 }]} data-satz={s.satz} hidden={i > 0}>
+          <div class="eingabe">
+            <span class="eingabe-label">Was möchtest du zeigen?</span>
+            <p class="eingabe-text">{s.satz}</p>
+          </div>
+          <div class="stapel">
+            {s.folien.map((n) => (
+              <Image {...bild(`${s.deck}-${n}`, '(max-width: 980px) 80vw, 460px', [480, 960])} class="folie" loading={i === 0 ? 'eager' : 'lazy'} />
+            ))}
+          </div>
+          <p class="status">
+            <span>Geschichte steht</span>
+            <span>Folien gestaltet</span>
+            <span>Alles geprüft</span>
+          </p>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  // Satz tippen, Folien auflegen, Status abhaken, nächste Szene. Ohne Bewegung bleibt die erste Szene fertig stehen.
+  const szenen = [...document.querySelectorAll<HTMLElement>('.szene')]
+  const pause = (ms: number) => new Promise((r) => setTimeout(r, ms))
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) szenen[0]?.classList.add('fertig')
+  else
+    (async () => {
+      for (let i = 0; ; i = (i + 1) % szenen.length) {
+        const s = szenen[i]
+        const text = s.querySelector('.eingabe-text')!
+        szenen.forEach((x) => (x.hidden = x !== s))
+        s.classList.remove('fertig')
+        for (let n = 0; n <= s.dataset.satz!.length; n++) {
+          text.textContent = s.dataset.satz!.slice(0, n)
+          await pause(28)
+        }
+        await pause(350)
+        s.classList.add('fertig')
+        await pause(5200)
+      }
+    })()
+</script>
+
+<style is:global>
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 6vw, 5rem); align-items: center; padding-block: clamp(3.5rem, 8vw, 7rem) clamp(3rem, 6vw, 5rem); }
+  .hero > * { min-width: 0; }
+  .hero .lede { font-size: clamp(1.08rem, 1.6vw, 1.2rem); }
+  .aktionen { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2.25rem; }
+  .hinweis { margin-top: 1.1rem; font-size: 0.9rem; color: var(--muted); }
+  @media (max-width: 980px) { .hero { grid-template-columns: 1fr; } }
+
+  .buehne-hero { min-height: 420px; }
+  .eingabe { padding: 14px 16px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-float); }
+  .eingabe-label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+  .eingabe-text { min-height: 3.2em; font-size: 1rem; line-height: 1.6; }
+  .szene:not(.fertig) .eingabe-text::after { content: ''; display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: -0.15em; background: var(--accent); animation: blinken 1s steps(1) infinite; }
+  @keyframes blinken { 50% { opacity: 0; } }
+  .stapel { position: relative; aspect-ratio: 16 / 11; margin-top: 18px; }
+  .stapel .folie { position: absolute; width: 78%; opacity: 0; transform: translateY(14px); transition: opacity 0.5s, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .stapel .folie:nth-child(1) { left: 0; top: 0; }
+  .stapel .folie:nth-child(2) { left: 11%; top: 13%; }
+  .stapel .folie:nth-child(3) { left: 22%; top: 26%; }
+  .fertig .stapel .folie { opacity: 1; transform: none; }
+  .fertig .stapel .folie:nth-child(2) { transition-delay: 0.45s; }
+  .fertig .stapel .folie:nth-child(3) { transition-delay: 0.9s; }
+  .status { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; margin-top: 14px; font-size: 0.86rem; color: var(--muted); }
+  .status span { opacity: 0.35; transition: opacity 0.3s, color 0.3s; }
+  .status span::before { content: '✓ '; color: var(--ok); }
+  .fertig .status span { opacity: 1; color: var(--text); }
+  .fertig .status span:nth-child(2) { transition-delay: 0.6s; }
+  .fertig .status span:nth-child(3) { transition-delay: 1.3s; }
+  @media (prefers-reduced-motion: reduce) { .stapel .folie, .status span { transition: none !important; } }
+</style>

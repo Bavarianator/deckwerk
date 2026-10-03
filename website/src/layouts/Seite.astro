@@ -1,0 +1,139 @@
+---
+// Rahmen der Seite: Kopf, Fuß, Meta-Tags und die Skripte, die mehrere Abschnitte nutzen (Kopieren, Handy-Menü)
+import '@fontsource-variable/inter'
+import '../styles/basis.css'
+import { FUSS, KOPF, REPO, base } from '../lib/seite'
+
+const beschreibung = 'Sag in einem Satz, was du zeigen willst: Deckwerk schreibt die Geschichte, gestaltet die Folien, prüft jede einzelne und liefert eine PowerPoint, die du weiterbearbeiten kannst. Kostenlos für Mac und Linux.'
+const url = new URL(base, Astro.site)
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Deckwerk – Präsentationen aus einem Satz</title>
+    <meta name="description" content={beschreibung} />
+    <link rel="canonical" href={url} />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <meta name="theme-color" content="#f2f2f4" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c0d10" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:title" content="Deckwerk – Präsentationen aus einem Satz" />
+    <meta property="og:description" content={beschreibung} />
+    <meta property="og:url" content={url} />
+    <meta property="og:image" content={new URL('og.jpg', url)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip" href="#inhalt">Zum Inhalt</a>
+    <header class="kopf">
+      <div class="wrap kopf-in">
+        <a class="marke" href={base} aria-label="Deckwerk, zum Seitenanfang">
+          <img src={`${base}favicon.svg`} alt="" width="28" height="28" />
+          <span>Deckwerk</span>
+        </a>
+        <nav class="menue" aria-label="Hauptmenü">
+          {KOPF.map(([href, label]) => <a href={href}>{label}</a>)}
+        </nav>
+        <a class="knopf klein" href="#laden"><span class="lang">Kostenlos laden</span><span class="kurz">Laden</span></a>
+        <details class="handy">
+          <summary aria-label="Menü öffnen">Menü</summary>
+          <nav class="flyout" aria-label="Menü">
+            {KOPF.map(([href, label]) => <a href={href}>{label}</a>)}
+          </nav>
+        </details>
+      </div>
+    </header>
+
+    <main id="inhalt">
+      <slot />
+    </main>
+
+    <footer class="fuss">
+      <div class="wrap fuss-in">
+        <div>
+          <a class="marke" href={base}>
+            <img src={`${base}favicon.svg`} alt="" width="22" height="22" />
+            <span>Deckwerk</span>
+          </a>
+          <p>Präsentationen aus einem Satz. Kostenlos und Open Source.</p>
+        </div>
+        {
+          FUSS.map((m) => (
+            <nav aria-label={m.name}>
+              <p>{m.name}</p>
+              {m.links.map(([href, label]) => (
+                <a href={href}>{label}</a>
+              ))}
+            </nav>
+          ))
+        }
+        <p class="klein">
+          Schriften unter der SIL Open Font License. Fotos in den Beispielen von Unsplash (<a href={`${REPO}/blob/master/examples/assets/CREDITS.md`}>Bildnachweise</a>).
+          Diese Seite setzt keine Cookies, zählt keine Besucher und lädt nichts von Dritten.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // Kopieren-Knöpfe
+      for (const b of document.querySelectorAll<HTMLButtonElement>('[data-copy]'))
+        b.addEventListener('click', async () => {
+          const alt = b.textContent
+          try {
+            await navigator.clipboard.writeText(b.dataset.copy!)
+            b.textContent = 'Kopiert'
+          } catch {
+            b.textContent = 'Bitte von Hand kopieren'
+          }
+          setTimeout(() => (b.textContent = alt), 1600)
+        })
+
+      // Handy-Menü: schließen bei Klick daneben, auf einen Link oder mit Esc
+      const menue = document.querySelector<HTMLDetailsElement>('details.handy')!
+      document.addEventListener('click', (e) => {
+        const t = e.target as Element
+        if (menue.open && (!menue.contains(t) || t.closest('a'))) menue.open = false
+      })
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menue.open) (menue.open = false), menue.querySelector('summary')!.focus()
+      })
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  .kopf { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+  .kopf-in { display: flex; align-items: center; gap: 1.5rem; height: 64px; }
+  .marke { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; letter-spacing: -0.02em; text-decoration: none; }
+  .marke:hover { color: var(--text); }
+  .menue { display: flex; gap: 0.25rem; margin-left: auto; }
+  .menue a { padding: 8px 12px; border-radius: 8px; font-size: 0.94rem; font-weight: 500; color: var(--muted); text-decoration: none; }
+  .menue a:hover { color: var(--text); background: var(--panel-2); }
+  .handy { display: none; position: relative; }
+  .handy summary { list-style: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; font-size: 0.94rem; font-weight: 500; color: var(--muted); }
+  .handy summary::-webkit-details-marker { display: none; }
+  .handy[open] summary { color: var(--text); background: var(--panel-2); }
+  .handy .flyout { position: absolute; top: calc(100% + 8px); right: 0; z-index: 6; width: min(80vw, 240px); padding: 8px; display: grid; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-float); }
+  .handy .flyout a { padding: 10px 12px; border-radius: 8px; color: var(--text); font-weight: 500; text-decoration: none; }
+  .handy .flyout a:hover { background: var(--panel-2); }
+  .kurz { display: none; }
+  @media (max-width: 880px) { .menue { display: none; } .kopf .knopf { margin-left: auto; } .handy { display: block; } }
+  @media (max-width: 480px) { .kopf-in { gap: 0.75rem; } .lang { display: none; } .kurz { display: inline; } }
+
+  .fuss { border-top: 1px solid var(--border); padding-block: 3.5rem; color: var(--muted); font-size: 0.92rem; }
+  .fuss-in { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem 3rem; }
+  .fuss-in > * { min-width: 0; }
+  .fuss-in p { margin-top: 0.6rem; }
+  .fuss nav { display: grid; align-content: start; gap: 0.35rem; }
+  .fuss nav p { margin: 0 0 0.3rem; font-weight: 600; color: var(--text); }
+  .fuss nav a { color: var(--muted); text-decoration: none; }
+  .fuss nav a:hover { color: var(--text); }
+  .fuss .klein { grid-column: 1 / -1; max-width: 80ch; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+  @media (max-width: 880px) { .fuss-in { grid-template-columns: 1fr 1fr; } .fuss-in > div:first-child { grid-column: 1 / -1; } }
+</style>

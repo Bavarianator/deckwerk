@@ -1,0 +1,35 @@
+---
+// Drei Schritte; enthält auch, was Deckwerk dabei abnimmt (roter Faden, Gestaltung, Prüfung)
+---
+
+<section class="abschnitt" id="so-gehts">
+  <div class="wrap">
+    <header class="kopfzeile">
+      <p class="vorzeile">So geht’s</p>
+      <h2>Drei Schritte, und du stehst vorne</h2>
+    </header>
+    <ol class="schritte">
+      <li>
+        <h3>Erzählen</h3>
+        <p>Schreib in einem Satz, worum es geht und für wen. Material wie PDF, Word oder alte Folien kannst du anhängen.</p>
+      </li>
+      <li>
+        <h3>Zurücklehnen</h3>
+        <p>Deckwerk baut den roten Faden, gestaltet jede Folie und prüft sie wie ein strenger Kollege, bevor du sie siehst.</p>
+      </li>
+      <li>
+        <h3>Präsentieren</h3>
+        <p>Direkt vortragen oder als PowerPoint weitergeben. Passt etwas nicht, sag es einfach: „Mach Folie 3 ruhiger.“</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<style is:global>
+  .schritte { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(2rem, 5vw, 4rem); counter-reset: schritt; }
+  .schritte li { counter-increment: schritt; }
+  .schritte li::before { content: counter(schritt); display: block; font-size: clamp(3.5rem, 7vw, 5rem); font-weight: 650; line-height: 1; letter-spacing: -0.04em; color: var(--accent); margin-bottom: 1rem; }
+  .schritte h3 { font-size: 1.25rem; }
+  .schritte p { margin-top: 0.5rem; color: var(--muted); }
+  @media (max-width: 760px) { .schritte { grid-template-columns: 1fr; } }
+</style>

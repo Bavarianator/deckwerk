@@ -1,0 +1,28 @@
+---
+// Laufband mit echten Folien
+import { Image } from 'astro:assets'
+import { bild } from '../lib/seite'
+
+const band = ['strategie-1', 'pitch-5', 'foto-2', 'quartal-4', 'strategie-4', 'pitch-11', 'foto-7', 'quartal-3', 'pitch-8', 'strategie-5', 'foto-6', 'pitch-1']
+---
+
+<section class="band" aria-label="Folien, die Deckwerk gebaut hat">
+  <div class="band-in">
+    {
+      [0, 1].map((kopie) =>
+        band.map((id) => <Image {...bild(id, '320px', [320, 640])} class="folie" aria-hidden={kopie === 1 ? 'true' : undefined} alt={kopie === 1 ? '' : bild(id, '').alt} />),
+      )
+    }
+  </div>
+  <p class="wrap band-text">Alle Folien auf dieser Seite hat Deckwerk selbst gebaut.</p>
+</section>
+
+<style is:global>
+  .band { padding-block: 1rem 2rem; overflow: hidden; }
+  .band-in { display: flex; gap: 20px; width: max-content; padding-block: 20px 40px; animation: laufen 90s linear infinite; }
+  .band-in .folie { width: 320px; flex: none; }
+  .band:hover .band-in { animation-play-state: paused; }
+  @keyframes laufen { to { transform: translateX(calc(-50% - 10px)); } }
+  @media (prefers-reduced-motion: reduce) { .band { overflow-x: auto; } .band-in { animation: none; } }
+  .band-text { font-size: 0.88rem; color: var(--muted); }
+</style>

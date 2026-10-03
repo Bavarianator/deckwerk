@@ -1,0 +1,58 @@
+---
+// Unter der Haube: Prüfung, MCP, Quellcode und letzte Versionen
+import { MCP, REPO, lint, neu, version } from '../lib/seite'
+---
+
+<section class="abschnitt technik" id="technik">
+  <div class="wrap">
+    <header class="kopfzeile">
+      <p class="vorzeile">Unter der Haube</p>
+      <h2>Für alle, die es genau wissen wollen</h2>
+    </header>
+    <div class="technik-raster">
+      <div>
+        <h3>Die Prüfung</h3>
+        <p>Autofit stuft die Schrift herunter, bis nichts überläuft. Danach prüft ein Lint Ränder, Mindestgröße, Überlappung, Textmenge und Rhythmus. Echte Ausgabe:</p>
+        <pre class="konsole"><code>{lint.length ? lint.join('\n') : '0 Fehler, 0 Warnungen'}</code></pre>
+      </div>
+      <div>
+        <h3>Für Agenten</h3>
+        <p>Deckwerk ist auch ein MCP-Server mit 20 Werkzeugen. Claude Code, Codex und Vibe bauen damit Decks direkt aus dem Terminal.</p>
+        <pre class="konsole"><code>{MCP}</code></pre>
+        <button type="button" data-copy={MCP}>Befehl kopieren</button>
+      </div>
+      <div>
+        <h3>Offen</h3>
+        <p>
+          Quellcode unter der <a href={`${REPO}/blob/master/LICENSE`}>AGPL-3.0</a> auf <a href={REPO}>GitHub</a>. Electron und React,
+          ein fester Layout-Katalog, PPTX mit nativen Objekten.{version && ` Aktuell Version ${version}.`}
+        </p>
+        {
+          neu.length > 0 && (
+            <ol class="versionen">
+              {neu.map((r) => (
+                <li>
+                  <a href={r.url}>{r.name}</a>
+                  <span>{r.datum}</span>
+                </li>
+              ))}
+            </ol>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .technik-raster { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(2rem, 5vw, 4rem); }
+  .technik-raster > * { min-width: 0; }
+  .technik-raster p { margin-top: 0.6rem; color: var(--muted); font-size: 0.95rem; }
+  .konsole { margin: 1rem 0 0; padding: 1rem 1.1rem; overflow-x: auto; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--r); font-size: 0.78rem; line-height: 1.6; white-space: pre-wrap; max-height: 260px; }
+  .technik button[data-copy] { margin-top: 0.75rem; }
+  .versionen { list-style: none; padding: 0; margin-top: 1rem; }
+  .versionen li { padding-block: 0.6rem; border-top: 1px solid var(--border); }
+  .versionen a { font-weight: 600; }
+  .versionen span { margin-left: 0.6rem; font-size: 0.84rem; color: var(--muted); }
+  @media (max-width: 980px) { .technik-raster { grid-template-columns: 1fr; } }
+</style>

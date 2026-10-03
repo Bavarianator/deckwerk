@@ -1,0 +1,143 @@
+---
+// Live-Demo: Beispiel-Decks durchklicken, mit Briefing, Ablauf und Sprechernotiz
+import { Image } from 'astro:assets'
+import { THEMES, base, bild, decks, folien, groesse } from '../lib/seite'
+
+const BRIEF = { audience: 'Für wen', goal: 'Ziel', tone: 'Ton' } as const
+---
+
+<section class="abschnitt flaeche" id="demo">
+  <div class="wrap">
+    <header class="kopfzeile">
+      <p class="vorzeile">Ausprobieren</p>
+      <h2>Klick dich durch Präsentationen, die Deckwerk gebaut hat</h2>
+    </header>
+    <div class="pillen" role="group" aria-label="Beispiel wählen">
+      {
+        Object.entries(decks).map(([name, d], i) => (
+          <button type="button" class="pille" data-deck={name} aria-pressed={i === 0 ? 'true' : 'false'}>
+            {d.title}
+          </button>
+        ))
+      }
+    </div>
+    {
+      Object.entries(decks).map(([name, d], i) => (
+        <div class="spieler" data-deck={name} hidden={i > 0}>
+          <div class="spieler-haupt">
+            <div class="buehne" tabindex="0" aria-label={`${d.title}: klicken oder Pfeiltasten zum Blättern`}>
+              {d.slides.map((id, n) => (
+                <Image {...bild(id, '(max-width: 980px) 100vw, 740px')} class="folie" hidden={n > 0} loading="lazy" />
+              ))}
+            </div>
+            <div class="leiste">
+              <button type="button" data-schritt="-1" aria-label="Vorige Folie">←</button>
+              <span class="zaehler" aria-live="polite">1 / {d.slides.length}</span>
+              <button type="button" data-schritt="1" aria-label="Nächste Folie">→</button>
+              <button type="button" class="vollbild">Vollbild</button>
+              <span class="downloads">
+                {d.dl.map((f) => (
+                  <a href={`${base}${f}`} download>
+                    {f.endsWith('.pptx') ? 'PowerPoint' : 'PDF'} <small>{groesse(f)}</small>
+                  </a>
+                ))}
+              </span>
+            </div>
+            <div class="notiz">
+              <b>Das könntest du sagen</b>
+              {d.slides.map((id, n) => <p hidden={n > 0}>{folien[id].notes || '–'}</p>)}
+            </div>
+          </div>
+          <aside class="storyline" aria-label="Für wen und Ablauf">
+            <dl class="briefing">
+              {Object.entries(BRIEF).map(([k, label]) => d.brief[k as keyof typeof BRIEF] && (
+                <div>
+                  <dt>{label}</dt>
+                  <dd>{d.brief[k as keyof typeof BRIEF]}</dd>
+                </div>
+              ))}
+              <div>
+                <dt>Stil</dt>
+                <dd>{THEMES[d.theme] ?? d.theme}</dd>
+              </div>
+            </dl>
+            <p class="storyline-titel">Ablauf</p>
+            <ol>
+              {d.slides.map((id, n) => (
+                <li>
+                  <button type="button" aria-current={n === 0 ? 'true' : undefined}>
+                    {folien[id].title || folien[id].layout}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  // Deck wählen, blättern per Klick, Pfeiltasten und Ablauf, Vollbild
+  const wahl = [...document.querySelectorAll<HTMLButtonElement>('#demo .pille')]
+  const spieler = [...document.querySelectorAll<HTMLElement>('.spieler')]
+  for (const b of wahl)
+    b.addEventListener('click', () => {
+      wahl.forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+      spieler.forEach((s) => (s.hidden = s.dataset.deck !== b.dataset.deck))
+    })
+  for (const s of spieler) {
+    const buehne = s.querySelector<HTMLElement>('.buehne')!
+    const bilder = [...buehne.querySelectorAll('img')]
+    const notizen = [...s.querySelectorAll<HTMLElement>('.notiz p')]
+    const punkte = [...s.querySelectorAll<HTMLButtonElement>('.storyline button')]
+    const zaehler = s.querySelector('.zaehler')!
+    let i = 0
+    const zeige = (n: number) => {
+      i = (n + bilder.length) % bilder.length
+      bilder.forEach((f, k) => (f.hidden = k !== i))
+      notizen.forEach((p, k) => (p.hidden = k !== i))
+      punkte.forEach((p, k) => (k === i ? p.setAttribute('aria-current', 'true') : p.removeAttribute('aria-current')))
+      zaehler.textContent = `${i + 1} / ${bilder.length}`
+      if (bilder[i + 1]) bilder[i + 1].loading = 'eager' // nächste Folie vorladen
+    }
+    buehne.addEventListener('click', () => zeige(i + 1))
+    s.querySelectorAll<HTMLButtonElement>('[data-schritt]').forEach((b) => b.addEventListener('click', () => zeige(i + Number(b.dataset.schritt))))
+    punkte.forEach((p, k) => p.addEventListener('click', () => zeige(k)))
+    s.querySelector('.vollbild')!.addEventListener('click', () => buehne.requestFullscreen?.())
+    s.addEventListener('keydown', (e) => {
+      const schritt = { ArrowRight: 1, PageDown: 1, ArrowLeft: -1, PageUp: -1 }[e.key]
+      if (!schritt) return
+      e.preventDefault()
+      zeige(i + schritt)
+    })
+  }
+</script>
+
+<style is:global>
+  .spieler { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3rem); align-items: start; }
+  .buehne { cursor: pointer; border-radius: 6px; }
+  .buehne:fullscreen { display: grid; place-items: center; background: #000; }
+  .buehne:fullscreen .folie { width: auto; max-width: 100vw; max-height: 100vh; border-radius: 0; box-shadow: none; }
+  .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.92rem; }
+  .leiste button { height: 36px; min-width: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--panel); cursor: pointer; }
+  .leiste button:hover { border-color: var(--text); }
+  .zaehler { min-width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .downloads { display: flex; gap: 1rem; margin-left: auto; }
+  .downloads small { color: var(--muted); }
+  .notiz { margin-top: 1.5rem; font-size: 0.95rem; color: var(--muted); max-width: 70ch; }
+  .notiz b, .storyline-titel { display: block; margin-bottom: 0.3rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+  .briefing { display: grid; gap: 0.6rem; padding-bottom: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .briefing div { display: grid; grid-template-columns: 5.5em 1fr; gap: 0.5rem; }
+  .briefing dt { color: var(--muted); }
+  .storyline-titel { padding-left: 8px; margin-bottom: 0.5rem; }
+  .storyline ol { list-style: none; padding: 0; counter-reset: folie; max-height: 440px; overflow-y: auto; }
+  .storyline li { counter-increment: folie; }
+  .storyline button { display: grid; grid-template-columns: 2.2em 1fr; width: 100%; padding: 7px 8px; border: 0; border-radius: 7px; background: none; text-align: left; font-size: 0.9rem; line-height: 1.4; color: var(--muted); cursor: pointer; }
+  .storyline button::before { content: counter(folie, decimal-leading-zero); font: 500 0.8rem/1.75 var(--mono); }
+  .storyline button:hover { background: var(--panel); color: var(--text); }
+  .storyline button[aria-current] { background: var(--accent-soft); color: var(--text); }
+  .storyline button[aria-current]::before { color: var(--accent); }
+  @media (max-width: 980px) { .spieler { grid-template-columns: 1fr; } .storyline ol { max-height: 320px; } }
+</style>

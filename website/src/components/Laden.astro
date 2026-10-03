@@ -1,0 +1,56 @@
+---
+// Installation für Mac und Linux
+import { APPIMAGE, DMG, INSTALL, INSTALL_MAC, appimage, mb } from '../lib/seite'
+---
+
+<section class="abschnitt flaeche" id="laden">
+  <div class="wrap">
+    <header class="kopfzeile">
+      <p class="vorzeile">Kostenlos laden</p>
+      <h2>In zwei Minuten startklar</h2>
+    </header>
+    <div class="plattformen">
+      <div>
+        <h3>Mac (Apple Silicon, ab M1)</h3>
+        <ol class="anleitung">
+          <li><a class="knopf" href={DMG}>Deckwerk für Mac laden</a></li>
+          <li>Die Datei öffnen und Deckwerk in „Programme“ ziehen.</li>
+          <li>Blockiert macOS den ersten Start: Systemeinstellungen → Datenschutz &amp; Sicherheit → „Trotzdem öffnen“.</li>
+        </ol>
+        <p class="klein">Oder im Terminal, das richtet auch die Agenten ein:</p>
+        <div class="befehl">
+          <code>{INSTALL_MAC}</code>
+          <button type="button" data-copy={INSTALL_MAC}>Kopieren</button>
+        </div>
+      </div>
+      <div>
+        <h3>Linux (und Windows mit WSL)</h3>
+        <ol class="anleitung">
+          <li>Terminal öffnen, meist mit <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>T</kbd>.</li>
+          <li>
+            Diesen Befehl einfügen und mit Enter bestätigen:
+            <div class="befehl">
+              <code>{INSTALL}</code>
+              <button type="button" data-copy={INSTALL}>Kopieren</button>
+            </div>
+          </li>
+          <li>Deckwerk im Startmenü öffnen. Updates holst du mit demselben Befehl.</li>
+        </ol>
+        <p class="klein">
+          Lieber eine einzelne Datei? <a href={APPIMAGE}>AppImage laden{appimage ? ` (${mb(appimage.size)})` : ''}</a>, braucht libfuse2.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style is:global>
+  .plattformen { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 6vw, 5rem); }
+  .plattformen > *, .anleitung > * { min-width: 0; }
+  .plattformen > div { padding-top: 1.4rem; border-top: 2px solid var(--text); }
+  .plattformen h3 { font-size: 1.25rem; }
+  .anleitung { margin: 1.2rem 0; padding-left: 1.3rem; display: grid; gap: 0.8rem; color: var(--muted); }
+  .anleitung li::marker { color: var(--accent); font-weight: 650; }
+  .anleitung .knopf { margin-top: -4px; }
+  @media (max-width: 880px) { .plattformen { grid-template-columns: 1fr; } }
+</style>
