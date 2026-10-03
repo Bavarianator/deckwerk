@@ -13,16 +13,15 @@ const bilder = import.meta.glob<{ default: ImageMetadata }>('../assets/folien/*.
 const folien = data.folien as Record<string, Folie>
 const decks = data.decks as Record<string, Deck>
 const THEMES: Record<string, string> = { beratung: 'Beratung', keynote: 'Keynote', schweiz: 'Schweiz', redaktion: 'Redaktion', zen: 'Zen' }
-const bild = (id: string, sizes: string) => ({
+const bild = (id: string, sizes: string, widths = [480, 960, 1600]) => ({
   src: bilder[`../assets/folien/${id}.webp`].default,
   alt: folien[id].title ? `Folie „${folien[id].title}“` : `Folie im Layout ${folien[id].layout}`,
   sizes,
-  widths: [480, 960, 1600],
+  widths,
   format: 'webp' as const,
 })
-const pick = (deck: string, layout: string) => decks[deck].slides.find((id) => folien[id].layout === layout)!
 
-// GitHub-Daten beim Build (Pages-Workflow baut auch bei Releases und wöchentlich neu); ohne Netz bleiben die Stellen weg
+// GitHub-Daten beim Build (Pages-Workflow baut täglich neu); ohne Netz bleiben die Stellen weg
 const gh = async (path: string) => {
   try {
     const token = process.env.GITHUB_TOKEN
@@ -45,6 +44,7 @@ const groesse = (f: string) => { try { return mb(statSync(join(process.cwd(), 'p
 const REPO = 'https://github.com/Bavarianator/deckwerk'
 const MAC_REPO = 'https://github.com/Bavarianator/deckwerk-macos'
 const APPIMAGE = `${REPO}/releases/latest/download/Deckwerk-x86_64.AppImage`
+const DMG = `${MAC_REPO}/releases/download/latest/Deckwerk-arm64.dmg` // laufender Mac-Build, wie install.sh ohne Version
 const INSTALL = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh'
 const INSTALL_MAC = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-macos/main/install.sh | sh'
 const UNINSTALL = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/uninstall.sh | sh'
@@ -56,53 +56,61 @@ const beispiel = decks.strategie.dl.find((f) => f.endsWith('.pptx'))
 
 const MENUS: { name: string; links: [href: string, label: string, hint: string][] }[] = [
   {
-    name: 'Produkt',
+    name: 'Entdecken',
     links: [
-      ['#beispiele', 'Beispiele', 'Echte Folien aus vier Decks'],
-      ['#ablauf', 'Ablauf', 'Vom Satz zum Deck in vier Schritten'],
-      ['#funktionen', 'Funktionen', 'Gestalten, Diagramme, Fotos, Freisteller'],
-      ['#praesentieren', 'Präsentieren', 'Referentenansicht, Morph, Fernbedienung'],
-      ['#export', 'Export', 'PowerPoint, PDF, PNG und Handout'],
-      ['#agenten', 'Agenten', 'MCP-Server für Claude Code, Codex, Vibe'],
-      ['#daten', 'Daten', 'Was deinen Rechner verlässt'],
-      ['#faq', 'FAQ', 'Kosten, Plattformen, Updates'],
+      ['#so-gehts', 'So geht’s', 'In drei Schritten zur fertigen Präsentation'],
+      ['#wofuer', 'Wofür?', 'Bericht, Pitch, Strategie, Antrag'],
+      ['#abnehmen', 'Was Deckwerk dir abnimmt', 'Geschichte, Gestaltung, Kontrolle'],
+      ['#kosten', 'Was es kostet', 'Die App ist kostenlos'],
+      ['#daten', 'Deine Daten', 'Was deinen Rechner verlässt'],
+      ['#faq', 'Fragen', 'Antworten in Klartext'],
     ],
   },
   {
-    name: 'Demos',
+    name: 'Ausprobieren',
     links: [
-      ['#demo', 'Live-Präsentation', 'Beispiel-Decks im Browser durchblättern'],
-      ['#looks', 'Theme-Umschalter', 'Ein Inhalt in fünf Themes'],
-      ['#formate', 'Formate', '16:9, Post, Story und A4'],
-      ['#pruefung', 'Lint-Prüfung', 'Echte Meldungen der Engine'],
-      ...(beispiel ? [[`${base}${beispiel}`, 'Beispiel als PowerPoint', `${decks.strategie.title}, ${groesse(beispiel)}`] as [string, string, string]] : []),
+      ['#demo', 'Präsentationen durchklicken', 'Vier fertige Beispiele im Browser'],
+      ['#looks', 'Stil wechseln', 'Ein Inhalt in fünf Looks'],
+      ['#formate', 'Formate', 'Präsentation, Post, Story, Handout'],
+      ...(beispiel ? [[`${base}${beispiel}`, 'Beispiel als PowerPoint', `„${decks.strategie.title}“, ${groesse(beispiel)}`] as [string, string, string]] : []),
+      ['#laden', 'Kostenlos laden', 'Für Mac und Linux'],
     ],
   },
   {
     name: 'GitHub',
     links: [
-      [REPO, 'Repository', sterne ? `Quellcode und Doku · ★ ${sterne}` : 'Quellcode und Doku'],
-      [`${REPO}/releases`, 'Releases', version ? `Aktuell ${version}` : 'Alle Versionen'],
-      ...(neu.length ? [['#neu', 'Neuigkeiten', 'Was die letzten Versionen gebracht haben'] as [string, string, string]] : []),
+      [REPO, 'Quellcode', sterne ? `Repository auf GitHub · ★ ${sterne}` : 'Repository auf GitHub'],
+      [`${REPO}/releases`, 'Versionen', version ? `Aktuell ${version}` : 'Alle Releases'],
+      ['#technik', 'Unter der Haube', 'Prüfung, Agenten, Neuigkeiten'],
       [`${REPO}/issues/new`, 'Fehler melden', 'Issue auf GitHub öffnen'],
-      [`${REPO}/issues`, 'Ideen und Fragen', 'Offene Issues ansehen'],
       [`${REPO}#entwicklung`, 'Mitentwickeln', 'Bauen, testen, Layouts ergänzen'],
       [MAC_REPO, 'macOS-Fassung', 'Für Macs mit Apple Silicon'],
-      [`${REPO}/blob/master/LICENSE`, 'Lizenz', 'AGPL-3.0'],
+      [`${REPO}/blob/master/LICENSE`, 'Lizenz', 'AGPL-3.0, frei und offen'],
     ],
   },
 ]
 
-const halb = '(max-width: 760px) 100vw, 560px'
-const galerie = [pick('strategie', 'cover'), pick('pitch', 'kpi-grid'), pick('quartal', 'chart'), decks.foto.slides[5], pick('strategie', 'statement'), pick('pitch', 'timeline')]
+// Hero: ein Satz wird getippt, dann legen sich echte Folien des passenden Beispiel-Decks aufeinander, die Titelfolie zuletzt obenauf
+const SZENEN = [
+  { satz: 'Quartalsbericht für die Geschäftsführung: Wir liegen 9 % über Plan und brauchen zwei neue Stellen.', deck: 'quartal', folien: [4, 3, 1] },
+  { satz: 'Präsentation für unsere Gesellschafter: drei neue Standorte für unser Café.', deck: 'foto', folien: [3, 2, 1] },
+  { satz: 'Pitch für einen Schulbuchverlag: Unser Rechtschreib-Tool soll an 20 Schulen starten.', deck: 'pitch', folien: [8, 5, 1] },
+]
+const band = ['strategie-1', 'pitch-5', 'foto-2', 'quartal-4', 'strategie-4', 'pitch-11', 'foto-7', 'quartal-3', 'pitch-8', 'strategie-5', 'foto-6', 'pitch-1']
+const WOFUER = [
+  ['quartal-3', 'Bericht für den Chef', 'Zahlen, die auf einen Blick sitzen, und eine klare Bitte am Ende.'],
+  ['pitch-8', 'Pitch für Partner', 'Problem, Lösung, Beweis: eine Geschichte, die überzeugt.'],
+  ['strategie-4', 'Strategie für den Führungskreis', 'Große Gedanken ruhig und klar auf den Punkt gebracht.'],
+  ['foto-6', 'Antrag bei Bank oder Gesellschaftern', 'Mit Fotos, Kennzahlen und einer Entscheidung, um die du bittest.'],
+] as const
 const formate = [
   ['16:9', 'Präsentation', 'format-16-9-1'],
   ['1:1', 'Instagram-Post', 'format-1-1-1'],
   ['9:16', 'Story', 'format-9-16-1'],
   ['A4', 'Handout', 'format-a4-1'],
 ]
-const BRIEF = { audience: 'Publikum', goal: 'Ziel', tone: 'Ton' } as const
-const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft jede einzelne als Bild und exportiert nach PowerPoint, PDF und PNG. Open Source für Linux und macOS.'
+const BRIEF = { audience: 'Für wen', goal: 'Ziel', tone: 'Ton' } as const
+const beschreibung = 'Sag in einem Satz, was du zeigen willst: Deckwerk schreibt die Geschichte, gestaltet die Folien, prüft jede einzelne und liefert eine PowerPoint, die du weiterbearbeiten kannst. Kostenlos für Mac und Linux.'
 ---
 
 <!doctype html>
@@ -151,7 +159,7 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
             ))
           }
         </nav>
-        <a class="knopf klein" href="#installieren">Installieren</a>
+        <a class="knopf klein" href="#laden"><span class="lang">Kostenlos laden</span><span class="kurz">Laden</span></a>
         <details class="aufklapp handy">
           <summary aria-label="Menü öffnen">Menü</summary>
           <div class="flyout">
@@ -175,44 +183,86 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
     <main id="inhalt">
       <section class="hero wrap">
         <div class="hero-text">
-          <p class="vorzeile">KI-Präsentationsstudio · Open Source</p>
-          <h1>Ein Satz rein.<br />Ein Deck raus.</h1>
+          <h1>Sag, was du zeigen willst. <span class="akzent">Deckwerk baut die Präsentation.</span></h1>
           <p class="lede">
-            Deckwerk schreibt die Storyline, baut die Folien aus 29 Layouts, prüft jede einzelne als Bild und exportiert nach
-            PowerPoint, PDF und PNG. Danach gestaltest du frei weiter, per Chat oder direkt auf der Folie.
+            Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet jede Folie und prüft sie, bevor du sie siehst. Am
+            Ende hast du eine PowerPoint-Datei, die du ganz normal weiterbearbeiten kannst.
           </p>
-          <div class="befehl">
-            <code>{INSTALL}</code>
-            <button type="button" data-copy={INSTALL}>Kopieren</button>
-          </div>
-          <p class="hinweis">
-            <a class="knopf" href="#demo">Live-Demo ansehen</a>
-            <a href={APPIMAGE}>AppImage{appimage ? ` (${mb(appimage.size)})` : ''}</a>
-            <a href="#installieren">macOS</a>
+          <p class="aktionen">
+            <a class="knopf gross" href="#laden">Kostenlos laden</a>
+            <a class="knopf zweit gross" href="#demo">Beispiele ansehen</a>
           </p>
+          <p class="hinweis">Für Mac und Linux · Open Source · keine Anmeldung bei uns</p>
         </div>
-        <figure class="hero-bild">
-          <Image {...bild(pick('foto', 'cover'), '(max-width: 980px) 100vw, 620px')} loading="eager" fetchpriority="high" class="folie" />
-          <figcaption>Titelfolie aus dem Beispiel-Deck „{decks.foto.title}“, gerendert von Deckwerk.</figcaption>
-        </figure>
-        <ul class="fakten">
-          <li><b>KI-Zugang</b> über Claude Code, Codex, Mistral Vibe oder einen Anthropic-API-Key</li>
-          <li><b>Lokal</b> gerendert und exportiert, Decks liegen als Datei auf deinem Rechner</li>
-          <li><b>Frei</b> unter der AGPL-3.0{version && `, Version ${version}`}</li>
-        </ul>
+        <div class="buehne-hero" aria-label="Beispiel: Aus einem Satz wird eine Präsentation">
+          {
+            SZENEN.map((s, i) => (
+              <div class:list={['szene', { fertig: i === 0 }]} data-satz={s.satz} hidden={i > 0}>
+                <div class="eingabe">
+                  <span class="eingabe-label">Was möchtest du zeigen?</span>
+                  <p class="eingabe-text">{s.satz}</p>
+                </div>
+                <div class="stapel">
+                  {s.folien.map((n) => (
+                    <Image {...bild(`${s.deck}-${n}`, '(max-width: 980px) 80vw, 460px', [480, 960])} class="folie" loading={i === 0 ? 'eager' : 'lazy'} />
+                  ))}
+                </div>
+                <p class="status">
+                  <span>Geschichte steht</span>
+                  <span>Folien gestaltet</span>
+                  <span>Alles geprüft</span>
+                </p>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="band" aria-label="Folien, die Deckwerk gebaut hat">
+        <div class="band-in">
+          {
+            [0, 1].map((kopie) =>
+              band.map((id) => <Image {...bild(id, '320px', [320, 640])} class="folie" aria-hidden={kopie === 1 ? 'true' : undefined} alt={kopie === 1 ? '' : bild(id, '').alt} />),
+            )
+          }
+        </div>
+        <p class="wrap band-text">Alle Folien auf dieser Seite hat Deckwerk selbst gebaut und gerendert.</p>
+      </section>
+
+      <section class="abschnitt" id="so-gehts">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">So geht’s</p>
+            <h2>Drei Schritte, und du stehst vorne</h2>
+          </header>
+          <ol class="schritte">
+            <li>
+              <h3>Erzählen</h3>
+              <p>Schreib in einem Satz, worum es geht und für wen. Wenn du magst, häng Material an: ein PDF, ein Word-Dokument, alte Folien oder eine Tabelle.</p>
+            </li>
+            <li>
+              <h3>Zurücklehnen</h3>
+              <p>Deckwerk überlegt sich den roten Faden, wählt für jede Folie das passende Layout, sucht Fotos und schreibt dir Notizen für den Vortrag.</p>
+            </li>
+            <li>
+              <h3>Präsentieren</h3>
+              <p>Direkt aus Deckwerk vortragen oder als PowerPoint und PDF weitergeben. Gefällt dir etwas nicht, sag es einfach: „Mach Folie 3 ruhiger.“</p>
+            </li>
+          </ol>
+        </div>
       </section>
 
       <section class="abschnitt" id="demo">
         <div class="wrap">
           <header class="kopfzeile">
-            <p class="vorzeile">Live-Demo</p>
-            <h2>Blättere durch Decks, die Deckwerk aus einem Briefing gebaut hat</h2>
+            <p class="vorzeile">Ausprobieren</p>
+            <h2>Klick dich durch Präsentationen, die Deckwerk gebaut hat</h2>
             <p class="lede">
-              Vier Beispiel-Decks, jede Folie von der App gerendert. Daneben Briefing und Storyline: Die Titel allein erzählen die
-              Geschichte. Darunter die Sprechernotiz, die Deckwerk zu jeder Folie schreibt.
+              Vier Beispiele, Folie für Folie. Daneben siehst du, für wen sie gedacht sind, und den Ablauf. Darunter steht, was du
+              beim Vortrag sagen könntest – auch das schreibt Deckwerk.
             </p>
           </header>
-          <div class="demo-wahl" role="group" aria-label="Beispiel-Deck wählen">
+          <div class="demo-wahl" role="group" aria-label="Beispiel wählen">
             {
               Object.entries(decks).map(([name, d], i) => (
                 <button type="button" data-deck={name} aria-pressed={i === 0 ? 'true' : 'false'}>
@@ -225,9 +275,9 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
             Object.entries(decks).map(([name, d], i) => (
               <div class="spieler" data-deck={name} hidden={i > 0}>
                 <div class="spieler-haupt">
-                  <div class="buehne" tabindex="0" aria-label={`${d.title}: Klick oder Pfeiltasten blättern`}>
+                  <div class="buehne" tabindex="0" aria-label={`${d.title}: klicken oder Pfeiltasten zum Blättern`}>
                     {d.slides.map((id, n) => (
-                      <Image {...bild(id, '(max-width: 980px) 100vw, 740px')} class="folie" hidden={n > 0} loading={i === 0 && n < 2 ? 'eager' : 'lazy'} />
+                      <Image {...bild(id, '(max-width: 980px) 100vw, 740px')} class="folie" hidden={n > 0} loading="lazy" />
                     ))}
                   </div>
                   <div class="leiste">
@@ -238,17 +288,17 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
                     <span class="downloads">
                       {d.dl.map((f) => (
                         <a href={`${base}${f}`} download>
-                          {f.endsWith('.pptx') ? 'PowerPoint' : 'PDF'} <small>{groesse(f)}</small>
+                          {f.endsWith('.pptx') ? 'Als PowerPoint' : 'Als PDF'} <small>{groesse(f)}</small>
                         </a>
                       ))}
                     </span>
                   </div>
                   <div class="notiz">
-                    <b>Sprechernotiz</b>
+                    <b>Das könntest du sagen</b>
                     {d.slides.map((id, n) => <p hidden={n > 0}>{folien[id].notes || '–'}</p>)}
                   </div>
                 </div>
-                <aside class="storyline" aria-label="Briefing und Storyline">
+                <aside class="storyline" aria-label="Für wen und Ablauf">
                   <dl class="briefing">
                     {Object.entries(BRIEF).map(([k, label]) => d.brief[k as keyof typeof BRIEF] && (
                       <div>
@@ -257,10 +307,11 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
                       </div>
                     ))}
                     <div>
-                      <dt>Theme</dt>
+                      <dt>Stil</dt>
                       <dd>{THEMES[d.theme] ?? d.theme}</dd>
                     </div>
                   </dl>
+                  <p class="storyline-titel">Ablauf – schon die Titel erzählen die Geschichte</p>
                   <ol>
                     {d.slides.map((id, n) => (
                       <li>
@@ -277,112 +328,59 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
         </div>
       </section>
 
-      <section class="abschnitt" id="beispiele">
+      <section class="abschnitt" id="wofuer">
         <div class="wrap">
           <header class="kopfzeile">
-            <p class="vorzeile">Beispiele</p>
-            <h2>Jede Folie auf dieser Seite hat Deckwerk gebaut</h2>
-            <p class="lede">Aus den Beispiel-Decks im Repository und gerendert mit der App selbst. Vier Decks, vier Themes, und jeder Titel sagt, worum es auf der Folie geht.</p>
+            <p class="vorzeile">Wofür?</p>
+            <h2>Für alles, wo du andere überzeugen willst</h2>
+            <p class="lede">Ob Chef, Kundin, Beirat oder Bank: Deckwerk baut keine bunten Folien, sondern eine Präsentation mit klarer Aussage.</p>
           </header>
           <div class="galerie">
             {
-              galerie.map((id) => {
-                const f = bild(id, halb)
-                return (
-                  <figure>
-                    <a href={f.src.src} aria-label={`${f.alt} groß anzeigen`}>
-                      <Image {...f} class="folie" />
-                    </a>
-                    <figcaption>
-                      {folien[id].title}
-                      <span>
-                        {folien[id].layout} · {THEMES[folien[id].theme]}
-                      </span>
-                    </figcaption>
-                  </figure>
-                )
-              })
+              WOFUER.map(([id, titel, text]) => (
+                <figure>
+                  <Image {...bild(id, '(max-width: 760px) 100vw, 560px')} class="folie" />
+                  <figcaption>
+                    {titel}
+                    <span>{text}</span>
+                  </figcaption>
+                </figure>
+              ))
             }
           </div>
         </div>
       </section>
 
-      <section class="abschnitt" id="ablauf">
+      <section class="abschnitt" id="abnehmen">
         <div class="wrap">
           <header class="kopfzeile">
-            <p class="vorzeile">Ablauf</p>
-            <h2>Vom ersten Satz zum fertigen Deck in vier Schritten</h2>
-          </header>
-          <ol class="schritte">
-            <li>
-              <h3>Beschreiben</h3>
-              <p>„Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum.“ Im Chat, aus einer Vorlage oder auf einer leeren Folie.</p>
-            </li>
-            <li>
-              <h3>Material anhängen</h3>
-              <p>PDF, Word, PowerPoint, Text, Markdown, CSV oder JSON. Die KI baut das Deck daraus und recherchiert auf Wunsch im Web.</p>
-            </li>
-            <li>
-              <h3>Storyline und Folien</h3>
-              <p>Pyramidenprinzip und Action Titles: Die Titel allein erzählen die Geschichte. Dazu Layouts, Diagramme, Bilder und Sprechernotizen.</p>
-            </li>
-            <li>
-              <h3>Prüfen und exportieren</h3>
-              <p>Jede Folie wird gerendert, vermessen und geprüft. Dann PowerPoint, PDF, PNG oder ein Handout.</p>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section class="abschnitt" id="pruefung">
-        <div class="wrap zwei">
-          <header class="kopfzeile">
-            <p class="vorzeile">Prüfung</p>
-            <h2>Jede Folie wird als Bild geprüft, bevor du sie siehst</h2>
-            <p class="lede">
-              Autofit misst jeden Textblock und setzt die Schrift stufenweise kleiner, bis nichts mehr überläuft. Danach prüft der
-              Lint Ränder, Mindestgröße, Überlappung, Textmenge und den Rhythmus des ganzen Decks. Die KI bekommt die Meldungen
-              nach jedem Schritt und bessert selbst nach.
-            </p>
-          </header>
-          <figure class="konsole">
-            <pre><code>{data.lint.length ? data.lint.join('\n') : '0 Fehler, 0 Warnungen'}</code></pre>
-            <figcaption>Echte Ausgabe des Lints für ein Deck, das dreimal hintereinander eine Liste zeigt.</figcaption>
-          </figure>
-        </div>
-      </section>
-
-      <section class="abschnitt" id="funktionen">
-        <div class="wrap">
-          <header class="kopfzeile">
-            <p class="vorzeile">Funktionen</p>
-            <h2>Ein Studio, in dem du nach der KI weiterarbeitest</h2>
-            <p class="lede">Deckwerk liefert kein fertiges Bild, sondern ein Deck, das du anfassen kannst wie in einem Design-Programm.</p>
+            <p class="vorzeile">Was Deckwerk dir abnimmt</p>
+            <h2>Die Arbeit, die sonst den Abend frisst</h2>
           </header>
           <dl class="liste">
             <div>
-              <dt>Frei gestalten</dt>
-              <dd>Texte, Formen, Fotos, Icons, Diagramme, QR-Codes, Video und Audio. Mit Gruppen, Zuschnitt, Hilfslinien und Einrasten.</dd>
+              <dt>Der rote Faden</dt>
+              <dd>Jede Folie hat eine klare Aussage, und die Titel ergeben zusammen die Geschichte. So, wie Berater ihre Präsentationen bauen.</dd>
             </div>
             <div>
-              <dt>Layouts lösen</dt>
-              <dd>Aus einer Layout-Folie werden einzelne Texte und Bilder, die du frei verschiebst. Farben einer Folie lassen sich im ganzen Deck ersetzen.</dd>
+              <dt>Die Gestaltung</dt>
+              <dd>29 Layouts, passende Schriften und Farben. Ruhig und aufgeräumt statt überladen. Deine Firmenfarbe kann Deckwerk übernehmen.</dd>
             </div>
             <div>
-              <dt>Diagramme mit Datentabelle</dt>
-              <dd>Säulen, Balken, gestapelt, Wasserfall, Linie und Ring. Die Zahlen bleiben editierbar, auch in PowerPoint.</dd>
+              <dt>Die Kontrolle</dt>
+              <dd>Deckwerk schaut sich jede Folie an wie ein strenger Kollege: Läuft etwas über? Ist die Schrift zu klein? Steht zu viel Text drauf? Erst dann bekommst du sie zu sehen.</dd>
             </div>
             <div>
-              <dt>Fotos und KI-Bilder</dt>
-              <dd>Zuerst aus deinem Ordner <code>~/Deckwerk/assets</code>, sonst von Unsplash mit Bildnachweis in den Notizen. Eigene Bilder erzeugt die KI über OpenAI, Mammouth oder den Codex-Login.</dd>
+              <dt>Fotos und Diagramme</dt>
+              <dd>Fotos aus deinem eigenen Ordner oder von Unsplash, auf Wunsch eigene KI-Bilder. Diagramme mit echten Zahlen, die du später noch ändern kannst.</dd>
             </div>
             <div>
-              <dt>Freisteller auf dem Rechner</dt>
-              <dd>„Hintergrund entfernen“ läuft lokal. Das Modell wird einmal geladen, danach dauert es Sekunden.</dd>
+              <dt>Die Notizen für den Vortrag</dt>
+              <dd>Zu jeder Folie steht, was du sagen kannst. Beim Präsentieren siehst nur du sie, mit Uhr und der nächsten Folie.</dd>
             </div>
             <div>
-              <dt>Speichern ohne Speichern</dt>
-              <dd>Jede Änderung landet nach 1,5 Sekunden in der <code>deck.json</code>. Höchstens alle 10 Minuten legt Deckwerk den vorigen Stand ab, bis zu 100 Versionen pro Deck.</dd>
+              <dt>Das Speichern</dt>
+              <dd>Jede Änderung wird sofort gesichert, frühere Stände kannst du wiederherstellen. Nichts geht verloren.</dd>
             </div>
           </dl>
         </div>
@@ -391,15 +389,12 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
       <section class="abschnitt" id="looks">
         <div class="wrap">
           <header class="kopfzeile">
-            <p class="vorzeile">Looks</p>
-            <h2>Derselbe Inhalt sieht in jedem Theme fertig aus</h2>
-            <p class="lede">
-              Fünf Themes im Katalog, dazu eigene Designs, die die KI passend zum Inhalt entwirft: Farbwelt, Schriften, Struktur.
-              Unten dieselben drei Folien aus dem Strategie-Deck in allen fünf Themes.
-            </p>
+            <p class="vorzeile">Stil</p>
+            <h2>Ein Klick, und der ganze Look ist ein anderer</h2>
+            <p class="lede">Probier es aus: Dieselben drei Folien in fünf Stilen. Oder Deckwerk entwirft dir einen eigenen, passend zum Thema.</p>
           </header>
           <div class="looks">
-            <div class="looks-wahl" role="radiogroup" aria-label="Theme wählen">
+            <div class="looks-wahl" role="radiogroup" aria-label="Stil wählen">
               {
                 Object.entries(THEMES).map(([id, name], i) => (
                   <label>
@@ -419,16 +414,6 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
               ))
             }
           </div>
-          <dl class="liste">
-            <div>
-              <dt>Hausstil</dt>
-              <dd>Sag „merk dir …“, und Deckwerk trägt die Vorliebe in <code>~/Deckwerk/hausstil.md</code> ein. Sie gilt für jedes künftige Deck.</dd>
-            </div>
-            <div>
-              <dt>Schriften im Gepäck</dt>
-              <dd>18 Schriften liegen bei. Die Schriften der Premium-Themes werden in die PowerPoint-Datei eingebettet, beim Empfänger fehlt nichts.</dd>
-            </div>
-          </dl>
         </div>
       </section>
 
@@ -437,10 +422,7 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
           <header class="kopfzeile">
             <p class="vorzeile">Formate</p>
             <h2>Aus einer Präsentation wird ein Post, eine Story oder ein Handout</h2>
-            <p class="lede">
-              Acht Formate von 16:9 über Instagram bis A4. Deckwerk rechnet ein Deck um oder legt eine Kopie an. Die Layouts ordnen
-              sich neu, freie Elemente wandern mit.
-            </p>
+            <p class="lede">Deckwerk ordnet die Folien für das neue Format neu an. Du musst nichts von Hand verschieben.</p>
           </header>
           <div class="formate">
             {
@@ -457,217 +439,193 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
         </div>
       </section>
 
-      <section class="abschnitt" id="praesentieren">
+      <section class="abschnitt" id="vortragen">
         <div class="wrap zwei">
           <header class="kopfzeile">
-            <p class="vorzeile">Präsentieren</p>
-            <h2>Vorgetragen wird direkt aus Deckwerk</h2>
+            <p class="vorzeile">Vortragen und weitergeben</p>
+            <h2>Vorne stehen oder die Datei verschicken – beides geht</h2>
             <p class="lede">
-              Mit einem zweiten Bildschirm erscheint das Publikumsfenster dort. Du siehst die Referentenansicht mit Notizen, Uhr,
-              Sprechzeit und der nächsten Folie.
+              Mit einem zweiten Bildschirm sieht das Publikum die Folien und du deine Notizen, die Uhr und was als Nächstes kommt.
+              {beispiel && <> Oder du schickst die Datei: <a href={`${base}${beispiel}`} download>Beispiel als PowerPoint laden</a> ({groesse(beispiel)}).</>}
             </p>
           </header>
           <dl class="liste eng">
             <div>
+              <dt>PowerPoint zum Weiterbearbeiten</dt>
+              <dd>Texte, Bilder und Diagramme bleiben einzeln anfassbar, Schriften und Animationen sind dabei. Dazu PDF und Bilder.</dd>
+            </div>
+            <div>
               <dt>Laserpointer und Stift</dt>
-              <dd>Mit <kbd>L</kbd> und <kbd>D</kbd>, das Publikum sieht beides live.</dd>
-            </div>
-            <div>
-              <dt>Morph</dt>
-              <dd>Gleicher Text oder dasselbe Foto wandert von der vorigen Folie herüber, etwa ein Agenda-Punkt in den Kapiteltitel.</dd>
-            </div>
-            <div>
-              <dt>Animationen</dt>
-              <dd>Aufbauten, Übergänge und ein Animationsstil für das ganze Deck: keine, ruhig, standard oder lebhaft.</dd>
+              <dd>Auf Tastendruck zeigen oder etwas einkreisen, das Publikum sieht es live.</dd>
             </div>
             <div>
               <dt>Handy als Fernbedienung</dt>
               <dd>QR-Code scannen, blättern und Notizen lesen. Handy und Rechner müssen im selben WLAN sein.</dd>
             </div>
-          </dl>
-        </div>
-      </section>
-
-      <section class="abschnitt" id="export">
-        <div class="wrap zwei">
-          <header class="kopfzeile">
-            <p class="vorzeile">Export</p>
-            <h2>Die PowerPoint-Datei lässt sich weiterbearbeiten</h2>
-            <p class="lede">
-              Keine Bilder von Folien: Texte, Formen, Bilder, Diagramme, Video und Audio kommen als native Objekte an, Animationen
-              und Übergänge laufen mit.
-              {beispiel && <> Probier es aus: <a href={`${base}${beispiel}`} download>„{decks.strategie.title}“ als PowerPoint</a> ({groesse(beispiel)}).</>}
-            </p>
-          </header>
-          <dl class="liste eng">
             <div>
-              <dt>.pptx</dt>
-              <dd>Editierbare Objekte, Animationen, eingebettete Schriften.</dd>
-            </div>
-            <div>
-              <dt>.pdf und .png</dt>
-              <dd>Pixelgenau wie die Vorschau, eine PNG-Datei pro Folie.</dd>
-            </div>
-            <div>
-              <dt>.md</dt>
-              <dd>Handout mit allen Sprechernotizen.</dd>
-            </div>
-            <div>
-              <dt>Ehrlich gesagt</dt>
-              <dd>Die PowerPoint-Dateien sind gegen LibreOffice geprüft. Die Abnahme in echtem PowerPoint steht noch aus, und Diagramme sehen dort leicht anders aus als in der Vorschau.</dd>
+              <dt>Weiche Übergänge</dt>
+              <dd>Ein Wort oder ein Foto gleitet von einer Folie zur nächsten, wie bei „Morph“ in PowerPoint.</dd>
             </div>
           </dl>
         </div>
       </section>
 
-      <section class="abschnitt" id="agenten">
+      <section class="abschnitt" id="kosten">
         <div class="wrap zwei">
           <header class="kopfzeile">
-            <p class="vorzeile">Agenten</p>
-            <h2>Claude Code, Codex und Vibe bauen Decks direkt aus dem Terminal</h2>
-            <p class="lede">
-              Deckwerk ist zugleich ein MCP-Server mit 20 Werkzeugen: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen,
-              Fotos suchen, rendern, exportieren. Der Installer trägt ihn ein, samt Skill, der dem Agenten den Arbeitsablauf
-              beibringt.
-            </p>
+            <p class="vorzeile">Was es kostet</p>
+            <h2>Deckwerk ist kostenlos. Die KI bringst du mit.</h2>
           </header>
-          <figure class="konsole">
-            <pre><code><span class="leise"># von Hand eintragen (macht der Installer schon)</span>
-{MCP}
-
-<span class="leise"># dann im Agenten:</span>
-&gt; Baue ein Deck über unser Q3, 10 Folien,
-  mit Diagrammen aus umsatz.csv</code></pre>
-            <button type="button" data-copy={MCP}>Befehl kopieren</button>
-          </figure>
+          <div class="text">
+            <p>
+              Die App kostet nichts und ist Open Source. Für das Denken nutzt Deckwerk die KI, die du vielleicht schon hast: dein Abo
+              bei <b>Claude</b>, <b>ChatGPT</b> (über Codex) oder <b>Mistral</b>, oder einen eigenen API-Schlüssel von Anthropic.
+            </p>
+            <p>
+              Beim ersten Start sucht Deckwerk von selbst, was auf deinem Rechner angemeldet ist. Du musst nur noch auswählen.
+            </p>
+          </div>
         </div>
       </section>
 
       <section class="abschnitt" id="daten">
-        <div class="wrap">
+        <div class="wrap zwei">
           <header class="kopfzeile">
-            <p class="vorzeile">Daten</p>
-            <h2>Nur was die KI wirklich braucht, verlässt deinen Rechner</h2>
+            <p class="vorzeile">Deine Daten</p>
+            <h2>Deine Präsentationen bleiben auf deinem Rechner</h2>
           </header>
-          <dl class="liste">
-            <div>
-              <dt>Geht an deinen KI-Anbieter</dt>
-              <dd>Deine Wünsche, der Inhalt des Decks, angehängtes Material und gerenderte Folienbilder. Je nach Zugang an Anthropic, OpenAI oder Mistral.</dd>
-            </div>
-            <div>
-              <dt>Bleibt auf dem Rechner</dt>
-              <dd>Rendering, Export und Freisteller. Decks liegen als <code>deck.json</code> unter <code>~/Deckwerk</code>, Schlüssel verschlüsselt im System-Schlüsselbund.</dd>
-            </div>
-            <div>
-              <dt>Abgeschirmte Agenten</dt>
-              <dd>Läuft der Chat über Claude Code, Codex oder Vibe, bekommt das CLI nur die Deckwerk-Werkzeuge, keine Shell und keinen Dateizugriff.</dd>
-            </div>
-            <div>
-              <dt>Fernbedienung</dt>
-              <dd>Sie läuft über unverschlüsseltes HTTP mit Token. In fremden WLANs ist sie mitlesbar.</dd>
-            </div>
-          </dl>
+          <div class="text">
+            <p>
+              Deckwerk speichert alles als Datei bei dir, nicht in einer Cloud von uns. Ein Konto bei uns gibt es nicht. An die KI geht
+              nur, was sie zum Bauen braucht: dein Wunsch, der Inhalt und die Folienbilder, je nach Wahl an Anthropic, OpenAI oder
+              Mistral.
+            </p>
+            <p>Rendern, Exportieren und das Freistellen von Fotos passieren auf deinem Rechner.</p>
+          </div>
         </div>
       </section>
-
-      {
-        neu.length > 0 && (
-          <section class="abschnitt" id="neu">
-            <div class="wrap zwei">
-              <header class="kopfzeile">
-                <p class="vorzeile">Neu</p>
-                <h2>Deckwerk wird laufend besser</h2>
-                <p class="lede">
-                  Die letzten Versionen, direkt aus den <a href={`${REPO}/releases`}>Releases auf GitHub</a>.
-                </p>
-              </header>
-              <ol class="versionen">
-                {neu.map((r) => (
-                  <li>
-                    <a href={r.url}>{r.name}</a>
-                    <span>{r.datum}</span>
-                    <p>{r.text}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </section>
-        )
-      }
 
       <section class="abschnitt" id="faq">
         <div class="wrap zwei">
           <header class="kopfzeile">
-            <p class="vorzeile">FAQ</p>
-            <h2>Häufige Fragen</h2>
+            <p class="vorzeile">Fragen</p>
+            <h2>Was Leute vorher wissen wollen</h2>
           </header>
           <div class="faq">
             <details>
-              <summary>Was kostet Deckwerk?</summary>
-              <p>Die App ist kostenlos und Open Source (AGPL-3.0). Die KI läuft über dein vorhandenes Abo bei Claude Code, Codex oder Mistral Vibe oder über einen Anthropic-API-Key, den du selbst bezahlst.</p>
+              <summary>Brauche ich Technikkenntnisse?</summary>
+              <p>Nein. Auf dem Mac lädst du die App wie jede andere. Unter Linux kopierst du einmal einen Befehl ins Terminal, die Anleitung steht unten. Danach redest du mit Deckwerk wie mit einem Kollegen.</p>
             </details>
             <details>
-              <summary>Welche Modelle stehen zur Wahl?</summary>
-              <p>Mit Claude: Opus 5.5, Fable 5.1, Sonnet 5 oder Haiku 4.5. Über Codex und Vibe die Modelle dieser CLIs.</p>
+              <summary>Was, wenn mir eine Folie nicht gefällt?</summary>
+              <p>Sag es einfach, zum Beispiel „Folie 4 bitte mit Foto“ oder „weniger Text“. Oder du klickst direkt auf die Folie und änderst Text, Bilder und Farben selbst, ähnlich wie in Canva.</p>
             </details>
             <details>
-              <summary>Läuft Deckwerk unter Windows oder auf dem Mac?</summary>
-              <p>Unter Windows über WSL. Für Macs mit Apple Silicon gibt es eine eigene Fassung; sie ist nicht von Apple notarisiert, beim DMG-Weg bestätigst du den ersten Start einmal unter „Datenschutz &amp; Sicherheit“.</p>
+              <summary>Funktioniert das mit PowerPoint und Keynote?</summary>
+              <p>Deckwerk speichert eine normale PowerPoint-Datei, die sich in PowerPoint, Keynote, LibreOffice oder Google Slides öffnen lässt. Getestet ist sie bisher mit LibreOffice; Diagramme sehen in PowerPoint leicht anders aus als in der Vorschau.</p>
             </details>
             <details>
-              <summary>Brauche ich eine Internetverbindung?</summary>
-              <p>Für die KI, die Fotosuche und den einmaligen Download des Freisteller-Modells ja. Bearbeiten, Präsentieren und Exportieren gehen ohne.</p>
+              <summary>Kann ich meine Firmenfarben und Schriften nutzen?</summary>
+              <p>Ja. Sag Deckwerk deine Markenfarbe, und mit „merk dir …“ hältst du Vorlieben für alle künftigen Präsentationen fest.</p>
             </details>
             <details>
-              <summary>Wie aktualisiere oder entferne ich Deckwerk?</summary>
-              <p>Zum Aktualisieren den Installationsbefehl erneut ausführen. Zum Entfernen:</p>
+              <summary>Läuft Deckwerk unter Windows?</summary>
+              <p>Über WSL, das ist ein in Windows eingebautes Linux. Eine eigene Windows-Version gibt es noch nicht.</p>
+            </details>
+            <details>
+              <summary>Brauche ich Internet?</summary>
+              <p>Für die KI und die Fotosuche ja. Bearbeiten, Vortragen und Exportieren gehen auch offline.</p>
+            </details>
+            <details>
+              <summary>Wie werde ich Deckwerk wieder los?</summary>
+              <p>Unter Linux mit diesem Befehl, deine Präsentationen bleiben dabei erhalten:</p>
               <div class="befehl">
                 <code>{UNINSTALL}</code>
                 <button type="button" data-copy={UNINSTALL}>Kopieren</button>
               </div>
-              <p>Deine Decks unter <code>~/Deckwerk</code> bleiben erhalten.</p>
-            </details>
-            <details>
-              <summary>Wo melde ich einen Fehler?</summary>
-              <p>Als <a href={`${REPO}/issues/new`}>Issue auf GitHub</a>. Hilfreich sind die Deckwerk-Version, dein System und, wenn möglich, die betroffene <code>deck.json</code>.</p>
             </details>
           </div>
         </div>
       </section>
 
-      <section class="abschnitt" id="installieren">
+      <section class="abschnitt" id="laden">
         <div class="wrap">
           <header class="kopfzeile">
-            <p class="vorzeile">Installieren</p>
-            <h2>Ein Befehl im Terminal, und Deckwerk ist da</h2>
+            <p class="vorzeile">Kostenlos laden</p>
+            <h2>In zwei Minuten startklar</h2>
           </header>
           <div class="plattformen">
             <div>
-              <h3>Linux und Windows (WSL)</h3>
-              <div class="befehl">
-                <code>{INSTALL}</code>
-                <button type="button" data-copy={INSTALL}>Kopieren</button>
-              </div>
-              <p>
-                Lädt die fertige App nach <code>~/.local/share/deckwerk</code>, legt einen Startmenü-Eintrag an und trägt Deckwerk in
-                Claude Code, Codex und Vibe ein. Git und Node.js brauchst du nicht.
-              </p>
-              <p class="links">
-                <a href={APPIMAGE}>AppImage{appimage ? ` (${mb(appimage.size)})` : ''}, braucht libfuse2</a>
-                <a href={`${REPO}#installation`}>Aus dem Quellcode</a>
-              </p>
-            </div>
-            <div>
-              <h3>macOS (Apple Silicon)</h3>
+              <h3>Mac (Apple Silicon, ab M1)</h3>
+              <ol class="anleitung">
+                <li><a class="knopf" href={DMG}>Deckwerk für Mac laden</a></li>
+                <li>Die Datei öffnen und Deckwerk in „Programme“ ziehen.</li>
+                <li>Beim ersten Start blockiert macOS die App, weil sie nicht von Apple geprüft ist: Systemeinstellungen → Datenschutz &amp; Sicherheit → „Trotzdem öffnen“.</li>
+              </ol>
+              <p class="klein">Oder im Terminal, das richtet auch die Agenten ein:</p>
               <div class="befehl">
                 <code>{INSTALL_MAC}</code>
                 <button type="button" data-copy={INSTALL_MAC}>Kopieren</button>
               </div>
-              <p>Kopiert Deckwerk nach „Programme“ und trägt es in die Agenten-CLIs ein. Die App ist nicht notarisiert; lies das kurze Skript vorher.</p>
-              <p class="links">
-                <a href={`${MAC_REPO}/releases/latest`}>DMG laden</a>
-                <a href={MAC_REPO}>macOS-Fassung auf GitHub</a>
+            </div>
+            <div>
+              <h3>Linux (und Windows mit WSL)</h3>
+              <ol class="anleitung">
+                <li>Terminal öffnen, meist mit <kbd>Strg</kbd>+<kbd>Alt</kbd>+<kbd>T</kbd>.</li>
+                <li>
+                  Diesen Befehl kopieren, einfügen und mit Enter bestätigen:
+                  <div class="befehl">
+                    <code>{INSTALL}</code>
+                    <button type="button" data-copy={INSTALL}>Kopieren</button>
+                  </div>
+                </li>
+                <li>Deckwerk im Startmenü öffnen. Updates holst du mit demselben Befehl.</li>
+              </ol>
+              <p class="klein">
+                Lieber eine einzelne Datei? <a href={APPIMAGE}>AppImage laden{appimage ? ` (${mb(appimage.size)})` : ''}</a>, braucht libfuse2.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="abschnitt technik" id="technik">
+        <div class="wrap">
+          <header class="kopfzeile">
+            <p class="vorzeile">Unter der Haube</p>
+            <h2>Für alle, die es genau wissen wollen</h2>
+          </header>
+          <div class="technik-raster">
+            <div>
+              <h3>Die Prüfung</h3>
+              <p>Autofit misst jeden Textblock und stuft die Schrift herunter, bis nichts mehr überläuft. Danach prüft ein Lint Ränder, Mindestgröße, Überlappung, Textmenge und den Rhythmus des Decks. Echte Ausgabe für ein Deck mit drei Listen hintereinander:</p>
+              <pre class="konsole"><code>{data.lint.length ? data.lint.join('\n') : '0 Fehler, 0 Warnungen'}</code></pre>
+            </div>
+            <div>
+              <h3>Für Agenten</h3>
+              <p>Deckwerk ist auch ein MCP-Server mit 20 Werkzeugen. Claude Code, Codex und Vibe bauen damit Decks direkt aus dem Terminal; der Installer trägt ihn samt Skill ein.</p>
+              <pre class="konsole"><code>{MCP}</code></pre>
+              <button type="button" data-copy={MCP}>Befehl kopieren</button>
+            </div>
+            <div>
+              <h3>Offen</h3>
+              <p>
+                Quellcode unter der <a href={`${REPO}/blob/master/LICENSE`}>AGPL-3.0</a> auf <a href={REPO}>GitHub</a>. Electron und React,
+                ein fester Layout-Katalog, PPTX mit nativen Objekten.{version && ` Aktuell Version ${version}.`}
+              </p>
+              {
+                neu.length > 0 && (
+                  <ol class="versionen">
+                    {neu.map((r) => (
+                      <li>
+                        <a href={r.url}>{r.name}</a>
+                        <span>{r.datum}</span>
+                        <p>{r.text}</p>
+                      </li>
+                    ))}
+                  </ol>
+                )
+              }
             </div>
           </div>
         </div>
@@ -681,7 +639,7 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
             <img src={`${base}favicon.svg`} alt="" width="22" height="22" />
             <span>Deckwerk</span>
           </a>
-          <p>KI-Präsentationsstudio. Open Source unter der <a href={`${REPO}/blob/master/LICENSE`}>AGPL-3.0</a>.</p>
+          <p>Präsentationen aus einem Satz. Kostenlos und Open Source.</p>
         </div>
         {
           MENUS.map((m) => (
@@ -701,6 +659,8 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
     </footer>
 
     <script>
+      const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches
+
       // Kopieren-Knöpfe
       for (const b of document.querySelectorAll<HTMLButtonElement>('[data-copy]'))
         b.addEventListener('click', async () => {
@@ -726,7 +686,28 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
         for (const d of menues) if (d.open) (d.open = false), d.querySelector('summary')!.focus()
       })
 
-      // Live-Demo: Deck wählen, blättern per Klick, Pfeiltasten und Storyline, Vollbild
+      // Hero: Satz tippen, Folien auflegen, Status abhaken, nächste Szene. Ohne Bewegung bleibt die erste Szene fertig stehen.
+      const szenen = [...document.querySelectorAll<HTMLElement>('.szene')]
+      const pause = (ms: number) => new Promise((r) => setTimeout(r, ms))
+      if (ruhig) szenen[0]?.classList.add('fertig')
+      else
+        (async () => {
+          for (let i = 0; ; i = (i + 1) % szenen.length) {
+            const s = szenen[i]
+            const text = s.querySelector('.eingabe-text')!
+            szenen.forEach((x) => (x.hidden = x !== s))
+            s.classList.remove('fertig')
+            for (let n = 0; n <= s.dataset.satz!.length; n++) {
+              text.textContent = s.dataset.satz!.slice(0, n)
+              await pause(28)
+            }
+            await pause(350)
+            s.classList.add('fertig')
+            await pause(5200)
+          }
+        })()
+
+      // Live-Demo: Deck wählen, blättern per Klick, Pfeiltasten und Ablauf, Vollbild
       const wahl = [...document.querySelectorAll<HTMLButtonElement>('.demo-wahl button')]
       const spieler = [...document.querySelectorAll<HTMLElement>('.spieler')]
       for (const b of wahl)
@@ -736,18 +717,18 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
         })
       for (const s of spieler) {
         const buehne = s.querySelector<HTMLElement>('.buehne')!
-        const folien = [...buehne.querySelectorAll('img')]
+        const bilder = [...buehne.querySelectorAll('img')]
         const notizen = [...s.querySelectorAll<HTMLElement>('.notiz p')]
         const punkte = [...s.querySelectorAll<HTMLButtonElement>('.storyline button')]
         const zaehler = s.querySelector('.zaehler')!
         let i = 0
         const zeige = (n: number) => {
-          i = (n + folien.length) % folien.length
-          folien.forEach((f, k) => (f.hidden = k !== i))
+          i = (n + bilder.length) % bilder.length
+          bilder.forEach((f, k) => (f.hidden = k !== i))
           notizen.forEach((p, k) => (p.hidden = k !== i))
           punkte.forEach((p, k) => (k === i ? p.setAttribute('aria-current', 'true') : p.removeAttribute('aria-current')))
-          zaehler.textContent = `${i + 1} / ${folien.length}`
-          if (folien[i + 1]) folien[i + 1].loading = 'eager' // nächste Folie vorladen
+          zaehler.textContent = `${i + 1} / ${bilder.length}`
+          if (bilder[i + 1]) bilder[i + 1].loading = 'eager' // nächste Folie vorladen
         }
         buehne.addEventListener('click', () => zeige(i + 1))
         s.querySelectorAll<HTMLButtonElement>('[data-schritt]').forEach((b) => b.addEventListener('click', () => zeige(i + Number(b.dataset.schritt))))
@@ -778,6 +759,7 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
     --accent-hover: #4346c4;
     --accent-soft: #eeeffd;
     --on-accent: #fff;
+    --ok: #1f8a4c;
     --shadow-slide: 0 1px 1px rgb(22 22 26 / 0.04), 0 12px 40px rgb(22 22 26 / 0.1), 0 40px 80px -24px rgb(22 22 26 / 0.22);
     --shadow-float: 0 1px 3px rgb(22 22 26 / 0.06), 0 16px 40px rgb(22 22 26 / 0.12);
     --sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -799,6 +781,7 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
       --accent-hover: #8d97ff;
       --accent-soft: rgb(122 134 255 / 0.14);
       --on-accent: #0b0c10;
+      --ok: #4fc58c;
       --shadow-slide: 0 0 0 1px rgb(255 255 255 / 0.04), 0 24px 60px -20px rgb(0 0 0 / 0.7);
       --shadow-float: 0 0 0 1px var(--border-strong), 0 24px 60px -12px rgb(0 0 0 / 0.6);
       color-scheme: dark;
@@ -815,7 +798,7 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   a:hover { color: var(--accent-hover); }
   button { font: inherit; color: inherit; }
   h1, h2, h3 { margin: 0; font-weight: 650; text-wrap: balance; }
-  h1 { font-size: clamp(2.75rem, 6vw, 4.25rem); line-height: 1.02; letter-spacing: -0.04em; }
+  h1 { font-size: clamp(2.4rem, 5.2vw, 3.9rem); line-height: 1.04; letter-spacing: -0.04em; }
   h2 { font-size: clamp(1.75rem, 3.6vw, 2.6rem); line-height: 1.12; letter-spacing: -0.03em; }
   h3 { font-size: 1.05rem; line-height: 1.3; letter-spacing: -0.01em; }
   p, dl, dd, figure, ol, ul { margin: 0; }
@@ -826,12 +809,13 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
 
   .wrap { width: min(100% - 32px, var(--wrap)); margin-inline: auto; }
   /* Grid-Spalten sonst so breit wie der längste Befehl (nowrap) → seitliches Scrollen */
-  .hero > *, .zwei > *, .plattformen > *, .spieler > *, .galerie > * { min-width: 0; }
+  .hero > *, .zwei > *, .plattformen > *, .spieler > *, .galerie > *, .technik-raster > *, .anleitung > * { min-width: 0; }
   .skip { position: absolute; left: 16px; top: -48px; z-index: 10; padding: 8px 14px; background: var(--panel); border-radius: 6px; }
   .skip:focus { top: 12px; }
   .vorzeile { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.9rem; }
   .lede { color: var(--muted); font-size: clamp(1.02rem, 1.5vw, 1.15rem); max-width: 60ch; margin-top: 1.1rem; }
-  .klein { font-size: 0.86rem; }
+  .klein { font-size: 0.88rem; color: var(--muted); }
+  .akzent { color: var(--accent); }
 
   /* Kopf und Menüs */
   .kopf { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
@@ -855,23 +839,57 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   .handy .flyout { left: auto; right: 0; width: min(92vw, 360px); max-height: calc(100vh - 90px); overflow-y: auto; gap: 0.5rem; }
   .handy .gruppe p { padding: 8px 12px 2px; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   @media (max-width: 880px) { .menue { display: none; } .kopf .knopf { margin-left: auto; } .handy { display: block; } }
-  .knopf { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 0.92rem; text-decoration: none; white-space: nowrap; }
+  .knopf { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 18px; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 0.92rem; text-decoration: none; white-space: nowrap; border: 1px solid transparent; }
   .knopf:hover { background: var(--accent-hover); color: var(--on-accent); }
   .knopf.klein { height: 36px; padding: 0 14px; }
+  .kurz { display: none; }
+  @media (max-width: 480px) { .kopf-in { gap: 0.75rem; } .lang { display: none; } .kurz { display: inline; } }
+  .knopf.gross { height: 48px; padding: 0 22px; font-size: 1rem; }
+  .knopf.zweit { background: transparent; color: var(--text); border-color: var(--border-strong); }
+  .knopf.zweit:hover { background: var(--panel); color: var(--text); border-color: var(--text); }
 
   /* Hero */
-  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; padding-block: clamp(3rem, 8vw, 6.5rem) clamp(3rem, 6vw, 5rem); }
-  .hero .lede { font-size: clamp(1.08rem, 1.7vw, 1.22rem); }
-  .hero-bild figcaption, .formate figcaption, .konsole figcaption { margin-top: 0.8rem; font-size: 0.84rem; color: var(--muted); }
-  .hinweis { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin-top: 1.5rem; font-size: 0.94rem; }
-  .fakten { grid-column: 1 / -1; list-style: none; padding: 1.6rem 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem 2.5rem; border-top: 1px solid var(--border); font-size: 0.95rem; color: var(--muted); }
-  .fakten b { color: var(--text); font-weight: 600; }
-  @media (max-width: 980px) { .hero { grid-template-columns: 1fr; } .fakten { grid-template-columns: 1fr; } }
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; padding-block: clamp(3rem, 7vw, 6rem) clamp(3rem, 6vw, 4.5rem); }
+  .hero .lede { font-size: clamp(1.08rem, 1.6vw, 1.2rem); }
+  .aktionen { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+  .hinweis { margin-top: 1.1rem; font-size: 0.9rem; color: var(--muted); }
+  @media (max-width: 980px) { .hero { grid-template-columns: 1fr; } }
+
+  .buehne-hero { min-height: 420px; }
+  .eingabe { padding: 14px 16px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow-float); }
+  .eingabe-label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+  .eingabe-text { min-height: 3.2em; font-size: 1rem; line-height: 1.6; }
+  .szene:not(.fertig) .eingabe-text::after { content: ''; display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: -0.15em; background: var(--accent); animation: blinken 1s steps(1) infinite; }
+  @keyframes blinken { 50% { opacity: 0; } }
+  .stapel { position: relative; aspect-ratio: 16 / 11; margin-top: 18px; }
+  .stapel .folie { position: absolute; width: 78%; opacity: 0; transform: translateY(14px); transition: opacity 0.5s, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .stapel .folie:nth-child(1) { left: 0; top: 0; }
+  .stapel .folie:nth-child(2) { left: 11%; top: 13%; }
+  .stapel .folie:nth-child(3) { left: 22%; top: 26%; }
+  .fertig .stapel .folie { opacity: 1; transform: none; }
+  .fertig .stapel .folie:nth-child(2) { transition-delay: 0.45s; }
+  .fertig .stapel .folie:nth-child(3) { transition-delay: 0.9s; }
+  .status { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; margin-top: 14px; font-size: 0.86rem; color: var(--muted); }
+  .status span { opacity: 0.35; transition: opacity 0.3s, color 0.3s; }
+  .status span::before { content: '✓ '; color: var(--ok); }
+  .fertig .status span { opacity: 1; color: var(--text); }
+  .fertig .status span:nth-child(2) { transition-delay: 0.6s; }
+  .fertig .status span:nth-child(3) { transition-delay: 1.3s; }
+  @media (prefers-reduced-motion: reduce) { .stapel .folie, .status span { transition: none !important; } }
 
   .folie { width: 100%; border-radius: 6px; box-shadow: var(--shadow-slide); background: var(--panel); }
 
+  /* Laufband mit echten Folien */
+  .band { padding-block: 1rem 3rem; overflow: hidden; }
+  .band-in { display: flex; gap: 20px; width: max-content; padding-block: 20px 40px; animation: laufen 90s linear infinite; }
+  .band-in .folie { width: 320px; flex: none; }
+  .band:hover .band-in { animation-play-state: paused; }
+  @keyframes laufen { to { transform: translateX(calc(-50% - 10px)); } }
+  @media (prefers-reduced-motion: reduce) { .band { overflow-x: auto; } .band-in { animation: none; } }
+  .band-text { font-size: 0.88rem; color: var(--muted); }
+
   /* Befehl mit Kopieren */
-  .befehl { display: flex; align-items: center; gap: 10px; margin-top: 2rem; max-width: 100%; padding: 10px 10px 10px 16px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--r); }
+  .befehl { display: flex; align-items: center; gap: 10px; margin-top: 0.75rem; max-width: 100%; padding: 10px 10px 10px 16px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--r); }
   .befehl code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; color: var(--text); scrollbar-width: none; }
   button[data-copy] { flex: none; font: 600 0.82rem var(--sans); color: var(--accent); background: var(--accent-soft); border: 0; border-radius: 6px; padding: 7px 12px; cursor: pointer; }
   button[data-copy]:hover { color: var(--accent-hover); }
@@ -881,7 +899,16 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   .kopfzeile { max-width: 46rem; margin-bottom: clamp(2.25rem, 5vw, 3.5rem); }
   .zwei { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: start; }
   .zwei .kopfzeile { margin-bottom: 0; }
+  .text { display: grid; gap: 1rem; font-size: 1.05rem; color: var(--muted); }
+  .text b { color: var(--text); font-weight: 600; }
   @media (max-width: 880px) { .zwei { grid-template-columns: 1fr; } }
+
+  .schritte { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1.5rem, 4vw, 3rem); counter-reset: schritt; }
+  .schritte li { counter-increment: schritt; }
+  .schritte li::before { content: counter(schritt); display: block; font-size: clamp(3.5rem, 7vw, 5rem); font-weight: 650; line-height: 1; letter-spacing: -0.04em; color: var(--accent); margin-bottom: 1rem; }
+  .schritte h3 { font-size: 1.25rem; }
+  .schritte p { margin-top: 0.5rem; color: var(--muted); }
+  @media (max-width: 760px) { .schritte { grid-template-columns: 1fr; } }
 
   /* Live-Demo */
   .demo-wahl { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
@@ -890,7 +917,7 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   .demo-wahl [aria-pressed='true'], .looks-wahl input:checked + span { background: var(--text); border-color: var(--text); color: var(--bg); }
   .spieler { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: clamp(1.5rem, 3vw, 2.5rem); align-items: start; }
   .buehne { cursor: pointer; border-radius: 6px; }
-  .buehne:fullscreen { display: grid; place-items: center; background: #000; cursor: pointer; }
+  .buehne:fullscreen { display: grid; place-items: center; background: #000; }
   .buehne:fullscreen .folie { width: auto; max-width: 100vw; max-height: 100vh; border-radius: 0; box-shadow: none; }
   .leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.92rem; }
   .leiste button { height: 36px; min-width: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--panel); cursor: pointer; }
@@ -899,11 +926,12 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   .downloads { display: flex; gap: 1rem; margin-left: auto; }
   .downloads small { color: var(--muted); }
   .notiz { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.95rem; color: var(--muted); max-width: 70ch; }
-  .notiz b { display: block; margin-bottom: 0.3rem; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
-  .briefing { display: grid; gap: 0.6rem; padding-bottom: 1.2rem; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .notiz b, .storyline-titel { display: block; margin-bottom: 0.3rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); }
+  .briefing { display: grid; gap: 0.6rem; padding-bottom: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
   .briefing div { display: grid; grid-template-columns: 5.5em 1fr; gap: 0.5rem; }
   .briefing dt { color: var(--muted); }
-  .storyline ol { list-style: none; padding: 0; counter-reset: folie; max-height: 520px; overflow-y: auto; }
+  .storyline-titel { padding-left: 8px; margin-bottom: 0.5rem; }
+  .storyline ol { list-style: none; padding: 0; counter-reset: folie; max-height: 480px; overflow-y: auto; }
   .storyline li { counter-increment: folie; }
   .storyline button { display: grid; grid-template-columns: 2.2em 1fr; width: 100%; padding: 7px 8px; border: 0; border-radius: 7px; background: none; text-align: left; font-size: 0.9rem; line-height: 1.4; color: var(--muted); cursor: pointer; }
   .storyline button::before { content: counter(folie, decimal-leading-zero); font: 500 0.8rem/1.75 var(--mono); }
@@ -913,30 +941,18 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   @media (max-width: 980px) { .spieler { grid-template-columns: 1fr; } .storyline ol { max-height: 320px; } }
 
   .galerie { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 4vw, 3rem) clamp(1.25rem, 3vw, 2.5rem); }
-  .galerie figcaption { margin-top: 0.9rem; font-weight: 550; line-height: 1.4; }
-  .galerie figcaption span { display: block; margin-top: 0.2rem; font-weight: 400; font-size: 0.84rem; color: var(--muted); }
+  .galerie figcaption { margin-top: 1rem; font-weight: 600; font-size: 1.1rem; line-height: 1.35; }
+  .galerie figcaption span { display: block; margin-top: 0.25rem; font-weight: 400; font-size: 0.96rem; color: var(--muted); }
   @media (max-width: 760px) { .galerie { grid-template-columns: 1fr; } }
-
-  .schritte { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; counter-reset: schritt; }
-  .schritte li { counter-increment: schritt; padding-top: 1.1rem; border-top: 2px solid var(--text); }
-  .schritte li::before { content: counter(schritt, decimal-leading-zero); display: block; font: 600 0.84rem var(--mono); color: var(--accent); margin-bottom: 0.6rem; }
-  .schritte p { margin-top: 0.5rem; color: var(--muted); font-size: 0.96rem; }
-  @media (max-width: 980px) { .schritte { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 560px) { .schritte { grid-template-columns: 1fr; } }
 
   .liste { display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(2rem, 5vw, 4rem); }
   .liste > div { padding-block: 1.2rem; border-top: 1px solid var(--border); }
   .liste dt { font-weight: 600; }
-  .liste dd { margin-top: 0.35rem; color: var(--muted); font-size: 0.96rem; }
+  .liste dd { margin-top: 0.35rem; color: var(--muted); font-size: 0.98rem; }
   .liste.eng { grid-template-columns: 1fr; }
-  .looks + .liste { margin-top: clamp(2.5rem, 5vw, 3.5rem); }
   @media (max-width: 760px) { .liste { grid-template-columns: 1fr; } }
 
-  .konsole pre { margin: 0; padding: 1.25rem 1.4rem; overflow-x: auto; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--r); font-size: 0.84rem; line-height: 1.7; white-space: pre-wrap; }
-  .konsole .leise { color: var(--muted); }
-  .konsole button { margin-top: 0.8rem; }
-
-  /* Theme-Umschalter ohne JS: Radio + :has() */
+  /* Stil-Umschalter ohne JS: Radio + :has() */
   .looks-wahl { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
   .looks-wahl label { cursor: pointer; }
   .looks-wahl input { position: absolute; opacity: 0; pointer-events: none; }
@@ -952,14 +968,9 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
 
   /* Formate: Spaltenbreite = Seitenverhältnis, damit alle gleich hoch stehen */
   .formate { display: grid; grid-template-columns: 1.778fr 1fr 0.5625fr 0.707fr; gap: clamp(1rem, 2.5vw, 2rem); align-items: end; }
+  .formate figcaption { margin-top: 0.8rem; font-size: 0.86rem; color: var(--muted); }
   .formate b { color: var(--text); font-weight: 600; margin-right: 0.3rem; }
   @media (max-width: 760px) { .formate { grid-template-columns: 1fr 0.5625fr 0.707fr; } .formate figure:first-child { grid-column: 1 / -1; } }
-
-  .versionen { list-style: none; padding: 0; }
-  .versionen li { padding-block: 1.2rem; border-top: 1px solid var(--border); }
-  .versionen a { font-weight: 600; }
-  .versionen span { margin-left: 0.75rem; font-size: 0.86rem; color: var(--muted); }
-  .versionen p { margin-top: 0.4rem; color: var(--muted); font-size: 0.96rem; }
 
   .faq details { border-top: 1px solid var(--border); }
   .faq details:last-child { border-bottom: 1px solid var(--border); }
@@ -968,14 +979,27 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   .faq summary::after { content: '+'; position: absolute; right: 0; top: 1rem; font-weight: 400; font-size: 1.3rem; color: var(--muted); }
   .faq details[open] summary::after { content: '–'; }
   .faq details > :not(summary) { margin-bottom: 1.1rem; color: var(--muted); }
-  .faq .befehl { margin-top: 0; }
 
   .plattformen { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 4rem); }
   .plattformen > div { padding-top: 1.4rem; border-top: 2px solid var(--text); }
-  .plattformen .befehl { margin-top: 1rem; }
-  .plattformen p { margin-top: 1rem; color: var(--muted); font-size: 0.96rem; }
-  .plattformen .links { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; }
+  .plattformen h3 { font-size: 1.25rem; }
+  .anleitung { margin: 1.2rem 0 1.2rem; padding-left: 1.3rem; display: grid; gap: 0.8rem; color: var(--muted); }
+  .anleitung li::marker { color: var(--accent); font-weight: 650; }
+  .anleitung .knopf { margin-top: -4px; }
   @media (max-width: 880px) { .plattformen { grid-template-columns: 1fr; } }
+
+  /* Unter der Haube */
+  .technik { background: var(--panel-2); }
+  .technik-raster { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(2rem, 4vw, 3rem); }
+  .technik-raster p { margin-top: 0.6rem; color: var(--muted); font-size: 0.95rem; }
+  .konsole { margin: 1rem 0 0; padding: 1rem 1.1rem; overflow-x: auto; background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--r); font-size: 0.78rem; line-height: 1.6; white-space: pre-wrap; max-height: 320px; }
+  .technik button[data-copy] { margin-top: 0.75rem; }
+  .versionen { list-style: none; padding: 0; margin-top: 1rem; }
+  .versionen li { padding-block: 0.9rem; border-top: 1px solid var(--border); }
+  .versionen a { font-weight: 600; }
+  .versionen span { margin-left: 0.6rem; font-size: 0.84rem; color: var(--muted); }
+  .versionen p { margin-top: 0.3rem; font-size: 0.9rem; }
+  @media (max-width: 980px) { .technik-raster { grid-template-columns: 1fr; } }
 
   .fuss { border-top: 1px solid var(--border); padding-block: 3rem; color: var(--muted); font-size: 0.92rem; }
   .fuss-in { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem 3rem; }
@@ -983,8 +1007,8 @@ const beschreibung = 'Deckwerk schreibt die Storyline, baut die Folien, prüft j
   .fuss nav { display: grid; align-content: start; gap: 0.35rem; }
   .fuss nav p { margin: 0 0 0.3rem; font-weight: 600; color: var(--text); }
   .fuss nav a { color: var(--muted); text-decoration: none; }
-  .fuss a { white-space: nowrap; }
   .fuss nav a:hover { color: var(--text); }
+  .fuss-in > * { min-width: 0; }
   .fuss .klein { grid-column: 1 / -1; max-width: 80ch; padding-top: 1.5rem; border-top: 1px solid var(--border); }
   @media (max-width: 880px) { .fuss-in { grid-template-columns: 1fr 1fr; } .fuss-in > div:first-child { grid-column: 1 / -1; } }
 </style>
