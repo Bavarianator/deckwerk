@@ -2,10 +2,15 @@
 // Rahmen der Seite: Kopf, Fuß, Meta-Tags und die Skripte, die mehrere Abschnitte nutzen (Kopieren, Handy-Menü)
 import '@fontsource-variable/inter'
 import '../styles/basis.css'
-import { FUSS, KOPF, REPO, base } from '../lib/seite'
+import { FUSS, REPO, SEITEN, base } from '../lib/seite'
 
-const beschreibung = 'Sag in einem Satz, was du zeigen willst: Deckwerk schreibt die Geschichte, gestaltet die Folien, prüft jede einzelne und liefert eine PowerPoint, die du weiterbearbeiten kannst. Kostenlos für Mac und Linux.'
-const url = new URL(base, Astro.site)
+interface Props { titel?: string; beschreibung?: string }
+const {
+  titel = 'Deckwerk – Präsentationen aus einem Satz',
+  beschreibung = 'Sag in einem Satz, was du zeigen willst: Deckwerk schreibt die Geschichte, gestaltet die Folien, prüft jede einzelne und liefert eine PowerPoint, die du weiterbearbeiten kannst. Kostenlos für Mac und Linux.',
+} = Astro.props
+const url = new URL(Astro.url.pathname, Astro.site)
+const aktiv = (pfad: string) => Astro.url.pathname.endsWith(`/${pfad}`)
 ---
 
 <!doctype html>
@@ -13,18 +18,17 @@ const url = new URL(base, Astro.site)
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Deckwerk – Präsentationen aus einem Satz</title>
+    <title>{titel}</title>
     <meta name="description" content={beschreibung} />
     <link rel="canonical" href={url} />
     <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
-    <meta name="theme-color" content="#f2f2f4" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0c0d10" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#000000" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="de_DE" />
-    <meta property="og:title" content="Deckwerk – Präsentationen aus einem Satz" />
+    <meta property="og:title" content={titel} />
     <meta property="og:description" content={beschreibung} />
     <meta property="og:url" content={url} />
-    <meta property="og:image" content={new URL('og.jpg', url)} />
+    <meta property="og:image" content={new URL(`${base}og.jpg`, Astro.site)} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -38,13 +42,13 @@ const url = new URL(base, Astro.site)
           <span>Deckwerk</span>
         </a>
         <nav class="menue" aria-label="Hauptmenü">
-          {KOPF.map(([href, label]) => <a href={href}>{label}</a>)}
+          {SEITEN.map(([pfad, label]) => <a href={`${base}${pfad}`} aria-current={aktiv(pfad) ? 'page' : undefined}>{label}</a>)}
         </nav>
-        <a class="knopf klein" href="#laden"><span class="lang">Laden</span><span class="kurz">Laden</span></a>
+        <a class="knopf klein" href={`${base}laden/`}>Kostenlos laden</a>
         <details class="handy">
           <summary aria-label="Menü öffnen">Menü</summary>
           <nav class="flyout" aria-label="Menü">
-            {KOPF.map(([href, label]) => <a href={href}>{label}</a>)}
+            {SEITEN.map(([pfad, label]) => <a href={`${base}${pfad}`} aria-current={aktiv(pfad) ? 'page' : undefined}>{label}</a>)}
           </nav>
         </details>
       </div>
@@ -97,10 +101,10 @@ const url = new URL(base, Astro.site)
       // Apple-artiges Einblenden beim Scrollen; .bewegt startet Mini-Animationen nur, solange sie im Bild sind.
       // Klassen setzt erst das Skript: ohne JS ist alles sofort sichtbar.
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        const ziele = document.querySelectorAll<HTMLElement>('.kopf-mitte, .schritte li, .kachel, .formate figure, .plattform, .spieler, .looks, .faq')
+        const ziele = document.querySelectorAll<HTMLElement>('.kopf-mitte, .schritte li, .kachel, .formate figure, .plattform, .spieler, .looks, .faq, .weg')
         const zeigen = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && (e.target.classList.add('da'), zeigen.unobserve(e.target))), { rootMargin: '0px 0px -10% 0px' })
         ziele.forEach((el) => {
-          const geschwister = [...el.parentElement!.children].filter((x) => x.matches('.schritte li, .kachel, .formate figure, .plattform'))
+          const geschwister = [...el.parentElement!.children].filter((x) => x.matches('.schritte li, .kachel, .formate figure, .plattform, .weg'))
           el.style.transitionDelay = `${Math.max(0, geschwister.indexOf(el)) * 90}ms` // Kacheln einer Reihe nacheinander
           el.classList.add('zeigen')
           zeigen.observe(el)
@@ -129,18 +133,17 @@ const url = new URL(base, Astro.site)
   .marke:hover { color: var(--text); text-decoration: none; }
   .menue { display: flex; gap: 2rem; margin-left: auto; }
   .menue a { font-size: 0.8rem; color: var(--text); opacity: 0.8; }
-  .menue a:hover { opacity: 1; text-decoration: none; }
+  .menue a:hover, .menue a[aria-current] { opacity: 1; text-decoration: none; }
+  .menue a[aria-current] { font-weight: 600; }
   .handy { display: none; position: relative; }
   .handy summary { list-style: none; cursor: pointer; padding: 6px 10px; font-size: 0.85rem; color: var(--text); }
   .handy summary::-webkit-details-marker { display: none; }
   .handy .flyout { position: absolute; top: calc(100% + 10px); right: 0; z-index: 6; width: min(80vw, 240px); padding: 8px; display: grid; background: var(--kachel); border-radius: 14px; box-shadow: var(--schatten); }
   .handy .flyout a { padding: 10px 12px; border-radius: 8px; color: var(--text); font-weight: 500; }
   .handy .flyout a:hover { background: var(--grau); text-decoration: none; }
-  .kurz { display: none; }
   @media (max-width: 760px) { .menue { display: none; } .kopf .knopf { margin-left: auto; } .handy { display: block; } }
-  @media (max-width: 480px) { .lang { display: none; } .kurz { display: inline; } }
 
-  .fuss { background: var(--grau); border-top: 1px solid var(--linie); padding-block: 2.5rem 3rem; color: var(--muted); font-size: 0.78rem; line-height: 1.6; }
+  .fuss { background: var(--bg); border-top: 1px solid var(--linie); padding-block: 2.5rem 3rem; color: var(--muted); font-size: 0.78rem; line-height: 1.6; }
   .fuss-in { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 2rem 3rem; }
   .fuss-in > * { min-width: 0; }
   .fuss .marke { font-size: 0.9rem; }

@@ -7,11 +7,11 @@ const BAU = ['pitch-1', 'pitch-3', 'pitch-5', 'pitch-8', 'pitch-9', 'pitch-11']
 const VORTRAG = ['foto-1', 'foto-2', 'foto-3']
 ---
 
-<section class="abschnitt grau" id="so-gehts">
+<section class="abschnitt" id="so-gehts">
   <div class="wrap">
     <header class="kopf-mitte">
       <h2>So einfach.</h2>
-      <p class="unterzeile">Du erzählst, Deckwerk baut. Gefällt dir etwas nicht, sag es: „Mach Folie 3 ruhiger.“</p>
+      <p class="unterzeile">Gefällt dir etwas nicht, sag es: „Mach Folie 3 ruhiger.“</p>
     </header>
     <ol class="schritte">
       <li>
@@ -45,18 +45,18 @@ const VORTRAG = ['foto-1', 'foto-2', 'foto-3']
 
 <style is:global>
   .schritte { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(1rem, 2vw, 1.5rem); }
-  .schritte li { min-width: 0; padding: clamp(1.75rem, 3.5vw, 2.5rem); background: var(--kachel); border-radius: 28px; }
+  .schritte li { min-width: 0; padding: clamp(1.75rem, 3.5vw, 2.5rem); background: var(--kachel); box-shadow: inset 0 0 0 1px var(--rand); border-radius: 28px; }
   .schritt-nr { display: block; font-size: 0.9rem; font-weight: 600; color: var(--accent); margin-bottom: 0.4rem; }
   .schritte p { margin-top: 0.6rem; color: var(--muted); font-size: 1.05rem; }
   @media (max-width: 820px) { .schritte { grid-template-columns: 1fr; } }
 
   /* Mini-Szenen: gleiche Höhe, laufen in Schleife; .bewegt setzt das Skript in Seite.astro, solange die Kachel im Bild ist */
-  .mini { position: relative; height: 150px; margin-bottom: 1.75rem; border-radius: 16px; background: var(--grau); overflow: hidden; }
+  .mini { position: relative; height: 150px; margin-bottom: 1.75rem; border-radius: 16px; background: var(--bg); overflow: hidden; }
   .mini * { animation-play-state: paused !important; }
   .bewegt .mini * { animation-play-state: running !important; }
 
   .mini-tippen { display: grid; place-items: center; padding: 0 16px; }
-  .mini-feld { width: 100%; padding: 12px 14px; border-radius: 12px; background: var(--kachel); box-shadow: 0 4px 14px rgb(0 0 0 / 0.08); font-size: 0.9rem; white-space: nowrap; overflow: hidden; }
+  .mini-feld { width: 100%; padding: 12px 14px; border-radius: 12px; background: var(--kachel); box-shadow: inset 0 0 0 1px var(--rand); font-size: 0.9rem; white-space: nowrap; overflow: hidden; }
   .mini-feld span { display: inline-block; clip-path: inset(0 100% 0 0); animation: mini-tipp 5s steps(31) infinite; }
   @keyframes mini-tipp { 0% { clip-path: inset(0 100% 0 0); } 55%, 90% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 100% 0 0); } }
 

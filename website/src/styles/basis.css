@@ -1,38 +1,25 @@
 /* Gestaltung nach Apple-Produktseiten: Weiß und Hellgrau im Wechsel, große zentrierte Überschriften, ein Blau, runde Kacheln */
+/* Dunkle Produkt-Bühne: schwarzer Grund, leuchtende Produktaufnahmen, große weiße Typo, ein Blau */
 :root {
-  --bg: #ffffff;
-  --grau: #f5f5f7;
-  --kachel: #ffffff;
-  --text: #1d1d1f;
-  --muted: #6e6e73;
-  --linie: #d2d2d7;
-  --accent: #0071e3;
-  --accent-hover: #0077ed;
-  --link: #0066cc;
+  --bg: #000000;
+  --grau: #0a0a0c;
+  --kachel: #141417;
+  --kachel-2: #1c1c20;
+  --rand: rgb(255 255 255 / 0.08);
+  --text: #f5f5f7;
+  --muted: #86868b;
+  --linie: #2c2c30;
+  --accent: #0a84ff;
+  --accent-hover: #3395ff;
+  --link: #2997ff;
   --on-accent: #ffffff;
-  --ok: #1d8a4c;
-  --schatten: 0 2px 6px rgb(0 0 0 / 0.04), 0 24px 60px -12px rgb(0 0 0 / 0.18);
+  --ok: #30d158;
+  --schatten: 0 0 0 1px rgb(255 255 255 / 0.06), 0 30px 80px -20px rgb(0 0 0 / 0.9);
   --sans: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --breit: 1180px;
   --schmal: 760px;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #000000;
-    --grau: #0b0b0d;
-    --kachel: #1c1c1e;
-    --text: #f5f5f7;
-    --muted: #a1a1a6;
-    --linie: #38383d;
-    --accent: #0a84ff;
-    --accent-hover: #3395ff;
-    --link: #2997ff;
-    --ok: #30d158;
-    --schatten: 0 0 0 1px rgb(255 255 255 / 0.06), 0 30px 70px -20px rgb(0 0 0 / 0.9);
-    color-scheme: dark;
-  }
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -45,7 +32,9 @@ a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 button { font: inherit; color: inherit; }
 h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
-h1 { font-size: clamp(2.75rem, 7.5vw, 5.5rem); line-height: 1.03; letter-spacing: -0.045em; }
+h1 { font-size: clamp(3rem, 8.5vw, 6.5rem); line-height: 1.02; letter-spacing: -0.05em; }
+/* Titel leicht von Weiß nach Grau verlaufend, wie auf Apple-Pro-Seiten */
+h1, h2 { background: linear-gradient(180deg, #ffffff 30%, #a1a1a6); -webkit-background-clip: text; background-clip: text; color: transparent; }
 h2 { font-size: clamp(2.25rem, 5.6vw, 4rem); line-height: 1.06; letter-spacing: -0.04em; }
 h3 { font-size: clamp(1.3rem, 2vw, 1.6rem); line-height: 1.15; letter-spacing: -0.025em; }
 p, dl, dd, figure, ol, ul { margin: 0; }
@@ -61,6 +50,7 @@ kbd { padding: 0.05em 0.35em; border: 1px solid var(--linie); border-radius: 5px
 /* Abschnitte: zentrierter Kopf, viel Luft; .grau für den Wechsel der Flächen */
 .abschnitt { padding-block: clamp(6rem, 13vw, 10rem); }
 .abschnitt.grau { background: var(--grau); }
+.abschnitt + .abschnitt:not(.grau) { padding-top: 0; } /* gleiche Fläche hintereinander: kein doppelter Abstand */
 .kopf-mitte { max-width: 52rem; margin: 0 auto clamp(3rem, 7vw, 5rem); text-align: center; }
 .unterzeile { margin: 1.25rem auto 0; max-width: 38ch; font-size: clamp(1.15rem, 2vw, 1.5rem); line-height: 1.35; font-weight: 500; color: var(--muted); letter-spacing: -0.02em; }
 .klein { font-size: 0.85rem; color: var(--muted); }
@@ -77,15 +67,21 @@ kbd { padding: 0.05em 0.35em; border: 1px solid var(--linie); border-radius: 5px
 
 /* Auswahl-Pillen (Demo-Decks, Stile) */
 .pillen { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: clamp(2rem, 4vw, 3rem); }
-.pille { display: inline-block; padding: 8px 18px; border-radius: 999px; background: var(--kachel); box-shadow: inset 0 0 0 1px var(--linie); border: 0; font-size: 0.94rem; font-weight: 500; color: var(--text); cursor: pointer; }
+.pille { display: inline-block; padding: 8px 18px; border-radius: 999px; background: var(--kachel); box-shadow: inset 0 0 0 1px var(--rand); border: 0; font-size: 0.94rem; font-weight: 500; color: var(--text); cursor: pointer; }
 .pille:hover { box-shadow: inset 0 0 0 1px var(--muted); }
 .pille[aria-pressed='true'], input:checked + .pille { background: var(--text); color: var(--bg); box-shadow: none; }
 
 /* Befehl mit Kopieren */
-.befehl { display: flex; align-items: center; gap: 10px; max-width: 100%; padding: 8px 8px 8px 16px; background: var(--grau); border-radius: 12px; }
+.befehl { display: flex; align-items: center; gap: 10px; max-width: 100%; padding: 8px 8px 8px 16px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--rand); border-radius: 12px; }
 .befehl code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
-button[data-copy] { flex: none; font: 500 0.8rem var(--sans); color: var(--link); background: var(--kachel); border: 0; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+button[data-copy] { flex: none; font: 500 0.8rem var(--sans); color: var(--link); background: var(--kachel-2); border: 0; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
 
 /* Einblenden beim Scrollen (Klassen setzt layouts/Seite.astro) */
 .zeigen { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .zeigen.da { opacity: 1; transform: none; }
+
+/* Kacheln: dunkle Fläche mit feinem Rand */
+.kachel-flaeche { background: var(--kachel); box-shadow: inset 0 0 0 1px var(--rand); border-radius: 28px; }
+/* Leuchten hinter Produktaufnahmen */
+.leuchten { position: relative; isolation: isolate; }
+.leuchten::before { content: ''; position: absolute; z-index: -1; inset: -14% -6% -22%; background: radial-gradient(closest-side, rgb(94 92 230 / 0.8), rgb(10 132 255 / 0.35) 62%, transparent 100%); filter: blur(50px); pointer-events: none; }

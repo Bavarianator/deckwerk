@@ -1,26 +1,13 @@
 ---
-// Startseite: setzt die Abschnitte zusammen. Daten und Helfer in src/lib/seite.ts, Grundstile in src/styles/basis.css,
-// jeder Abschnitt mit eigenem Markup, CSS und Skript in src/components/. Flächen wechseln: weiß, grau, weiß …
+// Startseite: kurz. Hero mit Live-Szene, Galerie, drei Wege zu den Unterseiten.
 import Seite from '../layouts/Seite.astro'
 import Hero from '../components/Hero.astro'
 import Band from '../components/Band.astro'
-import SoGehts from '../components/SoGehts.astro'
-import Demo from '../components/Demo.astro'
-import Looks from '../components/Looks.astro'
-import Formate from '../components/Formate.astro'
-import Alles from '../components/Alles.astro'
-import Faq from '../components/Faq.astro'
-import Laden from '../components/Laden.astro'
+import Teaser from '../components/Teaser.astro'
 ---
 
 <Seite>
   <Hero />
   <Band />
-  <SoGehts />
-  <Demo />
-  <Looks />
-  <Formate />
-  <Alles />
-  <Faq />
-  <Laden />
+  <Teaser />
 </Seite>

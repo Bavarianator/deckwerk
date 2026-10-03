@@ -1,0 +1,41 @@
+---
+// Startseite: drei große Wege zu den Unterseiten, je ein Bild, ein Satz, ein Link
+import { Image } from 'astro:assets'
+import { base, bild } from '../lib/seite'
+
+const WEGE = [
+  { pfad: 'beispiele/', titel: 'Beispiele', satz: 'Vier fertige Präsentationen zum Durchklicken. In jedem Stil, in jedem Format.', bild: 'pitch-1', link: 'Ansehen' },
+  { pfad: 'funktionen/', titel: 'Funktionen', satz: 'PowerPoint zum Weiterbearbeiten, geprüfte Folien, Vortragsmodus.', bild: 'quartal-4', link: 'Mehr erfahren' },
+  { pfad: 'laden/', titel: 'Kostenlos', satz: 'Für Mac und Linux. In zwei Minuten startklar, ohne Anmeldung.', bild: 'strategie-1', link: 'Laden' },
+]
+---
+
+<section class="abschnitt teaser-abschnitt">
+  <div class="wrap teaser">
+    {
+      WEGE.map((w) => (
+        <a class="weg kachel-flaeche" href={`${base}${w.pfad}`}>
+          <div class="weg-text">
+            <h3>{w.titel}</h3>
+            <p>{w.satz}</p>
+            <span class="pfeil">{w.link}</span>
+          </div>
+          <Image {...bild(w.bild, '(max-width: 900px) 90vw, 380px', [480, 960])} alt="" class="folie" loading="lazy" />
+        </a>
+      ))
+    }
+  </div>
+</section>
+
+<style is:global>
+  .teaser-abschnitt { padding-top: 0; }
+  .teaser { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(0.75rem, 1.5vw, 1.25rem); }
+  .weg { display: flex; flex-direction: column; justify-content: space-between; gap: 2rem; min-width: 0; padding: clamp(1.75rem, 3vw, 2.5rem); overflow: hidden; color: var(--muted); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s; }
+  .weg:hover { text-decoration: none; transform: translateY(-4px); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16); }
+  .weg h3 { color: var(--text); font-size: clamp(1.6rem, 2.6vw, 2.1rem); letter-spacing: -0.035em; }
+  .weg p { margin-top: 0.5rem; }
+  .weg .pfeil { display: inline-block; margin-top: 1rem; color: var(--link); }
+  .weg .folie { width: 115%; margin-bottom: -18%; transform: rotate(-3deg); transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .weg:hover .folie { transform: rotate(0deg) translateY(-6px); }
+  @media (max-width: 900px) { .teaser { grid-template-columns: 1fr; } .weg .folie { width: 100%; margin-bottom: -12%; } }
+</style>

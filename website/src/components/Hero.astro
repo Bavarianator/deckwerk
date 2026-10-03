@@ -1,6 +1,7 @@
 ---
 // Hero: Name, Versprechen, Knöpfe; darunter die Live-Szene der App
 import AppFilm from './AppFilm.astro'
+import { base } from '../lib/seite'
 ---
 
 <section class="hero">
@@ -9,17 +10,17 @@ import AppFilm from './AppFilm.astro'
     <h1>Ein Satz.<br />Eine Präsentation.</h1>
     <p class="unterzeile">Deckwerk schreibt die Geschichte, gestaltet jede Folie und gibt dir eine PowerPoint, die du weiterbearbeiten kannst.</p>
     <p class="aktionen">
-      <a class="knopf" href="#laden">Kostenlos laden</a>
-      <a class="pfeil" href="#demo">Beispiele ansehen</a>
+      <a class="knopf" href={`${base}laden/`}>Kostenlos laden</a>
+      <a class="pfeil" href={`${base}beispiele/`}>Beispiele ansehen</a>
     </p>
   </div>
-  <div class="wrap hero-app">
+  <div class="wrap hero-app leuchten">
     <AppFilm />
   </div>
 </section>
 
 <style is:global>
-  .hero { padding-block: clamp(4rem, 10vw, 8rem) clamp(4rem, 8vw, 6rem); text-align: center; overflow: hidden; }
+  .hero { padding-block: clamp(4.5rem, 11vw, 9rem) clamp(5rem, 10vw, 8rem); text-align: center; overflow: hidden; }
   .hero-marke { font-size: clamp(1.1rem, 2vw, 1.4rem); font-weight: 600; color: var(--muted); margin-bottom: 0.75rem; letter-spacing: -0.02em; }
   .hero .unterzeile { max-width: 34ch; }
   .hero-app { margin-top: clamp(3rem, 7vw, 5rem); }

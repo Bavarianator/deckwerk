@@ -4,12 +4,8 @@ import { Image } from 'astro:assets'
 import { base, bild, decks, folien, groesse } from '../lib/seite'
 ---
 
-<section class="abschnitt" id="demo">
+<section class="abschnitt demo-abschnitt" id="demo">
   <div class="wrap">
-    <header class="kopf-mitte">
-      <h2>Sieh selbst.</h2>
-      <p class="unterzeile">Vier Präsentationen, so wie Deckwerk sie gebaut hat. Klick dich durch.</p>
-    </header>
     <div class="pillen" role="group" aria-label="Beispiel wählen">
       {
         Object.entries(decks).map(([name, d], i) => (
@@ -22,7 +18,7 @@ import { base, bild, decks, folien, groesse } from '../lib/seite'
     {
       Object.entries(decks).map(([name, d], i) => (
         <div class="spieler" data-deck={name} hidden={i > 0}>
-          <div class="buehne" tabindex="0" aria-label={`${d.title}: klicken oder Pfeiltasten zum Blättern`}>
+          <div class="buehne leuchten" tabindex="0" aria-label={`${d.title}: klicken oder Pfeiltasten zum Blättern`}>
             {d.slides.map((id, n) => (
               <Image {...bild(id, '(max-width: 1000px) 100vw, 960px')} class="folie" hidden={n > 0} loading="lazy" />
             ))}
@@ -83,10 +79,11 @@ import { base, bild, decks, folien, groesse } from '../lib/seite'
 </script>
 
 <style is:global>
+  .demo-abschnitt { padding-top: 0; }
   .spieler { max-width: 960px; margin-inline: auto; text-align: center; }
   .buehne { cursor: pointer; border-radius: 10px; }
   .leiste { display: inline-flex; align-items: center; gap: 0.75rem; margin-top: 1.75rem; }
-  .leiste button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--grau); font-size: 1.4rem; line-height: 1; cursor: pointer; }
+  .leiste button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--kachel-2); font-size: 1.4rem; line-height: 1; cursor: pointer; }
   .leiste button:hover { background: var(--linie); }
   .zaehler { min-width: 4.5em; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
   .notiz { max-width: 60ch; min-height: 3em; margin: 1.25rem auto 0; color: var(--muted); font-size: 1rem; }

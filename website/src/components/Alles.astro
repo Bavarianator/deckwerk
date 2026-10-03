@@ -3,39 +3,35 @@
 import { MCP, REPO, base, beispiel, groesse } from '../lib/seite'
 ---
 
-<section class="abschnitt grau" id="alles">
+<section class="abschnitt" id="alles">
   <div class="wrap">
-    <header class="kopf-mitte">
-      <h2>Alles drin.</h2>
-      <p class="unterzeile">Was eine gute Präsentation braucht, macht Deckwerk von selbst.</p>
-    </header>
     <div class="bento">
-      <article class="kachel breit">
+      <article class="kachel kachel-flaeche breit">
         <p class="gross">PowerPoint,<br />die sich bearbeiten lässt.</p>
         <p>Texte, Bilder und Diagramme bleiben einzeln anfassbar, Schriften und Animationen sind dabei. Dazu PDF und Bilder.</p>
         {beispiel && <a class="pfeil" href={`${base}${beispiel}`} download>Beispiel laden ({groesse(beispiel)})</a>}
       </article>
-      <article class="kachel">
+      <article class="kachel kachel-flaeche">
         <p class="zahl">29</p>
         <p><b>Layouts.</b> Ruhig gestaltet, nach den Regeln guter Designer statt bunter Vorlagen.</p>
       </article>
-      <article class="kachel">
+      <article class="kachel kachel-flaeche">
         <p class="zahl">✓</p>
         <p><b>Jede Folie geprüft.</b> Nichts läuft über, nichts ist zu klein, nichts steht zu dicht.</p>
       </article>
-      <article class="kachel">
+      <article class="kachel kachel-flaeche">
         <p class="zahl">0 €</p>
         <p><b>Kostenlos und offen.</b> Die KI bringst du mit: Claude, ChatGPT oder Mistral.</p>
       </article>
-      <article class="kachel">
+      <article class="kachel kachel-flaeche">
         <p class="zahl">Lokal</p>
         <p><b>Kein Konto, keine Cloud von uns.</b> Deine Präsentationen liegen als Datei auf deinem Rechner.</p>
       </article>
-      <article class="kachel halb">
+      <article class="kachel kachel-flaeche halb">
         <p class="gross">Vorne stehen.</p>
         <p>Du siehst Notizen, Uhr und nächste Folie, das Publikum nur die Folien. Das Handy wird zur Fernbedienung, Laserpointer und Stift sind dabei.</p>
       </article>
-      <article class="kachel halb">
+      <article class="kachel kachel-flaeche halb">
         <p class="gross">Für Agenten.</p>
         <p>Ein MCP-Server mit 20 Werkzeugen: Claude Code, Codex und Vibe bauen Decks direkt aus dem Terminal.</p>
         <div class="befehl">
@@ -49,8 +45,9 @@ import { MCP, REPO, base, beispiel, groesse } from '../lib/seite'
 </section>
 
 <style is:global>
+  #alles { padding-top: 0; }
   .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(0.75rem, 1.5vw, 1.25rem); }
-  .kachel { grid-column: span 2; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; padding: clamp(1.75rem, 3.5vw, 2.75rem); background: var(--kachel); border-radius: 28px; color: var(--muted); font-size: 1.02rem; }
+  .kachel { grid-column: span 2; display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; padding: clamp(1.75rem, 3.5vw, 2.75rem); color: var(--muted); font-size: 1.02rem; }
   .kachel.breit { grid-column: span 4; }
   .kachel.halb { grid-column: span 3; }
   .kachel b { color: var(--text); font-weight: 600; }

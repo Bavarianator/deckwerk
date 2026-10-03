@@ -1,0 +1,15 @@
+---
+// Kopf einer Unterseite: große Überschrift, ein Satz
+interface Props { titel: string; satz: string }
+const { titel, satz } = Astro.props
+---
+
+<header class="seitenkopf wrap">
+  <h1 set:html={titel} />
+  <p class="unterzeile">{satz}</p>
+</header>
+
+<style is:global>
+  .seitenkopf { padding-block: clamp(4.5rem, 11vw, 8.5rem) clamp(3rem, 7vw, 5rem); text-align: center; }
+  .seitenkopf h1 { font-size: clamp(2.75rem, 7vw, 5.5rem); }
+</style>

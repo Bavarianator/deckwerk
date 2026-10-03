@@ -51,31 +51,30 @@ export const MCP = 'claude mcp add -s user deckwerk -- ~/deckwerk/scripts/deckwe
 export const base = import.meta.env.BASE_URL.replace(/\/?$/, '/')
 export const beispiel = decks.strategie.dl.find((f) => f.endsWith('.pptx'))
 
-// Kopf: wenige direkte Ziele; die vollständige Liste steht im Fuß
-export const KOPF: [href: string, label: string][] = [
-  ['#demo', 'Beispiele'],
-  ['#looks', 'Stile'],
-  ['#alles', 'Funktionen'],
-  ['#faq', 'Fragen'],
+// Seiten der Website; der Kopf zeigt sie alle, die aktuelle hervorgehoben
+export const SEITEN: [pfad: string, label: string][] = [
+  ['beispiele/', 'Beispiele'],
+  ['funktionen/', 'Funktionen'],
+  ['laden/', 'Laden'],
 ]
 
 export const FUSS: { name: string; links: [href: string, label: string][] }[] = [
   {
-    name: 'Entdecken',
+    name: 'Deckwerk',
     links: [
-      ['#so-gehts', 'So geht’s'],
-      ['#demo', 'Beispiele'],
-      ['#looks', 'Stile'],
-      ['#formate', 'Formate'],
-      ['#alles', 'Funktionen'],
-      ['#faq', 'Fragen'],
+      [base, 'Start'],
+      [`${base}beispiele/`, 'Beispiele'],
+      [`${base}funktionen/`, 'Funktionen'],
+      [`${base}laden/`, 'Laden'],
+      [`${base}laden/#faq`, 'Fragen'],
     ],
   },
   {
-    name: 'Laden',
+    name: 'Ausprobieren',
     links: [
-      ['#laden', 'Für Mac'],
-      ['#laden', 'Für Linux'],
+      [`${base}beispiele/#demo`, 'Decks durchklicken'],
+      [`${base}beispiele/#looks`, 'Stile'],
+      [`${base}beispiele/#formate`, 'Formate'],
       ...(beispiel ? [[`${base}${beispiel}`, 'Beispiel als PowerPoint'] as [string, string]] : []),
     ],
   },

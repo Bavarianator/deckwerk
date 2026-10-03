@@ -3,14 +3,10 @@
 import { APPIMAGE, DMG, INSTALL, INSTALL_MAC, appimage, mb } from '../lib/seite'
 ---
 
-<section class="abschnitt grau" id="laden">
+<section class="abschnitt laden-abschnitt" id="laden">
   <div class="wrap">
-    <header class="kopf-mitte">
-      <h2>Jetzt laden.<br />Kostenlos.</h2>
-      <p class="unterzeile">In zwei Minuten startklar. Ohne Anmeldung.</p>
-    </header>
     <div class="plattformen">
-      <article class="plattform">
+      <article class="plattform kachel-flaeche">
         <h3>Mac</h3>
         <p class="klein">Apple Silicon, ab M1</p>
         <a class="knopf" href={DMG}>Für Mac laden</a>
@@ -23,7 +19,7 @@ import { APPIMAGE, DMG, INSTALL, INSTALL_MAC, appimage, mb } from '../lib/seite'
           </div>
         </details>
       </article>
-      <article class="plattform">
+      <article class="plattform kachel-flaeche">
         <h3>Linux</h3>
         <p class="klein">und Windows mit WSL</p>
         <div class="befehl">
@@ -42,7 +38,8 @@ import { APPIMAGE, DMG, INSTALL, INSTALL_MAC, appimage, mb } from '../lib/seite'
 
 <style is:global>
   .plattformen { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(0.75rem, 1.5vw, 1.25rem); max-width: 980px; margin-inline: auto; }
-  .plattform { display: flex; flex-direction: column; align-items: center; gap: 1rem; min-width: 0; padding: clamp(2rem, 4vw, 3.25rem); background: var(--kachel); border-radius: 28px; text-align: center; color: var(--muted); }
+  .laden-abschnitt { padding-top: 0; }
+  .plattform { display: flex; flex-direction: column; align-items: center; gap: 1rem; min-width: 0; padding: clamp(2rem, 4vw, 3.25rem); text-align: center; color: var(--muted); }
   .plattform h3 { color: var(--text); font-size: clamp(2rem, 4vw, 2.75rem); letter-spacing: -0.04em; }
   .plattform .klein { margin-top: -0.75rem; }
   .plattform .befehl { width: 100%; text-align: left; }
