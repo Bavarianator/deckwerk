@@ -157,8 +157,23 @@ function Table({ c }: Props<'table'>) {
   )
 }
 
-function BigNumber({ c }: Props<'big-number'>) {
+function BigNumber({ c, v }: Props<'big-number'>) {
   const img = photoOf(c.image)
+  if (v === 'poster' && !img) return (
+    <Frame>
+      <div className="bign poster" data-fit data-slot="_body">
+        <div className="bign-top">
+          {c.eyebrow ? <T role="eyebrow" slot="eyebrow">{c.eyebrow}</T> : <div />}
+          <div className="bign-side">
+            <T role="h1" slot="label" maxLines={5} className="bign-label" build={0}>{c.label}</T>
+            {c.context && <T role="body" slot="context" className="muted" build={0}>{c.context}</T>}
+          </div>
+        </div>
+        <T role="hero" slot="value" className="bign-value" build={0}>{c.value}</T>
+      </div>
+      {c.source && <T role="footer" slot="source" className="source">{c.source}</T>}
+    </Frame>
+  )
   return (
     <Frame safeClass={img ? 'safe-left' : undefined} media={img && (
       <div className="media right">{img.src ? <Img {...img} slot="image" /> : <div className="placeholder" />}</div>

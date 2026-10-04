@@ -66,6 +66,14 @@
 .bign { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 22px; max-width: 980px; }
 .bign-value { color: var(--accent); line-height: 0.95; }
 .bign-label { max-width: 900px; }
+.bign + .source { overflow: hidden; } /* Inhaltsbereich der Schrift ragt sonst in Social-Formaten 2 px aus der Folie */
+/* Plakat: Zahl übergroß unten links (Faktor auf --fs-hero, schrumpft mit dem Autofit), Label in schmaler Spalte oben rechts */
+.bign.poster { max-width: none; justify-content: space-between; gap: 32px; }
+.bign-top { display: flex; justify-content: space-between; gap: 64px; }
+.bign-side { flex: none; width: 440px; display: flex; flex-direction: column; gap: 16px; }
+.bign.poster .bign-label { max-width: none; }
+/* overflow: Inhaltsbereich der Schrift (~1,2em) zählt sonst unten zur Höhe des Blocks */
+.bign.poster .bign-value { font-size: calc(var(--fs-hero) * var(--bign-k, 1.8)); flex: none; line-height: 1; overflow: hidden; }
 
 /* ---------- Icon-Raster ---------- */
 .ig { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 40px 48px; align-content: start; }

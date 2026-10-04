@@ -287,8 +287,8 @@ export const EXTRA_LAYOUTS = {
   }),
   'big-number': L({
     id: 'big-number', name: 'Große Zahl',
-    when: 'Eine einzige Zahl trägt die Folie (Wirkung, Marktgröße, Ersparnis). Stärker als kpi-grid, wenn es nur eine Zahl gibt. Mit Foto für Emotion.',
-    schema: bigNumber, defaultBuild: 'zoom-kpi', footer: true,
+    when: 'Eine einzige Zahl trägt die Folie (Wirkung, Marktgröße, Ersparnis). Stärker als kpi-grid, wenn es nur eine Zahl gibt. Mit Foto für Emotion. Variante poster (ohne Foto): Zahl übergroß unten links, Label oben rechts; bricht bewusst den Rhythmus (Höhepunkt, Stil mutig, einmal pro Deck).',
+    variants: ['plain', 'poster'], schema: bigNumber, defaultBuild: 'zoom-kpi', footer: true,
     samples: {
       min: { value: '41 %', label: 'Weniger Fehler nach sechs Monaten' },
       typ: { eyebrow: 'Wirkung', value: '−41 %', label: 'Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler', context: 'Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.', source: 'Pilotauswertung 2026' },
