@@ -8,7 +8,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { icons } from 'lucide-react'
-import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, transitionOf, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide } from '../shared/deck'
+import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide } from '../shared/deck'
 import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -30,6 +30,10 @@ export interface ToolContext {
 // Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt
 export const STYLE_FILE = join(homedir(), 'Deckwerk', 'hausstil.md')
 export const houseStyle = () => { try { return readFileSync(STYLE_FILE, 'utf8').trim() } catch { return '' } }
+// Brand-Kit des Nutzers für jedes neue Deck (Farben, Schriften, Logo); DECKWERK_HOME: Tests
+export const BRAND_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'brand.json')
+export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(BRAND_FILE, 'utf8'))) } catch { return undefined } }
+export const saveBrand = (b: BrandKit) => { mkdirSync(dirname(BRAND_FILE), { recursive: true }); writeFileSync(BRAND_FILE, JSON.stringify(b, null, 2)) }
 
 export interface ToolOutput { text: string; images?: Buffer[] } // PNG oder JPEG, siehe mimeOf
 export const mimeOf = (b: Buffer): 'image/png' | 'image/jpeg' => (b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : 'image/png')
@@ -63,7 +67,9 @@ const brand = z.object({
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Markenfarbe #RRGGBB'),
   secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   logo: z.string().optional().describe('Pfad zum Logo (aus find_images)'),
+  logoDark: z.string().optional().describe('Logo für dunklen Grund; fehlt es, gilt logo'),
   headFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).optional().describe('Headline-Schrift; Office: Arial, Calibri, Georgia; Premium (eingebettet): alle übrigen, siehe customTheme.headFont'),
+  bodyFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).optional().describe('Schrift für Fließtext'),
 })
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil (Design-Guide §6 „Stil des Decks“): sachlich = Zurückhaltung (Standard), mutig = kräftige Farben, Plakat-Typo, mehr Farbflächen, markante Bilder. Wählt der Nutzer im Look-Bereich oder per Wunsch („mutiger“).')
@@ -87,6 +93,8 @@ const FONT_MOOD: Record<FontName, string> = {
   'IBM Plex Sans': 'sachliche Profi-Grotesk mit Charakter: Beratung, Finanzen, Technik, Zahlen',
   'IBM Plex Serif': 'nüchterne Serif, Partner zu IBM Plex Sans: Vortrag, Forschung, Reflexion',
   'Source Serif 4': 'redaktionelle Buch-Serif: Bericht, Stiftung, Verwaltung, Wissenschaft',
+  'Archivo Black': 'Plakat-Grotesk in Black (nur ein Schnitt), nur als Titelschrift im Stil mutig: Kampagne, Event, laute Ansagen',
+  'IBM Plex Mono': 'Monospace, nicht als Titel- oder Textschrift: nur über labelFont mono für Eyebrow und Fußzeile',
 }
 // Standardschriften generierter Designs: nur auf ausdrücklichen Wunsch, nie in eigenen Vorschlägen (propose_looks)
 const AI_FONTS: string[] = ['Space Grotesk', 'Instrument Serif']
@@ -101,11 +109,12 @@ const themeSpec = z.object({
   radius: z.number().int().min(0).max(28).describe('Eckenradius in px: 0–4 empfohlen; über 8 wirkt es schnell generiert'),
   decor: z.enum(DECORS).describe('Hintergrundmotiv; none empfohlen. blobs/glow (unscharfe Farbkreise) nur auf ausdrücklichen Wunsch'),
   texture: z.enum(['grain']).optional().describe('feine Papierkörnung, nur auf Wunsch'),
-  titleSize: z.enum(['normal', 'large']).optional().describe('large = Plakat-Titel (Vortrag, Swiss, Editorial); normal = sachlich (Chef-Update, viele Daten)'),
+  titleSize: z.enum(['normal', 'large', 'huge']).optional().describe('large = Plakat-Titel (Vortrag, Swiss, Editorial); huge = übergroße Titel, nur im Stil mutig; normal = sachlich (Chef-Update, viele Daten)'),
   titleWeight: z.enum(['regular', 'bold']).optional().describe('regular wirkt edel und redaktionell (am besten mit Serif und titleSize large), bold sachlich und kräftig'),
   rule: z.enum(['none', 'over', 'under']).optional().describe('feine Linie: over = Kopflinie über dem Titel (Swiss, Redaktion), under = Trennlinie unter dem Kopf (Beratung), none = pur'),
   sectionTone: z.enum(TONES).optional().describe('Kapiteltrenner: accent = Akzentfläche (Standard), invert = Hell/Dunkel getauscht, normal = nur große Typo auf dem Grund'),
   vivid: z.boolean().optional().describe('nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf fast Weiß/Schwarz zu dämpfen; Textfarbe kommt automatisch mit Kontrast'),
+  labelFont: z.enum(['body', 'mono']).optional().describe('mono = Eyebrow und Fußzeile in IBM Plex Mono (Magazin, Tech); body = Textschrift (Standard)'),
 })
 
 const FRAME_HINT = 'Komposition: top = Titel oben (Standard), split = Titel auf Akzentfläche links, band = Titel im Farbband oben, center = Kopf zentriert. Nur die im Katalog genannten Frames des Layouts.'
@@ -248,7 +257,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         brief: z.object({ audience: z.string().max(120), goal: z.string().max(200), tone: z.string().max(60) }).optional(),
         theme: z.enum(THEME_IDS).default(THEME_IDS[0]).describe('Katalog-Theme; wird ignoriert, wenn customTheme gesetzt ist'),
         customTheme: themeSpec.optional().describe('Eigenes Design für genau dieses Deck (Standard). Vorgehen und Regeln im Design-Guide §6'),
-        brand: brand.optional(),
+        brand: brand.nullable().optional().describe('Brand-Kit; weglassen = das gespeicherte Brand-Kit des Nutzers (~/Deckwerk/brand.json), falls es eines gibt; null = ohne Marke'),
         transition: z.enum(TRANSITIONS).default('fade'),
         mode: z.enum(['click', 'auto']).default('click').describe('click = Vortrag (Builds per Klick), auto = Selbstlauf'),
         motion: z.enum(MOTIONS).optional().describe('Bewegungsstil wie Canva „Magic Animate“: none = keine Aufbauten, calm = nur Einblenden (Vorstand, Behörde), standard = Layout-Standard, lively = Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom (Pitch, Event)'),
@@ -256,9 +265,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         format: format.optional().describe('Folienformat; weglassen = 16:9-Präsentation'),
       }),
       async run(i) {
-        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand, custom: i.customTheme }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style === 'mutig' ? 'mutig' : undefined, slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
+        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style === 'mutig' || (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig) ? 'mutig' : undefined, slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
-        return { text: `Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'sachlich'}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'sachlich'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -455,7 +464,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'propose_looks',
       description: 'Zwei bis drei deutlich verschiedene Looks zur Auswahl rendern (je Cover, Kennzahlen, Diagramm, Kapiteltrenner). Für neue Decks, vor create_deck. Der Nutzer wählt; danach create_deck mit genau diesem customTheme bzw. Katalog-Theme.',
-      inputSchema: z.object({ looks: z.array(z.union([z.enum(CATALOG_THEMES.map((t) => t.id) as [string, ...string[]]), themeSpec])).min(2).max(3).describe('Eigene Entwürfe für dieses Thema (Design-Guide §6): einer hell und sachlich, einer dunkel oder plakativ; sie unterscheiden sich in Struktur (Serif/Sans, titleSize, rule, sectionTone), nicht nur in der Farbe. Ein Katalog-Theme als dritter Look ist erlaubt.') }),
+      inputSchema: z.object({ looks: z.array(z.union([z.enum(CATALOG_THEMES.map((t) => t.id) as [string, ...string[]]), themeSpec])).min(2).max(3).describe('Eigene Entwürfe für dieses Thema (Design-Guide §6): einer hell und sachlich, einer dunkel oder plakativ, ein dritter als Überraschung (unerwartet, aber aus dem Thema begründet); sie unterscheiden sich in Struktur (Serif/Sans, titleSize, rule, sectionTone, labelFont), nicht nur in der Farbe. Ein Katalog-Theme ist erlaubt, im Stil mutig auch plakat/magazin/neomono/pastell.') }),
       async run(i) {
         const title = ctx.getDeck()?.title ?? 'Vorschau'
         const refs = i.looks.map((l) => (typeof l === 'string' ? { id: l } : { id: 'custom', custom: l }))
@@ -518,7 +527,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         source: z.enum(['auto', 'local', 'unsplash', 'web']).default('auto').describe('auto = lokal, ohne lokalen Treffer aus dem Netz (Unsplash, sonst Openverse); web = Openverse'),
         url: z.string().url().max(2000).optional().describe('Bild direkt von dieser Adresse übernehmen. Nur Bilder, die der Nutzer genannt hat oder die verwendet werden dürfen (freie Lizenz, eigene Website); Quelle in die Notes'),
         limit: z.number().int().min(1).max(5).default(3),
-        orientation: z.enum(['landscape', 'portrait', 'squarish']).default('landscape').describe('Unsplash: landscape für Vollbild/Cover/Galerie, portrait für Porträts (quote), squarish für Kacheln'),
+        orientation: z.enum(['landscape', 'portrait', 'squarish']).default('landscape').describe('Unsplash: landscape für Vollbild/Cover/Galerie, portrait für Porträts (quote) und Hochformat-Decks (4:5, 9:16, A4), squarish für Kacheln und Quadrat-Decks'),
       }),
       async run(i) {
         if (i.url) return fromUrl(ctx, i.url)
@@ -537,7 +546,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       description: 'Bild per KI erzeugen (Szene, Stimmung, Illustration, ruhige Bildfläche), wenn find_images nichts Passendes liefert oder der Nutzer es will. Dauert 20–120 s und kostet: alle Bilder des Plans in einer Antwort gleichzeitig anfordern (sie laufen parallel), erst einen Bildplan machen (2–5 Schlüsselfolien wie Cover, Kapitelwechsel, Höhepunkt, Abschluss) und einen Stilsatz, der wörtlich an jeden Prompt kommt. Nie für echte Personen, Logos, Marken, echte Produkte oder Orte des Nutzers (das wären Fälschungen), Diagramme oder Text. Kein KI-Look (Neon, Roboter, Glühbirnen, glänzendes 3D). Regeln im Design-Guide §6 „KI-Bilder“. Rückgabe: asset://-Pfad für `image.src` plus Vorschau.',
       inputSchema: z.object({
         prompt: z.string().min(10).max(1500).describe('Englisch, in dieser Reihenfolge: Motiv und Handlung, Umgebung, Ausschnitt mit ruhiger Fläche für den Titel (z. B. "subject on the right, calm empty left half"), Licht und Stimmung, Stilsatz des Decks mit Theme-Farben als Wort plus Hex, zum Schluss "no text, no letters, no logos, no watermark". Konkrete Szene statt abstraktem Begriff.'),
-        orientation: z.enum(['landscape', 'portrait', 'square']).default('landscape').describe('landscape für cover, photo, closing und gallery; square für image-text, section und big-number; portrait selten'),
+        orientation: z.enum(['landscape', 'portrait', 'square']).default('landscape').describe('landscape für cover, photo, closing und gallery; square für image-text, section und big-number; portrait für Hochformat-Decks (4:5, 9:16, A4), sonst selten'),
         provider: z.enum(IMAGE_PROVIDERS).optional().describe('nur auf Wunsch des Nutzers; weglassen = der erste eingerichtete (Mammouth, OpenAI, Codex)'),
       }),
       async run(i) {
@@ -546,8 +555,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), pdf (pixelgenau), png (eine Datei pro Folie) oder md (Handout: Titel, Inhalte, Notizen).',
-      inputSchema: z.object({ format: z.enum(['pptx', 'pdf', 'png', 'md']) }),
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell) oder md (Handout: Titel, Inhalte, Notizen). Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
+      inputSchema: z.object({ format: z.enum(['pptx', 'pdf', 'png', 'zip', 'md']) }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
@@ -601,12 +610,12 @@ async function unsplash(ctx: ToolContext, query: string, limit: number, orientat
   mkdirSync(ctx.assetDir, { recursive: true })
   const lines: string[] = [], images: Buffer[] = []
   for (const h of hits) {
-    // 1920 px statt „regular“ (1080): Vollbildfotos werden mit 2560 px exportiert
-    const [full, thumb] = await Promise.all([get(`${h.urls.raw}&w=1920&q=82&fm=jpg`).then((r) => r.arrayBuffer()), get(h.urls.small).then((r) => r.arrayBuffer())])
+    // 2560 px statt „regular“ (1080): Vollbildfotos werden mit 2560 px exportiert, so bleiben sie scharf
+    const [full, thumb] = await Promise.all([get(`${h.urls.raw}&w=2560&q=82&fm=jpg`).then((r) => r.arrayBuffer()), get(h.urls.small).then((r) => r.arrayBuffer())])
     const file = join(ctx.assetDir, `unsplash-${h.id.replace(/[^\w-]/g, '')}.jpg`)
     writeFileSync(file, Buffer.from(full))
     get(h.links.download_location).catch(() => {}) // Unsplash-Richtlinie: Download zählen
-    lines.push(`${assetUrl(file)} — 1920×${Math.round((1920 * h.height) / h.width)} px, ${h.alt_description ?? h.description ?? query} (Foto: ${h.user.name} / Unsplash, ${h.user.links.html})`)
+    lines.push(`${assetUrl(file)} — 2560×${Math.round((2560 * h.height) / h.width)} px, ${h.alt_description ?? h.description ?? query} (Foto: ${h.user.name} / Unsplash, ${h.user.links.html})`)
     images.push(Buffer.from(thumb))
   }
   return { text: `${hits.length} Unsplash-Fotos geladen (Reihenfolge wie die Vorschaubilder). Bildnachweis in die Speaker Notes übernehmen:\n${lines.join('\n')}`, images }
@@ -781,6 +790,7 @@ export function buildCatalog(): string {
       `Wann: ${L.when}`,
       L.variants?.length ? `Varianten: ${L.variants.join(', ')}` : null,
       L.frames?.length ? `Frames: top, ${L.frames.join(', ')}` : null,
+      (L as { sizes?: FormatId[] }).sizes ? `Nur im Format: ${(L as { sizes?: FormatId[] }).sizes!.join(', ')} (create_deck format)` : null,
       `Default-Build: ${L.defaultBuild}`,
       `Schema: ${JSON.stringify(schema)}`,
     ].filter(Boolean).join('\n')
@@ -791,11 +801,11 @@ export function buildCatalog(): string {
     'Ausnahme: freie Elemente (`items` in add_slides/update_slide: Text, Form, Bild, Icon, Diagramm mit x/y/w/h in px auf 1280×720, Drehung, Deckkraft). Nur auf Layout blank oder wenn der Nutzer ausdrücklich frei gestaltet bzw. ein Element „wie in Canva“ platziert haben will. Mindestens 48 px Rand, Text ab 20 px, prüfe das Ergebnis mit render_slides. get_deck zeigt vorhandene items mit IDs.',
     ...layouts,
     '## Themes',
-    'Entwirf für jedes Deck ein eigenes Design (create_deck.customTheme) nach Design-Guide §6: Farbe, Schriftpaar und Struktur (titleSize, titleWeight, rule, sectionTone) aus Thema, Branche und Anlass. Die Katalog-Themes sind erprobte Vorbilder dafür und die Wahl, wenn es schnell gehen soll: beratung (hell, Daten, Chef-Update), keynote (dunkel, Plakat-Titel), schweiz (streng, Kopflinie), redaktion (Serif regular, Kopflinie), zen (dunkel, Serif, fotolastig). Die Engine leitet Flächen, Ränder, Sekundärtext und Diagrammfarben ab, dämpft den Grund und sichert Kontraste.',
+    'Entwirf für jedes Deck ein eigenes Design (create_deck.customTheme) nach Design-Guide §6: Farbe, Schriftpaar und Struktur (titleSize, titleWeight, rule, sectionTone) aus Thema, Branche und Anlass. Die Katalog-Themes sind erprobte Vorbilder dafür und die Wahl, wenn es schnell gehen soll: beratung (hell, Daten, Chef-Update), keynote (dunkel, Plakat-Titel), schweiz (streng, Kopflinie), redaktion (Serif regular, Kopflinie), zen (dunkel, Serif, fotolastig). Nur im Stil mutig: plakat (Signalgelb, Black-Titel), magazin (Papier, riesige Serif, Mono-Labels), neomono (Off-Black, Lime, Mono-Labels), pastell (Lavendel, rund, freundlich). Die Engine leitet Flächen, Ränder, Sekundärtext und Diagrammfarben ab, dämpft den Grund und sichert Kontraste.',
     'Schriften (Premium-Schriften werden in die PPTX eingebettet):',
     FONT_NAMES.map((f) => `- ${f}: ${FONT_MOOD[f]}`).join('\n'),
     'Katalog-Themes:',
-    CATALOG_THEMES.map((t) => `- ${t.id}: ${t.name}${t.dark ? ' (dunkel)' : ''}`).join('\n'),
+    CATALOG_THEMES.map((t) => `- ${t.id}: ${t.name}${t.dark ? ' (dunkel)' : ''}${t.mutig ? ' (nur Stil mutig)' : ''}`).join('\n'),
     '## Folien-Ton und Dekor',
     'Pro Folie optional `tone`: normal | accent (Akzentfläche, Standard bei section) | invert (Hell/Dunkel getauscht). Für Rhythmus: Kapiteltrenner, Kernaussage oder den Höhepunkt des Decks auf accent/invert setzen, höchstens jede 3.–4. Folie. `decor` wählt das Hintergrundmotiv (none, blobs, glow, rings, grid, stripe, dots); Standard kommt vom Theme (none). Motive nur auf ausdrücklichen Wunsch.',
     '## Animationen',

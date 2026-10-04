@@ -1,0 +1,75 @@
+{
+ "title": "Angebot und Infoblatt",
+ "size": {
+  "w": 794,
+  "h": 1123
+ },
+ "theme": {
+  "id": "beratung"
+ },
+ "slides": [
+  {
+   "id": "info",
+   "layout": "doc-text",
+   "content": {
+    "eyebrow": "Projektinfo",
+    "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+    "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+    "sections": [
+     {
+      "heading": "Worum es geht",
+      "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+     },
+     {
+      "heading": "Was wir brauchen",
+      "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+     },
+     {
+      "heading": "Datenschutz",
+      "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+     }
+    ],
+    "source": "Stand Oktober 2026"
+   }
+  },
+  {
+   "id": "angebot",
+   "layout": "offer",
+   "content": {
+    "eyebrow": "Angebot 2026-041",
+    "title": "Angebot Pilotbetreuung",
+    "to": "Muster-Grundschule\nMusterweg 1\n12345 Musterstadt",
+    "meta": "04.10.2026 · gültig bis 03.11.2026",
+    "items": [
+     {
+      "name": "Einrichtung und Schulung",
+      "detail": "Zwei Termine à zwei Stunden vor Ort",
+      "qty": "4 Std.",
+      "price": "360 €"
+     },
+     {
+      "name": "Lizenz Schuljahr 2026/27",
+      "detail": "Alle Klassen der Jahrgangsstufen 3 und 4",
+      "qty": "1 Pauschale",
+      "price": "1.900 €"
+     }
+    ],
+    "totals": [
+     {
+      "label": "Netto",
+      "value": "2.260 €"
+     },
+     {
+      "label": "Umsatzsteuer 19 %",
+      "value": "429,40 €"
+     },
+     {
+      "label": "Gesamt",
+      "value": "2.689,40 €"
+     }
+    ],
+    "terms": "Zahlbar innerhalb von 14 Tagen nach Rechnungsstellung."
+   }
+  }
+ ]
+}

@@ -68,7 +68,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
 
       <main className="home-main">
         <h1>Was möchtest du zeigen?</h1>
-        <p className="home-sub">Ein Satz genügt. Deckwerk schreibt die Storyline, baut die Folien und prüft jede einzelne.</p>
+        <p className="home-sub">Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.</p>
         <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { const f = e.dataTransfer.files[0]; if (f) { e.preventDefault(); attach(window.api.pathOf(f)) } }}>

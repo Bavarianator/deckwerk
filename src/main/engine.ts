@@ -1,7 +1,8 @@
 import { nativeImage } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Deck, Measured } from '../shared/deck'
+import JSZip from 'jszip'
+import { formatSuffix, type Deck, type Measured } from '../shared/deck'
 import { handout } from '../shared/handout'
 import { lintDeck } from '../shared/lint'
 import type { Engine } from './agent'
@@ -13,7 +14,7 @@ const slug = (s: string) => s.toLowerCase().replace(/[äöüß]/g, (c) => ({ ä:
 export function createEngine(): Engine {
   // ponytail: unbounded measure cache keyed by everything a slide render depends on; fine for a desktop session
   const cache = new Map<string, Measured>()
-  const key = (deck: Deck, i: number) => JSON.stringify([deck.slides[i], deck.theme, deck.title, i])
+  const key = (deck: Deck, i: number) => JSON.stringify([deck.slides[i], deck.theme, deck.title, deck.size, i])
 
   async function measure(deck: Deck, indices = deck.slides.map((_, i) => i)): Promise<Measured[]> {
     const out: Measured[] = []
@@ -49,7 +50,7 @@ export function createEngine(): Engine {
     },
     async exportDeck(deck, format, outDir) {
       await mkdir(outDir, { recursive: true })
-      const base = join(outDir, slug(deck.title))
+      const base = join(outDir, slug(deck.title) + formatSuffix(deck.size)) // Format im Namen: gleiche Titel in 4:5 und A4 überschreiben sich nicht
       if (format === 'md') {
         await writeFile(`${base}.md`, handout(deck))
         return [`${base}.md`]
@@ -57,6 +58,13 @@ export function createEngine(): Engine {
       if (format === 'pdf') {
         await writeFile(`${base}.pdf`, await renderPdf(deck))
         return [`${base}.pdf`]
+      }
+      if (format === 'zip') {
+        const zip = new JSZip()
+        for (let i = 0; i < deck.slides.length; i++) zip.file(`${String(i + 1).padStart(2, '0')}.png`, (await renderSlide(deck, i, { png: true })).png!)
+        zip.file(`${slug(deck.title)}.pdf`, await renderPdf(deck))
+        await writeFile(`${base}.zip`, await zip.generateAsync({ type: 'nodebuffer', compression: 'STORE' })) // PNG ist schon komprimiert
+        return [`${base}.zip`]
       }
       const slides: Rendered[] = []
       for (let i = 0; i < deck.slides.length; i++) slides.push(await renderSlide(deck, i, { png: format === 'png', background: format === 'pptx' }))

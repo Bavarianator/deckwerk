@@ -1,0 +1,82 @@
+{
+ "title": "5 Tipps gegen Rechtschreibfrust",
+ "size": {
+  "w": 1080,
+  "h": 1350
+ },
+ "theme": {
+  "id": "keynote"
+ },
+ "slides": [
+  {
+   "id": "hook",
+   "layout": "cover",
+   "content": {
+    "eyebrow": "Karussell · Lernen",
+    "title": "Warum Kinder beim Schreiben aufgeben – und was hilft",
+    "subtitle": "5 Tipps für Eltern und Lehrkräfte"
+   }
+  },
+  {
+   "id": "t1",
+   "layout": "big-number",
+   "content": {
+    "value": "01",
+    "label": "Fehler sind Daten, keine Urteile",
+    "context": "Jeder Fehler zeigt, welche Regel noch fehlt. Das sagt nichts über die Begabung."
+   }
+  },
+  {
+   "id": "t2",
+   "layout": "big-number",
+   "content": {
+    "value": "02",
+    "label": "Zehn Minuten täglich schlagen eine Stunde am Sonntag",
+    "context": "Kurze, regelmäßige Übung festigt Regeln dauerhaft."
+   }
+  },
+  {
+   "id": "t3",
+   "layout": "statement",
+   "content": {
+    "eyebrow": "Merksatz",
+    "text": "Wer **eigene Texte** schreibt, lernt Regeln schneller als beim Abschreiben."
+   }
+  },
+  {
+   "id": "t4",
+   "layout": "big-number",
+   "content": {
+    "value": "03",
+    "label": "Eine Regel pro Woche reicht",
+    "context": "Erst Doppelkonsonanten, dann das Dehnungs-h."
+   }
+  },
+  {
+   "id": "t5",
+   "layout": "bullets",
+   "content": {
+    "title": "So starten Sie heute",
+    "items": [
+     {
+      "text": "Kurzen Text schreiben lassen"
+     },
+     {
+      "text": "Drei Fehler markieren, nicht dreißig"
+     },
+     {
+      "text": "Regel dazu gemeinsam finden"
+     }
+    ]
+   }
+  },
+  {
+   "id": "cta",
+   "layout": "closing",
+   "content": {
+    "title": "Speichern und weitergeben",
+    "subtitle": "Mehr Tipps im Profil"
+   }
+  }
+ ]
+}

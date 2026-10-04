@@ -174,6 +174,73 @@ function BigNumber({ c }: Props<'big-number'>) {
   )
 }
 
+function DocText({ c, v }: Props<'doc-text'>) {
+  const two = v === 'two'
+  const half = two ? Math.ceil(c.sections.length / 2) : c.sections.length
+  const col = (items: typeof c.sections, off: number) => (
+    <div className="doc-col">
+      {items.map((s, i) => (
+        <div className="doc-sec" key={off + i}>
+          {s.heading && <T role="h3" slot={`sections.${off + i}.heading`} build={off + i}>{s.heading}</T>}
+          <T role="body" slot={`sections.${off + i}.text`} build={off + i}>{s.text}</T>
+        </div>
+      ))}
+    </div>
+  )
+  return (
+    <Frame>
+      <Header c={c} />
+      {c.lead && <T role="body" slot="lead" className="doc-lead" build={0}>{c.lead}</T>}
+      <div className={`doc ${two ? 'two' : ''}`} data-fit data-slot="sections">
+        {col(c.sections.slice(0, half), 0)}
+        {two && col(c.sections.slice(half), half)}
+      </div>
+      {c.source && <T role="footer" slot="source" className="source">{c.source}</T>}
+    </Frame>
+  )
+}
+
+function Offer({ c }: Props<'offer'>) {
+  const last = c.totals.length - 1
+  return (
+    <Frame>
+      <Header c={c} />
+      {(c.to || c.meta) && (
+        <div className="of-meta">
+          {c.to && <T role="label" slot="to" className="of-to">{c.to}</T>}
+          {c.meta && <T role="label" slot="meta" className="muted of-date">{c.meta}</T>}
+        </div>
+      )}
+      <div className="of" data-fit data-slot="items">
+        <div className="of-row of-head">
+          <T role="label" slot="_h.name" className="muted">Position</T>
+          <T role="label" slot="_h.qty" className="muted num">Menge</T>
+          <T role="label" slot="_h.price" className="muted num">Betrag</T>
+        </div>
+        {c.items.map((it, i) => (
+          <div className="of-row" key={i}>
+            <div className="of-name">
+              <T role="body" slot={`items.${i}.name`} build={i}>{it.name}</T>
+              {it.detail && <T role="label" slot={`items.${i}.detail`} build={i} className="muted">{it.detail}</T>}
+            </div>
+            <T role="body" slot={`items.${i}.qty`} build={i} className="num">{it.qty ?? ''}</T>
+            <T role="body" slot={`items.${i}.price`} build={i} className="num">{it.price}</T>
+          </div>
+        ))}
+        <div className="of-tot">
+          {c.totals.map((t, i) => (
+            <div className={`of-tot-row ${i === last ? 'sum' : ''}`} key={i}>
+              <T role={i === last ? 'h3' : 'body'} slot={`totals.${i}.label`} build={c.items.length}>{t.label}</T>
+              <T role={i === last ? 'h3' : 'body'} slot={`totals.${i}.value`} build={c.items.length} className="num">{t.value}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+      {c.terms && <T role="label" slot="terms" className="muted of-terms">{c.terms}</T>}
+    </Frame>
+  )
+}
+
 function IconGrid({ c }: Props<'icon-grid'>) {
   const n = c.items.length
   return (
@@ -304,8 +371,14 @@ function Pricing({ c }: Props<'pricing'>) {
   )
 }
 
+// Zahl aus „12.400“, „38 %“, „1,2 Mio“; NaN, wenn keine Zahl drinsteht
+const num = (s: string) => parseFloat(s.replace(/\.(?=\d{3})/g, '').replace(',', '.').replace(/[^\d.-]/g, ''))
+
 function Funnel({ c }: Props<'funnel'>) {
   const n = c.stages.length
+  const vals = c.stages.map((s) => num(s.value))
+  const conv = vals.every((x) => x > 0) ? vals.map((x, i) => (i ? x / vals[i - 1] : 1)) : undefined // Übergangsquote je Stufe
+  const drop = conv ? conv.indexOf(Math.min(...conv.slice(1))) : -1 // größter Abfall: die eine Stufe in Akzentfarbe
   return (
     <Frame>
       <Header c={c} />
@@ -313,10 +386,13 @@ function Funnel({ c }: Props<'funnel'>) {
         <div className="fn-bars" data-fit data-slot="stages">
           {c.stages.map((s, i) => (
             <div className="fn-row" key={i}>
-              <Box slot={`_bar.${i}`} className="fn-bar" build={i} style={{ width: `${100 - (i * 55) / Math.max(1, n - 1)}%` }}>
+              <Box slot={`_bar.${i}`} className={`fn-bar ${drop < 0 || i === drop ? 'hl' : ''}`} build={i} style={{ width: `${100 - (i * 55) / Math.max(1, n - 1)}%` }}>
                 <T role="h3" slot={`stages.${i}.value`} build={i} className="fn-val">{s.value}</T>
               </Box>
-              <T role="label" slot={`stages.${i}.label`} build={i} className="fn-label">{s.label}</T>
+              <div className="fn-side">
+                <T role="label" slot={`stages.${i}.label`} build={i} className="fn-label">{s.label}</T>
+                {conv && i > 0 && <T role="small" slot={`_conv.${i}`} build={i} className={i === drop ? 'fn-conv hl' : 'fn-conv'}>{`${Math.round(conv[i] * 100)} % der Vorstufe`}</T>}
+              </div>
             </div>
           ))}
         </div>
@@ -371,6 +447,6 @@ function Logos({ c }: Props<'logos'>) {
 
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
-  table: Table, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
+  table: Table, 'doc-text': DocText, offer: Offer, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
 }

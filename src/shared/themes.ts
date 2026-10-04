@@ -25,6 +25,9 @@ export interface Theme {
   rule?: 'over' | 'under' // feine Linie über bzw. unter dem Folienkopf
   sectionTone?: Tone // Ton der Kapiteltrenner, Standard accent
   vivid?: boolean // kräftiger Farbgrund erlaubt (Stil mutig): calmBg greift nicht
+  mutig?: boolean // Katalog-Theme nur für den Deck-Stil mutig
+  mono?: FontRef // Schrift für Eyebrow und Fußzeile (Mono-Labels)
+  subBody?: boolean // Zwischentitel (h2/h3) in der Textschrift fett: Plakat-Schriften sind dafür zu schwer und breit
   logo?: string
 }
 
@@ -49,6 +52,8 @@ const FONT_LIST = {
   'IBM Plex Sans': { css: 'IBM Plex Sans', pptx: 'IBM Plex Sans', embed: 'IBMPlexSans' },
   'IBM Plex Serif': { css: 'IBM Plex Serif', pptx: 'IBM Plex Serif', embed: 'IBMPlexSerif', serif: true },
   'Source Serif 4': { css: 'Source Serif 4', pptx: 'Source Serif 4', embed: 'SourceSerif4', serif: true },
+  'Archivo Black': { css: 'Archivo Black', pptx: 'Archivo Black', embed: 'ArchivoBlack', single: true },
+  'IBM Plex Mono': { css: 'IBM Plex Mono', pptx: 'IBM Plex Mono', embed: 'IBMPlexMono' },
 } satisfies Record<string, FontRef>
 export type FontName = keyof typeof FONT_LIST
 export const FONTS: Record<FontName, FontRef> = FONT_LIST
@@ -152,8 +157,6 @@ const BASE_THEMES: Theme[] = [
   },
 ]
 
-export const THEMES: Theme[] = [...CORE_THEMES, ...[...BASE_THEMES, ...EXTRA_THEMES].map((t) => ({ ...t, legacy: true }))]
-export const CATALOG_THEMES = THEMES.filter((t) => !t.legacy)
 
 const oklch = converter('oklch')
 
@@ -180,7 +183,8 @@ function withBrand(base: Theme, b?: BrandKit): Theme {
     id: `${base.id}+brand`,
     c: { ...base.c, accent, accent2, onAccent, chart: [accent, accent2, ...base.c.chart.slice(2)] },
     head: b.headFont && b.headFont in FONTS ? { ...base.head, ...FONTS[b.headFont as FontName] } : base.head,
-    logo: b.logo,
+    body: b.bodyFont && b.bodyFont in FONTS ? FONTS[b.bodyFont as FontName] : base.body,
+    logo: (base.dark && b.logoDark) || b.logo,
   }
 }
 
@@ -224,12 +228,14 @@ export function themeFromSpec(s: ThemeSpec): Theme {
     head: headRef(head, s.titleWeight === 'regular' ? 400 : 700),
     body: FONTS[s.bodyFont as FontName] ?? FONTS.Calibri,
     radius: s.radius, decor: s.decor, texture: s.texture,
-    headScale: s.titleSize === 'large' ? 1.22 : undefined,
+    headScale: s.titleSize === 'huge' ? 1.45 : s.titleSize === 'large' ? 1.22 : undefined,
     rule: s.rule === 'none' ? undefined : s.rule,
     sectionTone: s.sectionTone,
     vivid: s.vivid,
+    mono: s.labelFont === 'mono' ? FONTS['IBM Plex Mono'] : undefined,
   }
 }
+
 
 // Base theme (+ brand kit), with every text colour pushed to WCAG AA on the surfaces it is used on.
 // Kuratierte Schriftpaare [Titel, Text] für „Schriften mischen“
@@ -319,3 +325,17 @@ export function withTone(t: Theme, tone: Tone = 'normal'): Theme {
   }
   return t
 }
+
+// Stil mutig: Plakat, Magazin, Neo-Mono, Pastell. Über themeFromSpec, damit Flächen und Kontraste dieselben Leitplanken haben.
+const MUTIG_THEMES: Theme[] = ([
+  ['plakat', { name: 'Plakat', bg: '#FFD60A', text: '#111111', accent: '#111111', accent2: '#FFFFFF', headFont: 'Archivo Black', bodyFont: 'Archivo', radius: 0, decor: 'none', titleSize: 'huge', sectionTone: 'invert', vivid: true }],
+  ['magazin', { name: 'Magazin', bg: '#FFFFFF', accent: '#C8102E', headFont: 'DM Serif Display', bodyFont: 'DM Sans', radius: 0, decor: 'none', titleSize: 'huge', rule: 'over', labelFont: 'mono' }],
+  ['neomono', { name: 'Neo-Mono', bg: '#0E0E0E', accent: '#C6F432', headFont: 'Space Grotesk', bodyFont: 'Inter', radius: 0, decor: 'none', titleSize: 'large', rule: 'under', sectionTone: 'normal', labelFont: 'mono' }],
+  ['pastell', { name: 'Pastell', bg: '#E6E0FF', accent: '#2A2FBF', headFont: 'Plus Jakarta Sans', bodyFont: 'DM Sans', radius: 12, decor: 'none', titleSize: 'large', vivid: true }],
+] as [string, ThemeSpec][]).map(([id, spec]) => {
+  const t = themeFromSpec(spec)
+  return { ...t, id, mutig: true, subBody: id === 'plakat', head: id === 'pastell' ? { ...t.head, tracking: -0.01 } : t.head } // Plus Jakarta läuft von Haus aus eng
+})
+
+export const THEMES: Theme[] = [...CORE_THEMES, ...MUTIG_THEMES, ...[...BASE_THEMES, ...EXTRA_THEMES].map((t) => ({ ...t, legacy: true }))]
+export const CATALOG_THEMES = THEMES.filter((t) => !t.legacy)

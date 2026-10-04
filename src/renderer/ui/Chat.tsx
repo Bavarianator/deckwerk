@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useRef } from 'react'
 import { Select } from './kit'
 import { Check, CircleAlert, LoaderCircle, Sparkles } from 'lucide-react'
 import { AUTO_CHOICE, MODELS, type ChatModels } from '../../shared/models'
+import { klartext } from '../../shared/klartext'
 
 export type Msg =
   | { kind: 'user' | 'ai' | 'error'; text: string }
@@ -86,7 +87,9 @@ export function ChatLog({ msgs, busy, onSend, className }: { msgs: Msg[]; busy: 
               {m.summary && <span className="chip-sum">{m.summary}</span>}
             </span>
           ) : (
-            <div key={i} className={`msg msg-${m.kind}`}>{m.text}</div>
+            <div key={i} className={`msg msg-${m.kind}`} title={m.kind === 'error' && klartext(m.text) ? m.text : undefined}>
+              {m.kind === 'error' ? klartext(m.text) ?? m.text : m.text}
+            </div>
           ),
         )}
         {busy && <div className="msg-busy"><LoaderCircle size={14} className="spin" /> Die KI arbeitet …</div>}

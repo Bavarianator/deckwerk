@@ -1,6 +1,6 @@
 import { wcagContrast } from 'culori'
-import type { Box, BoxEl, Deck, El, Gradient, ImgEl, Measured, TextEl } from './deck'
-import { morphKey, morphNames, sizeOf, transitionOf } from './deck'
+import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl } from './deck'
+import { FORMATS, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { LAYOUTS, buildOf } from './layouts'
 
 export interface Issue {
@@ -14,6 +14,13 @@ export interface Issue {
 
 const MARGIN = 24 // no text closer to the slide edge than this
 const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank'] // absichtlich luftig
+// Grenzen je Profil (aus der Foliengröße): Folien werden projiziert, Social-Posts aufs Handy skaliert, A4 gedruckt und gelesen.
+// Nur Folien haben Struktur-, Rhythmus- und Leere-Regeln; Karussells wiederholen Layouts mit Absicht, Dokumente sind dichter und ruhiger.
+const PROFILE = {
+  slides: { minPx: () => 13, words: 50, goal: 40, unit: 'Folie', deckRules: true },
+  social: { minPx: (w: number) => w / 60, words: 30, goal: 25, unit: 'Folie', deckRules: false },
+  doc: { minPx: () => 12, words: 350, goal: 300, unit: 'Seite', deckRules: false },
+}
 const SPARSE = 0.67 // Füllgrad des Satzspiegels, darunter wirkt eine Inhaltsfolie leer (kalibriert an echten KI-Decks: Prozess 65 %, Zeitstrahl 58 % leer; Tabelle 72 %, Pro/Contra 77 % gut)
 const overlapArea = (a: Box, b: Box) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
@@ -54,6 +61,7 @@ function bgOverPhoto(t: TextEl, photo: ImgEl, els: El[]): string {
 
 export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
   const s = deck.slides[i]
+  const prof = PROFILE[profileOf(deck)]
   const out: Issue[] = []
   const add = (severity: Issue['severity'], rule: string, message: string, slot?: string) =>
     out.push({ slide: i, slideId: s.id, slot, severity, rule, message })
@@ -63,6 +71,10 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     add('error', 'layout', `Unbekanntes Layout "${s.layout}". Erlaubt: ${Object.keys(LAYOUTS).join(', ')}`)
     return out
   }
+  const sizes = (def as { sizes?: FormatId[] }).sizes
+  const { w: pw, h: ph } = sizeOf(deck)
+  if (sizes && !sizes.some((f) => FORMATS[f].w === pw && FORMATS[f].h === ph))
+    add('warn', 'format', `Layout "${s.layout}" ist für ${sizes.map((f) => FORMATS[f].name).join(' oder ')} gedacht, das Deck hat ${pw}×${ph}. Format mit update_deck umstellen oder ein anderes Layout wählen.`)
   const parsed = def.schema.safeParse(s.content)
   if (!parsed.success)
     for (const e of parsed.error.issues) add('error', 'schema', `${e.path.join('.') || 'content'}: ${e.message}`, String(e.path[0] ?? ''))
@@ -80,7 +92,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     const b = t.box
     if (!t.slot.startsWith('items.') && (b.x < MARGIN || b.y < MARGIN || b.x + b.w > sizeOf(deck).w - MARGIN || b.y + b.h > sizeOf(deck).h - MARGIN))
       add('error', 'frame', `"${t.slot}" ragt in den Rand der Folie.`, t.slot)
-    if (t.sizePx < 13) add('error', 'min-size', `"${t.slot}" ist mit ${Math.round(t.sizePx * 0.75)} pt zu klein.`, t.slot)
+    if (t.sizePx < prof.minPx(sizeOf(deck).w)) add('error', 'min-size', `"${t.slot}" ist mit ${Math.round(t.sizePx * 0.75)} pt zu klein.`, t.slot)
     const photo = photos.find((p) => overlapArea(p.box, b) > 4)
     const bg = photo ? bgOverPhoto(t, photo, m.els) : t.bg
     if (bg) {
@@ -106,8 +118,10 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
       if (overlapArea(solids[a].box, solids[b].box) > 4)
         add('error', 'overlap', `"${solids[a].slot}" überlappt "${solids[b].slot}".`, solids[a].slot)
 
-  const count = texts.filter((t) => !t.slot.startsWith('footer')).reduce((n, t) => n + wordsOf(t).length, 0)
-  if (count > 50) add('warn', 'density', `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`)
+  const count = texts.filter((t) => !t.slot.startsWith('_footer')).reduce((n, t) => n + wordsOf(t).length, 0) // Fußzeile (Decktitel, Seitenzahl) zählt nicht
+  if (count > prof.words) add('warn', 'density', prof === PROFILE.slides
+    ? `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`
+    : `${count} Wörter auf der ${prof.unit} – zu viel für dieses Format (Ziel: unter ${prof.goal}). Kürzen oder auf eine weitere ${prof.unit} verteilen.`)
   if (/"(src|image)":""/.test(JSON.stringify(s.content ?? {}))) add('warn', 'image', 'Kein Bild gesetzt – es wird ein Platzhalter angezeigt. Mit find_images ein Foto suchen oder eigenes Bild einsetzen.')
   // Live-Test: die KI lässt highlight trotz Schema-Hinweis weg, dann trägt keine Farbe die Aussage des Titels
   const chart = s.content?.chart
@@ -118,7 +132,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
   // Agenda ist Navigation; bei split füllt die Akzentfläche links, die nicht als Element gemessen wird; ein Bildfeld füllt seine
   // Hälfte auch als Platzhalter (dafür gibt es die Regel image)
   // Nicht zusammen mit density: Dann ist zu viel Text klein gesetzt, nicht zu wenig Inhalt da
-  if (!AIRY.includes(s.layout) && s.layout !== 'agenda' && s.frame !== 'split' && !('image' in (s.content ?? {})) && count <= 50) {
+  if (!AIRY.includes(s.layout) && s.layout !== 'agenda' && s.frame !== 'split' && !('image' in (s.content ?? {})) && count <= prof.words && prof.deckRules) {
     const { w: W, h: H } = sizeOf(deck)
     const used = m.els.filter((e) => !/^(_footer|source$|note$)/.test(e.slot) && e.box.w * e.box.h < 0.6 * W * H)
     if (used.length) {
@@ -133,6 +147,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
 
 export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   const out = deck.slides.flatMap((_, i) => lintSlide(deck, i, measured[i]))
+  if (!PROFILE[profileOf(deck)].deckRules) return [...out, ...lintMotion(deck, measured)]
   const s = deck.slides
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: s[i].id, severity: 'warn', rule, message })
   if (s.length && s[0].layout !== 'cover') warn(0, 'structure', 'Das Deck beginnt nicht mit einer Titelfolie (cover).')

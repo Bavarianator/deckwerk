@@ -2,18 +2,19 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage, screen, shell } from 'electron'
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { Deck } from '../shared/deck'
-import { DeckAgent, type AgentEvent, type Engine } from './agent'
+import type { BrandKit, Deck } from '../shared/deck'
+import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
-import { assetUrl, buildTools, localizeDeck, STYLE_FILE } from './tools'
+import { assetUrl, buildTools, defaultBrand, localizeDeck, saveBrand, STYLE_FILE } from './tools'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
+import { createSyncer, localAsset, testSync, type SyncSettings } from './sync'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -57,6 +58,22 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   detect()
   const hasApiKey = () => existsSync(keyFile) || !!process.env.ANTHROPIC_API_KEY
   loadImageSettings()
+
+  // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/deckwerk wie image-settings.bin; Lauf beim Start und 5 s nach dem Speichern
+  const syncFile = join(app.getPath('appData'), 'deckwerk', 'sync.bin')
+  let syncCfg: SyncSettings | null = null
+  try { if (existsSync(syncFile)) syncCfg = JSON.parse(safeStorage.decryptString(readFileSync(syncFile))) } catch (e) { console.warn('[sync] Zugang nicht lesbar:', e) }
+  // Hat der Sync das offene Deck überschrieben, neu laden. ponytail: mit ungesicherten Änderungen gewinnt die lokale Fassung beim nächsten Speichern
+  const syncChanged = (files: string[]) => {
+    if (!path || dirty || !files.includes(path) || !existsSync(path)) return
+    try { deck = readDeck(path); agent?.setDeck(deck); if (!win.isDestroyed()) win.webContents.send('deck:synced', deck) } catch (e) { console.warn('[sync] Deck neu laden:', e) }
+  }
+  const syncer = createSyncer(HOME, () => syncCfg, (st) => { if (!win.isDestroyed()) win.webContents.send('sync:status', st) }, syncChanged)
+  syncer.later(3000)
+  // Änderungen anderer Geräte bzw. des MCP-Prozesses: beim Zurückkehren ins Fenster und alle 5 Minuten abholen
+  win.on('focus', () => syncer.later(1000))
+  const syncTick = setInterval(() => syncer.later(0), 5 * 60_000)
+  win.on('closed', () => clearInterval(syncTick))
 
   const emit = (e: AgentEvent) => {
     if (e.type === 'deck') { deck = e.deck; dirty = true }
@@ -165,11 +182,14 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     await snapshot(path)
     const json = JSON.stringify(deck, null, 2)
     dirty = false // vor dem Schreiben: eine Änderung, die währenddessen kommt, bleibt markiert
-    await writeFile(path, json)
+    // atomar über eine Punktdatei (vom Sync ausgenommen): ein gleichzeitiger Cloud-Abgleich liest nie eine halbe deck.json
+    await writeFile(`${dirname(path)}/.deck.json.part`, json)
+    await rename(`${dirname(path)}/.deck.json.part`, path)
+    syncer.later()
     return path
   })
 
-  ipcMain.handle('deck:export', async (_, format: 'pptx' | 'pdf' | 'png' | 'md') => {
+  ipcMain.handle('deck:export', async (_, format: ExportFormat) => {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Exportieren.')
     await mkdir(outDir(), { recursive: true })
     const [file] = await engine.exportDeck(deck, format, outDir())
@@ -195,18 +215,49 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
   ipcMain.handle('agent:abort', () => agent?.abort())
 
-  ipcMain.handle('key:set', async (_, key: string) => {
-    if (!key.trim()) throw new Error('Der API-Key ist leer.')
+  // Prüft den Key vorher bei Anthropic (GET /v1/models kostet nichts). Ohne Netz wird er ungeprüft gespeichert.
+  ipcMain.handle('key:set', async (_, key: string): Promise<'geprüft' | 'ungeprüft'> => {
+    key = key.trim()
+    if (!key) throw new Error('Der API-Schlüssel ist leer.')
     if (!safeStorage.isEncryptionAvailable()) throw new Error('Keine sichere Schlüsselablage verfügbar. Setze stattdessen die Umgebungsvariable ANTHROPIC_API_KEY.')
+    const r = await fetch('https://api.anthropic.com/v1/models?limit=1', { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' }, signal: AbortSignal.timeout(10_000) }).catch(() => null)
+    if (r?.status === 401) throw new Error(`Diesen Schlüssel kennt Anthropic nicht. Kopier ihn noch einmal vollständig${key.startsWith('sk-ant-') ? '' : ', er beginnt mit „sk-ant-“'}.`)
+    if (r?.status === 403) throw new Error('Anthropic lehnt den Schlüssel ab. Prüf in der Anthropic-Konsole, ob dein Konto freigeschaltet ist.')
     await mkdir(dirname(keyFile), { recursive: true })
-    await writeFile(keyFile, safeStorage.encryptString(key.trim()))
+    await writeFile(keyFile, safeStorage.encryptString(key))
     agent?.abort()
     agent = null // nächster send nutzt den neuen Key
+    return r?.ok ? 'geprüft' : 'ungeprüft'
+  })
+  // Hilfe-Links der Einrichtung öffnen im Browser; nur diese Ziele, der Renderer kann keine beliebige Adresse öffnen
+  const HILFE = { 'api-keys': 'https://platform.claude.com/settings/keys', claude: 'https://code.claude.com/docs/en/setup', node: 'https://nodejs.org/' }
+  ipcMain.handle('hilfe:open', (_, id: string) => {
+    if (!Object.hasOwn(HILFE, id)) throw new Error(`Unbekannter Link: ${id}`)
+    return shell.openExternal(HILFE[id as keyof typeof HILFE])
   })
 
   // KI-Bilder (Einrichtung → Bilder): Keys bleiben im Main-Prozess, generate_image liest sie beim Aufruf
   ipcMain.handle('imageSettings:get', () => imageStatus())
   ipcMain.handle('imageSettings:set', (_, patch: unknown) => saveImageSettings(patch))
+
+  ipcMain.handle('sync:get', () => syncer.status())
+  ipcMain.handle('sync:run', () => syncer.run())
+  ipcMain.handle('sync:test', (_, s: SyncSettings) => testSync(s))
+  ipcMain.handle('sync:set', async (_, s: SyncSettings | null) => {
+    const sent = () => { if (!win.isDestroyed()) win.webContents.send('sync:status', syncer.status()) } // auch die Wolke in der Kopfleiste
+    if (!s) { syncCfg = null; await rm(syncFile, { force: true }); sent(); return syncer.status() }
+    if (!safeStorage.isEncryptionAvailable()) throw new Error('Keine sichere Schlüsselablage verfügbar, das Passwort kann nicht gespeichert werden.')
+    const url = String(s.url).trim(), user = String(s.user).trim()
+    // gespeichertes Passwort nur für denselben Zugang, nie an eine neue Adresse
+    const next = { url, user, pass: String(s.pass) || (syncCfg?.url === url && syncCfg.user === user ? syncCfg.pass : '') }
+    if (!next.url || !next.user || !next.pass) throw new Error('Adresse, Nutzername und App-Passwort ausfüllen.')
+    await testSync(next)
+    syncCfg = next
+    await mkdir(dirname(syncFile), { recursive: true })
+    await writeFile(syncFile, safeStorage.encryptString(JSON.stringify(next)), { mode: 0o600 })
+    sent()
+    return syncer.run()
+  })
 
   ipcMain.handle('image:pick', async () => {
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'svg'] }] })
@@ -218,7 +269,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Freisteller (nativ, siehe bg-remove.ts); Fortschritt des einmaligen Modell-Downloads als Ereignis
   ipcMain.handle('image:removeBg', async (_, src: string) => {
     if (!src.startsWith('asset://')) throw new Error('Nur eigene Bilddateien lassen sich freistellen')
-    const file = decodeURIComponent(new URL(src).pathname)
+    const file = localAsset(decodeURIComponent(new URL(src).pathname))
     const { removeBackground } = await import('./bg-remove')
     const png = await removeBackground(file, join(HOME, 'models'), (pct) => !win.isDestroyed() && win.webContents.send('bg:progress', pct))
     await mkdir(assets, { recursive: true })
@@ -243,6 +294,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (!text) throw new Error('In der Datei steht kein lesbarer Text (gescanntes PDF?).')
     return { name: path.split('/').pop()!, text: text.slice(0, SOURCE_MAX), cut: text.length > SOURCE_MAX }
   })
+  ipcMain.handle('brand:get', () => defaultBrand() ?? null)
+  ipcMain.handle('brand:set', (_e, b: BrandKit) => saveBrand(b))
   ipcMain.handle('style:open', async () => {
     await mkdir(HOME, { recursive: true })
     if (!existsSync(STYLE_FILE)) await writeFile(STYLE_FILE, '# Hausstil\n\n<!-- Gilt für jedes Deck. Eine Vorliebe pro Zeile; die KI ergänzt hier, wenn du „merk dir …“ sagst. -->\n')

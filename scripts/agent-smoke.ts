@@ -100,8 +100,8 @@ assert.match((await run('find_images', {})).text, /Keine .*Bilder|nicht konfigur
   const T2 = Object.fromEntries(buildTools({ engine, getDeck: () => deck, setDeck: () => {}, assetDir, outDir: '/tmp/out', unsplashKey: 'k' }).map((t) => [t.name, t])) as Record<string, ToolDef>
   const r = await T2.find_images.run(T2.find_images.inputSchema.parse({ query: 'teacher classroom' }))
   globalThis.fetch = realFetch
-  assert.match(r.text, /asset:\/\/local\/.*unsplash-abc\.jpg — 1920×1280 px, teacher in classroom \(Foto: Jane/)
-  assert.ok(calls.includes('https://img/r?ixid=1&w=1920&q=82&fm=jpg'), '1920-px-Download')
+  assert.match(r.text, /asset:\/\/local\/.*unsplash-abc\.jpg — 2560×1707 px, teacher in classroom \(Foto: Jane/)
+  assert.ok(calls.includes('https://img/r?ixid=1&w=2560&q=82&fm=jpg'), '2560-px-Download')
   assert.ok(existsSync(join(assetDir, 'unsplash-abc.jpg')) && r.images!.length === 1 && r.images![0][0] === 0xff)
   assert.ok(calls.some((u) => u.includes('per_page=3&orientation=landscape')) && calls.includes('https://api/dl'), 'Suche + Download-Meldung')
   assert.match((await T2.find_images.run(T2.find_images.inputSchema.parse({}))).text, /unsplash-abc\.jpg/, 'danach lokal auffindbar')
@@ -150,6 +150,7 @@ assert.match((await run('find_images', {})).text, /Keine .*Bilder|nicht konfigur
   Object.assign(process.env, keep)
 }
 assert.match((await run('export_deck', { format: 'pptx' })).text, /deck\.pptx/)
+assert.match((await run('export_deck', { format: 'zip' })).text, /deck\.zip/)
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
 assert.equal(events, 9, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test

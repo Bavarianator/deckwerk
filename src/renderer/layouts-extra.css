@@ -53,6 +53,7 @@
 .tb { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
 .tb-row { display: grid; column-gap: 20px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
 .tb-head { border-bottom: 2px solid var(--text); padding-top: 0; }
+.tb-row:nth-child(even of :not(.tb-head, .tb-hl)) { background: var(--surface); } /* feine Zebra-Streifen, landen im Hintergrundbild */
 .tb.roomy .tb-row:not(.tb-head) { padding-top: 16px; padding-bottom: 16px; }
 .tb-head .t { font-weight: 700; color: var(--muted); }
 .tb-hl { background: var(--accent-tint); border-radius: var(--radius); border-bottom-color: transparent; }
@@ -118,9 +119,14 @@
 .fn.with-take { grid-template-columns: 1fr 320px; }
 .fn-bars { min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
 .fn-row { display: grid; grid-template-columns: 1fr 220px; align-items: center; gap: 20px; }
-.fn-bar { justify-self: center; height: 64px; border-radius: var(--radius); background: var(--fill); display: flex; align-items: center; justify-content: center; }
-.fn-val { color: var(--on-accent); white-space: nowrap; }
+.fn-bar { justify-self: start; height: 64px; border-radius: var(--radius); background: var(--surface2); display: flex; align-items: center; padding-left: 20px; } /* linksbündig, nur die Stufe mit dem größten Abfall in Akzentfarbe */
+.fn-bar.hl { background: var(--fill); }
+.fn-val { color: var(--text); white-space: nowrap; }
+.fn-bar.hl .fn-val { color: var(--on-accent); }
+.fn-side { display: flex; flex-direction: column; gap: 2px; }
 .fn-label { font-weight: 700; }
+.fn-conv { color: var(--muted); }
+.fn-conv.hl { color: var(--accent); font-weight: 700; }
 
 /* ---------- Marktgröße ---------- */
 .ms { flex: 1; min-height: 0; display: grid; grid-template-columns: auto 1fr; gap: 64px; align-items: center; }
@@ -145,3 +151,23 @@
 .lg-tile { height: 110px; border-radius: var(--radius); background: var(--surface); display: flex; align-items: center; justify-content: center; padding: 20px 24px; min-width: 0; }
 .lg-img { width: 100%; height: 100%; }
 .lg-name { text-align: center; color: var(--muted); }
+
+/* ---------- Dokumente (A4): Fließtext, Angebot ---------- */
+.doc { flex: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 1fr; gap: 24px 40px; align-content: start; }
+.doc.two { grid-template-columns: 1fr 1fr; }
+.doc-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.doc-sec { display: flex; flex-direction: column; gap: 6px; }
+.t.doc-lead { margin-bottom: 22px; font-size: calc(var(--fs-body) * 1.2); line-height: 1.4; }
+.of-meta { flex: none; display: flex; justify-content: space-between; gap: 40px; margin-bottom: 22px; }
+.of-date { text-align: right; white-space: nowrap; }
+.of { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.of > * { flex: none; } /* Zeilen schrumpfen nicht: sonst überlappen sie die Summen, statt dass der Autofit den Überlauf sieht */
+.of-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px 120px; gap: 16px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.of-head { padding-top: 0; }
+.of-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.of .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.of-tot { margin: 18px 0 0 auto; width: 56%; display: flex; flex-direction: column; gap: 6px; }
+.of-tot-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.of-tot-row.sum { position: relative; margin-top: 8px; padding-top: 12px; } /* Pseudo-Element: landet im Hintergrundbild, nicht als Rahmen in der PPTX */
+.of-tot-row.sum::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
+.t.of-terms { flex: none; margin-top: 18px; }

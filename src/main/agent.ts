@@ -12,12 +12,13 @@ import guide from './design-guide.md?raw'
 import { buildCatalog, buildTools, houseStyle, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
+export type ExportFormat = 'pptx' | 'pdf' | 'png' | 'md' | 'zip' // zip = PNG je Folie + PDF in einer Datei (Social-Karussell, Druck)
 export interface Engine {
   measure(deck: Deck, indices?: number[]): Promise<Measured[]> // Autofit + Messung, Reihenfolge wie indices
   renderPng(deck: Deck, indices: number[], width?: number): Promise<Buffer[]> // PNG pro Folie (default 1024 px breit)
   renderOverview(deck: Deck): Promise<Buffer> // Kontaktbogen aller Folien, 1 PNG
   lint(deck: Deck): Promise<Issue[]>
-  exportDeck(deck: Deck, format: 'pptx' | 'pdf' | 'png' | 'md', outDir: string): Promise<string[]>
+  exportDeck(deck: Deck, format: ExportFormat, outDir: string): Promise<string[]>
   thumbnail?(img: Buffer, width: number): Buffer | null // JPEG-Vorschau eines Bildes ohne Rendern; null = Format unbekannt (WebP)
 }
 

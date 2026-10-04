@@ -47,8 +47,8 @@ function Cover({ c, v }: Props<'cover'>) {
   const img = photoOf(c.image)
   const photo = !!img?.src
   return (
-    <Frame decor="hero" media={photo && <Backdrop image={img!} scrim={v === 'center' ? 'full' : 'left'} />}>
-      <div className={`cover ${v === 'center' ? 'center' : ''} ${photo ? 'on-photo' : ''}`} style={photo ? onPhoto(theme) : undefined}>
+    <Frame decor="hero" media={photo && <Backdrop image={img!} scrim={v === 'center' ? 'full' : v === 'bottom' ? 'bottom' : 'left'} />}>
+      <div className={`cover ${v === 'center' ? 'center' : v === 'bottom' ? 'bottom' : ''} ${photo ? 'on-photo' : ''}`} style={photo ? onPhoto(theme) : undefined}>
         <div className="cover-top">{theme.logo && <Img src={theme.logo} slot="_logo" className="cover-logo" contain />}</div>
         <div className="cover-main">
           <Eyebrow text={c.eyebrow} center={v === 'center'} />
@@ -100,7 +100,7 @@ function Section({ c }: Props<'section'>) {
       <div className="media right section-media"><Img src={img!.src} focus={img!.focus} look={img!.look} slot="image" /></div>
     )}>
       <div className="section">
-        {c.number && <T role="display" slot="number" className="section-num">{c.number}</T>}
+        {c.number && <T role="hero" slot="number" className="section-num">{c.number}</T>}
         <T role="display" slot="title" maxLines={photo ? 3 : 2}>{c.title}</T>
         {c.subtitle && <T role="body" slot="subtitle" maxLines={photo ? 3 : 2} className="section-sub">{c.subtitle}</T>}
       </div>
@@ -108,11 +108,12 @@ function Section({ c }: Props<'section'>) {
   )
 }
 
-function Statement({ c }: Props<'statement'>) {
+function Statement({ c, v }: Props<'statement'>) {
+  const center = v === 'center'
   return (
     <Frame decor="hero">
-      <div className="statement">
-        <Eyebrow text={c.eyebrow} center />
+      <div className={`statement ${center ? 'center' : ''}`}>
+        <Eyebrow text={c.eyebrow} center={center} />
         <T role="statement" slot="text" maxLines={4} className="statement-text" build={0}>{c.text}</T>
         {c.source && (
           <div className="statement-source">
@@ -169,7 +170,7 @@ function TwoColumn({ c, v }: Props<'two-column'>) {
         {(['left', 'right'] as const).map((k, i) => {
           const col = c[k]
           return (
-            <Box key={k} slot={`_card.${k}`} className={`card col-card ${v === 'highlight-right' && k === 'right' ? 'hl' : ''}`} build={i} fit>
+            <Box key={k} slot={`_card.${k}`} className={`${v === 'rule' ? 'col-rule' : 'card'} col-card ${v === 'highlight-right' && k === 'right' ? 'hl' : ''}`} build={i} fit>
               <T role="h2" slot={`${k}.heading`} build={i}>{col.heading}</T>
               {col.text && <T role="body" slot={`${k}.text`} build={i}>{col.text}</T>}
               <Points items={col.points} base={`${k}.points`} build={i} />
@@ -276,7 +277,7 @@ function Timeline({ c }: Props<'timeline'>) {
           <div className="tl-item" key={i}>
             <Box slot={`_dot.${i}`} className="tl-dot" ellipse build={i} />
             <Box slot={`_card.${i}`} className="card tl-card" build={i} fit>
-              <T role="label" slot={`items.${i}.date`} build={i} className="tl-date">{it.date}</T>
+              <T role={roomy ? 'h2' : 'h3'} slot={`items.${i}.date`} build={i} className="tl-date">{it.date}</T>
               <T role={roomy ? 'h2' : 'h3'} slot={`items.${i}.title`} build={i}>{it.title}</T>
               {it.desc && <T role="body" slot={`items.${i}.desc`} build={i} className="muted">{it.desc}</T>}
             </Box>
@@ -294,16 +295,9 @@ function Process({ c }: Props<'process'>) {
       <div className="proc">
         {c.steps.map((s, i) => (
           <Fragment key={i}>
-            {i > 0 && (
-              <div className="proc-arrow">
-                <Icon name="chevron-right" slot={`_arrow.${i}`} size={26} build={i} />
-              </div>
-            )}
             <Box slot={`_card.${i}`} className="card proc-card" build={i} fit>
               <div className="proc-head">
-                <Box slot={`_badge.${i}`} className="proc-badge" ellipse build={i}>
-                  <T role="label" slot={`_n.${i}`} build={i}>{String(i + 1)}</T>
-                </Box>
+                <T role="h1" slot={`_n.${i}`} build={i} className="proc-num">{String(i + 1).padStart(2, '0')}</T>
                 {s.icon && <Icon name={s.icon} slot={`_icon.${i}`} size={28} build={i} className="proc-icon" />}
               </div>
               <T role="h2" slot={`steps.${i}.title`} build={i}>{s.title}</T>

@@ -45,7 +45,7 @@ export default function App() {
   const [nav, setNav] = useState(true) // Folienübersicht links
   const [panel, setPanel] = useState<Panel>(null) // rechts: Einfügen oder Anpassen
   const [look, setLook] = useState(false)
-  const [setup, setSetup] = useState(false) // Einrichtung: beim ersten Start von selbst (state().setupDone), sonst über das Zahnrad
+  const [setup, setSetup] = useState<boolean | string>(false) // Einrichtung: beim ersten Start von selbst (state().setupDone), sonst über das Zahnrad; Text = Schritt, mit dem sie aufgeht
   const [formats, setFormats] = useState(false)
   const [view, setView] = useState<View>('slide') // einzelne Folie oder Übersicht aller Folien
   const [target, setTarget] = useState<Target | null>(null) // gewähltes Element als Bezug für die KI-Leiste
@@ -198,6 +198,12 @@ export default function App() {
     turnStart.current = null
   }
   useEffect(() => api.onDeckOpened((s) => load(s.deck, s.path)), []) // Doppelklick auf eine deck.json bei laufender App
+  // Cloud-Sync brachte eine neuere Fassung: nur das Deck tauschen, Chat und Auswahl bleiben
+  useEffect(() => api.onDeckSynced((d) => {
+    skipSave.current = true
+    setDoc(fresh(d))
+    setSel((i) => Math.min(i, Math.max(0, d.slides.length - 1)))
+  }), [])
   const actions = {
     onNew: () => guard(async () => {
       await api.newDeck() // Main speichert offene Änderungen vorher (flush)
@@ -217,7 +223,7 @@ export default function App() {
       setSaved(true)
       setStatus({ text: `Gespeichert: ${p}` })
     }),
-    onExport: (format: 'pptx' | 'pdf' | 'png' | 'md') => guard(async () => {
+    onExport: (format: 'pptx' | 'pdf' | 'png' | 'zip' | 'md') => guard(async () => {
       setStatus({ text: `Exportiere ${format.toUpperCase()} …` })
       setStatus({ text: `Exportiert: ${await api.exportDeck(format)}` })
     }),
@@ -369,9 +375,10 @@ export default function App() {
       {home && status?.error && <div className="toast material" role="alert">{status.text}</div>}
       {formats && deck && <FormatSheet deck={deck} index={index} onApply={(id) => commit((d) => resizeDeck(d, id))} onCopies={saveCopies} onClose={() => setFormats(false)} />}
       {look && deck && <LookSheet deck={deck} busy={busy} patchDeck={patchDeck} pickImage={api.pickImage} onAsk={(t) => send(t)} onClose={() => setLook(false)} />}
-      {setup && <SetupSheet model={model} onModel={pickModel} onKeySaved={() => { void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} onClose={() => { setSetup(false); void loadChoices() }} />}
+      {setup && <SetupSheet model={model} onModel={pickModel} start={typeof setup === 'string' ? setup : undefined} onKeySaved={() => { void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} onClose={() => { setSetup(false); void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} />}
       {askKey && (
         <KeyDialog
+          onSetup={() => { setAskKey(false); setSetup('KI-Zugang') }}
           onClose={() => setAskKey(false)}
           onSave={async (key) => {
             await api.setApiKey(key).catch((e) => { throw new Error(errText(e)) })

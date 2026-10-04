@@ -26,7 +26,9 @@ export interface BrandKit {
   primary: string // #RRGGBB
   secondary?: string
   logo?: string // asset://local/<abs path>
+  logoDark?: string // Logo für dunklen Grund (Theme dark); fehlt es, gilt logo
   headFont?: string // FontName aus src/shared/themes.ts
+  bodyFont?: string // FontName für Fließtext
 }
 
 // Eigenes Theme, das die KI pro Deck entwirft. Aus wenigen Vorgaben leitet resolveTheme die volle Palette ab
@@ -43,11 +45,12 @@ export interface ThemeSpec {
   decor: DecorId
   texture?: 'grain'
   // Struktur statt nur Farbe: damit eigene Designs sich wirklich unterscheiden
-  titleSize?: 'normal' | 'large' // large = Plakat-Titel (rund 1,2×)
+  titleSize?: 'normal' | 'large' | 'huge' // large = Plakat-Titel (rund 1,2×), huge = 1,45× (Stil mutig)
   titleWeight?: 'regular' | 'bold'
   rule?: 'none' | 'over' | 'under' // feine Linie über bzw. unter dem Folienkopf
   sectionTone?: Tone // Kapiteltrenner: accent (Standard), invert oder normal
   vivid?: boolean // kräftiger Farbgrund statt fast Weiß/Schwarz (Stil mutig); sonst dämpft themeFromSpec den Grund
+  labelFont?: 'body' | 'mono' // mono = Eyebrow und Fußzeile in IBM Plex Mono
 }
 
 export interface Slide {
@@ -149,7 +152,22 @@ export const FORMATS = {
 } as const
 export type FormatId = keyof typeof FORMATS
 export interface Size { w: number; h: number }
+// Kürzel für Dateinamen (4x5, a4 …); Sondergrößen als 800x600. 16:9 bleibt leer, damit die Namen wie bisher heißen.
+export const formatSuffix = (size: Size | undefined): string => {
+  if (!size || (size.w === 1280 && size.h === 720)) return ''
+  const id = (Object.keys(FORMATS) as FormatId[]).find((k) => FORMATS[k].w === size.w && FORMATS[k].h === size.h)
+  return `-${(id ?? `${size.w}x${size.h}`).replace(':', 'x')}`
+}
 export const sizeOf = (deck: Pick<Deck, 'size'> | null | undefined): Size => deck?.size ?? { w: 1280, h: 720 }
+
+// Profil aus der Größe: bestimmt Lint-Grenzen und Guide-Regeln. A4 = Dokument, Quadrat/Hochformat = Social, sonst Folien.
+export type Profile = 'slides' | 'social' | 'doc'
+export function profileOf(deck: Pick<Deck, 'size'> | null | undefined): Profile {
+  const { w, h } = sizeOf(deck)
+  const a4 = (f: { w: number; h: number }) => w === f.w && h === f.h
+  if (a4(FORMATS.a4) || a4(FORMATS['a4-quer'])) return 'doc'
+  return w / h <= 1.2 ? 'social' : 'slides'
+}
 
 export interface Deck {
   title: string
@@ -191,9 +209,6 @@ export function morphNames(prev: MorphEl[], next: MorphEl[]): string[] {
 }
 
 // ---- what the renderer measures and hands to lint + PPTX export (all px, relative to the 1280x720 slide) ----
-
-export const SLIDE_W = 1280
-export const SLIDE_H = 720
 
 export interface Box { x: number; y: number; w: number; h: number }
 

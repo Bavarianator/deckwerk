@@ -1,6 +1,6 @@
 ---
 name: deckwerk
-description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts – und als PowerPoint (PPTX), PDF oder PNG exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
+description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente und Angebote – und als PowerPoint (PPTX), PDF oder PNG exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
 ---
 
 # Deckwerk: Präsentationen, die man dem Chef zeigen kann
@@ -18,17 +18,21 @@ Rufe `read_guide` mit `part` 1, 2, … auf, bis die Antwort „Teil n von n“ m
 ## 2. Briefing und Material
 
 - Höchstens 2–3 Rückfragen: Zielgruppe, Ziel oder Entscheidung, Umfang und Anlass. Fehlt etwas, triff eine sinnvolle Annahme und nenne sie.
+- **Format:** Standard ist 16:9. Für Instagram (Karussell 4:5 oder 1:1, Story 9:16) oder Druck (A4) beim Anlegen `create_deck` mit `format` aufrufen; Gerüst und Textmenge stehen im Guide §3 (Karussell, A4-Dokument mit `doc-text`/`offer`).
 - **Quellmaterial:** Nennt der Nutzer Dateien (Bericht, README, Tabelle, Notizen), lies sie selbst und übernimm nur belegte Zahlen. Fehlt eine Zahl, nimm einen deutlich markierten Platzhalter und liste ihn am Ende auf. Nie stillschweigend erfinden.
 - **Vorhandenes Deck:** `open_deck` mit dem Pfad, dann `get_deck`. Gezielt mit `update_slide` ändern statt neu bauen.
 
 ## 3. Idee, dann Storyline
 
-Erst die Idee (Guide §2 „Die Idee“): Entwickle zwei bis drei Leitideen und nimm die überraschendste, die zum Publikum passt. Mögliche Zutaten:
+Erst die Idee (Guide §2 „Die Idee“): Entwickle drei Leitideen (naheliegend, überraschend, gewagt), verwirf die naheliegende und nimm die stärkste, die zum Publikum passt. Mögliche Zutaten:
 - ein Bild für das Ganze
 - ein Einstieg mit Haken statt Agenda
 - greifbare Vergleiche für Zahlen
 - konkrete Beispiele aus dem Material
-- genau ein mutiger Höhepunkt
+- ein Perspektivwechsel (Sicht des Kunden, Brief aus 2030, ein Tag im Leben von …)
+- eine Serie von Ein-Satz-Folien als Schlagfolge
+- Kapiteltrenner als Frage
+- ein mutiger Höhepunkt (im Stil mutig zwei bis drei)
 - ein Schluss, der den Anfang aufgreift
 
 Nenne die Idee in einem Satz. Mutig sein heißt hier: in Idee, Sprache und Dramaturgie, nicht in Deko. Beim Chef-Update bleibt sie leise.
@@ -41,7 +45,8 @@ Dann zeige die Storyline als nummerierte Liste von Action Titles im Chat:
 
 ## 4. Look
 
-- Ohne Vorgabe: `propose_looks` mit zwei eigenen Entwürfen, einem hellen, sachlichen und einem dunklen oder plakativen. Sie sollen sich in der Struktur unterscheiden (Serif/Sans, titleSize, rule, sectionTone), nicht nur in der Farbe. Lass den Nutzer wählen. Gibt er Marke, Farben oder Theme vor, rufe direkt `create_deck` auf.
+- Ohne Vorgabe: `propose_looks` mit drei eigenen Entwürfen: einem hellen, sachlichen, einem dunklen oder plakativen und einem Überraschungsentwurf, der unerwartet, aber aus dem Thema begründet ist. Sie sollen sich in der Struktur unterscheiden (Serif/Sans, titleSize, rule, sectionTone, labelFont), nicht nur in der Farbe. Jedes Design trägt eine unerwartete Entscheidung (Guide §6). Im Stil mutig sind auch `plakat`, `magazin`, `neomono` und `pastell` Kandidaten. Lass den Nutzer wählen. Gibt er Marke, Farben oder Theme vor, rufe direkt `create_deck` auf.
+- **Brand-Kit:** Hat der Nutzer in Deckwerk eine Marke (Farben, Schriften, Logo) gespeichert, wendet `create_deck` sie automatisch an und nennt das im Ergebnis. Dann Akzentfarbe und Schriften nicht überschreiben; `brand: null` nur auf ausdrücklichen Wunsch. Der Hausstil ergänzt die Marke (Ton, Anrede), die Marke bestimmt Farbe und Schrift.
 - `create_deck` mit genau dem gewählten `customTheme`. Die Vorschau im Ergebnis wie ein Art Director prüfen.
 - **Stil des Decks:** sachlich (Standard) oder mutig (`style` in `create_deck`/`update_deck`).
   - **Mutig** wählen, wenn der Nutzer es so einstellt oder „mutiger“, „plakativ“ bzw. „verspielter“ will, oder bei Event, Kampagne, Schule, Kultur. Dann erlaubt Guide §6 „Stil des Decks“ kräftigen Farbgrund (`vivid`), Plakat-Typo, mehr Farbflächen und markante Bilder.
@@ -80,7 +85,7 @@ Dann zeige die Storyline als nummerierte Liste von Action Titles im Chat:
 ## 8. Abschluss
 
 - `save_deck` speichert nach `~/Deckwerk/<titel>/deck.json`. Nenne den Pfad; der Nutzer öffnet die Datei in der Deckwerk-App (Doppelklick auf `deck.json`) und kann dort weiterarbeiten.
-- Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `pdf`, `png` oder `md` (Handout). Pfade nennen.
+- Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `pdf`, `png`, `zip` (alle Bilder plus PDF in einer Datei, für Karussells) oder `md` (Handout). Pfade nennen; bei Nicht-16:9 tragen die Dateien das Format im Namen (`-4x5`, `-a4`).
 - Kurzer Bericht: Folienzahl, Storyline in einem Satz, getroffene Annahmen und was der Nutzer ersetzen muss (Zahlen, Zitate, Fotos).
 
 ## Häufige Fehler
