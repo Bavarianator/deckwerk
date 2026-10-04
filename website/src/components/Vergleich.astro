@@ -12,10 +12,10 @@ const REGELN = [
 ]
 ---
 
-<section class="abschnitt" id="haltung">
+<section class="abschnitt weiss" id="haltung">
   <div class="wrap">
     <div class="abschnitt-kopf">
-      <h2>Kein<br />KI-Look.</h2>
+      <h2>Kein KI-Look.</h2>
       <p class="unterzeile">Zieh am Regler. Links die Botschaft, wie Deckwerk sie setzt. Rechts, was man von KI-Folien kennt.</p>
     </div>
 
@@ -45,14 +45,14 @@ const REGELN = [
         <input type="range" min="0" max="100" step="2" value="62" />
       </label>
       </div>
-      <figcaption class="mono">Links: echte Ausgabe, Folie 1 aus „Strategie 2027“ – „{folien[echt].title}“</figcaption>
+      <figcaption>Links: echte Ausgabe, Folie 1 aus „Strategie 2027“ – „{folien[echt].title}“</figcaption>
     </figure>
 
     <ol class="regeln">
       {
         REGELN.map(([kurz, lang], i) => (
           <li data-zeigen>
-            <span class="mono">{String(i + 1).padStart(2, '0')}</span>
+            <span class="etikett">{String(i + 1).padStart(2, '0')}</span>
             <b>{kurz}</b>
             <span>{lang}</span>
           </li>
@@ -94,10 +94,9 @@ const REGELN = [
 </script>
 
 <style is:global>
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .vg-buehne { position: relative; display: grid; user-select: none; outline: 1px solid var(--ink); }
+  .vg-buehne { position: relative; display: grid; user-select: none; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-slide); }
   .vg-folie { grid-area: 1 / 1; aspect-ratio: 16 / 9; }
-  .vg-folie .folie { height: 100%; object-fit: cover; }
+  .vg-folie .folie { height: 100%; object-fit: cover; border-radius: 0; box-shadow: none; }
   .vg-ki { container-type: inline-size; }
   .vg-echt { clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
   /* Die Parodie: alles, was Deckwerk nicht macht */
@@ -111,19 +110,20 @@ const REGELN = [
   .ki-karten span { font-size: 3.4cqw; }
   .ki-karten b { font-size: 1.8cqw; }
   .ki-karten small { font-size: 1.3cqw; opacity: 0.85; }
-  .vg-griff { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 3px; margin-left: -1.5px; background: var(--ink); pointer-events: none; }
-  .vg-griff span { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 52px; height: 52px; transform: translate(-50%, -50%); background: var(--accent); color: var(--ink); font-size: 1.4rem; font-weight: 900; border: 2px solid var(--ink); }
-  .vg-etikett { position: absolute; top: 12px; padding: 6px 10px; background: var(--ink); color: var(--bg); pointer-events: none; }
-  .vg-l { left: 12px; background: var(--accent); color: var(--ink); }
-  .vg-r { right: 12px; }
+  .vg-griff { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 0 1px rgb(22 22 26 / 0.12); pointer-events: none; }
+  .vg-griff span { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 44px; height: 44px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--accent); color: #fff; font-size: 1.1rem; box-shadow: var(--shadow-float); }
+  .vg-etikett { position: absolute; top: 14px; display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; background: var(--material); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: var(--shadow-float); font-size: 0.8125rem; font-weight: 600; color: var(--text); pointer-events: none; }
+  .vg-l { left: 14px; color: var(--accent); }
+  .vg-r { right: 14px; }
   .vg-regler { position: absolute; inset: 0; }
   .vg-regler input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
-  .vergleich:has(input:focus-visible) .vg-griff span { outline: 3px solid var(--ink); outline-offset: 3px; }
-  .vergleich figcaption { margin-top: 14px; color: var(--muted); }
+  .vergleich:has(input:focus-visible) .vg-griff span { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .vergleich figcaption { margin-top: 14px; font-size: 0.875rem; color: var(--muted); text-align: center; }
 
-  .regeln { list-style: none; padding: 0; margin-top: clamp(3rem, 6vw, 5.5rem); border-top: 1px solid var(--linie); }
-  .regeln li { display: grid; grid-template-columns: 7.5rem minmax(0, 4fr) minmax(0, 6fr); gap: 1.5rem; align-items: baseline; padding: 1.5rem 0; border-bottom: 1px solid var(--linie); }
-  .regeln b { font-weight: 800; font-size: clamp(1.5rem, 2.4vw, 2.1rem); letter-spacing: -0.01em; line-height: 1.1; }
-  .regeln li > span:last-child { color: var(--leise); }
-  @media (max-width: 860px) { .regeln li { grid-template-columns: 1fr; gap: 0.4rem; } .vg-etikett { font-size: 0.7rem; } }
+  .regeln { list-style: none; padding: 0; margin-top: clamp(3rem, 6vw, 4.5rem); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+  .regeln li { display: flex; flex-direction: column; gap: 0.4rem; }
+  .regeln .etikett { color: var(--accent); }
+  .regeln b { font-size: 1.15rem; font-weight: 600; }
+  .regeln li > span:last-child { color: var(--muted); }
+  @media (max-width: 860px) { .regeln { grid-template-columns: 1fr; } }
 </style>

@@ -1,17 +1,16 @@
 ---
-// Kopf einer Unterseite: riesige Versalien links, ein Satz rechts unten auf der Linie
+// Kopf einer Unterseite: wie der Startbildschirm der App, mittig auf Weiß
 interface Props { titel: string; satz: string }
 const { titel, satz } = Astro.props
 ---
 
-<header class="seitenkopf wrap">
-  <h1 set:html={titel} />
-  <p class="unterzeile">{satz}</p>
+<header class="seitenkopf">
+  <div class="wrap">
+    <h1 set:html={titel} />
+    <p class="unterzeile">{satz}</p>
+  </div>
 </header>
 
 <style is:global>
-  .seitenkopf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); align-items: end; gap: 1.5rem 3rem; padding-block: clamp(2.5rem, 6vw, 5rem) clamp(2.5rem, 5vw, 4rem); }
-  .seitenkopf h1 { font-size: clamp(4rem, 12vw, 11.5rem); margin-left: -0.04em; }
-  .seitenkopf .unterzeile { padding-top: 1rem; border-top: 3px solid var(--accent); }
-  @media (max-width: 860px) { .seitenkopf { grid-template-columns: 1fr; } }
+  .seitenkopf { padding-block: clamp(3.5rem, 8vw, 6rem) clamp(3rem, 6vw, 4.5rem); background: var(--panel); text-align: center; }
 </style>

@@ -46,11 +46,12 @@ import { UNINSTALL } from '../lib/seite'
 </section>
 
 <style is:global>
-  .faq { max-width: 60rem; border-top: 3px solid var(--ink); }
-  .faq details { border-bottom: 1px solid var(--linie); }
-  .faq summary { cursor: pointer; list-style: none; padding: 1.5rem 2.5rem 1.5rem 0; font-size: clamp(1.25rem, 2.2vw, 1.75rem); font-weight: 800; letter-spacing: -0.01em; position: relative; min-height: 44px; }
+  .faq { max-width: 760px; margin-inline: auto; padding: 4px 24px; background: var(--panel); border-radius: 16px; box-shadow: var(--shadow-panel); }
+  .faq details { border-bottom: 1px solid var(--border); }
+  .faq details:last-child { border-bottom: 0; }
+  .faq summary { cursor: pointer; list-style: none; padding: 1.1rem 2.5rem 1.1rem 0; font-weight: 600; position: relative; }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: '+'; position: absolute; right: 0.25rem; top: 1.3rem; font-weight: 300; font-size: 1.6rem; color: var(--accent); transition: transform 0.2s; }
+  .faq summary::after { content: '+'; position: absolute; right: 0.25rem; top: 0.85rem; font-size: 1.4rem; font-weight: 300; color: var(--faint); transition: transform 0.2s; }
   .faq details[open] summary::after { transform: rotate(45deg); }
-  .faq details > :not(summary) { margin-bottom: 1.5rem; color: var(--leise); font-size: 1.1rem; max-width: 62ch; }
+  .faq details > :not(summary) { margin-bottom: 1.25rem; color: var(--muted); max-width: 62ch; }
 </style>

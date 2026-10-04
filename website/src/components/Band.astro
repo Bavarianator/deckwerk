@@ -1,5 +1,5 @@
 ---
-// Folien-Wand: zwei Reihen echter Folien, gegenläufig. Davor das Export-Laufband als harte Zeile.
+// Folien-Wand: zwei Reihen echter Folien, gegenläufig, auf dem Grau der Arbeitsfläche
 import { Image } from 'astro:assets'
 import { bild } from '../lib/seite'
 
@@ -7,44 +7,30 @@ const REIHEN = [
   ['strategie-1', 'pitch-5', 'foto-2', 'quartal-4', 'strategie-4', 'pitch-11', 'foto-7', 'quartal-3'],
   ['pitch-8', 'strategie-5', 'foto-6', 'pitch-1', 'quartal-6', 'strategie-9', 'foto-4', 'pitch-7'],
 ]
-const WORTE = ['PPTX', 'PDF', 'PNG', 'Markdown', '29 Layouts', 'Jede Folie geprüft', 'Lokal', '0 €']
 ---
 
-<div class="laufband" aria-hidden="true">
-  <div class="laufband-in">
-    {[0, 1].map(() => WORTE.map((w) => <><span>{w}</span><span class="akzent">/</span></>))}
-  </div>
-</div>
-
-<section class="wand dunkel" aria-label="Folien, die Deckwerk gebaut hat">
+<section class="wand" aria-label="Folien, die Deckwerk gebaut hat">
+  <p class="wand-text klein">Echte Ausgaben von Deckwerk, nichts nachbearbeitet</p>
   {
     REIHEN.map((reihe, r) => (
       <div class:list={['wand-reihe', { rueck: r === 1 }]}>
         {[0, 1].map((kopie) =>
           reihe.map((id) => (
-            <Image {...bild(id, '420px', [420, 840])} class="folie" loading="lazy" aria-hidden={kopie === 1 ? 'true' : undefined} alt={kopie === 1 ? '' : bild(id, '').alt} />
+            <Image {...bild(id, '400px', [400, 800])} class="folie" loading="lazy" aria-hidden={kopie === 1 ? 'true' : undefined} alt={kopie === 1 ? '' : bild(id, '').alt} />
           )),
         )}
       </div>
     ))
   }
-  <p class="wand-text wrap mono">Echte Ausgaben von Deckwerk, kein Mockup</p>
 </section>
 
 <style is:global>
-  .laufband { background: var(--accent); color: var(--ink); border-block: 1px solid var(--ink); overflow: hidden; white-space: nowrap; }
-  .laufband-in { display: inline-flex; gap: 2.5rem; padding: 14px 0; font-family: var(--display); font-weight: 900; font-stretch: 62%; font-size: clamp(1.75rem, 3vw, 2.5rem); text-transform: uppercase; line-height: 1; animation: band-lauf 40s linear infinite; }
-  .laufband-in .akzent { color: var(--ink); }
-  @keyframes band-lauf { to { transform: translateX(-50%); } }
-
-  .wand { padding-block: clamp(3rem, 6vw, 5rem) 2rem; overflow: hidden; }
-  .wand-reihe { display: flex; gap: 20px; width: max-content; margin-bottom: 20px; animation: band-lauf 90s linear infinite; }
-  .wand-reihe.rueck { animation-direction: reverse; animation-duration: 110s; }
-  .wand-reihe .folie { width: clamp(260px, 30vw, 420px); flex: none; outline-color: var(--dunkel-linie); }
+  .wand { padding-block: 0 clamp(4rem, 8vw, 6rem); overflow: hidden; }
+  .wand-text { margin-bottom: 1.5rem; text-align: center; }
+  .wand-reihe { display: flex; gap: 24px; width: max-content; padding-block: 6px 18px; animation: wand-lauf 110s linear infinite; }
+  .wand-reihe.rueck { animation-direction: reverse; animation-duration: 130s; }
+  .wand-reihe .folie { width: clamp(240px, 28vw, 380px); flex: none; }
   .wand:hover .wand-reihe { animation-play-state: paused; }
-  .wand-text { margin-top: 1rem; color: var(--dunkel-muted); }
-  @media (prefers-reduced-motion: reduce) {
-    .laufband-in, .wand-reihe { animation: none; }
-    .wand { overflow-x: auto; }
-  }
+  @keyframes wand-lauf { to { transform: translateX(calc(-50% - 12px)); } }
+  @media (prefers-reduced-motion: reduce) { .wand-reihe { animation: none; } .wand { overflow-x: auto; } }
 </style>
