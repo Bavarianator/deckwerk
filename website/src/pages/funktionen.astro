@@ -1,20 +1,12 @@
 ---
 import Seite from '../layouts/Seite.astro'
 import Kopf from '../components/Kopf.astro'
-import AppFilm from '../components/AppFilm.astro'
 import Alles from '../components/Alles.astro'
 import SoGehts from '../components/SoGehts.astro'
 ---
 
 <Seite titel="Funktionen – Deckwerk" beschreibung="PowerPoint zum Weiterbearbeiten, geprüfte Folien, Vortragsmodus, lokal und kostenlos.">
-  <Kopf titel="Alles<br />drin." satz="Was eine gute Präsentation braucht, macht Deckwerk von selbst." />
-  <section class="dunkel film-buehne" aria-label="Die App bei der Arbeit">
-    <div class="wrap"><AppFilm /></div>
-  </section>
+  <Kopf titel="Alles drin." satz="Was eine gute Präsentation braucht, macht Deckwerk von selbst." />
   <SoGehts />
   <Alles />
 </Seite>
-
-<style is:global>
-  .film-buehne { padding-block: clamp(3rem, 6vw, 5rem); }
-</style>

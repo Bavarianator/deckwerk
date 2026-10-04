@@ -79,19 +79,17 @@ import { base, bild, decks, folien, groesse } from '../lib/seite'
 </script>
 
 <style is:global>
-  .demo-abschnitt { padding-top: 0; }
-  .spieler { display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 3fr); gap: 0 clamp(1.5rem, 3vw, 3rem); align-items: start; }
-  .spieler > :not(.buehne) { grid-column: 2; }
-  .buehne { grid-row: 1 / span 4; }
+  /* Wie der Editor: große Folie auf der Bühne, Notizen darunter, Blättern über runde Knöpfe */
+  .demo-abschnitt { padding-top: clamp(3rem, 6vw, 4.5rem); }
+  .spieler { max-width: 960px; margin-inline: auto; }
   .buehne { cursor: pointer; }
-  .buehne:hover .folie { outline: 3px solid var(--accent); }
-  .leiste { display: flex; align-items: stretch; border: 1px solid var(--ink); }
-  .leiste button { width: 56px; height: 56px; border: 0; background: var(--ink); color: var(--bg); font-size: 1.6rem; line-height: 1; cursor: pointer; }
-  .leiste button:hover { background: var(--accent); color: var(--ink); }
-  .zaehler { flex: 1; display: grid; place-items: center; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.95rem; }
-  .notiz { min-height: 3em; margin-top: 1.25rem; color: var(--leise); font-size: 1rem; }
-  .notiz::before { content: 'Sprechernotiz'; display: block; margin-bottom: 0.4rem; font: 0.8125rem var(--mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-  .downloads { display: grid; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--ink); font-size: 0.95rem; color: var(--muted); }
-  @media (max-width: 860px) { .spieler { grid-template-columns: 1fr; } .spieler > :not(.buehne) { grid-column: 1; } .buehne { grid-row: auto; margin-bottom: 1rem; } }
-  .downloads small { color: var(--muted); }
+  .buehne .folie { border-radius: 10px; box-shadow: var(--shadow-slide); }
+  .leiste { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 1.75rem; }
+  .leiste button { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--hover); font-size: 1.3rem; line-height: 1; cursor: pointer; }
+  .leiste button:hover { background: var(--accent); color: #fff; }
+  .zaehler { min-width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.875rem; }
+  .notiz { max-width: 720px; min-height: 3em; margin: 1.25rem auto 0; color: var(--muted); }
+  .notiz::before { content: 'Notizen'; display: block; margin-bottom: 2px; font-size: 0.8125rem; font-weight: 600; color: var(--faint); }
+  .downloads { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1.5rem; margin-top: 1.5rem; font-size: 0.9rem; color: var(--muted); }
+  .downloads small { color: var(--faint); }
 </style>

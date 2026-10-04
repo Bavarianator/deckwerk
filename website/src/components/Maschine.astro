@@ -1,152 +1,200 @@
 ---
-// Prompt-Maschine: ein Satz wird live zur Präsentation. Links tippt die Konsole Briefing und Storyline (echte Action Titles),
-// rechts fallen die echten Folien ins Raster. Daten aus folien.json, nichts ist ausgedacht.
-// Ohne JS und bei „Bewegung reduzieren“ steht das fertige Deck da; der Lauf startet erst, wenn die Maschine im Bild ist.
+// Das App-Fenster (Editor aus TopBar.tsx und shell.css nachgebaut): Kopfleiste, Filmstreifen, Bühne, Notizen, Dock.
+// Ein Lauf: Satz ins Feld des Heros tippen → Pfeil → Folien entstehen nacheinander im Filmstreifen, die Bühne zeigt die neueste,
+// die Blase meldet den Fortschritt, am Ende „geprüft“. Alles echte Folien und Titel aus folien.json.
+// Ohne JS und bei „Bewegung reduzieren“ steht das fertige erste Deck da.
 import { Image } from 'astro:assets'
-import { THEMES, base, bild, decks, folien } from '../lib/seite'
+import { THEMES, bild, decks, folien } from '../lib/seite'
 
-const satz = (d: (typeof decks)[string]) => `${d.title.replace(/ – .*/, '')} für ${d.brief.audience ?? 'das Team'}. Ziel: ${d.brief.goal ?? 'eine klare Entscheidung'}.`
 const titel = (id: string) => folien[id].title || folien[id].layout
 ---
 
-<section class="maschine dunkel" aria-labelledby="maschine-titel">
+<section class="maschine" aria-label="So sieht Deckwerk bei der Arbeit aus">
   <div class="wrap">
-    <div class="ma-kopf">
-      <h2 id="maschine-titel" class="ma-titel mono"><span class="ma-live" aria-hidden="true"></span>Live: Satz rein, Deck raus</h2>
-      <div class="pillen ma-wahl" role="group" aria-label="Briefing wählen">
-        {
-          Object.entries(decks).map(([name, d], i) => (
-            <button type="button" class="pille" data-deck={name} aria-pressed={i === 0 ? 'true' : 'false'}>
-              {d.title.replace(/ – .*/, '')}
-            </button>
-          ))
-        }
-      </div>
-    </div>
     {
       Object.entries(decks).map(([name, d], i) => (
-        <div class="ma-lauf" data-deck={name} hidden={i > 0}>
-          <div class="ma-konsole">
-            <p class="ma-prompt">
-              <span class="akzent" aria-hidden="true">&gt; </span>
-              <span class="ma-satz" data-satz={satz(d)}>{satz(d)}</span>
-              <span class="ma-cursor" aria-hidden="true" />
-            </p>
-            <p class="ma-schritt mono">Storyline · {d.slides.length} Folien · Look „{THEMES[d.theme] ?? d.theme}“</p>
-            <ol class="ma-log">
+        <div class="fenster" data-deck={name} hidden={i > 0}>
+          <div class="fe-top">
+            <span class="fe-l">
+              <span class="plain"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>Decks</span>
+            </span>
+            <span class="fe-titel"><b>{d.title}</b><span>{d.slides.length} Folien · {THEMES[d.theme] ?? d.theme}</span></span>
+            <span class="fe-r">
+              <span class="plain fe-nur-breit"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><path d="m16 6-4-4-4 4" /><path d="M12 2v13" /></svg>Exportieren</span>
+              <span class="pill tint fe-praes"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 3l14 9-14 9z" /></svg>Präsentieren</span>
+            </span>
+          </div>
+          <div class="fe-work">
+            <ol class="fe-film" aria-label="Folien">
               {d.slides.map((id, n) => (
-                <li>
-                  <span class="ma-nr">{String(n + 1).padStart(2, '0')}</span>
-                  <span class="ma-text">{titel(id)}</span>
-                  <span class="ma-ok"><span aria-hidden="true">✓</span><span class="sr">geprüft</span></span>
+                <li class:list={{ aktiv: n === 0 }}>
+                  <span class="fe-nr">{n + 1}</span>
+                  <Image {...bild(id, '160px', [160, 320])} class="fe-thumb" loading="lazy" />
                 </li>
               ))}
             </ol>
-            <p class="ma-schritt ma-ende mono"><span class="akzent">✓</span> {d.slides.length} Folien geprüft · PowerPoint gespeichert</p>
+            <div class="fe-mitte">
+              <div class="fe-buehne">
+                {d.slides.map((id, n) => (
+                  <Image {...bild(id, '(max-width: 900px) 90vw, 720px', [480, 960, 1440])} class:list={['folie gross fe-folie', { an: n === 0 }]} loading={i === 0 && n === 0 ? 'eager' : 'lazy'} />
+                ))}
+              </div>
+              <div class="fe-notiz">
+                <span class="mono">Notizen</span>
+                {d.slides.map((id, n) => <p hidden={n > 0}>{folien[id].notes}</p>)}
+              </div>
+              <div class="fe-dock">
+                <p class="fe-blase material" aria-live="polite">
+                  <span class="fe-ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>
+                  <span class="fe-spin" aria-hidden="true"></span>
+                  <span class="fe-blase-text">{d.slides.length} Folien gestaltet und geprüft</span>
+                </p>
+                <div class="fe-cap material">
+                  <svg class="fe-funke" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" /></svg>
+                  <span class="fe-cap-text">Sag, was sich ändern soll – zum Beispiel „Mach Folie 3 ruhiger“</span>
+                  <span class="round fe-cap-los"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg></span>
+                </div>
+              </div>
+            </div>
           </div>
-          <ol class="ma-folien">
-            {d.slides.map((id) => (
-              <li>
-                <Image {...bild(id, '(max-width: 860px) 45vw, 220px', [240, 480])} class="folie" loading="lazy" />
-              </li>
-            ))}
-          </ol>
+          <ul class="fe-titel-liste" hidden>
+            {d.slides.map((id) => <li>{titel(id)}</li>)}
+          </ul>
         </div>
       ))
     }
-    <p class="ma-fuss">
-      <span class="mono">Echte Ausgabe, ungeschönt</span>
-      <a class="pfeil" href={`${base}beispiele/#demo`}>Decks durchklicken</a>
-    </p>
   </div>
 </section>
 
 <script>
   const m = document.querySelector<HTMLElement>('.maschine')
-  if (m && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    const wahl = [...m.querySelectorAll<HTMLButtonElement>('.ma-wahl .pille')]
-    const laeufe = [...m.querySelectorAll<HTMLElement>('.ma-lauf')]
+  const feld = document.querySelector<HTMLElement>('.feld')
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('.feld-chips .pill')]
+  // Die Pillen funktionieren immer (Deck wechseln); animiert wird nur ohne „Bewegung reduzieren“
+  const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (m && feld) {
+    const fenster = [...m.querySelectorAll<HTMLElement>('.fenster')]
+    const satzEl = feld.querySelector<HTMLElement>('.feld-satz')!
     const warte = (ms: number) => new Promise((r) => setTimeout(r, ms))
     let lauf = 0 // Zähler: ein neuer Lauf bricht den alten ab
 
-    const spiele = async (el: HTMLElement) => {
-      const ich = ++lauf
-      const satz = el.querySelector<HTMLElement>('.ma-satz')!
-      const text = satz.dataset.satz!
-      const stufen = [...el.querySelectorAll<HTMLElement>('.ma-schritt, .ma-log li, .ma-folien li')]
-      const log = [...el.querySelectorAll<HTMLElement>('.ma-log li')]
-      const bilder = [...el.querySelectorAll<HTMLElement>('.ma-folien li')]
-      el.classList.add('bereit', 'tippt')
-      stufen.forEach((s) => s.classList.remove('da'))
-      el.querySelectorAll('img').forEach((i) => (i.loading = 'eager'))
-      for (let n = 0; n <= text.length; n++) {
-        if (ich !== lauf) return
-        satz.textContent = text.slice(0, n)
-        await warte(n % 7 === 0 ? 70 : 28)
-      }
-      el.classList.remove('tippt')
-      await warte(350)
-      if (ich !== lauf) return
-      el.querySelector('.ma-schritt')!.classList.add('da')
-      for (let n = 0; n < log.length; n++) {
-        await warte(240)
-        if (ich !== lauf) return
-        log[n].classList.add('da')
-        bilder[n].classList.add('da')
-      }
-      await warte(400)
-      if (ich === lauf) el.querySelector('.ma-ende')!.classList.add('da')
+    const zeige = (f: HTMLElement, n: number) => {
+      f.querySelectorAll('.fe-film li').forEach((li, k) => li.classList.toggle('aktiv', k === n))
+      f.querySelectorAll('.fe-folie').forEach((img, k) => img.classList.toggle('an', k === n))
+      f.querySelectorAll<HTMLElement>('.fe-notiz p').forEach((p, k) => (p.hidden = k !== n))
     }
 
-    // Erster Lauf, sobald die Maschine im Bild ist; ein Klick vorher ersetzt ihn
+    const spiele = async (f: HTMLElement, satz: string) => {
+      const ich = ++lauf
+      const film = [...f.querySelectorAll<HTMLElement>('.fe-film li')]
+      const titel = [...f.querySelectorAll('.fe-titel-liste li')].map((li) => li.textContent ?? '')
+      const blase = f.querySelector<HTMLElement>('.fe-blase')!
+      const text = f.querySelector<HTMLElement>('.fe-blase-text')!
+      const fertig = text.textContent
+      if (ruhig) return
+      f.querySelectorAll('img').forEach((i) => (i.loading = 'eager'))
+      f.classList.add('bereit')
+      film.forEach((li) => li.classList.remove('da'))
+      blase.classList.add('arbeitet')
+      text.textContent = 'Deckwerk liest das Briefing …'
+      feld.classList.add('aktiv', 'tippt')
+      for (let n = 0; n <= satz.length; n++) {
+        if (ich !== lauf) return
+        satzEl.textContent = satz.slice(0, n)
+        await warte(n % 6 === 0 ? 55 : 22)
+      }
+      feld.classList.remove('tippt')
+      feld.classList.add('drueckt')
+      await warte(220)
+      feld.classList.remove('drueckt', 'aktiv')
+      if (ich !== lauf) return
+      text.textContent = `Storyline: ${film.length} Folien`
+      await warte(700)
+      for (let n = 0; n < film.length; n++) {
+        if (ich !== lauf) return
+        text.textContent = `Folie ${n + 1} von ${film.length}: ${titel[n]}`
+        film[n].classList.add('da')
+        zeige(f, n)
+        await warte(520)
+      }
+      if (ich !== lauf) return
+      blase.classList.remove('arbeitet')
+      text.textContent = fertig
+      await warte(900)
+      if (ich === lauf) zeige(f, 0)
+    }
+
+    const waehle = (b: HTMLButtonElement) => {
+      chips.forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+      fenster.forEach((f) => (f.hidden = f.dataset.deck !== b.dataset.deck))
+      const f = fenster.find((x) => !x.hidden)!
+      if (ruhig) satzEl.textContent = b.dataset.satz!
+      spiele(f, b.dataset.satz!)
+    }
+
+    // Erster Lauf, sobald das Fenster im Bild ist; ein Klick vorher ersetzt ihn
     const start = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return
       start.disconnect()
-      spiele(laeufe.find((l) => !l.hidden)!)
-    }, { rootMargin: '0px 0px -30% 0px' })
+      waehle(chips.find((c) => c.getAttribute('aria-pressed') === 'true') ?? chips[0])
+    }, { rootMargin: '0px 0px -25% 0px' })
     start.observe(m)
+    for (const b of chips) b.addEventListener('click', () => (start.disconnect(), waehle(b)))
 
-    for (const b of wahl)
-      b.addEventListener('click', () => {
-        start.disconnect()
-        wahl.forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
-        laeufe.forEach((l) => (l.hidden = l.dataset.deck !== b.dataset.deck))
-        spiele(laeufe.find((l) => !l.hidden)!)
-      })
+    // Filmstreifen anklicken wie in der App
+    for (const f of fenster)
+      f.querySelectorAll<HTMLElement>('.fe-film li').forEach((li, n) => li.addEventListener('click', () => ((lauf += 1), f.querySelector('.fe-blase')!.classList.remove('arbeitet'), zeige(f, n))))
   }
 </script>
 
 <style is:global>
-  .maschine { padding-block: clamp(3rem, 6vw, 5rem); }
-  .ma-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem 2rem; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
-  .ma-titel { font: inherit; font-family: var(--mono); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 10px; }
-  .ma-live { width: 10px; height: 10px; background: var(--accent); animation: ma-puls 1.4s steps(1) infinite; }
-  @keyframes ma-puls { 50% { opacity: 0.2; } }
-  .ma-wahl { margin: 0; }
-  .ma-wahl .pille { min-height: 44px; font-size: 0.95rem; }
-  .ma-lauf { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); border: 1px solid var(--dunkel-linie); }
-  .ma-konsole { padding: clamp(1.25rem, 2.5vw, 2rem); border-right: 1px solid var(--dunkel-linie); font-family: var(--mono); font-size: 0.875rem; line-height: 1.55; min-height: 100%; }
-  .ma-prompt { font-size: clamp(1rem, 1.35vw, 1.15rem); line-height: 1.45; min-height: 4.4em; color: var(--dunkel-text); }
-  .ma-cursor { display: none; width: 0.6em; height: 1.1em; vertical-align: -0.15em; margin-left: 2px; background: var(--accent); animation: ma-puls 1s steps(1) infinite; }
-  .ma-lauf.tippt .ma-cursor { display: inline-block; }
-  .ma-schritt { margin-top: 1.25rem; color: var(--dunkel-muted); }
-  .ma-log { list-style: none; padding: 0; margin-top: 0.75rem; border-top: 1px solid var(--dunkel-linie); }
-  .ma-log li { display: grid; grid-template-columns: 2.25em minmax(0, 1fr) 1.25em; gap: 0.5rem; padding: 6px 0; border-bottom: 1px solid var(--dunkel-linie); }
-  .ma-nr { color: var(--dunkel-muted); }
-  .ma-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ma-ok { color: var(--accent); text-align: right; }
-  .ma-folien { list-style: none; margin: 0; padding: clamp(1rem, 2vw, 1.5rem); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 1vw, 14px); align-content: start; }
-  .ma-folien .folie { outline-color: var(--dunkel-linie); }
-  /* Gesteuerter Zustand: erst sichtbar, wenn das Skript die Stufe freigibt */
-  .ma-lauf.bereit :is(.ma-schritt, .ma-log li, .ma-folien li) { opacity: 0; }
-  .ma-lauf.bereit .ma-folien li { transform: translateY(-14px) scale(0.96); }
-  .ma-lauf.bereit .da { opacity: 1 !important; transform: none !important; transition: opacity 0.35s var(--ease), transform 0.45s var(--ease); }
-  .ma-fuss { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem 2rem; margin-top: 1rem; color: var(--dunkel-muted); }
-  .ma-fuss .pfeil { color: var(--dunkel-text); }
-  @media (max-width: 860px) {
-    .ma-lauf { grid-template-columns: 1fr; }
-    .ma-konsole { border-right: 0; border-bottom: 1px solid var(--dunkel-linie); }
-    .ma-folien { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .maschine { padding-block: 0 clamp(4rem, 8vw, 6rem); margin-top: calc(-1 * clamp(1.5rem, 3vw, 2.25rem)); }
+  /* Fenster: weißer Rahmen um die graue Arbeitsfläche, wie die App auf dem Bildschirm */
+  .fenster { border-radius: 14px; overflow: hidden; background: var(--bg); box-shadow: 0 0 0 1px var(--border), 0 2px 6px rgb(22 22 26 / 0.06), 0 30px 80px -20px rgb(22 22 26 / 0.28); font-size: 13px; text-align: left; }
+  .fe-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; height: 52px; padding: 0 14px 0 10px; }
+  .fe-l, .fe-r { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .fe-r { justify-content: flex-end; }
+  .fenster .plain { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; color: var(--text); font-size: 13px; }
+  .fe-titel { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; }
+  .fe-titel b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .fe-titel span { color: var(--faint); }
+  .fe-praes { height: 32px; padding: 0 14px; margin-left: 8px; font-size: 13px; }
+  .fe-work { display: flex; min-height: 0; }
+  .fe-film { flex: none; width: 200px; list-style: none; margin: 0; padding: 8px 14px 24px 8px; display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; scrollbar-width: thin; }
+  .fe-film li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; align-items: start; cursor: pointer; transition: opacity 0.35s var(--ease), transform 0.35s var(--ease); }
+  .fe-nr { padding-top: 1px; color: var(--faint); font-size: 11px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+  .fe-thumb { width: 100%; border-radius: 6px; box-shadow: 0 0 0 1px var(--border), 0 1px 3px rgb(22 22 26 / 0.08); transition: box-shadow 0.2s; }
+  .fe-film li.aktiv .fe-nr { color: var(--accent); font-weight: 700; }
+  .fe-film li.aktiv .fe-thumb { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4.5px var(--accent); }
+  .fe-mitte { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fe-buehne { display: grid; padding: 20px 32px 8px; }
+  .fe-folie { grid-area: 1 / 1; opacity: 0; transition: opacity 0.35s; }
+  .fe-folie.an { opacity: 1; }
+  .fe-notiz { display: grid; gap: 2px; padding: 6px 32px 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .fe-notiz p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .fe-dock { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 24px 24px; margin-top: auto; }
+  .fe-blase { display: flex; align-items: center; gap: 10px; max-width: min(640px, 100%); min-height: 40px; padding: 6px 14px; border-radius: 20px; font-size: 13.5px; }
+  .fe-blase-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fe-ok { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--ok); color: #fff; }
+  .fe-spin { display: none; flex: none; width: 16px; height: 16px; border: 2px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: fe-dreh 0.9s linear infinite; }
+  .fe-blase.arbeitet .fe-ok { display: none; }
+  .fe-blase.arbeitet .fe-spin { display: block; }
+  @keyframes fe-dreh { to { transform: rotate(360deg); } }
+  .fe-cap { display: flex; align-items: center; gap: 10px; width: min(720px, 100%); height: 56px; padding: 0 10px 0 18px; border-radius: 28px; }
+  .fe-funke { flex: none; color: var(--accent); }
+  .fe-cap-text { flex: 1; min-width: 0; color: var(--faint); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fe-cap-los { width: 34px; height: 34px; opacity: 0.35; }
+  /* Gesteuerter Lauf: Filmstreifen füllt sich */
+  .fenster.bereit .fe-film li:not(.da) { opacity: 0; transform: translateX(-10px); pointer-events: none; }
+  @media (max-width: 900px) {
+    .fe-film { display: none; }
+    .fe-nur-breit { display: none !important; }
+    .fe-titel span { display: none; }
+    .fe-buehne { padding: 12px 12px 4px; }
+    .fe-notiz { padding: 6px 14px 0; }
+    .fe-dock { padding: 12px; }
+    .fe-cap-text { font-size: 13px; }
   }
-  @media (prefers-reduced-motion: reduce) { .ma-live { animation: none; } }
+  @media (max-width: 560px) { .fe-l { display: none; } .fe-top { grid-template-columns: minmax(0, 1fr) auto; } }
+  @media (prefers-reduced-motion: reduce) { .fe-spin { animation: none; } }
 </style>
