@@ -16,7 +16,7 @@ const titel = (id: string) => folien[id].title || folien[id].layout
         <div class="fenster" data-deck={name} hidden={i > 0}>
           <div class="fe-top">
             <span class="fe-l">
-              <span class="plain"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>Decks</span>
+              <span class="plain fe-tint"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>Decks</span>
             </span>
             <span class="fe-titel"><b>{d.title}</b><span>{d.slides.length} Folien · {THEMES[d.theme] ?? d.theme}</span></span>
             <span class="fe-r">
@@ -28,8 +28,10 @@ const titel = (id: string) => folien[id].title || folien[id].layout
             <ol class="fe-film" aria-label="Folien">
               {d.slides.map((id, n) => (
                 <li class:list={{ aktiv: n === 0 }}>
-                  <span class="fe-nr">{n + 1}</span>
-                  <Image {...bild(id, '160px', [160, 320])} class="fe-thumb" loading="lazy" />
+                  <button type="button" aria-label={`Folie ${n + 1}`}>
+                    <span class="fe-nr">{n + 1}</span>
+                    <Image {...bild(id, '160px', [160, 320])} class="fe-thumb" loading="lazy" />
+                  </button>
                 </li>
               ))}
             </ol>
@@ -40,14 +42,14 @@ const titel = (id: string) => folien[id].title || folien[id].layout
                 ))}
               </div>
               <div class="fe-notiz">
-                <span class="mono">Notizen</span>
+                <span class="fe-notiz-kopf">Notizen</span>
                 {d.slides.map((id, n) => <p hidden={n > 0}>{folien[id].notes}</p>)}
               </div>
               <div class="fe-dock">
-                <p class="fe-blase material" aria-live="polite">
+                <p class="fe-blase material">
                   <span class="fe-ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>
                   <span class="fe-spin" aria-hidden="true"></span>
-                  <span class="fe-blase-text">{d.slides.length} Folien gestaltet und geprüft</span>
+                  <span class="fe-blase-text" data-fertig={`${d.slides.length} Folien gestaltet und geprüft`}>{d.slides.length} Folien gestaltet und geprüft</span>
                 </p>
                 <div class="fe-cap material">
                   <svg class="fe-funke" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" /></svg>
@@ -90,7 +92,7 @@ const titel = (id: string) => folien[id].title || folien[id].layout
       const titel = [...f.querySelectorAll('.fe-titel-liste li')].map((li) => li.textContent ?? '')
       const blase = f.querySelector<HTMLElement>('.fe-blase')!
       const text = f.querySelector<HTMLElement>('.fe-blase-text')!
-      const fertig = text.textContent
+      const fertig = text.dataset.fertig!
       if (ruhig) return
       f.querySelectorAll('img').forEach((i) => (i.loading = 'eager'))
       f.classList.add('bereit')
@@ -143,7 +145,17 @@ const titel = (id: string) => folien[id].title || folien[id].layout
 
     // Filmstreifen anklicken wie in der App
     for (const f of fenster)
-      f.querySelectorAll<HTMLElement>('.fe-film li').forEach((li, n) => li.addEventListener('click', () => ((lauf += 1), f.querySelector('.fe-blase')!.classList.remove('arbeitet'), zeige(f, n))))
+      f.querySelectorAll<HTMLElement>('.fe-film button').forEach((b, n) =>
+        b.addEventListener('click', () => {
+          // Ein Klick während des Aufbaus beendet ihn sofort: alles da, Endtext, gewählte Folie
+          lauf += 1
+          f.classList.remove('bereit')
+          const text = f.querySelector<HTMLElement>('.fe-blase-text')!
+          text.textContent = text.dataset.fertig!
+          f.querySelector('.fe-blase')!.classList.remove('arbeitet')
+          zeige(f, n)
+        }),
+      )
   }
 </script>
 
@@ -158,10 +170,12 @@ const titel = (id: string) => folien[id].title || folien[id].layout
   .fe-titel { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; }
   .fe-titel b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
   .fe-titel span { color: var(--faint); }
+  .fenster .fe-tint { color: var(--accent); }
   .fe-praes { height: 32px; padding: 0 14px; margin-left: 8px; font-size: 13px; }
   .fe-work { display: flex; min-height: 0; }
   .fe-film { flex: none; width: 200px; list-style: none; margin: 0; padding: 8px 14px 24px 8px; display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow-y: auto; scrollbar-width: thin; }
-  .fe-film li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; align-items: start; cursor: pointer; transition: opacity 0.35s var(--ease), transform 0.35s var(--ease); }
+  .fe-film li { transition: opacity 0.35s var(--ease), transform 0.35s var(--ease); }
+  .fe-film button { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; align-items: start; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
   .fe-nr { padding-top: 1px; color: var(--faint); font-size: 11px; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
   .fe-thumb { width: 100%; border-radius: 6px; box-shadow: 0 0 0 1px var(--border), 0 1px 3px rgb(22 22 26 / 0.08); transition: box-shadow 0.2s; }
   .fe-film li.aktiv .fe-nr { color: var(--accent); font-weight: 700; }
@@ -170,7 +184,8 @@ const titel = (id: string) => folien[id].title || folien[id].layout
   .fe-buehne { display: grid; padding: 20px 32px 8px; }
   .fe-folie { grid-area: 1 / 1; opacity: 0; transition: opacity 0.35s; }
   .fe-folie.an { opacity: 1; }
-  .fe-notiz { display: grid; gap: 2px; padding: 6px 32px 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .fe-notiz { display: grid; gap: 2px; padding: 6px 32px 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+  .fe-notiz-kopf { font-size: 12px; font-weight: 600; color: var(--faint); }
   .fe-notiz p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .fe-dock { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 24px 24px; margin-top: auto; }
   .fe-blase { display: flex; align-items: center; gap: 10px; max-width: min(640px, 100%); min-height: 40px; padding: 6px 14px; border-radius: 20px; font-size: 13.5px; }
@@ -180,7 +195,7 @@ const titel = (id: string) => folien[id].title || folien[id].layout
   .fe-blase.arbeitet .fe-ok { display: none; }
   .fe-blase.arbeitet .fe-spin { display: block; }
   @keyframes fe-dreh { to { transform: rotate(360deg); } }
-  .fe-cap { display: flex; align-items: center; gap: 10px; width: min(720px, 100%); height: 56px; padding: 0 10px 0 18px; border-radius: 28px; }
+  .fe-cap { display: flex; align-items: center; gap: 10px; width: min(720px, 100%); height: 60px; padding: 0 12px 0 18px; border-radius: 30px; }
   .fe-funke { flex: none; color: var(--accent); }
   .fe-cap-text { flex: 1; min-width: 0; color: var(--faint); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .fe-cap-los { width: 34px; height: 34px; opacity: 0.35; }

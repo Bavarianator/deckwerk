@@ -52,7 +52,7 @@ kbd { padding: 0.05em 0.4em; border-radius: 5px; background: var(--hover); }
 .skip:focus { top: 12px; }
 
 /* Kleine Etiketten wie in der App (Notizen, Regal-Überschriften) */
-.mono { font-size: 0.8125rem; font-weight: 600; color: var(--faint); }
+.etikett { font-size: 0.8125rem; font-weight: 600; color: var(--faint); }
 
 /* Abschnitte: Wechsel zwischen Grau (Arbeitsfläche) und Weiß (Startbildschirm) */
 .abschnitt { padding-block: clamp(4.5rem, 9vw, 7.5rem); }

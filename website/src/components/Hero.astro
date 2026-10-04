@@ -24,7 +24,8 @@ const erstes = Object.values(decks)[0]
         <span class="round feld-los"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg></span>
       </div>
     </div>
-    <div class="feld-chips" role="group" aria-label="Beispiel wählen und bauen lassen">
+    <noscript><style>.feld-chips { display: none !important; }</style></noscript>
+    <div class="feld-chips" role="group aria-label="Beispiel wählen und bauen lassen">
       {
         Object.entries(decks).map(([name, d], i) => (
           <button type="button" class="pill" data-deck={name} data-satz={satz(d)} aria-pressed={i === 0 ? 'true' : 'false'}>

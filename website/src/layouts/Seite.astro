@@ -53,6 +53,7 @@ const aktiv = (pfad: string) => Astro.url.pathname.endsWith(`/${pfad}`)
           <nav class="flyout" aria-label="Menü">
             {SEITEN.map(([pfad, label]) => <a href={`${base}${pfad}`} aria-current={aktiv(pfad) ? 'page' : undefined}>{label}</a>)}
             <a href={REPO}>GitHub</a>
+            <a class="knopf klein" href={`${base}laden/`}>Kostenlos laden</a>
           </nav>
         </details>
       </div>
@@ -144,9 +145,10 @@ const aktiv = (pfad: string) => Astro.url.pathname.endsWith(`/${pfad}`)
   .handy .flyout { position: absolute; top: calc(100% + 8px); right: 0; z-index: 6; width: min(80vw, 240px); padding: 4px; display: grid; border-radius: 12px; background: var(--material); backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px); border: 1px solid var(--border); box-shadow: var(--shadow-float); }
   .handy .flyout a { display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 8px; color: var(--text); }
   .handy .flyout a:hover { background: var(--accent); color: #fff; text-decoration: none; }
+  .handy .flyout .knopf { justify-content: center; margin: 4px; height: 40px; border-radius: 999px; color: #fff; }
   @media (max-width: 760px) {
     .kopf-in { grid-template-columns: 1fr auto; }
-    .menue, .kopf-r .plain { display: none; }
+    .menue { display: none; }
     .kopf-r { display: none; }
     .handy { display: block; }
   }
