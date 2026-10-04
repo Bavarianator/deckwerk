@@ -85,6 +85,9 @@ const titel = (id: string) => folien[id].title || folien[id].layout
 
     // Welches echte Beispiel passt zum eigenen Satz? Schlichte Stichwortwertung, keine KI.
     const WORTE: Record<string, string[]> = {
+      deckwerk: ['deckwerk', 'folien', 'präsentation', 'powerpoint', 'pptx', 'deck', 'layout', 'design', 'vorlage'],
+      vortrag: ['vortrag', 'präsentieren', 'rede', 'konferenz', 'bühne', 'publikum', 'keynote', 'talk', 'referent', 'speaker'],
+      agenten: ['agent', 'claude', 'codex', 'vibe', 'mcp', 'terminal', 'entwickler', 'developer', 'code', 'skill', 'automatis'],
       strategie: ['strategie', 'ziel', 'vision', 'beirat', 'vorstand', 'führung', 'schwerpunkt', 'roadmap', 'plan', '2027', '2028', 'zukunft', 'mission', 'transformation', 'team', 'workshop'],
       pitch: ['pitch', 'investor', 'start', 'startup', 'produkt', 'app', 'idee', 'gründ', 'kunde', 'schul', 'verlag', 'bildung', 'lösung', 'markt', 'software', 'ki', 'tool', 'verkauf'],
       quartal: ['quartal', 'q1', 'q2', 'q3', 'q4', 'umsatz', 'vertrieb', 'zahlen', 'bericht', 'kpi', 'status', 'projekt', 'budget', 'controlling', 'ergebnis', 'monat', 'jahr', 'update', 'stellen'],
@@ -92,7 +95,7 @@ const titel = (id: string) => folien[id].title || folien[id].layout
     }
     const passend = (satz: string) => {
       const t = satz.toLowerCase()
-      let best = 'strategie', punkte = 0
+      let best = 'deckwerk', punkte = 0 // ohne Treffer: das Deck über Deckwerk selbst
       for (const [deck, worte] of Object.entries(WORTE)) {
         const p = worte.filter((w) => t.includes(w)).length
         if (p > punkte) (best = deck), (punkte = p)
