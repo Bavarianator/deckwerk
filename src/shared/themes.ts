@@ -330,7 +330,7 @@ export function withTone(t: Theme, tone: Tone = 'normal'): Theme {
 const MUTIG_THEMES: Theme[] = ([
   ['plakat', { name: 'Plakat', bg: '#FFD60A', text: '#111111', accent: '#111111', accent2: '#FFFFFF', headFont: 'Archivo Black', bodyFont: 'Archivo', radius: 0, decor: 'none', titleSize: 'huge', sectionTone: 'invert', vivid: true }],
   ['magazin', { name: 'Magazin', bg: '#FFFFFF', accent: '#C8102E', headFont: 'DM Serif Display', bodyFont: 'DM Sans', radius: 0, decor: 'none', titleSize: 'huge', rule: 'over', labelFont: 'mono' }],
-  ['neomono', { name: 'Neo-Mono', bg: '#0E0E0E', accent: '#C6F432', headFont: 'Space Grotesk', bodyFont: 'Inter', radius: 0, decor: 'none', titleSize: 'large', rule: 'under', sectionTone: 'normal', labelFont: 'mono' }],
+  ['neomono', { name: 'Neo-Mono', bg: '#0E0E0E', accent: '#FF5B2E', headFont: 'IBM Plex Sans', bodyFont: 'IBM Plex Sans', radius: 0, decor: 'none', titleSize: 'large', rule: 'under', sectionTone: 'normal', labelFont: 'mono' }],
   ['pastell', { name: 'Pastell', bg: '#E6E0FF', accent: '#2A2FBF', headFont: 'Plus Jakarta Sans', bodyFont: 'DM Sans', radius: 12, decor: 'none', titleSize: 'large', vivid: true }],
 ] as [string, ThemeSpec][]).map(([id, spec]) => {
   const t = themeFromSpec(spec)

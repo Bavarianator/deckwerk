@@ -7,6 +7,7 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
+import { converter } from 'culori'
 import { icons } from 'lucide-react'
 import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide } from '../shared/deck'
 import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
@@ -98,6 +99,17 @@ const FONT_MOOD: Record<FontName, string> = {
 }
 // Standardschriften generierter Designs: nur auf ausdrücklichen Wunsch, nie in eigenen Vorschlägen (propose_looks)
 const AI_FONTS: string[] = ['Space Grotesk', 'Instrument Serif']
+const oklch = converter('oklch')
+// Klischees generierter Decks (Guide §6) nur als Hinweis: der Nutzer darf sie wollen, die KI soll sie nicht von sich aus wählen
+function aiTells(t: { headFont?: string; bodyFont?: string; accent?: string; bg?: string }): string {
+  const out = [...new Set([t.headFont, t.bodyFont])].filter((f): f is string => !!f && AI_FONTS.includes(f))
+    .map((f) => `Hinweis: ${f} ist eine Standardschrift generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
+  const a = t.accent ? oklch(t.accent) : undefined, h = a?.h ?? -1, c = a?.c ?? 0
+  const dark = (oklch(t.bg ?? '#fff')?.l ?? 1) < 0.4
+  if (h >= 265 && h <= 300 && c > 0.12) out.push(`Hinweis: Akzent ${t.accent} (Lila-Blau) ist eine Standardfarbe generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
+  if (dark && h >= 115 && h <= 135 && c > 0.15) out.push(`Hinweis: Säuregrün ${t.accent} auf dunklem Grund ist eine Standardfarbe generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
+  return out.map((x) => x + '\n').join('')
+}
 const themeSpec = z.object({
   name: z.string().min(2).max(40).describe('Name, z. B. "Nordlicht Finance"'),
   bg: hexColor.describe('Hintergrund: fast weiß oder fast schwarz, höchstens leicht in Richtung der Akzentfarbe getönt (die Engine dämpft alles andere)'),
@@ -267,7 +279,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run(i) {
         const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style === 'mutig' || (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig) ? 'mutig' : undefined, slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
-        return { text: `Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'sachlich'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `${aiTells(deck.theme.custom ?? {})}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'sachlich'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -311,7 +323,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         ctx.setDeck(deck)
         const look = i.theme || i.customTheme || i.brand !== undefined || i.shuffle !== undefined || i.fonts !== undefined // Theme geändert → neue Vorschau
         return {
-          text: `Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'sachlich' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
+          text: `${i.customTheme ? aiTells(deck.theme.custom ?? {}) : ''}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'sachlich' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
           images: look ? await themePreview(ctx, deck) : undefined,
         }
       },
@@ -481,9 +493,10 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (images.some((b) => !b)) throw new Error('Vorschau fehlgeschlagen, bitte einzeln mit create_deck prüfen.')
         const label = (l: (typeof i.looks)[number]) => (typeof l === 'string' ? CATALOG_THEMES.find((t) => t.id === l)!.name : l.name)
         const names = i.looks.map((l, k) => `${k + 1}. ${label(l)}`).join('\n')
-        if (!ctx.choice) return { text: `Looks (Bilder in dieser Reihenfolge):\n${names}\nZeig dem Nutzer die Namen und frag, welchen er möchte.`, images }
+        const hints = i.looks.map((l) => (typeof l === 'string' ? '' : aiTells(l))).join('')
+        if (!ctx.choice) return { text: `${hints}Looks (Bilder in dieser Reihenfolge):\n${names}\nZeig dem Nutzer die Namen und frag, welchen er möchte.`, images }
         ctx.choice({ question: 'Welcher Look soll es werden?', options: i.looks.map((l, k) => ({ label: label(l), image: `data:${mimeOf(images[k])};base64,${images[k].toString('base64')}` })) })
-        return { text: `Looks zur Auswahl angezeigt:\n${names}\nBeende jetzt den Turn ohne weiteren Text; die Wahl kommt als nächste Nachricht (Name des Looks).`, images }
+        return { text: `${hints}Looks zur Auswahl angezeigt:\n${names}\nBeende jetzt den Turn ohne weiteren Text; die Wahl kommt als nächste Nachricht (Name des Looks).`, images }
       },
     }),
     tool({
@@ -801,7 +814,7 @@ export function buildCatalog(): string {
     'Ausnahme: freie Elemente (`items` in add_slides/update_slide: Text, Form, Bild, Icon, Diagramm mit x/y/w/h in px auf 1280×720, Drehung, Deckkraft). Nur auf Layout blank oder wenn der Nutzer ausdrücklich frei gestaltet bzw. ein Element „wie in Canva“ platziert haben will. Mindestens 48 px Rand, Text ab 20 px, prüfe das Ergebnis mit render_slides. get_deck zeigt vorhandene items mit IDs.',
     ...layouts,
     '## Themes',
-    'Entwirf für jedes Deck ein eigenes Design (create_deck.customTheme) nach Design-Guide §6: Farbe, Schriftpaar und Struktur (titleSize, titleWeight, rule, sectionTone) aus Thema, Branche und Anlass. Die Katalog-Themes sind erprobte Vorbilder dafür und die Wahl, wenn es schnell gehen soll: beratung (hell, Daten, Chef-Update), keynote (dunkel, Plakat-Titel), schweiz (streng, Kopflinie), redaktion (Serif regular, Kopflinie), zen (dunkel, Serif, fotolastig). Nur im Stil mutig: plakat (Signalgelb, Black-Titel), magazin (Papier, riesige Serif, Mono-Labels), neomono (Off-Black, Lime, Mono-Labels), pastell (Lavendel, rund, freundlich). Die Engine leitet Flächen, Ränder, Sekundärtext und Diagrammfarben ab, dämpft den Grund und sichert Kontraste.',
+    'Entwirf für jedes Deck ein eigenes Design (create_deck.customTheme) nach Design-Guide §6: Farbe, Schriftpaar und Struktur (titleSize, titleWeight, rule, sectionTone) aus Thema, Branche und Anlass. Die Katalog-Themes sind erprobte Vorbilder dafür und die Wahl, wenn es schnell gehen soll: beratung (hell, Daten, Chef-Update), keynote (dunkel, Plakat-Titel), schweiz (streng, Kopflinie), redaktion (Serif regular, Kopflinie), zen (dunkel, Serif, fotolastig). Nur im Stil mutig: plakat (Signalgelb, Black-Titel), magazin (Papier, riesige Serif, Mono-Labels), neomono (Off-Black, Signalorange, Plex, Mono-Labels), pastell (Lavendel, rund, freundlich). Die Engine leitet Flächen, Ränder, Sekundärtext und Diagrammfarben ab, dämpft den Grund und sichert Kontraste.',
     'Schriften (Premium-Schriften werden in die PPTX eingebettet):',
     FONT_NAMES.map((f) => `- ${f}: ${FONT_MOOD[f]}`).join('\n'),
     'Katalog-Themes:',
