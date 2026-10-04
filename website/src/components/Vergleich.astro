@@ -19,6 +19,7 @@ const REGELN = [
       <p class="unterzeile">Zieh am Regler. Links die Botschaft, wie Deckwerk sie setzt. Rechts, was man von KI-Folien kennt.</p>
     </div>
 
+    <noscript><style>.vg-regler, .vg-griff { display: none; }</style></noscript>
     <figure class="vergleich" style="--pos: 62%">
       <div class="vg-buehne">
       <div class="vg-folie vg-ki" aria-hidden="true">
@@ -41,7 +42,7 @@ const REGELN = [
       <span class="vg-etikett vg-r mono" aria-hidden="true">Typischer KI-Look</span>
       <label class="vg-regler">
         <span class="sr">Vergleich verschieben</span>
-        <input type="range" min="0" max="100" value="62" />
+        <input type="range" min="0" max="100" step="2" value="62" />
       </label>
       </div>
       <figcaption class="mono">Links: echte Ausgabe, Folie 1 aus „Strategie 2027“ – „{folien[echt].title}“</figcaption>
@@ -67,7 +68,9 @@ const REGELN = [
   if (v && r) {
     const setze = (n: number) => (v.style.setProperty('--pos', `${n}%`), (r.value = String(n)))
     let selbst = false
+    setze(Number(r.value)) // Browser stellen den Wert beim Neuladen teils wieder her
     r.addEventListener('input', () => ((selbst = true), setze(Number(r.value))))
+    for (const ev of ['pointerdown', 'focus']) r.addEventListener(ev, () => (selbst = true))
     // Einmal vorführen: Regler fährt nach rechts, nach links und bleibt in der Mitte; jede eigene Bewegung bricht ab
     if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const zeigen = new IntersectionObserver(([e]) => {

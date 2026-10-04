@@ -8,7 +8,7 @@
   --muted: #55554f;
   --leise: #3a3a35;
   --linie: var(--ink);
-  --accent: #ff4d1a;
+  --accent: #f24513; /* 3,2:1 auf Papier (große Schrift), 5,2:1 mit Tusche-Text */
   --on-accent: var(--ink);
   --dunkel-text: #eeeeea;
   --dunkel-muted: #b4b4ac;

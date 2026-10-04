@@ -64,7 +64,7 @@ const VORTRAG = ['foto-1', 'foto-2', 'foto-3']
   @keyframes mini-tipp { 0% { clip-path: inset(0 100% 0 0); } 55%, 90% { clip-path: inset(0 0 0 0); } 100% { clip-path: inset(0 100% 0 0); } }
 
   .mini-bauen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 18px; align-content: center; }
-  .mini-bauen img { width: 100%; border-radius: 3px; box-shadow: 0 2px 6px rgb(0 0 0 / 0.12); opacity: 0; animation: mini-bau 6s infinite; }
+  .mini-bauen img { width: 100%; outline: 1px solid var(--dunkel-linie); opacity: 0; animation: mini-bau 6s infinite; }
   .mini-bauen img:nth-child(2) { animation-delay: 0.35s; }
   .mini-bauen img:nth-child(3) { animation-delay: 0.7s; }
   .mini-bauen img:nth-child(4) { animation-delay: 1.05s; }
@@ -72,13 +72,13 @@ const VORTRAG = ['foto-1', 'foto-2', 'foto-3']
   .mini-bauen img:nth-child(6) { animation-delay: 1.75s; }
   @keyframes mini-bau { 0% { opacity: 0; transform: translateY(6px) scale(0.96); } 8%, 85% { opacity: 1; transform: none; } 95%, 100% { opacity: 0; } }
 
-  .mini-vortrag { background: #000; display: grid; place-items: center; padding: 14px 22px 22px; }
-  .mini-vortrag img { grid-area: 1 / 1; width: 100%; border-radius: 3px; opacity: 0; animation: mini-folie 9s infinite; }
+  .mini-vortrag { background: var(--ink); display: grid; place-items: center; padding: 14px 22px 22px; }
+  .mini-vortrag img { grid-area: 1 / 1; width: 100%; opacity: 0; animation: mini-folie 9s infinite; }
   .mini-vortrag img:nth-child(2) { animation-delay: 3s; }
   .mini-vortrag img:nth-child(3) { animation-delay: 6s; }
   @keyframes mini-folie { 0% { opacity: 0; } 4%, 33% { opacity: 1; } 38%, 100% { opacity: 0; } }
-  .mini-balken { position: absolute; left: 22px; right: 22px; bottom: 10px; height: 3px; border-radius: 2px; background: rgb(255 255 255 / 0.2); overflow: hidden; }
-  .mini-balken::after { content: ''; position: absolute; inset: 0; background: #fff; transform-origin: left; animation: mini-lauf 9s linear infinite; }
+  .mini-balken { position: absolute; left: 22px; right: 22px; bottom: 10px; height: 3px; background: rgb(238 238 234 / 0.2); overflow: hidden; }
+  .mini-balken::after { content: ''; position: absolute; inset: 0; background: var(--accent); transform-origin: left; animation: mini-lauf 9s linear infinite; }
   @keyframes mini-lauf { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
   @media (prefers-reduced-motion: reduce) {

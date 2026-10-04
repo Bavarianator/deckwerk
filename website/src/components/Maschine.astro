@@ -38,7 +38,7 @@ const titel = (id: string) => folien[id].title || folien[id].layout
                 <li>
                   <span class="ma-nr">{String(n + 1).padStart(2, '0')}</span>
                   <span class="ma-text">{titel(id)}</span>
-                  <span class="ma-ok" aria-label="geprüft">✓</span>
+                  <span class="ma-ok"><span aria-hidden="true">✓</span><span class="sr">geprüft</span></span>
                 </li>
               ))}
             </ol>
@@ -86,6 +86,7 @@ const titel = (id: string) => folien[id].title || folien[id].layout
       }
       el.classList.remove('tippt')
       await warte(350)
+      if (ich !== lauf) return
       el.querySelector('.ma-schritt')!.classList.add('da')
       for (let n = 0; n < log.length; n++) {
         await warte(240)
@@ -97,19 +98,21 @@ const titel = (id: string) => folien[id].title || folien[id].layout
       if (ich === lauf) el.querySelector('.ma-ende')!.classList.add('da')
     }
 
+    // Erster Lauf, sobald die Maschine im Bild ist; ein Klick vorher ersetzt ihn
+    const start = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return
+      start.disconnect()
+      spiele(laeufe.find((l) => !l.hidden)!)
+    }, { rootMargin: '0px 0px -30% 0px' })
+    start.observe(m)
+
     for (const b of wahl)
       b.addEventListener('click', () => {
+        start.disconnect()
         wahl.forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
         laeufe.forEach((l) => (l.hidden = l.dataset.deck !== b.dataset.deck))
         spiele(laeufe.find((l) => !l.hidden)!)
       })
-    // Erster Lauf, sobald die Maschine zur Hälfte im Bild ist
-    const start = new IntersectionObserver(([e]) => {
-      if (!e.isIntersecting) return
-      start.disconnect()
-      spiele(laeufe[0])
-    }, { threshold: 0.35 })
-    start.observe(m)
   }
 </script>
 
