@@ -26,6 +26,16 @@ const overlapArea = (a: Box, b: Box) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
 const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).filter(Boolean)
 
+// ---------- KI-Merkmale im Text ----------
+// Floskeln generierter Texte; Wortstamm + beliebige Endung, damit Flexionen greifen. „Hebel“ fehlt bewusst (oft legitim).
+const FLOSKELN = /(?<![\p{L}\d])(nahtlos\p{L}*|ganzheitlich\p{L}*|innovativ\p{L}*|revolution[äa]r\p{L}*|maßgeschneidert\p{L}*|synergie\p{L}*|mehrwert\p{L}*|auf (?:das |die )?nächsten? (?:level|stufe)|game[- ]?changer|in der heutigen (?:schnelllebigen )?(?:welt|zeit)|schnelllebig\p{L}*|entfessel\p{L}*|transformativ\p{L}*|potenzial\p{L}* (?:\p{L}+ )?(?:entfalt|freisetz|freizusetz|freigesetzt)\p{L}*|aus einer hand|zukunftssicher\p{L}*|state of the art|leuchtturm\p{L}*)(?![\p{L}\d])/giu
+const EMOJI = /(?![©®™])\p{Extended_Pictographic}/u
+const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr']) // Bild-, Link- und Icon-Felder sieht niemand als Text
+const textsOf = (v: unknown, key = ''): string[] =>
+  NO_TEXT.has(key) ? [] : typeof v === 'string' ? [v.replace(/\*\*/g, '')]
+    : Array.isArray(v) ? v.flatMap((x) => textsOf(x, key))
+    : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => textsOf(x, k)) : []
+
 // ---------- Text auf Foto: Kontrast gegen das Overlay über dem ungünstigsten Foto ----------
 const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
 const toHex = (c: number[]) => '#' + c.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')
@@ -142,6 +152,13 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
       if (fill < SPARSE) add('warn', 'sparse', `Folie wirkt leer: Titel und Inhalt füllen nur ${Math.round(fill * 100)} % des Satzspiegels. Mehr Substanz ergänzen (Zahl, Beispiel, Beleg), ein Foto dazunehmen (image-text), auf eine luftige Form wechseln (statement, big-number) oder mit der Nachbarfolie zusammenlegen.`)
     }
   }
+  const found = new Set<string>()
+  for (const t of textsOf(s.content)) {
+    for (const f of t.matchAll(FLOSKELN)) found.add(`„${f[0]}“`)
+    if (/\bnicht nur\b[\s\S]*\bsondern\b/i.test(t)) found.add('„nicht nur … sondern“')
+    if (EMOJI.test(t)) found.add('Emoji')
+  }
+  if (found.size) add('warn', 'ki-sprache', `Klingt generiert: ${[...found].join(', ')}. Stattdessen konkret werden (Zahl, Name, Beispiel aus dem Material) und in eigenen Worten sagen, was passiert.`)
   return out
 }
 
@@ -170,6 +187,25 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
     run = AIRY.includes(s[i].layout) ? 0 : run + 1
     if (run === 5) warn(i, 'breath', 'Fünf dichte Folien in Folge – eine luftige Folie einschieben (statement, big-number oder photo mit einem Satz).')
   }
+  // Generierte Dramaturgie: immer drei Punkte, Doppelpunkt- und Gedankenstrich-Titel
+  const LIST_SKIP = ['columns', 'rows', 'criteria', 'options', 'quadrants', 'contact'] // Tabellen-/Matrixdaten, Kontaktzeilen
+  const mainList = (x: (typeof s)[number]) => Object.entries(x.content ?? {}).find(([k, v]) => Array.isArray(v) && !LIST_SKIP.includes(k) && v.every((e) => typeof e === 'string' || (e && typeof e === 'object')))?.[1] as unknown[] | undefined
+  const threes = s.map((x, i) => (x.layout !== 'agenda' && mainList(x)?.length === 3 ? i : -1)).filter((i) => i >= 0)
+  if (threes.length > 2) warn(threes[2], 'ki-muster', `Auf ${threes.length} Folien genau drei Punkte – immer genau drei wirkt generiert. So viele Punkte nehmen, wie das Material hergibt: zwei, vier, oder einen einzigen als Statement.`)
+  const titles = s.map((x, i) => [i, x.content?.title] as const).filter((t): t is readonly [number, string] => typeof t[1] === 'string')
+  const pattern = (re: RegExp, message: string) => {
+    const hits = titles.filter(([, t]) => re.test(t))
+    if (titles.length >= 3 && hits.length > titles.length / 3) warn(hits[0][0], 'ki-muster', `${hits.length} von ${titles.length} Titeln ${message}`)
+  }
+  pattern(/^[^:]{1,40}:\s+\S/, 'nach dem Muster „Stichwort: Aussage“ – wirkt generiert. Die Aussage als ganzen Satz schreiben, ohne Vorspann.')
+  pattern(/ – |—/, 'mit Gedankenstrich – eine Häufung wirkt generiert. Lieber Punkt oder Komma, oder zwei Sätze daraus machen.')
+  // Mut: ein Mensch bricht mindestens einmal den Rhythmus
+  const bold = (x: (typeof s)[number]) =>
+    ((x.tone === 'accent' || x.tone === 'invert') && x.layout !== 'section') || x.layout === 'photo' ||
+    (['big-number', 'statement'].includes(x.layout) && x.variant === 'poster') ||
+    (x.layout === 'cover' && x.variant === 'bottom' && !!x.content?.image?.src)
+  if (s.length >= 8 && !s.some(bold))
+    warn(0, 'mut', 'Kein mutiger Moment im Deck – alle Folien im gleichen Ton. Ein Mensch würde einmal den Rhythmus brechen: riesige Zahl auf Akzentfläche (big-number, tone accent oder Variante poster), eine Frage auf dunklem Grund (statement, tone invert), ein Vollbildfoto (photo).')
   return [...out, ...lintMotion(deck, measured)]
 }
 
