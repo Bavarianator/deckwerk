@@ -1,34 +1,67 @@
 ---
-// Hero: riesige Versalien, ein Satz, zwei Wege. Darunter die Prompt-Maschine.
-import { base, version } from '../lib/seite'
+// Hero = Startbildschirm der App (Start.tsx): große Frage, Eingabefeld mit rundem Pfeil, Beispiel-Pillen.
+// Die Pillen wählen ein echtes Beispiel-Deck; Maschine.astro tippt den Satz ins Feld und baut das Deck im App-Fenster darunter.
+import { base, decks, version } from '../lib/seite'
 import Maschine from './Maschine.astro'
+
+const satz = (d: (typeof decks)[string]) => `${d.title.replace(/ – .*/, '')} für ${d.brief.audience ?? 'das Team'}. Ziel: ${d.brief.goal ?? 'eine klare Entscheidung'}.`
+const erstes = Object.values(decks)[0]
 ---
 
 <section class="hero">
-  <div class="wrap">
-    <p class="hero-meta mono">
-      {version && <span>v{version.split(' ')[0]}</span>}
-      <span>Mac · Linux</span>
-      <span>Kostenlos · Open Source</span>
-    </p>
-    <h1>Ein Satz.<br /><span class="akzent">Ein Deck.</span></h1>
-    <div class="hero-fuss">
-      <p class="hero-lead">Du sagst, worum es geht. Deckwerk schreibt den roten Faden, setzt jede Folie und prüft sie. Raus kommt eine PowerPoint, die du weiterbearbeiten kannst.</p>
-      <p class="aktionen">
-        <a class="knopf" href={`${base}laden/`}>Kostenlos laden</a>
-        <a class="pfeil" href={`${base}beispiele/`}>Beispiele ansehen</a>
-      </p>
+  <div class="hero-weiss"><div class="wrap hero-in">
+    <img class="hero-logo" src={`${base}favicon.svg`} alt="" width="56" height="56" />
+    <h1>Ein Satz.<br />Eine Präsentation.</h1>
+    <p class="unterzeile">Deckwerk schreibt die Geschichte, gestaltet jede Folie, prüft sie und gibt dir eine PowerPoint, die du weiterbearbeiten kannst.</p>
+
+    <div class="feld" aria-hidden="true">
+      <p class="feld-text"><span class="feld-satz">{satz(erstes)}</span><span class="feld-cursor"></span></p>
+      <div class="feld-leiste">
+        <span class="feld-l">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+          <span>Claude</span>
+        </span>
+        <span class="round feld-los"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg></span>
+      </div>
     </div>
-  </div>
+    <div class="feld-chips" role="group" aria-label="Beispiel wählen und bauen lassen">
+      {
+        Object.entries(decks).map(([name, d], i) => (
+          <button type="button" class="pill" data-deck={name} data-satz={satz(d)} aria-pressed={i === 0 ? 'true' : 'false'}>
+            {d.title.replace(/ – .*/, '')}
+          </button>
+        ))
+      }
+    </div>
+
+    <p class="aktionen hero-aktionen">
+      <a class="knopf" href={`${base}laden/`}>Kostenlos laden</a>
+      <a class="pfeil" href={`${base}beispiele/`}>Beispiele ansehen</a>
+    </p>
+    <p class="klein hero-meta">{version ? `Version ${version.split(' ')[0]} · ` : ''}Mac und Linux · Kostenlos und Open Source</p>
+  </div></div>
   <Maschine />
 </section>
 
 <style is:global>
-  .hero { padding-top: clamp(2rem, 5vw, 4.5rem); }
-  .hero-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-bottom: clamp(1rem, 2vw, 1.75rem); }
-  .hero h1 { margin-left: -0.04em; }
-  .hero-fuss { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 1.5rem 3rem; align-items: end; margin-top: clamp(2rem, 4vw, 3.5rem); padding-block: 1.75rem clamp(2.5rem, 5vw, 4rem); border-top: 1px solid var(--ink); }
-  .hero-lead { max-width: 36ch; font-size: clamp(1.25rem, 1.9vw, 1.65rem); line-height: 1.3; }
-  .hero .aktionen { justify-content: flex-end; }
-  @media (max-width: 860px) { .hero-fuss { grid-template-columns: 1fr; } .hero .aktionen { justify-content: flex-start; } }
+  .hero-weiss { background: var(--panel); padding-bottom: clamp(3rem, 6vw, 4.5rem); }
+  .hero-in { display: flex; flex-direction: column; align-items: center; padding-top: clamp(3rem, 7vw, 5.5rem); text-align: center; }
+  .hero-logo { margin-bottom: 1.5rem; }
+  /* Eingabefeld wie .home-field */
+  .feld { width: min(720px, 100%); margin-top: 2.5rem; display: flex; flex-direction: column; gap: 10px; padding: 18px 12px 12px 22px; border: 1px solid rgb(22 22 26 / 0.1); border-radius: 22px; background: #fff; box-shadow: 0 1px 2px rgb(22 22 26 / 0.04), 0 16px 40px rgb(22 22 26 / 0.08); text-align: left; transition: box-shadow 0.2s; }
+  .feld.aktiv { box-shadow: 0 0 0 4px rgb(79 82 217 / 0.12), 0 1px 2px rgb(22 22 26 / 0.04), 0 16px 40px rgb(22 22 26 / 0.08); }
+  .feld-text { min-height: 3em; padding-right: 10px; font-size: clamp(1rem, 1.6vw, 1.125rem); line-height: 1.5; }
+  .feld-cursor { display: none; width: 2px; height: 1.15em; margin-left: 1px; vertical-align: -0.2em; background: var(--accent); animation: feld-blink 1s steps(1) infinite; }
+  .feld.tippt .feld-cursor { display: inline-block; }
+  @keyframes feld-blink { 50% { opacity: 0; } }
+  .feld-leiste { display: flex; align-items: center; justify-content: space-between; }
+  .feld-l { display: inline-flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: 8px; color: var(--muted); font-size: 0.875rem; }
+  .round { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; transition: transform 0.2s var(--ease); }
+  .feld.drueckt .feld-los { transform: scale(0.88); }
+  .feld-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
+  .feld-chips .pill { height: 34px; padding: 0 16px; font-weight: 400; font-size: 0.875rem; }
+  .feld-chips .pill[aria-pressed='true'] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .hero-aktionen { margin-top: 2.25rem; }
+  .hero-meta { margin-top: 0.75rem; }
+  @media (prefers-reduced-motion: reduce) { .feld-cursor { animation: none; } }
 </style>

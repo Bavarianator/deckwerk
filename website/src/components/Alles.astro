@@ -1,29 +1,28 @@
 ---
-// Datenblatt: alles Wichtige als technische Tabelle mit Haarlinien (Export, Prüfung, Vortrag, KI, Daten, Agenten)
-import { MCP, REPO, base, beispiel, groesse, version } from '../lib/seite'
+// Was drin ist: eine weiße Fläche mit Zeilen wie das Panel der App; darunter der Weg für Agenten
+import { MCP, REPO, base, beispiel, groesse } from '../lib/seite'
 
 const ZEILEN: [string, string][] = [
-  ['Export', 'PowerPoint mit einzeln bearbeitbaren Texten, Bildern und Diagrammen, eingebetteten Schriften und Animationen. Dazu PDF, PNG und Markdown.'],
-  ['Layouts', '29 Layouts, ruhig gestaltet nach den Regeln guter Designer statt bunter Vorlagen. Für Folien, Social-Formate und A4.'],
-  ['Prüfung', 'Autofit und Lint auf jeder Folie: nichts läuft über, nichts ist zu klein, nichts steht zu dicht.'],
-  ['Vortrag', 'Du siehst Notizen, Uhr und nächste Folie, das Publikum nur die Folien. Das Handy wird zur Fernbedienung, Laserpointer und Stift sind dabei.'],
-  ['KI', 'Bring deine eigene mit: Claude, ChatGPT oder Mistral.'],
-  ['Daten', 'Kein Konto, keine Cloud von uns. Deine Präsentationen liegen als Datei auf deinem Rechner.'],
-  ['Preis', '0 €. Open Source unter AGPL-3.0.'],
+  ['PowerPoint, die sich bearbeiten lässt', 'Texte, Bilder und Diagramme bleiben einzeln anfassbar, Schriften und Animationen sind dabei. Dazu PDF, PNG und Markdown.'],
+  ['29 Layouts', 'Ruhig gestaltet nach den Regeln guter Designer statt bunter Vorlagen. Für Folien, Social-Formate und A4.'],
+  ['Jede Folie geprüft', 'Nichts läuft über, nichts ist zu klein, nichts steht zu dicht.'],
+  ['Vorne stehen', 'Du siehst Notizen, Uhr und nächste Folie, das Publikum nur die Folien. Das Handy wird zur Fernbedienung.'],
+  ['Deine KI', 'Claude, ChatGPT oder Mistral, mit deinem Login oder Schlüssel.'],
+  ['Lokal', 'Kein Konto, keine Cloud von uns. Deine Präsentationen liegen als Datei auf deinem Rechner.'],
+  ['Kostenlos', 'Open Source unter AGPL-3.0.'],
 ]
 ---
 
 <section class="abschnitt" id="alles">
   <div class="wrap">
-    <div class="blatt-kopf">
-      <h2>Datenblatt</h2>
-      <span class="mono">Deckwerk {version ? version.split(' ')[0] : ''}</span>
-    </div>
-    <dl class="blatt">
+    <header class="abschnitt-kopf">
+      <h2>Alles, was eine Präsentation braucht.</h2>
+    </header>
+    <dl class="blatt panel">
       {
         ZEILEN.map(([k, v]) => (
-          <div data-zeigen>
-            <dt class="mono">{k}</dt>
+          <div>
+            <dt>{k}</dt>
             <dd>{v}</dd>
           </div>
         ))
@@ -33,15 +32,14 @@ const ZEILEN: [string, string][] = [
   </div>
 </section>
 
-<section class="abschnitt dunkel agenten" id="agenten">
+<section class="abschnitt weiss agenten" id="agenten">
   <div class="wrap agenten-in">
     <div>
-      <h2>Für<br /><span class="akzent">Agenten.</span></h2>
+      <h2>Für Agenten.</h2>
       <p class="unterzeile">Ein MCP-Server mit 20 Werkzeugen. Claude Code, Codex und Vibe bauen Decks direkt aus dem Terminal.</p>
       <a class="pfeil" href={REPO}>Quellcode auf GitHub</a>
     </div>
     <div class="terminal">
-      <p class="terminal-leiste mono"><span>Terminal</span><span>MCP</span></p>
       <div class="befehl">
         <code>{MCP}</code>
         <button type="button" data-copy={MCP}>Kopieren</button>
@@ -54,22 +52,18 @@ const ZEILEN: [string, string][] = [
 </section>
 
 <style is:global>
-  .blatt-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 1rem; padding-bottom: 1rem; border-bottom: 3px solid var(--ink); }
-  .blatt-kopf h2 { font-size: clamp(3rem, 6vw, 5.5rem); }
-  .blatt > div { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); gap: 1.5rem; padding: 1.4rem 0; border-bottom: 1px solid var(--ink); }
-  .blatt dt { padding-top: 0.45em; }
-  .blatt dd { font-size: clamp(1.2rem, 1.8vw, 1.6rem); line-height: 1.35; max-width: 52ch; }
-  .blatt-dl { margin-top: 1.5rem; }
-  @media (max-width: 760px) { .blatt > div { grid-template-columns: 1fr; gap: 0.4rem; } }
+  .blatt { max-width: 860px; margin-inline: auto; padding: 8px 28px; }
+  .blatt > div { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1.5rem; padding: 18px 0; border-bottom: 1px solid var(--border); }
+  .blatt > div:last-child { border-bottom: 0; }
+  .blatt dt { font-weight: 600; }
+  .blatt dd { color: var(--muted); }
+  .blatt-dl { margin-top: 1.25rem; text-align: center; }
+  @media (max-width: 760px) { .blatt { padding: 4px 20px; } .blatt > div { grid-template-columns: 1fr; gap: 0.25rem; } }
 
-  .agenten-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(2rem, 5vw, 5rem); align-items: center; }
-  .agenten h2 { font-size: clamp(3.5rem, 7vw, 6.5rem); }
-  .agenten .unterzeile { margin-block: 1.5rem 0.5rem; }
-  .agenten .pfeil { color: var(--dunkel-text); }
-  .terminal { min-width: 0; border: 1px solid var(--dunkel-linie); }
-  .terminal-leiste { display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--dunkel-linie); color: var(--dunkel-muted); }
-  .terminal .befehl { outline: 0; border-bottom: 1px solid var(--dunkel-linie); }
-  .terminal pre { margin: 0; padding: 18px 16px 22px; font-size: 0.875rem; line-height: 1.7; white-space: pre-wrap; }
-  .terminal-leise { color: var(--dunkel-muted); }
+  .agenten-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(2rem, 5vw, 4rem); align-items: center; }
+  .agenten .unterzeile { margin: 1rem 0 0.5rem; }
+  .terminal { min-width: 0; padding: 14px; border-radius: 16px; background: var(--bg); }
+  .terminal pre { margin: 0; padding: 16px 6px 4px; font-size: 0.85rem; line-height: 1.7; white-space: pre-wrap; }
+  .terminal-leise { color: var(--faint); }
   @media (max-width: 860px) { .agenten-in { grid-template-columns: 1fr; } }
 </style>
