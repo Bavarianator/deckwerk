@@ -1,0 +1,149 @@
+---
+// Prompt-Maschine: ein Satz wird live zur Präsentation. Links tippt die Konsole Briefing und Storyline (echte Action Titles),
+// rechts fallen die echten Folien ins Raster. Daten aus folien.json, nichts ist ausgedacht.
+// Ohne JS und bei „Bewegung reduzieren“ steht das fertige Deck da; der Lauf startet erst, wenn die Maschine im Bild ist.
+import { Image } from 'astro:assets'
+import { THEMES, base, bild, decks, folien } from '../lib/seite'
+
+const satz = (d: (typeof decks)[string]) => `${d.title.replace(/ – .*/, '')} für ${d.brief.audience ?? 'das Team'}. Ziel: ${d.brief.goal ?? 'eine klare Entscheidung'}.`
+const titel = (id: string) => folien[id].title || folien[id].layout
+---
+
+<section class="maschine dunkel" aria-labelledby="maschine-titel">
+  <div class="wrap">
+    <div class="ma-kopf">
+      <h2 id="maschine-titel" class="ma-titel mono"><span class="ma-live" aria-hidden="true"></span>Live: Satz rein, Deck raus</h2>
+      <div class="pillen ma-wahl" role="group" aria-label="Briefing wählen">
+        {
+          Object.entries(decks).map(([name, d], i) => (
+            <button type="button" class="pille" data-deck={name} aria-pressed={i === 0 ? 'true' : 'false'}>
+              {d.title.replace(/ – .*/, '')}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+    {
+      Object.entries(decks).map(([name, d], i) => (
+        <div class="ma-lauf" data-deck={name} hidden={i > 0}>
+          <div class="ma-konsole">
+            <p class="ma-prompt">
+              <span class="akzent" aria-hidden="true">&gt; </span>
+              <span class="ma-satz" data-satz={satz(d)}>{satz(d)}</span>
+              <span class="ma-cursor" aria-hidden="true" />
+            </p>
+            <p class="ma-schritt mono">Storyline · {d.slides.length} Folien · Look „{THEMES[d.theme] ?? d.theme}“</p>
+            <ol class="ma-log">
+              {d.slides.map((id, n) => (
+                <li>
+                  <span class="ma-nr">{String(n + 1).padStart(2, '0')}</span>
+                  <span class="ma-text">{titel(id)}</span>
+                  <span class="ma-ok" aria-label="geprüft">✓</span>
+                </li>
+              ))}
+            </ol>
+            <p class="ma-schritt ma-ende mono"><span class="akzent">✓</span> {d.slides.length} Folien geprüft · PowerPoint gespeichert</p>
+          </div>
+          <ol class="ma-folien">
+            {d.slides.map((id) => (
+              <li>
+                <Image {...bild(id, '(max-width: 860px) 45vw, 220px', [240, 480])} class="folie" loading="lazy" />
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))
+    }
+    <p class="ma-fuss">
+      <span class="mono">Echte Ausgabe, ungeschönt</span>
+      <a class="pfeil" href={`${base}beispiele/#demo`}>Decks durchklicken</a>
+    </p>
+  </div>
+</section>
+
+<script>
+  const m = document.querySelector<HTMLElement>('.maschine')
+  if (m && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const wahl = [...m.querySelectorAll<HTMLButtonElement>('.ma-wahl .pille')]
+    const laeufe = [...m.querySelectorAll<HTMLElement>('.ma-lauf')]
+    const warte = (ms: number) => new Promise((r) => setTimeout(r, ms))
+    let lauf = 0 // Zähler: ein neuer Lauf bricht den alten ab
+
+    const spiele = async (el: HTMLElement) => {
+      const ich = ++lauf
+      const satz = el.querySelector<HTMLElement>('.ma-satz')!
+      const text = satz.dataset.satz!
+      const stufen = [...el.querySelectorAll<HTMLElement>('.ma-schritt, .ma-log li, .ma-folien li')]
+      const log = [...el.querySelectorAll<HTMLElement>('.ma-log li')]
+      const bilder = [...el.querySelectorAll<HTMLElement>('.ma-folien li')]
+      el.classList.add('bereit', 'tippt')
+      stufen.forEach((s) => s.classList.remove('da'))
+      el.querySelectorAll('img').forEach((i) => (i.loading = 'eager'))
+      for (let n = 0; n <= text.length; n++) {
+        if (ich !== lauf) return
+        satz.textContent = text.slice(0, n)
+        await warte(n % 7 === 0 ? 70 : 28)
+      }
+      el.classList.remove('tippt')
+      await warte(350)
+      el.querySelector('.ma-schritt')!.classList.add('da')
+      for (let n = 0; n < log.length; n++) {
+        await warte(240)
+        if (ich !== lauf) return
+        log[n].classList.add('da')
+        bilder[n].classList.add('da')
+      }
+      await warte(400)
+      if (ich === lauf) el.querySelector('.ma-ende')!.classList.add('da')
+    }
+
+    for (const b of wahl)
+      b.addEventListener('click', () => {
+        wahl.forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+        laeufe.forEach((l) => (l.hidden = l.dataset.deck !== b.dataset.deck))
+        spiele(laeufe.find((l) => !l.hidden)!)
+      })
+    // Erster Lauf, sobald die Maschine zur Hälfte im Bild ist
+    const start = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return
+      start.disconnect()
+      spiele(laeufe[0])
+    }, { threshold: 0.35 })
+    start.observe(m)
+  }
+</script>
+
+<style is:global>
+  .maschine { padding-block: clamp(3rem, 6vw, 5rem); }
+  .ma-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem 2rem; margin-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+  .ma-titel { font: inherit; font-family: var(--mono); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 10px; }
+  .ma-live { width: 10px; height: 10px; background: var(--accent); animation: ma-puls 1.4s steps(1) infinite; }
+  @keyframes ma-puls { 50% { opacity: 0.2; } }
+  .ma-wahl { margin: 0; }
+  .ma-wahl .pille { min-height: 44px; font-size: 0.95rem; }
+  .ma-lauf { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); border: 1px solid var(--dunkel-linie); }
+  .ma-konsole { padding: clamp(1.25rem, 2.5vw, 2rem); border-right: 1px solid var(--dunkel-linie); font-family: var(--mono); font-size: 0.875rem; line-height: 1.55; min-height: 100%; }
+  .ma-prompt { font-size: clamp(1rem, 1.35vw, 1.15rem); line-height: 1.45; min-height: 4.4em; color: var(--dunkel-text); }
+  .ma-cursor { display: none; width: 0.6em; height: 1.1em; vertical-align: -0.15em; margin-left: 2px; background: var(--accent); animation: ma-puls 1s steps(1) infinite; }
+  .ma-lauf.tippt .ma-cursor { display: inline-block; }
+  .ma-schritt { margin-top: 1.25rem; color: var(--dunkel-muted); }
+  .ma-log { list-style: none; padding: 0; margin-top: 0.75rem; border-top: 1px solid var(--dunkel-linie); }
+  .ma-log li { display: grid; grid-template-columns: 2.25em minmax(0, 1fr) 1.25em; gap: 0.5rem; padding: 6px 0; border-bottom: 1px solid var(--dunkel-linie); }
+  .ma-nr { color: var(--dunkel-muted); }
+  .ma-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ma-ok { color: var(--accent); text-align: right; }
+  .ma-folien { list-style: none; margin: 0; padding: clamp(1rem, 2vw, 1.5rem); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 1vw, 14px); align-content: start; }
+  .ma-folien .folie { outline-color: var(--dunkel-linie); }
+  /* Gesteuerter Zustand: erst sichtbar, wenn das Skript die Stufe freigibt */
+  .ma-lauf.bereit :is(.ma-schritt, .ma-log li, .ma-folien li) { opacity: 0; }
+  .ma-lauf.bereit .ma-folien li { transform: translateY(-14px) scale(0.96); }
+  .ma-lauf.bereit .da { opacity: 1 !important; transform: none !important; transition: opacity 0.35s var(--ease), transform 0.45s var(--ease); }
+  .ma-fuss { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem 2rem; margin-top: 1rem; color: var(--dunkel-muted); }
+  .ma-fuss .pfeil { color: var(--dunkel-text); }
+  @media (max-width: 860px) {
+    .ma-lauf { grid-template-columns: 1fr; }
+    .ma-konsole { border-right: 0; border-bottom: 1px solid var(--dunkel-linie); }
+    .ma-folien { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (prefers-reduced-motion: reduce) { .ma-live { animation: none; } }
+</style>

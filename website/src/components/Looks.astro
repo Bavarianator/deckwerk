@@ -7,9 +7,9 @@ const ids = Object.keys(THEMES)
 const sichtbar = ids.map((id) => `.looks:has([value='${id}']:checked) [data-look='${id}']`).join(',\n') + ' { display: grid; }'
 ---
 
-<section class="abschnitt grau" id="looks">
+<section class="abschnitt dunkel" id="looks">
   <div class="wrap">
-    <header class="kopf-mitte">
+    <header class="abschnitt-kopf">
       <h2>Ein Inhalt.<br />Viele Looks.</h2>
       <p class="unterzeile">Ein Klick, und die ganze Präsentation sieht anders aus. Oder Deckwerk entwirft einen eigenen Stil zum Thema.</p>
     </header>
@@ -58,10 +58,10 @@ const sichtbar = ids.map((id) => `.looks:has([value='${id}']:checked) [data-look
 <style is:global>
   .looks label { cursor: pointer; }
   .looks input { position: absolute; opacity: 0; pointer-events: none; }
-  .looks input:focus-visible + .pille { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .look { display: none; animation: look-ein 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); grid-template-columns: 2fr 1fr; gap: clamp(1rem, 2vw, 1.5rem); max-width: 1080px; margin-inline: auto; }
+  .looks input:focus-visible + .pille { outline: 3px solid var(--accent); outline-offset: -3px; }
+  .look { display: none; animation: look-ein 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); grid-template-columns: 2fr 1fr; gap: clamp(1rem, 2vw, 1.5rem); }
   .look > :first-child { grid-row: span 2; }
-  @keyframes look-ein { from { opacity: 0; transform: scale(0.985); } }
+  @keyframes look-ein { from { opacity: 0; transform: translateY(12px); } }
   @media (prefers-reduced-motion: reduce) { .look { animation: none; } }
   @media (max-width: 760px) { .look { grid-template-columns: 1fr; } .look > :first-child { grid-row: auto; } }
 </style>
