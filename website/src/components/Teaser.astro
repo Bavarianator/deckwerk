@@ -1,47 +1,41 @@
 ---
-// Index: drei riesige Zeilen zu den Unterseiten. Beim Überfahren schiebt sich eine echte Folie ins Bild.
+// „Weiter“: Regal wie „Mit einer Vorlage beginnen“ im Startbildschirm der App – Deckblatt, Titel, eine Zeile
 import { Image } from 'astro:assets'
 import { base, bild } from '../lib/seite'
 
 const WEGE = [
-  { pfad: 'beispiele/', titel: 'Beispiele', satz: 'Vier fertige Decks zum Durchklicken, fünf Looks, vier Formate.', bild: 'pitch-1' },
-  { pfad: 'funktionen/', titel: 'Funktionen', satz: 'PowerPoint zum Weiterbearbeiten, geprüfte Folien, Vortragsmodus, MCP für Agenten.', bild: 'quartal-4' },
-  { pfad: 'laden/', titel: 'Laden', satz: 'Für Mac und Linux. In zwei Minuten startklar, ohne Anmeldung.', bild: 'strategie-1' },
+  { pfad: 'beispiele/', titel: 'Beispiele', satz: 'Vier Decks zum Durchklicken, fünf Looks, vier Formate', bild: 'pitch-1' },
+  { pfad: 'funktionen/', titel: 'Funktionen', satz: 'PowerPoint, geprüfte Folien, Vortrag, Agenten', bild: 'quartal-4' },
+  { pfad: 'laden/', titel: 'Kostenlos laden', satz: 'Mac und Linux, in zwei Minuten startklar', bild: 'strategie-1' },
 ]
 ---
 
-<nav class="index" aria-label="Weiter">
+<section class="abschnitt regal-abschnitt">
   <div class="wrap">
-    {
-      WEGE.map((w, i) => (
-        <a class="index-zeile" href={`${base}${w.pfad}`} data-zeigen>
-          <span class="mono">{String(i + 1).padStart(2, '0')}</span>
-          <span class="index-titel display">{w.titel}</span>
-          <span class="index-satz">{w.satz}</span>
-          <span class="index-pfeil" aria-hidden="true">→</span>
-          <Image {...bild(w.bild, '360px', [360, 720])} alt="" class="folie index-bild" loading="lazy" />
-        </a>
-      ))
-    }
+    <h2 class="regal-kopf">Weiter</h2>
+    <div class="regal">
+      {
+        WEGE.map((w) => (
+          <a class="regal-deck" href={`${base}${w.pfad}`} data-zeigen>
+            <Image {...bild(w.bild, '(max-width: 760px) 90vw, 360px', [360, 720])} alt="" class="folie" loading="lazy" />
+            <b>{w.titel}</b>
+            <span>{w.satz}</span>
+          </a>
+        ))
+      }
+    </div>
   </div>
-</nav>
+</section>
 
 <style is:global>
-  .index { border-top: 1px solid var(--ink); }
-  .index-zeile { position: relative; display: grid; grid-template-columns: 4rem minmax(0, 1fr) minmax(0, 22rem) 4rem; align-items: center; gap: 1.5rem; padding-block: clamp(1rem, 2vw, 1.75rem); border-bottom: 1px solid var(--ink); text-decoration: none; }
-  .index-zeile:last-child { border-bottom: 0; }
-  .index-titel { font-size: clamp(3.5rem, 10vw, 9.5rem); transition: transform 0.4s var(--ease), color 0.2s; }
-  .index-satz { color: var(--leise); font-size: 1.05rem; }
-  .index-pfeil { justify-self: end; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 300; transition: transform 0.4s var(--ease); }
-  .index-bild { position: absolute; z-index: 2; right: 12%; top: 50%; width: clamp(220px, 24vw, 360px); opacity: 0; transform: translateY(-50%) rotate(-4deg) scale(0.9); transition: opacity 0.25s, transform 0.45s var(--ease); pointer-events: none; box-shadow: 8px 8px 0 var(--ink); }
-  .index-zeile:hover { color: var(--ink); }
-  .index-zeile:hover .index-titel { color: var(--accent); transform: translateX(0.15em); }
-  .index-zeile:hover .index-pfeil { transform: translateX(8px); }
-  .index-zeile:hover .index-bild { opacity: 1; transform: translateY(-50%) rotate(3deg) scale(1); }
-  @media (max-width: 860px) {
-    .index-zeile { grid-template-columns: 2.5rem minmax(0, 1fr) 2.5rem; }
-    .index-satz { grid-column: 2; grid-row: 2; }
-    .index-pfeil { grid-row: 1; grid-column: 3; }
-    .index-bild { display: none; }
-  }
+  .regal-abschnitt { padding-top: 0; }
+  .regal-kopf { margin-bottom: 18px; font-size: 0.875rem; font-weight: 600; letter-spacing: 0; color: var(--muted); }
+  .regal { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  .regal-deck { display: flex; flex-direction: column; gap: 4px; color: var(--text); }
+  .regal-deck:hover { color: var(--text); text-decoration: none; }
+  .regal-deck .folie { margin-bottom: 10px; box-shadow: 0 1px 2px rgb(22 22 26 / 0.06), 0 10px 24px rgb(22 22 26 / 0.12); transition: transform 0.2s; }
+  .regal-deck:hover .folie { transform: translateY(-2px); }
+  .regal-deck b { font-weight: 600; }
+  .regal-deck span { font-size: 0.875rem; color: var(--muted); }
+  @media (max-width: 760px) { .regal { grid-template-columns: 1fr; } }
 </style>
