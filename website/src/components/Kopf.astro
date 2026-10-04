@@ -1,5 +1,5 @@
 ---
-// Kopf einer Unterseite: große Überschrift, ein Satz
+// Kopf einer Unterseite: riesige Versalien links, ein Satz rechts unten auf der Linie
 interface Props { titel: string; satz: string }
 const { titel, satz } = Astro.props
 ---
@@ -10,6 +10,8 @@ const { titel, satz } = Astro.props
 </header>
 
 <style is:global>
-  .seitenkopf { padding-block: clamp(4.5rem, 11vw, 8.5rem) clamp(3rem, 7vw, 5rem); text-align: center; }
-  .seitenkopf h1 { font-size: clamp(2.75rem, 7vw, 5.5rem); }
+  .seitenkopf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 24rem); align-items: end; gap: 1.5rem 3rem; padding-block: clamp(2.5rem, 6vw, 5rem) clamp(2.5rem, 5vw, 4rem); }
+  .seitenkopf h1 { font-size: clamp(4rem, 12vw, 11.5rem); margin-left: -0.04em; }
+  .seitenkopf .unterzeile { padding-top: 1rem; border-top: 3px solid var(--accent); }
+  @media (max-width: 860px) { .seitenkopf { grid-template-columns: 1fr; } }
 </style>

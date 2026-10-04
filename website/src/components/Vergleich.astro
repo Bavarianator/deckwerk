@@ -1,0 +1,129 @@
+---
+// „Kein KI-Look“: Schieberegler zwischen einer typischen KI-Folie (absichtlich überzeichnet, in HTML nachgebaut)
+// und derselben Botschaft, wie Deckwerk sie gesetzt hat. Darunter die drei Regeln dahinter.
+import { Image } from 'astro:assets'
+import { bild, folien } from '../lib/seite'
+
+const echt = 'strategie-1'
+const REGELN = [
+  ['Der Titel ist die Aussage.', 'Nicht „Umsatz 2025“, sondern „Der Umsatz wächst jedes Quartal zweistellig“. Die Titel allein erzählen die Geschichte.'],
+  ['Eine Akzentfarbe.', 'Hierarchie entsteht über Größe und Weißraum. Keine Verläufe, keine Icon-Kacheln, keine Sticker.'],
+  ['Nichts läuft über.', 'Die Engine misst jede Folie, passt die Schrift an und prüft Abstände, Kontrast und Mindestgrößen.'],
+]
+---
+
+<section class="abschnitt" id="haltung">
+  <div class="wrap">
+    <div class="abschnitt-kopf">
+      <h2>Kein<br />KI-Look.</h2>
+      <p class="unterzeile">Zieh am Regler. Links die Botschaft, wie Deckwerk sie setzt. Rechts, was man von KI-Folien kennt.</p>
+    </div>
+
+    <noscript><style>.vg-regler, .vg-griff { display: none; }</style></noscript>
+    <figure class="vergleich" style="--pos: 62%">
+      <div class="vg-buehne">
+      <div class="vg-folie vg-ki" aria-hidden="true">
+        <div class="ki">
+          <p class="ki-pille">✨ Strategie 2027 ✨</p>
+          <p class="ki-titel">🚀 Unsere Vision für die Zukunft</p>
+          <p class="ki-unter">Gemeinsam. Innovativ. Verlässlich. Nachhaltig.</p>
+          <div class="ki-karten">
+            <div><span>💡</span><b>Innovation</b><small>Wir denken neu</small></div>
+            <div><span>🤝</span><b>Partnerschaft</b><small>Gemeinsam stark</small></div>
+            <div><span>📈</span><b>Wachstum</b><small>Nachhaltig erfolgreich</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="vg-folie vg-echt">
+        <Image {...bild(echt, '(max-width: 1440px) 100vw, 1330px', [960, 1600, 2400])} class="folie" />
+      </div>
+      <span class="vg-griff" aria-hidden="true"><span>⟷</span></span>
+      <span class="vg-etikett vg-l mono" aria-hidden="true">Deckwerk</span>
+      <span class="vg-etikett vg-r mono" aria-hidden="true">Typischer KI-Look</span>
+      <label class="vg-regler">
+        <span class="sr">Vergleich verschieben</span>
+        <input type="range" min="0" max="100" step="2" value="62" />
+      </label>
+      </div>
+      <figcaption class="mono">Links: echte Ausgabe, Folie 1 aus „Strategie 2027“ – „{folien[echt].title}“</figcaption>
+    </figure>
+
+    <ol class="regeln">
+      {
+        REGELN.map(([kurz, lang], i) => (
+          <li data-zeigen>
+            <span class="mono">{String(i + 1).padStart(2, '0')}</span>
+            <b>{kurz}</b>
+            <span>{lang}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<script>
+  const v = document.querySelector<HTMLElement>('.vergleich')
+  const r = v?.querySelector('input')
+  if (v && r) {
+    const setze = (n: number) => (v.style.setProperty('--pos', `${n}%`), (r.value = String(n)))
+    let selbst = false
+    setze(Number(r.value)) // Browser stellen den Wert beim Neuladen teils wieder her
+    r.addEventListener('input', () => ((selbst = true), setze(Number(r.value))))
+    for (const ev of ['pointerdown', 'focus']) r.addEventListener(ev, () => (selbst = true))
+    // Einmal vorführen: Regler fährt nach rechts, nach links und bleibt in der Mitte; jede eigene Bewegung bricht ab
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const zeigen = new IntersectionObserver(([e]) => {
+        if (!e.isIntersecting) return
+        zeigen.disconnect()
+        const wege: [number, number, number][] = [[62, 92, 900], [92, 12, 1600], [12, 62, 1000]]
+        let t0 = performance.now(), i = 0
+        const schritt = (t: number) => {
+          if (selbst || i >= wege.length) return
+          const [von, nach, dauer] = wege[i]
+          const k = Math.min(1, (t - t0) / dauer), w = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2
+          setze(Math.round(von + (nach - von) * w))
+          if (k === 1) (i++, (t0 = t))
+          requestAnimationFrame(schritt)
+        }
+        setTimeout(() => requestAnimationFrame((t) => ((t0 = t), schritt(t))), 400)
+      }, { threshold: 0.6 })
+      zeigen.observe(v)
+    }
+  }
+</script>
+
+<style is:global>
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .vg-buehne { position: relative; display: grid; user-select: none; outline: 1px solid var(--ink); }
+  .vg-folie { grid-area: 1 / 1; aspect-ratio: 16 / 9; }
+  .vg-folie .folie { height: 100%; object-fit: cover; }
+  .vg-ki { container-type: inline-size; }
+  .vg-echt { clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+  /* Die Parodie: alles, was Deckwerk nicht macht */
+  .ki { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2cqw; padding: 4cqw; text-align: center; color: #fff; font-family: system-ui, sans-serif;
+    background: radial-gradient(circle at 20% 15%, #ff7ad9 0, transparent 40%), radial-gradient(circle at 85% 90%, #4fd1ff 0, transparent 45%), linear-gradient(135deg, #5b21b6, #9333ea 50%, #db2777); }
+  .ki-pille { padding: 0.6cqw 2cqw; border-radius: 99px; background: rgb(255 255 255 / 0.2); font-size: 1.5cqw; font-weight: 600; }
+  .ki-titel { font-size: 4.6cqw; font-weight: 800; line-height: 1.1; text-shadow: 0 0.4cqw 1.6cqw rgb(0 0 0 / 0.35); }
+  .ki-unter { font-size: 1.9cqw; opacity: 0.9; }
+  .ki-karten { display: flex; gap: 2cqw; margin-top: 1cqw; }
+  .ki-karten div { display: grid; gap: 0.4cqw; width: 18cqw; padding: 1.8cqw; border-radius: 1.6cqw; background: rgb(255 255 255 / 0.16); box-shadow: 0 1cqw 3cqw rgb(0 0 0 / 0.25), inset 0 0 0 1px rgb(255 255 255 / 0.3); }
+  .ki-karten span { font-size: 3.4cqw; }
+  .ki-karten b { font-size: 1.8cqw; }
+  .ki-karten small { font-size: 1.3cqw; opacity: 0.85; }
+  .vg-griff { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 3px; margin-left: -1.5px; background: var(--ink); pointer-events: none; }
+  .vg-griff span { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 52px; height: 52px; transform: translate(-50%, -50%); background: var(--accent); color: var(--ink); font-size: 1.4rem; font-weight: 900; border: 2px solid var(--ink); }
+  .vg-etikett { position: absolute; top: 12px; padding: 6px 10px; background: var(--ink); color: var(--bg); pointer-events: none; }
+  .vg-l { left: 12px; background: var(--accent); color: var(--ink); }
+  .vg-r { right: 12px; }
+  .vg-regler { position: absolute; inset: 0; }
+  .vg-regler input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+  .vergleich:has(input:focus-visible) .vg-griff span { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .vergleich figcaption { margin-top: 14px; color: var(--muted); }
+
+  .regeln { list-style: none; padding: 0; margin-top: clamp(3rem, 6vw, 5.5rem); border-top: 1px solid var(--linie); }
+  .regeln li { display: grid; grid-template-columns: 7.5rem minmax(0, 4fr) minmax(0, 6fr); gap: 1.5rem; align-items: baseline; padding: 1.5rem 0; border-bottom: 1px solid var(--linie); }
+  .regeln b { font-weight: 800; font-size: clamp(1.5rem, 2.4vw, 2.1rem); letter-spacing: -0.01em; line-height: 1.1; }
+  .regeln li > span:last-child { color: var(--leise); }
+  @media (max-width: 860px) { .regeln li { grid-template-columns: 1fr; gap: 0.4rem; } .vg-etikett { font-size: 0.7rem; } }
+</style>
