@@ -71,6 +71,8 @@ Dann zeige die Storyline als nummerierte Liste von Action Titles im Chat:
     - `sparse` (wirkt leer): mehr Substanz (Zahl, Beispiel, Beleg), ein Foto, eine luftigere Form (statement, big-number) oder mit der Nachbarfolie zusammenlegen.
     - `density` (zu viel Text): kürzen, der Rest kommt in die Notes.
     - `monotone`, `rhythm`, `cards`, `breath`: Komposition (`frame`), Ton (`tone`) oder Layout wechseln.
+    - `ki-sprache`, `ki-muster`: Floskel oder Muster umschreiben, konkret statt glatt (Guide §7 „Klingt nach KI“).
+    - `mut`: einen mutigen Moment einbauen, z. B. `statement`/`big-number` Variante `poster` (Guide §6 „Mut wie ein Mensch“).
 - **Rhythmus:** Auf je vier Inhaltsfolien kommt eine luftige (statement, big-number, photo). Kapiteltrenner und Höhepunkt mit `tone` absetzen.
 - **Diagramme** immer mit `highlight`; die Aussage steht im Titel, nicht im Chart.
 - **Speaker Notes** zu jeder Inhaltsfolie: 2–4 Sätze, die der Redner sagt.
