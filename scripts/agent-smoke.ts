@@ -51,6 +51,10 @@ await fails(run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel
 const looks = await run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel', '#12261E', { headFont: 'Inter', titleSize: 'large', rule: 'over' })] }) as { text: string; images: Buffer[] }
 assert.equal(looks.images.length, 2); assert.match(looks.text, /Hell[\s\S]*Dunkel/)
 await fails(run('add_slides', { slides: [{ layout: 'cover', content: { title: 'x' } }] }), /create_deck/)
+// KI-Klischees in create_deck/update_deck: Hinweis statt Ablehnung (der Nutzer darf sie wünschen)
+assert.match((await run('create_deck', { title: 'Test', customTheme: look('Tech', '#0E0E0E', { headFont: 'Space Grotesk', accent: '#C6F432' }) })).text, /^Hinweis: Space Grotesk[\s\S]*Hinweis: Säuregrün/)
+assert.match((await run('update_deck', { customTheme: { accent: '#7C3AED', headFont: 'Fraunces' } })).text, /^Hinweis: Akzent #7C3AED/)
+assert.doesNotMatch((await run('update_deck', { customTheme: { accent: '#C4552D' } })).text, /Hinweis/)
 await run('create_deck', { title: 'Test', theme: 'midnight' })
 assert.equal(deck!.theme.id, 'midnight'); assert.equal(deck!.transition, 'fade')
 // Stil-Regler: mutig setzen und zurück; vivid hält den kräftigen Grund (nur aus dem mittleren Helligkeitsband geschoben)
@@ -153,7 +157,7 @@ assert.match((await run('export_deck', { format: 'pptx' })).text, /deck\.pptx/)
 assert.match((await run('export_deck', { format: 'zip' })).text, /deck\.zip/)
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
-assert.equal(events, 9, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test
+assert.equal(events, 12, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 3 aus dem Klischee-Test
 
 const sys = buildSystemPrompt()
 assert.ok(sys.includes('# Design-Guide') && sys.includes('### kpi-grid') && sys.includes('"maxLength"'))
