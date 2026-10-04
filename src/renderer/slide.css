@@ -115,6 +115,11 @@
 .statement-text strong { color: var(--accent); font-weight: inherit; }
 .statement-source { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
 .statement.center .statement-source { align-items: center; }
+/* Plakat: wenige Wörter füllen die Breite, oben links verankert; Kennung und Quelle klein unten */
+.statement.poster { justify-content: space-between; gap: 24px; }
+.statement.poster .statement-text { max-width: none; }
+.statement.poster .statement-text.big { font-size: calc(var(--fs-display) * var(--hs) * var(--poster-k, 1.9)); line-height: 0.96; letter-spacing: -0.035em; }
+.statement-poster-foot { display: flex; flex-direction: column; gap: 8px; }
 .dash { width: 40px; height: 2px; background: var(--accent); }
 
 /* ---------- bullets ---------- */
@@ -292,6 +297,12 @@
 .fmt-tall.fr-split :is(.bullets.as-cards, .cols, .kpis, .ig, .team, .pr, .lg) { align-content: start; }
 .fmt-tall.fr-split :is(.tl, .proc) { margin: 0; }
 /* Nebeneinander wird untereinander (Raster mit Inline-Spalten brauchen !important) */
+.fmt-narrow .bign.poster { --bign-k: 1.3; }
+.fmt-narrow .bign-top { flex-direction: column; gap: 24px; }
+.fmt-narrow .bign-side { width: auto; }
+/* Social-Formate vergrößern die Schrift schon im Autofit (Breite / 750): Plakatfaktor kleiner, sonst passt kein Wort in die Zeile */
+.prof-social .statement.poster { --poster-k: 1.2; }
+.prof-social .bign.poster { --bign-k: 1.2; }
 .fmt-narrow :is(.agenda, .chart-wrap.with-take, .sum.with-rec, .mx.with-take, .fn.with-take, .psol, .ms, .cols, .pc-cols) { grid-template-columns: 1fr; }
 .fmt-narrow .agenda { gap: 28px; }
 .fmt-narrow :is(.kpis, .pr, .team, .lg, .tl, .opt) { grid-template-columns: 1fr !important; }

@@ -110,6 +110,23 @@ function Section({ c }: Props<'section'>) {
 
 function Statement({ c, v }: Props<'statement'>) {
   const center = v === 'center'
+  if (v === 'poster') {
+    // Plakat nur für kurze Sätze; längerer Text fällt auf die normale Größe zurück, statt zu überlaufen
+    const big = c.text.replace(/\*\*/g, '').length <= 60
+    return (
+      <Frame decor="hero">
+        <div className="statement poster">
+          <T role={big ? 'display' : 'statement'} slot="text" maxLines={big ? 3 : 4} className={`statement-text ${big ? 'big' : ''}`} build={0}>{c.text}</T>
+          {(c.eyebrow || c.source) && (
+            <div className="statement-poster-foot">
+              <Eyebrow text={c.eyebrow} />
+              {c.source && <T role="label" slot="source" className="muted" build={0}>{c.source}</T>}
+            </div>
+          )}
+        </div>
+      </Frame>
+    )
+  }
   return (
     <Frame decor="hero">
       <div className={`statement ${center ? 'center' : ''}`}>
