@@ -1,0 +1,195 @@
+{
+ "title": "Deckwerk für Agenten",
+ "brief": {
+  "audience": "Entwickler, die mit Claude Code, Codex oder Vibe arbeiten",
+  "goal": "Deckwerk als MCP-Server einrichten",
+  "tone": "präzise, technisch, knapp"
+ },
+ "theme": {
+  "id": "custom",
+  "custom": {
+   "name": "Terminal",
+   "bg": "#14161B",
+   "accent": "#7A86FF",
+   "headFont": "IBM Plex Sans",
+   "bodyFont": "IBM Plex Sans",
+   "radius": 2,
+   "decor": "none",
+   "titleSize": "large",
+   "titleWeight": "bold",
+   "rule": "under",
+   "sectionTone": "invert",
+   "labelFont": "mono"
+  }
+ },
+ "transition": "slide",
+ "mode": "click",
+ "slides": [
+  {
+   "id": "s26e3",
+   "layout": "cover",
+   "variant": "left",
+   "notes": "Dieses Deck zeigt, wie Agenten im Terminal mit Deckwerk Präsentationen bauen.",
+   "content": {
+    "eyebrow": "MCP-Server",
+    "title": "Dein Agent bekommt ein Designstudio",
+    "subtitle": "Deckwerk für Claude Code, Codex und Vibe",
+    "meta": "Open Source · Mac und Linux"
+   }
+  },
+  {
+   "id": "s9cd7",
+   "layout": "statement",
+   "tone": "invert",
+   "notes": "Sprachmodelle formulieren stark, platzieren Elemente aber schlecht. Deckwerk trennt beides: Der Agent liefert Inhalt und Layoutwahl, die Engine setzt.",
+   "content": {
+    "text": "Ein Agent kann gut **schreiben**. Folien setzen sollte er nicht."
+   }
+  },
+  {
+   "id": "s46d1",
+   "layout": "process",
+   "frame": "top",
+   "notes": "Der Installer legt auch den Skill für Claude Code und Codex ab. Danach reicht ein Satz im Terminal.",
+   "content": {
+    "title": "Einrichten dauert drei Befehle",
+    "steps": [
+     {
+      "title": "Installieren",
+      "desc": "install.sh lädt die App, legt den Skill für Claude Code und Codex ab"
+     },
+     {
+      "title": "Verbinden",
+      "desc": "claude mcp add … deckwerk.sh --mcp – einmal, für alle Projekte"
+     },
+     {
+      "title": "Loslegen",
+      "desc": "claude \"Quartalsupdate aus zahlen.csv\" – der Agent baut und prüft"
+     }
+    ]
+   }
+  },
+  {
+   "id": "sc7ff",
+   "layout": "table",
+   "frame": "band",
+   "notes": "Eine Auswahl der Werkzeuge. Dazu kommen Bildsuche, Bild-KI, Icons, Deko und Gedächtnis für Vorlieben.",
+   "content": {
+    "title": "20 Werkzeuge führen vom Briefing bis zur fertigen Datei",
+    "columns": [
+     "Phase",
+     "Werkzeuge",
+     "Ergebnis"
+    ],
+    "rows": [
+     [
+      "Planen",
+      "plan_storyline, ask_user",
+      "Storyline aus Action Titles"
+     ],
+     [
+      "Anlegen",
+      "propose_looks, create_deck",
+      "Eigenes Design"
+     ],
+     [
+      "Bauen",
+      "add_slides, update_slide",
+      "Folien mit Autofit"
+     ],
+     [
+      "Prüfen",
+      "render_overview, lint_deck",
+      "Fehler und Warnungen"
+     ],
+     [
+      "Liefern",
+      "export_deck",
+      "PPTX, PDF, PNG"
+     ]
+    ],
+    "highlight": {
+     "row": 3
+    }
+   }
+  },
+  {
+   "id": "s06f6",
+   "layout": "big-number",
+   "tone": "accent",
+   "notes": "Das ist der wichtigste Unterschied zu Agenten, die PowerPoint per Code zusammenbauen.",
+   "content": {
+    "value": "0",
+    "label": "Koordinaten rät der Agent – er wählt Layouts, die Engine setzt",
+    "context": "Positionen, Schriftgrößen und Farben berechnet Deckwerk aus 29 Layouts und dem Theme."
+   }
+  },
+  {
+   "id": "s52de",
+   "layout": "two-column",
+   "variant": "rule",
+   "notes": "Genau so ist dieses Deck entstanden: Folien waren zu dicht, die Antwort hat es gemeldet, der Agent hat gekürzt.",
+   "content": {
+    "title": "Jede Antwort enthält Autofit und Lint – der Agent korrigiert sich selbst",
+    "left": {
+     "heading": "Agent sendet",
+     "text": "",
+     "points": [
+      "Layout und Inhalt je Folie",
+      "keine Koordinaten, kein HTML",
+      "Batches von vier bis sechs Folien"
+     ]
+    },
+    "right": {
+     "heading": "Deckwerk antwortet",
+     "text": "",
+     "points": [
+      "Autofit-Stufe für Titel und Text",
+      "„61 Wörter, Ziel unter 40“",
+      "Fehler, die weg müssen"
+     ]
+    }
+   }
+  },
+  {
+   "id": "se322",
+   "layout": "bullets",
+   "frame": "top",
+   "notes": "Der Skill liegt unter ~/.claude/skills bzw. ~/.codex/skills und wird von der Einrichtung gepflegt.",
+   "content": {
+    "title": "Der Skill bringt deinem Agenten den Ablauf bei",
+    "items": [
+     {
+      "text": "Briefing klären, höchstens drei Fragen",
+      "sub": "Publikum, Ziel, Umfang"
+     },
+     {
+      "text": "Storyline als Action Titles",
+      "sub": "Die Titel allein erzählen die Geschichte"
+     },
+     {
+      "text": "Looks vorschlagen, dann bauen",
+      "sub": "Zwei bis drei eigene Entwürfe"
+     },
+     {
+      "text": "Prüfen, bis kein Fehler bleibt",
+      "sub": "Lint und Kontaktbogen, höchstens drei Runden"
+     }
+    ]
+   }
+  },
+  {
+   "id": "sdd33",
+   "layout": "closing",
+   "notes": "Der Befehl bindet Deckwerk für alle Projekte ein.",
+   "content": {
+    "title": "Ein Befehl, und dein Agent baut Decks",
+    "subtitle": "claude mcp add -s user deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp",
+    "contact": [
+     "github.com/Bavarianator/deckwerk"
+    ],
+    "qr": "https://github.com/Bavarianator/deckwerk"
+   }
+  }
+ ]
+}

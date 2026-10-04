@@ -28,16 +28,16 @@ const example = (name) => {
 
 const THEMES = ['beratung', 'keynote', 'schweiz', 'redaktion', 'zen'] // CATALOG_THEMES in src/shared/themes.ts
 const SIZES = { '1:1': { w: 1080, h: 1080 }, '9:16': { w: 720, h: 1280 }, a4: { w: 794, h: 1123 } } // FORMATS in src/shared/deck.ts
-const OG = { title: 'Deckwerk', theme: { id: 'keynote' }, slides: [{ id: 'og', layout: 'cover', content: { eyebrow: 'Deckwerk', title: 'Ein Satz rein. Ein Deck raus.', subtitle: 'KI-Präsentationsstudio für Linux und macOS. Open Source.' } }] }
+// og.jpg (Link-Vorschau) ist von Hand im Look der App gestaltet und wird hier nicht mehr gerendert
 
 // Ganze Decks für Live-Demo und Galerie; dl: PPTX und PDF zum Herunterladen (die Foto-Decks sind dafür zu groß)
-const DECKS = [{ name: 'strategie', dl: true }, { name: 'pitch' }, { name: 'quartal', dl: true }, { name: 'foto' }]
+// Zuerst die Decks über Deckwerk selbst (Startseite, Live-Demo), dann die Anwendungsbeispiele
+const DECKS = [{ name: 'deckwerk', dl: true }, { name: 'vortrag' }, { name: 'agenten' }, { name: 'strategie', dl: true }, { name: 'pitch' }, { name: 'quartal', dl: true }, { name: 'foto' }]
 const JOBS = [
   ...DECKS.map((d) => ({ ...d, deck: example(d.name) })),
   ...THEMES.map((t) => ({ name: `look-${t}`, deck: example('strategie'), slides: [1, 5, 4], theme: { id: t } })),
   { name: 'format-16-9', deck: example('foto'), slides: [2] },
   ...Object.entries(SIZES).map(([f, size]) => ({ name: `format-${f.replace(':', '-')}`, deck: example('foto'), slides: [2], size })),
-  { name: 'og', deck: OG, size: { w: 1200, h: 630 } },
   { name: 'pruefung', deck: example('quartal'), slides: [1, 2, 6, 2, 8], images: false }, // nur der Lint-Auszug: drei Listen hintereinander
 ]
 
@@ -58,12 +58,11 @@ for (const job of JOBS) {
   if (lint.length) console.log(lint.join('\n'))
   const entries = readdirSync(out, { withFileTypes: true })
   const pngs = join(out, entries.find((e) => e.isDirectory()).name) // <out>/<slug(titel)>/NN.png, daneben .pptx und .pdf
-  if (job.name === 'og') { await sharp(join(pngs, '01.png')).resize({ width: 1200 }).jpeg({ quality: 88 }).toFile(join(site, 'public/og.jpg')); continue }
   const ids = []
   for (const [i, slide] of deck.slides.entries()) {
     const id = `${job.name}-${i + 1}`
     await sharp(join(pngs, `${String(i + 1).padStart(2, '0')}.png`)).resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 90 }).toFile(join(dest, `${id}.webp`))
-    manifest.folien[id] = { title: titleOf(slide.content), layout: slide.layout, theme: deck.theme.id, notes: slide.notes ?? '' }
+    manifest.folien[id] = { title: titleOf(slide.content), layout: slide.layout, theme: deck.theme.custom?.name ?? deck.theme.id, notes: slide.notes ?? '' }
     ids.push(id)
   }
   if (!DECKS.some((d) => d.name === job.name)) continue
@@ -71,7 +70,7 @@ for (const job of JOBS) {
     copyFileSync(join(out, entries.find((e) => e.name.endsWith(`.${ext}`)).name), join(downloads, `${job.name}.${ext}`))
     return `beispiele/${job.name}.${ext}`
   }) : []
-  manifest.decks[job.name] = { title: deck.title, brief: deck.brief ?? {}, theme: deck.theme.id, slides: ids, dl }
+  manifest.decks[job.name] = { title: deck.title, brief: deck.brief ?? {}, theme: deck.theme.custom?.name ?? deck.theme.id, slides: ids, dl }
 }
 
 writeFileSync(join(dest, 'folien.json'), JSON.stringify(manifest, null, 2) + '\n')

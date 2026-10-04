@@ -1,5 +1,72 @@
 {
   "decks": {
+    "deckwerk": {
+      "title": "Deckwerk",
+      "brief": {
+        "audience": "Menschen, die regelmäßig Präsentationen bauen müssen",
+        "goal": "Deckwerk verstehen und kostenlos laden",
+        "tone": "klar, selbstbewusst, ohne Hype"
+      },
+      "theme": "Deckwerk App",
+      "slides": [
+        "deckwerk-1",
+        "deckwerk-2",
+        "deckwerk-3",
+        "deckwerk-4",
+        "deckwerk-5",
+        "deckwerk-6",
+        "deckwerk-7",
+        "deckwerk-8",
+        "deckwerk-9",
+        "deckwerk-10",
+        "deckwerk-11",
+        "deckwerk-12"
+      ],
+      "dl": [
+        "beispiele/deckwerk.pptx",
+        "beispiele/deckwerk.pdf"
+      ]
+    },
+    "vortrag": {
+      "title": "Vorne stehen mit Deckwerk",
+      "brief": {
+        "audience": "Menschen, die vor Publikum präsentieren",
+        "goal": "Zeigen, wie Deckwerk beim Vortragen hilft",
+        "tone": "ruhig, sicher, nahbar"
+      },
+      "theme": "Bühnenlicht",
+      "slides": [
+        "vortrag-1",
+        "vortrag-2",
+        "vortrag-3",
+        "vortrag-4",
+        "vortrag-5",
+        "vortrag-6",
+        "vortrag-7",
+        "vortrag-8"
+      ],
+      "dl": []
+    },
+    "agenten": {
+      "title": "Deckwerk für Agenten",
+      "brief": {
+        "audience": "Entwickler, die mit Claude Code, Codex oder Vibe arbeiten",
+        "goal": "Deckwerk als MCP-Server einrichten",
+        "tone": "präzise, technisch, knapp"
+      },
+      "theme": "Terminal",
+      "slides": [
+        "agenten-1",
+        "agenten-2",
+        "agenten-3",
+        "agenten-4",
+        "agenten-5",
+        "agenten-6",
+        "agenten-7",
+        "agenten-8"
+      ],
+      "dl": []
+    },
     "strategie": {
       "title": "Strategie 2027",
       "brief": {
@@ -96,6 +163,174 @@
     }
   },
   "folien": {
+    "deckwerk-1": {
+      "title": "Ein Satz rein. Ein fertiges Deck raus.",
+      "layout": "cover",
+      "theme": "Deckwerk App",
+      "notes": "Deckwerk in einem Satz: Du sagst, worum es geht, und bekommst ein fertiges, geprüftes Deck. Foto: Galymzhan Abdugalimov / Unsplash."
+    },
+    "deckwerk-2": {
+      "title": "Wer Folien baut, schiebt Kästchen – statt an seiner Botschaft zu arbeiten.",
+      "layout": "statement",
+      "theme": "Deckwerk App",
+      "notes": "Der Einstieg: Die meiste Zeit beim Foliebauen geht ins Ausrichten, Kürzen und Nachjustieren. Genau das übernimmt Deckwerk."
+    },
+    "deckwerk-3": {
+      "title": "Aus einem Satz wird in vier Schritten ein Deck",
+      "layout": "process",
+      "theme": "Deckwerk App",
+      "notes": "Der Ablauf in der App: Satz eingeben, Storyline lesen, Folien entstehen und werden geprüft. Danach sagt man einfach, was sich ändern soll."
+    },
+    "deckwerk-4": {
+      "title": "Die KI schreibt, die Engine setzt – keine Folie wird geraten",
+      "layout": "problem-solution",
+      "theme": "Deckwerk App",
+      "notes": "Der Kern der Architektur: Die KI setzt nie Koordinaten. Sie wählt Layouts und füllt Felder; Positionen, Schriftgrößen und Farben berechnet die Engine."
+    },
+    "deckwerk-5": {
+      "title": "Layouts decken Pitch, Strategie, Bericht und Social-Post ab",
+      "layout": "big-number",
+      "theme": "Deckwerk App",
+      "notes": "Der Katalog ist fest: Die KI kann keine Layouts erfinden, nur gute auswählen. Deshalb sieht das Ergebnis aus wie von einem Designer."
+    },
+    "deckwerk-6": {
+      "title": "Geprüft, bevor du es siehst",
+      "layout": "section",
+      "theme": "Deckwerk App",
+      "notes": "Kapitel zwei: Was die Engine im Hintergrund tut."
+    },
+    "deckwerk-7": {
+      "title": "Die Prüfung findet Fehler vor dem Meeting",
+      "layout": "bullets",
+      "theme": "Deckwerk App",
+      "notes": "Der Lint prüft jede Folie nach dem Rendern: Überlauf, Überlappung, Mindestgröße, Wortdichte, einzelne Wörter in der letzten Zeile und den Rhythmus des ganzen Decks. Die KI bekommt die Meldungen zurück und korrigiert sich selbst."
+    },
+    "deckwerk-8": {
+      "title": "Ein Deck, vier Ausgaben – und die PowerPoint bleibt bearbeitbar",
+      "layout": "table",
+      "theme": "Deckwerk App",
+      "notes": "In der PowerPoint sind Texte, Formen, Bilder und Diagramme echte Objekte an den gemessenen Positionen, Schriften sind eingebettet, Animationen und Morph laufen mit."
+    },
+    "deckwerk-9": {
+      "title": "Aus einem Inhalt werden Folie, Post, Story und Handout",
+      "layout": "kpi-grid",
+      "theme": "Deckwerk App",
+      "notes": "Das Format lässt sich jederzeit wechseln. Deckwerk ordnet Spalten neu, setzt Bilder nach oben und vergrößert die Schrift für kleine Bildschirme."
+    },
+    "deckwerk-10": {
+      "title": "Deine Decks bleiben auf deinem Rechner",
+      "layout": "photo",
+      "theme": "Deckwerk App",
+      "notes": "Decks liegen als Datei unter ~/Deckwerk. Deckwerk nutzt dein vorhandenes Abo über die Kommandozeile oder einen eigenen API-Schlüssel. Foto: Aleks Dorohovich / Unsplash."
+    },
+    "deckwerk-11": {
+      "title": "Werkzeuge im MCP-Server – Agenten bauen Decks direkt im Terminal",
+      "layout": "big-number",
+      "theme": "Deckwerk App",
+      "notes": "Wer lieber im Terminal arbeitet, bindet Deckwerk als MCP-Server ein. Die Werkzeuge liefern dieselben Prüfmeldungen wie in der App."
+    },
+    "deckwerk-12": {
+      "title": "Bau dein nächstes Deck mit einem Satz",
+      "layout": "closing",
+      "theme": "Deckwerk App",
+      "notes": "Der nächste Schritt: laden, einen Satz eingeben, das Ergebnis ansehen. Foto: Alejandro Escamilla / Unsplash."
+    },
+    "vortrag-1": {
+      "title": "Die Folien stehen. Jetzt zählt, was du sagst.",
+      "layout": "cover",
+      "theme": "Bühnenlicht",
+      "notes": "Dieses Deck zeigt den Präsentiermodus von Deckwerk. Foto: Forrest Cavale / Unsplash."
+    },
+    "vortrag-2": {
+      "title": "Gute Vortragende schauen ins Publikum, nicht auf ihren Laptop.",
+      "layout": "statement",
+      "theme": "Bühnenlicht",
+      "notes": "Die Leitidee: Alles, was du während des Vortrags brauchst, kommt zu dir – aufs Handy, in die Referentenansicht."
+    },
+    "vortrag-3": {
+      "title": "Du siehst mehr als dein Publikum",
+      "layout": "bullets",
+      "theme": "Bühnenlicht",
+      "notes": "Die Referentenansicht läuft auf deinem Bildschirm, der Beamer zeigt nur die Folie. Die Notizen schreibt Deckwerk beim Bauen gleich mit."
+    },
+    "vortrag-4": {
+      "title": "Dein Handy wird zur Fernbedienung",
+      "layout": "image-text",
+      "theme": "Bühnenlicht",
+      "notes": "Im Präsentiermodus zeigt Deckwerk einen QR-Code. Das Handy öffnet eine Seite mit Weiter und Zurück, der aktuellen Folie und den Notizen. Foto: Aleks Dorohovich / Unsplash."
+    },
+    "vortrag-5": {
+      "title": "Laser und Stift zeigen, worüber du gerade sprichst",
+      "layout": "process",
+      "theme": "Bühnenlicht",
+      "notes": "Drei Tasten reichen. Was du zeichnest, landet nie im Deck – es ist nur für den Moment."
+    },
+    "vortrag-6": {
+      "title": "Morph lässt eine Zahl von Folie zu Folie wandern",
+      "layout": "kpi-grid",
+      "theme": "Bühnenlicht",
+      "notes": "Achte auf die 29: Beim Wechsel zur nächsten Folie wächst sie zur großen Zahl."
+    },
+    "vortrag-7": {
+      "title": "Morph läuft in Deckwerk und genauso in PowerPoint",
+      "layout": "big-number",
+      "theme": "Bühnenlicht",
+      "notes": "Morph ist der eine Übergang, der Inhalte verbindet. Deckwerk schreibt ihn auch in die PPTX."
+    },
+    "vortrag-8": {
+      "title": "Du sprichst, Deckwerk kümmert sich um den Rest",
+      "layout": "closing",
+      "theme": "Bühnenlicht",
+      "notes": "Foto: Jeff Sheldon / Unsplash."
+    },
+    "agenten-1": {
+      "title": "Dein Agent bekommt ein Designstudio",
+      "layout": "cover",
+      "theme": "Terminal",
+      "notes": "Dieses Deck zeigt, wie Agenten im Terminal mit Deckwerk Präsentationen bauen."
+    },
+    "agenten-2": {
+      "title": "Ein Agent kann gut schreiben. Folien setzen sollte er nicht.",
+      "layout": "statement",
+      "theme": "Terminal",
+      "notes": "Sprachmodelle formulieren stark, platzieren Elemente aber schlecht. Deckwerk trennt beides: Der Agent liefert Inhalt und Layoutwahl, die Engine setzt."
+    },
+    "agenten-3": {
+      "title": "Einrichten dauert drei Befehle",
+      "layout": "process",
+      "theme": "Terminal",
+      "notes": "Der Installer legt auch den Skill für Claude Code und Codex ab. Danach reicht ein Satz im Terminal."
+    },
+    "agenten-4": {
+      "title": "20 Werkzeuge führen vom Briefing bis zur fertigen Datei",
+      "layout": "table",
+      "theme": "Terminal",
+      "notes": "Eine Auswahl der Werkzeuge. Dazu kommen Bildsuche, Bild-KI, Icons, Deko und Gedächtnis für Vorlieben."
+    },
+    "agenten-5": {
+      "title": "Koordinaten rät der Agent – er wählt Layouts, die Engine setzt",
+      "layout": "big-number",
+      "theme": "Terminal",
+      "notes": "Das ist der wichtigste Unterschied zu Agenten, die PowerPoint per Code zusammenbauen."
+    },
+    "agenten-6": {
+      "title": "Jede Antwort enthält Autofit und Lint – der Agent korrigiert sich selbst",
+      "layout": "two-column",
+      "theme": "Terminal",
+      "notes": "Genau so ist dieses Deck entstanden: Folien waren zu dicht, die Antwort hat es gemeldet, der Agent hat gekürzt."
+    },
+    "agenten-7": {
+      "title": "Der Skill bringt deinem Agenten den Ablauf bei",
+      "layout": "bullets",
+      "theme": "Terminal",
+      "notes": "Der Skill liegt unter ~/.claude/skills bzw. ~/.codex/skills und wird von der Einrichtung gepflegt."
+    },
+    "agenten-8": {
+      "title": "Ein Befehl, und dein Agent baut Decks",
+      "layout": "closing",
+      "theme": "Terminal",
+      "notes": "Der Befehl bindet Deckwerk für alle Projekte ein."
+    },
     "strategie-1": {
       "title": "Wir werden bis 2027 der verlässlichste Partner unserer Branche",
       "layout": "cover",

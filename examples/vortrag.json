@@ -1,0 +1,172 @@
+{
+ "title": "Vorne stehen mit Deckwerk",
+ "brief": {
+  "audience": "Menschen, die vor Publikum präsentieren",
+  "goal": "Zeigen, wie Deckwerk beim Vortragen hilft",
+  "tone": "ruhig, sicher, nahbar"
+ },
+ "theme": {
+  "id": "custom",
+  "custom": {
+   "name": "Bühnenlicht",
+   "bg": "#121214",
+   "accent": "#E8B04A",
+   "headFont": "Source Serif 4",
+   "bodyFont": "Inter",
+   "radius": 0,
+   "decor": "none",
+   "titleSize": "large",
+   "titleWeight": "regular",
+   "rule": "none",
+   "sectionTone": "normal"
+  }
+ },
+ "transition": "dissolve",
+ "mode": "click",
+ "motion": "calm",
+ "slides": [
+  {
+   "id": "sfcac",
+   "layout": "cover",
+   "variant": "left",
+   "notes": "Dieses Deck zeigt den Präsentiermodus von Deckwerk. Foto: Forrest Cavale / Unsplash.",
+   "content": {
+    "eyebrow": "Präsentieren mit Deckwerk",
+    "title": "Die Folien stehen. Jetzt zählt, was du sagst.",
+    "subtitle": "Wie Deckwerk dir beim Vortrag den Rücken freihält",
+    "image": {
+     "src": "assets/strasse-abend.jpg",
+     "focus": "bottom"
+    }
+   }
+  },
+  {
+   "id": "s2a1a",
+   "layout": "statement",
+   "tone": "invert",
+   "notes": "Die Leitidee: Alles, was du während des Vortrags brauchst, kommt zu dir – aufs Handy, in die Referentenansicht.",
+   "content": {
+    "text": "Gute Vortragende schauen ins **Publikum**, nicht auf ihren Laptop."
+   }
+  },
+  {
+   "id": "s3767",
+   "layout": "bullets",
+   "frame": "split",
+   "notes": "Die Referentenansicht läuft auf deinem Bildschirm, der Beamer zeigt nur die Folie. Die Notizen schreibt Deckwerk beim Bauen gleich mit.",
+   "content": {
+    "title": "Du siehst mehr als dein Publikum",
+    "items": [
+     {
+      "text": "Speaker Notes zur aktuellen Folie",
+      "sub": "Beim Bauen gleich mitgeschrieben",
+      "icon": "notebook-pen"
+     },
+     {
+      "text": "Die nächste Folie als Vorschau",
+      "sub": "Keine Überraschung beim Klicken",
+      "icon": "square-arrow-right"
+     },
+     {
+      "text": "Vergangene Zeit und Uhrzeit",
+      "sub": "Im Zeitplan bleiben",
+      "icon": "clock"
+     },
+     {
+      "text": "Das Publikum sieht nur die Folien",
+      "icon": "monitor"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s8fca",
+   "layout": "image-text",
+   "variant": "image-right",
+   "notes": "Im Präsentiermodus zeigt Deckwerk einen QR-Code. Das Handy öffnet eine Seite mit Weiter und Zurück, der aktuellen Folie und den Notizen. Foto: Aleks Dorohovich / Unsplash.",
+   "content": {
+    "title": "Dein Handy wird zur Fernbedienung",
+    "text": "QR-Code scannen, schon blätterst du vom Handy aus. Folie und Notizen siehst du dort mit.",
+    "image": {
+     "src": "assets/schreibtisch.jpg",
+     "focus": "center"
+    }
+   }
+  },
+  {
+   "id": "s4f9a",
+   "layout": "process",
+   "notes": "Drei Tasten reichen. Was du zeichnest, landet nie im Deck – es ist nur für den Moment.",
+   "content": {
+    "title": "Laser und Stift zeigen, worüber du gerade sprichst",
+    "steps": [
+     {
+      "title": "L – Laserpointer",
+      "desc": "Ein Lichtpunkt zeigt auf die Zahl, um die es geht"
+     },
+     {
+      "title": "D – Stift",
+      "desc": "Markieren und einkreisen, während du sprichst"
+     },
+     {
+      "title": "E – Löschen",
+      "desc": "Mit einer Taste weg, nichts landet im Deck"
+     }
+    ]
+   }
+  },
+  {
+   "id": "sae55",
+   "layout": "kpi-grid",
+   "notes": "Achte auf die 29: Beim Wechsel zur nächsten Folie wächst sie zur großen Zahl.",
+   "content": {
+    "title": "Morph lässt eine Zahl von Folie zu Folie wandern",
+    "kpis": [
+     {
+      "value": "29",
+      "label": "Layouts im Katalog, von Cover bis Angebot"
+     },
+     {
+      "value": "8",
+      "label": "Formate von 16:9 bis A4"
+     },
+     {
+      "value": "20",
+      "label": "Werkzeuge für Agenten im MCP-Server"
+     }
+    ],
+    "focus": 0,
+    "source": "Achte auf die 29 beim Weiterklicken"
+   }
+  },
+  {
+   "id": "s7ff0",
+   "layout": "big-number",
+   "transition": "morph",
+   "tone": "accent",
+   "notes": "Morph ist der eine Übergang, der Inhalte verbindet. Deckwerk schreibt ihn auch in die PPTX.",
+   "content": {
+    "value": "29",
+    "label": "Morph läuft in Deckwerk und genauso in PowerPoint",
+    "context": "Gleicher Text, gleiches Foto oder gleicher Platz im Layout – Deckwerk erkennt die Brücke selbst."
+   }
+  },
+  {
+   "id": "sd707",
+   "layout": "closing",
+   "notes": "Foto: Jeff Sheldon / Unsplash.",
+   "content": {
+    "title": "Du sprichst, Deckwerk kümmert sich um den Rest",
+    "subtitle": "Referentenansicht, Fernbedienung, Laser und Stift – alles in der kostenlosen App",
+    "contact": [
+     "bavarianator.github.io/deckwerk"
+    ],
+    "image": {
+     "src": "assets/cafe-fenster.jpg",
+     "focus": "center",
+     "look": "mono"
+    }
+   }
+  }
+ ]
+}

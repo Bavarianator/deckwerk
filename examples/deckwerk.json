@@ -1,0 +1,256 @@
+{
+ "title": "Deckwerk",
+ "brief": {
+  "audience": "Menschen, die regelmäßig Präsentationen bauen müssen",
+  "goal": "Deckwerk verstehen und kostenlos laden",
+  "tone": "klar, selbstbewusst, ohne Hype"
+ },
+ "theme": {
+  "id": "custom",
+  "custom": {
+   "name": "Deckwerk App",
+   "bg": "#F7F7F8",
+   "accent": "#4F52D9",
+   "headFont": "Inter",
+   "bodyFont": "Inter",
+   "radius": 4,
+   "decor": "none",
+   "titleSize": "large",
+   "titleWeight": "bold",
+   "rule": "none",
+   "sectionTone": "accent"
+  }
+ },
+ "transition": "fade",
+ "mode": "click",
+ "slides": [
+  {
+   "id": "sc201",
+   "layout": "cover",
+   "variant": "left",
+   "notes": "Deckwerk in einem Satz: Du sagst, worum es geht, und bekommst ein fertiges, geprüftes Deck. Foto: Galymzhan Abdugalimov / Unsplash.",
+   "content": {
+    "eyebrow": "Deckwerk",
+    "title": "Ein Satz rein. Ein fertiges Deck raus.",
+    "subtitle": "Das Präsentationsstudio, das schreibt, gestaltet, jede Folie prüft und eine bearbeitbare PowerPoint liefert",
+    "meta": "Kostenlos · Open Source · Mac und Linux",
+    "image": {
+     "src": "assets/arbeitsplatz.jpg",
+     "focus": "right"
+    }
+   }
+  },
+  {
+   "id": "s0c16",
+   "layout": "statement",
+   "tone": "invert",
+   "notes": "Der Einstieg: Die meiste Zeit beim Foliebauen geht ins Ausrichten, Kürzen und Nachjustieren. Genau das übernimmt Deckwerk.",
+   "content": {
+    "text": "Wer Folien baut, schiebt **Kästchen** – statt an seiner Botschaft zu arbeiten."
+   }
+  },
+  {
+   "id": "s9e9d",
+   "layout": "process",
+   "notes": "Der Ablauf in der App: Satz eingeben, Storyline lesen, Folien entstehen und werden geprüft. Danach sagt man einfach, was sich ändern soll.",
+   "content": {
+    "title": "Aus einem Satz wird in vier Schritten ein Deck",
+    "steps": [
+     {
+      "title": "Erzählen",
+      "desc": "Ein Satz: worum es geht, für wen"
+     },
+     {
+      "title": "Storyline",
+      "desc": "Action Titles erzählen die Geschichte"
+     },
+     {
+      "title": "Gestalten",
+      "desc": "Layout aus dem Katalog, eigenes Design"
+     },
+     {
+      "title": "Prüfen",
+      "desc": "Jede Folie gemessen und kontrolliert"
+     }
+    ]
+   }
+  },
+  {
+   "id": "s711f",
+   "layout": "problem-solution",
+   "notes": "Der Kern der Architektur: Die KI setzt nie Koordinaten. Sie wählt Layouts und füllt Felder; Positionen, Schriftgrößen und Farben berechnet die Engine.",
+   "content": {
+    "title": "Die KI schreibt, die Engine setzt – keine Folie wird geraten",
+    "problem": {
+     "heading": "Übliche KI-Folien",
+     "points": [
+      "Text läuft über den Rand",
+      "Schrift schrumpft, bis alles passt",
+      "Jede Folie sieht anders aus"
+     ]
+    },
+    "solution": {
+     "heading": "Mit Deckwerk",
+     "points": [
+      "KI wählt nur Layout und Inhalt",
+      "Engine misst und setzt die Schrift",
+      "Ein Design für das ganze Deck"
+     ]
+    }
+   }
+  },
+  {
+   "id": "sa46f",
+   "layout": "big-number",
+   "notes": "Der Katalog ist fest: Die KI kann keine Layouts erfinden, nur gute auswählen. Deshalb sieht das Ergebnis aus wie von einem Designer.",
+   "content": {
+    "value": "29",
+    "label": "Layouts decken Pitch, Strategie, Bericht und Social-Post ab",
+    "context": "Von der Kennzahl über Zeitstrahl und Matrix bis zum Angebot auf A4 – alle nach den Regeln guter Designer gebaut."
+   }
+  },
+  {
+   "id": "s16cc",
+   "layout": "section",
+   "notes": "Kapitel zwei: Was die Engine im Hintergrund tut.",
+   "content": {
+    "title": "Geprüft, bevor du es siehst",
+    "subtitle": "Jede Folie wird gemessen, angepasst und kontrolliert"
+   }
+  },
+  {
+   "id": "s9777",
+   "layout": "bullets",
+   "frame": "split",
+   "notes": "Der Lint prüft jede Folie nach dem Rendern: Überlauf, Überlappung, Mindestgröße, Wortdichte, einzelne Wörter in der letzten Zeile und den Rhythmus des ganzen Decks. Die KI bekommt die Meldungen zurück und korrigiert sich selbst.",
+   "content": {
+    "title": "Die Prüfung findet Fehler vor dem Meeting",
+    "items": [
+     {
+      "text": "Text, der überläuft oder sich überlappt"
+     },
+     {
+      "text": "Schrift unter der Mindestgröße"
+     },
+     {
+      "text": "Zu viele Wörter für einen Blick"
+     },
+     {
+      "text": "Einsame Wörter in der letzten Zeile"
+     },
+     {
+      "text": "Monotonie: dreimal dieselbe Folie"
+     }
+    ]
+   }
+  },
+  {
+   "id": "scd9b",
+   "layout": "table",
+   "notes": "In der PowerPoint sind Texte, Formen, Bilder und Diagramme echte Objekte an den gemessenen Positionen, Schriften sind eingebettet, Animationen und Morph laufen mit.",
+   "content": {
+    "title": "Ein Deck, vier Ausgaben – und die PowerPoint bleibt bearbeitbar",
+    "columns": [
+     "Ausgabe",
+     "Wofür",
+     "Bearbeitbar"
+    ],
+    "rows": [
+     [
+      "PowerPoint",
+      "Weitergeben, im Team ändern",
+      "Text, Bild, Diagramm"
+     ],
+     [
+      "PDF",
+      "Verschicken, drucken, Handout",
+      "–"
+     ],
+     [
+      "PNG",
+      "Social Media, Chat, Website",
+      "–"
+     ],
+     [
+      "Markdown",
+      "Notizen, Wiki, weitere KI",
+      "als Text"
+     ]
+    ],
+    "highlight": {
+     "row": 0
+    }
+   }
+  },
+  {
+   "id": "sc531",
+   "layout": "kpi-grid",
+   "notes": "Das Format lässt sich jederzeit wechseln. Deckwerk ordnet Spalten neu, setzt Bilder nach oben und vergrößert die Schrift für kleine Bildschirme.",
+   "content": {
+    "title": "Aus einem Inhalt werden Folie, Post, Story und Handout",
+    "kpis": [
+     {
+      "value": "8",
+      "label": "Formate, umschaltbar mit einem Klick"
+     },
+     {
+      "value": "16:9",
+      "label": "Präsentation für Beamer und Bildschirm"
+     },
+     {
+      "value": "4:5",
+      "label": "Post für Instagram und LinkedIn"
+     },
+     {
+      "value": "A4",
+      "label": "Handout, Infoblatt und Angebot"
+     }
+    ],
+    "focus": 0,
+    "source": "Weitere Formate: 4:3, 1:1, 9:16 (Story) und A4 quer"
+   }
+  },
+  {
+   "id": "s8829",
+   "layout": "photo",
+   "variant": "text-left",
+   "notes": "Decks liegen als Datei unter ~/Deckwerk. Deckwerk nutzt dein vorhandenes Abo über die Kommandozeile oder einen eigenen API-Schlüssel. Foto: Aleks Dorohovich / Unsplash.",
+   "content": {
+    "title": "Deine Decks bleiben auf deinem Rechner",
+    "subtitle": "Kein Konto, keine Cloud von uns. Die KI bringst du mit: Claude, ChatGPT oder Mistral.",
+    "image": {
+     "src": "assets/schreibtisch.jpg",
+     "focus": "right"
+    }
+   }
+  },
+  {
+   "id": "s86af",
+   "layout": "big-number",
+   "notes": "Wer lieber im Terminal arbeitet, bindet Deckwerk als MCP-Server ein. Die Werkzeuge liefern dieselben Prüfmeldungen wie in der App.",
+   "content": {
+    "value": "20",
+    "label": "Werkzeuge im MCP-Server – Agenten bauen Decks direkt im Terminal",
+    "context": "Claude Code, Codex und Vibe legen Decks an, fügen Folien hinzu, rendern, prüfen und exportieren."
+   }
+  },
+  {
+   "id": "s1eb0",
+   "layout": "closing",
+   "notes": "Der nächste Schritt: laden, einen Satz eingeben, das Ergebnis ansehen. Foto: Alejandro Escamilla / Unsplash.",
+   "content": {
+    "title": "Bau dein nächstes Deck mit einem Satz",
+    "subtitle": "Kostenlos und Open Source, für Mac und Linux. In zwei Minuten startklar.",
+    "contact": [
+     "bavarianator.github.io/deckwerk",
+     "github.com/Bavarianator/deckwerk"
+    ],
+    "qr": "https://bavarianator.github.io/deckwerk/",
+    "image": {
+     "src": "assets/laptop-gast.jpg",
+     "focus": "right"
+    }
+   }
+  }
+ ]
+}

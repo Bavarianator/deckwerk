@@ -4,7 +4,7 @@
 // die Blase meldet den Fortschritt, am Ende „geprüft“. Alles echte Folien und Titel aus folien.json.
 // Ohne JS und bei „Bewegung reduzieren“ steht das fertige erste Deck da.
 import { Image } from 'astro:assets'
-import { THEMES, bild, decks, folien } from '../lib/seite'
+import { THEMES, base, bild, decks, folien } from '../lib/seite'
 
 const titel = (id: string) => folien[id].title || folien[id].layout
 ---
@@ -50,6 +50,7 @@ const titel = (id: string) => folien[id].title || folien[id].layout
                   <span class="fe-ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>
                   <span class="fe-spin" aria-hidden="true"></span>
                   <span class="fe-blase-text" data-fertig={`${d.slides.length} Folien gestaltet und geprüft`}>{d.slides.length} Folien gestaltet und geprüft</span>
+                  <a class="fe-blase-link" href={`${base}laden/`} hidden>App laden</a>
                 </p>
                 <div class="fe-cap material">
                   <svg class="fe-funke" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" /></svg>
@@ -70,71 +71,102 @@ const titel = (id: string) => folien[id].title || folien[id].layout
 
 <script>
   const m = document.querySelector<HTMLElement>('.maschine')
-  const feld = document.querySelector<HTMLElement>('.feld')
+  const feld = document.querySelector<HTMLFormElement>('form.feld')
   const chips = [...document.querySelectorAll<HTMLButtonElement>('.feld-chips .pill')]
-  // Die Pillen funktionieren immer (Deck wechseln); animiert wird nur ohne „Bewegung reduzieren“
+  // Ohne „Bewegung reduzieren“ animiert; sonst springt alles sofort in den fertigen Zustand
   const ruhig = matchMedia('(prefers-reduced-motion: reduce)').matches
   if (m && feld) {
     const fenster = [...m.querySelectorAll<HTMLElement>('.fenster')]
-    const satzEl = feld.querySelector<HTMLElement>('.feld-satz')!
+    const eingabe = feld.querySelector('textarea')!
     const warte = (ms: number) => new Promise((r) => setTimeout(r, ms))
     let lauf = 0 // Zähler: ein neuer Lauf bricht den alten ab
+    let beispiel = eingabe.value // was die Demo selbst ins Feld geschrieben hat
+    let letztesEigen: string | null = null // eigener Satz des laufenden Laufs
+
+    // Welches echte Beispiel passt zum eigenen Satz? Schlichte Stichwortwertung, keine KI.
+    const WORTE: Record<string, string[]> = {
+      deckwerk: ['deckwerk', 'folien', 'präsentation', 'powerpoint', 'pptx', 'deck', 'layout', 'design', 'vorlage'],
+      vortrag: ['vortrag', 'präsentieren', 'rede', 'konferenz', 'bühne', 'publikum', 'keynote', 'talk', 'referent', 'speaker'],
+      agenten: ['agent', 'claude', 'codex', 'vibe', 'mcp', 'terminal', 'entwickler', 'developer', 'code', 'skill', 'automatis'],
+      strategie: ['strategie', 'ziel', 'vision', 'beirat', 'vorstand', 'führung', 'schwerpunkt', 'roadmap', 'plan', '2027', '2028', 'zukunft', 'mission', 'transformation', 'team', 'workshop'],
+      pitch: ['pitch', 'investor', 'start', 'startup', 'produkt', 'app', 'idee', 'gründ', 'kunde', 'schul', 'verlag', 'bildung', 'lösung', 'markt', 'software', 'ki', 'tool', 'verkauf'],
+      quartal: ['quartal', 'q1', 'q2', 'q3', 'q4', 'umsatz', 'vertrieb', 'zahlen', 'bericht', 'kpi', 'status', 'projekt', 'budget', 'controlling', 'ergebnis', 'monat', 'jahr', 'update', 'stellen'],
+      foto: ['café', 'cafe', 'restaurant', 'laden', 'standort', 'expansion', 'filiale', 'gastro', 'bank', 'kredit', 'hotel', 'shop', 'eröffn', 'stadt', 'marke', 'event', 'reise'],
+    }
+    const passend = (satz: string) => {
+      const t = satz.toLowerCase()
+      let best = 'deckwerk', punkte = 0 // ohne Treffer: das Deck über Deckwerk selbst
+      for (const [deck, worte] of Object.entries(WORTE)) {
+        const p = worte.filter((w) => t.includes(w)).length
+        if (p > punkte) (best = deck), (punkte = p)
+      }
+      return best
+    }
 
     const zeige = (f: HTMLElement, n: number) => {
       f.querySelectorAll('.fe-film li').forEach((li, k) => li.classList.toggle('aktiv', k === n))
       f.querySelectorAll('.fe-folie').forEach((img, k) => img.classList.toggle('an', k === n))
       f.querySelectorAll<HTMLElement>('.fe-notiz p').forEach((p, k) => (p.hidden = k !== n))
     }
+    const fertig = (f: HTMLElement, eigen: string | null) => {
+      const text = f.querySelector<HTMLElement>('.fe-blase-text')!
+      const titel = f.querySelector('.fe-titel b')!.textContent!.replace(/ – .*/, '')
+      text.textContent = eigen ? `Ähnlichstes Beispiel: „${titel}“ · dein eigenes Deck baut die App` : text.dataset.fertig!
+      f.querySelector<HTMLElement>('.fe-blase-link')!.hidden = !eigen
+      f.querySelector('.fe-blase')!.classList.remove('arbeitet')
+    }
 
-    const spiele = async (f: HTMLElement, satz: string) => {
+    // satz: Text, den die Demo selbst tippt; eigen: eigener Satz aus dem Feld
+    const spiele = async (f: HTMLElement, satz: string | null, eigen: string | null) => {
       const ich = ++lauf
+      letztesEigen = eigen
       const film = [...f.querySelectorAll<HTMLElement>('.fe-film li')]
       const titel = [...f.querySelectorAll('.fe-titel-liste li')].map((li) => li.textContent ?? '')
       const blase = f.querySelector<HTMLElement>('.fe-blase')!
       const text = f.querySelector<HTMLElement>('.fe-blase-text')!
-      const fertig = text.dataset.fertig!
-      if (ruhig) return
+      if (satz) eingabe.value = beispiel = satz
+      if (ruhig) return fertig(f, eigen)
       f.querySelectorAll('img').forEach((i) => (i.loading = 'eager'))
       f.classList.add('bereit')
+      f.querySelector<HTMLElement>('.fe-blase-link')!.hidden = true
       film.forEach((li) => li.classList.remove('da'))
       blase.classList.add('arbeitet')
-      text.textContent = 'Deckwerk liest das Briefing …'
-      feld.classList.add('aktiv', 'tippt')
-      for (let n = 0; n <= satz.length; n++) {
-        if (ich !== lauf) return
-        satzEl.textContent = satz.slice(0, n)
-        await warte(n % 6 === 0 ? 55 : 22)
-      }
-      feld.classList.remove('tippt')
-      feld.classList.add('drueckt')
-      await warte(220)
-      feld.classList.remove('drueckt', 'aktiv')
+      text.textContent = eigen ? 'Deckwerk liest dein Briefing …' : 'Deckwerk liest das Briefing …'
+      if (satz) {
+        feld.classList.add('aktiv')
+        for (let n = 0; n <= satz.length; n++) {
+          if (ich !== lauf) return
+          eingabe.value = beispiel = satz.slice(0, n)
+          await warte(n % 6 === 0 ? 55 : 22)
+        }
+        feld.classList.add('drueckt')
+        await warte(220)
+        feld.classList.remove('drueckt', 'aktiv')
+      } else await warte(600)
       if (ich !== lauf) return
-      text.textContent = `Storyline: ${film.length} Folien`
-      await warte(700)
+      text.textContent = eigen ? `Passt am besten: Beispiel „${f.querySelector('.fe-titel b')!.textContent!.replace(/ – .*/, '')}“` : `Storyline: ${film.length} Folien`
+      await warte(eigen ? 1300 : 700)
       for (let n = 0; n < film.length; n++) {
         if (ich !== lauf) return
         text.textContent = `Folie ${n + 1} von ${film.length}: ${titel[n]}`
         film[n].classList.add('da')
         zeige(f, n)
-        await warte(520)
+        await warte(480)
       }
       if (ich !== lauf) return
-      blase.classList.remove('arbeitet')
-      text.textContent = fertig
+      fertig(f, eigen)
       await warte(900)
       if (ich === lauf) zeige(f, 0)
     }
 
-    const waehle = (b: HTMLButtonElement) => {
-      chips.forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
-      fenster.forEach((f) => (f.hidden = f.dataset.deck !== b.dataset.deck))
-      const f = fenster.find((x) => !x.hidden)!
-      if (ruhig) satzEl.textContent = b.dataset.satz!
-      spiele(f, b.dataset.satz!)
+    const oeffne = (deck: string) => {
+      chips.forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.deck === deck)))
+      fenster.forEach((f) => (f.hidden = f.dataset.deck !== deck))
+      return fenster.find((x) => !x.hidden)!
     }
+    const waehle = (b: HTMLButtonElement) => spiele(oeffne(b.dataset.deck!), b.dataset.satz!, null)
 
-    // Erster Lauf, sobald das Fenster im Bild ist; ein Klick vorher ersetzt ihn
+    // Erster Lauf, sobald das Fenster im Bild ist; jede eigene Aktion vorher ersetzt ihn
     const start = new IntersectionObserver(([e]) => {
       if (!e.isIntersecting) return
       start.disconnect()
@@ -143,16 +175,39 @@ const titel = (id: string) => folien[id].title || folien[id].layout
     start.observe(m)
     for (const b of chips) b.addEventListener('click', () => (start.disconnect(), waehle(b)))
 
-    // Filmstreifen anklicken wie in der App
+    // Eigener Satz: Fokus hält das Tippen an und markiert den Beispielsatz, damit man ihn einfach übertippt
+    eingabe.addEventListener('focus', () => {
+      start.disconnect()
+      if (eingabe.value === beispiel || beispiel.startsWith(eingabe.value)) {
+        lauf += 1
+        feld.classList.remove('aktiv', 'drueckt')
+        eingabe.select()
+      }
+    })
+    eingabe.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) (e.preventDefault(), feld.requestSubmit())
+    })
+    feld.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const eigen = eingabe.value.trim()
+      if (!eigen) return eingabe.focus()
+      start.disconnect()
+      const f = oeffne(passend(eigen))
+      chips.forEach((x) => x.setAttribute('aria-pressed', 'false'))
+      beispiel = '' // ab jetzt gehört das Feld dem Gast
+      const oben = m.getBoundingClientRect().top
+      if (oben > innerHeight * 0.6) m.scrollIntoView({ behavior: ruhig ? 'auto' : 'smooth', block: 'start' })
+      spiele(f, null, eigen)
+    })
+
+    // Filmstreifen anklicken wie in der App; ein Klick während des Aufbaus beendet ihn sofort
     for (const f of fenster)
       f.querySelectorAll<HTMLElement>('.fe-film button').forEach((b, n) =>
         b.addEventListener('click', () => {
-          // Ein Klick während des Aufbaus beendet ihn sofort: alles da, Endtext, gewählte Folie
+          const lief = f.querySelector('.fe-blase')!.classList.contains('arbeitet')
           lauf += 1
           f.classList.remove('bereit')
-          const text = f.querySelector<HTMLElement>('.fe-blase-text')!
-          text.textContent = text.dataset.fertig!
-          f.querySelector('.fe-blase')!.classList.remove('arbeitet')
+          if (lief) fertig(f, letztesEigen)
           zeige(f, n)
         }),
       )
@@ -190,6 +245,8 @@ const titel = (id: string) => folien[id].title || folien[id].layout
   .fe-dock { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 14px 24px 24px; margin-top: auto; }
   .fe-blase { display: flex; align-items: center; gap: 10px; max-width: min(640px, 100%); min-height: 40px; padding: 6px 14px; border-radius: 20px; font-size: 13.5px; }
   .fe-blase-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fe-blase-link { flex: none; font-weight: 600; white-space: nowrap; }
+  .fe-blase-link::after { content: ' ›'; }
   .fe-ok { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: var(--ok); color: #fff; }
   .fe-spin { display: none; flex: none; width: 16px; height: 16px; border: 2px solid var(--accent-soft); border-top-color: var(--accent); border-radius: 50%; animation: fe-dreh 0.9s linear infinite; }
   .fe-blase.arbeitet .fe-ok { display: none; }
