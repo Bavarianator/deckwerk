@@ -40,3 +40,13 @@ const sect = deck([...plain.slides.slice(0, 8), { id: 'z', layout: 'section', to
 assert.ok(rules(sect).includes('0:mut'))
 
 console.log('check-ki-look: ok')
+
+// Fehlalarme aus dem Review: Mehrwertsteuer, Trendpfeile, Linkziele, „sondern“ im nächsten Satz, Dreier-Diagramme
+const legit = lintSlide(deck([{ id: 'l', layout: 'bullets', content: { title: 'Preise ab Q3 inkl. Mehrwertsteuer ↗', items: [{ text: 'Nicht nur heute. Sondern morgen' }, { text: '[Kontakt](https://innovativ-gmbh.de)' }] } }]), 0, empty)
+assert.deepEqual(legit.filter((x) => x.rule === 'ki-sprache'), [])
+const chart = (id: string): Slide => ({ id, layout: 'chart', content: { title: `Umsatz ${id}`, chart: { type: 'bar', categories: ['Q1', 'Q2', 'Q3'], series: [{ name: 'a', values: [1, 2, 3] }] } } })
+assert.ok(!rules(deck([chart('1'), chart('2'), chart('3')])).some((r) => r.endsWith('ki-muster')))
+// poster mit Foto fällt im Renderer auf normal zurück und zählt nicht als Mut
+const filler = Array.from({ length: 8 }, (_, k) => bullets(`f${k}`, `Folie ${k}`, 2))
+assert.ok(rules(deck([...filler, { id: 'p', layout: 'big-number', variant: 'poster', content: { value: '41 %', label: 'x', image: { src: 'asset://a.jpg' } } }])).includes('0:mut'))
+console.log('ki-look: Fehlalarme ok')

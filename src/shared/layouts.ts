@@ -208,7 +208,7 @@ export const LAYOUTS = {
     },
   }),
   statement: L({
-    id: 'statement', name: 'Kernaussage', when: 'Eine einzige starke Botschaft, Zitat oder These. Maximal 1–2 pro Deck. Standard linksbündig; Variante center nur für kurze Sätze. Variante poster: 1–8 Wörter riesig, bricht bewusst den Rhythmus (Höhepunkt, Stil mutig, einmal pro Deck).', variants: ['left', 'center', 'poster'],
+    id: 'statement', name: 'Kernaussage', when: 'Eine einzige starke Botschaft, Zitat oder These. Maximal 1–2 pro Deck. Standard linksbündig; Variante center nur für kurze Sätze. Variante poster: 1–8 Wörter riesig, bricht bewusst den Rhythmus (Höhepunkt, einmal pro Deck, im Stil mutig bis zu dreimal).', variants: ['left', 'center', 'poster'],
     schema: statement, defaultBuild: 'fade', footer: false,
     samples: {
       min: { text: 'Kunden bleiben, wenn es **einfach** ist.' },

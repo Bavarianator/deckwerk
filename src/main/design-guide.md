@@ -267,11 +267,15 @@ Regeln: Mut kommt aus Maßstab, Weißraum, Bild und Dramaturgie, nie aus Deko. I
 - **Folie gesamt:** max. ca. 40 Wörter ohne Titel (Glance-Test: in 3 Sekunden erfassbar); `statement`, `big-number`, `photo` höchstens 7–12 Wörter. Mehr gehört in die Speaker Notes.
 - **Zahlen statt Adjektive:** „3 Wochen schneller“ statt „deutlich schneller“.
 - **Keine Füllwörter:** Streiche „im Rahmen von“, „grundsätzlich“.
+- **Einheitliche Schreibweise:** Zahlen, Einheiten, Datumsformate und Groß-/Kleinschreibung im ganzen Deck gleich. Deutsch: „42 %“, „3,1 Mio. €“, „Q3 2026“.
+- **Links:** `[Text](https://…)` oder `[Text](mailto:…)` in jedem Textfeld wird ein anklickbarer Link (auch in der PPTX). Sparsam, vor allem auf der Abschlussfolie.
+- **Speaker Notes** schreibst du für jede Inhaltsfolie: 2–5 Sätze, die der Vortragende sagt. Sie enthalten den Kontext, der auf der Folie fehlt.
+- Wenn Auto-Fit meldet, dass Text nicht passt: kürzen (die Meldung nennt die Zielgröße) oder Folie teilen. Nie auf kleinere Schrift hoffen.
 
 **Klingt nach KI. Nie schreiben:**
 - Floskeln: nahtlos, ganzheitlich, innovativ, Mehrwert, Synergie, maßgeschneidert, Game-Changer, entfesseln, „auf das nächste Level“, „In der heutigen schnelllebigen Welt“.
 - „nicht nur …, sondern auch“; der Gedankenstrich als Allzweck-Verbinder.
-- Titel als Serie „Thema: Aussage“. Ein Doppelpunkt-Titel ist erlaubt, fünf sind ein Muster.
+- Titel als Serie „Thema: Aussage“. Ein Doppelpunkt-Titel ist erlaubt; hat mehr als jeder dritte Titel einen, ist es ein Muster.
 - Dreierlisten aus Gewohnheit. Die Liste ist so lang wie der Inhalt; 2, 4 oder 5 Punkte sind normal.
 - Drei Adjektive in Folge („schnell, sicher, skalierbar“).
 - Perfekt parallel gebaute Stichpunkte gleicher Länge. Gleiche grammatische Form ja, gleiche Länge nein.
@@ -280,10 +284,6 @@ Regeln: Mut kommt aus Maßstab, Weißraum, Bild und Dramaturgie, nie aus Deko. I
 Lint meldet das als `ki-sprache` (Floskeln, Emoji) und `ki-muster` (immer drei Punkte, Titel-Serien mit Doppelpunkt oder Gedankenstrich).
 
 **Was ein Mensch schreibt:** eine konkrete Zahl, einen Namen, einen Ort; eine Behauptung mit Kante, der jemand widersprechen könnte; auch mal einen unvollständigen Satz („Drei Wochen. Für ein Formular.“) oder eine Frage; die Wörter des Publikums statt der Wörter der Branche.
-- **Einheitliche Schreibweise:** Zahlen, Einheiten, Datumsformate und Groß-/Kleinschreibung im ganzen Deck gleich. Deutsch: „42 %“, „3,1 Mio. €“, „Q3 2026“.
-- **Links:** `[Text](https://…)` oder `[Text](mailto:…)` in jedem Textfeld wird ein anklickbarer Link (auch in der PPTX). Sparsam, vor allem auf der Abschlussfolie.
-- **Speaker Notes** schreibst du für jede Inhaltsfolie: 2–5 Sätze, die der Vortragende sagt. Sie enthalten den Kontext, der auf der Folie fehlt.
-- Wenn Auto-Fit meldet, dass Text nicht passt: kürzen (die Meldung nennt die Zielgröße) oder Folie teilen. Nie auf kleinere Schrift hoffen.
 
 ## 8. Animation
 

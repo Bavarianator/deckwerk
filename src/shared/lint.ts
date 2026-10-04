@@ -28,11 +28,11 @@ const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).
 
 // ---------- KI-Merkmale im Text ----------
 // Floskeln generierter Texte; Wortstamm + beliebige Endung, damit Flexionen greifen. „Hebel“ fehlt bewusst (oft legitim).
-const FLOSKELN = /(?<![\p{L}\d])(nahtlos\p{L}*|ganzheitlich\p{L}*|innovativ\p{L}*|revolution[äa]r\p{L}*|maßgeschneidert\p{L}*|synergie\p{L}*|mehrwert\p{L}*|auf (?:das |die )?nächsten? (?:level|stufe)|game[- ]?changer|in der heutigen (?:schnelllebigen )?(?:welt|zeit)|schnelllebig\p{L}*|entfessel\p{L}*|transformativ\p{L}*|potenzial\p{L}* (?:\p{L}+ )?(?:entfalt|freisetz|freizusetz|freigesetzt)\p{L}*|aus einer hand|zukunftssicher\p{L}*|state of the art|leuchtturm\p{L}*)(?![\p{L}\d])/giu
-const EMOJI = /(?![©®™])\p{Extended_Pictographic}/u
+const FLOSKELN = /(?<![\p{L}\d])(nahtlos\p{L}*|ganzheitlich\p{L}*|innovativ(?:e[rnms]?)?|revolution[äa]r\p{L}*|maßgeschneidert\p{L}*|synergie\p{L}*|mehrwert(?!steuer)\p{L}*|auf (?:das |die )?nächsten? (?:level|stufe)|game[- ]?changer|in der heutigen (?:schnelllebigen )?(?:welt|zeit)|schnelllebig\p{L}*|entfessel\p{L}*|transformativ\p{L}*|potenzial\p{L}* (?:\p{L}+ )?(?:entfalt|freisetz|freizusetz|freigesetzt)\p{L}*|aus einer hand|zukunftssicher\p{L}*|state of the art|leuchtturm(?:projekt\p{L}*)?)(?![\p{L}\d])/giu
+const EMOJI = /\p{Emoji_Presentation}/u // nur Bild-Emoji; Pfeile, Häkchen und ©®™ sind Satzzeichen
 const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr']) // Bild-, Link- und Icon-Felder sieht niemand als Text
 const textsOf = (v: unknown, key = ''): string[] =>
-  NO_TEXT.has(key) ? [] : typeof v === 'string' ? [v.replace(/\*\*/g, '')]
+  NO_TEXT.has(key) ? [] : typeof v === 'string' ? [v.replace(/\*\*/g, '').replace(/\]\([^)]*\)/g, ']')]
     : Array.isArray(v) ? v.flatMap((x) => textsOf(x, key))
     : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => textsOf(x, k)) : []
 
@@ -155,7 +155,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
   const found = new Set<string>()
   for (const t of textsOf(s.content)) {
     for (const f of t.matchAll(FLOSKELN)) found.add(`„${f[0]}“`)
-    if (/\bnicht nur\b[\s\S]*\bsondern\b/i.test(t)) found.add('„nicht nur … sondern“')
+    if (/\bnicht nur\b[^.!?]*\bsondern\b/i.test(t)) found.add('„nicht nur … sondern“')
     if (EMOJI.test(t)) found.add('Emoji')
   }
   if (found.size) add('warn', 'ki-sprache', `Klingt generiert: ${[...found].join(', ')}. Stattdessen konkret werden (Zahl, Name, Beispiel aus dem Material) und in eigenen Worten sagen, was passiert.`)
@@ -188,9 +188,10 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
     if (run === 5) warn(i, 'breath', 'Fünf dichte Folien in Folge – eine luftige Folie einschieben (statement, big-number oder photo mit einem Satz).')
   }
   // Generierte Dramaturgie: immer drei Punkte, Doppelpunkt- und Gedankenstrich-Titel
+  const LISTS = ['bullets', 'process', 'timeline', 'kpi-grid', 'icon-grid', 'image-text', 'two-column'] // Stichpunkt-Layouts; Diagramme, Galerien, Preise zählen nicht
   const LIST_SKIP = ['columns', 'rows', 'criteria', 'options', 'quadrants', 'contact'] // Tabellen-/Matrixdaten, Kontaktzeilen
   const mainList = (x: (typeof s)[number]) => Object.entries(x.content ?? {}).find(([k, v]) => Array.isArray(v) && !LIST_SKIP.includes(k) && v.every((e) => typeof e === 'string' || (e && typeof e === 'object')))?.[1] as unknown[] | undefined
-  const threes = s.map((x, i) => (x.layout !== 'agenda' && mainList(x)?.length === 3 ? i : -1)).filter((i) => i >= 0)
+  const threes = s.map((x, i) => (LISTS.includes(x.layout) && mainList(x)?.length === 3 ? i : -1)).filter((i) => i >= 0)
   if (threes.length > 2) warn(threes[2], 'ki-muster', `Auf ${threes.length} Folien genau drei Punkte – immer genau drei wirkt generiert. So viele Punkte nehmen, wie das Material hergibt: zwei, vier, oder einen einzigen als Statement.`)
   const titles = s.map((x, i) => [i, x.content?.title] as const).filter((t): t is readonly [number, string] => typeof t[1] === 'string')
   const pattern = (re: RegExp, message: string) => {
@@ -202,7 +203,7 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   // Mut: ein Mensch bricht mindestens einmal den Rhythmus
   const bold = (x: (typeof s)[number]) =>
     ((x.tone === 'accent' || x.tone === 'invert') && x.layout !== 'section') || x.layout === 'photo' ||
-    (['big-number', 'statement'].includes(x.layout) && x.variant === 'poster') ||
+    (x.variant === 'poster' && ((x.layout === 'big-number' && !x.content?.image?.src) || (x.layout === 'statement' && String(x.content?.text ?? '').replace(/\*\*/g, '').length <= 60))) || // wie im Renderer: sonst fällt poster auf normal zurück
     (x.layout === 'cover' && x.variant === 'bottom' && !!x.content?.image?.src)
   if (s.length >= 8 && !s.some(bold))
     warn(0, 'mut', 'Kein mutiger Moment im Deck – alle Folien im gleichen Ton. Ein Mensch würde einmal den Rhythmus brechen: riesige Zahl auf Akzentfläche (big-number, tone accent oder Variante poster), eine Frage auf dunklem Grund (statement, tone invert), ein Vollbildfoto (photo).')
