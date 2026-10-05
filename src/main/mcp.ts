@@ -40,7 +40,8 @@ Kernregeln:
 - Eine Botschaft pro Folie. Der Titel ist diese Botschaft als Satz (max. ~80 Zeichen); die Titel allein erzählen die Geschichte.
 - Zurückhaltung statt Deko: keine Karten-Raster, keine Icons als Schmuck, keine Verläufe oder Sticker. Hierarchie über Größe und Weißraum, eine Akzentfarbe.
 - Auf 4 Inhaltsfolien mindestens eine luftige Folie (statement, big-number, photo).
-- Höchstens ~40 Wörter pro Folie, Details in die Speaker Notes.`
+- Höchstens ~40 Wörter pro Folie, Details in die Speaker Notes.
+- Stil (\`style\` in create_deck) nach Anlass wählen: mutig für Vortrag, Schule, Event, Kampagne; sachlich für Chef-Update, Antrag, Bericht. Neue Decks im Designtyp nicht wie die letzten (Guide §6 „Abwechslung“).`
 
 export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServer {
   const home = opts.home ?? join(homedir(), 'Deckwerk')
