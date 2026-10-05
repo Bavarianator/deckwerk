@@ -46,7 +46,7 @@ export interface DeckAgentOptions {
 
 const WORKFLOW = `## Arbeitsablauf
 1. Höchstens 2–3 Rückfragen (mit ask_user, falls vorhanden), sonst sinnvolle Defaults annehmen.
-2. Erst die Leitidee in einem Satz (Guide §2 „Die Idee“: Bild für das Ganze, Haken, ein mutiger Höhepunkt), dann die Storyline als Liste von Action Titles (mit plan_storyline, falls vorhanden, sonst im Chat), dann create_deck und add_slides in Batches.
+2. Erst die Leitidee in einem Satz (Guide §2 „Die Idee“: Bild für das Ganze, Haken, ein mutiger Höhepunkt), dann die Storyline als Liste der Titel (Datenfolien als Aussage-Satz, Bühnenfolien kurz) (mit plan_storyline, falls vorhanden, sonst im Chat), dann create_deck und add_slides in Batches.
 3. QA-Schleife (max. 3 Runden): Fehler aus den Tool-Rückmeldungen und lint_deck beheben → render_overview kritisch prüfen (Rhythmus, Dichte, Konsistenz) → nachbessern.
 4. Animationen prüfen (ein Übergangstyp, maximal ein Build pro Folie, keine Animation auf Titeln), Speaker Notes ergänzen.
 5. Kurze Zusammenfassung; exportieren nur, wenn der Nutzer es wünscht.

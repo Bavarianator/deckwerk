@@ -33,12 +33,12 @@ Erst die Idee (Guide §2 „Die Idee“): Entwickle drei Leitideen (naheliegend,
 - eine Serie von Ein-Satz-Folien als Schlagfolge
 - Kapiteltrenner als Frage
 - ein mutiger Höhepunkt (im Stil mutig zwei bis drei)
-- ein Schluss, der den Anfang aufgreift
+- ein Schluss, der den Anfang in Sprache oder Motiv aufgreift (nicht mit demselben Foto)
 
 Nenne die Idee in einem Satz. Mutig sein heißt hier: in Idee, Sprache und Dramaturgie, nicht in Deko. Beim Chef-Update bleibt sie leise.
 
-Dann zeige die Storyline als nummerierte Liste von Action Titles im Chat:
-- Jeder Titel ist die Kernaussage der Folie als ganzer Satz mit höchstens ~80 Zeichen, möglichst mit Zahl oder konkretem Ergebnis.
+Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien als Aussage-Satz, Bühnenfolien kurz):
+- Datenfolien tragen die Kernaussage als ganzen Satz mit höchstens ~80 Zeichen, möglichst mit Zahl oder konkretem Ergebnis. Bühnenfolien (statement, big-number, photo) kurz, dazu eine kurze Behauptung oder Frage: Titel in Form und Länge mischen.
 - Test: Wer nur die Titel liest, versteht Argument und Empfehlung.
 - Gerüst nach Anlass (Guide §3), Empfehlung früh (Pyramidenprinzip).
 - Bei großen Decks auf ein OK warten, bei klarem Auftrag direkt weiterbauen.
@@ -56,6 +56,7 @@ Dann zeige die Storyline als nummerierte Liste von Action Titles im Chat:
 ## 5. Bilder
 
 - **Bildplan:** 2–5 Folien tragen ein Bild (Cover, Kapitelwechsel, Höhepunkt, Abschluss), nicht jede.
+- **Variante `side`** (cover, closing, photo): Foto rechts auf 7/12, Text links ohne Verlauf; nimm sie, wenn das Foto keine ruhige Fläche hat. Vollbild mit Verlauf höchstens einmal pro Deck.
 - **Erst suchen:** `find_images` (eigene Bilder, freie Fotos).
 - **Dann erzeugen:** `generate_image` nur nach Guide §6 „KI-Bilder“:
   - ein Stilsatz für alle Bilder
@@ -74,6 +75,9 @@ Dann zeige die Storyline als nummerierte Liste von Action Titles im Chat:
     - `monotone`, `rhythm`, `cards`, `breath`: Komposition (`frame`), Ton (`tone`) oder Layout wechseln.
     - `ki-sprache`, `ki-muster`: Floskel oder Muster umschreiben, konkret statt glatt (Guide §7 „Klingt nach KI“).
     - `mut`: einen mutigen Moment einbauen, z. B. `statement`/`big-number` Variante `poster` (Guide §6 „Mut wie ein Mensch“).
+    - `ornament`: Eyebrow nur auf Cover und wo es Orientierung gibt (Kapitel, Stand), sonst weglassen.
+    - `echo`: Schluss zeigt das Cover-Foto; anderes Motiv oder ohne Foto, den Bogen über Sprache oder Motiv schlagen.
+    - `titel-formel`: Titel mischen (Bühnenfolien ein Wort oder kurzer Satz, eine Behauptung ≤ 5 Wörter, eine Frage).
 - **Rhythmus:** Auf je vier Inhaltsfolien kommt eine luftige (statement, big-number, photo). Kapiteltrenner und Höhepunkt mit `tone` absetzen.
 - **Diagramme** immer mit `highlight`; die Aussage steht im Titel, nicht im Chart.
 - **Speaker Notes** zu jeder Inhaltsfolie: 2–4 Sätze, die der Redner sagt.
@@ -97,5 +101,6 @@ Dann zeige die Storyline als nummerierte Liste von Action Titles im Chat:
 - Felder raten statt aus dem Katalog nehmen.
 - Freie Elemente (`items`) mit Koordinaten ohne Not; sie sind nur für Layout `blank` oder auf Wunsch des Nutzers da.
 - Zwei Botschaften auf einer Folie, weil „es noch draufpasst“.
-- Erfundene Zahlen ohne Hinweis.
+- Erfundene Zahlen ohne Hinweis; runde Zahlen ohne Quelle statt echter mit Quelle und Stand.
+- Alle Titel als gleich lange Satz-Zweizeiler; Executive Summary und KPI-Reihe als Pflichtteile statt nach Inhalt.
 - Empfehlung erst auf der letzten Folie, „Danke für Ihre Aufmerksamkeit“ statt nächster Schritte.
