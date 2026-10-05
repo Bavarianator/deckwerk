@@ -61,7 +61,7 @@ function Options({ c }: Props<'options'>) {
       <div className="opt" data-fit data-slot="options" style={{ gridTemplateColumns: `1.3fr repeat(${c.options.length}, 1fr)`, gridTemplateRows: `auto repeat(${c.criteria.length}, 1fr) auto` }}>
         {rec !== undefined && <Box slot="_rec" className="opt-hl" style={{ gridColumn: rec + 2, gridRow: `1 / ${rows + 1}` }} />}
         {c.options.map((o, j) => (
-          <div className="opt-head" key={`h${j}`} style={at(j + 1, 0)}>
+          <div className={`opt-head ${j === rec ? 'hl' : ''}`} key={`h${j}`} style={at(j + 1, 0)}>
             {j === rec && <Box slot="_badge" className="opt-badge"><T role="eyebrow" slot="_badge.text">Empfehlung</T></Box>}
             <T role="h3" slot={`options.${j}.name`} build={0}>{o.name}</T>
           </div>

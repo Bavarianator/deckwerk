@@ -1,4 +1,7 @@
 /* Profi-Layouts (layouts-extra.tsx). Linien auf Elementen ohne data-pptx landen im Hintergrundbild der PPTX. */
+/* Bauteile (Klasse el-* am .slide): solid = Kästen wie bisher, line = Kopflinie statt Fläche (2px Text, hervorgehoben 4px Akzent),
+   plain = nur Typografie und Abstand. Kopflinien auf data-pptx-Boxen als ::before (border-top würde in der PPTX zum Rahmen ringsum);
+   visibility: visible, weil hide-exportables die Box samt Pseudo-Element ausblendet und die Linie sonst im Hintergrundbild fehlt. */
 
 /* ---------- Executive Summary ---------- */
 .sum { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 44px; }
@@ -10,6 +13,14 @@
 .sum-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .sum-rec { align-self: center; display: flex; flex-direction: column; gap: 14px; padding: 32px; border-radius: var(--radius); background: var(--fill); --text: var(--on-accent); --muted: var(--on-accent-soft); color: var(--on-accent); }
 .sum-rec .r-eyebrow { color: var(--on-accent); }
+.slide:is(.el-line, .el-plain) .sum-rec { background: none; border-radius: 0; padding: 0 0 4px; --text: inherit; --muted: inherit; color: var(--text); }
+.slide:is(.el-line, .el-plain) .sum-rec .r-eyebrow { color: var(--accent); }
+.slide.el-line .sum-rec { position: relative; padding-top: 24px; }
+.slide.el-line .sum-rec::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); visibility: visible; }
+.slide.el-line .sum-num { font-size: var(--fs-label); font-weight: 700; }
+.slide.el-plain .sum-row { border: 0; }
+.slide.el-plain .sum-num { width: auto; margin-top: -0.3em; font-size: calc(var(--fs-h2) * 1.6); font-weight: 400; line-height: 1; color: var(--muted); }
+/* Größe wie h1, aber über h2 an der Textstufe des Autofits; die Ziffern ragen in den Zeilenabstand, damit die Zeilen nicht höher werden (sonst schrumpft der Titel mit) */
 
 /* ---------- Optionsvergleich ---------- */
 .opt { flex: 1; min-height: 0; display: grid; column-gap: 14px; }
@@ -22,6 +33,12 @@
 .opt-note { padding: 14px 12px 12px; text-align: center; }
 .harvey { display: inline-flex; width: 30px; height: 30px; color: var(--text); }
 .harvey svg { display: block; }
+.slide:is(.el-line, .el-plain) .opt-hl { border: 0; border-radius: 0; margin-top: 0; }
+.slide.el-line .opt-hl { position: relative; pointer-events: none; } /* leere Spaltenbox über den Zellen: Klicks zum Bearbeiten gehen durch */
+.slide.el-line .opt-hl::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); visibility: visible; }
+.slide:is(.el-line, .el-plain) .opt-badge { background: none; border-radius: 0; padding: 0; }
+.slide:is(.el-line, .el-plain) .opt-badge .r-eyebrow, .slide:is(.el-line, .el-plain) .opt-head.hl .r-h3 { color: var(--accent); }
+.slide.el-plain :is(.opt-crit, .opt-cell) { border-bottom: 0; }
 
 /* ---------- 2×2-Matrix ---------- */
 .mx { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 40px; }
@@ -48,6 +65,20 @@
 .mx-item .mx-lbl { white-space: nowrap; } /* spezifischer als .t (pre-line), sonst bricht jedes Wort in der 0-breiten Hülle um */
 .mx-item .mx-lbl.hl { font-weight: 700; }
 .mx-take { align-self: center; }
+.slide:is(.el-line, .el-plain) .mx-q { min-width: 0; padding-left: 0; padding-right: 0; background: none; border-radius: 0; }
+/* ohne Fläche bündig zur Linie; schmale Spalte (Split-Frame): Labels lösen den Autofit aus, statt das Raster über den Rand zu schieben */
+.slide:is(.el-line, .el-plain) .mx-area { min-width: 0; }
+.slide:is(.el-line, .el-plain) .mx-plot { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.slide:is(.el-line, .el-plain) .mx-qlabel { min-width: 0; }
+.slide:is(.el-line, .el-plain) .mx-q.q1 .mx-qlabel { color: var(--accent); }
+.slide.el-line .mx-q { position: relative; }
+.slide.el-line .mx-q::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .mx-q.q1::before { height: 4px; background: var(--accent); }
+/* plain: Achsenkreuz statt Flächen, sonst sind die Quadranten nicht mehr lesbar */
+.slide.el-plain .mx-plot { background: linear-gradient(var(--border), var(--border)) center / 1px 100% no-repeat, linear-gradient(var(--border), var(--border)) center / 100% 1px no-repeat; }
+.slide:is(.el-line, .el-plain) .mx-take { background: none; border-radius: 0; padding: 0 0 4px; }
+.slide.el-line .mx-take { position: relative; padding-top: 24px; }
+.slide.el-line .mx-take::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
 
 /* ---------- Tabelle ---------- */
 .tb { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
@@ -61,6 +92,11 @@
 .tb-cell.num { text-align: right; font-variant-numeric: tabular-nums; }
 .tb-cell.first { font-weight: 700; }
 .tb-cell.hl { color: var(--accent); font-weight: 700; }
+.slide:is(.el-line, .el-plain) .tb .tb-row { padding-left: 0; padding-right: 0; background: none; border-radius: 0; }
+.slide:is(.el-line, .el-plain) .tb-hl .t { color: var(--accent); }
+.slide.el-line .tb-hl { position: relative; border-bottom-color: var(--border); }
+.slide.el-line .tb-hl::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; height: 4px; background: var(--accent); visibility: visible; } /* ersetzt die Linie darüber (Haarlinie oder Kopflinie der Tabelle) */
+.slide.el-plain .tb .tb-row:not(.tb-head) { border-bottom: 0; }
 
 /* ---------- Große Zahl ---------- */
 .bign { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 22px; max-width: 980px; }
@@ -92,6 +128,16 @@
 .pc-pros .pc-badge { background: var(--good); }
 .pc-cons .pc-badge { background: var(--bad); }
 .pc-verdict { display: flex; align-items: center; gap: 18px; padding: 22px 28px; border-radius: var(--radius); background: var(--fill); --text: var(--on-accent); color: var(--on-accent); }
+.slide:is(.el-line, .el-plain) .pc-col > .r-h2 { padding-bottom: 0; border-bottom: 0; }
+.slide.el-line .pc-col { padding-top: 20px; border-top: 2px solid var(--text); }
+.slide:is(.el-line, .el-plain) .pc-badge { width: 18px; background: none; }
+.slide.el-line .pc-pros .pc-badge { color: var(--good); }
+.slide.el-line .pc-cons .pc-badge { color: var(--bad); }
+.slide.el-plain .pc-badge { display: none; }
+.slide:is(.el-line, .el-plain) .pc-verdict { padding: 0 0 4px; border-radius: 0; background: none; --text: inherit; color: var(--accent); }
+.slide.el-line .pc-verdict { position: relative; padding-top: 22px; }
+.slide.el-plain .pc-verdict { margin-top: 16px; } /* ohne Linie trennt nur der Abstand das Fazit von den Listen */
+.slide.el-line .pc-verdict::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); visibility: visible; }
 
 /* ---------- Problem und Lösung ---------- */
 .psol { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 64px 1fr; gap: 20px; align-items: center; }
@@ -102,6 +148,17 @@
 .card.ps-solution { background: var(--fill); --text: var(--on-accent); --muted: var(--on-accent-soft); --accent: var(--on-accent); color: var(--text); }
 .ps-solution .pdot { background: var(--on-accent); }
 .ps-arrow { width: 64px; height: 64px; border-radius: 50%; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; }
+/* line/plain: Spalten so hoch wie der längere Inhalt und mittig, damit die Kopflinien auf einer Höhe direkt über dem Text stehen */
+.slide:is(.el-line, .el-plain) .psol { align-content: safe center; }
+.slide:is(.el-line, .el-plain) .ps-card { padding: 0 0 4px; border-radius: 0; background: none; justify-content: flex-start; --text: inherit; --muted: inherit; --accent: inherit; color: var(--text); }
+.slide:is(.el-line, .el-plain) .ps-solution :is(.r-eyebrow, .r-h2) { color: var(--accent); }
+.slide:is(.el-line, .el-plain) .ps-arrow { background: none; color: var(--muted); }
+.slide.el-line .ps-card { position: relative; padding-top: 28px; }
+.slide.el-line .ps-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .ps-solution::before { height: 4px; background: var(--accent); }
+.slide.el-line .ps-card .pdot { width: 14px; height: 2px; border-radius: 0; margin-top: calc(var(--fs-body) * 0.69 - 1px); background: var(--text); }
+.slide.el-line .ps-solution .pdot { background: var(--accent); }
+.slide.el-plain .ps-card .pdot { display: none; }
 
 /* ---------- Team ---------- */
 .team { flex: 1; min-height: 0; overflow: hidden; display: grid; gap: 24px 32px; align-content: start; justify-items: center; text-align: center; }
@@ -121,6 +178,15 @@
 .pr-card.hl .pr-price { border-bottom-color: color-mix(in srgb, var(--on-accent) 30%, transparent); }
 .pr-feat { display: flex; flex-direction: column; gap: 10px; }
 .pr-chk { color: var(--accent); margin-top: 3px; }
+.slide:is(.el-line, .el-plain) .pr { column-gap: 40px; } /* ohne Kartenrand braucht der Text mehr Abstand zur Nachbarspalte */
+.slide:is(.el-line, .el-plain) .pr-card { padding: 0 0 4px; border-radius: 0; background: none; --text: inherit; --muted: inherit; --accent: inherit; color: var(--text); }
+.slide:is(.el-line, .el-plain) .pr-card.hl .r-kpi { color: var(--accent); }
+.slide.el-line .pr-card { position: relative; padding-top: 28px; }
+.slide.el-line .pr-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .pr-card.hl::before { height: 4px; background: var(--accent); }
+.slide.el-line .pr-card.hl .pr-price { border-bottom-color: var(--border); }
+.slide.el-plain .pr-price { border-bottom: 0; }
+.slide.el-plain .pr-chk { display: none; }
 
 /* ---------- Trichter ---------- */
 .fn { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
@@ -159,6 +225,9 @@
 .lg-tile { height: 110px; border-radius: var(--radius); background: var(--surface); display: flex; align-items: center; justify-content: center; padding: 20px 24px; min-width: 0; }
 .lg-img { width: 100%; height: 100%; }
 .lg-name { text-align: center; color: var(--muted); }
+.slide:is(.el-line, .el-plain) .lg-tile { border-radius: 0; background: none; }
+.slide.el-line .lg-tile { position: relative; }
+.slide.el-line .lg-tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
 
 /* ---------- Dokumente (A4): Fließtext, Angebot ---------- */
 .doc { flex: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 1fr; gap: 24px 40px; align-content: start; }
