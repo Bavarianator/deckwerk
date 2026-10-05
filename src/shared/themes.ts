@@ -191,12 +191,13 @@ function withBrand(base: Theme, b?: BrandKit): Theme {
 // Titelschrift mit passendem Gewicht und Laufweite (Einschnitt-Schriften nur 400)
 const headRef = (f: FontRef, weight = 700) => ({ ...f, weight: f.single ? 400 : weight, tracking: f.serif ? -0.012 : -0.022 })
 
-// Grund nur fast weiß oder fast schwarz und kaum bunt: mittlere, pastellige oder kräftige Gründe verraten Laien-Design sofort.
+// Grund hell oder dunkel und wenig bunt: getöntes Papier (Salbei, Sand, Eisblau) und tiefe Dunkeltöne (Nachtblau, Tannengrün)
+// bleiben erhalten; mittlere, pastellige oder kräftige Gründe verraten Laien-Design sofort und werden gedämpft.
 function calmBg(hex: string): string {
   const c = oklch(hex)
   if (!c) return hex
   const dark = c.l < 0.6
-  return formatHex(clampChroma({ ...c, l: dark ? Math.min(c.l, 0.24) : Math.max(c.l, 0.955), c: Math.min(c.c ?? 0, dark ? 0.045 : 0.01) }, 'oklch'))!
+  return formatHex(clampChroma({ ...c, l: dark ? Math.min(c.l, 0.27) : Math.max(c.l, 0.93), c: Math.min(c.c ?? 0, dark ? 0.065 : 0.03) }, 'oklch'))!
 }
 
 // Stil mutig: kräftiger Grund bleibt in Farbton und Sättigung, verlässt aber das mittlere Helligkeitsband. Dort hielte weder
