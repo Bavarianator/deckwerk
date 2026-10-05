@@ -7,6 +7,7 @@ import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '
 import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
 import { FONTS, HEAD_ROLES, SCALE, duotoneOf, ensureContrast, mix, resolveTheme, withTone, type FontName, type Theme } from '../shared/themes'
 import { LAYOUTS, buildOf } from '../shared/layouts'
+import { AIRY } from '../shared/lint'
 import { COMPONENTS } from './layouts'
 import { autofit } from './measure'
 import './slide.css'
@@ -372,6 +373,11 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
   const def = LAYOUTS[s.layout as keyof typeof LAYOUTS] as { tone?: Tone; footer: boolean; frames?: FrameId[] } | undefined
   const theme = withTone(ctx.theme, s.tone ?? p.tone ?? (def?.tone && (ctx.theme.sectionTone ?? def.tone)))
   const frame = s.frame && def?.frames?.includes(s.frame) ? s.frame : 'top'
+  // Fußzeile nur als Navigation: Kapitel links, „3 / 12“ rechts; Vortrag (mutig) und luftige Folien ohne. A4 liest man wie ein Dokument: Decktitel und Seite wie bisher.
+  const doc = profileOf(deck) === 'doc', nav = !doc && deck.style !== 'mutig'
+  const left = doc ? deck.title : nav ? deck.slides.slice(0, index).findLast((x) => x.layout === 'section')?.content?.title : undefined
+  const page = doc ? String(index + 1) : nav ? `${index + 1} / ${deck.slides.length}` : undefined
+  const footer = def?.footer && (doc || !AIRY.includes(s.layout)) && (left || page || theme.logo)
   return (
     <SlideCtx.Provider value={{ ...ctx, theme }}>
       <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} prof-${profileOf(deck)} ${sizeOf(deck).w / sizeOf(deck).h <= 1.2 ? 'fmt-tall' : ''} ${sizeOf(deck).w <= 800 ? 'fmt-narrow' : ''} el-${theme.elements ?? 'line'} ${theme.rule ? `rule-${theme.rule}` : ''} ${theme.subBody ? 'sub-body' : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
@@ -380,12 +386,12 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
         <div className={`safe ${p.safeClass ?? ''}`} data-fit data-slot="_slide">
           {p.children}
         </div>
-        {def?.footer && (
+        {footer && (
           <div className={`footer ${p.safeClass ?? ''}`}>
-            <T role="footer" slot="_footer.title">{deck.title}</T>
+            {left && <T role="footer" slot="_footer.title">{left}</T>}
             <div className="footer-right">
               {theme.logo && <Img src={theme.logo} slot="_footer.logo" className="footer-logo" contain />}
-              <T role="footer" slot="_footer.page">{String(index + 1)}</T>
+              {page && <T role="footer" slot="_footer.page">{page}</T>}
             </div>
           </div>
         )}

@@ -37,7 +37,7 @@
 .safe { position: absolute; left: 72px; right: 72px; top: 60px; bottom: 72px; display: flex; flex-direction: column; overflow: hidden; }
 .footer { position: absolute; left: 72px; right: 72px; bottom: 24px; height: 22px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .footer > .t { max-width: 70%; white-space: nowrap; overflow: hidden; }
-.footer-right { display: flex; align-items: center; gap: 16px; }
+.footer-right { display: flex; align-items: center; gap: 16px; margin-left: auto; } /* rechts, auch ohne Kapitel links */
 .footer-logo { height: 20px; width: 90px; background-repeat: no-repeat; background-position: right center; }
 .safe-right { left: 664px; }
 .safe-left { right: 664px; }
@@ -297,8 +297,8 @@
 .dw-word { display: inline-block; }
 
 /* ---------- Bauteile: Theme-Hebel elements (Klasse el-* am .slide, gesetzt in Frame) ----------
-   solid = Karten, Flächen und Punkte wie oben. line (redaktionell): keine Flächen, 2px-Kopflinie in Textfarbe, Betonung mit
-   4px-Akzentlinie, kleine Nummern, Striche statt Punkte. plain (Keynote/Swiss): nur Schriftgröße und Abstand, Betonung über
+   solid = Karten, Flächen und Punkte wie oben. line (redaktionell): keine Flächen, 1px-Kopflinie in Textfarbe, Betonung mit
+   2px-Akzentlinie, kleine Nummern, Striche statt Punkte. plain (Keynote/Swiss): nur Schriftgröße und Abstand, Betonung über
    die Akzentfarbe. Linien als ::before: border-top würde in der PPTX zum Rahmen ringsum. */
 :is(.el-line, .el-plain) :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card, .agenda-row.active) { background: transparent; border-radius: 0; }
 :is(.el-line, .el-plain) :is(.col-card.hl, .kpi-card.hl) { --text: inherit; --muted: inherit; --good: inherit; --bad: inherit; } /* Text wie auf der Folie statt onAccent */
@@ -312,10 +312,11 @@
 .el-line .cols.few .card { padding-top: 36px; }
 .el-line .take-card { justify-content: flex-start; }
 .el-line :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card, .agenda-row.active) { position: relative; }
-.el-line :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card)::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
-.el-line :is(.col-card.hl, .kpi-card.hl, .take-card)::before { height: 4px; background: var(--accent); }
-.el-line .agenda-row.active::before { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; background: var(--accent); }
-.el-line .proc-card::before { background: var(--text); }
+.el-line :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card)::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--text); }
+.el-line :is(.col-card.hl, .kpi-card.hl, .take-card)::before { height: 2px; background: var(--accent); }
+.el-line .agenda-row.active::before { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 2px; background: var(--accent); }
+.el-line .proc-card::before { height: 1px; background: var(--text); }
+.el-line .col-rule::before { height: 1px; } /* hl (auch .col-card.hl) bekommt oben 2px Akzent */
 .el-line :is(.agenda-num, .proc-num) { font-size: var(--fs-label); line-height: 1.32; }
 .el-line .agenda.few .agenda-row { align-items: baseline; }
 .el-line :is(.bullet-dot, .pdot) { width: 14px; height: 2px; border-radius: 0; position: relative; top: 4px; } /* Strich mittig zur ersten Zeile wie der 10-px-Punkt */

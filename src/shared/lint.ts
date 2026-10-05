@@ -13,7 +13,7 @@ export interface Issue {
 }
 
 const MARGIN = 24 // no text closer to the slide edge than this
-const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank'] // absichtlich luftig
+export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank'] // absichtlich luftig
 // Grenzen je Profil (aus der Foliengröße): Folien werden projiziert, Social-Posts aufs Handy skaliert, A4 gedruckt und gelesen.
 // Nur Folien haben Struktur-, Rhythmus- und Leere-Regeln; Karussells wiederholen Layouts mit Absicht, Dokumente sind dichter und ruhiger.
 const PROFILE = {
@@ -128,7 +128,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
       if (overlapArea(solids[a].box, solids[b].box) > 4)
         add('error', 'overlap', `"${solids[a].slot}" überlappt "${solids[b].slot}".`, solids[a].slot)
 
-  const count = texts.filter((t) => !t.slot.startsWith('_footer')).reduce((n, t) => n + wordsOf(t).length, 0) // Fußzeile (Decktitel, Seitenzahl) zählt nicht
+  const count = texts.filter((t) => !t.slot.startsWith('_footer')).reduce((n, t) => n + wordsOf(t).length, 0) // Fußzeile (Kapitel, Seitenzahl) zählt nicht
   if (count > prof.words) add('warn', 'density', prof === PROFILE.slides
     ? `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`
     : `${count} Wörter auf der ${prof.unit} – zu viel für dieses Format (Ziel: unter ${prof.goal}). Kürzen oder auf eine weitere ${prof.unit} verteilen.`)
@@ -200,6 +200,24 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   }
   pattern(/^[^:]{1,40}:\s+\S/, 'nach dem Muster „Stichwort: Aussage“ – wirkt generiert. Die Aussage als ganzen Satz schreiben, ohne Vorspann.')
   pattern(/ – |—/, 'mit Gedankenstrich – eine Häufung wirkt generiert. Lieber Punkt oder Komma, oder zwei Sätze daraus machen.')
+  // Vorlagen-Muster: Ornamente ohne Information, gespiegelter Schluss, alle Titel gleich gebaut
+  const plain = (v: unknown) => String(v ?? '').replace(/\*\*/g, '')
+  const inhalt = s.map((x, i) => [i, x] as const).filter(([, x]) => !AIRY.includes(x.layout))
+  const brows = inhalt.filter(([, x]) => plain(x.content?.eyebrow).trim())
+  if (s.length >= 6 && brows.length > inhalt.length / 3)
+    warn(brows[0][0], 'ornament', `Eyebrow auf ${brows.length} von ${inhalt.length} Inhaltsfolien – eine Überzeile über jedem Titel wirkt wie Vorlage. Nur dort setzen, wo es Orientierung gibt (Kapitel, Stand), sonst eyebrow weglassen.`)
+  const src = (x?: (typeof s)[number]) => { const v = x?.content?.image; return typeof v === 'string' ? v : v?.src }
+  const cover = src(s.find((x) => x.layout === 'cover'))
+  s.forEach((x, i) => {
+    if (cover && x.layout === 'closing' && src(x) === cover)
+      warn(i, 'echo', 'Schluss wiederholt das Cover-Foto – der Bogen wirkt wie Vorlage. Ein anderes Bild (find_images) oder einen rein typografischen Schluss ohne image setzen.')
+  })
+  // ponytail: Titellänge in Zeichen statt gemessener Zeilen; über measured[i] (Zeilen des Slots title) genauer, falls die Regel daneben liegt
+  const heads = inhalt.filter(([, x]) => typeof x.content?.title === 'string')
+  const formel = heads.filter(([, x]) => plain(x.content.title).length >= 45 && plain(x.content.title).length <= 90)
+  const stage = s.some((x) => x.layout === 'big-number' || (x.layout === 'statement' && plain(x.content?.text).length < 45) || (x.layout === 'photo' && plain(x.content?.title).length < 45))
+  if (s.length >= 8 && heads.length && formel.length >= 0.8 * heads.length && !stage)
+    warn(formel[0][0], 'titel-formel', `${formel.length} von ${heads.length} Titeln sind gleich gebaute Zwei- bis Dreizeiler – wirkt wie Vorlage. Ein bis zwei Folien mit kurzem Titel (höchstens 5 Wörter) bauen oder als Bühnenfolie (statement mit kurzem Satz, big-number, photo).`)
   // Mut: ein Mensch bricht mindestens einmal den Rhythmus
   const bold = (x: (typeof s)[number]) =>
     ((x.tone === 'accent' || x.tone === 'invert') && x.layout !== 'section') || x.layout === 'photo' ||
