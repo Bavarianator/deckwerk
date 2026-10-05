@@ -1,7 +1,6 @@
 /* Profi-Layouts (layouts-extra.tsx). Linien auf Elementen ohne data-pptx landen im Hintergrundbild der PPTX. */
 /* Bauteile (Klasse el-* am .slide): solid = Kästen wie bisher, line = Kopflinie statt Fläche (2px Text, hervorgehoben 4px Akzent),
-   plain = nur Typografie und Abstand. Kopflinien auf data-pptx-Boxen als ::before (border-top würde in der PPTX zum Rahmen ringsum);
-   visibility: visible, weil hide-exportables die Box samt Pseudo-Element ausblendet und die Linie sonst im Hintergrundbild fehlt. */
+   plain = nur Typografie und Abstand. Kopflinien auf data-pptx-Boxen als ::before (border-top würde in der PPTX zum Rahmen ringsum). */
 
 /* ---------- Executive Summary ---------- */
 .sum { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr; gap: 44px; }
@@ -16,7 +15,7 @@
 .slide:is(.el-line, .el-plain) .sum-rec { background: none; border-radius: 0; padding: 0 0 4px; --text: inherit; --muted: inherit; color: var(--text); }
 .slide:is(.el-line, .el-plain) .sum-rec .r-eyebrow { color: var(--accent); }
 .slide.el-line .sum-rec { position: relative; padding-top: 24px; }
-.slide.el-line .sum-rec::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); visibility: visible; }
+.slide.el-line .sum-rec::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); }
 .slide.el-line .sum-num { font-size: var(--fs-label); font-weight: 700; }
 .slide.el-plain .sum-row { border: 0; }
 .slide.el-plain .sum-num { width: auto; margin-top: -0.3em; font-size: calc(var(--fs-h2) * 1.6); font-weight: 400; line-height: 1; color: var(--muted); }
@@ -35,7 +34,7 @@
 .harvey svg { display: block; }
 .slide:is(.el-line, .el-plain) .opt-hl { border: 0; border-radius: 0; margin-top: 0; }
 .slide.el-line .opt-hl { position: relative; pointer-events: none; } /* leere Spaltenbox über den Zellen: Klicks zum Bearbeiten gehen durch */
-.slide.el-line .opt-hl::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); visibility: visible; }
+.slide.el-line .opt-hl::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); }
 .slide:is(.el-line, .el-plain) .opt-badge { background: none; border-radius: 0; padding: 0; }
 .slide:is(.el-line, .el-plain) .opt-badge .r-eyebrow, .slide:is(.el-line, .el-plain) .opt-head.hl .r-h3 { color: var(--accent); }
 .slide.el-plain :is(.opt-crit, .opt-cell) { border-bottom: 0; }
@@ -72,13 +71,13 @@
 .slide:is(.el-line, .el-plain) .mx-qlabel { min-width: 0; }
 .slide:is(.el-line, .el-plain) .mx-q.q1 .mx-qlabel { color: var(--accent); }
 .slide.el-line .mx-q { position: relative; }
-.slide.el-line .mx-q::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .mx-q::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
 .slide.el-line .mx-q.q1::before { height: 4px; background: var(--accent); }
 /* plain: Achsenkreuz statt Flächen, sonst sind die Quadranten nicht mehr lesbar */
 .slide.el-plain .mx-plot { background: linear-gradient(var(--border), var(--border)) center / 1px 100% no-repeat, linear-gradient(var(--border), var(--border)) center / 100% 1px no-repeat; }
 .slide:is(.el-line, .el-plain) .mx-take { background: none; border-radius: 0; padding: 0 0 4px; }
 .slide.el-line .mx-take { position: relative; padding-top: 24px; }
-.slide.el-line .mx-take::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .mx-take::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
 
 /* ---------- Tabelle ---------- */
 .tb { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
@@ -95,7 +94,7 @@
 .slide:is(.el-line, .el-plain) .tb .tb-row { padding-left: 0; padding-right: 0; background: none; border-radius: 0; }
 .slide:is(.el-line, .el-plain) .tb-hl .t { color: var(--accent); }
 .slide.el-line .tb-hl { position: relative; border-bottom-color: var(--border); }
-.slide.el-line .tb-hl::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; height: 4px; background: var(--accent); visibility: visible; } /* ersetzt die Linie darüber (Haarlinie oder Kopflinie der Tabelle) */
+.slide.el-line .tb-hl::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; height: 4px; background: var(--accent); } /* ersetzt die Linie darüber (Haarlinie oder Kopflinie der Tabelle) */
 .slide.el-plain .tb .tb-row:not(.tb-head) { border-bottom: 0; }
 
 /* ---------- Große Zahl ---------- */
@@ -137,7 +136,7 @@
 .slide:is(.el-line, .el-plain) .pc-verdict { padding: 0 0 4px; border-radius: 0; background: none; --text: inherit; color: var(--accent); }
 .slide.el-line .pc-verdict { position: relative; padding-top: 22px; }
 .slide.el-plain .pc-verdict { margin-top: 16px; } /* ohne Linie trennt nur der Abstand das Fazit von den Listen */
-.slide.el-line .pc-verdict::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); visibility: visible; }
+.slide.el-line .pc-verdict::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--accent); }
 
 /* ---------- Problem und Lösung ---------- */
 .psol { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 64px 1fr; gap: 20px; align-items: center; }
@@ -154,9 +153,9 @@
 .slide:is(.el-line, .el-plain) .ps-solution :is(.r-eyebrow, .r-h2) { color: var(--accent); }
 .slide:is(.el-line, .el-plain) .ps-arrow { background: none; color: var(--muted); }
 .slide.el-line .ps-card { position: relative; padding-top: 28px; }
-.slide.el-line .ps-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .ps-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
 .slide.el-line .ps-solution::before { height: 4px; background: var(--accent); }
-.slide.el-line .ps-card .pdot { width: 14px; height: 2px; border-radius: 0; margin-top: calc(var(--fs-body) * 0.69 - 1px); background: var(--text); }
+.slide.el-line .ps-card .pdot { width: 14px; height: 2px; border-radius: 0; top: 0; margin-top: calc(var(--fs-body) * 0.69 - 1px); background: var(--text); }
 .slide.el-line .ps-solution .pdot { background: var(--accent); }
 .slide.el-plain .ps-card .pdot { display: none; }
 
@@ -182,7 +181,7 @@
 .slide:is(.el-line, .el-plain) .pr-card { padding: 0 0 4px; border-radius: 0; background: none; --text: inherit; --muted: inherit; --accent: inherit; color: var(--text); }
 .slide:is(.el-line, .el-plain) .pr-card.hl .r-kpi { color: var(--accent); }
 .slide.el-line .pr-card { position: relative; padding-top: 28px; }
-.slide.el-line .pr-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .pr-card::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
 .slide.el-line .pr-card.hl::before { height: 4px; background: var(--accent); }
 .slide.el-line .pr-card.hl .pr-price { border-bottom-color: var(--border); }
 .slide.el-plain .pr-price { border-bottom: 0; }
@@ -227,7 +226,7 @@
 .lg-name { text-align: center; color: var(--muted); }
 .slide:is(.el-line, .el-plain) .lg-tile { border-radius: 0; background: none; }
 .slide.el-line .lg-tile { position: relative; }
-.slide.el-line .lg-tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); visibility: visible; }
+.slide.el-line .lg-tile::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
 
 /* ---------- Dokumente (A4): Fließtext, Angebot ---------- */
 .doc { flex: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: 1fr; gap: 24px 40px; align-content: start; }

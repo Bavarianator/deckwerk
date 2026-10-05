@@ -3,7 +3,7 @@
 import type { z } from 'zod'
 import { EXTRA_LAYOUTS } from '../shared/layouts-extra'
 import { Header } from './layouts'
-import { Box, Frame, Icon, Img, T, photoOf } from './slide'
+import { Box, Frame, Icon, Img, T, photoOf, useSlide } from './slide'
 import './layouts-extra.css'
 
 type Props<K extends keyof typeof EXTRA_LAYOUTS> = { c: z.infer<(typeof EXTRA_LAYOUTS)[K]['schema']>; v?: string }
@@ -305,6 +305,7 @@ function ProsCons({ c }: Props<'pros-cons'>) {
 }
 
 function ProblemSolution({ c }: Props<'problem-solution'>) {
+  const round = useSlide().theme.elements === 'solid' // wie Points: Strich statt flacher Ellipse in der PPTX
   const card = (k: 'problem' | 'solution', i: number) => {
     const s = c[k]
     return (
@@ -313,7 +314,7 @@ function ProblemSolution({ c }: Props<'problem-solution'>) {
         {s.text && <T role="h2" slot={`${k}.text`} build={i}>{s.text}</T>}
         {s.points?.map((p, j) => (
           <div className="point" key={j}>
-            <Box slot={`_pd.${k}.${j}`} className="pdot" ellipse build={i} />
+            <Box slot={`_pd.${k}.${j}`} className="pdot" ellipse={round} build={i} />
             <T role="body" slot={`${k}.points.${j}`} build={i}>{p}</T>
           </div>
         ))}
