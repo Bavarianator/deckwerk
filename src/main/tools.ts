@@ -110,15 +110,15 @@ function aiTells(t: { headFont?: string; bodyFont?: string; accent?: string; bg?
   if (dark && h >= 115 && h <= 135 && c > 0.15) out.push(`Hinweis: Säuregrün ${t.accent} auf dunklem Grund ist eine Standardfarbe generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
   return out.map((x) => x + '\n').join('')
 }
-// Designtyp (Guide §6 „Abwechslung“): die vier Merkmale, an denen man Decks auf einen Blick unterscheidet; font/akzent nur zur Anzeige
-export interface LookTyp { hell: 'hell' | 'dunkel'; schrift: 'Serif' | 'Sans'; gewicht: 'regular' | 'bold'; grund: 'kräftig' | 'getönt' | 'neutral'; font: string; akzent: string }
+// Designtyp (Guide §6 „Abwechslung“): die fünf Merkmale, an denen man Decks auf einen Blick unterscheidet; font/akzent nur zur Anzeige
+export interface LookTyp { hell: 'hell' | 'dunkel'; schrift: 'Serif' | 'Sans'; gewicht: 'regular' | 'bold'; grund: 'kräftig' | 'getönt' | 'neutral'; bauteile: 'line' | 'plain' | 'solid'; font: string; akzent: string }
 export function lookTyp(ref: ThemeRef): LookTyp {
   const t = resolveTheme(ref), bg = oklch(t.c.bg), l = bg?.l ?? 1, c = bg?.c ?? 0
   const tinted = t.dark ? c > 0.02 : l < 0.955 && c > 0.006
-  return { hell: t.dark ? 'dunkel' : 'hell', schrift: t.head.serif ? 'Serif' : 'Sans', gewicht: t.head.weight < 600 ? 'regular' : 'bold', grund: t.vivid ? 'kräftig' : tinted ? 'getönt' : 'neutral', font: t.head.css, akzent: t.c.accent }
+  return { hell: t.dark ? 'dunkel' : 'hell', schrift: t.head.serif ? 'Serif' : 'Sans', gewicht: t.head.weight < 600 ? 'regular' : 'bold', grund: t.vivid ? 'kräftig' : tinted ? 'getönt' : 'neutral', bauteile: t.elements ?? 'line', font: t.head.css, akzent: t.c.accent }
 }
-export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schrift === b.schrift && a.gewicht === b.gewicht && a.grund === b.grund
-const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}`
+export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schrift === b.schrift && a.gewicht === b.gewicht && a.grund === b.grund && a.bauteile === b.bauteile
+const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}, Bauteile ${{ line: 'Linie', plain: 'frei', solid: 'Fläche' }[t.bauteile]}`
 // Zuletzt gebaute Decks, neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
 export function recentLooks(except?: string): { title: string; typ: LookTyp }[] {
   const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
@@ -138,7 +138,7 @@ export function recentLooks(except?: string): { title: string; typ: LookTyp }[] 
 // Hinweis, wenn ein Design im Typ einem der 3 neuesten Decks gleicht; '' sonst
 function repeats(typ: LookTyp, recent: { title: string; typ: LookTyp }[]): string {
   const alike = recent.slice(0, 3).filter((r) => sameLook(r.typ, typ)).map((r) => `„${r.title}“`)
-  return alike.length ? `gleicht im Typ deinen letzten Decks ${alike.join(', ')} (${typText(typ)}). Ändere mindestens eins: Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt) oder Titelgewicht – außer der Nutzer will eine Serie (Design-Guide §6 „Abwechslung“).` : ''
+  return alike.length ? `gleicht im Typ deinen letzten Decks ${alike.join(', ')} (${typText(typ)}). Ändere mindestens eins: Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt), Titelgewicht oder Bauteile (line/plain) – außer der Nutzer will eine Serie (Design-Guide §6 „Abwechslung“).` : ''
 }
 const themeSpec = z.object({
   name: z.string().min(2).max(40).describe('Name, z. B. "Nordlicht Finance"'),
@@ -157,6 +157,7 @@ const themeSpec = z.object({
   sectionTone: z.enum(TONES).optional().describe('Kapiteltrenner: accent = Akzentfläche (Standard), invert = Hell/Dunkel getauscht, normal = nur große Typo auf dem Grund'),
   vivid: z.boolean().optional().describe('nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf Papier- bzw. Dunkeltöne zu dämpfen; Textfarbe kommt automatisch mit Kontrast'),
   labelFont: z.enum(['body', 'mono']).optional().describe('mono = Eyebrow und Fußzeile in IBM Plex Mono (Magazin, Tech); body = Textschrift (Standard)'),
+  elements: z.enum(['line', 'plain', 'solid']).optional().describe('Bauteile (Design-Guide §6): line = offen, Kopflinien statt Kästen, kurze Striche als Marker (Standard, redaktionell, Beratung); plain = nur Typografie und Weißraum, keine Linien, große leichte Nummern (Keynote, Zen, Tech); solid = Akzentflächen für Hervorhebungen, nur im Stil mutig'),
 })
 
 const FRAME_HINT = 'Komposition: top = Titel oben (Standard), split = Titel auf Akzentfläche links, band = Titel im Farbband oben, center = Kopf zentriert. Nur die im Katalog genannten Frames des Layouts.'
@@ -514,16 +515,16 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const tell = i.looks.flatMap((l) => (typeof l === 'string' ? [] : [l.headFont, l.bodyFont])).find((f) => AI_FONTS.includes(f))
         if (tell) throw new Error(`${tell} ist eine Standardschrift generierter Designs und gehört nicht in eigene Vorschläge. Andere Schrift wählen (Design-Guide §6); hat der Nutzer sie ausdrücklich gewünscht, direkt create_deck mit diesem customTheme.`)
         // Guide §6: Entwürfe unterscheiden sich in der Struktur, sonst sieht der Nutzer nur Umfärbungen desselben Looks
-        const traits = refs.map((r) => { const t = resolveTheme(r); return { 'hell/dunkel': t.dark, 'Serif/Sans': !!t.head.serif, titleSize: (t.headScale ?? 1) > 1, titleWeight: t.head.weight, rule: t.rule ?? 'none', sectionTone: t.sectionTone ?? 'accent', Farbgrund: !!t.vivid } })
+        const traits = refs.map((r) => { const t = resolveTheme(r); return { 'hell/dunkel': t.dark, 'Serif/Sans': !!t.head.serif, titleSize: (t.headScale ?? 1) > 1, titleWeight: t.head.weight, rule: t.rule ?? 'none', sectionTone: t.sectionTone ?? 'accent', Farbgrund: !!t.vivid, Bauteile: t.elements ?? 'line' } })
         for (let a = 0; a < traits.length; a++)
           for (let b = a + 1; b < traits.length; b++) {
             const same = Object.keys(traits[a]).filter((k) => traits[a][k as keyof (typeof traits)[0]] === traits[b][k as keyof (typeof traits)[0]])
-            if (same.length > 3) throw new Error(`Look ${a + 1} und ${b + 1} unterscheiden sich kaum, gleich sind: ${same.join(', ')}. Ändere bei einem mindestens ${same.length - 3} davon, damit der Nutzer echte Alternativen sieht.`)
+            if (same.length > 4) throw new Error(`Look ${a + 1} und ${b + 1} unterscheiden sich kaum, gleich sind: ${same.join(', ')}. Ändere bei einem mindestens ${same.length - 4} davon, damit der Nutzer echte Alternativen sieht.`)
           }
         // Guide §6 „Abwechslung“: mindestens ein Look hebt sich im Typ von den letzten Decks ab (mit Brand-Kit gilt dessen Look)
         const recent = defaultBrand() ? [] : recentLooks()
         const reps = refs.map((r) => repeats(lookTyp(r), recent))
-        if (reps.every(Boolean)) throw new Error(`Alle Looks gleichen im Typ deinen letzten Decks (${recent.slice(0, 3).map((r) => `„${r.title}“: ${typText(r.typ)}`).join('; ')}). Baue mindestens einen Look in Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt) oder Titelgewicht anders (Design-Guide §6 „Abwechslung“).`)
+        if (reps.every(Boolean)) throw new Error(`Alle Looks gleichen im Typ deinen letzten Decks (${recent.slice(0, 3).map((r) => `„${r.title}“: ${typText(r.typ)}`).join('; ')}). Baue mindestens einen Look in Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt), Titelgewicht oder Bauteile (line/plain) anders (Design-Guide §6 „Abwechslung“).`)
         const images = (await Promise.all(refs.map((theme) => themePreview(ctx, { title, theme, transition: 'fade', mode: 'click', slides: [] })))).map((b) => b[0])
         if (images.some((b) => !b)) throw new Error('Vorschau fehlgeschlagen, bitte einzeln mit create_deck prüfen.')
         const label = (l: (typeof i.looks)[number]) => (typeof l === 'string' ? CATALOG_THEMES.find((t) => t.id === l)!.name : l.name)

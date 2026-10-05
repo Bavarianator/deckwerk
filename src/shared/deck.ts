@@ -51,6 +51,7 @@ export interface ThemeSpec {
   sectionTone?: Tone // Kapiteltrenner: accent (Standard), invert oder normal
   vivid?: boolean // kräftiger Farbgrund (Stil mutig); sonst dämpft themeFromSpec den Grund auf Papier- bzw. Dunkeltöne
   labelFont?: 'body' | 'mono' // mono = Eyebrow und Fußzeile in IBM Plex Mono
+  elements?: 'line' | 'plain' | 'solid' // Bauteile: line = offen mit Kopflinien, keine Flächen (Standard); plain = nur Typografie und Weißraum, keine Linien und Flächen; solid = Farbflächen (Stil mutig)
 }
 
 export interface Slide {

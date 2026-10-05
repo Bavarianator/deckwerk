@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DeckAgent, buildSystemPrompt, toRunnable, type Engine } from '../src/main/agent'
 import { z } from 'zod'
-import { buildTools, imageSettings, recentLooks, webpSize, type ToolDef } from '../src/main/tools'
+import { buildTools, imageSettings, lookTyp, recentLooks, webpSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
@@ -178,7 +178,11 @@ assert.equal(events, 12, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   const T4 = Object.fromEntries(buildTools({ engine, getDeck: () => d, setDeck: (x) => { d = x }, assetDir: '/nonexistent', outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
   const make = (input: unknown) => T4.create_deck.run(T4.create_deck.inputSchema.parse(input))
   const same = await make({ title: 'Neu', style: 'sachlich', brand: null, customTheme: look('Papier', '#FFFFFF', { headFont: 'Lora', titleWeight: 'regular' }) })
-  assert.equal(d!.style, 'sachlich'); assert.match(same.text, /^Hinweis: Dieses Design gleicht im Typ deinen letzten Decks „Alt \d“, „Alt \d“ \(hell, Serif-Titel regular, Grund neutral\)/)
+  assert.equal(d!.style, 'sachlich'); assert.match(same.text, /^Hinweis: Dieses Design gleicht im Typ deinen letzten Decks „Alt \d“, „Alt \d“ \(hell, Serif-Titel regular, Grund neutral, Bauteile Linie\)/)
+  // anderes Bauteil-Vokabular = anderer Typ: kein Hinweis
+  assert.doesNotMatch((await make({ title: 'Frei', brand: null, customTheme: look('Papier', '#FFFFFF', { headFont: 'Lora', titleWeight: 'regular', elements: 'plain' }) })).text, /gleicht im Typ/)
+  assert.equal(d!.theme.custom?.elements, 'plain')
+  assert.notEqual(lookTyp({ id: 'custom', custom: look('A', '#FFFFFF', { elements: 'line' }) as never }).bauteile, lookTyp({ id: 'custom', custom: look('A', '#FFFFFF', { elements: 'plain' }) as never }).bauteile)
   assert.doesNotMatch((await make({ title: 'Nacht', brand: null, customTheme: look('Nacht', '#12261E', { headFont: 'Inter' }) })).text, /gleicht im Typ/)
   put('nacht', json('Nacht', look('Nacht', '#12261E', { headFont: 'Inter' })))
   await fails(T4.propose_looks.run(T4.propose_looks.inputSchema.parse({ looks: [look('Papier', '#FFFFFF', { titleWeight: 'regular', titleSize: 'large', rule: 'over' }), look('Nachtblau', '#12261E', { headFont: 'Inter' })] })), /Alle Looks gleichen im Typ/)
@@ -187,7 +191,7 @@ assert.equal(events, 12, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
 
 const sys = buildSystemPrompt()
 assert.ok(sys.includes('# Design-Guide') && sys.includes('### kpi-grid') && sys.includes('"maxLength"'))
-assert.match(sys, /## Zuletzt gebaute Decks \(nur für neue Decks[^\n]*\n(- .*\n)*- „Alt \d“: hell, Serif-Titel regular \(Fraunces\), Grund neutral, Akzent #/)
+assert.match(sys, /## Zuletzt gebaute Decks \(nur für neue Decks[^\n]*\n(- .*\n)*- „Alt \d“: hell, Serif-Titel regular \(Fraunces\), Grund neutral, Bauteile line, Akzent #/)
 assert.equal(sys, buildSystemPrompt(), 'Systemprompt stabil (Caching)')
 if (realHome === undefined) delete process.env.DECKWERK_HOME
 else process.env.DECKWERK_HOME = realHome

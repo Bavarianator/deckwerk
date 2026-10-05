@@ -374,7 +374,7 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
   const frame = s.frame && def?.frames?.includes(s.frame) ? s.frame : 'top'
   return (
     <SlideCtx.Provider value={{ ...ctx, theme }}>
-      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} prof-${profileOf(deck)} ${sizeOf(deck).w / sizeOf(deck).h <= 1.2 ? 'fmt-tall' : ''} ${sizeOf(deck).w <= 800 ? 'fmt-narrow' : ''} ${theme.rule ? `rule-${theme.rule}` : ''} ${theme.subBody ? 'sub-body' : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
+      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} prof-${profileOf(deck)} ${sizeOf(deck).w / sizeOf(deck).h <= 1.2 ? 'fmt-tall' : ''} ${sizeOf(deck).w <= 800 ? 'fmt-narrow' : ''} el-${theme.elements ?? 'line'} ${theme.rule ? `rule-${theme.rule}` : ''} ${theme.subBody ? 'sub-body' : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
         {s.bg?.image ? <div className="backdrop"><Img src={s.bg.image} slot="_bg" under /></div> : <Decor kind={p.decor ?? 'content'} id={s.decor ?? theme.decor} />}
         {p.media}
         <div className={`safe ${p.safeClass ?? ''}`} data-fit data-slot="_slide">
