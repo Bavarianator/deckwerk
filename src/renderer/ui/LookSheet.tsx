@@ -156,8 +156,8 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
           </div>
           <div className="look-group">
             <b>Stil</b>
-            <div className="seg" title="Wie mutig die KI gestaltet: sachlich = zurückhaltend, mutig = kräftige Farben, Plakat-Typo, starke Bilder">
-              <button aria-pressed={deck.style !== 'mutig'} onClick={() => patchDeck({ style: undefined })}>Sachlich</button>
+            <div className="seg" title="Wie mutig die KI gestaltet: sachlich = zurückhaltend, mutig = kräftige Farben, Plakat-Typo, starke Bilder; ohne Wahl entscheidet die KI nach Anlass">
+              <button aria-pressed={deck.style === 'sachlich'} onClick={() => patchDeck({ style: 'sachlich' })}>Sachlich</button>
               <button aria-pressed={deck.style === 'mutig'} onClick={() => patchDeck({ style: 'mutig' })}>Mutig</button>
             </div>
           </div>

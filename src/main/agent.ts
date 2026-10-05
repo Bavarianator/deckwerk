@@ -9,7 +9,7 @@ import type { Issue } from '../shared/lint'
 import { LAYOUTS, LAYOUT_IDS } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
 import guide from './design-guide.md?raw'
-import { buildCatalog, buildTools, houseStyle, mimeOf, type ToolDef, type ToolOutput } from './tools'
+import { buildCatalog, buildTools, houseStyle, mimeOf, recentLooks, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
 export type ExportFormat = 'pptx' | 'pdf' | 'png' | 'md' | 'zip' // zip = PNG je Folie + PDF in einer Datei (Social-Karussell, Druck)
@@ -53,8 +53,9 @@ const WORKFLOW = `## Arbeitsablauf
 Antworte auf Deutsch, knapp.`
 
 export function buildSystemPrompt(): string {
-  const style = houseStyle()
-  return [guide.trim(), buildCatalog(), WORKFLOW, ...(style ? [`## Hausstil des Nutzers (gilt für jedes Deck, hat Vorrang vor dem Design-Guide)\n${style}`] : [])].join('\n\n')
+  const style = houseStyle(), recent = recentLooks()
+  return [guide.trim(), buildCatalog(), WORKFLOW, ...(style ? [`## Hausstil des Nutzers (gilt für jedes Deck, hat Vorrang vor dem Design-Guide)\n${style}`] : []),
+    ...(recent.length ? [`## Zuletzt gebaute Decks (nur für neue Decks: im Typ nicht wiederholen, Design-Guide §6 „Abwechslung“; bestehende Decks behalten ihr Design)\n${recent.map(({ title, typ: t }) => `- „${title}“: ${t.hell}, ${t.schrift}-Titel ${t.gewicht} (${t.font}), Grund ${t.grund}, Akzent ${t.akzent}`).join('\n')}`] : [])].join('\n\n')
 }
 
 const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { type: 'base64', media_type: mimeOf(buf), data: buf.toString('base64') } })

@@ -177,7 +177,7 @@ export interface Deck {
   theme: ThemeRef
   transition: Transition
   motion?: Motion // Bewegungsstil des Decks (Canva „Magic Animate“); einzelne Folien-builds haben Vorrang
-  style?: 'mutig' // Gestaltungsstil für die KI; ohne = sachlich (Zurückhaltung, Design-Guide §6 „Stil des Decks“)
+  style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
   slides: Slide[]
 }

@@ -239,7 +239,7 @@ export default function App() {
     // Kontext (Canvas-Element oder angezeigte Folie für „diese Folie“) geht nur an die KI, der Chat zeigt den Text
     const slide = deck?.slides[index]
     context ??= slide && `Gerade angezeigt: Folie ${index + 1} (ID „${slide.id}“, Layout ${slide.layout})`
-    if (deck?.style === 'mutig') context = [context, 'Deck-Stil: mutig (Design-Guide §6 „Stil des Decks“)'].filter(Boolean).join(' · ') // Regler im Look-Bereich
+    if (deck?.style) context = [context, `Deck-Stil: ${deck.style} (Design-Guide §6 „Stil des Decks“)`].filter(Boolean).join(' · ') // Regler im Look-Bereich oder Wahl der KI
     api.send(context ? `${text}\n\n(${context})` : text, model)
       .catch((e) => setMsgs((m) => [...m, { kind: 'error', text: errText(e) }]))
       .finally(() => setBusy(false))

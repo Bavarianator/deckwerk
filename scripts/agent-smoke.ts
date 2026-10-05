@@ -1,9 +1,12 @@
 // Smoke-Test für Tools + Systemprompt ohne API (Mock-Engine). Mit --live und ANTHROPIC_API_KEY zusätzlich ein echter Agent-Turn.
 // Aufruf: npx esbuild scripts/agent-smoke.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/agent-smoke.mjs && node out/agent-smoke.mjs [--live]
 import assert from 'node:assert/strict'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { DeckAgent, buildSystemPrompt, toRunnable, type Engine } from '../src/main/agent'
 import { z } from 'zod'
-import { buildTools, imageSettings, webpSize, type ToolDef } from '../src/main/tools'
+import { buildTools, imageSettings, recentLooks, webpSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
@@ -23,6 +26,8 @@ const tools = buildTools({ engine, getDeck: () => deck, setDeck: (d) => { deck =
 const T = Object.fromEntries(tools.map((t) => [t.name, t])) as Record<string, ToolDef>
 const run = (name: string, input: unknown) => T[name].run(T[name].inputSchema.parse(input))
 const fails = async (p: Promise<unknown>, re: RegExp) => { try { await p } catch (e) { assert.match((e as Error).message, re); return } assert.fail('sollte werfen') }
+const realHome = process.env.DECKWERK_HOME
+process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 
 assert.equal(tools.length, 16)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -55,13 +60,14 @@ await fails(run('add_slides', { slides: [{ layout: 'cover', content: { title: 'x
 assert.match((await run('create_deck', { title: 'Test', customTheme: look('Tech', '#0E0E0E', { headFont: 'Space Grotesk', accent: '#C6F432' }) })).text, /^Hinweis: Space Grotesk[\s\S]*Hinweis: Säuregrün/)
 assert.match((await run('update_deck', { customTheme: { accent: '#7C3AED', headFont: 'Fraunces' } })).text, /^Hinweis: Akzent #7C3AED/)
 assert.doesNotMatch((await run('update_deck', { customTheme: { accent: '#C4552D' } })).text, /Hinweis/)
-await run('create_deck', { title: 'Test', theme: 'midnight' })
+const created = await run('create_deck', { title: 'Test', theme: 'midnight' })
 assert.equal(deck!.theme.id, 'midnight'); assert.equal(deck!.transition, 'fade')
+assert.equal(deck!.style, undefined); assert.match(created.text, /Stil nicht gewählt/)
 // Stil-Regler: mutig setzen und zurück; vivid hält den kräftigen Grund (nur aus dem mittleren Helligkeitsband geschoben)
 await run('update_deck', { style: 'mutig', customTheme: look('Koralle', '#FFD100', { vivid: true }) })
 assert.equal(deck!.style, 'mutig'); assert.equal(resolveTheme(deck!.theme).c.bg.toLowerCase(), '#ffd100')
 await run('update_deck', { style: 'sachlich', customTheme: { vivid: false } })
-assert.equal(deck!.style, undefined); assert.notEqual(resolveTheme(deck!.theme).c.bg.toLowerCase(), '#ffd100', 'ohne vivid dämpft die Engine')
+assert.equal(deck!.style, 'sachlich'); assert.notEqual(resolveTheme(deck!.theme).c.bg.toLowerCase(), '#ffd100', 'ohne vivid dämpft die Engine')
 await run('update_deck', { theme: 'midnight' })
 await fails(run('add_slides', { slides: [{ layout: 'cover', content: { title: 'Okay' } }, { layout: 'agenda', content: { title: 'Agenda', items: [] } }] }), /slides\[1\] \(agenda\)[\s\S]*items/)
 assert.equal(deck!.slides.length, 0, 'Batch mit Fehler ändert nichts')
@@ -159,9 +165,32 @@ await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
 assert.equal(events, 12, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 3 aus dem Klischee-Test
 
+// Abwechslung: neues Deck im selben Typ wie die letzten Decks → Hinweis (eigenes Tool-Set, damit events stimmt)
+{
+  const home = process.env.DECKWERK_HOME!
+  const put = (dir: string, json: string) => { mkdirSync(join(home, dir)); writeFileSync(join(home, dir, 'deck.json'), json) }
+  const json = (title: string, custom: object) => JSON.stringify({ title, theme: { id: 'custom', custom }, transition: 'fade', mode: 'click', slides: [] })
+  const serif = (title: string) => json(title, look(title, '#FFFFFF', { titleWeight: 'regular' }))
+  put('alt-1', serif('Alt 1')); put('alt-2', serif('Alt 2')); put('kaputt', '{'); put('versions', serif('Alt 3'))
+  assert.deepEqual(recentLooks().map((r) => r.title).sort(), ['Alt 1', 'Alt 2'])
+  assert.deepEqual(recentLooks('Alt 1').map((r) => r.title), ['Alt 2'])
+  let d: Deck | null = null
+  const T4 = Object.fromEntries(buildTools({ engine, getDeck: () => d, setDeck: (x) => { d = x }, assetDir: '/nonexistent', outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  const make = (input: unknown) => T4.create_deck.run(T4.create_deck.inputSchema.parse(input))
+  const same = await make({ title: 'Neu', style: 'sachlich', brand: null, customTheme: look('Papier', '#FFFFFF', { headFont: 'Lora', titleWeight: 'regular' }) })
+  assert.equal(d!.style, 'sachlich'); assert.match(same.text, /^Hinweis: Dieses Design gleicht im Typ deinen letzten Decks „Alt \d“, „Alt \d“ \(hell, Serif-Titel regular, Grund neutral\)/)
+  assert.doesNotMatch((await make({ title: 'Nacht', brand: null, customTheme: look('Nacht', '#12261E', { headFont: 'Inter' }) })).text, /gleicht im Typ/)
+  put('nacht', json('Nacht', look('Nacht', '#12261E', { headFont: 'Inter' })))
+  await fails(T4.propose_looks.run(T4.propose_looks.inputSchema.parse({ looks: [look('Papier', '#FFFFFF', { titleWeight: 'regular', titleSize: 'large', rule: 'over' }), look('Nachtblau', '#12261E', { headFont: 'Inter' })] })), /Alle Looks gleichen im Typ/)
+  await T4.update_deck.run(T4.update_deck.inputSchema.parse({ style: 'mutig' })); assert.equal(d!.style, 'mutig')
+}
+
 const sys = buildSystemPrompt()
 assert.ok(sys.includes('# Design-Guide') && sys.includes('### kpi-grid') && sys.includes('"maxLength"'))
+assert.match(sys, /## Zuletzt gebaute Decks \(nur für neue Decks[^\n]*\n(- .*\n)*- „Alt \d“: hell, Serif-Titel regular \(Fraunces\), Grund neutral, Akzent #/)
 assert.equal(sys, buildSystemPrompt(), 'Systemprompt stabil (Caching)')
+if (realHome === undefined) delete process.env.DECKWERK_HOME
+else process.env.DECKWERK_HOME = realHome
 console.log(`Tools OK · Systemprompt ${sys.length} Zeichen`)
 
 if (process.argv.includes('--live')) {

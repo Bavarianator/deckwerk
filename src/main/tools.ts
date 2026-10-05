@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide } from '../shared/deck'
+import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef } from '../shared/deck'
 import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -73,7 +73,7 @@ const brand = z.object({
   bodyFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).optional().describe('Schrift für Fließtext'),
 })
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
-const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil (Design-Guide §6 „Stil des Decks“): sachlich = Zurückhaltung (Standard), mutig = kräftige Farben, Plakat-Typo, mehr Farbflächen, markante Bilder. Wählt der Nutzer im Look-Bereich oder per Wunsch („mutiger“).')
+const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil, beim Anlegen immer setzen (Design-Guide §6 „Stil des Decks“). Nach Anlass: mutig für Vortrag, Schule/Unterricht, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social; sachlich für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot. Steht im Kontext „Deck-Stil: …“ oder wünscht der Nutzer einen Stil, gilt der. mutig = kräftige Farbgründe, Plakat-Typo, mehr Farbflächen, markante Bilder.')
 // Zeichen jeder Schrift, damit die KI Paare nach Stimmung wählt
 const FONT_MOOD: Record<FontName, string> = {
   Fraunces: 'warme Display-Serif mit Charakter: editorial, Magazin, Handwerk, Kultur',
@@ -110,9 +110,39 @@ function aiTells(t: { headFont?: string; bodyFont?: string; accent?: string; bg?
   if (dark && h >= 115 && h <= 135 && c > 0.15) out.push(`Hinweis: Säuregrün ${t.accent} auf dunklem Grund ist eine Standardfarbe generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
   return out.map((x) => x + '\n').join('')
 }
+// Designtyp (Guide §6 „Abwechslung“): die vier Merkmale, an denen man Decks auf einen Blick unterscheidet; font/akzent nur zur Anzeige
+export interface LookTyp { hell: 'hell' | 'dunkel'; schrift: 'Serif' | 'Sans'; gewicht: 'regular' | 'bold'; grund: 'kräftig' | 'getönt' | 'neutral'; font: string; akzent: string }
+export function lookTyp(ref: ThemeRef): LookTyp {
+  const t = resolveTheme(ref), bg = oklch(t.c.bg), l = bg?.l ?? 1, c = bg?.c ?? 0
+  const tinted = t.dark ? c > 0.02 : l < 0.955 && c > 0.006
+  return { hell: t.dark ? 'dunkel' : 'hell', schrift: t.head.serif ? 'Serif' : 'Sans', gewicht: t.head.weight < 600 ? 'regular' : 'bold', grund: t.vivid ? 'kräftig' : tinted ? 'getönt' : 'neutral', font: t.head.css, akzent: t.c.accent }
+}
+export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schrift === b.schrift && a.gewicht === b.gewicht && a.grund === b.grund
+const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}`
+// Zuletzt gebaute Decks, neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
+export function recentLooks(except?: string): { title: string; typ: LookTyp }[] {
+  const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
+  let dirs: string[]
+  try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models'].includes(d)) } catch { return [] }
+  const files = dirs.flatMap((d) => { const f = join(home, d, 'deck.json'); try { return [{ f, t: statSync(f).mtimeMs }] } catch { return [] } }).sort((a, b) => b.t - a.t)
+  const out: { title: string; typ: LookTyp }[] = []
+  for (const { f } of files) {
+    if (out.length >= 4) break
+    try {
+      const d = JSON.parse(readFileSync(f, 'utf8')) as Deck
+      if (!d.theme.brand && d.title !== except) out.push({ title: d.title, typ: lookTyp(d.theme) })
+    } catch {}
+  }
+  return out
+}
+// Hinweis, wenn ein Design im Typ einem der 3 neuesten Decks gleicht; '' sonst
+function repeats(typ: LookTyp, recent: { title: string; typ: LookTyp }[]): string {
+  const alike = recent.slice(0, 3).filter((r) => sameLook(r.typ, typ)).map((r) => `„${r.title}“`)
+  return alike.length ? `gleicht im Typ deinen letzten Decks ${alike.join(', ')} (${typText(typ)}). Ändere mindestens eins: Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt) oder Titelgewicht – außer der Nutzer will eine Serie (Design-Guide §6 „Abwechslung“).` : ''
+}
 const themeSpec = z.object({
   name: z.string().min(2).max(40).describe('Name, z. B. "Nordlicht Finance"'),
-  bg: hexColor.describe('Hintergrund: fast weiß oder fast schwarz, höchstens leicht in Richtung der Akzentfarbe getönt (die Engine dämpft alles andere)'),
+  bg: hexColor.describe('Grund: fast Weiß, getöntes Papier (Salbei, Sand, Eisblau, Rosé) oder tiefer Dunkelton (Nachtblau, Tannengrün, Aubergine, Graphit); die Engine begrenzt Helligkeit und Sättigung. Kräftige Farbgründe nur mit vivid (Stil mutig).'),
   text: hexColor.optional().describe('Textfarbe; weglassen = automatisch passend'),
   accent: hexColor.describe('Hauptakzent mit Charakter (Zahlen, Hervorhebungen, Akzentflächen); wird bei Bedarf für Kontrast nachgedunkelt/aufgehellt'),
   accent2: hexColor.optional().describe('Zweitfarbe für Vergleichsserien und Duotone; weglassen = neutrales Grau (empfohlen: eine Akzentfarbe reicht)'),
@@ -277,9 +307,10 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         format: format.optional().describe('Folienformat; weglassen = 16:9-Präsentation'),
       }),
       async run(i) {
-        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style === 'mutig' || (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig) ? 'mutig' : undefined, slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
+        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
-        return { text: `${aiTells(deck.theme.custom ?? {})}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'sachlich'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
+        return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -316,14 +347,14 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.transition) deck.transition = i.transition
         if (i.mode) deck.mode = i.mode
         if (i.motion) deck.motion = i.motion === 'standard' ? undefined : i.motion
-        if (i.style) deck.style = i.style === 'mutig' ? 'mutig' : undefined
+        if (i.style) deck.style = i.style
         if (i.shuffle !== undefined) deck.theme.shuffle = i.shuffle || undefined
         if (i.fonts !== undefined) deck.theme.fonts = i.fonts ?? undefined
         if (i.format) Object.assign(deck, resizeDeck(deck, i.format))
         ctx.setDeck(deck)
         const look = i.theme || i.customTheme || i.brand !== undefined || i.shuffle !== undefined || i.fonts !== undefined // Theme geändert → neue Vorschau
         return {
-          text: `${i.customTheme ? aiTells(deck.theme.custom ?? {}) : ''}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'sachlich' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
+          text: `${i.customTheme ? aiTells(deck.theme.custom ?? {}) : ''}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
           images: look ? await themePreview(ctx, deck) : undefined,
         }
       },
@@ -489,11 +520,15 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
             const same = Object.keys(traits[a]).filter((k) => traits[a][k as keyof (typeof traits)[0]] === traits[b][k as keyof (typeof traits)[0]])
             if (same.length > 3) throw new Error(`Look ${a + 1} und ${b + 1} unterscheiden sich kaum, gleich sind: ${same.join(', ')}. Ändere bei einem mindestens ${same.length - 3} davon, damit der Nutzer echte Alternativen sieht.`)
           }
+        // Guide §6 „Abwechslung“: mindestens ein Look hebt sich im Typ von den letzten Decks ab (mit Brand-Kit gilt dessen Look)
+        const recent = defaultBrand() ? [] : recentLooks()
+        const reps = refs.map((r) => repeats(lookTyp(r), recent))
+        if (reps.every(Boolean)) throw new Error(`Alle Looks gleichen im Typ deinen letzten Decks (${recent.slice(0, 3).map((r) => `„${r.title}“: ${typText(r.typ)}`).join('; ')}). Baue mindestens einen Look in Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt) oder Titelgewicht anders (Design-Guide §6 „Abwechslung“).`)
         const images = (await Promise.all(refs.map((theme) => themePreview(ctx, { title, theme, transition: 'fade', mode: 'click', slides: [] })))).map((b) => b[0])
         if (images.some((b) => !b)) throw new Error('Vorschau fehlgeschlagen, bitte einzeln mit create_deck prüfen.')
         const label = (l: (typeof i.looks)[number]) => (typeof l === 'string' ? CATALOG_THEMES.find((t) => t.id === l)!.name : l.name)
         const names = i.looks.map((l, k) => `${k + 1}. ${label(l)}`).join('\n')
-        const hints = i.looks.map((l) => (typeof l === 'string' ? '' : aiTells(l))).join('')
+        const hints = i.looks.map((l) => (typeof l === 'string' ? '' : aiTells(l))).join('') + reps.map((x, k) => x && `Hinweis: Look ${k + 1} ${x}\n`).join('')
         if (!ctx.choice) return { text: `${hints}Looks (Bilder in dieser Reihenfolge):\n${names}\nZeig dem Nutzer die Namen und frag, welchen er möchte.`, images }
         ctx.choice({ question: 'Welcher Look soll es werden?', options: i.looks.map((l, k) => ({ label: label(l), image: `data:${mimeOf(images[k])};base64,${images[k].toString('base64')}` })) })
         return { text: `${hints}Looks zur Auswahl angezeigt:\n${names}\nBeende jetzt den Turn ohne weiteren Text; die Wahl kommt als nächste Nachricht (Name des Looks).`, images }
