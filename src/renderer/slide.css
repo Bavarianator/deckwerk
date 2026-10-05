@@ -12,6 +12,7 @@
 .slide [contenteditable]:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 3px; }
 .slide [contenteditable]:focus { box-shadow: 0 0 0 2px var(--accent); border-radius: 3px; }
 .hide-exportables .slide [data-pptx] { visibility: hidden !important; }
+.hide-exportables .slide [data-pptx]::before { visibility: visible; } /* Linien als ::before an Boxen gehören ins Hintergrundbild */
 
 /* ---------- decor ---------- */
 .decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -294,6 +295,44 @@
 .dw-fitting * { translate: none !important; scale: none !important; }
 /* Wort-für-Wort-Animation (PresentScreen): Wörter brauchen inline-block, damit translate greift */
 .dw-word { display: inline-block; }
+
+/* ---------- Bauteile: Theme-Hebel elements (Klasse el-* am .slide, gesetzt in Frame) ----------
+   solid = Karten, Flächen und Punkte wie oben. line (redaktionell): keine Flächen, 2px-Kopflinie in Textfarbe, Betonung mit
+   4px-Akzentlinie, kleine Nummern, Striche statt Punkte. plain (Keynote/Swiss): nur Schriftgröße und Abstand, Betonung über
+   die Akzentfarbe. Linien als ::before: border-top würde in der PPTX zum Rahmen ringsum. */
+:is(.el-line, .el-plain) :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card, .agenda-row.active) { background: transparent; border-radius: 0; }
+:is(.el-line, .el-plain) :is(.col-card.hl, .kpi-card.hl) { --text: inherit; --muted: inherit; --good: inherit; --bad: inherit; } /* Text wie auf der Folie statt onAccent */
+:is(.el-line, .el-plain) .kpis:has(> .hl) .kpi-value { color: var(--text); }
+:is(.el-line, .el-plain) :is(.col-card.hl > .r-h2, .kpi-card.hl .kpi-value, .agenda-row.active .agenda-text > .r-h2) { color: var(--accent); }
+:is(.el-line, .el-plain) .bullet-icon:has(> .bullet-num) { width: auto; height: auto; justify-content: flex-start; }
+:is(.el-line, .el-plain) .chart-ann { border: 0; border-radius: 0; padding-inline: 0; }
+/* line */
+.el-line :is(.bullet-card, .kpi-card.card, .take-card) { padding: 28px 0 4px; }
+.el-line .cols .card { padding: 28px 0 4px; }
+.el-line .cols.few .card { padding-top: 36px; }
+.el-line .take-card { justify-content: flex-start; }
+.el-line :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card, .agenda-row.active) { position: relative; }
+.el-line :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card)::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--text); }
+.el-line :is(.col-card.hl, .kpi-card.hl, .take-card)::before { height: 4px; background: var(--accent); }
+.el-line .agenda-row.active::before { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; background: var(--accent); }
+.el-line .proc-card::before { background: var(--text); }
+.el-line :is(.agenda-num, .proc-num) { font-size: var(--fs-label); line-height: 1.32; }
+.el-line .agenda.few .agenda-row { align-items: baseline; }
+.el-line :is(.bullet-dot, .pdot) { width: 14px; height: 2px; border-radius: 0; position: relative; top: 4px; } /* Strich mittig zur ersten Zeile wie der 10-px-Punkt */
+.el-line .pdot { top: 3px; } /* 8-px-Punkt */
+.el-line .col-card.hl .pdot { background: var(--accent); }
+.el-line .tl-axis { top: 7px; height: 2px; }
+.el-line .tl-dot { width: 24px; height: 4px; border: 0; border-radius: 0; margin: 6px 0 28px; } /* Mitte auf der Achse, Text beginnt wie beim Punkt */
+/* plain */
+.el-plain :is(.bullet-card, .kpi-card.card, .take-card) { padding: 0 0 4px; }
+.el-plain .cols .col-card { padding: 0 0 4px; }
+.el-plain :is(.col-rule, .proc-card)::before { content: none; }
+.el-plain .proc-card { padding-top: 0; }
+.el-plain :is(.bullet-dot, .pdot, .tl-axis, .tl-dot, .kpi-rule, .dash) { display: none; }
+.el-plain .agenda-row { border-bottom-color: transparent; }
+.el-plain :is(.agenda-num, .proc-num, .bullet-num) { font-weight: 400; color: var(--muted); }
+.el-plain .agenda:not(.few) .agenda-num { font-size: calc(var(--fs-h2) * 1.6); line-height: 1; } /* an der Textstufe: Autofit verkleinert bei langen Listen die Zeilen, nicht den Folientitel */
+.el-plain .bullet-num { font-size: var(--fs-h1); line-height: 1; }
 
 /* ---------- Formate: Hochformat, Quadrat (.fmt-tall) und schmale Seiten (.fmt-narrow, bis 800 px) ---------- */
 /* Bild oben statt an der Seite: sonst bleiben im Hochformat nur wenige Pixel für den Text */

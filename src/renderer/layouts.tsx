@@ -30,12 +30,13 @@ export function Header({ c, maxLines = 2 }: { c: { eyebrow?: string; title: stri
 }
 
 function Points({ items, base, build }: { items?: string[]; base: string; build?: number }) {
+  const round = useSlide().theme.elements === 'solid' // line zeichnet einen Strich: in der PPTX Rechteck statt flacher Ellipse
   if (!items?.length) return null
   return (
     <div className="points">
       {items.map((p, j) => (
         <div className="point" key={j}>
-          <Box slot={`_pd.${base}.${j}`} className="pdot" ellipse build={build} />
+          <Box slot={`_pd.${base}.${j}`} className="pdot" ellipse={round} build={build} />
           <T role="body" slot={`${base}.${j}`} build={build}>{p}</T>
         </div>
       ))}
@@ -201,7 +202,7 @@ function TwoColumn({ c, v }: Props<'two-column'>) {
         {(['left', 'right'] as const).map((k, i) => {
           const col = c[k]
           return (
-            <Box key={k} slot={`_card.${k}`} className={`${v === 'rule' ? 'col-rule' : 'card'} col-card ${v === 'highlight-right' && k === 'right' ? 'hl' : ''}`} build={i} fit>
+            <Box key={k} slot={`_card.${k}`} className={`${!v || v === 'rule' ? 'col-rule' : 'card'} col-card ${v === 'highlight-right' && k === 'right' ? 'hl' : ''}`} build={i} fit>
               <T role="h2" slot={`${k}.heading`} build={i}>{col.heading}</T>
               {col.text && <T role="body" slot={`${k}.text`} build={i}>{col.text}</T>}
               <Points items={col.points} base={`${k}.points`} build={i} />
@@ -299,6 +300,7 @@ function ChartSlide({ c }: Props<'chart'>) {
 // Autofit verkleinert bei Bedarf wie immer.
 function Timeline({ c }: Props<'timeline'>) {
   const roomy = c.items.length <= 4
+  const round = useSlide().theme.elements === 'solid' // wie Points
   return (
     <Frame>
       <Header c={c} />
@@ -306,7 +308,7 @@ function Timeline({ c }: Props<'timeline'>) {
         <Box slot="_axis" className="tl-axis" />
         {c.items.map((it, i) => (
           <div className="tl-item" key={i}>
-            <Box slot={`_dot.${i}`} className="tl-dot" ellipse build={i} />
+            <Box slot={`_dot.${i}`} className="tl-dot" ellipse={round} build={i} />
             <Box slot={`_card.${i}`} className="card tl-card" build={i} fit>
               <T role={roomy ? 'h2' : 'h3'} slot={`items.${i}.date`} build={i} className="tl-date">{it.date}</T>
               <T role={roomy ? 'h2' : 'h3'} slot={`items.${i}.title`} build={i}>{it.title}</T>
