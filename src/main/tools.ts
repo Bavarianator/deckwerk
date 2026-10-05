@@ -308,7 +308,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         format: format.optional().describe('Folienformat; weglassen = 16:9-Präsentation'),
       }),
       async run(i) {
-        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
+        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' } }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
         return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
@@ -338,7 +338,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.theme) { deck.theme.id = i.theme; delete deck.theme.custom }
         if (i.customTheme === null) { delete deck.theme.custom; if (deck.theme.id === 'custom') deck.theme.id = THEME_IDS[0] }
         else if (i.customTheme) {
-          const merged = { ...deck.theme.custom, ...i.customTheme }
+          // Neues eigenes Design (keins vorher oder neuer Name): Bauteile line; Korrekturen an einem alten Design behalten seine Bauteile
+          const fresh = !deck.theme.custom || (!!i.customTheme.name && i.customTheme.name !== deck.theme.custom.name)
+          const merged = { ...deck.theme.custom, ...(fresh && { elements: 'line' as const }), ...i.customTheme }
           const r = themeSpec.safeParse(merged)
           if (!r.success) throw new Error(`customTheme unvollständig: ${z.prettifyError(r.error)}\nBeim ersten Setzen alle Pflichtfelder angeben.`)
           deck.theme.custom = r.data
@@ -511,7 +513,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       inputSchema: z.object({ looks: z.array(z.union([z.enum(CATALOG_THEMES.map((t) => t.id) as [string, ...string[]]), themeSpec])).min(2).max(3).describe('Eigene Entwürfe für dieses Thema (Design-Guide §6): einer hell und sachlich, einer dunkel oder plakativ, ein dritter als Überraschung (unerwartet, aber aus dem Thema begründet); sie unterscheiden sich in Struktur (Serif/Sans, titleSize, rule, sectionTone, labelFont), nicht nur in der Farbe. Ein Katalog-Theme ist erlaubt, im Stil mutig auch plakat/magazin/neomono/pastell.') }),
       async run(i) {
         const title = ctx.getDeck()?.title ?? 'Vorschau'
-        const refs = i.looks.map((l) => (typeof l === 'string' ? { id: l } : { id: 'custom', custom: l }))
+        const refs = i.looks.map((l) => (typeof l === 'string' ? { id: l } : { id: 'custom', custom: { ...l, elements: l.elements ?? 'line' } }))
         const tell = i.looks.flatMap((l) => (typeof l === 'string' ? [] : [l.headFont, l.bodyFont])).find((f) => AI_FONTS.includes(f))
         if (tell) throw new Error(`${tell} ist eine Standardschrift generierter Designs und gehört nicht in eigene Vorschläge. Andere Schrift wählen (Design-Guide §6); hat der Nutzer sie ausdrücklich gewünscht, direkt create_deck mit diesem customTheme.`)
         // Guide §6: Entwürfe unterscheiden sich in der Struktur, sonst sieht der Nutzer nur Umfärbungen desselben Looks

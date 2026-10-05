@@ -170,7 +170,7 @@ assert.equal(events, 12, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   const home = process.env.DECKWERK_HOME!
   const put = (dir: string, json: string) => { mkdirSync(join(home, dir)); writeFileSync(join(home, dir, 'deck.json'), json) }
   const json = (title: string, custom: object) => JSON.stringify({ title, theme: { id: 'custom', custom }, transition: 'fade', mode: 'click', slides: [] })
-  const serif = (title: string) => json(title, look(title, '#FFFFFF', { titleWeight: 'regular' }))
+  const serif = (title: string) => json(title, look(title, '#FFFFFF', { titleWeight: 'regular', elements: 'line' }))
   put('alt-1', serif('Alt 1')); put('alt-2', serif('Alt 2')); put('kaputt', '{'); put('versions', serif('Alt 3'))
   assert.deepEqual(recentLooks().map((r) => r.title).sort(), ['Alt 1', 'Alt 2'])
   assert.deepEqual(recentLooks('Alt 1').map((r) => r.title), ['Alt 2'])
@@ -183,8 +183,17 @@ assert.equal(events, 12, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   assert.doesNotMatch((await make({ title: 'Frei', brand: null, customTheme: look('Papier', '#FFFFFF', { headFont: 'Lora', titleWeight: 'regular', elements: 'plain' }) })).text, /gleicht im Typ/)
   assert.equal(d!.theme.custom?.elements, 'plain')
   assert.notEqual(lookTyp({ id: 'custom', custom: look('A', '#FFFFFF', { elements: 'line' }) as never }).bauteile, lookTyp({ id: 'custom', custom: look('A', '#FFFFFF', { elements: 'plain' }) as never }).bauteile)
+  // Designs von vor dem Hebel behalten ihre Kästen, neue ohne Angabe bekommen line
+  assert.equal(lookTyp({ id: 'custom', custom: look('Alt', '#FFFFFF') as never }).bauteile, 'solid')
+  await make({ title: 'Neu', brand: null, customTheme: look('Neu', '#FFFFFF') })
+  assert.equal(d!.theme.custom?.elements, 'line')
+  // update_deck an einem alten Deck: Korrektur behält die Kästen, ein neues Design (neuer Name) bekommt line
+  const upd = (customTheme: object) => T4.update_deck.run(T4.update_deck.inputSchema.parse({ customTheme }))
+  d = { ...d!, theme: { id: 'custom', custom: look('Alt', '#FFFFFF') as never } }
+  await upd({ accent: '#1F5E7A' }); assert.equal(d!.theme.custom?.elements, undefined)
+  await upd(look('Ganz neu', '#F2ECE0')); assert.equal(d!.theme.custom?.elements, 'line')
   assert.doesNotMatch((await make({ title: 'Nacht', brand: null, customTheme: look('Nacht', '#12261E', { headFont: 'Inter' }) })).text, /gleicht im Typ/)
-  put('nacht', json('Nacht', look('Nacht', '#12261E', { headFont: 'Inter' })))
+  put('nacht', json('Nacht', look('Nacht', '#12261E', { headFont: 'Inter', elements: 'line' })))
   await fails(T4.propose_looks.run(T4.propose_looks.inputSchema.parse({ looks: [look('Papier', '#FFFFFF', { titleWeight: 'regular', titleSize: 'large', rule: 'over' }), look('Nachtblau', '#12261E', { headFont: 'Inter' })] })), /Alle Looks gleichen im Typ/)
   await T4.update_deck.run(T4.update_deck.inputSchema.parse({ style: 'mutig' })); assert.equal(d!.style, 'mutig')
 }

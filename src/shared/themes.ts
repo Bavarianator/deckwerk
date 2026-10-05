@@ -28,7 +28,7 @@ export interface Theme {
   mutig?: boolean // Katalog-Theme nur für den Deck-Stil mutig
   mono?: FontRef // Schrift für Eyebrow und Fußzeile (Mono-Labels)
   subBody?: boolean // Zwischentitel (h2/h3) in der Textschrift fett: Plakat-Schriften sind dafür zu schwer und breit
-  elements?: 'line' | 'plain' | 'solid' // Bauteile (Klasse el-* am .slide); ohne = line
+  elements?: 'line' | 'plain' | 'solid' // Bauteile (Klasse el-* am .slide); themeFromSpec setzt es immer (eigene Designs ohne Angabe: solid wie vor dem Hebel)
   logo?: string
 }
 
@@ -235,7 +235,7 @@ export function themeFromSpec(s: ThemeSpec): Theme {
     sectionTone: s.sectionTone,
     vivid: s.vivid,
     mono: s.labelFont === 'mono' ? FONTS['IBM Plex Mono'] : undefined,
-    elements: s.elements,
+    elements: s.elements ?? 'solid', // Designs von vor dem Hebel behalten ihre Kästen; neue setzt tools.ts auf line
   }
 }
 
