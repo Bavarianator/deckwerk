@@ -10,6 +10,7 @@ import { buildTools, imageSettings, lookTyp, recentLooks, webpSize, type ToolDef
 import type { Deck } from '../src/shared/deck'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
+import { typeset } from '../src/shared/typo'
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 const engine: Engine = {
@@ -46,6 +47,26 @@ assert.deepEqual(webp('524946463610000057454250565038202a100000f010019d012ad2043
 assert.deepEqual(webp('52494646a6030000574542505650384c9a0300002fe8035300063169b2fef5c5'), { width: 1001, height: 333 })
 assert.deepEqual(webp('524946463c0a000057454250565038580a000000100000000803002a0200414c'), { width: 777, height: 555 })
 assert.equal(webp('ffd8ffe000104a46494600010100000100010000ffdb0043000302020302020303'), null)
+// Feinsatz: Anführungszeichen, Striche, geschützte Leerzeichen; URLs bleiben, Wiederholung ändert nichts
+{
+  const NB = '\u00a0'
+  const eq = (a: string, b: string) => { assert.equal(typeset(a), b); assert.equal(typeset(b), b, 'idempotent') }
+  eq('Umsatz +8% seit "Q1"', `Umsatz +8${NB}% seit „Q1“`)
+  eq("Wie geht's", 'Wie geht’s')
+  eq('Alpha - Beta', 'Alpha – Beta')
+  eq('E-Mail und Video-Sprechstunde', 'E-Mail und Video-Sprechstunde'); eq('2024-05-01', '2024-05-01')
+  eq('5 Mio. € und 3 km, 7 h', `5${NB}Mio.${NB}€ und 3${NB}km, 7${NB}h`)
+  eq('z. B. Nr. 5', `z.${NB}B. Nr.${NB}5`)
+  eq('siehe https://a.de/x-y?q=1-2 oder a-b@c.de', 'siehe https://a.de/x-y?q=1-2 oder a-b@c.de'); eq('/home/x/a-1.png', '/home/x/a-1.png')
+  eq('left', 'left')
+  // konservativ: Kennungen, Formeln, Minus, Zoll, URLs mit Anführungszeichen bleiben
+  for (const x of ['SKU 12-345', 'Boeing 737-800', 'ISO 9001-2015', 'IBAN DE89 3704-0044', 'Stand 2024-05', 'Tel. 030 1234-0', 'Kurs 2024-26', 'x - 3', '5 - 3 = 2', 'a - b', `-31${NB}% und −5${NB}%`, '12" Monitor', 'Quote "offen', 'https://a.de/?q="1" ok'])
+    eq(x, x)
+  eq('von 8-10 Mio. € in 2-3 Jahren, 1,5-2 %', `von 8–10${NB}Mio.${NB}€ in 2–3 Jahren, 1,5–2${NB}%`)
+  eq('Wachstum 2024-2026', 'Wachstum 2024–2026')
+  eq('Ergebnis (ok) - gut und "Ja" - nein', 'Ergebnis (ok) – gut und „Ja“ – nein')
+  eq('Er sagte "Hallo" (und "tschüss") bei 12" Zoll', 'Er sagte „Hallo“ (und „tschüss“) bei 12" Zoll')
+}
 // Auto-Modellwahl: neues Deck und Umbauten gründlich, gezielte Änderungen schnell
 assert.equal(autoPick('Ein Pitch für unser Café', false).model, 'claude-opus-5-5')
 assert.equal(autoPick('Überarbeite alle Folien im Ton', true).model, 'claude-opus-5-5')
@@ -78,6 +99,9 @@ const r = await run('add_slides', { slides: [{ layout: 'cover', content: { title
 assert.match(r.text, /Folie 1 \(s[0-9a-f]{4}, cover\): OK · Autofit head 0\/body 1/)
 const [c, b] = deck!.slides
 assert.notEqual(c.id, b.id)
+await run('add_slides', { slides: [{ layout: 'cover', content: { title: 'Umsatz +8% seit "Q1"' }, notes: 'ca. 5 Mio. €' }] })
+assert.equal(deck!.slides.at(-1)!.content.title, 'Umsatz +8\u00a0% seit „Q1“'); assert.equal(deck!.slides.at(-1)!.notes, 'ca. 5\u00a0Mio.\u00a0€')
+deck!.slides.pop()
 await run('add_slides', { slides: [{ layout: 'section', content: { title: 'Kapitel eins' } }], at: 1 })
 assert.equal(deck!.slides[1].layout, 'section')
 const u = await run('update_slide', { id: b.id, content: { items: [{ text: '1' }, { text: '2' }, { text: '3' }, { text: '4' }, { text: '5' }] } })
@@ -163,7 +187,7 @@ assert.match((await run('export_deck', { format: 'pptx' })).text, /deck\.pptx/)
 assert.match((await run('export_deck', { format: 'zip' })).text, /deck\.zip/)
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
-assert.equal(events, 12, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 3 aus dem Klischee-Test
+assert.equal(events, 13, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 3 aus dem Klischee-Test + 1 Feinsatz-Test
 
 // Abwechslung: neues Deck im selben Typ wie die letzten Decks → Hinweis (eigenes Tool-Set, damit events stimmt)
 {

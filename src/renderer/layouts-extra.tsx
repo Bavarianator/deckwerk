@@ -388,7 +388,7 @@ function Pricing({ c }: Props<'pricing'>) {
 }
 
 // Zahl aus „12.400“, „38 %“, „1,2 Mio“; NaN, wenn keine Zahl drinsteht
-const num = (s: string) => parseFloat(s.replace(/\.(?=\d{3})/g, '').replace(',', '.').replace(/[^\d.-]/g, ''))
+const num = (s: string) => parseFloat(s.split('–')[0].replace(/\.(?=\d{3})/g, '').replace(',', '.').replace(/[^\d.-]/g, ''))
 
 function Funnel({ c }: Props<'funnel'>) {
   const n = c.stages.length

@@ -14,6 +14,7 @@ import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
 import type { Issue } from '../shared/lint'
+import { typeset } from '../shared/typo'
 import type { Engine } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 
@@ -196,6 +197,14 @@ export function newSlideId(deck: Deck): string {
   }
 }
 
+// Feinsatz rekursiv über alle Strings; Quellen, Links und Symbolnamen bleiben unberührt
+const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus'])
+const typesetDeep = (v: unknown, key?: string): unknown =>
+  typeof v === 'string' ? (key && NO_TYPESET.has(key) ? v : typeset(v))
+    : Array.isArray(v) ? v.map((x) => typesetDeep(x, key))
+    : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typesetDeep(x, k)]))
+    : v
+
 // Validiert content gegen das Layout-Schema. Wirft mit konkretem Hinweis.
 // Unbekannte Felder (z. B. „kicker“ statt „eyebrow“) würde zod still verwerfen; der Inhalt fehlte dann ohne Meldung.
 export function validateContent(layout: string, content: unknown, where: string): Record<string, unknown> {
@@ -204,7 +213,7 @@ export function validateContent(layout: string, content: unknown, where: string)
   const r = def.schema.safeParse(content)
   const json = z.toJSONSchema(def.schema) as JsonSchema
   const stray = [...new Set(strayKeys(json, content, ''))]
-  if (r.success && !stray.length) return r.data as Record<string, unknown>
+  if (r.success && !stray.length) return typesetDeep(r.data) as Record<string, unknown>
   const { $schema: _, ...schema } = json as Record<string, unknown>
   throw new Error([
     `${where} (${layout}): Inhalt ungültig.`,
@@ -308,7 +317,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         format: format.optional().describe('Folienformat; weglassen = 16:9-Präsentation'),
       }),
       async run(i) {
-        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' } }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
+        const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' } }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
         return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
@@ -333,7 +342,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       }),
       async run(i) {
         const deck = needDeck(ctx)
-        if (i.title) deck.title = i.title
+        if (i.title) deck.title = typeset(i.title)
         if (i.brief) deck.brief = { ...deck.brief, ...i.brief }
         if (i.theme) { deck.theme.id = i.theme; delete deck.theme.custom }
         if (i.customTheme === null) { delete deck.theme.custom; if (deck.theme.id === 'custom') deck.theme.id = THEME_IDS[0] }
@@ -372,7 +381,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run(i) {
         const deck = needDeck(ctx)
         const fresh: Slide[] = i.slides.map((s, k) => ({
-          id: '', layout: s.layout, variant: s.variant, build: s.build, transition: s.transition, tone: s.tone, decor: s.decor, frame: (checkFrame(s.layout, s.frame, `slides[${k}]`), s.frame), notes: s.notes, items: withIds(s.items as Item[]), bg: s.bg,
+          id: '', layout: s.layout, variant: s.variant, build: s.build, transition: s.transition, tone: s.tone, decor: s.decor, frame: (checkFrame(s.layout, s.frame, `slides[${k}]`), s.frame), notes: s.notes && typeset(s.notes), items: withIds(s.items as Item[]), bg: s.bg,
           content: validateContent(s.layout, s.content, `slides[${k}]`),
         }))
         for (const s of fresh) { s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
@@ -415,7 +424,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.frame !== undefined) s.frame = i.frame ?? undefined
         if (i.build !== undefined) s.build = i.build ?? undefined
         if (i.transition !== undefined) s.transition = i.transition ?? undefined
-        if (i.notes !== undefined) s.notes = i.notes ?? undefined
+        if (i.notes !== undefined) s.notes = i.notes ? typeset(i.notes) : undefined
         if (i.items !== undefined) s.items = withIds((i.items ?? undefined) as Item[] | undefined)
         if (i.bg !== undefined) s.bg = i.bg ?? undefined
         ctx.setDeck(deck)
