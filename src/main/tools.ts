@@ -130,7 +130,7 @@ export function recentLooks(except?: string): { title: string; typ: LookTyp }[] 
     if (out.length >= 4) break
     try {
       const d = JSON.parse(readFileSync(f, 'utf8')) as Deck
-      if (!d.theme.brand && d.title !== except) out.push({ title: d.title, typ: lookTyp(d.theme) })
+      if (!d.theme.brand && d.title !== except) out.push({ title: String(d.title).replace(/\s+/g, ' ').slice(0, 80), typ: lookTyp(d.theme) })
     } catch {}
   }
   return out
@@ -155,7 +155,7 @@ const themeSpec = z.object({
   titleWeight: z.enum(['regular', 'bold']).optional().describe('regular wirkt edel und redaktionell (am besten mit Serif und titleSize large), bold sachlich und kräftig'),
   rule: z.enum(['none', 'over', 'under']).optional().describe('feine Linie: over = Kopflinie über dem Titel (Swiss, Redaktion), under = Trennlinie unter dem Kopf (Beratung), none = pur'),
   sectionTone: z.enum(TONES).optional().describe('Kapiteltrenner: accent = Akzentfläche (Standard), invert = Hell/Dunkel getauscht, normal = nur große Typo auf dem Grund'),
-  vivid: z.boolean().optional().describe('nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf fast Weiß/Schwarz zu dämpfen; Textfarbe kommt automatisch mit Kontrast'),
+  vivid: z.boolean().optional().describe('nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf Papier- bzw. Dunkeltöne zu dämpfen; Textfarbe kommt automatisch mit Kontrast'),
   labelFont: z.enum(['body', 'mono']).optional().describe('mono = Eyebrow und Fußzeile in IBM Plex Mono (Magazin, Tech); body = Textschrift (Standard)'),
 })
 

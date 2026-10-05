@@ -49,7 +49,7 @@ export interface ThemeSpec {
   titleWeight?: 'regular' | 'bold'
   rule?: 'none' | 'over' | 'under' // feine Linie über bzw. unter dem Folienkopf
   sectionTone?: Tone // Kapiteltrenner: accent (Standard), invert oder normal
-  vivid?: boolean // kräftiger Farbgrund statt fast Weiß/Schwarz (Stil mutig); sonst dämpft themeFromSpec den Grund
+  vivid?: boolean // kräftiger Farbgrund (Stil mutig); sonst dämpft themeFromSpec den Grund auf Papier- bzw. Dunkeltöne
   labelFont?: 'body' | 'mono' // mono = Eyebrow und Fußzeile in IBM Plex Mono
 }
 
