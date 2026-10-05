@@ -340,5 +340,5 @@ const MUTIG_THEMES: Theme[] = ([
   return { ...t, id, mutig: true, subBody: id === 'plakat', head: id === 'pastell' ? { ...t.head, tracking: -0.01 } : t.head } // Plus Jakarta läuft von Haus aus eng
 })
 
-export const THEMES: Theme[] = [...CORE_THEMES, ...MUTIG_THEMES, ...[...BASE_THEMES, ...EXTRA_THEMES].map((t) => ({ ...t, legacy: true, elements: t.elements ?? 'solid' as const }))]
+export const THEMES: Theme[] = [...CORE_THEMES, ...MUTIG_THEMES, ...[...BASE_THEMES, ...EXTRA_THEMES].map((t) => ({ ...t, legacy: true, elements: 'solid' as const }))]
 export const CATALOG_THEMES = THEMES.filter((t) => !t.legacy)

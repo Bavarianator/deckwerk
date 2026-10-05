@@ -115,7 +115,7 @@ export interface LookTyp { hell: 'hell' | 'dunkel'; schrift: 'Serif' | 'Sans'; g
 export function lookTyp(ref: ThemeRef): LookTyp {
   const t = resolveTheme(ref), bg = oklch(t.c.bg), l = bg?.l ?? 1, c = bg?.c ?? 0
   const tinted = t.dark ? c > 0.02 : l < 0.955 && c > 0.006
-  return { hell: t.dark ? 'dunkel' : 'hell', schrift: t.head.serif ? 'Serif' : 'Sans', gewicht: t.head.weight < 600 ? 'regular' : 'bold', grund: t.vivid ? 'kräftig' : tinted ? 'getönt' : 'neutral', bauteile: t.elements ?? 'line', font: t.head.css, akzent: t.c.accent }
+  return { hell: t.dark ? 'dunkel' : 'hell', schrift: t.head.serif ? 'Serif' : 'Sans', gewicht: t.head.weight < 600 && !(t.head.single && !t.head.serif) ? 'regular' : 'bold', grund: t.vivid ? 'kräftig' : tinted ? 'getönt' : 'neutral', bauteile: t.elements ?? 'line', font: t.head.css, akzent: t.c.accent }
 }
 export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schrift === b.schrift && a.gewicht === b.gewicht && a.grund === b.grund && a.bauteile === b.bauteile
 const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}, Bauteile ${{ line: 'Linie', plain: 'frei', solid: 'Fläche' }[t.bauteile]}`
@@ -126,7 +126,7 @@ export function recentLooks(except?: string): { title: string; typ: LookTyp }[] 
   try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models'].includes(d)) } catch { return [] }
   const files = dirs.flatMap((d) => { const f = join(home, d, 'deck.json'); try { return [{ f, t: statSync(f).mtimeMs }] } catch { return [] } }).sort((a, b) => b.t - a.t)
   const out: { title: string; typ: LookTyp }[] = []
-  for (const { f } of files) {
+  for (const { f } of files.slice(0, 12)) { // begrenzt: mit Brand-Kit zählt kein Deck, sonst würde jede deck.json gelesen
     if (out.length >= 4) break
     try {
       const d = JSON.parse(readFileSync(f, 'utf8')) as Deck
@@ -526,7 +526,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         // Guide §6 „Abwechslung“: mindestens ein Look hebt sich im Typ von den letzten Decks ab (mit Brand-Kit gilt dessen Look)
         const recent = defaultBrand() ? [] : recentLooks()
         const reps = refs.map((r) => repeats(lookTyp(r), recent))
-        if (reps.every(Boolean)) throw new Error(`Alle Looks gleichen im Typ deinen letzten Decks (${recent.slice(0, 3).map((r) => `„${r.title}“: ${typText(r.typ)}`).join('; ')}). Baue mindestens einen Look in Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt), Titelgewicht oder Bauteile (line/plain) anders (Design-Guide §6 „Abwechslung“).`)
+        if (reps.every(Boolean)) throw new Error(`Alle Looks gleichen im Typ deinen letzten Decks (${recent.slice(0, 3).map((r) => `„${r.title}“: ${typText(r.typ)}`).join('; ')}). Baue mindestens einen Look in Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt), Titelgewicht oder Bauteile (line/plain) anders – außer der Nutzer will eine Serie, dann create_deck direkt (Design-Guide §6 „Abwechslung“).`)
         const images = (await Promise.all(refs.map((theme) => themePreview(ctx, { title, theme, transition: 'fade', mode: 'click', slides: [] })))).map((b) => b[0])
         if (images.some((b) => !b)) throw new Error('Vorschau fehlgeschlagen, bitte einzeln mit create_deck prüfen.')
         const label = (l: (typeof i.looks)[number]) => (typeof l === 'string' ? CATALOG_THEMES.find((t) => t.id === l)!.name : l.name)
