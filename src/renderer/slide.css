@@ -188,6 +188,8 @@
 .kpi-value { color: var(--accent); }
 .kpis.kpi-row .kpi-value { color: var(--text); }
 .kpis.kpi-row .kpi-plain.big .kpi-value { color: var(--accent); }
+/* Einheit einer Kennzahl (big-number, kpi-grid): klein auf derselben Grundlinie, ohne die enge Laufweite der Zahl */
+.t .unit { font-size: 0.45em; letter-spacing: 0; }
 .kpi-delta { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .kpi-delta .r-small { color: inherit; font-weight: 700; }
 .kpi-delta.positive { color: var(--good); }

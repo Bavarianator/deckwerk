@@ -169,7 +169,7 @@ function BigNumber({ c, v }: Props<'big-number'>) {
             {c.context && <T role="body" slot="context" className="muted" build={0}>{c.context}</T>}
           </div>
         </div>
-        <T role="hero" slot="value" className="bign-value" build={0}>{c.value}</T>
+        <T role="hero" slot="value" className="bign-value" build={0} unit>{c.value}</T>
       </div>
       {c.source && <T role="footer" slot="source" className="source">{c.source}</T>}
     </Frame>
@@ -180,7 +180,7 @@ function BigNumber({ c, v }: Props<'big-number'>) {
     )}>
       <div className={`bign ${img ? 'with-img' : ''}`} data-fit data-slot="_body">
         {c.eyebrow && <T role="eyebrow" slot="eyebrow">{c.eyebrow}</T>}
-        <T role="hero" slot="value" className="bign-value" build={0}>{c.value}</T>
+        <T role="hero" slot="value" className="bign-value" build={0} unit>{c.value}</T>
         <T role="h1" slot="label" maxLines={img ? 4 : 3} className="bign-label" build={0}>{c.label}</T>
         {c.context && <T role="body" slot="context" className="muted" build={0}>{c.context}</T>}
       </div>

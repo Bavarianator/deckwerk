@@ -9,6 +9,13 @@ import { EXTRA_COMPONENTS } from './layouts-extra'
 type C<K extends keyof typeof LAYOUTS> = z.infer<(typeof LAYOUTS)[K]['schema']>
 type Props<K extends keyof typeof LAYOUTS> = { c: C<K>; v?: string }
 
+// Kennzahl → [Einheit vorn, Zahl, Einheit hinten], z. B. „855 €“ → ['', '855', ' €'], „€ 12“ → ['€ ', '12', ''].
+// Nur mit Zahl vorn und ohne Ziffern in der Einheit („Q3“, „24/7“, „30–45“ bleiben ganz). Die Teile ergeben wieder den Text.
+export function splitUnit(v: string): [string, string, string] {
+  const m = v.match(/^([€$£¥]\s?)?((?:[+\-−–±~≈<>]\s?)?\d+(?:[.,\s]\d{3})*(?:[.,]\d+)?(?:\s?[–-]\s?\d+(?:[.,]\d+)?)?)([^\d*[]*)$/)
+  return m && (m[1] || m[3]) ? [m[1] ?? '', m[2], m[3]] : ['', v, '']
+}
+
 function Eyebrow({ text, center }: { text?: string; center?: boolean }) {
   if (!text) return null
   return (
@@ -248,7 +255,7 @@ function KpiGrid({ c, v }: Props<'kpi-grid'>) {
           return (
             <Box key={i} slot={`_card.${i}`} className={`${plain ? 'kpi-plain' : 'card'} kpi-card ${i === focus ? (plain ? 'big' : 'hl') : ''}`} build={i} fit>
               {plain && i > 0 && <Box slot={`_rule.${i}`} className="kpi-rule" build={i} />}
-              <T role="kpi" slot={`kpis.${i}.value`} build={i} className="kpi-value">{k.value}</T>
+              <T role="kpi" slot={`kpis.${i}.value`} build={i} className="kpi-value" unit>{k.value}</T>
               <T role={c.kpis.length <= 3 ? 'body' : 'label'} slot={`kpis.${i}.label`} build={i} className="kpi-label">{k.label}</T>
               {k.delta && (
                 <div className={`kpi-delta ${k.sentiment ?? 'neutral'}`}>

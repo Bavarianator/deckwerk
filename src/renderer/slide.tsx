@@ -8,7 +8,7 @@ import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, 
 import { FONTS, HEAD_ROLES, SCALE, duotoneOf, ensureContrast, mix, resolveTheme, withTone, type FontName, type Theme } from '../shared/themes'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { AIRY } from '../shared/lint'
-import { COMPONENTS } from './layouts'
+import { COMPONENTS, splitUnit } from './layouts'
 import { autofit } from './measure'
 import './slide.css'
 
@@ -38,14 +38,18 @@ export const splitParts = (nodes: ReactNode[], by: 'word' | 'letter'): ReactNode
       : by === 'letter' ? [...n].map((c, j) => <span key={`${i}.${j}`} className="dw-part">{c}</span>)
         : n.split(/(\s+)/).map((w, j) => (!w.trim() ? w : <span key={`${i}.${j}`} className="dw-part dw-word">{w}</span>)))
 
-export function T(p: { role: keyof typeof SCALE; slot: string; children: string; maxLines?: number; build?: number; className?: string; style?: CSSProperties }) {
+export function T(p: { role: keyof typeof SCALE; slot: string; children: string; maxLines?: number; build?: number; className?: string; style?: CSSProperties; unit?: boolean }) {
   const { editable, onEdit, words, theme } = useSlide()
   const head = HEAD_ROLES.includes(p.role) || p.role === 'h2' || p.role === 'h3'
   const mono = theme.mono && (p.role === 'eyebrow' || p.role === 'footer') // Mono-Labels: CSS über --font-label, PPTX über data-face
   const sub = theme.subBody && (p.role === 'h2' || p.role === 'h3') // Zwischentitel in der Textschrift (CSS: .sub-body)
   const canEdit = editable && !p.slot.startsWith('_')
+  // unit: Einheit einer Kennzahl klein (.unit); innerText ergibt beim Bearbeiten wieder den ganzen Text
+  const [pre, num, post] = p.unit ? splitUnit(p.children) : ['', '', '']
+  const nodes = pre || post ? [pre && <span key="pre" className="unit">{pre}</span>, num, post && <span key="post" className="unit">{post}</span>].filter(Boolean) : rich(p.children)
   return (
     <div
+      key={p.unit ? p.children : undefined} // Bearbeiten ersetzt die Spans durch Klartext: neuer Wert → neu aufbauen
       className={`t r-${p.role} ${p.className ?? ''}`}
       style={p.style}
       data-pptx="text"
@@ -60,7 +64,7 @@ export function T(p: { role: keyof typeof SCALE; slot: string; children: string;
       suppressContentEditableWarning
       onBlur={canEdit ? (e) => e.currentTarget.innerText.trim() !== plain(p.children) && onEdit?.(p.slot, e.currentTarget.innerText.trim()) : undefined}
     >
-      {words && p.build !== undefined ? splitParts(rich(p.children), 'word') : rich(p.children)}
+      {words && p.build !== undefined ? splitParts(nodes, 'word') : nodes}
     </div>
   )
 }

@@ -107,7 +107,9 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
       const extra = b.w * WRAP_SLACK
       const x = el.align === 'center' ? b.x - extra / 2 : el.align === 'right' ? b.x - extra : b.x
       slide.addText(
-        el.runs.map((r) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined } })),
+        el.runs.map((r) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined,
+          // eigene Größe (Einheit); Laufweite 0 als 0.001, weil PptxGenJS falsy Werte vom Feld erbt (dessen Laufweite ist negativ)
+          ...(r.sizePx && { fontSize: PT(r.sizePx), charSpacing: PT(r.trackingPx ?? 0) || 0.001 }) } })),
         {
           x: IN(x), y: IN(b.y), w: IN(b.w + extra), h: IN(b.h), objectName: name, rotate: el.rot,
           fontFace: el.fontFace ?? (el.font === 'head' ? t.head.pptx : t.body.pptx), fontSize: PT(el.sizePx),
