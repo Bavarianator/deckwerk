@@ -3,6 +3,7 @@ import type { z } from 'zod'
 import { LAYOUTS } from '../shared/layouts'
 import { Backdrop, Box, ChartBox, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, rgba, useSlide } from './slide'
 import { annotation } from '../shared/charts'
+import { sizeOf } from '../shared/deck'
 import { EXTRA_COMPONENTS } from './layouts-extra'
 
 type C<K extends keyof typeof LAYOUTS> = z.infer<(typeof LAYOUTS)[K]['schema']>
@@ -41,6 +42,14 @@ function Points({ items, base, build }: { items?: string[]; base: string; build?
     </div>
   )
 }
+
+// Größere Schrift bei wenig Inhalt (few) nur im Breitformat und ohne lange Komposita: Ein Wort bricht nicht um, und der
+// Faktor wirkt auch auf der kleinsten Autofit-Stufe → Breitenüberlauf. In 4:3 und Hochformaten sind die Spalten dafür zu schmal.
+function useWide() {
+  const { w, h } = sizeOf(useSlide().deck)
+  return w / h >= 1.6
+}
+const longestWord = (texts: (string | undefined)[]) => Math.max(0, ...texts.flatMap((t) => t?.split(/[\s-]+/) ?? []).map((x) => x.length))
 
 function Cover({ c, v }: Props<'cover'>) {
   const { theme } = useSlide()
@@ -146,10 +155,11 @@ function Statement({ c, v }: Props<'statement'>) {
 function Bullets({ c, v }: Props<'bullets'>) {
   const sub = c.items.some((it) => it.sub)
   const cards = c.items.length <= 4 && v === 'cards'
+  const few = !cards && c.items.length <= 3
   return (
     <Frame>
       <Header c={c} />
-      <div className={`bullets ${sub ? 'has-sub' : ''} ${cards ? 'as-cards' : c.items.length <= 3 ? 'few' : ''}`} data-fit data-slot="items" style={cards ? { gridTemplateColumns: `repeat(${c.items.length}, 1fr)` } : undefined}>
+      <div className={`bullets ${sub ? 'has-sub' : ''} ${cards ? 'as-cards' : few ? 'few' : ''}`} data-fit data-slot="items" style={cards ? { gridTemplateColumns: `repeat(${c.items.length}, 1fr)` } : undefined}>
         {c.items.map((it, i) => {
           const mark = it.icon ? (
             <Box slot={`_ib.${i}`} className="bullet-icon" build={i}>
@@ -165,7 +175,7 @@ function Bullets({ c, v }: Props<'bullets'>) {
           const text = (
             <div className="bullet-text">
               <T role={cards ? 'h3' : 'body'} slot={`items.${i}.text`} build={i} className="bullet-main">{it.text}</T>
-              {it.sub && <T role={c.items.length <= 4 ? 'label' : 'small'} slot={`items.${i}.sub`} build={i} className="muted">{it.sub}</T>}
+              {it.sub && <T role={few ? 'body' : c.items.length <= 4 ? 'label' : 'small'} slot={`items.${i}.sub`} build={i} className="muted">{it.sub}</T>}
             </div>
           )
           return cards ? (
@@ -180,10 +190,14 @@ function Bullets({ c, v }: Props<'bullets'>) {
 }
 
 function TwoColumn({ c, v }: Props<'two-column'>) {
+  // wenig Inhalt je Spalte: größer und luftiger, sonst bleibt die untere Hälfte leer. Zeichenbudget, weil Autofit bei
+  // längeren Punkten sonst den Folientitel verkleinert
+  const few = useWide() && longestWord([c.left.heading, c.right.heading]) <= 20
+    && [c.left, c.right].every((col) => (col.points?.length ?? 0) <= 3 && (col.text ?? '').length + (col.points ?? []).join('').length <= 160)
   return (
     <Frame>
       <Header c={c} />
-      <div className="cols">
+      <div className={`cols ${few ? 'few' : ''}`}>
         {(['left', 'right'] as const).map((k, i) => {
           const col = c[k]
           return (
@@ -306,15 +320,17 @@ function Timeline({ c }: Props<'timeline'>) {
 }
 
 function Process({ c }: Props<'process'>) {
+  // wenige Schritte: große Nummern, größere Titel und Beschreibungen – sonst bleibt die untere Hälfte leer
+  const few = useWide() && c.steps.length <= 3 && longestWord(c.steps.map((s) => s.title)) <= 14 && longestWord(c.steps.map((s) => s.desc)) <= 20
   return (
     <Frame>
       <Header c={c} />
-      <div className="proc">
+      <div className={`proc ${few ? 'few' : ''}`}>
         {c.steps.map((s, i) => (
           <Fragment key={i}>
             <Box slot={`_card.${i}`} className="card proc-card" build={i} fit>
               <div className="proc-head">
-                <T role="h1" slot={`_n.${i}`} build={i} className="proc-num">{String(i + 1).padStart(2, '0')}</T>
+                <T role={few ? 'kpi' : 'h1'} slot={`_n.${i}`} build={i} className="proc-num">{String(i + 1).padStart(2, '0')}</T>
                 {s.icon && <Icon name={s.icon} slot={`_icon.${i}`} size={28} build={i} className="proc-icon" />}
               </div>
               <T role="h2" slot={`steps.${i}.title`} build={i}>{s.title}</T>

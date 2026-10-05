@@ -151,6 +151,14 @@
 .col-rule { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 28px 0 4px; } /* unten Luft für Unterlängen von Display-Serifen */ /* offene Spalten mit kräftiger Kopflinie statt grauer Karten */
 .col-rule::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--text); }
 .col-rule.hl::before { background: var(--accent); }
+/* bis 3 Punkte je Spalte: Kopf und Punkte größer, mehr Luft (wie .bullets.few; Autofit skaliert über --fs-* mit) */
+.cols.few .col-card { gap: 22px; }
+.cols.few .card { padding: 36px 32px; }
+.cols.few .col-rule { padding-top: 36px; }
+.cols.few .col-card > .r-h2 { font-size: calc(var(--fs-h2) * 1.3); }
+.cols.few .col-card .r-body { font-size: calc(var(--fs-body) * 1.15); } /* halbe Breite: kleinerer Faktor als bei bullets, sonst bricht jeder Punkt um */
+.cols.few .points { gap: 20px; }
+.cols.few .pdot { margin-top: calc(var(--fs-body) * 1.15 * 0.69 - 4px); }
 
 /* ---------- image + text ---------- */
 .media { position: absolute; left: 0; top: 0; bottom: 0; width: 600px; overflow: hidden; }
@@ -218,6 +226,10 @@
 .proc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .proc-num { color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
 .proc-icon { color: var(--accent); }
+/* bis 3 Schritte: Nummer in Kennzahlgröße (Rolle kpi), Titel und Beschreibung größer, mehr Luft */
+.proc.few .proc-card { gap: 20px; padding-top: 36px; }
+.proc.few .proc-card > .r-h2 { font-size: calc(var(--fs-h2) * 1.35); }
+.proc.few .proc-card > .r-body { font-size: calc(var(--fs-body) * 1.2); }
 
 /* ---------- print (PDF) ---------- */
 @page { size: 1280px 720px; margin: 0; }
