@@ -1,12 +1,12 @@
 // Smoke-Test für Tools + Systemprompt ohne API (Mock-Engine). Mit --live und ANTHROPIC_API_KEY zusätzlich ein echter Agent-Turn.
 // Aufruf: npx esbuild scripts/agent-smoke.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/agent-smoke.mjs && node out/agent-smoke.mjs [--live]
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DeckAgent, buildSystemPrompt, toRunnable, type Engine } from '../src/main/agent'
 import { z } from 'zod'
-import { buildTools, imageSettings, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
+import { assetUrl, buildTools, imageSettings, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
@@ -145,6 +145,31 @@ assert.match((await run('find_images', {})).text, /Keine .*Bilder|nicht konfigur
   assert.ok(existsSync(join(assetDir, 'unsplash-abc.jpg')) && r.images!.length === 1 && r.images![0][0] === 0xff)
   assert.ok(calls.some((u) => u.includes('per_page=3&orientation=landscape')) && calls.includes('https://api/dl'), 'Suche + Download-Meldung')
   assert.match((await T2.find_images.run(T2.find_images.inputSchema.parse({}))).text, /unsplash-abc\.jpg/, 'danach lokal auffindbar')
+}
+// Eigene Bilder: asset://-Pfad ansehen (nur im Asset-Ordner), lokale Suche neueste zuerst, nur die ersten `limit` mit Vorschau
+{
+  const assetDir = mkdtempSync(join(tmpdir(), 'dw-own-'))
+  const T5 = Object.fromEntries(buildTools({ engine, getDeck: () => deck, setDeck: () => {}, assetDir, outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  const find = (input: unknown) => T5.find_images.run(T5.find_images.inputSchema.parse(input))
+  const head = (w: number, h: number) => { const b = Buffer.from(png1x2); b.writeUInt32BE(w, 16); b.writeUInt32BE(h, 20); return b }
+  mkdirSync(join(assetDir, 'import-x'))
+  writeFileSync(join(assetDir, 'import-x', 'bild.png'), head(1600, 900))
+  const own = await find({ url: assetUrl(join(assetDir, 'import-x', 'bild.png')) })
+  assert.match(own.text, /^Bild: asset:\/\/local\/.*import-x\/bild\.png — 1600×900 px, quer\n.*update_deck mit brand/)
+  assert.equal(own.images!.length, 1)
+  for (const url of [assetUrl(join(tmpdir(), 'fremd.png')), `${assetUrl(assetDir)}-x/a.png`, `${assetUrl(assetDir)}/../fremd.png`, `${assetUrl(assetDir)}/import-x%2F..%2F..%2Ffremd.png`, assetUrl(join(assetDir, 'notiz.txt'))])
+    await fails(find({ url }), /Nur Bilder aus dem Asset-Ordner/)
+  writeFileSync(join(assetDir, 'alt.png'), head(800, 600)); writeFileSync(join(assetDir, 'neu.png'), head(1000, 1000)); writeFileSync(join(assetDir, 'logo.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+  for (const [f, t] of Object.entries({ 'alt.png': 1, 'import-x/bild.png': 2, 'logo.svg': 3, 'neu.png': 4 })) utimesSync(join(assetDir, f), t, t)
+  const list = await find({ source: 'local', limit: 2 })
+  assert.equal(list.images!.length, 2)
+  assert.deepEqual(list.text.match(/asset:\/\/local\S+/g)!.map((u) => u.split('/').pop()), ['neu.png', 'logo.svg', 'bild.png', 'alt.png'])
+  assert.match(list.text, /neu\.png — 1000×1000 px, quadratisch\n.*logo\.svg — SVG\n.*bild\.png\n.*alt\.png$/)
+  for (let n = 0; n < 28; n++) writeFileSync(join(assetDir, `x${n}.png`), head(10, 10))
+  assert.match((await find({ source: 'local', limit: 1 })).text, /\n… und 2 weitere, query eingrenzen$/)
+  // Logo im Brand-Kit: Pfad steht im Ergebnis (brand.json selbst ist hier nicht testbar: BRAND_FILE steht schon beim Import fest)
+  const made = await T5.create_deck.run(T5.create_deck.inputSchema.parse({ title: 'Mit Logo', brand: { primary: '#0B5563', logo: 'asset://local/x/logo.svg' } }))
+  assert.match(made.text, /Brand-Kit des Nutzers angewendet, Logo asset:\/\/local\/x\/logo\.svg in der Fußzeile\)/)
 }
 // generate_image: Mammouth über die Images-API (gemocktes fetch), Codex über ein Fake-CLI, das sein Bild nach $CODEX_HOME legt
 {

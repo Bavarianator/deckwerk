@@ -345,7 +345,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
   // dieselbe Suche wie das KI-Tool find_images; die asset://-Pfade stehen in dessen Textantwort
   ipcMain.handle('image:find', async (_, query: string) => {
-    const find = buildTools({ engine, getDeck: () => deck, setDeck: () => {}, assetDir: assets, outDir: outDir(), unsplashKey: process.env.UNSPLASH_ACCESS_KEY }).find((t) => t.name === 'find_images')!
+    const find = buildTools({ engine, getDeck: () => deck, setDeck: () => {}, assetDir: assets, outDir: outDir(), unsplashKey: process.env.UNSPLASH_ACCESS_KEY, previews: false }).find((t) => t.name === 'find_images')!
     const out = await find.run({ query: query || undefined, source: 'auto', limit: 5, orientation: 'landscape' })
     const urls = out.text.match(/asset:\/\/local\S+/g) ?? []
     return { urls, note: urls.length ? undefined : out.text }

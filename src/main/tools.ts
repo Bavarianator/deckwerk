@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
@@ -25,6 +25,7 @@ export interface ToolContext {
   assetDir: string // eigene Bilder für find_images; Unsplash-Downloads landen auch hier
   outDir: string // Exportziel
   unsplashKey?: string // Unsplash Access Key; ohne Key sucht find_images nur lokal
+  previews?: false // Bildsuche der UI (image:find) braucht nur die Pfade, keine Vorschaubilder
   ask?(q: { question: string; options: string[] }): void // nur im App-Chat: Rückfrage mit Antwort-Buttons
   storyline?(slides: { title: string; layout: string }[]): void // nur im App-Chat: geplante Folien für die Entstehen-Ansicht
   choice?(c: { question: string; options: { label: string; image: string }[] }): void // nur im App-Chat: Auswahl-Karten (image = PNG als data:-URL)
@@ -320,7 +321,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' } }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
-        return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? ', Brand-Kit des Nutzers angewendet' : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} in der Fußzeile` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -581,20 +582,24 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'find_images',
       readOnly: true,
-      description: 'Bilder finden: eigene Dateien im Asset-Ordner, Fotos aus dem Netz (Unsplash mit Key, sonst Openverse: freie Bilder von Wikimedia Commons, Flickr u. a., ohne Key) oder ein Bild direkt per `url` (Link vom Nutzer oder aus der Websuche). Treffer werden heruntergeladen und als Vorschau mitgeliefert. Rückgabe: asset://-Pfade für `image.src`, mit Maßen, Lizenz und Bildnachweis für die Notes. Setze `image.focus` nach dem Vorschaubild (wo Gesicht oder Motiv sitzt), wenn es nicht mittig ist.',
+      description: 'Bilder finden: eigene Dateien im Asset-Ordner, Fotos aus dem Netz (Unsplash mit Key, sonst Openverse: freie Bilder von Wikimedia Commons, Flickr u. a., ohne Key) oder ein Bild direkt per `url` (Link vom Nutzer oder aus der Websuche; asset://-Pfade aus dem Material des Nutzers zeigt es nur an). Eigene Dateien kommen neueste zuerst. Treffer werden heruntergeladen und als Vorschau mitgeliefert. Rückgabe: asset://-Pfade für `image.src`, mit Maßen, Lizenz und Bildnachweis für die Notes. Setze `image.focus` nach dem Vorschaubild (wo Gesicht oder Motiv sitzt), wenn es nicht mittig ist.',
       inputSchema: z.object({
         query: z.string().max(80).optional().describe('lokal: Teil des Dateinamens; Netz: englische Suchbegriffe, z. B. "teacher classroom"'),
         source: z.enum(['auto', 'local', 'unsplash', 'web']).default('auto').describe('auto = lokal, ohne lokalen Treffer aus dem Netz (Unsplash, sonst Openverse); web = Openverse'),
-        url: z.string().url().max(2000).optional().describe('Bild direkt von dieser Adresse übernehmen. Nur Bilder, die der Nutzer genannt hat oder die verwendet werden dürfen (freie Lizenz, eigene Website); Quelle in die Notes'),
+        url: z.string().url().max(2000).optional().describe('Bild direkt von dieser Adresse übernehmen. Nur Bilder, die der Nutzer genannt hat oder die verwendet werden dürfen (freie Lizenz, eigene Website); Quelle in die Notes. Auch asset://-Pfade aus Quellmaterial oder Anhängen des Nutzers, um sie vor dem Einbauen anzusehen'),
         limit: z.number().int().min(1).max(5).default(3),
         orientation: z.enum(['landscape', 'portrait', 'squarish']).default('landscape').describe('Unsplash: landscape für Vollbild/Cover/Galerie, portrait für Porträts (quote) und Hochformat-Decks (4:5, 9:16, A4), squarish für Kacheln und Quadrat-Decks'),
       }),
       async run(i) {
-        if (i.url) return fromUrl(ctx, i.url)
+        if (i.url) return i.url.startsWith('asset:') ? fromAsset(ctx, i.url) : fromUrl(ctx, i.url)
         const q = i.query?.toLowerCase()
-        let local: string[] = []
-        try { local = readdirSync(ctx.assetDir).filter((f) => /\.(png|jpe?g|svg|webp)$/i.test(f) && (!q || f.toLowerCase().includes(q))).map((f) => assetUrl(join(ctx.assetDir, f))) } catch {}
-        if (i.source === 'local' || (i.source === 'auto' && local.length)) return { text: local.length ? local.join('\n') : `Keine passenden Bilder in ${ctx.assetDir}.` }
+        let local: { file: string; t: number }[] = []
+        try {
+          local = readdirSync(ctx.assetDir, { recursive: true, encoding: 'utf8' }).filter((f) => IMG_FILE.test(f) && (!q || f.toLowerCase().includes(q)))
+            .flatMap((f) => { const file = join(ctx.assetDir, f), st = statSync(file, { throwIfNoEntry: false }); return st?.isFile() ? [{ file, t: st.mtimeMs }] : [] })
+            .sort((a, b) => b.t - a.t)
+        } catch {}
+        if (i.source === 'local' || (i.source === 'auto' && local.length)) return localImages(ctx, local.map((h) => h.file), i.limit)
         if (!i.query) return { text: `${local.length ? '' : 'Keine lokalen Bilder. '}Für Fotos aus dem Netz eine englische query angeben.` }
         if (i.source === 'unsplash' && !ctx.unsplashKey) throw new Error('Unsplash ist nicht konfiguriert (UNSPLASH_ACCESS_KEY fehlt). source "web" sucht ohne Key.')
         return i.source !== 'web' && ctx.unsplashKey ? unsplash(ctx, i.query, i.limit, i.orientation) : openverse(ctx, i.query, i.limit, i.orientation)
@@ -732,6 +737,7 @@ export function imageSize(b: Buffer): { width: number; height: number } | null {
 // Vorschau, die ins Modell passt: JPEG/PNG verkleinert nativeImage in Millisekunden; andere Formate (WebP) rendert die Engine,
 // gleich in Vorschaugröße (in Originalgröße, mit Render-Zoom 3840 px, dauerte jede Offscreen-Aufnahme 30–40 s).
 async function preview(ctx: ToolContext, img: Buffer, src: string, w0: number, h0: number, width = 768): Promise<Buffer[]> {
+  if (ctx.previews === false) return []
   const thumb = ctx.engine.thumbnail?.(img, width)
   if (thumb) return [thumb]
   const w = Math.round(width / 2), h = Math.round((w * h0) / w0) // Render-Zoom 2 → genau `width` Pixel breit
@@ -742,6 +748,39 @@ async function preview(ctx: ToolContext, img: Buffer, src: string, w0: number, h
     console.warn('[tools] Bildvorschau übersprungen:', (e as Error).message)
     return []
   }
+}
+
+// Eigene Bilder (auch Unterordner wie import-*/ aus dem Quellmaterial): Maße für die Trefferzeile, SVG/AVIF ohne lesbare Pixelmaße
+const IMG_FILE = /\.(png|jpe?g|gif|webp|svg|avif)$/i
+function dims(buf: Buffer, file: string): { label: string; w: number; h: number } {
+  const s = imageSize(buf)
+  if (!s) return { label: file.split('.').pop()!.toUpperCase(), w: 1600, h: 1000 }
+  const r = s.width / s.height
+  return { label: `${s.width}×${s.height} px, ${r > 1.1 ? 'quer' : r < 0.9 ? 'hoch' : 'quadratisch'}`, w: s.width, h: s.height }
+}
+
+// Bild aus dem Asset-Ordner ansehen, ohne es zu kopieren; die KI wählt den Pfad, deshalb nur dort und nur Bilddateien
+async function fromAsset(ctx: ToolContext, url: string): Promise<ToolOutput> {
+  const file = resolve(decodeURIComponent(new URL(url).pathname))
+  if (!IMG_FILE.test(file) || !file.startsWith(resolve(ctx.assetDir) + sep)) throw new Error(`Nur Bilder aus dem Asset-Ordner (${ctx.assetDir}) lassen sich ansehen.`)
+  const buf = readFileSync(file), d = dims(buf, file), src = assetUrl(file)
+  return { text: `Bild: ${src} — ${d.label}
+Als Logo: update_deck mit brand (logo = dieser Pfad; vorhandene Brand-Felder mitgeben, sonst gehen die Farben verloren). Als Foto oder Abbildung: image.src, image.focus nach der Vorschau.`, images: await preview(ctx, buf, src, d.w, d.h, 640) }
+}
+
+// Lokale Treffer (neueste zuerst): die ersten `limit` mit Vorschau und Maßen, der Rest nur als Pfad, höchstens 30 Zeilen
+async function localImages(ctx: ToolContext, files: string[], limit: number): Promise<ToolOutput> {
+  if (!files.length) return { text: `Keine passenden Bilder in ${ctx.assetDir}.` }
+  const lines: string[] = [], images: Buffer[] = []
+  for (const [n, file] of files.slice(0, 30).entries()) {
+    const src = assetUrl(file)
+    if (n >= limit) { lines.push(src); continue }
+    const buf = readFileSync(file), d = dims(buf, file)
+    images.push(...(await preview(ctx, buf, src, d.w, d.h, 512)))
+    lines.push(`${src} — ${d.label}`)
+  }
+  const more = files.length > 30 ? `\n… und ${files.length - 30} weitere, query eingrenzen` : ''
+  return { text: `${files.length} eigene Bilder, neueste zuerst (die ersten ${Math.min(limit, files.length)} mit Vorschau, gleiche Reihenfolge):\n${lines.join('\n')}${more}`, images }
 }
 
 async function fromUrl(ctx: ToolContext, url: string): Promise<ToolOutput> {
