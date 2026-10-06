@@ -10,7 +10,7 @@ import { Logo } from './Logo'
 export type Source = { name: string; text: string; cut: boolean }
 export const isImage = (name: string) => /\.(png|jpe?g|webp|gif|svg)$/i.test(name)
 export const sourceContext = (srcs: Source[]) => srcs.map((s) => `Quellmaterial aus „${s.name}“${s.cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden:\n<quelle>\n${s.text}\n</quelle>`).join('\n\n')
-  + '\n\nBilder (Zeilen „Bild: asset://…“) vor dem Einbauen mit find_images ansehen (url = dieser Pfad). Ein Logo gehört ins Brand-Kit (update_deck brand), Fotos und Abbildungen als Bildquelle der passenden Folie. Nichts dazuerfinden.'
+  + '\n\nBilder (Zeilen „Bild: asset://…“) vor dem Einbauen mit find_images ansehen (url = dieser Pfad). Ein Logo gehört ins Brand-Kit (update_deck brand) und steht dann nur auf Titel- und Schlussfolie, nie auf jeder Folie; Fotos und Abbildungen als Bildquelle der passenden Folie. Nichts dazuerfinden.'
 export function useSource() {
   const [srcs, setSrcs] = useState<Source[]>([])
   const [err, setErr] = useState('')

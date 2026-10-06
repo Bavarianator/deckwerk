@@ -381,7 +381,8 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
   const doc = profileOf(deck) === 'doc', nav = !doc && deck.style !== 'mutig'
   const left = doc ? deck.title : nav ? deck.slides.slice(0, index).findLast((x) => x.layout === 'section')?.content?.title : undefined
   const page = doc ? String(index + 1) : nav ? `${index + 1} / ${deck.slides.length}` : undefined
-  const footer = def?.footer && (doc || !AIRY.includes(s.layout)) && (left || page || theme.logo)
+  // Kein Logo in der Fußzeile: es steht nur auf Titel- und Schlussfolie, nie als Wasserzeichen auf jeder Folie
+  const footer = def?.footer && (doc || !AIRY.includes(s.layout)) && (left || page)
   return (
     <SlideCtx.Provider value={{ ...ctx, theme }}>
       <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} prof-${profileOf(deck)} ${sizeOf(deck).w / sizeOf(deck).h <= 1.2 ? 'fmt-tall' : ''} ${sizeOf(deck).w <= 800 ? 'fmt-narrow' : ''} el-${theme.elements ?? 'line'} ${theme.rule ? `rule-${theme.rule}` : ''} ${theme.subBody ? 'sub-body' : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
@@ -394,7 +395,6 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
           <div className={`footer ${p.safeClass ?? ''}`}>
             {left && <T role="footer" slot="_footer.title">{left}</T>}
             <div className="footer-right">
-              {theme.logo && <Img src={theme.logo} slot="_footer.logo" className="footer-logo" contain />}
               {page && <T role="footer" slot="_footer.page">{page}</T>}
             </div>
           </div>

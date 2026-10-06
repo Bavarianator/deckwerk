@@ -38,7 +38,6 @@
 .footer { position: absolute; left: 72px; right: 72px; bottom: 24px; height: 22px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .footer > .t { max-width: 70%; white-space: nowrap; overflow: hidden; }
 .footer-right { display: flex; align-items: center; gap: 16px; margin-left: auto; } /* rechts, auch ohne Kapitel links */
-.footer-logo { height: 20px; width: 90px; background-repeat: no-repeat; background-position: right center; }
 .safe-right { left: 664px; }
 .safe-left { right: 664px; }
 
