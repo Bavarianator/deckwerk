@@ -169,7 +169,7 @@ assert.match((await run('find_images', {})).text, /Keine .*Bilder|nicht konfigur
   assert.match((await find({ source: 'local', limit: 1 })).text, /\n… und 2 weitere, query eingrenzen$/)
   // Logo im Brand-Kit: Pfad steht im Ergebnis (brand.json selbst ist hier nicht testbar: BRAND_FILE steht schon beim Import fest)
   const made = await T5.create_deck.run(T5.create_deck.inputSchema.parse({ title: 'Mit Logo', brand: { primary: '#0B5563', logo: 'asset://local/x/logo.svg' } }))
-  assert.match(made.text, /Brand-Kit des Nutzers angewendet, Logo asset:\/\/local\/x\/logo\.svg auf Titel- und Schlussfolie\)/)
+  assert.match(made.text, /Brand-Kit des Nutzers angewendet, Logo asset:\/\/local\/x\/logo\.svg auf Titel- und Schlussfolie \(A4: Seite 1\)\)/)
 }
 // generate_image: Mammouth über die Images-API (gemocktes fetch), Codex über ein Fake-CLI, das sein Bild nach $CODEX_HOME legt
 {

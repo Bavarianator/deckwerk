@@ -111,7 +111,7 @@ const api = {
   /** data-URL (PNG/JPEG/WebP) unter ~/Deckwerk/assets speichern → asset://-URL */
   saveAsset: (dataUrl: string, name: string): Promise<string> => invoke('asset:save', dataUrl, name),
   /** Text aus TXT/MD/CSV/DOCX/PPTX/PDF lesen; ohne Pfad per Dialog, null = abgebrochen */
-  readSource: (paths?: string[]): Promise<{ name: string; text: string; cut: boolean }[] | null> => invoke('source:read', paths),
+  readSource: (paths?: string[]): Promise<{ srcs: { name: string; text: string; cut: boolean }[]; errors: string[] } | null> => invoke('source:read', paths),
   /** Brand-Kit des Nutzers (~/Deckwerk/brand.json), das jedes neue Deck per KI bekommt; null = keines gespeichert */
   getBrand: (): Promise<BrandKit | null> => invoke('brand:get'),
   setBrand: (b: BrandKit): Promise<void> => invoke('brand:set', b),

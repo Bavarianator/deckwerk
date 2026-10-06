@@ -290,18 +290,20 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       if (r.canceled || !r.filePaths.length) return null
       paths = r.filePaths
     }
-    const out: { name: string; text: string; cut: boolean }[] = []
+    const srcs: { name: string; text: string; cut: boolean }[] = []
+    const errors: string[] = []
     for (const path of paths) {
       const name = path.split('/').pop()!
       try {
         const text = (await sourceText(path, join(HOME, 'assets'))).trim()
         if (!text) throw new Error('In der Datei steht kein lesbarer Text (gescanntes PDF?).')
-        out.push({ name, text: text.slice(0, SOURCE_MAX), cut: text.length > SOURCE_MAX })
+        // an der Zeilengrenze kürzen, damit keine „Bild: asset://…“-Zeile mitten im Pfad abreißt
+        srcs.push({ name, text: text.length > SOURCE_MAX ? text.slice(0, SOURCE_MAX).replace(/\n[^\n]*$/, '') : text, cut: text.length > SOURCE_MAX })
       } catch (e) {
-        throw new Error(`${name}: ${(e as Error).message}`)
+        errors.push(`${name}: ${(e as Error).message}`)
       }
     }
-    return out
+    return { srcs, errors }
   })
   ipcMain.handle('brand:get', () => defaultBrand() ?? null)
   ipcMain.handle('brand:set', (_e, b: BrandKit) => saveBrand(b))

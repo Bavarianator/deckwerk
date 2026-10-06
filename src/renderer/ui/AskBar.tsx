@@ -101,12 +101,12 @@ export function AskBar(p: Props) {
           </span>
         )}
         {srcs.map((s) => (
-          <span key={s.name} className="cap-token" title={s.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>
-            {isImage(s.name) ? <ImageIcon size={11} /> : <Paperclip size={11} />}{s.name}
+          <span key={s.name} className="cap-token file" title={s.cut ? `${s.name} (zu lang, die KI bekommt den Anfang)` : s.name}>
+            {isImage(s.name) ? <ImageIcon size={11} /> : <Paperclip size={11} />}<span>{s.name}</span>
             <button type="button" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={11} strokeWidth={2.6} /></button>
           </span>
         ))}
-        {err && <span className="cap-token error" role="alert">{err}</span>}
+        {err && <span className="cap-token error" role="alert" title={err}>{err}</span>}
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

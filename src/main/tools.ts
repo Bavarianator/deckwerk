@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join, resolve, sep } from 'node:path'
+import { dirname, extname, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
@@ -321,7 +321,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' } }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
-        return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -754,7 +754,7 @@ async function preview(ctx: ToolContext, img: Buffer, src: string, w0: number, h
 const IMG_FILE = /\.(png|jpe?g|gif|webp|svg|avif)$/i
 function dims(buf: Buffer, file: string): { label: string; w: number; h: number } {
   const s = imageSize(buf)
-  if (!s) return { label: file.split('.').pop()!.toUpperCase(), w: 1600, h: 1000 }
+  if (!s) return { label: extname(file).slice(1).toUpperCase(), w: 1600, h: 1000 }
   const r = s.width / s.height
   return { label: `${s.width}×${s.height} px, ${r > 1.1 ? 'quer' : r < 0.9 ? 'hoch' : 'quadratisch'}`, w: s.width, h: s.height }
 }
@@ -765,7 +765,7 @@ async function fromAsset(ctx: ToolContext, url: string): Promise<ToolOutput> {
   if (!IMG_FILE.test(file) || !file.startsWith(resolve(ctx.assetDir) + sep)) throw new Error(`Nur Bilder aus dem Asset-Ordner (${ctx.assetDir}) lassen sich ansehen.`)
   const buf = readFileSync(file), d = dims(buf, file), src = assetUrl(file)
   return { text: `Bild: ${src} — ${d.label}
-Als Logo: update_deck mit brand (logo = dieser Pfad; vorhandene Brand-Felder mitgeben, sonst gehen die Farben verloren); es steht dann nur auf Titel- und Schlussfolie. Als Foto oder Abbildung: image.src, image.focus nach der Vorschau.`, images: await preview(ctx, buf, src, d.w, d.h, 640) }
+Als Logo: update_deck mit brand (logo = dieser Pfad; vorhandene Brand-Felder mitgeben, sonst gehen die Farben verloren); es steht dann nur auf Titel- und Schlussfolie (A4: Seite 1), nie auf jeder Folie. Als Foto oder Abbildung: image.src, image.focus nach der Vorschau.`, images: await preview(ctx, buf, src, d.w, d.h, 640) }
 }
 
 // Lokale Treffer (neueste zuerst): die ersten `limit` mit Vorschau und Maßen, der Rest nur als Pfad, höchstens 30 Zeilen

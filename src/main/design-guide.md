@@ -299,7 +299,7 @@ Regeln: Mut kommt aus Maßstab, Weißraum, Bild und Dramaturgie, nie aus Deko. I
 **Canva-Mittel nur auf ausdrücklichen Wunsch des Nutzers:** Sticker und Grafiken (`decorate_slide`), Bildrahmen (`mask`), Motive (`decor`), Texteffekte, `shuffle`, freie Formen. Dann sparsam: höchstens ein Akzent pro Folie, nie auf Daten- und Tabellenfolien.
 - **QR-Code:** Auf der Abschlussfolie `closing.qr` mit dem Link zu Unterlagen, Termin oder Anmeldung. Immer schwarz auf weiß.
 
-**Brand-Kit:** Hat der Nutzer eine Marke gespeichert (Farben, Schriften, Logo), wendet `create_deck` sie automatisch an und meldet das im Ergebnis. Dann gilt sie: Akzentfarben und Schriften nicht durch ein eigenes Design überschreiben, Logo nur dort, wo das Layout es vorsieht (Titel- und Schlussfolie), nie als Wasserzeichen auf jeder Folie. Das Design darf Struktur und Grund frei wählen, soweit es zur Marke passt; `brand: null` nur auf ausdrücklichen Wunsch.
+**Brand-Kit:** Hat der Nutzer eine Marke gespeichert (Farben, Schriften, Logo), wendet `create_deck` sie automatisch an und meldet das im Ergebnis. Dann gilt sie: Akzentfarben und Schriften nicht durch ein eigenes Design überschreiben, Logo nur dort, wo das Layout es vorsieht (Titel- und Schlussfolie, bei A4 Seite 1), nie als Wasserzeichen auf jeder Folie. Das Design darf Struktur und Grund frei wählen, soweit es zur Marke passt; `brand: null` nur auf ausdrücklichen Wunsch.
 
 ## 7. Text
 

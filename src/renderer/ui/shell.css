@@ -93,8 +93,8 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 .home-field textarea { border: 0; padding: 0 10px 0 0; background: transparent; font-size: 18px; line-height: 1.5; resize: none; outline: none; }
 /* randlose Felder: Fokus zeigt der Rahmen außen, nicht der Ring aus kit.css (.app textarea:focus) */
 .app .home-field textarea:focus, .app .work-notes textarea:focus { border-color: transparent; box-shadow: none; }
-.home-field-bar { display: flex; align-items: center; justify-content: space-between; }
-.home-field-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.home-field-bar { display: flex; align-items: flex-end; gap: 8px; justify-content: space-between; }
+.home-field-l { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 .home-err { font-size: 13px; }
 .home-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
 .home-chips .pill { height: 34px; padding: 0 16px; font-weight: 400; font-size: 13.5px; }
@@ -150,8 +150,12 @@ select.model-select { color: var(--muted); }
 .cap { display: flex; align-items: center; gap: 10px; width: min(720px, 100%); height: 60px; padding: 0 12px 0 18px; border-radius: 30px; }
 .cap:focus-within { box-shadow: 0 0 0 4px rgb(79 82 217 / 0.12), var(--shadow-float); }
 .cap > svg:first-child { flex: none; color: var(--accent); }
-.cap input { flex: 1; min-width: 0; height: 36px; padding: 0; border: 0; background: transparent; font-size: 15px; outline: none; }
+.cap input { flex: 1; min-width: 140px; height: 36px; padding: 0; border: 0; background: transparent; font-size: 15px; outline: none; }
 .cap-token { display: flex; flex: none; align-items: center; gap: 4px; height: 28px; padding: 0 4px 0 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.cap-token.file { flex: 0 1 auto; min-width: 54px; max-width: 160px; } /* eng: nur Icon und ×, Name im title */
+.cap-token.file > svg, .cap-token.file > button { flex: none; }
+.cap-token.file > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cap-token.error { display: block; flex: 0 1 auto; min-width: 110px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; line-height: 28px; padding-right: 10px; } /* mehrere Fehler: gekürzt, voller Text im title */
 .cap-token button { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
 .cap select.model-select { flex: none; border: 0; background: transparent; }
 .bubble { display: flex; align-items: center; gap: 10px; max-width: min(760px, calc(100% - 48px)); min-height: 40px; padding: 6px 6px 6px 14px; border-radius: 20px; z-index: 4; }

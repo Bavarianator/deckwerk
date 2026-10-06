@@ -13,12 +13,13 @@ export const SOURCE_MAX = 60_000 // Zeichen; der Rest wird abgeschnitten
 const MIN_PX = 150 * 150 // kleinere Abbildungen sind Icons, Linien, Zierrat
 const MAX_IMG = 20
 const IMG_MAX_BYTES = 25 << 20
+const IMG_NAME = /\.(png|jpe?g|gif|webp|svg)$/i // was der Renderer zeigen kann (kein EMF/WMF)
 
 // nur Textläufe (<a:t>, <w:t>) je Absatz; Animations- und Stilangaben bleiben draußen
 const paraText = (p: string) => [...p.matchAll(/<[aw]:t(?: [^>]*)?>([^<]*)<\/[aw]:t>/g)].map((m) => unxml(m[1])).join('')
 const runs = (xml: string) => xml.split(/<\/[aw]:p>/).map(paraText).filter((t) => t.trim()).join('\n')
 const unxml = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&')
-const clean = (n: string) => n.replace(/[^\w.-]+/g, '-') // Namen aus fremden Dateien nie als Pfad nutzen
+const clean = (n: string) => n.normalize('NFC').replace(/[^\p{L}\p{N}._-]+/gu, '-') // Namen aus fremden Dateien nie als Pfad nutzen; NFC: macOS liefert Umlaute zerlegt
 const imageLine = (url: string, b: Buffer) => {
   const s = imageSize(b)
   return `Bild: ${url}${s ? ` (${s.width}×${s.height} px)` : /\.svg$/i.test(url) ? ' (SVG)' : ''}`
@@ -30,14 +31,11 @@ const run = (cmd: string, args: string[], timeout = 0) => new Promise<string>((o
 async function slideImages(zip: JSZip, slide: string, dir: string): Promise<string[]> {
   const rels = await zip.file(slide.replace('slides/', 'slides/_rels/') + '.rels')?.async('string')
   const media = [...(rels ?? '').matchAll(/Type="[^"]*\/image"[^>]*Target="\.\.\/media\/([^"]+)"|Target="\.\.\/media\/([^"]+)"[^>]*Type="[^"]*\/image"/g)]
-    .map((m) => m[1] ?? m[2]).filter((n) => /\.(png|jpe?g|gif|webp|svg)$/i.test(n))
+    .map((m) => m[1] ?? m[2]).filter((n) => IMG_NAME.test(n))
   const urls = await Promise.all([...new Set(media)].map(async (n) => {
     const f = zip.file(`ppt/media/${n}`)
-    if (!f) return '' // verlinktes, nicht eingebettetes Bild
-    await mkdir(dir, { recursive: true })
-    const file = join(dir, basename(n.replace(/\\/g, '/'))) // Name kommt aus der fremden PPTX: nie als Pfad nutzen
-    await writeFile(file, await f.async('nodebuffer'))
-    return assetUrl(file)
+    const b = f && (await readCapped(f)) // fehlt bei verlinkten, nicht eingebetteten Bildern
+    return b ? assetUrl(await keepImage(basename(n.replace(/\\/g, '/')), b, dir)) : ''
   }))
   return urls.filter(Boolean)
 }
@@ -54,29 +52,41 @@ async function docxWithImages(zip: JSZip, xml: string, dir: string): Promise<str
     if (t.trim()) lines.push(t)
     for (const [, id] of p.matchAll(/<(?:a:blip\b[^>]*\br:embed|v:imagedata\b[^>]*\br:id)="([^"]+)"/g)) {
       const n = target.get(id)
-      const f = n && /\.(png|jpe?g|gif|webp|svg)$/i.test(n) && !seen.has(n) && seen.size < MAX_IMG && reads < 3 * MAX_IMG ? zip.file(`word/${n}`) : null
-      if (!f) continue // verlinkt, EMF/WMF, doppelt oder Grenze erreicht
+      if (!n || !IMG_NAME.test(n) || seen.has(n)) continue // EMF/WMF oder doppelt
+      if (seen.size >= MAX_IMG || reads >= 3 * MAX_IMG) continue
+      const f = zip.file(`word/${n}`)
+      if (!f) continue // verlinkt, nicht eingebettet
       reads++
       const b = await readCapped(f)
       const s = b && imageSize(b)
       if (!b || (s && s.width * s.height < MIN_PX)) continue
-      seen.add(n!)
-      lines.push(imageLine(assetUrl(await keepImage(basename(n!), b, dir)), b))
+      seen.add(n)
+      lines.push(imageLine(assetUrl(await keepImage(basename(n), b, dir)), b))
     }
   }
   return lines.join('\n')
 }
 
-// PDF: Rasterbilder per Poppler pdfimages; Masken (smask, stencil) und Kleinkram bleiben draußen
-async function pdfImages(file: string, dir: string): Promise<{ page: number; line: string }[]> {
+// Auswahl aus `pdfimages -list`: Masken (smask, stencil) und Kleinkram bleiben draußen.
+// Leer, wenn die Extraktion der Seiten 1..l zu groß würde: Ein präpariertes PDF kann winzig komprimiert riesige Maße deklarieren (tmpdir ist oft RAM).
+export function pdfPick(list: string): string[][] {
+  const rows = list.split('\n').slice(2).map((l) => l.trim().split(/\s+/)).filter((c) => c.length > 4)
   const seen = new Set<string>()
   const pick: string[][] = []
-  for (const c of (await run('pdfimages', ['-list', file], 60_000)).split('\n').slice(2).map((l) => l.trim().split(/\s+/))) {
+  for (const c of rows) {
     const id = c[10] === '-' ? '' : `${c[10]} ${c[11]}` // Objektnummer + Generation: dasselbe Bild auf mehreren Seiten; Inline-Bilder haben keine
     if (c[2] !== 'image' || +c[3] * +c[4] < MIN_PX || seen.has(id) || pick.length >= MAX_IMG) continue
     if (id) seen.add(id)
     pick.push(c)
   }
+  const last = +(pick[pick.length - 1]?.[0] ?? 0)
+  const px = rows.filter((c) => +c[0] <= last).map((c) => +c[3] * +c[4])
+  return px.every((p) => p <= 50e6) && px.reduce((a, p) => a + p, 0) <= 400e6 ? pick : [] // NaN zählt als zu groß
+}
+
+// PDF: Rasterbilder per Poppler pdfimages
+async function pdfImages(file: string, dir: string): Promise<{ page: number; line: string }[]> {
+  const pick = pdfPick(await run('pdfimages', ['-list', file], 60_000))
   if (!pick.length) return []
   const tmp = await mkdtemp(join(tmpdir(), 'dw-pdf-'))
   try {
@@ -85,7 +95,7 @@ async function pdfImages(file: string, dir: string): Promise<{ page: number; lin
     const files = await readdir(tmp)
     return (await Promise.all(pick.map(async ([page, num, , w, h]) => {
       const n = files.find((f) => f.startsWith(`i-${page.padStart(3, '0')}-${num.padStart(3, '0')}.`))
-      if (!n) return [] // nicht extrahiert: nur dieses Bild fehlt
+      if (!n || (await stat(join(tmp, n))).size > IMG_MAX_BYTES) return [] // nicht extrahiert oder zu groß: nur dieses Bild fehlt
       return [{ page: +page, line: `Bild: ${assetUrl(await keepImage(n, await readFile(join(tmp, n)), dir))} (${w}×${h} px)` }]
     }))).flat()
   } finally {
@@ -98,7 +108,7 @@ async function keepImage(name: string, b: Buffer, dir: string): Promise<string> 
   const n = clean(name)
   await mkdir(dir, { recursive: true })
   const old = await readFile(join(dir, n)).catch(() => null)
-  const file = join(dir, !old || old.equals(b) ? n : `${basename(n, extname(n))}-${createHash('sha1').update(b).digest('hex').slice(0, 4)}${extname(n)}`)
+  const file = join(dir, !old || old.equals(b) ? n : `${basename(n, extname(n))}-${createHash('sha1').update(b).digest('hex').slice(0, 8)}${extname(n)}`)
   await writeFile(file, b, { flag: 'wx' }).catch((e: NodeJS.ErrnoException) => {
     if (e.code !== 'EEXIST') throw e
   })
@@ -121,30 +131,31 @@ const readCapped = (f: JSZip.JSZipObject) => new Promise<Buffer | null>((ok, fai
 
 export async function sourceText(file: string, assetDir?: string): Promise<string> {
   const ext = extname(file).slice(1).toLowerCase()
+  const dir = assetDir && join(assetDir, `import-${clean(basename(file, extname(file)))}`) // Abbildungen aus PDF, DOCX, PPTX
   if (ext === 'pdf') {
     const text = await run('pdftotext', [file, '-']).catch((e: NodeJS.ErrnoException) => {
       throw new Error(e.code === 'ENOENT' ? 'PDF lesen braucht pdftotext (Paket poppler).' : e.message)
     })
     // ohne pdfimages, bei Fehlern oder Zeitüberschreitung bleibt es beim Text
-    const images = assetDir ? await pdfImages(file, join(assetDir, `import-${clean(basename(file, extname(file)))}`)).catch(() => []) : []
+    const images = dir ? await pdfImages(file, dir).catch(() => []) : []
     if (!images.length) return text
-    return text.split('\f').map((t, i) => [t.trim(), ...images.filter((m) => m.page === i + 1).map((m) => m.line)].filter(Boolean))
-      .map((l, i) => (l.length ? [`--- Seite ${i + 1} ---`, ...l].join('\n') : '')).filter(Boolean).join('\n\n')
+    return text.split('\f').map((t, i) => {
+      const l = [t.trim(), ...images.filter((m) => m.page === i + 1).map((m) => m.line)].filter(Boolean)
+      return l.length ? [`--- Seite ${i + 1} ---`, ...l].join('\n') : ''
+    }).filter(Boolean).join('\n\n')
   }
   if (ext === 'docx' || ext === 'pptx') {
     const zip = await JSZip.loadAsync(await readFile(file))
     const parts = Object.keys(zip.files)
       .filter((n) => (ext === 'docx' ? n === 'word/document.xml' : /^ppt\/slides\/slide\d+\.xml$/.test(n)))
       .sort((a, b) => Number(a.match(/\d+/)?.[0] ?? 0) - Number(b.match(/\d+/)?.[0] ?? 0))
-    if (ext === 'docx' && assetDir && parts.length)
-      return docxWithImages(zip, await zip.file(parts[0])!.async('string'), join(assetDir, `import-${clean(basename(file, extname(file)))}`))
+    if (ext === 'docx' && dir && parts.length) return docxWithImages(zip, await zip.file(parts[0])!.async('string'), dir)
     const texts = await Promise.all(parts.map(async (n) => runs(await zip.file(n)!.async('string'))))
     if (ext === 'docx') return texts.join('\n')
-    const dir = assetDir && join(assetDir, `import-${basename(file, '.pptx').replace(/[^\w.-]+/g, '-')}`)
     const images = await Promise.all(parts.map((n) => (dir ? slideImages(zip, n, dir) : [])))
     return texts.map((t, i) => [`--- Folie ${i + 1} ---`, t.trim(), ...images[i].map((u) => `Bild: ${u}`)].filter(Boolean).join('\n')).join('\n\n')
   }
-  if (SOURCE_IMG.includes(ext)) {
+  if (IMG_NAME.test(file)) {
     if ((await stat(file)).size > IMG_MAX_BYTES) throw new Error('Bild ist größer als 25 MB.')
     const b = await readFile(file)
     return imageLine(assetUrl(assetDir ? await keepImage(basename(file), b, assetDir) : file), b)

@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import JSZip from 'jszip'
-import { sourceText } from '../src/main/source-text'
+import { pdfPick, sourceText } from '../src/main/source-text'
 import { imageSize } from '../src/main/tools'
 
 const dir = mkdtempSync(join(tmpdir(), 'dw-src-'))
@@ -20,6 +20,7 @@ assert.match(pptx, /--- Folie 1 ---\n[\s\S]*Vertrieb[\s\S]*--- Folie 8 ---\n[^]*
 assert.match(await sourceText('exports/q3-update-vertrieb.pdf'), /Vertrieb/)
 const cafe = await sourceText('exports/caf-kollektiv-expansion-2027.pptx', dir)
 assert.match(cafe, /--- Folie 1 ---[^]*Bild: asset:\/\/local\/.*\/import-caf-kollektiv-expansion-2027\/[^\n]+\.(png|jpe?g)/)
+assert.equal(await sourceText('exports/caf-kollektiv-expansion-2027.pptx', dir), cafe) // erneuter Import: dieselben Dateien
 await assert.rejects(sourceText(join(dir, 'x.exe')), /nicht unterstützt/)
 
 // Bilder: Kopie nach assets/, gleicher Inhalt → gleiche Datei, anderer Inhalt → Suffix
@@ -41,9 +42,12 @@ assert.ok(existsSync(join(assets, 'Logo-Firma.png')))
 assert.equal(await sourceText(logo, assets), l1)
 writeFileSync(logo, png(3, 2, 1))
 const l2 = await sourceText(logo, assets)
-assert.match(l2, /\/Logo-Firma-[0-9a-f]{4}\.png \(3×2 px\)$/)
+assert.match(l2, /\/Logo-Firma-[0-9a-f]{8}\.png \(3×2 px\)$/)
 assert.equal(await sourceText(logo, assets), l2) // Hash-Suffix: erneuter Import legt keine weitere Kopie an
 assert.match(await sourceText(logo), /^Bild: asset:\/\/local\/.*\/in\/Logo%20Firma\.png \(3×2 px\)$/)
+writeFileSync(join(dir, 'in', 'Mu\u0308ller Logo.png'), png(3, 2)) // zerlegter Umlaut wie von macOS
+assert.match(await sourceText(join(dir, 'in', 'Mu\u0308ller Logo.png'), assets), /\/M%C3%BCller-Logo\.png \(3×2 px\)$/)
+assert.ok(existsSync(join(assets, 'Müller-Logo.png')))
 writeFileSync(join(dir, 'in', 'icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
 assert.match(await sourceText(join(dir, 'in', 'icon.svg'), assets), /\/icon\.svg \(SVG\)$/)
 writeFileSync(join(dir, 'in', 'riesig.jpg'), '')
@@ -77,4 +81,15 @@ for (const [, url, kind, w, h] of pages.matchAll(/^Bild: (asset:\/\/local\S+\.(p
 }
 assert.deepEqual([...kinds].sort(), ['jpg', 'png'])
 assert.doesNotMatch(await sourceText(pdf), /Bild:/)
+
+// pdfPick: Entscheidung aus `pdfimages -list`, ohne Bomben-PDF
+const row = (page: number, num: number, type: string, w: number, h: number, obj = `${100 + num} 0`) => `${page} ${num} ${type} ${w} ${h} rgb 3 8 image no ${obj} 72 72 1K 1%`
+const list = (...rows: string[]) => ['page num type width height color comp bpc enc interp object ID x-ppi y-ppi size ratio', '-'.repeat(40), ...rows, ''].join('\n')
+assert.equal(pdfPick(execFileSync('pdfimages', ['-list', pdf], { encoding: 'utf8' })).length, 10) // ohne smask, mit allen Fotos
+assert.deepEqual(pdfPick(list(row(1, 0, 'image', 400, 300), row(1, 1, 'image', 100, 100), row(2, 2, 'image', 400, 300, '100 0'))).map((c) => c[1]), ['0']) // Icon und Duplikat fallen weg
+assert.equal(pdfPick(list(row(1, 0, 'image', 400, 300, '- -'), row(2, 1, 'image', 400, 300, '- -'))).length, 2) // Inline-Bilder sind keine Duplikate
+assert.deepEqual(pdfPick(list(row(1, 0, 'image', 400, 300), row(1, 1, 'smask', 30000, 30000))), []) // ein Eintrag über 50 MP
+assert.deepEqual(pdfPick(list(...Array.from({ length: 20 }, (_, i) => row(1, i, 'image', 5000, 5000)))), []) // Summe über 400 MP
+assert.equal(pdfPick(list(row(1, 0, 'image', 400, 300), row(2, 1, 'image', 30000, 30000))).length, 0) // Riese auf der letzten gewählten Seite
+assert.equal(pdfPick(list(row(1, 0, 'image', 400, 300), row(2, 1, 'smask', 30000, 30000))).length, 1) // Seite 2 wird nicht extrahiert
 console.log('source ok')

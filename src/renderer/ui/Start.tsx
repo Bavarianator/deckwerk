@@ -9,7 +9,11 @@ import { Logo } from './Logo'
 // Angehängte Dateien (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateinamen
 export type Source = { name: string; text: string; cut: boolean }
 export const isImage = (name: string) => /\.(png|jpe?g|webp|gif|svg)$/i.test(name)
-export const sourceContext = (srcs: Source[]) => srcs.map((s) => `Quellmaterial aus „${s.name}“${s.cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden:\n<quelle>\n${s.text}\n</quelle>`).join('\n\n')
+// Gesamtbudget: viele Dateien sprengen sonst das Kontextfenster; gekürzt wird an der Zeilengrenze (Bild-Zeilen bleiben ganz)
+export const sourceContext = (srcs: Source[]) => srcs.map((s) => {
+  const max = Math.min(60_000, Math.floor(120_000 / srcs.length)), cut = s.cut || s.text.length > max
+  return `Quellmaterial aus „${s.name}“${cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden:\n<quelle>\n${s.text.length > max ? s.text.slice(0, max).replace(/\n[^\n]*$/, '') : s.text}\n</quelle>`
+}).join('\n\n')
   + '\n\nBilder (Zeilen „Bild: asset://…“) vor dem Einbauen mit find_images ansehen (url = dieser Pfad). Ein Logo gehört ins Brand-Kit (update_deck brand) und steht dann nur auf Titel- und Schlussfolie, nie auf jeder Folie; Fotos und Abbildungen als Bildquelle der passenden Folie. Nichts dazuerfinden.'
 export function useSource() {
   const [srcs, setSrcs] = useState<Source[]>([])
@@ -18,7 +22,11 @@ export function useSource() {
     if (paths && !(paths = paths.filter(Boolean)).length) return // gezogen ohne Datei (z. B. Text aus dem Browser)
     setErr('')
     // gleicher Name: der zuletzt angehängte gilt, auch innerhalb einer Auswahl
-    window.api.readSource(paths).then((n) => n && setSrcs((old) => [...old, ...n].filter((s, i, all) => all.findLastIndex((x) => x.name === s.name) === i)), (e: Error) => setErr(e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')))
+    window.api.readSource(paths).then((r) => {
+      if (!r) return
+      setSrcs((old) => [...old, ...r.srcs].filter((s, i, all) => all.findLastIndex((x) => x.name === s.name) === i))
+      setErr(r.errors.join(' · '))
+    }, (e: Error) => setErr(e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')))
   }
   return { srcs, attach, remove: (name: string) => setSrcs((old) => old.filter((o) => o.name !== name)), clear: () => setSrcs([]), err }
 }
