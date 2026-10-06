@@ -120,6 +120,21 @@ const offer = z.object({
   terms: z.string().max(260).optional().describe('Zahlungsziel, Gültigkeit, Hinweise'),
 })
 
+// Flyer (A4 hoch): eine Seite, die im Vorbeigehen wirkt – Foto, Schlagzeile, bis zu vier Gründe, Handlungsaufforderung, QR-Code.
+const flyer = z.object({
+  eyebrow: z.string().max(40).optional().describe('Anlass, Datum oder Zielgruppe, z. B. „Pitch Day · 14. Oktober“'),
+  title: z.string().min(3).max(60).describe('Schlagzeile: Nutzen oder Versprechen in wenigen Wörtern, z. B. „Präsentationen in Minuten statt Stunden“'),
+  subtitle: z.string().max(140).optional().describe('ein Satz, der die Schlagzeile einlöst: was, für wen, wie'),
+  image: photo.optional().describe('ein starkes Foto (Mensch, Produkt, Ort); weglassen = typografischer Flyer'),
+  points: z.array(z.object({
+    head: z.string().min(1).max(40).describe('Grund oder Vorteil in 2–5 Wörtern, gern mit Zahl'),
+    text: z.string().max(80).optional().describe('ein kurzer Satz dazu; bei drei Gründen nebeneinander höchstens ~40 Zeichen'),
+  })).max(4).optional().describe('2–4 Gründe, Programmpunkte oder Fakten; weniger ist stärker'),
+  cta: z.string().min(2).max(60).describe('Handlungsaufforderung, z. B. „Jetzt kostenlos testen“ oder „Anmelden bis 30. Oktober“'),
+  contact: z.array(z.string().max(50)).max(3).optional().describe('Web, Mail, Ort oder Termin; je eine Zeile'),
+  qr: z.string().max(120).optional().describe('kurze URL für den QR-Code (Anmeldung, Webseite, Demo); je kürzer, desto gröber das Muster und desto sicherer der Scan im Druck'),
+})
+
 const iconGrid = z.object({
   eyebrow,
   title: title(),
@@ -332,6 +347,25 @@ export const EXTRA_LAYOUTS = {
         terms: 'Zahlbar innerhalb von 14 Tagen nach Rechnungsstellung. Lieferzeit: sechs Wochen ab Beauftragung.',
       },
       max: { eyebrow: words(40), title: words(60), to: words(120), meta: words(80), items: rep(8, (i) => ({ name: words(60, i), detail: words(100, i), qty: '120 Std.', price: '12.345,67 €' })), totals: rep(3, (i) => ({ label: words(24, i), value: '123.456,78 €' })), terms: words(260) },
+    },
+  }),
+  flyer: L({
+    id: 'flyer', name: 'Flyer (A4)', variants: ['top', 'full'], sizes: ['a4'],
+    when: 'Nur A4 hoch: Flyer, Handzettel, Plakat, Einladung. Eine Seite, eine Botschaft: Schlagzeile mit Nutzen, ein Satz Unterzeile, 2–4 kurze Gründe, klare Handlungsaufforderung (cta), Kontakt und QR-Code zur Webseite oder Anmeldung. Variante top = Foto in der oberen Hälfte (Standard), full = Foto über die ganze Seite, Text unten auf dem Foto (nur mit ruhiger unterer Bildhälfte wie Himmel, Wand oder Tisch, sonst top). Ohne Foto typografisch: Schlagzeile übergroß; mit tone accent oder invert wird daraus ein farbiger Flyer.',
+    schema: flyer, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Sommerfest am Freitag', cta: 'Alle sind eingeladen' },
+      typ: {
+        eyebrow: 'Pitch Day · 14. Oktober', title: 'Präsentationen in Minuten statt Stunden',
+        subtitle: 'Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und exportiert nach PowerPoint.',
+        points: [
+          { head: '10 Minuten', text: 'vom Briefing bis zum fertigen Deck' },
+          { head: 'Kein KI-Look', text: 'ruhige Layouts, eine Akzentfarbe' },
+          { head: 'PPTX, PDF, PNG', text: 'bearbeitbar in PowerPoint' },
+        ],
+        cta: 'Jetzt kostenlos testen', contact: ['deckwerk.app', 'hallo@deckwerk.app'], qr: 'https://example.com',
+      },
+      max: { eyebrow: words(40), title: words(60), subtitle: words(140), image: { src: '' }, points: rep(4, (i) => ({ head: words(40, i), text: words(80, i) })), cta: words(60), contact: rep(3, (i) => words(50, i)), qr: 'https://example.com/anmeldung' },
     },
   }),
   'icon-grid': L({

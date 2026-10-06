@@ -78,8 +78,12 @@ cover (Hook: Versprechen oder Frage, höchstens ~8 Wörter) → 4–7 Folien mit
 **A4-Dokument (Format `a4` hoch oder `a4-quer`):** Eine Seite ist eine „Folie“; mehrere Seiten sind mehrere Folien. Der Lint rechnet hier mit Druck: Schrift ab 12 px (rund 9 pt), bis ~350 Wörter je Seite; Titelfolie, Schlussfolie und Abwechslungsregeln gelten nicht.
 - **Infoblatt, One-Pager, Konzept:** `doc-text` (Titel, Einleitung, 1–6 Absätze mit Zwischenüberschriften; Variante two ab drei Abschnitten oder im Querformat), bei Bedarf `table`, `chart`, `kpi-grid` oder `timeline` als Seiten dazwischen. Ganze Sätze, keine Folienstichworte; der Titel bleibt Aussage (Action Title).
 - **Angebot:** `offer` mit Positionen, Summenzeilen und Konditionen. Beträge selbst nachrechnen; fehlen Preise, Platzhalter statt erfundener Zahlen, am Ende auflisten.
-- **Flyer, Plakat:** `photo` (Titel + Untertitel mit Datum, Ort, Preis) oder `statement`; Kontakt auf `closing`. Wenig Text, ein Foto.
-- Nicht auf A4: `doc-text` und `offer` melden die Lint-Warnung `format`, wenn das Deck ein anderes Format hat.
+- **Flyer, Plakat, Einladung:** eine Seite `flyer` (nur A4 hoch). Wirkt im Vorbeigehen, also in drei Sekunden lesbar:
+  - Schlagzeile = Nutzen oder Versprechen in 3–7 Wörtern („Präsentationen in Minuten statt Stunden“), kein Thema und kein Firmenname. Die Unterzeile löst sie in einem Satz ein (was, für wen, wie).
+  - 2–4 Gründe (`points`) mit Kopf in 2–5 Wörtern, gern mit Zahl, Text bei drei Gründen höchstens ~40 Zeichen; Datum, Ort und Preis gehören in `eyebrow` oder `contact`.
+  - `cta` ist ein Verb mit Ziel („Jetzt kostenlos testen“, „Platz sichern bis 30. 10.“), `qr` zeigt genau dorthin (Anmeldung, Demo, Webseite), als kurze URL ohne Tracking-Parameter. Ohne echte URL kein QR-Code.
+  - Ein starkes Foto (`find_images` mit orientation landscape für top, portrait für full): Variante top = Foto oben, full = Foto vollflächig mit Text unten (nur wenn die untere Bildhälfte ruhig ist, sonst top). Ohne Foto typografisch; mit `tone` accent oder invert wird der Flyer farbig. Mehrere Entwürfe = mehrere Seiten mit verschiedenen Varianten, der Nutzer wählt.
+- Nicht auf A4: `doc-text`, `offer` und `flyer` melden die Lint-Warnung `format`, wenn das Deck ein anderes Format hat.
 
 Sonst gilt: Agenda (`agenda`) erst ab ca. 8 Folien, Abschluss (`closing`) mit einer klaren Handlungsaufforderung statt „Danke / Fragen?“.
 

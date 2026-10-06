@@ -1,0 +1,51 @@
+{
+ "title": "Flyer",
+ "size": { "w": 794, "h": 1123 },
+ "theme": { "id": "beratung" },
+ "slides": [
+  { "id": "oben", "layout": "flyer", "variant": "top",
+   "content": {
+    "eyebrow": "Pitch Day · 14. Oktober",
+    "title": "Präsentationen in Minuten statt Stunden",
+    "subtitle": "Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und exportiert nach PowerPoint.",
+    "image": { "src": "assets/arbeitsplatz.jpg" },
+    "points": [
+     { "head": "10 Minuten", "text": "vom Briefing bis zum fertigen Deck" },
+     { "head": "Kein KI-Look", "text": "ruhige Layouts, eine Akzentfarbe" },
+     { "head": "PPTX, PDF, PNG", "text": "bearbeitbar in PowerPoint" }
+    ],
+    "cta": "Jetzt kostenlos testen",
+    "contact": ["github.com/Bavarianator/deckwerk"],
+    "qr": "https://github.com/Bavarianator/deckwerk"
+   } },
+  { "id": "vollbild", "layout": "flyer", "variant": "full",
+   "content": {
+    "eyebrow": "Einladung",
+    "title": "Erst denken, dann Folien",
+    "subtitle": "Wir zeigen live, wie aus einer Idee in zehn Minuten ein Deck wird, das man dem Chef zeigen kann.",
+    "image": { "src": "assets/laptop-gast.jpg" },
+    "points": [
+     { "head": "Live-Demo", "text": "vom Briefing bis zur PPTX" },
+     { "head": "Fragen & Antworten", "text": "direkt im Anschluss" }
+    ],
+    "cta": "Platz sichern",
+    "contact": ["14. Oktober · 18 Uhr", "github.com/Bavarianator/deckwerk"],
+    "qr": "https://github.com/Bavarianator/deckwerk"
+   } },
+  { "id": "typo", "layout": "flyer", "tone": "accent",
+   "content": {
+    "eyebrow": "Neu",
+    "title": "Weniger Folien. Mehr Wirkung.",
+    "subtitle": "Deckwerk prüft jede Folie auf Überlauf, Kontrast und Textmenge – bevor Ihr Publikum es tut.",
+    "points": [
+     { "head": "Layout-Katalog", "text": "über 30 geprüfte Folientypen" },
+     { "head": "Autofit", "text": "Schrift passt sich dem Inhalt an" },
+     { "head": "Lint", "text": "Fehler werden vor dem Export gemeldet" },
+     { "head": "Offline", "text": "läuft lokal als Desktop-App" }
+    ],
+    "cta": "Ausprobieren",
+    "contact": ["github.com/Bavarianator/deckwerk"],
+    "qr": "https://github.com/Bavarianator/deckwerk"
+   } }
+ ]
+}

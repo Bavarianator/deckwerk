@@ -3,7 +3,7 @@
 import type { z } from 'zod'
 import { EXTRA_LAYOUTS } from '../shared/layouts-extra'
 import { Header } from './layouts'
-import { Box, Frame, Icon, Img, T, photoOf, useSlide } from './slide'
+import { Backdrop, Box, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, useSlide } from './slide'
 import './layouts-extra.css'
 
 type Props<K extends keyof typeof EXTRA_LAYOUTS> = { c: z.infer<(typeof EXTRA_LAYOUTS)[K]['schema']>; v?: string }
@@ -256,6 +256,51 @@ function Offer({ c }: Props<'offer'>) {
   )
 }
 
+// Flyer: top = Foto oben (36 %), full = Foto vollflächig mit Text unten, ohne Foto typografisch (Schlagzeile oben, alles andere als Block unten).
+// Handlung typografisch wie im Druck üblich, gebündelt mit QR-Code und Kontakt zu einem Aktionsblock.
+function Flyer({ c, v }: Props<'flyer'>) {
+  const { theme } = useSlide()
+  const img = photoOf(c.image)
+  const full = v === 'full' && !!img?.src
+  const top = !full && !!img
+  const pts = c.points ?? []
+  const sub = c.subtitle && <T role="body" slot="subtitle" maxLines={3} className="fly-sub">{c.subtitle}</T>
+  return (
+    <Frame decor="hero" media={full ? <Backdrop image={img!} scrim="bottom" /> : top && (
+      <div className="fly-media">{img!.src ? <Img {...img!} slot="image" /> : <div className="placeholder" />}</div>
+    )} safeClass={`fly-safe ${top ? 'fly-below' : ''}`}>
+      <div className={`fly ${full ? 'fly-full' : top ? 'fly-top' : 'fly-type'}`} style={full ? onPhoto(theme) : undefined}>
+        <div className="fly-head">
+          {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="fly-eyebrow">{c.eyebrow}</T>}
+          <T role="display" slot="title" maxLines={top ? 3 : 4} className="fly-title">{c.title}</T>
+          {(top || full) && sub}
+        </div>
+        {!top && !full && sub}
+        {pts.length > 0 && (
+          <div className={`fly-pts n${pts.length}`} data-fit data-slot="points">
+            {pts.map((p, i) => (
+              <div className="fly-pt" key={i}>
+                <T role="h3" slot={`points.${i}.head`} build={i} className="fly-pt-head">{p.head}</T>
+                {p.text && <T role="small" slot={`points.${i}.text`} build={i}>{p.text}</T>}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="fly-foot">
+          <div className="fly-act">
+            {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="fly-qr" build={pts.length} />}
+            <div className="fly-act-text">
+              <T role="h2" slot="cta" maxLines={2} className="fly-cta" build={pts.length}>{c.cta}</T>
+              {c.contact?.map((x, i) => <T key={i} role="label" slot={`contact.${i}`} className="fly-contact" build={pts.length}>{x}</T>)}
+            </div>
+          </div>
+          {theme.logo && <Img src={theme.logo} slot="_logo" className="fly-logo" contain />}
+        </div>
+      </div>
+    </Frame>
+  )
+}
+
 function IconGrid({ c }: Props<'icon-grid'>) {
   const n = c.items.length
   return (
@@ -463,6 +508,6 @@ function Logos({ c }: Props<'logos'>) {
 
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
-  table: Table, 'doc-text': DocText, offer: Offer, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
+  table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
 }

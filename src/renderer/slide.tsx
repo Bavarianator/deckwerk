@@ -491,8 +491,9 @@ export function QrCode(p: { text: string; slot: string; color: string; bg: strin
     if (!p.text) return { n: 1, path: '' }
     const m = QRCode.create(p.text, { errorCorrectionLevel: 'M' }).modules
     let path = ''
-    for (let y = 0; y < m.size; y++) for (let x = 0; x < m.size; x++) if (m.get(x, y)) path += `M${x + 2} ${y + 2}h1v1h-1z`
-    return { n: m.size + 4, path }
+    // Ruhezone 4 Module (ISO 18004): auf Foto oder Farbfläche scannen Handys sonst unzuverlässig
+    for (let y = 0; y < m.size; y++) for (let x = 0; x < m.size; x++) if (m.get(x, y)) path += `M${x + 4} ${y + 4}h1v1h-1z`
+    return { n: m.size + 8, path }
   }, [p.text])
   return (
     <span {...p.attrs} className={`icon ${p.className ?? ''}`} data-pptx="icon" data-qr={p.text} data-slot={p.slot} data-build={p.build} style={p.style}>

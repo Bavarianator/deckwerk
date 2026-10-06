@@ -98,7 +98,7 @@ Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewäh
   - „In freie Elemente umwandeln“ macht jeden Text, jede Form und jedes Bild der Folie frei verschiebbar.
   - „Farben dieser Folie“ ersetzt eine Farbe überall auf der Folie.
 - **Kontextmenü (Rechtsklick):** Ebenen, Gruppen, Sperren, sichere Ränder einblenden und eigene Hilfslinien setzen.
-- **Formate:** „Exportieren“ → „Anderes Format …“ rechnet das Deck auf ein anderes Format um oder legt Kopien in weiteren Formaten an: 16:9, 4:3, Quadrat, 4:5, Story 9:16, A4 hoch oder quer, Link-Vorschau. Freie Elemente wandern mit, Layouts ordnen sich neu an: Hoch- und Quadratformate stapeln Bild und Text, Social-Formate setzen größere Schrift, A4 kleinere. Der Lint rechnet je Format mit eigenen Grenzen (Social bis 30, A4 bis 350 Wörter je Seite). Für A4 gibt es die Layouts „Fließtext“ und „Angebot“.
+- **Formate:** „Exportieren“ → „Anderes Format …“ rechnet das Deck auf ein anderes Format um oder legt Kopien in weiteren Formaten an: 16:9, 4:3, Quadrat, 4:5, Story 9:16, A4 hoch oder quer, Link-Vorschau. Freie Elemente wandern mit, Layouts ordnen sich neu an: Hoch- und Quadratformate stapeln Bild und Text, Social-Formate setzen größere Schrift, A4 kleinere. Der Lint rechnet je Format mit eigenen Grenzen (Social bis 30, A4 bis 350 Wörter je Seite). Für A4 gibt es die Layouts „Fließtext“, „Angebot“ und „Flyer“ (Foto oben, Vollbild oder typografisch, mit Handlungsaufforderung und QR-Code).
 
 ### Speichern und Versionen
 
