@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DeckAgent, buildSystemPrompt, toRunnable, type Engine } from '../src/main/agent'
 import { z } from 'zod'
-import { buildTools, imageSettings, lookTyp, recentLooks, webpSize, type ToolDef } from '../src/main/tools'
+import { buildTools, imageSettings, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
@@ -43,6 +43,12 @@ assert.equal(tools.length, 16)
 }
 // WebP-Maße aus dem Kopf (Kopfbytes von ImageMagick-Dateien: verlustbehaftet 1234×567, verlustfrei 1001×333, erweitert 777×555)
 const webp = (hex: string) => webpSize(Buffer.from(hex, 'hex'))
+// imageSize: PNG (IHDR), GIF, JPEG (Frame-Kopf hinter einem APP0-Segment), sonst null
+const png1x2 = Buffer.from('89504e470d0a1a0a0000000d494844520000000300000002', 'hex')
+assert.deepEqual(imageSize(png1x2), { width: 3, height: 2 })
+assert.deepEqual(imageSize(Buffer.from('474946383961' + '0500' + '0700', 'hex')), { width: 5, height: 7 })
+assert.deepEqual(imageSize(Buffer.from('ffd8' + 'ffe00004aaaa' + 'ffc0000b08' + '0280' + '01e0' + '0300', 'hex')), { width: 480, height: 640 })
+assert.equal(imageSize(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>')), null)
 assert.deepEqual(webp('524946463610000057454250565038202a100000f010019d012ad20437023e6d'), { width: 1234, height: 567 })
 assert.deepEqual(webp('52494646a6030000574542505650384c9a0300002fe8035300063169b2fef5c5'), { width: 1001, height: 333 })
 assert.deepEqual(webp('524946463c0a000057454250565038580a000000100000000803002a0200414c'), { width: 777, height: 555 })

@@ -711,6 +711,24 @@ export function webpSize(b: Buffer): { width: number; height: number } | null {
   return null
 }
 
+// Pixelmaße aus dem Dateikopf (PNG, GIF, JPEG, WebP), ohne Electron; null = unbekannt (SVG, kaputt)
+export function imageSize(b: Buffer): { width: number; height: number } | null {
+  if (b.length >= 24 && b.readUInt32BE(0) === 0x89504e47) return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) }
+  if (b.length >= 10 && b.toString('latin1', 0, 4) === 'GIF8') return { width: b.readUInt16LE(6), height: b.readUInt16LE(8) }
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    // JPEG: Segmente bis zum Frame-Kopf SOF0–SOF15 (ohne DHT C4, JPG C8, DAC CC)
+    for (let i = 2; i + 9 < b.length;) {
+      if (b[i] !== 0xff) return null
+      const m = b[i + 1]
+      if (m === 0xff) { i++; continue } // Füllbyte
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { width: b.readUInt16BE(i + 7), height: b.readUInt16BE(i + 5) }
+      i += 2 + b.readUInt16BE(i + 2)
+    }
+    return null
+  }
+  return webpSize(b)
+}
+
 // Vorschau, die ins Modell passt: JPEG/PNG verkleinert nativeImage in Millisekunden; andere Formate (WebP) rendert die Engine,
 // gleich in Vorschaugröße (in Originalgröße, mit Render-Zoom 3840 px, dauerte jede Offscreen-Aufnahme 30–40 s).
 async function preview(ctx: ToolContext, img: Buffer, src: string, w0: number, h0: number, width = 768): Promise<Buffer[]> {
