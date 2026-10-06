@@ -283,16 +283,25 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const file = r.filePaths[0]
     return r.canceled || !file ? null : assetUrl(file)
   })
-  // Quellmaterial für ein neues Deck; ohne Pfad per Dialog. null = abgebrochen
-  ipcMain.handle('source:read', async (_, path?: string) => {
-    if (!path) {
-      const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Dokumente', extensions: SOURCE_EXT }] })
-      if (r.canceled || !r.filePaths[0]) return null
-      path = r.filePaths[0]
+  // Quellmaterial (mehrere Dateien, auch Bilder); ohne Pfade per Dialog. null = abgebrochen
+  ipcMain.handle('source:read', async (_, paths?: string[]) => {
+    if (!paths?.length) {
+      const r = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Dokumente und Bilder', extensions: SOURCE_EXT }] })
+      if (r.canceled || !r.filePaths.length) return null
+      paths = r.filePaths
     }
-    const text = (await sourceText(path, join(HOME, 'assets'))).trim()
-    if (!text) throw new Error('In der Datei steht kein lesbarer Text (gescanntes PDF?).')
-    return { name: path.split('/').pop()!, text: text.slice(0, SOURCE_MAX), cut: text.length > SOURCE_MAX }
+    const out: { name: string; text: string; cut: boolean }[] = []
+    for (const path of paths) {
+      const name = path.split('/').pop()!
+      try {
+        const text = (await sourceText(path, join(HOME, 'assets'))).trim()
+        if (!text) throw new Error('In der Datei steht kein lesbarer Text (gescanntes PDF?).')
+        out.push({ name, text: text.slice(0, SOURCE_MAX), cut: text.length > SOURCE_MAX })
+      } catch (e) {
+        throw new Error(`${name}: ${(e as Error).message}`)
+      }
+    }
+    return out
   })
   ipcMain.handle('brand:get', () => defaultBrand() ?? null)
   ipcMain.handle('brand:set', (_e, b: BrandKit) => saveBrand(b))

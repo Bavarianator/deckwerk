@@ -1,19 +1,26 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“ und die zuletzt bearbeiteten Decks.
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUp, Paperclip, Settings, X } from 'lucide-react'
+import { ArrowUp, Image as ImageIcon, Paperclip, Settings, X } from 'lucide-react'
 import type { Deck } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Logo } from './Logo'
 
-// Angehängtes Dokument (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateiname
+// Angehängte Dateien (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateinamen
 export type Source = { name: string; text: string; cut: boolean }
-export const sourceContext = (s: Source) => `Quellmaterial aus „${s.name}“${s.cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden; genannte Bilder (asset://…) direkt als Bildquelle nutzen:\n<quelle>\n${s.text}\n</quelle>`
+export const isImage = (name: string) => /\.(png|jpe?g|webp|gif|svg)$/i.test(name)
+export const sourceContext = (srcs: Source[]) => srcs.map((s) => `Quellmaterial aus „${s.name}“${s.cut ? ' (gekürzt)' : ''}. Inhalte und Zahlen von dort verwenden, nichts dazuerfinden:\n<quelle>\n${s.text}\n</quelle>`).join('\n\n')
+  + '\n\nBilder (Zeilen „Bild: asset://…“) vor dem Einbauen mit find_images ansehen (url = dieser Pfad). Ein Logo gehört ins Brand-Kit (update_deck brand), Fotos und Abbildungen als Bildquelle der passenden Folie. Nichts dazuerfinden.'
 export function useSource() {
-  const [src, setSrc] = useState<Source | null>(null)
+  const [srcs, setSrcs] = useState<Source[]>([])
   const [err, setErr] = useState('')
-  const attach = (path?: string) => { setErr(''); window.api.readSource(path).then((s) => s && setSrc(s), (e: Error) => setErr(e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, ''))) }
-  return { src, setSrc, err, attach }
+  const attach = (paths?: string[]) => {
+    if (paths && !(paths = paths.filter(Boolean)).length) return // gezogen ohne Datei (z. B. Text aus dem Browser)
+    setErr('')
+    // gleicher Name: der zuletzt angehängte gilt, auch innerhalb einer Auswahl
+    window.api.readSource(paths).then((n) => n && setSrcs((old) => [...old, ...n].filter((s, i, all) => all.findLastIndex((x) => x.name === s.name) === i)), (e: Error) => setErr(e.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')))
+  }
+  return { srcs, attach, remove: (name: string) => setSrcs((old) => old.filter((o) => o.name !== name)), clear: () => setSrcs([]), err }
 }
 
 interface Recent { path: string; title: string; mtime: number; deck: Deck }
@@ -47,12 +54,12 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   useEffect(() => { window.api.templates().then(setTemplates, () => setTemplates([])) }, [])
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { window.api.recent(8).then(setRecent, () => setRecent([])) }, [])
-  const { src, setSrc, err, attach } = useSource()
+  const { srcs, attach, remove, clear, err } = useSource()
   const submit = () => {
-    const ask = text.trim() || (!src ? '' : /\.pptx$/i.test(src.name)
+    const ask = text.trim() || (!srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
       ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
-      : 'Mach aus diesem Dokument eine Präsentation.')
-    if (onSubmit(src ? `${ask} · ${src.name}` : ask, src ? sourceContext(src) : undefined)) { setText(''); setSrc(null) }
+      : 'Mach aus diesen Dateien eine Präsentation.')
+    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, srcs.length ? sourceContext(srcs) : undefined)) { setText(''); clear() }
   }
 
   return (
@@ -71,7 +78,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         <p className="home-sub">Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.</p>
         <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
           onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => { const f = e.dataTransfer.files[0]; if (f) { e.preventDefault(); attach(window.api.pathOf(f)) } }}>
+          onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
           <textarea
             ref={ref}
             autoFocus
@@ -85,12 +92,13 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
           <div className="home-field-bar">
             <div className="home-field-l">
               <ModelSelect value={model} onChange={onModel} />
-              {src
-                ? <span className="pill" title={src.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}><Paperclip size={13} />{src.name}<button type="button" className="plain" aria-label="Anhang entfernen" onClick={() => setSrc(null)}><X size={13} /></button></span>
-                : <button type="button" className="plain" title="Dokument als Grundlage anhängen: Text, Markdown, Word, PowerPoint, PDF (oder hierher ziehen)" onClick={() => attach()}><Paperclip size={16} />Datei</button>}
+              {srcs.map((s) => (
+                <span key={s.name} className="pill" title={s.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>{isImage(s.name) ? <ImageIcon size={13} /> : <Paperclip size={13} />}{s.name}<button type="button" className="plain" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={13} /></button></span>
+              ))}
+              <button type="button" className="plain" title="Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)" onClick={() => attach()}><Paperclip size={16} />Datei</button>
               {err && <span className="home-err error" role="alert">{err}</span>}
             </div>
-            <button type="submit" className="round" aria-label="Deck erstellen" disabled={!text.trim() && !src}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            <button type="submit" className="round" aria-label="Deck erstellen" disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
           </div>
         </form>
         <div className="home-chips">
