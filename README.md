@@ -10,6 +10,7 @@ Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwe
 
 - **Aus einem Satz ein Deck.** Storyline nach dem Pyramidenprinzip, Action Titles, 29 Layouts, Diagramme und Animationen. Jede Folie wird gerendert und geprüft: Überlauf, Kontrast, Struktur, Eintönigkeit.
 - **Quellmaterial nutzen.** PDF, Word, PowerPoint, Text, Markdown, CSV oder JSON anhängen, und die KI baut das Deck daraus. Auf Wunsch recherchiert sie im Web.
+- **Eigene Bilder und Logos.** Fotos, Screenshots und Logos (PNG, JPG, WebP, GIF, SVG) einfach mit anhängen, auch mehrere Dateien auf einmal. Abbildungen aus PDF, Word und PowerPoint kommen mit. Die KI sieht sich jedes Bild an, setzt Fotos auf die passende Folie und ein Logo auf Titel- und Schlussfolie.
 - **Frei gestalten.** Texte, Formen, Fotos, Icons, Diagramme, QR-Codes, Video und Audio. Dazu Gruppen, Zuschnitt, Freisteller, Ausrichten, Hilfslinien und das Umwandeln von Layout-Folien in freie Elemente.
 - **Ein Look für alles.** 11 Themes, eigene Designs von der KI, eigene Schriften, 8 Formate von 16:9 über Instagram bis A4 (Layouts, Schriftgrößen und Lint passen sich an), ein Brand-Kit für jedes neue Deck und ein Hausstil, den sich die KI dauerhaft merkt.
 - **Präsentieren.** Referentenansicht mit Notizen, Uhr und Sprechzeit, Laserpointer und Stift, Handy als Fernbedienung.
@@ -59,7 +60,7 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 
 1. Starte Deckwerk über das Startmenü.
 2. Beim ersten Start führt dich die Einrichtung durch den KI-Zugang. Sie findet Claude Code, Codex und Vibe von selbst. Ist eines davon installiert und angemeldet, brauchst du nichts einzutragen: Der Chat nutzt dessen Login, bei mehreren wählst du per Klick. Ohne Zugang zeigt sie drei Wege Schritt für Schritt: Claude-Abo (Claude Code per nativem Installer), ChatGPT-Abo (Codex) oder Anthropic-API-Key. Ein frisch installiertes CLI erkennt sie von selbst. Einen Key prüft Deckwerk vor dem Speichern bei Anthropic, alternativ geht `ANTHROPIC_API_KEY`. Ein eingetragener Key hat Vorrang. Modell, Agenten (Deckwerk mit einem Klick in alle gefundenen CLIs eintragen), Bilder und Cloud stehen unter „Mehr Einstellungen“. Die Einrichtung erreichst du später über das Zahnrad.
-3. Beschreibe auf dem Startbildschirm in einem Satz, was du zeigen willst, zum Beispiel „Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum“. Über „Datei“ hängst du Quellmaterial an.
+3. Beschreibe auf dem Startbildschirm in einem Satz, was du zeigen willst, zum Beispiel „Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum“. Über „Datei“ (oder per Ziehen ins Feld) hängst du Quellmaterial und eigene Bilder an, auch mehrere Dateien. Die Bilder landen in `~/Deckwerk/assets/`, Abbildungen aus Dokumenten unter `assets/import-<name>/`. Für Abbildungen aus PDFs braucht Deckwerk `pdfimages` aus demselben Poppler-Paket wie `pdftotext`.
 4. Oder beginne mit einer Vorlage (du bearbeitest eine Kopie) oder mit „Leer beginnen und frei gestalten“.
 
 ## Bedienung
@@ -75,7 +76,7 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 
   Angeboten wird nur, was installiert ist. Steht das gespeicherte Modell nicht mehr zur Verfügung, nimmt Deckwerk das erste verfügbare. Die Wahl gilt ab der nächsten Nachricht und bleibt gespeichert. Wechselst du den Anbieter, beginnt ein neues Gespräch; das Deck bleibt. Vibe und Codex antworten spürbar langsamer als Claude.
 - Unter den Notizen schreibt „Schreiben lassen“ die Sprechernotizen, „Überarbeiten“ verbessert vorhandene. Daneben steht die geschätzte Sprechzeit.
-- **Brand-Kit:** Im Look-Dialog „Als Standard speichern“ legt Farben, Schriften und Logo (auch eines für dunklen Grund) in `~/Deckwerk/brand.json` ab. Jedes Deck, das die KI neu anlegt, bekommt die Marke automatisch; „Standard übernehmen“ wendet sie auf ein bestehendes Deck an.
+- **Brand-Kit:** Im Look-Dialog „Als Standard speichern“ legt Farben, Schriften und Logo (auch eines für dunklen Grund) in `~/Deckwerk/brand.json` ab. Jedes Deck, das die KI neu anlegt, bekommt die Marke automatisch, das Logo steht auf Titel- und Schlussfolie (kein Wasserzeichen auf jeder Folie); „Standard übernehmen“ wendet sie auf ein bestehendes Deck an.
 - **Hausstil:** Sag „merk dir …“, und die KI trägt die Vorliebe in `~/Deckwerk/hausstil.md` ein. Die Datei gilt für jedes künftige Deck und lässt sich von Hand bearbeiten.
 - **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/Deckwerk/assets`. Findet sie dort nichts Passendes und ist `UNSPLASH_ACCESS_KEY` gesetzt, sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
 - **KI-Bilder:** Die KI kann Bilder auch selbst erzeugen, mit `gpt-image-2` über [Mammouth](https://mammouth.ai) oder OpenAI, ohne Key auch über Codex mit deinem ChatGPT-Login (einmal `codex login`). Eingerichtet wird das unter Zahnrad → Einrichtung → **Bilder**: Keys (verschlüsselt gespeichert), bevorzugter Anbieter und Modell, z. B. `gemini-3-pro-image-preview` bei Mammouth. Ohne Vorgabe nimmt die KI den ersten eingerichteten Anbieter in der Reihenfolge Mammouth, OpenAI, Codex; „mach das Bild mit Codex“ wählt gezielt. Alternativ gelten `MAMMOUTH_API_KEY`, `OPENAI_API_KEY` und `IMAGE_MODEL` aus der Umgebung. Die Bilder landen in `~/Deckwerk/assets`.
@@ -189,7 +190,7 @@ Bei einer Quellcode-Installation nutzt der Server den vorhandenen Build und baut
 
 ## Datenschutz und Sicherheit
 
-- **Was an die KI geht:** Deine Wünsche, der Inhalt des Decks, angehängtes Quellmaterial und gerenderte Folienbilder gehen an den Anbieter deines KI-Zugangs: Anthropic (API oder Claude Code), OpenAI (Codex) oder Mistral (Vibe). Bei einer Web-Recherche ruft die KI Webseiten ab.
+- **Was an die KI geht:** Deine Wünsche, der Inhalt des Decks, angehängtes Quellmaterial (auch Vorschauen deiner Bilder) und gerenderte Folienbilder gehen an den Anbieter deines KI-Zugangs: Anthropic (API oder Claude Code), OpenAI (Codex) oder Mistral (Vibe). Bei einer Web-Recherche ruft die KI Webseiten ab.
 - **Chat über Claude Code, Codex oder Vibe:** Das CLI bekommt nur die Deckwerk-Werkzeuge (dazu Web-Recherche), keine Shell und keine Dateiwerkzeuge. Ein präpariertes Quelldokument kann so keine Befehle auf deinem Rechner ausführen.
 - **Cloud-Sync:** Nur wenn du ihn einrichtest. Decks und Bilder gehen dann an deinen WebDAV-Server. Das App-Passwort liegt verschlüsselt über den System-Schlüsselbund. Nutze eine `https://`-Adresse.
 - **Was lokal bleibt:** Freisteller, Rendering und Export laufen auf deinem Rechner.
