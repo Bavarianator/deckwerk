@@ -2,6 +2,7 @@
 // Select ist ein Drop-in für <select>: gleiche Props (value, onChange mit e.target.value), <option>/<optgroup> als Kinder.
 // Vorschau je Option: data-swatch="#hex" (Farbpunkt) oder style={{ fontFamily }} (Schrift in sich selbst), data-hint (zweite Zeile).
 import { Children, isValidElement, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { Check, ChevronDown } from 'lucide-react'
 import './kit.css'
@@ -32,35 +33,55 @@ interface SelectProps {
   id?: string
 }
 
+// Option ins Bild holen, dabei nur die Liste scrollen: scrollIntoView zöge scrollende Panels mit (Diagramm-Editor), das schlösse das Menü
+function reveal(l: HTMLElement | null, i: number) {
+  const o = l?.querySelector<HTMLElement>(`[data-i="${i}"]`)
+  if (!l || !o) return
+  if (o.offsetTop < l.scrollTop) l.scrollTop = o.offsetTop
+  else if (o.offsetTop + o.offsetHeight > l.scrollTop + l.clientHeight) l.scrollTop = o.offsetTop + o.offsetHeight - l.clientHeight
+}
+
 export function Select({ value, onChange, children, disabled, className, title, id, ...rest }: SelectProps) {
   const opts = collect(children)
   const cur = opts.find((o) => o.value === String(value ?? '')) ?? opts[0]
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
-  const [pos, setPos] = useState<CSSProperties>({})
   const btn = useRef<HTMLButtonElement>(null)
   const list = useRef<HTMLDivElement>(null)
   const lid = useId()
 
-  // Menü als position: fixed an den Auslöser hängen (Panels mit overflow schneiden es sonst ab); unten zu wenig Platz → nach oben
+  // Menü als position: fixed an den Auslöser hängen (Panels mit overflow schneiden es sonst ab). Vor dem Paint mit fester Breite
+  // die echte Höhe messen (Hinweise brechen um): unten, wenn es passt, sonst auf der Seite mit mehr Platz.
+  // Direkt am DOM statt per State, damit die gewählte Option noch vor dem Paint ins Bild scrollen kann.
   useLayoutEffect(() => {
-    if (!open || !btn.current) return
+    const l = list.current
+    if (!open || !btn.current || !l) return
     const r = btn.current.getBoundingClientRect()
-    const h = Math.min(340, 8 + opts.length * 34 + new Set(opts.map((o) => o.group)).size * 26)
-    const up = r.bottom + h + 8 > innerHeight && r.top > h
-    setPos({ left: r.left, minWidth: r.width, maxWidth: Math.max(r.width, 320), ...(up ? { bottom: innerHeight - r.top + 4 } : { top: r.bottom + 4 }) })
-    setActive(Math.max(0, opts.indexOf(cur)))
+    Object.assign(l.style, { left: '0px', minWidth: `${r.width}px`, maxWidth: `${Math.max(r.width, 320)}px` })
+    const m = l.getBoundingClientRect()
+    const below = innerHeight - r.bottom - 12, above = r.top - 12 // 4 px zum Knopf, 8 px zum Fensterrand
+    const up = Math.min(m.height, 560) > below && above > below
+    Object.assign(l.style, { left: `${Math.max(8, Math.min(r.left, innerWidth - m.width - 8))}px`, maxHeight: `${Math.min(560, up ? above : below)}px`, ...(up ? { bottom: `${innerHeight - r.top + 4}px` } : { top: `${r.bottom + 4}px` }) })
+    const i = Math.max(0, opts.indexOf(cur))
+    setActive(i)
+    reveal(l, i)
   }, [open])
   useEffect(() => {
     if (!open) return
     const close = (e: PointerEvent) => { if (!list.current?.contains(e.target as Node) && !btn.current?.contains(e.target as Node)) setOpen(false) }
+    // wie ein natives <select>: scrollt die Seite unter dem Knopf oder ändert sich das Fenster, schließt das Menü (es ist fixed)
+    const moved = (e: Event) => { if ((e.target as Node).contains(btn.current)) setOpen(false) }
+    const resized = () => setOpen(false)
     addEventListener('pointerdown', close, true)
-    return () => removeEventListener('pointerdown', close, true)
+    addEventListener('scroll', moved, true)
+    addEventListener('resize', resized)
+    return () => { removeEventListener('pointerdown', close, true); removeEventListener('scroll', moved, true); removeEventListener('resize', resized) }
   }, [open])
-  useEffect(() => { if (open) list.current?.querySelector<HTMLElement>(`[data-i="${active}"]`)?.scrollIntoView({ block: 'nearest' }) }, [active, open])
 
   const pick = (o: Opt) => { if (o.disabled) return; setOpen(false); btn.current?.focus(); if (o.value !== cur?.value) onChange({ target: { value: o.value } }) }
-  const step = (d: number) => { for (let i = active + d; i >= 0 && i < opts.length; i += d) if (!opts[i].disabled) return setActive(i) }
+  // Nur Tastatur scrollt die Liste mit; Hover setzt active ohne Scrollen, sonst wandert die Liste unter der Maus weg
+  const show = (i: number) => { setActive(i); reveal(list.current, i) }
+  const step = (d: number) => { for (let i = active + d; i >= 0 && i < opts.length; i += d) if (!opts[i].disabled) return show(i) }
   const onKey = (e: React.KeyboardEvent) => {
     if (disabled) return
     if (!open && ['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) { e.preventDefault(); return setOpen(true) }
@@ -71,7 +92,7 @@ export function Select({ value, onChange, children, disabled, className, title, 
     else if (e.key === 'Escape' || e.key === 'Tab') { setOpen(false); if (e.key === 'Tab') return }
     else if (e.key.length === 1) { // Tippen springt zur ersten passenden Option
       const i = opts.findIndex((o) => String(typeof o.label === 'string' ? o.label : o.value).toLowerCase().startsWith(e.key.toLowerCase()))
-      if (i >= 0) setActive(i)
+      if (i >= 0) show(i)
       return
     }
     else return
@@ -91,8 +112,8 @@ export function Select({ value, onChange, children, disabled, className, title, 
         <span className="kit-select-label" style={cur?.style}>{cur?.label}</span>
         <ChevronDown size={14} className="kit-chev" aria-hidden />
       </button>
-      {open && (
-        <div ref={list} id={lid} role="listbox" aria-label={rest['aria-label']} className="kit-menu" style={pos} onKeyDown={onKey}>
+      {open && createPortal( // an body: Vorfahren mit backdrop-filter (KI-Leiste, Panels) würden fixed sonst auf sich beziehen
+        <div ref={list} id={lid} role="listbox" aria-label={rest['aria-label']} className="kit-menu" onKeyDown={onKey}>
           {opts.map((o, i) => {
             const head = o.group !== lastGroup && o.group
             lastGroup = o.group
@@ -115,7 +136,8 @@ export function Select({ value, onChange, children, disabled, className, title, 
               </div>
             )
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

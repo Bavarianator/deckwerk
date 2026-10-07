@@ -458,7 +458,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const list = text.split(/^\[\[models\]\]\s*$/m).slice(1).map((b) => b.split(/^\[/m)[0]).flatMap((b) => {
       const alias = /^alias\s*=\s*"([^"]+)"/m.exec(b)?.[1] ?? /^name\s*=\s*"([^"]+)"/m.exec(b)?.[1]
       const provider = /^provider\s*=\s*"([^"]+)"/m.exec(b)?.[1]
-      return alias ? [{ id: `vibe:${alias}`, name: `Vibe · ${alias}`, hint: [provider, alias === active && 'Voreinstellung in Vibe'].filter(Boolean).join(', ') }] : []
+      const hint = [provider === 'llamacpp' && 'läuft lokal auf diesem Rechner', alias === active && 'Voreinstellung in Vibe'].filter(Boolean).join(', ')
+      return alias ? [{ id: `vibe:${alias}`, name: `Vibe · ${alias}`, hint: hint || undefined }] : []
     }).sort((a, b) => Number(b.id === `vibe:${active}`) - Number(a.id === `vibe:${active}`))
     return list.length ? list : [{ id: 'vibe:', name: 'Vibe', hint: 'Modell aus der Vibe-Einstellung' }]
   }
@@ -468,7 +469,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       if (e) throw e
       const all = (JSON.parse(out).models as { slug: string; display_name?: string; description?: string; visibility?: string; priority?: number }[])
       const list = all.filter((m) => m.visibility === 'list').sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99))
-      ok(list.map((m) => ({ id: `codex:${m.slug}`, name: `Codex · ${m.display_name ?? m.slug}`, hint: m.description })))
+      ok(list.map((m) => ({ id: `codex:${m.slug}`, name: `Codex · ${m.display_name ?? m.slug}` }))) // ohne die englische Katalogbeschreibung
     } catch { ok([{ id: 'codex:', name: 'Codex', hint: 'Modell aus der Codex-Einstellung' }]) }
   }))
   ipcMain.handle('chat:models', async (): Promise<ChatModels> => (detect(), {
