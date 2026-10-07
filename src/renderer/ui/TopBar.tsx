@@ -1,7 +1,8 @@
 // Kopfleiste im Editor: zurück zu den Decks, Titel mit Zustand, Einfügen/Anpassen/Look, Export, Präsentieren.
 import { useEffect, useRef, useState } from 'react'
 import type { SyncStatus } from '../../preload'
-import { ChevronLeft, CloudAlert, CloudCheck, CloudSync, LayoutGrid, PanelLeft, Palette, Play, Plus, RectangleHorizontal, Share, SlidersHorizontal } from 'lucide-react'
+import { ShortcutSheet } from './ShortcutSheet'
+import { ChevronLeft, CloudAlert, CloudCheck, CloudSync, Keyboard, LayoutGrid, PanelLeft, Palette, Play, Plus, RectangleHorizontal, Share, SlidersHorizontal } from 'lucide-react'
 
 export interface Status { text: string; error?: boolean }
 export type Panel = 'insert' | 'format' | null
@@ -51,10 +52,22 @@ export function TopBar(p: Props) {
     addEventListener('pointerdown', close)
     return () => removeEventListener('pointerdown', close)
   }, [menu])
+  const [keys, setKeys] = useState(false)
+  useEffect(() => {
+    const open = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (e.key !== '?' || e.ctrlKey || e.altKey || e.metaKey || t?.closest('input, textarea, select, [contenteditable]') || document.querySelector('.look')) return
+      e.preventDefault()
+      setKeys(true)
+    }
+    addEventListener('keydown', open)
+    return () => removeEventListener('keydown', open)
+  }, [])
   const toggle = (x: Panel) => p.onPanel(p.panel === x ? null : x)
   const state = p.status?.text ?? (!p.hasDeck ? '' : !p.saved ? 'Bearbeitet' : p.path ? 'Gespeichert' : 'Nicht gespeichert')
 
   return (
+    <>
     <header className="top">
       <div className="top-l">
         <button className="plain" aria-label="Folienübersicht ein- oder ausblenden" aria-pressed={p.nav} disabled={p.view === 'grid'} onClick={p.onNav}><PanelLeft size={18} /></button>
@@ -78,6 +91,7 @@ export function TopBar(p: Props) {
           </>
         )}
         <SyncBadge />
+        <button className="plain" title="Tastenkürzel (?)" aria-label="Tastenkürzel (?)" onClick={() => setKeys(true)}><Keyboard size={17} /></button>
         <button className="plain" disabled={!p.hasDeck} onClick={p.onLook}><Palette size={17} />Look</button>
         <div className="top-export" ref={box}>
           <button className="plain" disabled={!p.hasDeck} aria-expanded={menu} aria-haspopup="menu" onClick={() => setMenu(!menu)}><Share size={17} />Exportieren</button>
@@ -95,5 +109,7 @@ export function TopBar(p: Props) {
         <button className="pill tint" disabled={!p.hasDeck} onClick={p.onPresent} title="Präsentieren (F5)"><Play size={12} fill="currentColor" />Präsentieren</button>
       </div>
     </header>
+    {keys && <ShortcutSheet onClose={() => setKeys(false)} />}
+    </>
   )
 }
