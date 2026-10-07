@@ -12,7 +12,7 @@ import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
-import { assetUrl, BRAND_FILE, buildTools, defaultBrand, localizeDeck, saveBrand, STYLE_FILE } from './tools'
+import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, type Orientation } from './tools'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
 import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
@@ -413,6 +413,23 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const out = await find.run({ query: query || undefined, source: 'auto', limit: 5, orientation: 'landscape' })
     const urls = out.text.match(/asset:\/\/local\S+/g) ?? []
     return { urls, note: urls.length ? undefined : out.text }
+  })
+  // Einfügen-Panel (Canva „Magic Media“): dieselbe Bild-KI wie generate_image, Datei landet unter ~/Deckwerk/assets
+  ipcMain.handle('image:generate', async (_, prompt: unknown, orientation: unknown) => {
+    if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 2000) throw new Error('Bitte das Bild beschreiben (höchstens 2000 Zeichen).')
+    if (typeof orientation !== 'string' || !Object.hasOwn(IMAGE_SIZE, orientation)) throw new Error(`Unbekanntes Format: ${orientation}`)
+    const img = await makeImage(prompt.trim(), orientation as Orientation, assets)
+    if (!img) throw new Error(NO_IMAGE_AI)
+    return assetUrl(img.file)
+  })
+  // „Deine Bilder“ (Canva „Uploads“): die neuesten Bilder unter ~/Deckwerk/assets, auch aus Unterordnern wie import-*
+  ipcMain.handle('assets:list', async () => {
+    const files = (await readdir(assets, { recursive: true }).catch(() => [] as string[])).filter((f) => IMG_FILE.test(f))
+    const found = await Promise.all(files.map(async (f) => {
+      const st = await stat(join(assets, f)).catch(() => null)
+      return st?.isFile() ? [{ url: assetUrl(join(assets, f)), name: basename(f), mtime: st.mtimeMs }] : []
+    }))
+    return found.flat().sort((a, b) => b.mtime - a.mtime).slice(0, 60)
   })
 
   // Kopie als eigenes Deck unter ~/Deckwerk/<titel>/deck.json speichern (Formate: Quadrat, Story …); das offene Deck bleibt

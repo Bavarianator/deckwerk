@@ -453,3 +453,9 @@ button.setup-opt { cursor: pointer; }
 .obj-rewrite .menu.up { top: auto; bottom: 38px; }
 .obj-rewrite .menu.right { left: auto; right: 0; }
 .obj-rewrite .menu-cap { display: block; padding: 4px 10px 2px; font-size: 11px; color: var(--muted); }
+
+/* Einfügen: KI-Bild und Uploads */
+.el-gen-prompt { margin-bottom: 8px; }
+.el-gen-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.el-mine { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.el-mine .el-photo { aspect-ratio: 1; }

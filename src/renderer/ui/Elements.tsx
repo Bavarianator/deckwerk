@@ -1,6 +1,6 @@
 // Seitenpanel „Elemente“ wie in Canva: Text, Formen, Icons, Fotos (Upload und Suche), Diagramme, Folienvorlagen.
 // Klick fügt in die Mitte der Folie ein, Ziehen legt das Element an der Mausposition ab.
-import { useMemo, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Film, icons, ImagePlus, Music, QrCode as QrCodeIcon, Search } from 'lucide-react'
 import { FORMATS, SHAPES, sizeOf, type ChartSpec, type Deck, type FormatId, type Item } from '../../shared/deck'
 import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newMedia, newQr, newShape, newText } from '../../shared/items'
@@ -9,6 +9,7 @@ import { resolveTheme } from '../../shared/themes'
 import { SHAPE_PATHS } from '../slide'
 import { imageRatio } from './itemOps'
 import { videoPoster } from './media'
+import { OpenSettings, Spin } from './settings/parts'
 
 // Layouts mit `sizes` (Flyer, Fließtext, Angebot) nur im passenden Deck-Format; Muster wie in lint.ts
 export function layoutIdsFor(deck: Deck): LayoutId[] {
@@ -19,13 +20,14 @@ export function layoutIdsFor(deck: Deck): LayoutId[] {
   })
 }
 
-interface Props { deck: Deck; disabled: boolean; onAdd: (it: Item) => void; onAddSlide: (layout: LayoutId) => void; pickImage: () => Promise<string | null> }
+interface Props { deck: Deck; slideId?: string; disabled: boolean; onAdd: (it: Item) => void; onAddSlide: (layout: LayoutId) => void; pickImage: () => Promise<string | null> }
 
 const ICON_LIST = Object.keys(icons)
 const kebab = (n: string) => n.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([a-zA-Z])(\d)/g, '$1-$2').toLowerCase()
 export const SHAPE_NAMES: Record<string, string> = { rect: 'Rechteck', ellipse: 'Kreis', triangle: 'Dreieck', diamond: 'Raute', hexagon: 'Sechseck', star: 'Stern', arrow: 'Pfeil', line: 'Linie',
   chevron: 'Chevron', pentagon: 'Etikett', trapezoid: 'Trapez', parallelogram: 'Parallelogramm', rtTriangle: 'Rechtwinkliges Dreieck', octagon: 'Achteck',
   donut: 'Ring', plus: 'Plus', heart: 'Herz', star4: 'Stern 4', star6: 'Stern 6', star8: 'Stern 8', star12: 'Siegel' }
+const ORIENTATIONS = [['landscape', 'Quer'], ['portrait', 'Hoch'], ['square', 'Quadrat']] as const
 const CHARTS: [ChartSpec['type'], string][] = [['bar', 'Säulen'], ['hbar', 'Balken'], ['line', 'Linie'], ['donut', 'Ring'], ['stacked', 'Gestapelt'], ['waterfall', 'Wasserfall']]
 
 // Dateiauswahl + Poster für Video/Audio; auch von der Einfügen-Suche genutzt. null = abgebrochen.
@@ -46,11 +48,33 @@ function Tile({ make, title, className, children, disabled, onAdd }: { make: () 
   )
 }
 
-export function Elements({ deck, disabled, onAdd, onAddSlide, pickImage }: Props) {
+export function Elements({ deck, slideId, disabled, onAdd, onAddSlide, pickImage }: Props) {
   const t = useMemo(() => resolveTheme(deck.theme), [JSON.stringify(deck.theme)])
   const [iconQ, setIconQ] = useState('')
   const [photoQ, setPhotoQ] = useState('')
   const [photos, setPhotos] = useState<{ urls: string[]; note?: string; busy?: boolean }>({ urls: [] })
+  const [genQ, setGenQ] = useState('')
+  const [genO, setGenO] = useState<(typeof ORIENTATIONS)[number][0]>('landscape')
+  const [gen, setGen] = useState<{ busy?: boolean; error?: string; note?: string }>({})
+  const [mine, setMine] = useState<{ url: string; name: string }[] | null>(null)
+  const mineRef = useRef<HTMLElement>(null)
+  const openSettings = useContext(OpenSettings)
+  // die Erzeugung dauert Minuten: beim Fertigwerden die aktuelle Folie lesen, nicht die vom Klick
+  const now = useRef<{ slideId?: string; onAdd?: Props['onAdd'] }>({})
+  useEffect(() => {
+    now.current = { slideId, onAdd }
+    return () => { now.current = {} } // Panel zu: Folie unbekannt
+  }, [slideId, onAdd])
+  // eigene Bilder erst laden, wenn der Bereich ins Bild scrollt
+  useEffect(() => {
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return
+      io.disconnect()
+      window.api.listAssets().then(setMine, () => setMine([]))
+    })
+    if (mineRef.current) io.observe(mineRef.current)
+    return () => io.disconnect()
+  }, [])
   const iconHits = useMemo(() => {
     const q = iconQ.trim().toLowerCase().replace(/[\s-]/g, '')
     return (q ? ICON_LIST.filter((n) => n.toLowerCase().includes(q)) : ['Star', 'Heart', 'Check', 'Rocket', 'Lightbulb', 'Target', 'TrendingUp', 'Users', 'ShieldCheck', 'Globe', 'Zap', 'Award', 'Clock', 'Mail', 'Phone', 'MapPin', 'Leaf', 'Sparkles', 'ChartBar', 'Handshake', 'ArrowRight', 'Quote', 'Flag'].filter((n) => n in icons)).slice(0, 48)
@@ -63,6 +87,21 @@ export function Elements({ deck, disabled, onAdd, onAddSlide, pickImage }: Props
   const upload = async () => {
     const src = await pickImage()
     if (src) onAdd(newImage(src, await imageRatio(src)))
+  }
+  // ponytail: Zustand hängt am Panel; wird es geschlossen, liegt das Bild nur unter „Deine Bilder“. Sonst Zustand in den EditorScreen heben
+  const generate = async () => {
+    const at = slideId
+    setGen({ busy: true })
+    try {
+      const src = await window.api.generateImage(genQ.trim(), genO)
+      const it = newImage(src, await imageRatio(src))
+      // nur auf die Folie vom Klick; die Slide-id erkennt auch ein anderes Deck (gleich nur bei Kopien derselben Vorlage)
+      if (at && now.current.slideId === at) { now.current.onAdd!(it); setGen({}) }
+      else setGen({ note: 'Fertig – das Bild liegt unter „Deine Bilder“.' })
+      window.api.listAssets().then(setMine, () => {})
+    } catch (e) {
+      setGen({ error: (e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '') })
+    }
   }
   const tile = { disabled, onAdd }
 
@@ -117,6 +156,33 @@ export function Elements({ deck, disabled, onAdd, onAddSlide, pickImage }: Props
           ))}
         </div>
         <p className="muted small">Tipp: Bilder aus dem Dateimanager auf die Folie ziehen oder mit Strg+V einfügen.</p>
+      </section>
+
+      <section>
+        <h3>Bild erzeugen</h3>
+        <textarea className="el-gen-prompt" rows={3} maxLength={2000} value={genQ} onChange={(e) => setGenQ(e.target.value)} placeholder="Beschreibung, z. B. ruhiger Schreibtisch am Fenster, Morgenlicht" />
+        <div className="el-gen-row">
+          <div className="seg" role="group" aria-label="Format">
+            {ORIENTATIONS.map(([o, name]) => <button key={o} type="button" aria-pressed={genO === o} onClick={() => setGenO(o)}>{name}</button>)}
+          </div>
+          <button type="button" className="btn" disabled={disabled || gen.busy || !genQ.trim()} onClick={generate}>{gen.busy ? <><Spin /> Erzeugt …</> : 'Erzeugen'}</button>
+        </div>
+        {gen.busy && <p className="muted small">Das kann einige Minuten dauern.</p>}
+        {gen.note && <p className="muted small">{gen.note}</p>}
+        {gen.error && <p className="muted small">{gen.error}</p>}
+        {gen.error && /eingerichtet/.test(gen.error) && <button type="button" className="btn" onClick={() => openSettings('bilder')}>Einstellungen öffnen</button>}
+      </section>
+
+      <section ref={mineRef}>
+        <h3>Deine Bilder</h3>
+        {!mine ? <p className="muted small">Lädt …</p> : !mine.length && <p className="muted small">Noch keine eigenen Bilder in ~/Deckwerk/assets.</p>}
+        <div className="el-mine">
+          {mine?.map((u) => (
+            <Tile key={u.url} {...tile} make={async () => newImage(u.url, await imageRatio(u.url))} title={u.name} className="el-photo">
+              <img src={u.url} alt="" loading="lazy" />
+            </Tile>
+          ))}
+        </div>
       </section>
 
       <section>

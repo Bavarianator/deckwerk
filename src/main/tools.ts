@@ -756,7 +756,7 @@ async function preview(ctx: ToolContext, img: Buffer, src: string, w0: number, h
 }
 
 // Eigene Bilder (auch Unterordner wie import-*/ aus dem Quellmaterial): Maße für die Trefferzeile, SVG/AVIF ohne lesbare Pixelmaße
-const IMG_FILE = /\.(png|jpe?g|gif|webp|svg|avif)$/i
+export const IMG_FILE = /\.(png|jpe?g|gif|webp|svg|avif)$/i
 function dims(buf: Buffer, file: string): { label: string; w: number; h: number } {
   const s = imageSize(buf)
   if (!s) return { label: extname(file).slice(1).toUpperCase(), w: 1600, h: 1000 }
@@ -840,29 +840,38 @@ const IMAGE_API = {
   mammouth: { url: 'https://api.mammouth.ai/v1', env: 'MAMMOUTH_API_KEY' },
   openai: { url: 'https://api.openai.com/v1', env: 'OPENAI_API_KEY' },
 }
-const IMAGE_SIZE = { landscape: { w: 1536, h: 1024 }, portrait: { w: 1024, h: 1536 }, square: { w: 1024, h: 1024 } }
-type Orientation = keyof typeof IMAGE_SIZE
+export const IMAGE_SIZE = { landscape: { w: 1536, h: 1024 }, portrait: { w: 1024, h: 1536 }, square: { w: 1024, h: 1024 } }
+export type Orientation = keyof typeof IMAGE_SIZE
 const IMAGE_CHECK = 'Vorschau prüfen: Passt das Motiv zur Aussage der Folie? Sind Hände, Gesichter und Perspektive fehlerfrei, ist die Fläche für den Titel ruhig, passt der Stil zu den anderen Bildern? Wenn nicht, den Prompt gezielt ändern; nach zwei Fehlversuchen die Folie ohne Bild bauen. Sonst image.src setzen, focus nach der Vorschau wählen, die Folie mit render_slides ansehen und in die Notes „Bild: KI-generiert. Stil: <Stilsatz>“ schreiben (beim ersten KI-Bild des Decks, damit spätere Bilder dazu passen).'
 
 // Codex nacheinander: codexImage nimmt das neueste Bild im gemeinsamen Ordner, parallel wäre es das falsche
 let codexQueue: Promise<Buffer> = Promise.resolve(Buffer.alloc(0))
 
-async function generateImage(ctx: ToolContext, prompt: string, orientation: Orientation, provider?: ImageProvider): Promise<ToolOutput> {
+export const NO_IMAGE_AI = 'Keine Bild-KI eingerichtet (Einstellungen → Bilder: Mammouth- oder OpenAI-Key, oder Codex installieren).'
+
+// Bild erzeugen und unter assetDir ablegen, ohne Tool-Kontext (auch für die UI, image:generate). null = kein Anbieter eingerichtet
+export async function makeImage(prompt: string, orientation: Orientation, assetDir: string, provider?: ImageProvider): Promise<{ file: string; buf: Buffer; via: string } | null> {
   const keyOf = (p: keyof typeof IMAGE_API) => imageSettings[p] || process.env[IMAGE_API[p].env]
   const ready = (p: ImageProvider) => (p === 'codex' ? !!findCli('codex') : !!keyOf(p))
   const p = provider ?? imageSettings.provider ?? IMAGE_PROVIDERS.find(ready)
-  if (!p) return { text: 'Keine Bild-KI eingerichtet (Einstellungen → Bilder: Mammouth- oder OpenAI-Key, oder Codex installieren). Stattdessen find_images nutzen oder den Nutzer um ein Bild bitten.' }
+  if (!p) return null
   if (!ready(p)) throw new Error(`${p} ist nicht eingerichtet. Verfügbar: ${IMAGE_PROVIDERS.filter(ready).join(', ') || 'keiner'}`)
   const model = imageSettings.model || process.env.IMAGE_MODEL || 'gpt-image-2'
   const buf = p === 'codex' ? await (codexQueue = codexQueue.catch(() => {}).then(() => codexImage(prompt, orientation))) : await apiImage(p, keyOf(p)!, model, prompt, orientation)
-  mkdirSync(ctx.assetDir, { recursive: true })
+  mkdirSync(assetDir, { recursive: true })
   const ext = buf[0] === 0xff && buf[1] === 0xd8 ? 'jpg' : buf.subarray(8, 12).toString() === 'WEBP' ? 'webp' : 'png'
-  const file = join(ctx.assetDir, `ki-${Date.now().toString(36)}${randomBytes(2).toString('hex')}.${ext}`)
+  const file = join(assetDir, `ki-${Date.now().toString(36)}${randomBytes(2).toString('hex')}.${ext}`)
   writeFileSync(file, buf)
-  const src = assetUrl(file)
+  return { file, buf, via: p === 'codex' ? 'Codex' : `${p} · ${model}` }
+}
+
+async function generateImage(ctx: ToolContext, prompt: string, orientation: Orientation, provider?: ImageProvider): Promise<ToolOutput> {
+  const img = await makeImage(prompt, orientation, ctx.assetDir, provider)
+  if (!img) return { text: `${NO_IMAGE_AI} Stattdessen find_images nutzen oder den Nutzer um ein Bild bitten.` }
+  const src = assetUrl(img.file)
   const { w, h } = IMAGE_SIZE[orientation]
-  const images = await preview(ctx, buf, src, w, h) // Codex liefert PNGs mit mehreren MB
-  return { text: `Bild erzeugt (${p === 'codex' ? 'Codex' : `${p} · ${model}`}): ${src}\n${IMAGE_CHECK}`, images }
+  const images = await preview(ctx, img.buf, src, w, h) // Codex liefert PNGs mit mehreren MB
+  return { text: `Bild erzeugt (${img.via}): ${src}\n${IMAGE_CHECK}`, images }
 }
 
 async function apiImage(p: keyof typeof IMAGE_API, key: string, model: string, prompt: string, orientation: Orientation): Promise<Buffer> {

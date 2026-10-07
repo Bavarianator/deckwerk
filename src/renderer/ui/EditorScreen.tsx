@@ -143,7 +143,7 @@ export function EditorScreen(p: Props) {
         <aside className={`work-panel ${p.panel}`} aria-label={p.panel === 'insert' ? 'Einfügen' : 'Anpassen'}>
           {p.panel === 'insert'
             ? <InsertSearch deck={p.deck} disabled={p.busy} onAdd={add} onAddSlide={(l) => p.addSlide(l)}>
-                <Elements deck={p.deck} disabled={p.busy} onAdd={add} onAddSlide={(l) => p.addSlide(l)} pickImage={p.pickImage} />
+                <Elements deck={p.deck} slideId={slide?.id} disabled={p.busy} onAdd={add} onAddSlide={(l) => p.addSlide(l)} pickImage={p.pickImage} />
               </InsertSearch>
             : <Inspector deck={p.deck} index={p.index} disabled={p.busy} picked={p.picked} onItems={p.onItems} patchSlide={p.patchSlide} pickImage={p.pickImage} />}
         </aside>
