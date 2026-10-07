@@ -391,6 +391,14 @@ Jedes Layout hat einen sinnvollen Default. Weiche nur mit Grund davon ab. `pan`,
 5. **Animationen prüfen:** ein Übergangstyp, max. ein Build pro Folie, Modus passend zum Anlass. Die Rückmeldung jeder Folie nennt Übergang, Aufbau und Klicks; mehr als 5 Klicks auf einer Folie bremsen den Vortrag. Führt eine Agenda direkt in ein Kapitel oder eine Kennzahl in eine große Zahl, Morph gezielt setzen.
 6. **Abschluss:** kurze Zusammenfassung (Folienanzahl, Storyline in einem Satz, getroffene Annahmen), dann Export anbieten.
 
+### Aufträge fürs ganze Deck
+
+- **Übersetzen:** jede Folie per `update_slide` mit übersetztem `content` und `notes`, den Titel per `update_deck`. Layout, Variante, Bilder und Reihenfolge bleiben; Namen und Marken bleiben stehen; Zahlen- und Datumsformate der Zielsprache.
+- **Notizen für alle Folien:** `update_slide` nur mit `notes`, gute vorhandene Notizen behalten.
+- **Kürzen:** Folien zusammenlegen oder löschen, Storyline und Kernaussagen erhalten, Rhythmus prüfen.
+- **Als Text zusammenfassen (E-Mail, Newsletter, Blogartikel):** nur im Chat antworten, das Deck nicht ändern.
+- **Rechtschreibung:** nur Fehler per `update_slide` korrigieren, Wortlaut und Stil unverändert.
+
 ## 10. Häufige Fehler
 
 - Themen-Titel statt Aussage-Titel („Marktanalyse“).
