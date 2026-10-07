@@ -16,7 +16,7 @@ export interface ImageStatus { mammouth: 'app' | 'env' | null; openai: 'app' | '
 /** hasKey: irgendein KI-Zugang (API-Key oder ein Agenten-CLI) */
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
-export type PresentCmd = { type: 'next' } | { type: 'go'; i: number } | { type: 'ink'; ink: Ink }
+export type PresentCmd = { type: 'next' } | { type: 'go'; i: number } | { type: 'ink'; ink: Ink } | { type: 'pause'; on: boolean }
 /** Laserpunkt und Stiftstriche über der Folie, Koordinaten 0–1 (gleich auf jedem Bildschirm) */
 export interface Ink { laser: [number, number] | null; strokes: [number, number][][] }
 

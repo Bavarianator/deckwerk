@@ -249,8 +249,14 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
     else move(view.i + 1)
   }
   // Referent: jeden Schritt ans Publikumsfenster schicken; beide Fenster rechnen denselben Ablauf
-  const go = (i: number) => { move(i); if (mode === 'presenter') void window.api.presentCmd({ type: 'go', i }) }
-  const next = () => { step(); if (mode === 'presenter') void window.api.presentCmd({ type: 'next' }) }
+  // Pause (Canva „Blur“): Folie unscharf und abgedunkelt; jedes Weiter/Zurück hebt sie auf
+  const [paused, setPaused] = useState(false)
+  const pause = (on: boolean) => { setPaused(on); if (mode === 'presenter') void window.api.presentCmd({ type: 'pause', on }) }
+  const go = (i: number) => { setJump(''); if (paused) pause(false); move(i); if (mode === 'presenter') void window.api.presentCmd({ type: 'go', i }) }
+  const next = () => { setJump(''); if (paused) pause(false); step(); if (mode === 'presenter') void window.api.presentCmd({ type: 'next' }) }
+  // Zahl + Enter springt zur Folie; die Ziffern verfallen nach 2 s
+  const [jump, setJump] = useState('')
+  useEffect(() => { if (!jump) return; const t = setTimeout(() => setJump(''), 2000); return () => clearTimeout(t) }, [jump])
   // Laserpointer und Stift (Canva „Zeichnen“): L / D schalten um, E löscht; nur Anzeige, nichts landet im Deck
   const [tool, setTool] = useState<'laser' | 'pen' | null>(null)
   const [ink, setInk] = useState<Ink>({ laser: null, strokes: [] })
@@ -273,7 +279,8 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
     if (mode !== 'audience') return
     return window.api.onPresent((c) => {
       if (c === 'ended') return
-      if (c.type === 'next') remote.current.step()
+      if (c.type === 'pause') setPaused(c.on)
+      else if (c.type === 'next') remote.current.step()
       else if (c.type === 'ink') setInk(c.ink)
       else remote.current.move(c.i)
     })
@@ -309,7 +316,10 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
   useEffect(() => {
     if (mode === 'audience') return
     const onKey = (e: KeyboardEvent) => {
-      if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) next()
+      if (/^\d$/.test(e.key)) setJump((jump + e.key).slice(-4))
+      else if (e.key === 'Enter' && jump) { go(Math.min(Math.max(Number(jump), 1), last + 1) - 1); setJump('') }
+      else if (e.key.toLowerCase() === 'b') pause(!paused)
+      else if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].includes(e.key)) next()
       else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) go(view.i - 1)
       else if (e.key === 'Home') go(0)
       else if (e.key === 'End') go(last)
@@ -319,6 +329,7 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
       else if (e.key.toLowerCase() === 'd') setTool(tool === 'pen' ? null : 'pen')
       else if (e.key.toLowerCase() === 'e') share({ laser: null, strokes: [] })
       else return
+      if (!/^\d$/.test(e.key)) setJump('')
       e.preventDefault()
     }
     const onResize = () => setW(stageWidth(pv, ratio))
@@ -338,7 +349,7 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
   }, [])
 
   const stage = (
-    <div className="present-stage" style={{ width: w, height: w / ratio }}>
+    <div className="present-stage" style={{ width: w, height: w / ratio, filter: paused && !pv ? 'blur(24px) brightness(.55)' : 'none', transition: still() ? 'none' : 'filter .5s ease' }}>
       {view.from !== null && (
         <div ref={outRef} className="present-layer"><SlideView deck={deck} index={view.from} width={w} live /></div>
       )}
@@ -360,8 +371,11 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
   )
 
   if (mode === 'audience') return <div className="present">{stage}</div>
+  const hud = jump && (
+    <div role="status" style={{ position: 'fixed', right: 24, bottom: 24, zIndex: 10, padding: '6px 14px', borderRadius: 8, background: 'rgba(0,0,0,.6)', color: '#fff', font: '600 18px system-ui, sans-serif' }}>Folie {jump}</div>
+  )
   if (!pv)
-    return <div className="present" onClick={next} onContextMenu={(e) => { e.preventDefault(); go(view.i - 1) }}>{stage}</div>
+    return <div className="present" onClick={next} onContextMenu={(e) => { e.preventDefault(); go(view.i - 1) }}>{stage}{hud}</div>
 
   const notes = deck.slides[view.i].notes?.trim()
   const plan = deck.slides.reduce((t, s) => t + speakSec(s.notes), 0)
@@ -382,9 +396,10 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
             </div>
           )}
         </div>
-        <div className="pv-meta"><span>Folie {view.i + 1} von {last + 1}</span>{plan > 0 && <span title="Geschätzte Sprechzeit laut Notizen">Plan ≈ {fmtSec(plan)}</span>}<Clock /></div>
+        <div className="pv-meta">{paused && <span title="B oder Weiter/Zurück hebt die Pause auf"><b>Pausiert</b></span>}<span>Folie {view.i + 1} von {last + 1}</span>{plan > 0 && <span title="Geschätzte Sprechzeit laut Notizen">Plan ≈ {fmtSec(plan)}</span>}<Clock /></div>
       </div>
       <div className="pv-now" onClick={next}>{stage}</div>
+      {hud}
       <aside className="pv-side">
         <h3>Als Nächstes</h3>
         {view.i < last
@@ -410,7 +425,7 @@ export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: De
             </div>
           ))}
         </div>
-        <div className="pv-foot"><b>{titleOf(deck, view.i)}</b><span>Leertaste oder → weiter · ← zurück · L Laser · D Zeichnen · E löschen · P Ansicht · Esc beendet</span></div>
+        <div className="pv-foot"><b>{titleOf(deck, view.i)}</b><span>Leertaste oder → weiter · ← zurück · L Laser · D Zeichnen · E löschen · B Pause · Zahl+Enter Sprung · P Ansicht · Esc beendet</span></div>
       </div>
     </div>
   )
