@@ -69,6 +69,24 @@ Drag & Drop per CDP (`Input.dispatchDragEvent`) geprüft, auf dem Startbildschir
 
 **Offen:** nur noch Dinge, die bewusst draußen bleiben (L10–L12) oder groß sind: pixelgenauer PPTX-Import mit Positionen und Formen. Nur auf ausdrücklichen Wunsch.
 
+## 5. Stand 07.10.2026
+
+| Canva AI | Deckwerk | Wo |
+|---|---|---|
+| Magic Write: umschreiben, kürzen, Ton | fertig: Text-Aktionen am gewählten Element (kürzer, ausführlicher, einfacher, förmlicher, lockerer, korrigieren, übersetzen), für freie Texte in der Objektleiste, für Layout-Felder im ✦-Menü | `ui/ObjectBar.tsx`, `ui/AskBar.tsx` |
+| Translate | fertig als Deck-Auftrag (9 Sprachen, Layouts bleiben, Namen nicht übersetzt) | `ui/AskBar.tsx`, `design-guide.md` |
+| Magic Speaker Notes | fertig für alle Folien auf einmal (L3 deckte nur die aktuelle ab) | dto. |
+| Magic Switch zu Text (E-Mail, Newsletter, Blog) | fertig als Deck-Auftrag, Antwort im Chat | dto. |
+| Deck kürzen | fertig als Deck-Auftrag (5–15 Folien) | dto. |
+| Magic Media im Einfügen-Panel | fertig: „Bild erzeugen“ mit Format; L10 ist überholt, `generate_image` gibt es seit 02.10. | `ui/Elements.tsx`, `tools.ts` makeImage |
+
+**Offen:**
+- Bild per KI bearbeiten (Objekt entfernen, ersetzen, erweitern; Images-Edits-API von OpenAI/Mammouth wäre der Weg). Bisher bewusst draußen, ginge aber mit vorhandenen Keys.
+- Alt-Texte für Bilder (Feld im Schema, KI schreibt sie, Export als `descr`).
+- Quiz und Umfrage als Element bzw. Layout.
+- Magic Switch zu Social-Posts mit Bildunterschriften als eigenes Werkzeug (heute Formatkopie ohne KI plus Chat).
+- Magic Layers (flaches Bild in Ebenen zerlegen) und Magic Animate: nur auf Wunsch.
+
 ## Quellen
 
 - [TechCrunch: Canva's AI assistant can now call various tools (16.04.2026)](https://techcrunch.com/2026/04/16/canvas-ai-assistant-can-now-call-various-tools-to-make-designs-for-you/)
