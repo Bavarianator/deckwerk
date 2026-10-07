@@ -1,0 +1,42 @@
+---
+// Neuigkeiten: Liste aller Artikel, neueste zuerst
+import { getCollection } from 'astro:content'
+import Seite from '../../layouts/Seite.astro'
+import Kopf from '../../components/Kopf.astro'
+import { base } from '../../lib/seite'
+
+const artikel = (await getCollection('neuigkeiten')).sort((a, b) => b.data.datum.valueOf() - a.data.datum.valueOf())
+const datum = (d: Date) => d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+---
+
+<Seite titel="Neuigkeiten – Deckwerk" beschreibung="Neue Versionen und Neuerungen von Deckwerk.">
+  <Kopf titel="Neuigkeiten." satz="Was sich in Deckwerk tut: neue Versionen, neue Wege zu arbeiten." />
+  <section class="abschnitt">
+    <div class="wrap">
+      <ul class="liste">
+        {
+          artikel.map((a) => (
+            <li data-zeigen>
+              <a class="eintrag" href={`${base}neuigkeiten/${a.id}/`}>
+                <time class="etikett" datetime={a.data.datum.toISOString().slice(0, 10)}>{datum(a.data.datum)}</time>
+                <h2>{a.data.titel}</h2>
+                <p>{a.data.zusammenfassung}</p>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</Seite>
+
+<style>
+  .liste { display: grid; gap: 0; max-width: 46rem; margin: 0 auto; padding: 0; list-style: none; }
+  .liste li { border-top: 1px solid var(--border); }
+  .liste li:last-child { border-bottom: 1px solid var(--border); }
+  .eintrag { display: grid; gap: 0.5rem; padding-block: 2rem; color: var(--text); }
+  .eintrag:hover { color: var(--text); text-decoration: none; }
+  .eintrag:hover h2 { color: var(--accent); }
+  .eintrag h2 { font-size: clamp(1.4rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.02em; transition: color 0.2s; }
+  .eintrag p { color: var(--muted); line-height: 1.5; }
+</style>

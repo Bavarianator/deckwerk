@@ -1,0 +1,52 @@
+---
+// Ein Artikel der Neuigkeiten; Seiten entstehen beim Build aus src/content/neuigkeiten
+import { getCollection, render } from 'astro:content'
+import Seite from '../../layouts/Seite.astro'
+import { base } from '../../lib/seite'
+
+export async function getStaticPaths() {
+  const artikel = await getCollection('neuigkeiten')
+  return artikel.map((entry) => ({ params: { slug: entry.id }, props: { entry } }))
+}
+
+const { entry } = Astro.props
+const { Content } = await render(entry)
+const datum = entry.data.datum.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+---
+
+<Seite titel={`${entry.data.titel} – Deckwerk`} beschreibung={entry.data.zusammenfassung}>
+  <header class="artikel-kopf">
+    <div class="wrap">
+      <a class="zurueck" href={`${base}neuigkeiten/`}>Alle Neuigkeiten</a>
+      <time class="etikett" datetime={entry.data.datum.toISOString().slice(0, 10)}>{datum}</time>
+      <h1>{entry.data.titel}</h1>
+      <p class="unterzeile">{entry.data.zusammenfassung}</p>
+    </div>
+  </header>
+  <section class="abschnitt artikel">
+    <div class="wrap schmal">
+      <Content />
+    </div>
+  </section>
+</Seite>
+
+<style>
+  .artikel-kopf { padding-block: clamp(3rem, 7vw, 5rem) clamp(2.5rem, 5vw, 3.5rem); background: var(--panel); }
+  .artikel-kopf .wrap { max-width: 46rem; }
+  .zurueck { display: inline-block; margin-bottom: 2rem; font-size: 0.875rem; color: var(--muted); }
+  .zurueck:hover { color: var(--text); }
+  .artikel-kopf time { display: block; margin-bottom: 0.75rem; }
+  .artikel-kopf h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
+  .artikel-kopf .unterzeile { margin: 1.25rem 0 0; }
+  .schmal { max-width: 46rem; }
+  .artikel :global(p),
+  .artikel :global(li) { font-size: 1.0625rem; line-height: 1.65; }
+  .artikel :global(p + p),
+  .artikel :global(p + ul),
+  .artikel :global(ul + p) { margin-top: 1rem; }
+  .artikel :global(h2) { margin-top: 2.75rem; margin-bottom: 0.75rem; font-size: 1.5rem; }
+  .artikel :global(ul) { margin-top: 1rem; padding-left: 1.25rem; }
+  .artikel :global(li + li) { margin-top: 0.4rem; }
+  .artikel :global(code) { padding: 0.05em 0.35em; border-radius: 5px; background: var(--hover); }
+  .artikel :global(a) { color: var(--accent); }
+</style>
