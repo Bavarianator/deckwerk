@@ -56,6 +56,7 @@ export const SEITEN: [pfad: string, label: string][] = [
   ['beispiele/', 'Beispiele'],
   ['funktionen/', 'Funktionen'],
   ['laden/', 'Laden'],
+  ['neuigkeiten/', 'Neuigkeiten'],
 ]
 
 export const FUSS: { name: string; links: [href: string, label: string][] }[] = [
@@ -67,6 +68,7 @@ export const FUSS: { name: string; links: [href: string, label: string][] }[] = 
       [`${base}funktionen/`, 'Funktionen'],
       [`${base}laden/`, 'Laden'],
       [`${base}laden/#faq`, 'Fragen'],
+      [`${base}neuigkeiten/`, 'Neuigkeiten'],
     ],
   },
   {
