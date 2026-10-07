@@ -70,6 +70,7 @@ export function ObjectBar({ item, rect, colors, busy, onPatch, onMore, onAsk, on
     const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
     if (!d) return
     e.preventDefault()
+    e.stopPropagation() // sonst blättert App.tsx die Folie
     const l = [...wrap.current!.querySelectorAll<HTMLElement>('[role=menuitem]')]
     l[(l.indexOf(document.activeElement as HTMLElement) + d + l.length) % l.length]?.focus()
   }
