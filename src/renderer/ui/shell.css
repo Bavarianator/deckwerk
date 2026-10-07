@@ -107,6 +107,7 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 .home-deck:hover .home-deck-cover { transform: translateY(-2px); }
 .home-deck b { font-size: 13.5px; font-weight: 600; }
 .home-deck span { font-size: 12.5px; color: var(--muted); }
+.home-more { margin-top: 24px; }
 select.model-select { color: var(--muted); }
 
 /* ---------- Editor ---------- */

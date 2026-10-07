@@ -64,12 +64,14 @@ interface Props {
 export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey }: Props) {
   const [text, setText] = useState('')
   const [recent, setRecent] = useState<Recent[]>([])
+  const [all, setAll] = useState(false)
   const [templates, setTemplates] = useState<Deck[]>([])
   useEffect(() => { window.api.templates().then(setTemplates, () => setTemplates([])) }, [])
   const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     // bei jedem Fokus neu: Decks, die Claude Code oder Codex per MCP speichern, erscheinen ohne Neustart
-    const load = () => window.api.recent(8).then(setRecent, () => {}) // Fehler: alte Liste bleibt
+    // alle holen, gezeigt werden 8 bis „Alle anzeigen“; Fehler: alte Liste bleibt
+    const load = () => window.api.recent(Infinity).then(setRecent, () => {})
     void load()
     window.addEventListener('focus', load)
     return () => window.removeEventListener('focus', load)
@@ -131,7 +133,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         <section className="home-recent" aria-label="Zuletzt">
           <h2>Zuletzt</h2>
           <div className="home-shelf">
-            {recent.map((r) => (
+            {(all ? recent : recent.slice(0, 8)).map((r) => (
               <button key={r.path} className="home-deck" onClick={() => onOpenPath(r.path)}>
                 <div className="home-deck-cover"><SlideView deck={r.deck} index={0} width={232} /></div>
                 <b>{r.title}</b>
@@ -139,6 +141,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
               </button>
             ))}
           </div>
+          {recent.length > 8 && <button className="plain tint home-more" onClick={() => setAll(!all)}>{all ? 'Weniger anzeigen' : `Alle anzeigen (${recent.length})`}</button>}
         </section>
       )}
 
