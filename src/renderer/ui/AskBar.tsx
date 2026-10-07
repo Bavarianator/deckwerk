@@ -1,7 +1,8 @@
 // KI-Leiste: eine Kapsel für Wünsche an die KI (mit Bezug auf das gewählte Element), darüber eine kurze Blase mit
 // Status, Antwort oder Rückfrage und auf Wunsch der ganze Verlauf. Ersetzt die Chat-Spalte.
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ArrowUp, Check, CircleAlert, History, Image as ImageIcon, LoaderCircle, Paperclip, Sparkles, Square, Undo2, X } from 'lucide-react'
+import { Select } from './kit'
 import { ChatLog, ChoiceCards, ModelSelect, TOOL, type Msg } from './Chat'
 import { isImage, sourceContext, useSource } from './Start'
 
@@ -19,6 +20,70 @@ interface Props {
   onTarget: (t: Target | null) => void
   canUndo: boolean
   onUndo: () => void // macht die ganze letzte KI-Runde rückgängig
+}
+
+const SPRACHEN = ['Englisch', 'Französisch', 'Spanisch', 'Italienisch', 'Niederländisch', 'Polnisch', 'Türkisch', 'Ukrainisch', 'Deutsch']
+const TEXTARTEN = ['E-Mail', 'Newsletter', 'Blogartikel']
+const ZAHLEN = Array.from({ length: 11 }, (_, i) => String(i + 5))
+
+// Aufträge fürs ganze Deck: gehen als getippter Wunsch raus, die Regeln dazu stehen im Design-Guide
+const AUFTRAG = {
+  uebersetzen: (l: string) => `Übersetze das ganze Deck ins ${l}: alle Folientexte, Diagramm-Beschriftungen, Sprechernotizen und den Titel. Layouts, Bilder und Reihenfolge bleiben; Namen und Marken nicht übersetzen.`,
+  notizen: 'Schreibe für jede Folie ohne oder mit dünnen Sprechernotizen passende Sprechernotizen (in der Sprache des Decks, im Ton eines Vortrags). Vorhandene gute Notizen behalten; sonst nichts am Deck ändern.',
+  kuerzen: (n: string) => `Kürze das Deck auf ${n} Folien: Verwandtes zusammenlegen, Nebensächliches streichen, die Kernaussagen und die Storyline behalten.`,
+  text: (a: string) => `Fasse den Inhalt des Decks als ${a} zusammen und schreibe den Text direkt in den Chat. Das Deck nicht ändern.`,
+  rechtschreibung: 'Prüfe die Rechtschreibung, Grammatik und Zeichensetzung in allen Texten des Decks (Folien, Diagramm-Beschriftungen, Sprechernotizen, Titel) und korrigiere Fehler. Ändere sonst nichts, auch nicht den Wortlaut oder Stil.',
+}
+
+// Menü „Fürs ganze Deck“ am Sparkles-Knopf links in der Kapsel
+function DeckMenu({ busy, onSend }: { busy: boolean; onSend: (text: string) => boolean }) {
+  const [open, setOpen] = useState(false)
+  const [sprache, setSprache] = useState(SPRACHEN[0])
+  const [zahl, setZahl] = useState('8')
+  const [art, setArt] = useState(TEXTARTEN[0])
+  const box = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    box.current?.querySelector<HTMLElement>('[role=menuitem]')?.focus()
+    // das Menü der Selects hängt an body, Klicks darin zählen als drinnen
+    const close = (e: PointerEvent) => { const t = e.target as Element; if (!box.current?.contains(t) && !t.closest('.kit-menu')) setOpen(false) }
+    addEventListener('pointerdown', close, true)
+    return () => removeEventListener('pointerdown', close, true)
+  }, [open])
+  useEffect(() => { if (busy) setOpen(false) }, [busy])
+  const go = (text: string) => { if (onSend(text)) setOpen(false) }
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false); box.current?.querySelector<HTMLElement>('.deck-btn')?.focus() }
+    else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !(e.target as Element).closest('.kit-select')) { // dort öffnen die Pfeile das Select
+      const items = [...box.current!.querySelectorAll<HTMLElement>('[role=menuitem]')]
+      const at = items.indexOf(document.activeElement as HTMLElement)
+      items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
+      e.preventDefault()
+    }
+  }
+  const row = (label: string, run: () => void, select?: ReactNode) => (
+    <div className="deck-row">
+      <button type="button" role="menuitem" onClick={run}>{label}</button>
+      {select}
+    </div>
+  )
+  return (
+    <div className="deck-act" ref={box} onKeyDown={onKey}>
+      <button type="button" className={`plain deck-btn ${open ? 'on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="Fürs ganze Deck" title="Fürs ganze Deck: übersetzen, Notizen, kürzen …" disabled={busy} onClick={() => setOpen(!open)}>
+        <Sparkles size={19} aria-hidden />
+      </button>
+      {open && (
+        <div className="menu deck-menu material" role="menu" aria-label="Fürs ganze Deck">
+          <div className="deck-head">Fürs ganze Deck</div>
+          {row('Übersetzen ins', () => go(AUFTRAG.uebersetzen(sprache)), <Select value={sprache} onChange={(e) => setSprache(e.target.value)} aria-label="Sprache">{SPRACHEN.map((l) => <option key={l}>{l}</option>)}</Select>)}
+          {row('Sprechernotizen für alle Folien', () => go(AUFTRAG.notizen))}
+          {row('Kürzen auf', () => go(AUFTRAG.kuerzen(zahl)), <><Select value={zahl} onChange={(e) => setZahl(e.target.value)} aria-label="Zahl der Folien">{ZAHLEN.map((n) => <option key={n}>{n}</option>)}</Select><span>Folien</span></>)}
+          {row('Zusammenfassen als', () => go(AUFTRAG.text(art)), <Select value={art} onChange={(e) => setArt(e.target.value)} aria-label="Textart">{TEXTARTEN.map((a) => <option key={a}>{a}</option>)}</Select>)}
+          {row('Rechtschreibung prüfen', () => go(AUFTRAG.rechtschreibung))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function AskBar(p: Props) {
@@ -93,7 +158,7 @@ export function AskBar(p: Props) {
       <form className="cap material" onSubmit={(e) => { e.preventDefault(); submit() }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
-        <Sparkles size={19} aria-hidden />
+        <DeckMenu busy={p.busy} onSend={p.onSend} />
         {p.target && (
           <span className="cap-token">
             {p.target.label}

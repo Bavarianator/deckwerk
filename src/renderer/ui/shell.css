@@ -434,3 +434,15 @@ button.setup-opt { cursor: pointer; }
 .swatches input[type='color'] { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 1px solid var(--border-strong); overflow: hidden; }
 .swatches input[type='color']::-webkit-color-swatch-wrapper { padding: 0; }
 .swatches input[type='color']::-webkit-color-swatch { border: 0; border-radius: 50%; }
+
+/* Deck-Aufträge (AskBar) */
+.deck-act { position: relative; flex: none; }
+.cap .deck-btn { width: 32px; margin-left: -6px; padding: 0; justify-content: center; color: var(--accent); }
+.deck-menu { bottom: calc(100% + 22px); left: -12px; width: 340px; }
+.deck-head { padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+.deck-row { display: flex; align-items: center; gap: 6px; border-radius: 8px; font-size: 13px; }
+.deck-row:hover, .deck-row:focus-within { background: var(--hover); }
+.deck-row > button[role='menuitem'] { flex: 1; width: auto; min-width: 0; }
+.deck-row > button[role='menuitem']:hover, .deck-row > button[role='menuitem']:focus-visible { background: transparent; color: var(--accent); }
+.deck-row .kit-select { width: auto; height: 28px; margin-right: 4px; }
+.deck-row .kit-select:hover { background: var(--hover); color: var(--text); }
