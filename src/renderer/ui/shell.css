@@ -63,7 +63,8 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 /* ---------- Kopfleiste ---------- */
 
 .top {
-  position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
+  /* Seiten mindestens so breit wie ihre Knöpfe, der Titel schrumpft dazwischen (…); bei genug Platz bleibt er mittig */
+  position: relative; display: grid; grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr); align-items: center; gap: 12px;
   height: 52px; padding: 0 14px 0 10px; background: var(--bg); -webkit-app-region: drag;
 }
 .top button, .top .menu { -webkit-app-region: no-drag; }
