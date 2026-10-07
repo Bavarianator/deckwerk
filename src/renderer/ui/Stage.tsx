@@ -2,7 +2,7 @@
 // Mitten einrasten, skalieren, drehen, Mehrfachauswahl (Umschalt oder Rahmen aufziehen), Doppelklick bearbeitet Text,
 // Rechtsklick öffnet das Kontextmenü, Dateien per Drag & Drop. Layout-Elemente anklicken → KI-Leiste.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as RPE } from 'react'
-import { LoaderCircle, TriangleAlert } from 'lucide-react'
+import { LoaderCircle, Minus, Plus, TriangleAlert } from 'lucide-react'
 import { sizeOf, type Box, type Deck, type Item, type Measured, type Slide } from '../../shared/deck'
 import { elsToItems, newImage, newMedia } from '../../shared/items'
 import { extract, eyebrowRules } from '../measure'
@@ -82,19 +82,49 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
   const w = zoom ? Math.round(W * zoom) : fitW
   const k = w / W
   const fitRef = useRef(fitW)
-  fitRef.current = fitW / W // eingepasster Zoom (für den Mausrad-Listener)
+  fitRef.current = fitW / W // eingepasster Zoom (für die Listener)
 
-  // Strg/⌘ + Mausrad zoomt (nativer Listener, weil React-Wheel-Events passiv sind)
+  // Beim Zoomen bleibt der Punkt unter dem Mauszeiger (sonst die Mitte der Ansicht) an seiner Stelle:
+  // Anteil auf der Folie (fx, fy) und Position in der Ansicht (px, py) merken, nach dem Rendern zurückscrollen
+  const anchor = useRef<{ fx: number; fy: number; px: number; py: number } | null>(null)
+  const zoomBy = useCallback((f: number, cx?: number, cy?: number) => {
+    const b = box.current!.getBoundingClientRect(), c = canvas.current?.getBoundingClientRect()
+    cx ??= b.left + b.width / 2
+    cy ??= b.top + b.height / 2
+    anchor.current = c ? { fx: (cx - c.left) / c.width, fy: (cy - c.top) / c.height, px: cx - b.left, py: cy - b.top } : null
+    setZoom((z) => clampZoom((z ?? fitRef.current) * f))
+  }, [])
+  useLayoutEffect(() => {
+    const a = anchor.current, el = box.current!, c = canvas.current?.getBoundingClientRect()
+    anchor.current = null
+    if (!a || !c) return
+    const b = el.getBoundingClientRect()
+    el.scrollLeft += c.left + a.fx * c.width - b.left - a.px
+    el.scrollTop += c.top + a.fy * c.height - b.top - a.py
+  }, [w])
+
+  // Strg/⌘ + Mausrad oder Touchpad zoomt (nativer Listener, weil React-Wheel-Events passiv sind), Strg/⌘ + Plus/Minus
+  // ebenso, Strg/⌘ + 0 passt ein. Faktor nach deltaY: ein Rad-Klick ≈ 10 %, die vielen kleinen Touchpad-Schritte sanft.
   useEffect(() => {
     const el = box.current!
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
-      setZoom((z) => clampZoom((z ?? fitRef.current) * (e.deltaY < 0 ? 1.1 : 1 / 1.1)))
+      zoomBy(Math.exp(-Math.max(-100, Math.min(100, e.deltaY)) / 500), e.clientX, e.clientY)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return
+      if (e.key === '+' || e.key === '=') zoomBy(1.25)
+      else if (e.key === '-') zoomBy(0.8)
+      else if (e.key === '0') setZoom(null)
+      else return
+      e.preventDefault()
     }
     el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [])
+    addEventListener('keydown', onKey)
+    return () => { el.removeEventListener('wheel', onWheel); removeEventListener('keydown', onKey) }
+  }, [zoomBy])
 
   const slide = deck?.slides[index]
   const items = slide?.items ?? []
@@ -645,8 +675,12 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
           <TriangleAlert size={14} /> Text passt nicht ({overflow.map((o) => slotName(o.slot)).join(', ')}). Kürzen oder Folie teilen.
         </div>
       )}
-      {zoom !== null && ( // gezoomt per Strg + Mausrad: eine Pille führt zurück
-        <button className="pill zoom-pill material" onClick={() => setZoom(null)} title="Einpassen">{Math.round(k * 100)} % · Einpassen</button>
+      {!!deck?.slides.length && ( // Zoom wie in Design-Tools; die Prozentzahl passt ein
+        <div className="zoom-pill material">
+          <button className="plain" onClick={() => zoomBy(0.8)} title="Verkleinern (Strg + −)" aria-label="Verkleinern"><Minus size={14} /></button>
+          <button className="plain" onClick={() => setZoom(null)} title="Einpassen (Strg + 0)" aria-pressed={zoom === null}>{Math.round(k * 100)} %</button>
+          <button className="plain" onClick={() => zoomBy(1.25)} title="Vergrößern (Strg + +)" aria-label="Vergrößern"><Plus size={14} /></button>
+        </div>
       )}
     </main>
   )
