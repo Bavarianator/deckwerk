@@ -1,0 +1,61 @@
+/* Einstellungen (settings/Settings.tsx). Bausteine aus der Einrichtung (.setup-choice, .setup-opt, .setup-key, .setup-box) werden mitbenutzt. */
+
+/* ---------- Rahmen, Navigation, Kopf, Zeilen (Settings.tsx, parts.tsx) ---------- */
+.setup-card.settings { position: relative; flex-direction: row; gap: 0; width: min(920px, calc(100% - 48px)); height: min(700px, calc(100vh - 48px)); min-height: 0; padding: 0; overflow: hidden; }
+.settings-nav { flex: none; display: flex; flex-direction: column; gap: 2px; width: 200px; box-sizing: border-box; padding: 24px 12px; border-right: 1px solid var(--border); }
+.settings-nav h1 { margin: 0 0 14px; padding: 0 10px; font-size: 15px; font-weight: 700; }
+.settings-nav button { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font-size: 13.5px; text-align: left; white-space: nowrap; cursor: pointer; }
+.settings-nav button:hover { background: var(--hover); }
+.settings-nav button svg { flex: none; color: var(--muted); }
+.settings-nav button[aria-current='page'] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.settings-nav button[aria-current='page'] svg { color: var(--accent); }
+.settings-page { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 28px 32px; text-align: left; }
+.settings-page > * { flex-shrink: 0; } /* scrollen statt stauchen */
+.settings-page > button { align-self: flex-start; }
+.settings-done { position: absolute; top: 24px; right: 28px; }
+.settings-head { padding-right: 90px; } /* Platz für „Fertig“ */
+.settings-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.settings-head p { max-width: 560px; margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+.settings-row { align-items: center; }
+/* .setup-opt > span macht jede Spalte zur Textspalte; Haken und Knöpfe brauchen ihre eigene Anordnung */
+.settings-row > .settings-row-text { flex: 1; min-width: 0; }
+.settings-row > .setup-ok { display: grid; }
+.setup-opt > .setup-ok { color: #fff; } /* sonst färbt .setup-opt > span den Haken grau */
+.settings-row > .setup-ok, .settings-row > .setup-num { align-self: flex-start; } /* bei Formularen in der Zeile auf Höhe des Titels */
+.settings-act, .settings-row > .settings-act { flex: none; display: flex; flex-direction: row; gap: 8px; align-items: center; }
+.settings-row-text code { overflow-wrap: anywhere; }
+@media (max-width: 720px) {
+  .setup-card.settings { flex-direction: column; }
+  .settings-nav { flex-direction: row; width: auto; overflow-x: auto; padding: 12px 110px 12px 12px; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: none; }
+  .settings-nav h1 { display: none; }
+  .settings-nav button { flex: none; }
+  .settings-done { top: 13px; right: 16px; }
+  .settings-page { padding: 20px; }
+  .settings-head { padding-right: 0; }
+}
+
+/* ---------- KI-Zugang (KiSection.tsx) ---------- */
+/* Anleitung in einer Kontenzeile: ohne eigenen Kasten, die Zeile ist schon weiß */
+.settings-row .setup-anleitung { margin: 8px 0 0; padding: 0 0 0 20px; border-radius: 0; background: none; box-shadow: none; }
+.settings-row .ki-link { align-self: flex-start; padding: 0; height: 26px; }
+.ki-wartet { display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
+.ki-titel { margin: 24px 0 0; font-size: 15px; font-weight: 600; }
+.ki-hinweis { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+
+/* ---------- Cloud, Wolke in der Kopfleiste, Bilder (CloudSection.tsx, BilderSection.tsx) ---------- */
+.plain.cloud-btn.off { color: var(--faint); } /* .plain setzt die Textfarbe, deshalb doppelte Klasse */
+.plain.cloud-btn.error { color: var(--danger); }
+.cloud-login { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 8px; color: var(--text); }
+.cloud-dav { width: 100%; }
+.cloud-dav summary { padding: 6px 0; color: var(--accent); font-size: 13.5px; cursor: pointer; }
+.cloud-dav > p { margin: 4px 0 10px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.cloud-go { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+/* ---------- Marke, Agenten, Allgemein (MarkeSection.tsx, AgentenSection.tsx, AllgemeinSection.tsx) ---------- */
+.settings-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.settings-logo { align-self: flex-start; max-width: 160px; max-height: 40px; margin-top: 4px; object-fit: contain; }
+.settings-logo.dark { padding: 6px 10px; border-radius: 8px; background: #16161a; } /* Logo für dunklen Grund auf dunkel zeigen */
+.settings-haus { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.settings-style { width: 100%; min-height: 180px; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 10px; font-family: inherit; font-size: 13.5px; line-height: 1.5; resize: vertical; }
+.settings-page kbd { padding: 1px 6px; border-radius: 5px; background: var(--hover); font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--text); }
+

@@ -19,6 +19,8 @@ import { PrintSheet } from './ui/PrintSheet'
 import { LookSheet } from './ui/LookSheet'
 import { PresentScreen } from './ui/PresentScreen'
 import { SetupSheet } from './ui/SetupSheet'
+import { Settings } from './ui/settings/Settings'
+import { OpenSettings, type SectionId } from './ui/settings/parts'
 import { Start } from './ui/Start'
 import { Overview } from './ui/Overview'
 import { TopBar, type Panel, type Status, type View } from './ui/TopBar'
@@ -48,7 +50,8 @@ export default function App() {
   const [nav, setNav] = useState(true) // Folienübersicht links
   const [panel, setPanel] = useState<Panel>(null) // rechts: Einfügen oder Anpassen
   const [look, setLook] = useState(false)
-  const [setup, setSetup] = useState<boolean | string>(false) // Einrichtung: beim ersten Start von selbst (state().setupDone), sonst über das Zahnrad; Text = Schritt, mit dem sie aufgeht
+  const [setup, setSetup] = useState<boolean | string>(false) // Einrichtung: nur beim ersten Start von selbst (state().setupDone); Text = Schritt, mit dem sie aufgeht
+  const [settings, setSettings] = useState<SectionId | null>(null) // Einstellungen: Zahnrad, Wolke, Key-Dialog, „Alle Einstellungen“ im Assistenten
   const [formats, setFormats] = useState(false)
   const [printing, setPrinting] = useState(false) // Sheet „PDF für die Druckerei“
   const [view, setView] = useState<View>('slide') // einzelne Folie oder Übersicht aller Folien
@@ -68,6 +71,9 @@ export default function App() {
     try { localStorage.setItem('dw.chat', id) } catch { /* ohne Speicher gilt die Wahl nur bis zum Neustart */ }
   }, [])
   const loadChoices = useCallback(() => api.chatModels().then(setChoices, () => {}), [])
+  // KI-Zugang geändert (Key, Login, Logout): ob Senden geht und welche Modelle zur Wahl stehen
+  const reloadAccess = useCallback(() => { void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }, [])
+  const openSettings = useCallback((s?: SectionId) => setSettings(s ?? 'ki'), [])
   useEffect(() => { void loadChoices() }, [])
   // Gewähltes Modell hier nicht verfügbar (z. B. Vibe deinstalliert, nur Vibe da): automatisch das erste verfügbare
   useEffect(() => { if (choices && pickAvailable(model, choices) !== model) pickModel(pickAvailable(model, choices)) }, [choices])
@@ -319,11 +325,12 @@ export default function App() {
 
   return (
     <ChatChoices.Provider value={choices}>
+    <OpenSettings.Provider value={openSettings}>
     <div className="app">
       {home ? (
         <Start
           onSubmit={send} model={model} onModel={pickModel}
-          onOpen={actions.onOpen} onOpenPath={actions.onOpenPath} onKey={() => setSetup(true)}
+          onOpen={actions.onOpen} onOpenPath={actions.onOpenPath} onKey={() => openSettings()}
           onBlank={(size) => {
             // leer beginnen wie in Canva: eine leere Folie, alles Weitere von Hand oder per KI
             const d: Deck = { title: 'Neues Design', theme: { id: THEMES[0].id }, transition: 'fade', mode: 'click', slides: [{ id: `s-${newId()}`, layout: 'blank', content: {} }], ...(size && { size }) }
@@ -404,10 +411,11 @@ export default function App() {
       {printing && deck && <PrintSheet deck={deck} onExport={(o) => actions.onExport('print', o)} onClose={() => setPrinting(false)} />}
       {formats && deck && <FormatSheet deck={deck} index={index} onApply={(id) => commit((d) => resizeDeck(d, id))} onCopies={saveCopies} onClose={() => setFormats(false)} />}
       {look && deck && <LookSheet deck={deck} busy={busy} patchDeck={patchDeck} pickImage={api.pickImage} onAsk={(t) => send(t)} onClose={() => setLook(false)} />}
-      {setup && <SetupSheet model={model} onModel={pickModel} start={typeof setup === 'string' ? setup : undefined} onKeySaved={() => { void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} onClose={() => { setSetup(false); void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} />}
+      {setup && <SetupSheet model={model} onModel={pickModel} start={typeof setup === 'string' ? setup : undefined} onKeySaved={reloadAccess} onClose={() => { setSetup(false); reloadAccess() }} />}
+      {settings && <Settings section={settings} model={model} onModel={pickModel} onChanged={reloadAccess} onClose={() => { setSettings(null); reloadAccess() }} />}
       {askKey && (
         <KeyDialog
-          onSetup={() => { setAskKey(false); setSetup('KI-Zugang') }}
+          onSetup={() => { setAskKey(false); openSettings('ki') }}
           onClose={() => setAskKey(false)}
           onSave={async (key) => {
             await api.setApiKey(key).catch((e) => { throw new Error(errText(e)) })
@@ -417,6 +425,7 @@ export default function App() {
         />
       )}
     </div>
+    </OpenSettings.Provider>
     </ChatChoices.Provider>
   )
 }
