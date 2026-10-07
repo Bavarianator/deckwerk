@@ -2,7 +2,7 @@ import { nativeImage } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import JSZip from 'jszip'
-import { formatSuffix, sizeOf, type Deck, type Measured } from '../shared/deck'
+import { formatSuffix, sizeOf, visibleSlides, type Deck, type Measured } from '../shared/deck'
 import { handout } from '../shared/handout'
 import { lintDeck } from '../shared/lint'
 import type { Engine } from './agent'
@@ -49,7 +49,10 @@ export function createEngine(): Engine {
     async lint(deck) {
       return lintDeck(deck, await measure(deck))
     },
-    async exportDeck(deck, format, outDir, print) {
+    async exportDeck(all, format, outDir, print) {
+      // Ausgeblendete Folien fehlen überall außer in PowerPoint, dort bleiben sie versteckt (export-pptx.ts)
+      const deck = format === 'pptx' ? all : { ...all, slides: visibleSlides(all) }
+      if (all.slides.length && !deck.slides.length) throw new Error('Alle Folien sind ausgeblendet. Blende mindestens eine ein, um zu exportieren.')
       await mkdir(outDir, { recursive: true })
       const base = join(outDir, slug(deck.title) + formatSuffix(deck.size)) // Format im Namen: gleiche Titel in 4:5 und A4 überschreiben sich nicht
       if (format === 'md') {

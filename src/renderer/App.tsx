@@ -373,6 +373,7 @@ export default function App() {
           {deck && view === 'grid' ? (
             <Overview
               deck={deck} index={index} busy={busy} onMove={onMove} onDup={dupSlide} onDel={delSlide} onCopy={copySlides} onPaste={pasteSlides} onAsk={send}
+              onHide={(idx, on) => commit((d) => ({ ...d, slides: d.slides.map((s, j) => (idx.includes(j) ? { ...s, hidden: on || undefined } : s)) }))}
               onOpen={(i) => { setSel(i); setView('slide') }}
             />
           ) : <EditorScreen

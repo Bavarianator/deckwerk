@@ -1,7 +1,7 @@
 // Präsentationsmodus: Vollbild, Builds per Web Animations API mit denselben Presets wie der PPTX-Export.
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { flushSync } from 'react-dom'
-import { morphNames, morphText, sizeOf, transitionOf, type AnimDir, type AnimSpeed, type BuildPreset, type Deck, type ItemAnim, type MorphEl, type Transition } from '../../shared/deck'
+import { morphNames, morphText, showOf, sizeOf, transitionOf, type AnimDir, type AnimSpeed, type BuildPreset, type Deck, type ItemAnim, type MorphEl, type Transition } from '../../shared/deck'
 import { fmtSec, speakSec } from '../../shared/handout'
 import { LAYOUTS, buildOf, type LayoutId } from '../../shared/layouts'
 import type { Ink } from '../../preload'
@@ -217,7 +217,9 @@ function Clock() {
 
 // mode: solo = ein Bildschirm (P schaltet die Referentenansicht um); presenter = Referent, spiegelt jeden Schritt
 // an das Publikumsfenster; audience = Publikum auf dem zweiten Bildschirm, gesteuert nur vom Referenten
-export function PresentScreen({ deck, start, onExit, mode = 'solo' }: { deck: Deck; start: number; onExit: () => void; mode?: 'solo' | 'presenter' | 'audience' }) {
+export function PresentScreen({ deck: all, start: at, onExit, mode = 'solo' }: { deck: Deck; start: number; onExit: () => void; mode?: 'solo' | 'presenter' | 'audience' }) {
+  // Ausgeblendete Folien gibt es hier nicht: Indizes (auch zum Publikum und Handy) zählen nur sichtbare Folien
+  const { deck, start } = useMemo(() => showOf(all, at), [all, at])
   const [view, setView] = useState({ i: start, from: null as number | null, dir: 1 })
   const [pv, setPv] = useState(mode === 'presenter')
   const [noteSize, setNoteSize] = useState(() => { try { return Number(localStorage.getItem('dw.noteSize')) || 23 } catch { return 23 } })

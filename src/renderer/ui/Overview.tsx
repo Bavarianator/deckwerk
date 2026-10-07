@@ -1,7 +1,7 @@
 // Übersicht: alle Folien als Lichttisch, nach Kapiteln. Klick wählt (Umschalt: Bereich, Strg: einzeln dazu), Doppelklick öffnet,
-// Ziehen sortiert um. Für die Auswahl: Kopieren/Einfügen (Strg+C/V), Duplizieren, Löschen, mit Deckwerk überarbeiten.
+// Ziehen sortiert um. Für die Auswahl: Kopieren/Einfügen (Strg+C/V), Duplizieren, Ausblenden, Löschen, mit Deckwerk überarbeiten.
 import { useRef, useState } from 'react'
-import { Check, Sparkles } from 'lucide-react'
+import { Check, EyeOff, Sparkles } from 'lucide-react'
 import type { Deck, Measured } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { chaptersOf, titleOf } from './story'
@@ -15,6 +15,7 @@ interface Props {
   onMove: (from: number, to: number) => void
   onDup: (i: number) => void
   onDel: (i: number) => void
+  onHide: (idx: number[], on: boolean) => void
   onCopy: (idx: number[]) => void
   onPaste: (at: number) => number
   onAsk: (text: string, context: string) => boolean
@@ -22,7 +23,7 @@ interface Props {
 
 const W = 212
 
-export function Overview({ deck, index, busy, onOpen, onMove, onDup, onDel, onCopy, onPaste, onAsk }: Props) {
+export function Overview({ deck, index, busy, onOpen, onMove, onDup, onDel, onHide, onCopy, onPaste, onAsk }: Props) {
   const [picked, setSel] = useState<number[]>([])
   const sel = picked.filter((i) => i < deck.slides.length) // Deck kann schrumpfen (Rückgängig, KI): alte Indizes fallen weg
   const [fit, setFit] = useState<Record<string, Measured['fit']>>({})
@@ -38,6 +39,7 @@ export function Overview({ deck, index, busy, onOpen, onMove, onDup, onDel, onCo
   const desc = [...sel].sort((a, b) => b - a) // von hinten, damit die Indizes stimmen
   // Faustregel: gut eine Minute pro Inhaltsfolie, Kapiteltrenner und Titel zählen kaum
   const minutes = Math.max(1, Math.round(deck.slides.reduce((m, s) => m + (s.layout === 'section' || s.layout === 'cover' ? 0.25 : 1.1), 0)))
+  const shown = sel.some((i) => !deck.slides[i].hidden) // Auswahl enthält sichtbare Folien: Knopf blendet aus, sonst ein
   const ids = sel.map((i) => `„${deck.slides[i].id}“ (Folie ${i + 1})`).join(', ')
 
   return (
@@ -70,9 +72,9 @@ export function Overview({ deck, index, busy, onOpen, onMove, onDup, onDel, onCo
                 <button
                   key={s.id}
                   type="button"
-                  className={`grid-slide ${sel.includes(i) ? 'on' : ''} ${over === i && from !== i ? 'over' : ''}`}
+                  className={`grid-slide ${sel.includes(i) ? 'on' : ''} ${over === i && from !== i ? 'over' : ''} ${s.hidden ? 'dw-hidden' : ''}`}
                   aria-pressed={sel.includes(i)}
-                  aria-label={`Folie ${i + 1}${bad ? ', Text passt nicht' : ''}`}
+                  aria-label={`Folie ${i + 1}${s.hidden ? ', ausgeblendet' : ''}${bad ? ', Text passt nicht' : ''}`}
                   draggable={!busy}
                   onClick={(e) => pick(i, e)}
                   onDoubleClick={() => onOpen(i)}
@@ -86,7 +88,7 @@ export function Overview({ deck, index, busy, onOpen, onMove, onDup, onDel, onCo
                     {bad && <span className="grid-warn" />}
                     {sel.includes(i) && <span className="grid-check"><Check size={11} strokeWidth={3.2} /></span>}
                   </span>
-                  <span className="grid-cap"><b>{i + 1}</b><span>{titleOf(deck, i)}</span></span>
+                  <span className="grid-cap"><b>{i + 1}</b>{s.hidden && <EyeOff size={13} className="grid-off" aria-hidden />}<span>{titleOf(deck, i)}</span></span>
                   {bad && <span className="grid-bad">Text passt nicht</span>}
                 </button>
               )
@@ -99,6 +101,7 @@ export function Overview({ deck, index, busy, onOpen, onMove, onDup, onDel, onCo
         <div className="grid-bar material" role="toolbar" aria-label={`${sel.length} Folien ausgewählt`}>
           <b>{sel.length === 1 ? '1 Folie' : `${sel.length} Folien`} ausgewählt</b>
           <button className="plain" disabled={busy} onClick={() => { desc.forEach(onDup); setSel([]) }}>Duplizieren</button>
+          <button className="plain" disabled={busy} onClick={() => onHide(sel, shown)}>{shown ? 'Ausblenden' : 'Einblenden'}</button>
           <button className="plain danger" disabled={busy || sel.length >= deck.slides.length}
             onClick={() => void confirmDialog({ title: `${sel.length === 1 ? 'Folie' : `${sel.length} Folien`} löschen?`, text: 'Mit Strg+Z holst du sie zurück.', ok: 'Löschen', danger: true }).then((ok) => { if (ok) { desc.forEach(onDel); setSel([]) } })}>Löschen</button>
           <i aria-hidden="true" />
