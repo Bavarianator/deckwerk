@@ -1,7 +1,7 @@
 // MCP-Server gegen Mock-Engine über einen In-Memory-Transport: Tools gelistet, Fehler als isError, Bilder, save/open.
 // Aufruf: npx esbuild scripts/mcp-smoke.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/mcp-smoke.mjs && node out/mcp-smoke.mjs
 import assert from 'node:assert/strict'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
@@ -56,6 +56,9 @@ r = await call('render_slides', { ids: [deck.slides[0].id] })
 assert.equal(r.content[1].type, 'image')
 r = await call('save_deck'); assert.match(r.content[0].text!, /mcp-test\/deck\.json/)
 r = await call('create_deck', { title: 'Leer' })
+// Ein neues Deck bekommt beim Speichern einen eigenen Ordner und überschreibt das zuvor gespeicherte nicht
+r = await call('save_deck'); assert.match(r.content[0].text!, /\/leer\/deck\.json/)
+assert.equal(JSON.parse(readFileSync(join(home, 'mcp-test/deck.json'), 'utf8')).slides.length, 2)
 r = await call('open_deck', { path: 'mcp-test/deck.json' }); assert.match(r.content[0].text!, /2 Folien/)
 assert.match((await call('export_deck', { format: 'pdf' })).content[0].text!, /deck\.pdf/)
 await client.close()
