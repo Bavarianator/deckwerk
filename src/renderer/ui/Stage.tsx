@@ -462,7 +462,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     if (!slide) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
-      if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest('.kit-select, [role=listbox], dialog, .filmstrip') || busy) return // Dropdowns, Dialoge und Filmstreifen bedienen ihre Tasten selbst
+      if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest('.kit-select, [role=listbox]:not(.layers-list), dialog, .filmstrip') || (e.key.startsWith('Arrow') && t.closest('.layers-list')) || busy) return // Dropdowns, Dialoge, Filmstreifen und Pfeile der Ebenen-Liste bedienen ihre Tasten selbst
       if (document.querySelector('[aria-modal="true"], dialog[open]')) return // offenes Sheet: Fokus liegt nach Klicks oft auf body
       const mod = e.ctrlKey || e.metaKey, key = e.key.toLowerCase()
       if (crop) { // im Zuschnitt: Enter übernimmt, Esc verwirft, sonst nichts

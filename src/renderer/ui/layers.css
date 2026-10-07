@@ -1,0 +1,17 @@
+/* Ebenen-Panel im „Anpassen“ (LayersPanel.tsx) */
+.layers-panel { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.layers-panel > summary { cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.layers-panel[open] > summary { margin-bottom: 8px; }
+.layers-empty { margin: 0 0 6px; font-size: 12px; }
+.layers-list { position: relative; max-height: 300px; overflow-y: auto; margin: 0; padding: 0; list-style: none; border-radius: 6px; }
+.layers-row { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 2px 0 8px; border-radius: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.layers-row:hover { background: var(--hover); color: var(--text); }
+.layers-row[aria-selected="true"] { background: var(--accent-soft); color: var(--text); }
+.layers-member { padding-left: 24px; }
+.layers-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layers-lock.icon-btn { width: 24px; height: 24px; opacity: 0; }
+.layers-row:hover .layers-lock, .layers-lock:focus-visible, .layers-lock.on { opacity: 1; }
+.layers-layout { cursor: default; color: var(--faint); }
+/* Einfügemarke beim Ziehen */
+.layers-drop-above { box-shadow: inset 0 2px 0 var(--accent); }
+.layers-drop-below { box-shadow: inset 0 -2px 0 var(--accent); }

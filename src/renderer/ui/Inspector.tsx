@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { BUILDS, DECORS, TONES, TRANSITIONS, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
 import { ItemInspector } from './ItemInspector'
+import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
 import { Select } from './kit'
 import { LAYOUTS, nextLook, type LayoutId } from '../../shared/layouts'
@@ -24,6 +25,7 @@ interface Props {
   patchSlide: (i: number, p: Partial<Slide>, tag?: string) => void
   pickImage: () => Promise<string | null>
   picked: string[]
+  onPick: (ids: string[]) => void
   onItems: (fn: (items: Item[]) => Item[], tag?: string) => void
 }
 
@@ -31,7 +33,7 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   <label className="field"><span>{label}</span>{children}</label>
 )
 
-export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked, onItems }: Props) {
+export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked, onPick, onItems }: Props) {
   const slide = deck.slides[index]
   const def = slide && LAYOUTS[slide.layout as LayoutId]
   const items = slide?.items ?? []
@@ -42,6 +44,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
   return (
     <aside className="inspector">
       <fieldset disabled={disabled}>
+        {slide && <LayersPanel deck={deck} index={index} picked={picked} disabled={disabled} onPick={onPick} onItems={onItems} />}
         {picked.length > 0 && <ItemInspector deck={deck} index={index} picked={picked} onItems={onItems} pickImage={pickImage} />}
         {slide && (
           <section className="grow">

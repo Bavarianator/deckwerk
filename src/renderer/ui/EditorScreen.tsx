@@ -145,7 +145,7 @@ export function EditorScreen(p: Props) {
             ? <InsertSearch deck={p.deck} disabled={p.busy} onAdd={add} onAddSlide={(l) => p.addSlide(l)}>
                 <Elements deck={p.deck} slideId={slide?.id} disabled={p.busy} onAdd={add} onAddSlide={(l) => p.addSlide(l)} pickImage={p.pickImage} />
               </InsertSearch>
-            : <Inspector deck={p.deck} index={p.index} disabled={p.busy} picked={p.picked} onItems={p.onItems} patchSlide={p.patchSlide} pickImage={p.pickImage} />}
+            : <Inspector deck={p.deck} index={p.index} disabled={p.busy} picked={p.picked} onPick={p.onPick} onItems={p.onItems} patchSlide={p.patchSlide} pickImage={p.pickImage} />}
         </aside>
       )}
     </div>
