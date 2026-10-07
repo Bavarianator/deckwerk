@@ -1,8 +1,9 @@
 // Kopfleiste im Editor: zurück zu den Decks, Titel mit Zustand, Einfügen/Anpassen/Look, Export, Präsentieren.
-import { useEffect, useRef, useState } from 'react'
-import type { SyncStatus } from '../../preload'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { ShortcutSheet } from './ShortcutSheet'
-import { ChevronLeft, CloudAlert, CloudCheck, CloudSync, Keyboard, LayoutGrid, PanelLeft, Palette, Play, Plus, RectangleHorizontal, Share, SlidersHorizontal } from 'lucide-react'
+import { CloudButton } from './settings/CloudSection'
+import { OpenSettings } from './settings/parts'
+import { ChevronLeft, Keyboard, LayoutGrid, PanelLeft, Palette, Play, Plus, RectangleHorizontal, Settings, Share, SlidersHorizontal } from 'lucide-react'
 
 export interface Status { text: string; error?: boolean }
 export type Panel = 'insert' | 'format' | null
@@ -33,17 +34,8 @@ interface Props {
   onPresent: () => void
 }
 
-// Cloud-Sync-Zustand; nur sichtbar, wenn ein Zugang eingerichtet ist. Klick gleicht sofort ab.
-function SyncBadge() {
-  const [s, setS] = useState<SyncStatus | null>(null)
-  useEffect(() => { void window.api.syncStatus().then(setS); return window.api.onSync(setS) }, [])
-  if (!s?.hasPass) return null
-  const Icon = s.busy ? CloudSync : s.error ? CloudAlert : CloudCheck
-  const label = s.busy ? 'Cloud-Sync läuft …' : `Cloud-Sync: ${s.text || 'noch kein Abgleich'}${s.at ? ` (${new Date(s.at).toLocaleTimeString('de')})` : ''}. Klicken zum Abgleichen.`
-  return <button className={`plain ${s.error ? 'error' : ''}`} title={label} aria-label={label} disabled={s.busy} onClick={() => void window.api.syncRun().then(setS)}><Icon size={17} className={s.busy ? 'spin' : undefined} /></button>
-}
-
 export function TopBar(p: Props) {
+  const openSettings = useContext(OpenSettings)
   const [menu, setMenu] = useState(false)
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -90,8 +82,9 @@ export function TopBar(p: Props) {
             <button className={`plain ${p.panel === 'format' ? 'on' : ''}`} aria-pressed={p.panel === 'format'} disabled={!p.hasDeck} onClick={() => toggle('format')}><SlidersHorizontal size={17} />Anpassen</button>
           </>
         )}
-        <SyncBadge />
+        <CloudButton />
         <button className="plain" title="Tastenkürzel (?)" aria-label="Tastenkürzel (?)" onClick={() => setKeys(true)}><Keyboard size={17} /></button>
+        <button className="plain" title="Einstellungen" aria-label="Einstellungen" onClick={() => openSettings()}><Settings size={17} /></button>
         <button className="plain" disabled={!p.hasDeck} onClick={p.onLook}><Palette size={17} />Look</button>
         <div className="top-export" ref={box}>
           <button className="plain" disabled={!p.hasDeck} aria-expanded={menu} aria-haspopup="menu" onClick={() => setMenu(!menu)}><Share size={17} />Exportieren</button>

@@ -9,7 +9,7 @@ Deckwerk baut Folien aus einem festen Layout-Katalog. Deine Aufgabe sind Storyli
 
 ## 0. Voraussetzung
 
-Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__…`). Fehlen sie, ist Deckwerk nicht eingetragen. Dann sag dem Nutzer: in der Deckwerk-App Einrichtung → Agenten → „In Claude Code einrichten“ bzw. „In Codex einrichten“, danach eine neue Sitzung starten. Baue die Präsentation nicht stattdessen per Skript, HTML oder python-pptx nach.
+Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__…`). Fehlen sie, ist Deckwerk nicht eingetragen. Dann sag dem Nutzer: in der Deckwerk-App Einstellungen (Zahnrad) → Agenten → „In Claude Code einrichten“ bzw. „In Codex einrichten“, danach eine neue Sitzung starten. Baue die Präsentation nicht stattdessen per Skript, HTML oder python-pptx nach.
 
 ## 1. Zuerst den Guide lesen
 

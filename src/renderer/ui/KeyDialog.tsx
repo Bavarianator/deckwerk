@@ -1,4 +1,4 @@
-// Erscheint, wenn ein Wunsch ohne KI-Zugang abgeschickt wird: führt zur Einrichtung oder nimmt direkt einen Anthropic-API-Schlüssel
+// Erscheint, wenn ein Wunsch ohne KI-Zugang abgeschickt wird: führt in die Einstellungen (KI-Zugang) oder nimmt direkt einen Anthropic-API-Schlüssel
 // (wird im Main-Prozess geprüft und verschlüsselt gespeichert).
 import { useEffect, useRef, useState } from 'react'
 import { KeyRound } from 'lucide-react'
@@ -26,10 +26,10 @@ export function KeyDialog({ onSave, onSetup, onClose }: { onSave: (key: string) 
       <form onSubmit={(e) => (e.preventDefault(), save())}>
         <h2><KeyRound size={18} /> Deckwerk braucht noch eine KI</h2>
         <p className="muted">
-          Das geht mit deinem Claude- oder ChatGPT-Abo oder mit einem API-Schlüssel von Anthropic. Die Einrichtung führt dich Schritt
-          für Schritt hin.
+          Das geht mit deinem Claude- oder ChatGPT-Abo oder mit einem API-Schlüssel von Anthropic. In den Einstellungen meldest du dich
+          mit einem Klick an.
         </p>
-        <button type="button" className="btn primary" onClick={onSetup}>Einrichtung öffnen</button>
+        <button type="button" className="btn primary" onClick={onSetup}>KI-Zugang einrichten</button>
         <p className="muted">Schlüssel schon zur Hand? Dann hier einfügen. Er wird geprüft und verschlüsselt auf diesem Rechner gespeichert.</p>
         <input type="password" placeholder="sk-ant-…" value={key} onChange={(e) => setKey(e.target.value)} aria-label="API-Schlüssel" />
         {err && <p className="error" role="alert">{err}</p>}

@@ -6,6 +6,7 @@ import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Select } from './kit'
 import { Logo } from './Logo'
+import { CloudButton } from './settings/CloudSection'
 
 // Angehängte Dateien (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateinamen
 export type Source = { name: string; text: string; cut: boolean }
@@ -107,7 +108,8 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         <span />
         <div className="top-r">
           <button className="plain tint" onClick={onOpen}>Deck öffnen …</button>
-          <button className="plain" aria-label="Einrichtung" title="Einrichtung: KI-Zugang, Modelle, Agenten und Bilder" onClick={onKey}><Settings size={17} /></button>
+          <CloudButton />
+          <button className="plain" aria-label="Einstellungen" title="Einstellungen: KI-Zugang, Cloud, Bilder, Marke, Agenten" onClick={onKey}><Settings size={17} /></button>
         </div>
       </header>
 
