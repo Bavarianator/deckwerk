@@ -125,6 +125,10 @@ const api = {
   pasteImage: (): Promise<string | null> => invoke('image:paste'),
   /** Fotos suchen: eigene Bilder unter ~/Deckwerk/assets, sonst Unsplash (Key in Einstellungen → Bilder oder UNSPLASH_ACCESS_KEY) */
   findImages: (query: string): Promise<{ urls: string[]; note?: string }> => invoke('image:find', query),
+  /** Bild per KI erzeugen (Anbieter aus Einstellungen → Bilder), Datei unter ~/Deckwerk/assets → asset://-URL; dauert 20–120 s */
+  generateImage: (prompt: string, orientation: 'landscape' | 'portrait' | 'square'): Promise<string> => invoke('image:generate', prompt, orientation),
+  /** die neuesten eigenen Bilder unter ~/Deckwerk/assets (auch Unterordner), neu → alt, höchstens 60 */
+  listAssets: (): Promise<{ url: string; name: string; mtime: number }[]> => invoke('assets:list'),
   /** Hintergrund entfernen (nativ im Main-Prozess) → asset://-URL eines PNG mit Transparenz */
   removeBg: (src: string): Promise<string> => invoke('image:removeBg', src),
   /** Fortschritt des einmaligen Modell-Downloads in % */
