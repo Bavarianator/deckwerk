@@ -601,8 +601,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         } catch {}
         if (i.source === 'local' || (i.source === 'auto' && local.length)) return localImages(ctx, local.map((h) => h.file), i.limit)
         if (!i.query) return { text: `${local.length ? '' : 'Keine lokalen Bilder. '}Für Fotos aus dem Netz eine englische query angeben.` }
-        if (i.source === 'unsplash' && !ctx.unsplashKey) throw new Error('Unsplash ist nicht konfiguriert (UNSPLASH_ACCESS_KEY fehlt). source "web" sucht ohne Key.')
-        return i.source !== 'web' && ctx.unsplashKey ? unsplash(ctx, i.query, i.limit, i.orientation) : openverse(ctx, i.query, i.limit, i.orientation)
+        const unsplashKey = imageSettings.unsplash || ctx.unsplashKey // Key aus der App hat Vorrang wie bei den Bild-Keys
+        if (i.source === 'unsplash' && !unsplashKey) throw new Error('Unsplash ist nicht eingerichtet (Einstellungen → Bilder oder UNSPLASH_ACCESS_KEY). source "web" sucht ohne Key.')
+        return i.source !== 'web' && unsplashKey ? unsplash(ctx, i.query, i.limit, i.orientation) : openverse(ctx, i.query, i.limit, i.orientation)
       },
     }),
     tool({
@@ -670,7 +671,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
 
 // Unsplash: suchen, die besten `limit` Fotos (1080 px) nach assetDir laden, Download melden (API-Bedingung), Thumbs zurückgeben.
 async function unsplash(ctx: ToolContext, query: string, limit: number, orientation = 'landscape'): Promise<ToolOutput> {
-  const headers = { Authorization: `Client-ID ${ctx.unsplashKey}`, 'Accept-Version': 'v1' }
+  const headers = { Authorization: `Client-ID ${imageSettings.unsplash || ctx.unsplashKey}`, 'Accept-Version': 'v1' }
   const get = (url: string) => fetch(url, { headers, signal: AbortSignal.timeout(20_000) })
   const res = await get(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${limit}&orientation=${orientation}&content_filter=high`)
   if (!res.ok) throw new Error(`Unsplash antwortet ${res.status}: ${(await res.text()).slice(0, 200)}`)
@@ -830,11 +831,11 @@ async function openverse(ctx: ToolContext, query: string, limit: number, orienta
 }
 
 // KI-Bilder: Mammouth (LiteLLM-Proxy) und OpenAI sprechen dieselbe Images-API; Codex erzeugt sie mit dem ChatGPT-Login über sein
-// eingebautes image_gen. Einstellungen aus der App (Einrichtung → Bilder, image-settings.ts) haben Vorrang, sonst gilt die Umgebung;
+// eingebautes image_gen. Einstellungen aus der App (Einstellungen → Bilder, image-settings.ts) haben Vorrang, sonst gilt die Umgebung;
 // beides wird erst beim Aufruf gelesen.
 export const IMAGE_PROVIDERS = ['mammouth', 'openai', 'codex'] as const
 export type ImageProvider = (typeof IMAGE_PROVIDERS)[number]
-export const imageSettings: { mammouth?: string; openai?: string; provider?: ImageProvider; model?: string } = {}
+export const imageSettings: { mammouth?: string; openai?: string; unsplash?: string; provider?: ImageProvider; model?: string } = {}
 const IMAGE_API = {
   mammouth: { url: 'https://api.mammouth.ai/v1', env: 'MAMMOUTH_API_KEY' },
   openai: { url: 'https://api.openai.com/v1', env: 'OPENAI_API_KEY' },
@@ -850,7 +851,7 @@ async function generateImage(ctx: ToolContext, prompt: string, orientation: Orie
   const keyOf = (p: keyof typeof IMAGE_API) => imageSettings[p] || process.env[IMAGE_API[p].env]
   const ready = (p: ImageProvider) => (p === 'codex' ? !!findCli('codex') : !!keyOf(p))
   const p = provider ?? imageSettings.provider ?? IMAGE_PROVIDERS.find(ready)
-  if (!p) return { text: 'Keine Bild-KI eingerichtet (Einrichtung → Bilder: Mammouth- oder OpenAI-Key, oder Codex installieren). Stattdessen find_images nutzen oder den Nutzer um ein Bild bitten.' }
+  if (!p) return { text: 'Keine Bild-KI eingerichtet (Einstellungen → Bilder: Mammouth- oder OpenAI-Key, oder Codex installieren). Stattdessen find_images nutzen oder den Nutzer um ein Bild bitten.' }
   if (!ready(p)) throw new Error(`${p} ist nicht eingerichtet. Verfügbar: ${IMAGE_PROVIDERS.filter(ready).join(', ') || 'keiner'}`)
   const model = imageSettings.model || process.env.IMAGE_MODEL || 'gpt-image-2'
   const buf = p === 'codex' ? await (codexQueue = codexQueue.catch(() => {}).then(() => codexImage(prompt, orientation))) : await apiImage(p, keyOf(p)!, model, prompt, orientation)

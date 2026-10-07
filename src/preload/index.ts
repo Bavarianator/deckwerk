@@ -8,11 +8,17 @@ export type { SyncStatus }
 
 /** Agenten-CLI, über das der Chat ohne API-Key läuft und in das sich Deckwerk als MCP-Server einträgt */
 export type ChatCli = 'claude' | 'codex' | 'vibe'
-/** login: angemeldet (nur Codex prüfbar), null = unbekannt */
-export interface CliStatus { id: ChatCli; name: string; found: boolean; mcp: boolean; login: boolean | null }
+/** login: angemeldet, null = unbekannt (Vibe: Mistral-Key gefunden = true); who: Konto, z. B. „name@mail.de · Max“ */
+export interface CliStatus { id: ChatCli; name: string; found: boolean; mcp: boolean; login: boolean | null; who?: string }
+/** CLIs mit Browser-Anmeldung */
+export type LoginCli = 'claude' | 'codex'
+/** Anmeldung läuft: Seite im Browser (öffnet sich von selbst); code = der Dienst kann im Browser einen Code zeigen, den loginCode weitergibt */
+export interface LoginEvent { url: string; code: boolean }
 export type ImageProvider = 'mammouth' | 'openai' | 'codex'
-/** KI-Bilder: woher die Keys kommen (app = in Deckwerk gespeichert, env = Umgebungsvariable), nie die Keys selbst */
-export interface ImageStatus { mammouth: 'app' | 'env' | null; openai: 'app' | 'env' | null; provider: ImageProvider | null; model: string }
+/** KI-Bilder und Fotosuche: woher die Keys kommen (app = in Deckwerk gespeichert, env = Umgebungsvariable), nie die Keys selbst */
+export interface ImageStatus { mammouth: 'app' | 'env' | null; openai: 'app' | 'env' | null; unsplash: 'app' | 'env' | null; provider: ImageProvider | null; model: string }
+/** Über Deckwerk: Versionen und der Ordner mit Decks, Bildern, brand.json und hausstil.md */
+export interface AppInfo { version: string; electron: string; chrome: string; node: string; platform: string; home: string }
 /** hasKey: irgendein KI-Zugang (API-Key oder ein Agenten-CLI) */
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
@@ -89,13 +95,31 @@ const api = {
   },
   /** prüft den Key bei Anthropic und speichert ihn; „ungeprüft“ = ohne Verbindung gespeichert */
   setApiKey: (key: string): Promise<'geprüft' | 'ungeprüft'> => invoke('key:set', key),
+  /** gespeicherten Anthropic-Key löschen (ANTHROPIC_API_KEY aus der Umgebung bleibt) */
+  clearApiKey: (): Promise<void> => invoke('key:clear'),
   /** feste Hilfe-Links der Einrichtung im Browser öffnen */
-  openHilfe: (id: 'api-keys' | 'claude' | 'node'): Promise<void> => invoke('hilfe:open', id),
+  openHilfe: (id: 'api-keys' | 'claude' | 'node' | 'mistral' | 'openai' | 'unsplash'): Promise<void> => invoke('hilfe:open', id),
+  /** Konten: Browser-Anmeldung in Claude Code bzw. Codex; löst auf, wenn sie fertig ist. Eine Anmeldung zur Zeit (auch Nextcloud). */
+  login: (cli: LoginCli): Promise<void> => invoke('account:login', cli),
+  /** Code aus dem Browser an die laufende Anmeldung (Claude, falls der Rückweg zur App nicht klappt) */
+  loginCode: (code: string): Promise<void> => invoke('account:code', code),
+  /** laufende Anmeldung abbrechen (CLI oder Nextcloud); die wartende login-/nextcloudLogin-Promise wird abgelehnt */
+  loginCancel: (): Promise<void> => invoke('account:cancel'),
+  /** Anmeldeseite der laufenden Anmeldung erneut im Browser öffnen */
+  loginOpen: (): Promise<void> => invoke('account:open'),
+  onLogin(cb: (e: LoginEvent) => void): () => void {
+    const h = (_: unknown, e: LoginEvent) => cb(e)
+    ipcRenderer.on('account:url', h)
+    return () => void ipcRenderer.off('account:url', h)
+  },
+  logout: (cli: LoginCli): Promise<void> => invoke('account:logout', cli),
+  /** Mistral-Key für Vibe in ~/.vibe/.env speichern; null löscht ihn dort */
+  setVibeKey: (key: string | null): Promise<void> => invoke('account:vibeKey', key),
   /** liefert asset://local/<absoluter Pfad> oder null */
   pickImage: (): Promise<string | null> => invoke('image:pick'),
   /** Bild aus der System-Zwischenablage als PNG unter ~/Deckwerk/assets speichern; null = keins drin */
   pasteImage: (): Promise<string | null> => invoke('image:paste'),
-  /** Fotos suchen: eigene Bilder unter ~/Deckwerk/assets, sonst Unsplash (wenn UNSPLASH_ACCESS_KEY gesetzt) */
+  /** Fotos suchen: eigene Bilder unter ~/Deckwerk/assets, sonst Unsplash (Key in Einstellungen → Bilder oder UNSPLASH_ACCESS_KEY) */
   findImages: (query: string): Promise<{ urls: string[]; note?: string }> => invoke('image:find', query),
   /** Hintergrund entfernen (nativ im Main-Prozess) → asset://-URL eines PNG mit Transparenz */
   removeBg: (src: string): Promise<string> => invoke('image:removeBg', src),
@@ -116,8 +140,16 @@ const api = {
   /** Brand-Kit des Nutzers (~/Deckwerk/brand.json), das jedes neue Deck per KI bekommt; null = keines gespeichert */
   getBrand: (): Promise<BrandKit | null> => invoke('brand:get'),
   setBrand: (b: BrandKit): Promise<void> => invoke('brand:set', b),
+  /** Standard-Brand-Kit löschen (brand.json); bestehende Decks behalten ihres */
+  clearBrand: (): Promise<void> => invoke('brand:clear'),
   /** ~/Deckwerk/hausstil.md im Standard-Editor öffnen (legt sie bei Bedarf an) */
   openStyle: (): Promise<void> => invoke('style:open'),
+  /** Hausstil lesen ('' = keiner) und ganz ersetzen */
+  getStyle: (): Promise<string> => invoke('style:get'),
+  setStyle: (text: string): Promise<void> => invoke('style:set', text),
+  /** Über Deckwerk; openHome öffnet den Deckwerk-Ordner im Dateimanager */
+  appInfo: (): Promise<AppInfo> => invoke('app:info'),
+  openHome: (): Promise<void> => invoke('app:openHome'),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
   setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
   setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),
@@ -127,14 +159,17 @@ const api = {
   setupDone: (): Promise<void> => invoke('setup:done'),
   /** startet den MCP-Server wie die Agenten-CLIs und liefert die Anzahl seiner Werkzeuge */
   setupMcpTest: (): Promise<number> => invoke('setup:mcpTest'),
-  /** KI-Bilder: Keys (Mammouth, OpenAI), bevorzugter Anbieter, Modell; null oder '' löscht ein Feld */
+  /** KI-Bilder und Fotosuche: Keys (Mammouth, OpenAI, Unsplash), bevorzugter Anbieter, Modell; null oder '' löscht ein Feld */
   imageSettings: (): Promise<ImageStatus> => invoke('imageSettings:get'),
-  setImageSettings: (patch: { mammouth?: string | null; openai?: string | null; provider?: ImageProvider | null; model?: string | null }): Promise<ImageStatus> => invoke('imageSettings:set', patch),
+  setImageSettings: (patch: { mammouth?: string | null; openai?: string | null; unsplash?: string | null; provider?: ImageProvider | null; model?: string | null }): Promise<ImageStatus> => invoke('imageSettings:set', patch),
   /** Cloud-Sync: Zustand, Einstellungen setzen (pass '' = unverändert, null = Sync aus), Lauf starten, Verbindung testen */
   syncStatus: (): Promise<SyncStatus> => invoke('sync:get'),
   setSync: (s: { url: string; user: string; pass: string } | null): Promise<SyncStatus> => invoke('sync:set', s),
   syncRun: (): Promise<SyncStatus> => invoke('sync:run'),
   syncTest: (s: { url: string; user: string; pass: string }): Promise<void> => invoke('sync:test', s),
+  /** Nextcloud-Anmeldung im Browser (Login Flow v2): legt ein App-Passwort an, speichert den Zugang und gleicht ab.
+   * Seite kommt auch über onLogin, Abbruch über loginCancel. */
+  nextcloudLogin: (server: string): Promise<SyncStatus> => invoke('sync:nextcloud', server),
   onSync(cb: (s: SyncStatus) => void): () => void {
     const h = (_: unknown, s: SyncStatus) => cb(s)
     ipcRenderer.on('sync:status', h)
