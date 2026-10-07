@@ -69,12 +69,19 @@ function parseMultistatus(xml: string, basePath: string) {
   return out
 }
 
-export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch = fetch): Promise<SyncResult> {
+/** onProgress: kurzer Text für die Oberfläche, solange der Lauf dauert (Vergleichen, Übertragen) */
+export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch = fetch, onProgress?: (text: string) => void): Promise<SyncResult> {
   const base = davBase(s)
   const basePath = decodeURIComponent(new URL(base).pathname)
   const auth = `Basic ${btoa(unescape(encodeURIComponent(`${s.user}:${s.pass}`)))}`
-  const dav = async (method: string, rel: string, init: { body?: Uint8Array | string; headers?: Record<string, string> } = {}) => {
-    const r = await fetchFn(base + enc(rel), { method, body: init.body as BodyInit | undefined, headers: { Authorization: auth, ...init.headers } })
+  // Zeitlimit je Anfrage (2 min plus Übertragung bei 50 KB/s): ein hängender Server hielte den Lauf sonst für immer auf.
+  // Bricht er ab, merkt sich der finally-Block das Erledigte, der nächste Lauf macht weiter.
+  const dav = async (method: string, rel: string, init: { body?: Uint8Array | string; headers?: Record<string, string>; size?: number } = {}) => {
+    const ms = Math.round(120_000 + ((init.body?.length ?? init.size ?? 0) / 50_000) * 1000)
+    const signal = typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(ms) : undefined
+    const r = await fetchFn(base + enc(rel), { method, body: init.body as BodyInit | undefined, headers: { Authorization: auth, ...init.headers }, signal }).catch((e) => {
+      throw (e as Error)?.name === 'TimeoutError' ? new Error(`Cloud-Sync: Der Server antwortet nicht (${rel || 'Deckwerk'}). Der nächste Abgleich macht weiter.`) : e
+    })
     if (r.status === 401) throw new Error('Cloud-Sync: Anmeldung abgelehnt. Nutzername und App-Passwort prüfen.')
     return r
   }
@@ -161,7 +168,7 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
   }
   const down = async (rel: string, force = false) => {
     if (!force && await touched(rel)) return
-    const r = await must(await dav('GET', rel), `Herunterladen ${rel}`)
+    const r = await must(await dav('GET', rel, { size: remote.get(rel)?.size }), `Herunterladen ${rel}`)
     const file = join(home, rel)
     await mkdir(dirname(file), { recursive: true })
     // atomar über eine Punktdatei (vom Sync ausgenommen): ein Abbruch hinterlässt keine halbe Datei
@@ -195,11 +202,15 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
   // erst planen, dann ausführen: so greift die Löschbremse, bevor etwas weg ist
   type Op = 'keep' | 'same' | 'conflict' | 'up' | 'down' | 'rmLocal' | 'rmRemote' | 'forget'
   const plan: [string, Op][] = []
-  for (const rel of new Set([...local.keys(), ...remote.keys(), ...Object.keys(old)])) {
+  const all = [...new Set([...local.keys(), ...remote.keys(), ...Object.keys(old)])]
+  const toCompare = all.filter((rel) => !old[rel] && local.get(rel)?.size === remote.get(rel)?.size && local.has(rel) && remote.has(rel)).length
+  let compared = 0
+  for (const rel of all) {
     const l = local.get(rel), r = remote.get(rel), o = old[rel]
     // zwei neue Dateien gleicher Größe (erster Abgleich, Neubeginn): Inhalt vergleichen, sonst ginge eine Fassung unbemerkt verloren
     if (l && r && !o && l.size === r.size) {
-      const [x, y] = [new Uint8Array(await (await must(await dav('GET', rel), `Herunterladen ${rel}`)).arrayBuffer()), new Uint8Array(await readFile(join(home, rel)))]
+      onProgress?.(`Vergleicht ${++compared} von ${toCompare} Dateien`)
+      const [x, y] = [new Uint8Array(await (await must(await dav('GET', rel, { size: r.size }), `Herunterladen ${rel}`)).arrayBuffer()), new Uint8Array(await readFile(join(home, rel)))]
       const same = x.length === y.length && x.every((v, i) => v === y[i]) // ohne Buffer: läuft auch in der Android-Engine
       plan.push([rel, same ? 'same' : 'conflict'])
       continue
@@ -218,9 +229,18 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
   if (known >= 10 && deletions > known / 2)
     throw new Error(`Cloud-Sync angehalten: ${deletions} von ${known} Dateien würden gelöscht. Ist der Ordner auf dem Server oder auf dem Gerät noch vollständig? Zum Neubeginn Sync aus- und wieder einschalten.`)
 
+  // Fortschritt über die Übertragungen (hoch, runter, Konflikte); Größe aus der Liste, die Übertragung selbst zählt nicht mit
+  const moves = plan.filter(([, op]) => op === 'up' || op === 'down' || op === 'conflict')
+  const sizeOf = (rel: string, op: Op) => (op === 'down' ? remote.get(rel)?.size : local.get(rel)?.size) ?? 0
+  const totalBytes = moves.reduce((n, [rel, op]) => n + sizeOf(rel, op), 0)
+  const mb = (b: number) => (b / 1e6).toLocaleString('de', { maximumFractionDigits: b < 1e7 ? 1 : 0 })
+  let moved = 0, movedBytes = 0
+  const report = () => onProgress?.(`Überträgt ${moved} von ${moves.length} Dateien${totalBytes >= 1e6 ? ` · ${mb(movedBytes)} von ${mb(totalBytes)} MB` : ''}`)
+  if (moves.length) report()
   try {
     for (const [rel, op] of plan) {
       const l = local.get(rel), r = remote.get(rel)
+      if (op === 'up' || op === 'down' || op === 'conflict') { moved++; movedBytes += sizeOf(rel, op) }
       if (op === 'same') next[rel] = { ...l!, etag: r!.etag }
       else if (op === 'keep') next[rel] = old[rel]
       else if (op === 'conflict') await conflict(rel)
@@ -229,6 +249,7 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
       else if (op === 'rmLocal') { if (await touched(rel)) continue; await rm(join(home, rel), { force: true }); gone.add(rel); res.deleted++; res.changed.push(join(home, rel)) } // entfernt gelöscht
       else if (op === 'rmRemote') { await must(await dav('DELETE', rel), `Löschen ${rel}`); gone.add(rel); res.deleted++ } // lokal gelöscht
       else gone.add(rel)
+      if (op === 'up' || op === 'down' || op === 'conflict') report()
     }
     // ETags der hochgeladenen Dateien aus einer frischen Liste: manche Server liefern beim PUT keinen, andere ändern ihn
     // danach noch (X-OC-Mtime setzt die Zeit, rclone leitet den ETag daraus ab)
@@ -275,13 +296,16 @@ export function createSyncer(home: string, settings: () => SyncSettings | null, 
     if (busy) { again = true; return status() }
     busy = true
     try {
+      text = '' // solange der Lauf dauert: Fortschritt statt des letzten Ergebnisses
       onStatus(status()) // im try: wirft er (Fenster zu), bliebe busy sonst für immer gesetzt
-      const r = await sync(home, s, fetchFn)
+      const r = await sync(home, s, fetchFn, (t) => { text = t; onStatus(status()) }) // ein Event je Datei, billig genug
       text = syncSummary(r)
       if (r.changed.length) onChanged(r.changed)
       error = false
     } catch (e) {
-      text = e instanceof Error ? e.message.replace(/^Cloud-Sync: /, '') : String(e)
+      // Zeitlimit beim Lesen einer Antwort (Server hängt mitten im Download) kommt erst hier an, nicht in dav()
+      text = (e as Error)?.name === 'TimeoutError' ? 'Der Server antwortet nicht. Der nächste Abgleich macht weiter.'
+        : e instanceof Error ? e.message.replace(/^Cloud-Sync: /, '') : String(e)
       error = true
     }
     at = Date.now()

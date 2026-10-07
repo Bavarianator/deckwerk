@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { davBase, isFolder, localAsset, sync, testSync } from '../src/main/sync'
+import { createSyncer, davBase, isFolder, localAsset, sync, testSync } from '../src/main/sync'
 import { checkSyncFolder, findFolder, folderFetchFor } from '../src/main/sync-folder'
 
 // Server: Dateien unter /remote.php/dav/files/anna/…, ETag = Zähler, kein ETag bei PUT auf *.png (Fallback testen)
@@ -71,8 +71,17 @@ ok(readdirSync(join(A, 'pitch/versions')).some((f) => f.endsWith('-lokal.json') 
 // 3b) neues Gerät mit gleich großer, aber anderer deck.json: Inhaltsvergleich → Konflikt, keine Fassung geht verloren
 const C = join(root, 'tablet')
 put(C, 'pitch/deck.json', '{"v":"hendy"}')
-eq((await sync(C, s)).conflicts, 1)
+const texte: string[] = [] // Fortschritt für die Oberfläche: erst vergleichen, dann übertragen
+eq((await sync(C, s, fetch, (t) => texte.push(t))).conflicts, 1)
 ok(readdirSync(join(C, 'pitch/versions')).length === 1)
+eq(texte, ['Vergleicht 1 von 1 Dateien', 'Überträgt 0 von 2 Dateien', 'Überträgt 1 von 2 Dateien', 'Überträgt 2 von 2 Dateien']) // MB erst ab 1 MB
+// hängender Server: verständliche Meldung statt einer englischen DOMException
+const hang: typeof fetch = async () => { throw Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }) }
+await sync(A, s, hang).then(() => ok(false, 'Zeitüberschreitung übersehen'), (e) => ok(/antwortet nicht/.test(e.message), e.message))
+// … auch wenn der Server erst beim Lesen der Antwort hängt (das Zeitlimit greift dann im Body)
+const bodyHang: typeof fetch = async () => ({ ok: true, status: 207, headers: new Headers(), text: async () => { throw Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }) } }) as unknown as Response
+const st = await createSyncer(A, () => s, () => {}, () => {}, bodyHang).run()
+ok(st.error && /antwortet nicht/.test(st.text), st.text)
 
 // 3c) hrefs passen nicht zur Adresse (Proxy, andere Nextcloud-uid) → abbrechen statt „auf dem Server alles weg“
 const foreign: typeof fetch = async (u, i) => {
