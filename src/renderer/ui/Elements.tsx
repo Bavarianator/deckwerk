@@ -23,10 +23,18 @@ interface Props { deck: Deck; disabled: boolean; onAdd: (it: Item) => void; onAd
 
 const ICON_LIST = Object.keys(icons)
 const kebab = (n: string) => n.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([a-zA-Z])(\d)/g, '$1-$2').toLowerCase()
-const SHAPE_NAMES: Record<string, string> = { rect: 'Rechteck', ellipse: 'Kreis', triangle: 'Dreieck', diamond: 'Raute', hexagon: 'Sechseck', star: 'Stern', arrow: 'Pfeil', line: 'Linie',
+export const SHAPE_NAMES: Record<string, string> = { rect: 'Rechteck', ellipse: 'Kreis', triangle: 'Dreieck', diamond: 'Raute', hexagon: 'Sechseck', star: 'Stern', arrow: 'Pfeil', line: 'Linie',
   chevron: 'Chevron', pentagon: 'Etikett', trapezoid: 'Trapez', parallelogram: 'Parallelogramm', rtTriangle: 'Rechtwinkliges Dreieck', octagon: 'Achteck',
   donut: 'Ring', plus: 'Plus', heart: 'Herz', star4: 'Stern 4', star6: 'Stern 6', star8: 'Stern 8', star12: 'Siegel' }
 const CHARTS: [ChartSpec['type'], string][] = [['bar', 'Säulen'], ['hbar', 'Balken'], ['line', 'Linie'], ['donut', 'Ring'], ['stacked', 'Gestapelt'], ['waterfall', 'Wasserfall']]
+
+// Dateiauswahl + Poster für Video/Audio; auch von der Einfügen-Suche genutzt. null = abgebrochen.
+export async function pickMediaItem(kind: 'video' | 'audio'): Promise<Item | null> {
+  const src = await window.api.pickMedia(kind)
+  if (!src) return null
+  const poster = kind === 'video' ? await videoPoster(src).catch(() => undefined) : undefined
+  return newMedia(kind, src, poster?.ratio, poster?.src)
+}
 
 function Tile({ make, title, className, children, disabled, onAdd }: { make: () => Item | Promise<Item>; title: string; className?: string; children: ReactNode; disabled: boolean; onAdd: Props['onAdd'] }) {
   return (
@@ -51,12 +59,7 @@ export function Elements({ deck, disabled, onAdd, onAddSlide, pickImage }: Props
     setPhotos({ urls: [], busy: true })
     try { setPhotos(await window.api.findImages(photoQ.trim())) } catch (e) { setPhotos({ urls: [], note: e instanceof Error ? e.message : String(e) }) }
   }
-  const addMedia = async (kind: 'video' | 'audio') => {
-    const src = await window.api.pickMedia(kind)
-    if (!src) return
-    const poster = kind === 'video' ? await videoPoster(src).catch(() => undefined) : undefined
-    onAdd(newMedia(kind, src, poster?.ratio, poster?.src))
-  }
+  const addMedia = async (kind: 'video' | 'audio') => { const it = await pickMediaItem(kind); if (it) onAdd(it) }
   const upload = async () => {
     const src = await pickImage()
     if (src) onAdd(newImage(src, await imageRatio(src)))

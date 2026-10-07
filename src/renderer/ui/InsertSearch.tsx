@@ -1,16 +1,15 @@
-// Eine Suche über alles im Einfügen-Popover: Text, Formen, Icons (auch deutsche Begriffe), Diagramme, Folienvorlagen,
+// Eine Suche über alles im Einfügen-Popover: Text, Formen, Icons (auch deutsche Begriffe), Grafiken, QR, Video/Audio, Diagramme, Folienvorlagen,
 // Fotos (eigene und Unsplash per Enter). Leeres Feld → das normale Elemente-Panel darunter.
 import { useMemo, useState, type ReactNode } from 'react'
-import { icons, Search, X } from 'lucide-react'
+import { Film, icons, Music, QrCode as QrCodeIcon, Search, X } from 'lucide-react'
 import { SHAPES, type ChartSpec, type Deck, type Item } from '../../shared/deck'
-import { TEXT_PRESETS, newChart, newIcon, newImage, newShape, newText } from '../../shared/items'
+import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newQr, newShape, newText } from '../../shared/items'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { SHAPE_PATHS } from '../slide'
-import { layoutIdsFor } from './Elements'
+import { SHAPE_NAMES, layoutIdsFor, pickMediaItem } from './Elements'
 import { imageRatio } from './itemOps'
 
-const SHAPE_NAMES: Record<string, string> = { rect: 'Rechteck', ellipse: 'Kreis', triangle: 'Dreieck', diamond: 'Raute', hexagon: 'Sechseck', star: 'Stern', arrow: 'Pfeil', line: 'Linie' }
 const CHARTS: [ChartSpec['type'], string][] = [['bar', 'Säulendiagramm'], ['hbar', 'Balkendiagramm'], ['line', 'Liniendiagramm'], ['donut', 'Ringdiagramm'], ['stacked', 'Gestapelt'], ['waterfall', 'Wasserfall']]
 // häufige deutsche Suchwörter → englische Icon-Namen (lucide)
 const DE: Record<string, string[]> = {
@@ -23,6 +22,13 @@ const DE: Record<string, string[]> = {
   einstellungen: ['settings'], werkzeug: ['wrench', 'hammer'], blitz: ['zap'], auszeichnung: ['award', 'trophy'], pokal: ['trophy'], frage: ['circle-help'],
   info: ['info'], warnung: ['triangle-alert'], fabrik: ['factory'], gebäude: ['building'], handschlag: ['handshake'], vertrag: ['file-signature'],
 }
+
+// Medien-Kacheln des Panels mit zusätzlichen deutschen Suchbegriffen (Präfix-Treffer)
+const MEDIA: { id: string; name: string; terms: string }[] = [
+  { id: 'qr', name: 'QR-Code', terms: 'qr code link adresse' },
+  { id: 'video', name: 'Video', terms: 'film clip mp4' },
+  { id: 'audio', name: 'Audio', terms: 'ton musik sound mp3' },
+]
 
 const kebab = (n: string) => n.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([a-zA-Z])(\d)/g, '$1-$2').toLowerCase()
 const ICONS = Object.keys(icons).map((n) => [n, kebab(n)] as const)
@@ -43,6 +49,8 @@ export function InsertSearch({ deck, disabled, onAdd, onAddSlide, children }: Pr
       text: (Object.keys(TEXT_PRESETS) as (keyof typeof TEXT_PRESETS)[]).filter((p) => hit(TEXT_PRESETS[p].label) || 'text schrift'.includes(s)),
       shapes: SHAPES.filter((x) => hit(SHAPE_NAMES[x] ?? x) || hit(x) || 'form'.startsWith(s)),
       icons: ICONS.filter(([, k]) => words.some((w) => k.includes(w))).slice(0, 32),
+      graphics: Object.entries(GRAPHICS).filter(([id, g]) => hit(g.name) || hit(id) || 'grafik deko'.split(' ').some((w) => w.startsWith(s))),
+      media: MEDIA.filter((m) => hit(m.name) || m.terms.split(' ').some((w) => w.startsWith(s))),
       charts: CHARTS.filter(([type, name]) => hit(name) || hit(type) || 'diagramm'.startsWith(s)),
       layouts: layoutIdsFor(deck).filter((id) => hit(LAYOUTS[id].name) || 'folie vorlage'.includes(s)),
     }
@@ -52,16 +60,17 @@ export function InsertSearch({ deck, disabled, onAdd, onAddSlide, children }: Pr
     setPhotos({ urls: [], busy: true })
     try { setPhotos(await window.api.findImages(q.trim())) } catch (e) { setPhotos({ urls: [], note: e instanceof Error ? e.message : String(e) }) }
   }
-  const tile = (key: string, title: string, make: () => Item | Promise<Item>, body: ReactNode, cls = '') => (
-    <button key={key} type="button" className={`el-tile ${cls}`} title={title} aria-label={title} disabled={disabled} onClick={async () => onAdd(await make())}>{body}</button>
+  // make → null: abgebrochen (Dateiauswahl)
+  const tile = (key: string, title: string, make: () => Item | null | Promise<Item | null>, body: ReactNode, cls = '') => (
+    <button key={key} type="button" className={`el-tile ${cls}`} title={title} aria-label={title} disabled={disabled} onClick={async () => { const it = await make(); if (it) onAdd(it) }}>{body}</button>
   )
-  const none = found && !found.text.length && !found.shapes.length && !found.icons.length && !found.charts.length && !found.layouts.length
+  const none = found && !found.text.length && !found.shapes.length && !found.icons.length && !found.graphics.length && !found.media.length && !found.charts.length && !found.layouts.length
 
   return (
     <div className="ins">
       <form className="ins-search" onSubmit={(e) => { e.preventDefault(); if (s) void findPhotos() }}>
         <Search size={16} />
-        <input autoFocus value={q} placeholder="Formen, Icons, Fotos, Diagramme suchen" aria-label="Einfügen: suchen"
+        <input autoFocus value={q} placeholder="Formen, Icons, Fotos, Video, QR, Diagramme suchen" aria-label="Einfügen: suchen"
           onChange={(e) => { setQ(e.target.value); setPhotos(null) }} />
         {q && <button type="button" className="plain" aria-label="Suche leeren" onClick={() => { setQ(''); setPhotos(null) }}><X size={14} /></button>}
       </form>
@@ -86,6 +95,19 @@ export function InsertSearch({ deck, disabled, onAdd, onAddSlide, children }: Pr
               {found.icons.map(([n, k]) => { const Cmp = icons[n as keyof typeof icons]; return tile(n, k, () => newIcon(k, t.c.accent), <Cmp size={20} />) })}
             </div></section>
           )}
+          {found.graphics.length > 0 && (
+            <section><h3>Grafiken</h3><div className="el-grid">
+              {found.graphics.map(([id, g]) => tile(id, g.name, () => newGraphic(id, t.c.accent), (
+                <svg viewBox="-6 -6 112 112" width="30" height="30"><path d={g.d} fill={g.fill ? 'currentColor' : 'none'} stroke={g.fill ? 'none' : 'currentColor'} strokeWidth="8" strokeLinecap="round" /></svg>
+              )))}
+            </div></section>
+          )}
+          {found.media.length > 0 && (
+            <section><h3>QR-Code, Video und Audio</h3><div className="el-grid">
+              {found.media.map((m) => tile(m.id, m.name, m.id === 'qr' ? newQr : () => pickMediaItem(m.id as 'video' | 'audio'),
+                m.id === 'qr' ? <QrCodeIcon size={20} /> : m.id === 'video' ? <Film size={20} /> : <Music size={20} />))}
+            </div></section>
+          )}
           {found.charts.length > 0 && (
             <section><h3>Diagramme</h3><div className="el-grid wide">
               {found.charts.map(([type, name]) => tile(type, name, () => newChart(type), name, 'el-chip'))}
@@ -106,7 +128,7 @@ export function InsertSearch({ deck, disabled, onAdd, onAddSlide, children }: Pr
               </div>
             )}
           </section>
-          {none && !photos && <p className="muted ins-none">Keine Formen, Icons oder Vorlagen zu „{q.trim()}“. Fotos suchst du mit Enter.</p>}
+          {none && !photos && <p className="muted ins-none">Keine Elemente oder Vorlagen zu „{q.trim()}“. Fotos suchst du mit Enter.</p>}
         </div>
       )}
     </div>
