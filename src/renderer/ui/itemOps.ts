@@ -49,13 +49,22 @@ export function reorder(items: Item[], ids: string[], how: Order): Item[] {
   const rest = items.filter((it) => !ids.includes(it.id))
   if (how === 'front') return [...rest, ...sel]
   if (how === 'back') return [...sel, ...rest]
-  // eine Ebene: Auswahl hinter das nächste (bzw. vor das vorige) nicht gewählte Element schieben
+  // eine Ebene: Auswahl hinter das nächste (bzw. vor das vorige) nicht gewählte Element schieben, fremde Gruppen als Ganzes
   const idx = items.findIndex((it) => ids.includes(it.id))
   const last = items.findLastIndex((it) => ids.includes(it.id))
   const anchor = how === 'forward' ? items.slice(last + 1).find((it) => !ids.includes(it.id)) : items.slice(0, idx).findLast((it) => !ids.includes(it.id))
-  if (!anchor) return items
-  const at = rest.indexOf(anchor) + (how === 'forward' ? 1 : 0)
-  return [...rest.slice(0, at), ...sel, ...rest.slice(at)]
+  return anchor ? moveNextTo(items, ids, anchor.id, how === 'forward') : items
+}
+// Auswahl direkt vor (above) bzw. hinter das Element anchor legen (Ebenen-Panel, reorder). Liegt anchor in einer Gruppe,
+// zu der die Auswahl nicht gehört, zählt deren Rand: fremde Elemente landen nie zwischen Gruppenmitgliedern
+export function moveNextTo(items: Item[], ids: string[], anchor: string, above: boolean): Item[] {
+  const rest = items.filter((it) => !ids.includes(it.id))
+  const g = rest.find((it) => it.id === anchor)?.group
+  const edge = g && !items.some((it) => ids.includes(it.id) && it.group === g)
+  const i = edge ? (above ? rest.findLastIndex((it) => it.group === g) : rest.findIndex((it) => it.group === g)) : rest.findIndex((it) => it.id === anchor)
+  if (i < 0) return items
+  const at = i + (above ? 1 : 0)
+  return [...rest.slice(0, at), ...items.filter((it) => ids.includes(it.id)), ...rest.slice(at)]
 }
 
 export type Align = 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom'
