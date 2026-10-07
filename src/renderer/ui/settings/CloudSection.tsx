@@ -21,7 +21,9 @@ function ziel(s: SyncStatus): string {
     const h = /^https:\/\/([^/]+)/.exec(c.url ?? '')?.[1]
     return h && new RegExp(`^${h.replace(/\./g, '\\.').replace(/\{\w+\}/g, '[^.]+')}$`).test(host)
   })
-  return `${p?.name ?? host}${s.user ? ` als ${s.user}` : ''}`
+  // interne Kennungen (z. B. Nextcloud mit Single Sign-on: 64 Hex-Zeichen) sagen niemandem etwas
+  const user = /^[0-9a-f]{24,}$/i.test(s.user) ? '' : s.user
+  return `${p?.name ?? host}${user ? ` als ${user}` : ''}`
 }
 
 // Sync-Zustand, bleibt über onSync aktuell
@@ -131,7 +133,7 @@ export function CloudSection(_: SectionProps) {
               <button type="button" className="pill" disabled={!!busy || s.busy} onClick={() => void run('sync', async () => setS(await window.api.syncRun()))}>Jetzt abgleichen</button>
               <button type="button" className="plain" disabled={!!busy} onClick={() => void abmelden()}>Abmelden</button>
             </>}>
-              {s.busy ? <span><Spin /> Gleicht gerade ab …</span>
+              {s.busy ? <span role="status"><Spin /> {s.text || 'Gleicht gerade ab …'}</span>
                 : <span className={s.error ? 'error' : undefined}>{s.at ? `${zeit(s.at)}: ${s.text}` : 'Noch kein Abgleich.'}</span>}
             </Row>
           </Group>
@@ -168,7 +170,7 @@ export function CloudButton() {
   const open = useContext(OpenSettings)
   const Icon = !s?.hasPass ? Cloud : s.busy ? CloudSync : s.error ? CloudAlert : CloudCheck
   const label = !s ? 'Cloud-Sync' : !s.hasPass ? 'Cloud-Sync einrichten'
-    : s.busy ? 'Cloud-Sync läuft …'
+    : s.busy ? `Cloud-Sync läuft${s.text ? `: ${s.text}` : ' …'}`
     : `Cloud-Sync: ${s.text || 'noch kein Abgleich'}${s.at ? ` (${zeit(s.at)})` : ''}`
   return (
     <button className={`plain cloud-btn ${!s?.hasPass ? 'off' : s.error ? 'error' : ''}`} title={label} aria-label={label} onClick={() => open('cloud')}>
