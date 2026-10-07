@@ -1,7 +1,10 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { CustomFont, Deck } from '../shared/deck'
+import type { BrandKit, CustomFont, Deck } from '../shared/deck'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
+import type { SyncStatus } from '../main/sync'
+
+export type { SyncStatus }
 
 /** Agenten-CLI, über das der Chat ohne API-Key läuft und in das sich Deckwerk als MCP-Server einträgt */
 export type ChatCli = 'claude' | 'codex' | 'vibe'
@@ -50,6 +53,12 @@ const api = {
     ipcRenderer.on('deck:opened', h)
     return () => void ipcRenderer.off('deck:opened', h)
   },
+  /** Der Cloud-Sync hat das offene Deck mit der Fassung eines anderen Geräts ersetzt */
+  onDeckSynced(cb: (d: Deck) => void): () => void {
+    const h = (_: unknown, d: Deck) => cb(d)
+    ipcRenderer.on('deck:synced', h)
+    return () => void ipcRenderer.off('deck:synced', h)
+  },
   onRemote(cb: (c: 'next' | 'prev') => void): () => void {
     const h = (_: unknown, c: 'next' | 'prev') => cb(c)
     ipcRenderer.on('present:remote', h)
@@ -68,7 +77,7 @@ const api = {
   recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
-  exportDeck: (format: 'pptx' | 'pdf' | 'png' | 'md'): Promise<string> => invoke('deck:export', format),
+  exportDeck: (format: 'pptx' | 'pdf' | 'png' | 'zip' | 'md'): Promise<string> => invoke('deck:export', format),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),
@@ -77,7 +86,10 @@ const api = {
     ipcRenderer.on('agent:event', h)
     return () => void ipcRenderer.off('agent:event', h)
   },
-  setApiKey: (key: string): Promise<void> => invoke('key:set', key),
+  /** prüft den Key bei Anthropic und speichert ihn; „ungeprüft“ = ohne Verbindung gespeichert */
+  setApiKey: (key: string): Promise<'geprüft' | 'ungeprüft'> => invoke('key:set', key),
+  /** feste Hilfe-Links der Einrichtung im Browser öffnen */
+  openHilfe: (id: 'api-keys' | 'claude' | 'node'): Promise<void> => invoke('hilfe:open', id),
   /** liefert asset://local/<absoluter Pfad> oder null */
   pickImage: (): Promise<string | null> => invoke('image:pick'),
   /** Bild aus der System-Zwischenablage als PNG unter ~/Deckwerk/assets speichern; null = keins drin */
@@ -99,7 +111,10 @@ const api = {
   /** data-URL (PNG/JPEG/WebP) unter ~/Deckwerk/assets speichern → asset://-URL */
   saveAsset: (dataUrl: string, name: string): Promise<string> => invoke('asset:save', dataUrl, name),
   /** Text aus TXT/MD/CSV/DOCX/PPTX/PDF lesen; ohne Pfad per Dialog, null = abgebrochen */
-  readSource: (path?: string): Promise<{ name: string; text: string; cut: boolean } | null> => invoke('source:read', path),
+  readSource: (paths?: string[]): Promise<{ srcs: { name: string; text: string; cut: boolean }[]; errors: string[] } | null> => invoke('source:read', paths),
+  /** Brand-Kit des Nutzers (~/Deckwerk/brand.json), das jedes neue Deck per KI bekommt; null = keines gespeichert */
+  getBrand: (): Promise<BrandKit | null> => invoke('brand:get'),
+  setBrand: (b: BrandKit): Promise<void> => invoke('brand:set', b),
   /** ~/Deckwerk/hausstil.md im Standard-Editor öffnen (legt sie bei Bedarf an) */
   openStyle: (): Promise<void> => invoke('style:open'),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
@@ -114,6 +129,16 @@ const api = {
   /** KI-Bilder: Keys (Mammouth, OpenAI), bevorzugter Anbieter, Modell; null oder '' löscht ein Feld */
   imageSettings: (): Promise<ImageStatus> => invoke('imageSettings:get'),
   setImageSettings: (patch: { mammouth?: string | null; openai?: string | null; provider?: ImageProvider | null; model?: string | null }): Promise<ImageStatus> => invoke('imageSettings:set', patch),
+  /** Cloud-Sync: Zustand, Einstellungen setzen (pass '' = unverändert, null = Sync aus), Lauf starten, Verbindung testen */
+  syncStatus: (): Promise<SyncStatus> => invoke('sync:get'),
+  setSync: (s: { url: string; user: string; pass: string } | null): Promise<SyncStatus> => invoke('sync:set', s),
+  syncRun: (): Promise<SyncStatus> => invoke('sync:run'),
+  syncTest: (s: { url: string; user: string; pass: string }): Promise<void> => invoke('sync:test', s),
+  onSync(cb: (s: SyncStatus) => void): () => void {
+    const h = (_: unknown, s: SyncStatus) => cb(s)
+    ipcRenderer.on('sync:status', h)
+    return () => void ipcRenderer.off('sync:status', h)
+  },
   /** absoluter Pfad einer per Drag & Drop abgelegten Datei */
   pathOf: (file: File): string => webUtils.getPathForFile(file),
 }

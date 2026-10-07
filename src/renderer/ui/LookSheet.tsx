@@ -41,8 +41,8 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   }, [deck.size?.w, deck.size?.h]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // eigenes Theme (von der KI angelegt) bleibt als erster Eintrag wählbar
-  // alte Themes nur, wenn das Deck gerade eins nutzt
-  const ids = [...(orig.theme.custom ? ['custom'] : []), ...THEMES.filter((t) => !t.legacy || t.id === orig.theme.id).map((t) => t.id)]
+  // alte Themes nur, wenn das Deck gerade eins nutzt; mutige nur im Stil mutig
+  const ids = [...(orig.theme.custom ? ['custom'] : []), ...THEMES.filter((t) => (!t.legacy && (!t.mutig || deck.style === 'mutig')) || t.id === orig.theme.id).map((t) => t.id)]
   const at = Math.max(0, ids.indexOf(deck.theme.custom ? 'custom' : deck.theme.id))
   const themeRef = (id: string) => (id === 'custom' ? { ...orig.theme, brand: deck.theme.brand } : { id, brand: deck.theme.brand })
   const themeOf = (id: string) => (id === 'custom' ? themeFromSpec(orig.theme.custom!) : THEMES.find((t) => t.id === id) ?? THEMES[0])
@@ -67,6 +67,8 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
 
   const t = themeOf(ids[at])
   const brand = deck.theme.brand
+  const [saved, setSaved] = useState<BrandKit | null>(null) // gespeichertes Brand-Kit (brand.json)
+  useEffect(() => { void window.api.getBrand().then(setSaved) }, [])
   const setBrand = (p: Partial<BrandKit>, tag?: string) => patchDeck({ theme: { ...deck.theme, brand: { primary: t.c.accent, ...brand, ...p } } }, tag)
   const cancel = () => {
     const { builds, ...rest } = orig
@@ -154,8 +156,8 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
           </div>
           <div className="look-group">
             <b>Stil</b>
-            <div className="seg" title="Wie mutig die KI gestaltet: sachlich = zurückhaltend, mutig = kräftige Farben, Plakat-Typo, starke Bilder">
-              <button aria-pressed={deck.style !== 'mutig'} onClick={() => patchDeck({ style: undefined })}>Sachlich</button>
+            <div className="seg" title="Wie mutig die KI gestaltet: sachlich = zurückhaltend, mutig = kräftige Farben, Plakat-Typo, starke Bilder; ohne Wahl entscheidet die KI nach Anlass">
+              <button aria-pressed={deck.style === 'sachlich'} onClick={() => patchDeck({ style: 'sachlich' })}>Sachlich</button>
               <button aria-pressed={deck.style === 'mutig'} onClick={() => patchDeck({ style: 'mutig' })}>Mutig</button>
             </div>
           </div>
@@ -198,6 +200,10 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
             ) : (
               <button className="pill logo-pill" onClick={async () => { const src = await pickImage(); if (src) setBrand({ logo: src }) }}><Plus size={14} />Hinzufügen</button>
             )}
+            {brand?.logo && (brand.logoDark
+              ? <span className="pill" title="Logo für dunklen Grund">hell: {decodeURIComponent(brand.logoDark).split('/').pop()}
+                  <button className="plain" aria-label="Logo für dunklen Grund entfernen" onClick={() => setBrand({ logoDark: undefined })}><X size={13} /></button></span>
+              : <button className="pill logo-pill" title="Zweites Logo für dunkle Folien" onClick={async () => { const src = await pickImage(); if (src) setBrand({ logoDark: src }) }}><Plus size={14} />Für dunklen Grund</button>)}
           </div>
           <div className="look-group">
             <b>Überschriften</b>
@@ -205,6 +211,17 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
               <option value="">Wie im Theme</option>
               {FONT_NAMES.map((f) => <option key={f}>{f}</option>)}
             </Select>
+            <Select aria-label="Schrift des Fließtexts" value={brand?.bodyFont ?? ''} onChange={(e) => setBrand({ bodyFont: (e.target.value || undefined) as BrandKit['bodyFont'] })}>
+              <option value="">Text wie im Theme</option>
+              {FONT_NAMES.map((f) => <option key={f}>{f}</option>)}
+            </Select>
+          </div>
+          <div className="look-group">
+            <b>Brand-Kit</b>
+            <button className="pill" disabled={!brand} title="Marke dieses Decks für jedes neue Deck der KI speichern (~/Deckwerk/brand.json)"
+              onClick={() => void window.api.setBrand(brand!).then(() => setSaved(brand!))}>Als Standard speichern</button>
+            <button className="pill" disabled={!saved} title="Gespeicherte Marke auf dieses Deck anwenden"
+              onClick={() => saved && patchDeck({ theme: { ...deck.theme, brand: saved } })}>Standard übernehmen</button>
           </div>
           <div className="look-group">
             <b>Mischen</b>

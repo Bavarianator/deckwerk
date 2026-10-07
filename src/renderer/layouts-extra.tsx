@@ -3,7 +3,7 @@
 import type { z } from 'zod'
 import { EXTRA_LAYOUTS } from '../shared/layouts-extra'
 import { Header } from './layouts'
-import { Box, Frame, Icon, Img, T, photoOf } from './slide'
+import { Backdrop, Box, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, useSlide } from './slide'
 import './layouts-extra.css'
 
 type Props<K extends keyof typeof EXTRA_LAYOUTS> = { c: z.infer<(typeof EXTRA_LAYOUTS)[K]['schema']>; v?: string }
@@ -61,7 +61,7 @@ function Options({ c }: Props<'options'>) {
       <div className="opt" data-fit data-slot="options" style={{ gridTemplateColumns: `1.3fr repeat(${c.options.length}, 1fr)`, gridTemplateRows: `auto repeat(${c.criteria.length}, 1fr) auto` }}>
         {rec !== undefined && <Box slot="_rec" className="opt-hl" style={{ gridColumn: rec + 2, gridRow: `1 / ${rows + 1}` }} />}
         {c.options.map((o, j) => (
-          <div className="opt-head" key={`h${j}`} style={at(j + 1, 0)}>
+          <div className={`opt-head ${j === rec ? 'hl' : ''}`} key={`h${j}`} style={at(j + 1, 0)}>
             {j === rec && <Box slot="_badge" className="opt-badge"><T role="eyebrow" slot="_badge.text">Empfehlung</T></Box>}
             <T role="h3" slot={`options.${j}.name`} build={0}>{o.name}</T>
           </div>
@@ -157,19 +157,146 @@ function Table({ c }: Props<'table'>) {
   )
 }
 
-function BigNumber({ c }: Props<'big-number'>) {
+function BigNumber({ c, v }: Props<'big-number'>) {
   const img = photoOf(c.image)
+  if (v === 'poster' && !img) return (
+    <Frame>
+      <div className="bign poster" data-fit data-slot="_body">
+        <div className="bign-top">
+          {c.eyebrow ? <T role="eyebrow" slot="eyebrow">{c.eyebrow}</T> : <div />}
+          <div className="bign-side">
+            <T role="h1" slot="label" maxLines={5} className="bign-label" build={0}>{c.label}</T>
+            {c.context && <T role="body" slot="context" className="muted" build={0}>{c.context}</T>}
+          </div>
+        </div>
+        <T role="hero" slot="value" className="bign-value" build={0} unit>{c.value}</T>
+      </div>
+      {c.source && <T role="footer" slot="source" className="source">{c.source}</T>}
+    </Frame>
+  )
   return (
     <Frame safeClass={img ? 'safe-left' : undefined} media={img && (
       <div className="media right">{img.src ? <Img {...img} slot="image" /> : <div className="placeholder" />}</div>
     )}>
       <div className={`bign ${img ? 'with-img' : ''}`} data-fit data-slot="_body">
         {c.eyebrow && <T role="eyebrow" slot="eyebrow">{c.eyebrow}</T>}
-        <T role="hero" slot="value" className="bign-value" build={0}>{c.value}</T>
+        <T role="hero" slot="value" className="bign-value" build={0} unit>{c.value}</T>
         <T role="h1" slot="label" maxLines={img ? 4 : 3} className="bign-label" build={0}>{c.label}</T>
         {c.context && <T role="body" slot="context" className="muted" build={0}>{c.context}</T>}
       </div>
       {c.source && <T role="footer" slot="source" className="source">{c.source}</T>}
+    </Frame>
+  )
+}
+
+function DocText({ c, v }: Props<'doc-text'>) {
+  const two = v === 'two'
+  const half = two ? Math.ceil(c.sections.length / 2) : c.sections.length
+  const col = (items: typeof c.sections, off: number) => (
+    <div className="doc-col">
+      {items.map((s, i) => (
+        <div className="doc-sec" key={off + i}>
+          {s.heading && <T role="h3" slot={`sections.${off + i}.heading`} build={off + i}>{s.heading}</T>}
+          <T role="body" slot={`sections.${off + i}.text`} build={off + i}>{s.text}</T>
+        </div>
+      ))}
+    </div>
+  )
+  return (
+    <Frame>
+      <Header c={c} />
+      {c.lead && <T role="body" slot="lead" className="doc-lead" build={0}>{c.lead}</T>}
+      <div className={`doc ${two ? 'two' : ''}`} data-fit data-slot="sections">
+        {col(c.sections.slice(0, half), 0)}
+        {two && col(c.sections.slice(half), half)}
+      </div>
+      {c.source && <T role="footer" slot="source" className="source">{c.source}</T>}
+    </Frame>
+  )
+}
+
+function Offer({ c }: Props<'offer'>) {
+  const last = c.totals.length - 1
+  return (
+    <Frame>
+      <Header c={c} />
+      {(c.to || c.meta) && (
+        <div className="of-meta">
+          {c.to && <T role="label" slot="to" className="of-to">{c.to}</T>}
+          {c.meta && <T role="label" slot="meta" className="muted of-date">{c.meta}</T>}
+        </div>
+      )}
+      <div className="of" data-fit data-slot="items">
+        <div className="of-row of-head">
+          <T role="label" slot="_h.name" className="muted">Position</T>
+          <T role="label" slot="_h.qty" className="muted num">Menge</T>
+          <T role="label" slot="_h.price" className="muted num">Betrag</T>
+        </div>
+        {c.items.map((it, i) => (
+          <div className="of-row" key={i}>
+            <div className="of-name">
+              <T role="body" slot={`items.${i}.name`} build={i}>{it.name}</T>
+              {it.detail && <T role="label" slot={`items.${i}.detail`} build={i} className="muted">{it.detail}</T>}
+            </div>
+            <T role="body" slot={`items.${i}.qty`} build={i} className="num">{it.qty ?? ''}</T>
+            <T role="body" slot={`items.${i}.price`} build={i} className="num">{it.price}</T>
+          </div>
+        ))}
+        <div className="of-tot">
+          {c.totals.map((t, i) => (
+            <div className={`of-tot-row ${i === last ? 'sum' : ''}`} key={i}>
+              <T role={i === last ? 'h3' : 'body'} slot={`totals.${i}.label`} build={c.items.length}>{t.label}</T>
+              <T role={i === last ? 'h3' : 'body'} slot={`totals.${i}.value`} build={c.items.length} className="num">{t.value}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+      {c.terms && <T role="label" slot="terms" className="muted of-terms">{c.terms}</T>}
+    </Frame>
+  )
+}
+
+// Flyer: top = Foto oben (36 %), full = Foto vollflächig mit Text unten, ohne Foto typografisch (Schlagzeile oben, alles andere als Block unten).
+// Handlung typografisch wie im Druck üblich, gebündelt mit QR-Code und Kontakt zu einem Aktionsblock.
+function Flyer({ c, v }: Props<'flyer'>) {
+  const { theme } = useSlide()
+  const img = photoOf(c.image)
+  const full = v === 'full' && !!img?.src
+  const top = !full && !!img
+  const pts = c.points ?? []
+  const sub = c.subtitle && <T role="body" slot="subtitle" maxLines={3} className="fly-sub">{c.subtitle}</T>
+  return (
+    <Frame decor="hero" media={full ? <Backdrop image={img!} scrim="bottom" /> : top && (
+      <div className="fly-media">{img!.src ? <Img {...img!} slot="image" /> : <div className="placeholder" />}</div>
+    )} safeClass={`fly-safe ${top ? 'fly-below' : ''}`}>
+      <div className={`fly ${full ? 'fly-full' : top ? 'fly-top' : 'fly-type'}`} style={full ? onPhoto(theme) : undefined}>
+        <div className="fly-head">
+          {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="fly-eyebrow">{c.eyebrow}</T>}
+          <T role="display" slot="title" maxLines={top ? 3 : 4} className="fly-title">{c.title}</T>
+          {(top || full) && sub}
+        </div>
+        {!top && !full && sub}
+        {pts.length > 0 && (
+          <div className={`fly-pts n${pts.length}`} data-fit data-slot="points">
+            {pts.map((p, i) => (
+              <div className="fly-pt" key={i}>
+                <T role="h3" slot={`points.${i}.head`} build={i} className="fly-pt-head">{p.head}</T>
+                {p.text && <T role="small" slot={`points.${i}.text`} build={i}>{p.text}</T>}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="fly-foot">
+          <div className="fly-act">
+            {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="fly-qr" build={pts.length} />}
+            <div className="fly-act-text">
+              <T role="h2" slot="cta" maxLines={2} className="fly-cta" build={pts.length}>{c.cta}</T>
+              {c.contact?.map((x, i) => <T key={i} role="label" slot={`contact.${i}`} className="fly-contact" build={pts.length}>{x}</T>)}
+            </div>
+          </div>
+          {theme.logo && <Img src={theme.logo} slot="_logo" className="fly-logo" contain />}
+        </div>
+      </div>
     </Frame>
   )
 }
@@ -223,6 +350,7 @@ function ProsCons({ c }: Props<'pros-cons'>) {
 }
 
 function ProblemSolution({ c }: Props<'problem-solution'>) {
+  const round = useSlide().theme.elements === 'solid' // wie Points: Strich statt flacher Ellipse in der PPTX
   const card = (k: 'problem' | 'solution', i: number) => {
     const s = c[k]
     return (
@@ -231,7 +359,7 @@ function ProblemSolution({ c }: Props<'problem-solution'>) {
         {s.text && <T role="h2" slot={`${k}.text`} build={i}>{s.text}</T>}
         {s.points?.map((p, j) => (
           <div className="point" key={j}>
-            <Box slot={`_pd.${k}.${j}`} className="pdot" ellipse build={i} />
+            <Box slot={`_pd.${k}.${j}`} className="pdot" ellipse={round} build={i} />
             <T role="body" slot={`${k}.points.${j}`} build={i}>{p}</T>
           </div>
         ))}
@@ -304,8 +432,14 @@ function Pricing({ c }: Props<'pricing'>) {
   )
 }
 
+// Zahl aus „12.400“, „38 %“, „1,2 Mio“; NaN, wenn keine Zahl drinsteht
+const num = (s: string) => parseFloat(s.split('–')[0].replace(/\.(?=\d{3})/g, '').replace(',', '.').replace(/[^\d.-]/g, ''))
+
 function Funnel({ c }: Props<'funnel'>) {
   const n = c.stages.length
+  const vals = c.stages.map((s) => num(s.value))
+  const conv = vals.every((x) => x > 0) ? vals.map((x, i) => (i ? x / vals[i - 1] : 1)) : undefined // Übergangsquote je Stufe
+  const drop = conv ? conv.indexOf(Math.min(...conv.slice(1))) : -1 // größter Abfall: die eine Stufe in Akzentfarbe
   return (
     <Frame>
       <Header c={c} />
@@ -313,10 +447,13 @@ function Funnel({ c }: Props<'funnel'>) {
         <div className="fn-bars" data-fit data-slot="stages">
           {c.stages.map((s, i) => (
             <div className="fn-row" key={i}>
-              <Box slot={`_bar.${i}`} className="fn-bar" build={i} style={{ width: `${100 - (i * 55) / Math.max(1, n - 1)}%` }}>
+              <Box slot={`_bar.${i}`} className={`fn-bar ${drop < 0 || i === drop ? 'hl' : ''}`} build={i} style={{ width: `${100 - (i * 55) / Math.max(1, n - 1)}%` }}>
                 <T role="h3" slot={`stages.${i}.value`} build={i} className="fn-val">{s.value}</T>
               </Box>
-              <T role="label" slot={`stages.${i}.label`} build={i} className="fn-label">{s.label}</T>
+              <div className="fn-side">
+                <T role="label" slot={`stages.${i}.label`} build={i} className="fn-label">{s.label}</T>
+                {conv && i > 0 && <T role="small" slot={`_conv.${i}`} build={i} className={i === drop ? 'fn-conv hl' : 'fn-conv'}>{`${Math.round(conv[i] * 100)} % der Vorstufe`}</T>}
+              </div>
             </div>
           ))}
         </div>
@@ -371,6 +508,6 @@ function Logos({ c }: Props<'logos'>) {
 
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
-  table: Table, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
+  table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
 }

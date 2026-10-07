@@ -8,17 +8,21 @@ const COMBOS = Array.from({ length: 16 }, (_, i) => [i >> 2, i & 3]).sort((a, b)
 
 function applySteps(root: HTMLElement, head: number, body: number) {
   root.style.setProperty('--head-fit', String(1 - head / 3)) // Plakat-Titel des Themes stufenweise auf Normalgröße
+  // Schriftgrößen sind für 1280 px Breite gewählt: Social-Posts werden aufs Handy skaliert (größer), A4 ist Druck (kleiner, nie unter 12 px)
+  const k = root.classList.contains('prof-social') ? root.offsetWidth / 750 : root.classList.contains('prof-doc') ? 0.65 : 1
   for (const [role, steps] of Object.entries(SCALE))
-    root.style.setProperty(`--fs-${role}`, `${steps[HEAD_ROLES.includes(role) ? head : body]}px`)
+    root.style.setProperty(`--fs-${role}`, `${Math.max(Math.round(steps[HEAD_ROLES.includes(role) ? head : body] * k), k < 1 ? 12 : 0)}px`)
 }
 
 function lineTops(el: HTMLElement): number[] {
   const range = document.createRange()
   range.selectNodeContents(el)
   const tol = (3 * el.getBoundingClientRect().width) / (el.offsetWidth || 1) // 3 layout px, in (possibly scaled) screen px
-  const tops: number[] = []
-  for (const r of range.getClientRects()) if (r.width > 0 && !tops.some((t) => Math.abs(t - r.top) < tol)) tops.push(r.top)
-  return tops
+  // höchste Kästen zuerst: Kleineres auf derselben Grundlinie (Einheit) liegt innerhalb ihrer Zeile statt in einer eigenen
+  const rects = [...range.getClientRects()].filter((r) => r.width > 0).sort((a, b) => b.height - a.height)
+  const lines: DOMRect[] = []
+  for (const r of rects) if (!lines.some((l) => r.top > l.top - tol && r.bottom < l.bottom + tol)) lines.push(r)
+  return lines.map((l) => l.top)
 }
 
 const slotOf = (el: Element) =>
@@ -93,12 +97,15 @@ function runsOf(el: HTMLElement, hardwrap: boolean, k: number): Run[] {
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
   const range = document.createRange()
   let lastTop: number | undefined
+  const elSize = parseFloat(getComputedStyle(el).fontSize)
   for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
     const cs = getComputedStyle(node.parentElement!)
-    const style = { bold: Number(cs.fontWeight) >= 600, italic: cs.fontStyle === 'italic', underline: cs.textDecorationLine.includes('underline') || undefined, color: parseColor(cs.color)?.color ?? '#000000', link: node.parentElement!.closest<HTMLElement>('[data-href]')?.dataset.href }
+    const size = parseFloat(cs.fontSize)
+    const style = { bold: Number(cs.fontWeight) >= 600, italic: cs.fontStyle === 'italic', underline: cs.textDecorationLine.includes('underline') || undefined, color: parseColor(cs.color)?.color ?? '#000000', link: node.parentElement!.closest<HTMLElement>('[data-href]')?.dataset.href,
+      ...(size !== elSize && { sizePx: size, trackingPx: parseFloat(cs.letterSpacing) || 0 }) }
     const push = (text: string) => {
       const prev = runs[runs.length - 1]
-      if (prev && !prev.breakAfter && prev.bold === style.bold && prev.italic === style.italic && prev.underline === style.underline && prev.color === style.color && prev.link === style.link) prev.text += text
+      if (prev && !prev.breakAfter && prev.bold === style.bold && prev.italic === style.italic && prev.underline === style.underline && prev.color === style.color && prev.link === style.link && prev.sizePx === style.sizePx) prev.text += text
       else runs.push({ text, ...style })
     }
     const lines = node.data.split('\n')
@@ -109,7 +116,7 @@ function runsOf(el: HTMLElement, hardwrap: boolean, k: number): Run[] {
       for (const tok of line.match(/\S+\s*|\s+/g) ?? []) {
         range.setStart(node, offset)
         range.setEnd(node, offset + 1)
-        const top = range.getClientRects()[0]?.top
+        const top = style.sizePx ? undefined : range.getClientRects()[0]?.top // kleinere Schrift sitzt tiefer, zählt nicht als neue Zeile
         if (top !== undefined && lastTop !== undefined && top > lastTop + 3 / k && runs.length) {
           const prev = runs[runs.length - 1]
           prev.text = prev.text.trimEnd()

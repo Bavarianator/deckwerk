@@ -9,6 +9,7 @@ import { webpSize } from './tools'
 import { MEDIA_EXT, morphKey, morphNames, sizeOf, transitionOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
+import { localAsset } from './sync'
 import { injectAnimations, type AnimStep, type SlideAnim } from './animations'
 import { adjustBlip, gradFill, maskShape, patchShapes, recolor, roundRect, textEffect, type ShapePatch } from './patch-xml'
 import { postProcess } from './pptx-post'
@@ -26,7 +27,7 @@ export interface ExportSlide { measured: Measured; background: Buffer }
 
 export function assetPath(src: string): string | undefined {
   const p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src.startsWith('file://') ? fileURLToPath(src) : undefined
-  return p && MEDIA_EXT.test(p) ? p : undefined
+  return p && MEDIA_EXT.test(p) ? localAsset(p) : undefined
 }
 
 // Bildmaße: nativeImage kennt nur PNG/JPEG; WebP (Netzbilder, eigene Dateien) wurde ohne Maße auf die Box gestreckt
@@ -50,7 +51,7 @@ function containRect(el: ImgEl, path: string) {
 function addChart(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: ChartEl, t: Theme, name: string) {
   const s = el.spec
   const pos = { x: IN(el.box.x), y: IN(el.box.y), w: IN(el.box.w), h: IN(el.box.h) }
-  const font = { fontFace: t.body.pptx, size: 11 }
+  const font = { fontFace: t.body.pptx, size: 14 }
   const { perSeries, perPoint } = chartColors(s, t)
   if (s.type === 'donut') {
     slide.addChart(pptx.ChartType.doughnut, [{ name: s.series[0]?.name ?? '', labels: s.categories, values: s.series[0]?.values ?? [] }], {
@@ -69,7 +70,7 @@ function addChart(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: ChartEl, t: Theme
   const colors = wf ? [t.c.bg, t.c.good, t.c.bad, t.c.chart[0]] : perPoint ?? perSeries
   slide.addChart(line ? pptx.ChartType.line : pptx.ChartType.bar, data, {
     ...pos, objectName: name, chartColors: colors.map(hex),
-    barDir: s.type === 'hbar' ? 'bar' : 'col', barGrouping: stacked ? 'stacked' : 'clustered', barGapWidthPct: 60,
+    barDir: s.type === 'hbar' ? 'bar' : 'col', barGrouping: stacked ? 'stacked' : 'clustered', barGapWidthPct: 40,
     catAxisOrientation: (s.type === 'hbar' ? 'maxMin' : 'minMax') as 'minMax', // Typen zu eng, PptxGenJS schreibt den Wert durch (Ranking von oben nach unten)
     lineSize: 2.25, lineDataSymbol: 'circle', lineDataSymbolSize: 6, lineSmooth: false,
     catAxisLabelColor: hex(t.c.muted), valAxisLabelColor: hex(t.c.muted),
@@ -106,7 +107,9 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
       const extra = b.w * WRAP_SLACK
       const x = el.align === 'center' ? b.x - extra / 2 : el.align === 'right' ? b.x - extra : b.x
       slide.addText(
-        el.runs.map((r) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined } })),
+        el.runs.map((r) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined,
+          // eigene Größe (Einheit); Laufweite 0 als 0.001, weil PptxGenJS falsy Werte vom Feld erbt (dessen Laufweite ist negativ)
+          ...(r.sizePx && { fontSize: PT(r.sizePx), charSpacing: PT(r.trackingPx ?? 0) || 0.001 }) } })),
         {
           x: IN(x), y: IN(b.y), w: IN(b.w + extra), h: IN(b.h), objectName: name, rotate: el.rot,
           fontFace: el.fontFace ?? (el.font === 'head' ? t.head.pptx : t.body.pptx), fontSize: PT(el.sizePx),
@@ -267,7 +270,7 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
   })
   const buf = await patchShapes((await pptx.write({ outputType: 'nodebuffer' })) as Buffer, patches)
   const free = deck.slides.flatMap((s) => s.items ?? []).flatMap((it) => (it.font && it.font in FONTS ? [FONTS[it.font as FontName]] : []))
-  return embedFonts(await postProcess(await injectAnimations(buf, anims), deck), embedList([t.head, t.body, ...free]))
+  return embedFonts(await postProcess(await injectAnimations(buf, anims), deck), embedList([t.head, t.body, ...(t.mono ? [t.mono] : []), ...free]))
 }
 
 // Premium-Schriften des Themes (head/body mit `embed`) als TTF-Buffer für embedFonts; Office-Schriften brauchen nichts.

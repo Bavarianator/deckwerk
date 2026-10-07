@@ -23,6 +23,8 @@ const FAMILIES: Record<string, string> = {
   'IBM Plex Sans': 'ital,wght@0,400;0,700;1,400;1,700',
   'IBM Plex Serif': 'ital,wght@0,400;0,700;1,400;1,700',
   'Source Serif 4': 'ital,wght@0,400;0,700;1,400;1,700',
+  'Archivo Black': 'wght@400', // eigene Familie = Black-Schnitt ohne weitere EOT-Gewichte
+  'IBM Plex Mono': 'ital,wght@0,400;0,700;1,400;1,700',
 }
 const DIR = 'assets/fonts'
 const face = (weight: string, style: string) => (weight === '700' ? 'Bold' : 'Regular').replace(/^Regular$/, style === 'italic' ? 'Italic' : 'Regular') + (weight === '700' && style === 'italic' ? 'Italic' : '')

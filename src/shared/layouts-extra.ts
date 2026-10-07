@@ -12,7 +12,7 @@ export const photo = z.preprocess(
   (v) => (typeof v === 'string' ? { src: v } : v),
   z.object({
     src: z.string().describe('asset://local/<absoluter Pfad> aus find_images, oder "" für einen gestalteten Platzhalter'),
-    focus: z.enum(FOCI).optional().describe('wichtigster Bildteil (Gesicht, Horizont) für den Zuschnitt; Standard center'),
+    focus: z.union([z.enum(FOCI), z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) })]).optional().describe('wichtigster Bildteil (Gesicht, Horizont) für den Zuschnitt: Voreinstellung oder freier Punkt {x, y} von 0 bis 1 (0,0 = oben links); Standard center'),
     look: z.enum(LOOKS).optional().describe('natural = Originalfarben, duotone = in Theme-Farben eingefärbt, mono = schwarzweiß'),
     mask: z.enum(MASKS).optional().describe('Bildrahmen: circle, arch (Bogen), hexagon, diamond, octagon, star, heart; nur für freistehende Fotos (image-text, gallery, quote), nicht für Vollbild'),
   }),
@@ -90,6 +90,49 @@ const bigNumber = z.object({
   context: z.string().max(160).optional().describe('Einordnung oder Vergleich in einem Satz'),
   source,
   image: photo.optional().describe('Foto rechts; weglassen = nur Zahl und Text'),
+})
+
+// Dokumente (A4): Fließtext und Angebot. Nur im Format a4/a4-quer sinnvoll (LayoutDef.sizes).
+const docText = z.object({
+  eyebrow,
+  title: title(80),
+  lead: z.string().max(300).optional().describe('Einleitung in einem Absatz, etwas größer gesetzt'),
+  sections: z.array(z.object({
+    heading: z.string().max(50).optional().describe('Zwischenüberschrift, kurz'),
+    text: z.string().min(1).max(700).describe('Absatz in ganzen Sätzen; Zeilenumbruch (\\n) beginnt einen neuen Absatz, **fett** hebt hervor'),
+  })).min(1).max(6),
+  source,
+})
+
+const offer = z.object({
+  eyebrow: z.string().max(40).optional().describe('z. B. Angebotsnummer'),
+  title: z.string().min(3).max(60).describe('Gegenstand des Angebots, z. B. „Angebot Webseiten-Relaunch“'),
+  to: z.string().max(120).optional().describe('Empfänger, Zeilenumbruch (\\n) für Anschrift'),
+  meta: z.string().max(80).optional().describe('Datum und Gültigkeit, z. B. „04.10.2026 · gültig bis 03.11.2026“'),
+  items: z.array(z.object({
+    name: z.string().min(1).max(60),
+    detail: z.string().max(100).optional().describe('Leistungsbeschreibung in einem Satz'),
+    qty: z.string().max(12).optional().describe('Menge mit Einheit, z. B. „12 Std.“'),
+    price: z.string().min(1).max(14).describe('Betrag der Position, z. B. „4.800 €“'),
+  })).min(1).max(8),
+  totals: z.array(z.object({ label: z.string().max(24), value: z.string().max(14) })).min(1).max(3)
+    .describe('Summenzeilen (Netto, Umsatzsteuer, Gesamt); die letzte ist der Gesamtbetrag und wird hervorgehoben. Beträge nachrechnen, nie schätzen'),
+  terms: z.string().max(260).optional().describe('Zahlungsziel, Gültigkeit, Hinweise'),
+})
+
+// Flyer (A4 hoch): eine Seite, die im Vorbeigehen wirkt – Foto, Schlagzeile, bis zu vier Gründe, Handlungsaufforderung, QR-Code.
+const flyer = z.object({
+  eyebrow: z.string().max(40).optional().describe('Anlass, Datum oder Zielgruppe, z. B. „Pitch Day · 14. Oktober“'),
+  title: z.string().min(3).max(60).describe('Schlagzeile: Nutzen oder Versprechen in wenigen Wörtern, z. B. „Präsentationen in Minuten statt Stunden“'),
+  subtitle: z.string().max(140).optional().describe('ein Satz, der die Schlagzeile einlöst: was, für wen, wie'),
+  image: photo.optional().describe('ein starkes Foto (Mensch, Produkt, Ort); weglassen = typografischer Flyer'),
+  points: z.array(z.object({
+    head: z.string().min(1).max(40).describe('Grund oder Vorteil in 2–5 Wörtern, gern mit Zahl'),
+    text: z.string().max(80).optional().describe('ein kurzer Satz dazu; bei drei Gründen nebeneinander höchstens ~40 Zeichen'),
+  })).max(4).optional().describe('2–4 Gründe, Programmpunkte oder Fakten; weniger ist stärker'),
+  cta: z.string().min(2).max(60).describe('Handlungsaufforderung, z. B. „Jetzt kostenlos testen“ oder „Anmelden bis 30. Oktober“'),
+  contact: z.array(z.string().max(50)).max(3).optional().describe('Web, Mail, Ort oder Termin; je eine Zeile'),
+  qr: z.string().max(120).optional().describe('kurze URL für den QR-Code (Anmeldung, Webseite, Demo); je kürzer, desto gröber das Muster und desto sicherer der Scan im Druck'),
 })
 
 const iconGrid = z.object({
@@ -259,12 +302,70 @@ export const EXTRA_LAYOUTS = {
   }),
   'big-number': L({
     id: 'big-number', name: 'Große Zahl',
-    when: 'Eine einzige Zahl trägt die Folie (Wirkung, Marktgröße, Ersparnis). Stärker als kpi-grid, wenn es nur eine Zahl gibt. Mit Foto für Emotion.',
-    schema: bigNumber, defaultBuild: 'zoom-kpi', footer: true,
+    when: 'Eine einzige Zahl trägt die Folie (Wirkung, Marktgröße, Ersparnis). Stärker als kpi-grid, wenn es nur eine Zahl gibt. Mit Foto für Emotion. Variante poster (ohne Foto): Zahl übergroß unten links, Label oben rechts; bricht bewusst den Rhythmus (Höhepunkt, einmal pro Deck, im Stil mutig bis zu dreimal).',
+    variants: ['plain', 'poster'], schema: bigNumber, defaultBuild: 'zoom-kpi', footer: true,
     samples: {
       min: { value: '41 %', label: 'Weniger Fehler nach sechs Monaten' },
       typ: { eyebrow: 'Wirkung', value: '−41 %', label: 'Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler', context: 'Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.', source: 'Pilotauswertung 2026' },
       max: { eyebrow: words(28), value: '€ 12,4 M', label: words(90), context: words(160), source: words(90), image: { src: '' } },
+    },
+  }),
+  'doc-text': L({
+    id: 'doc-text', name: 'Fließtext (A4)', variants: ['one', 'two'], sizes: ['a4', 'a4-quer'],
+    when: 'Nur A4: Seite mit Fließtext (Infoblatt, One-Pager, Konzept, Bericht). Titel, optional Einleitung, 1–6 Absätze mit Zwischenüberschriften. Variante one = eine Spalte (Standard), two = zwei Spalten (ab ca. 3 Abschnitten oder im Querformat). Ganze Sätze statt Stichpunkte.',
+    schema: docText, defaultBuild: 'fade', footer: true,
+    samples: {
+      min: { title: 'Kurzinfo zum Vorhaben', sections: [{ text: 'Ein Absatz genügt.' }] },
+      typ: {
+        eyebrow: 'Projektinfo', title: 'Ortho-Bot startet im Herbst an 20 Pilotschulen',
+        lead: 'Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.',
+        sections: [
+          { heading: 'Worum es geht', text: 'Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse.' },
+          { heading: 'Was wir brauchen', text: 'Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich.' },
+          { heading: 'Datenschutz', text: 'Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft.' },
+        ],
+        source: 'Stand Oktober 2026',
+      },
+      max: { eyebrow: words(28), title: words(80), lead: words(300), sections: rep(3, (i) => ({ heading: words(50, i), text: words(700, i) })), source: words(90) },
+    },
+  }),
+  offer: L({
+    id: 'offer', name: 'Angebot (A4)', sizes: ['a4'],
+    when: 'Nur A4: Angebot oder Kostenvoranschlag mit Positionen, Summen und Konditionen. Beträge selbst nachrechnen; fehlen Preise, markierten Platzhalter statt erfundener Zahl.',
+    schema: offer, defaultBuild: 'fade', footer: true,
+    samples: {
+      min: { title: 'Angebot Webseiten-Relaunch', items: [{ name: 'Konzept und Design', price: '4.800 €' }], totals: [{ label: 'Gesamt', value: '4.800 €' }] },
+      typ: {
+        eyebrow: 'Angebot 2026-041', title: 'Angebot Webseiten-Relaunch', to: 'Muster GmbH\nMusterweg 1\n12345 Musterstadt', meta: '04.10.2026 · gültig bis 03.11.2026',
+        items: [
+          { name: 'Konzept und Design', detail: 'Strukturplan, Gestaltung von fünf Seitentypen', qty: '1 Pauschale', price: '4.800 €' },
+          { name: 'Umsetzung', detail: 'Programmierung, Anbindung an das Redaktionssystem', qty: '40 Std.', price: '3.600 €' },
+          { name: 'Inhalte und Fotos', qty: '1 Pauschale', price: '1.200 €' },
+          { name: 'Schulung', detail: 'Zwei Termine à zwei Stunden', qty: '4 Std.', price: '360 €' },
+        ],
+        totals: [{ label: 'Netto', value: '9.960 €' }, { label: 'Umsatzsteuer 19 %', value: '1.892,40 €' }, { label: 'Gesamt', value: '11.852,40 €' }],
+        terms: 'Zahlbar innerhalb von 14 Tagen nach Rechnungsstellung. Lieferzeit: sechs Wochen ab Beauftragung.',
+      },
+      max: { eyebrow: words(40), title: words(60), to: words(120), meta: words(80), items: rep(8, (i) => ({ name: words(60, i), detail: words(100, i), qty: '120 Std.', price: '12.345,67 €' })), totals: rep(3, (i) => ({ label: words(24, i), value: '123.456,78 €' })), terms: words(260) },
+    },
+  }),
+  flyer: L({
+    id: 'flyer', name: 'Flyer (A4)', variants: ['top', 'full'], sizes: ['a4'],
+    when: 'Nur A4 hoch: Flyer, Handzettel, Plakat, Einladung. Eine Seite, eine Botschaft: Schlagzeile mit Nutzen, ein Satz Unterzeile, 2–4 kurze Gründe, klare Handlungsaufforderung (cta), Kontakt und QR-Code zur Webseite oder Anmeldung. Variante top = Foto in der oberen Hälfte (Standard), full = Foto über die ganze Seite, Text unten auf dem Foto (nur mit ruhiger unterer Bildhälfte wie Himmel, Wand oder Tisch, sonst top). Ohne Foto typografisch: Schlagzeile übergroß; mit tone accent oder invert wird daraus ein farbiger Flyer.',
+    schema: flyer, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Sommerfest am Freitag', cta: 'Alle sind eingeladen' },
+      typ: {
+        eyebrow: 'Pitch Day · 14. Oktober', title: 'Präsentationen in Minuten statt Stunden',
+        subtitle: 'Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und exportiert nach PowerPoint.',
+        points: [
+          { head: '10 Minuten', text: 'vom Briefing bis zum fertigen Deck' },
+          { head: 'Kein KI-Look', text: 'ruhige Layouts, eine Akzentfarbe' },
+          { head: 'PPTX, PDF, PNG', text: 'bearbeitbar in PowerPoint' },
+        ],
+        cta: 'Jetzt kostenlos testen', contact: ['deckwerk.app', 'hallo@deckwerk.app'], qr: 'https://example.com',
+      },
+      max: { eyebrow: words(40), title: words(60), subtitle: words(140), image: { src: '' }, points: rep(4, (i) => ({ head: words(40, i), text: words(80, i) })), cta: words(60), contact: rep(3, (i) => words(50, i)), qr: 'https://example.com/anmeldung' },
     },
   }),
   'icon-grid': L({
