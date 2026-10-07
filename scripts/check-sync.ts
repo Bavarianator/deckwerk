@@ -103,7 +103,17 @@ await sync(D, s, merkt(0, true)).then(() => ok(false, 'Fehler verschluckt'), (e)
 await sync(D, s, merkt(1, false))
 ok(!hoch[1].some((u) => hoch[0].includes(u)), 'schon Hochgeladenes noch einmal hochgeladen')
 eq(hoch[0].length + hoch[1].length, 6)
-for (const k of [...files.keys()]) if (/\/Deckwerk\/(neu|zwei)(\/|$)/.test(k)) files.delete(k) // spätere Blöcke (Löschbremse) zählen die Dateien auf dem Server
+// Zwischenstand alle 20 Übertragungen: bricht die App mitten im Lauf ab, ist Erledigtes schon gemerkt
+for (let i = 0; i < 25; i++) put(D, `drei/bild${i}.png`, `D${i}`)
+let gemerkt = -1, puts = 0
+const schaut: typeof fetch = async (u, i) => {
+  if (i?.method === 'PUT' && ++puts === 25) gemerkt = Object.keys(JSON.parse(readFileSync(join(D, '.sync-state.json'), 'utf8')).files).filter((k) => k.startsWith('drei/')).length
+  return fetch(u, i)
+}
+eq((await sync(D, s, schaut)).up, 25)
+ok(gemerkt >= 20, `Zwischenstand: ${gemerkt}`)
+ok(!readdirSync(D).includes('.sync-state.json.tmp'))
+for (const k of [...files.keys()]) if (/\/Deckwerk\/(neu|zwei|drei)(\/|$)/.test(k)) files.delete(k) // spätere Blöcke (Löschbremse) zählen die Dateien auf dem Server
 // hängender Server: verständliche Meldung statt einer englischen DOMException
 const hang: typeof fetch = async () => { throw Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }) }
 await sync(A, s, hang).then(() => ok(false, 'Zeitüberschreitung übersehen'), (e) => ok(/antwortet nicht/.test(e.message), e.message))
