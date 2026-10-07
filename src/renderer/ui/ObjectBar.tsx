@@ -7,9 +7,9 @@ import type { Item } from '../../shared/deck'
 const ALIGN = { left: AlignLeft, center: AlignCenter, right: AlignRight }
 const NEXT = { left: 'center', center: 'right', right: 'left' } as const
 
-// Schnellaktionen „Umschreiben“: jeder Auftrag ändert nur den gewählten Text
-const GUARD = 'Nur diesen Text ändern, Aussage und Fakten behalten, Layout und andere Folien nicht anfassen.'
-const REWRITE: [string, string][] = [
+// Schnellaktionen „Umschreiben“: jeder Auftrag ändert nur den gewählten Text (auch im ✦-Menü der KI-Leiste für Layout-Felder)
+export const GUARD = 'Nur diesen Text ändern, Aussage und Fakten behalten, Layout und andere Folien nicht anfassen.'
+export const REWRITE: [string, string][] = [
   ['Kürzer', 'Schreibe den gewählten Text kürzer.'],
   ['Ausführlicher', 'Schreibe den gewählten Text ausführlicher.'],
   ['Einfacher', 'Schreibe den gewählten Text in einfacherer, leichter verständlicher Sprache.'],

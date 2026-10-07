@@ -1,9 +1,10 @@
 // KI-Leiste: eine Kapsel für Wünsche an die KI (mit Bezug auf das gewählte Element), darüber eine kurze Blase mit
 // Status, Antwort oder Rückfrage und auf Wunsch der ganze Verlauf. Ersetzt die Chat-Spalte.
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ArrowUp, Check, CircleAlert, History, Image as ImageIcon, LoaderCircle, Paperclip, Sparkles, Square, Undo2, X } from 'lucide-react'
 import { Select } from './kit'
 import { ChatLog, ChoiceCards, ModelSelect, TOOL, type Msg } from './Chat'
+import { GUARD, REWRITE } from './ObjectBar'
 import { isImage, sourceContext, useSource } from './Start'
 
 // label steht in der Kapsel, context geht nur an die KI; slot und rect (Fensterkoordinaten) für Werkzeuge am Objekt
@@ -28,7 +29,7 @@ const ZAHLEN = Array.from({ length: 11 }, (_, i) => String(i + 5))
 
 // Aufträge fürs ganze Deck: gehen als getippter Wunsch raus, die Regeln dazu stehen im Design-Guide
 const AUFTRAG = {
-  uebersetzen: (l: string) => `Übersetze das ganze Deck ins ${l}: alle Folientexte, Diagramm-Beschriftungen, Sprechernotizen und den Titel. Layouts, Bilder und Reihenfolge bleiben; Namen und Marken nicht übersetzen.`,
+  uebersetzen: (l: string) => `Übersetze das ganze Deck ins ${l}e: alle Folientexte, Diagramm-Beschriftungen, Sprechernotizen und den Titel. Layouts, Bilder und Reihenfolge bleiben; Namen und Marken nicht übersetzen.`,
   notizen: 'Schreibe für jede Folie ohne oder mit dünnen Sprechernotizen passende Sprechernotizen (in der Sprache des Decks, im Ton eines Vortrags). Vorhandene gute Notizen behalten; sonst nichts am Deck ändern.',
   kuerzen: (n: string) => `Kürze das Deck auf ${n} Folien: Verwandtes zusammenlegen, Nebensächliches streichen, die Kernaussagen und die Storyline behalten.`,
   text: (a: string) => `Fasse den Inhalt des Decks als ${a} zusammen und schreibe den Text direkt in den Chat. Das Deck nicht ändern.`,
@@ -36,7 +37,8 @@ const AUFTRAG = {
 }
 
 // Menü „Fürs ganze Deck“ am Sparkles-Knopf links in der Kapsel
-function DeckMenu({ busy, onSend }: { busy: boolean; onSend: (text: string) => boolean }) {
+// Mit gewähltem Element (auch Text-Feldern des Layouts, die keine Objektleiste haben) stehen oben dessen Text-Aktionen
+function DeckMenu({ busy, onSend, target, onTarget }: { busy: boolean; onSend: (text: string, context?: string) => boolean; target: Target | null; onTarget: (t: Target | null) => void }) {
   const [open, setOpen] = useState(false)
   const [sprache, setSprache] = useState(SPRACHEN[0])
   const [zahl, setZahl] = useState('8')
@@ -52,6 +54,8 @@ function DeckMenu({ busy, onSend }: { busy: boolean; onSend: (text: string) => b
   }, [open])
   useEffect(() => { if (busy) setOpen(false) }, [busy])
   const go = (text: string) => { if (onSend(text)) setOpen(false) }
+  // wie ein getippter Wunsch mit Bezug (AskBar.submit): Label vorn, Kontext nur an die KI, danach Bezug lösen
+  const goTarget = (task: string) => { if (target && onSend(`${target.label}: ${task} ${GUARD}`, target.context)) { setOpen(false); onTarget(null) } }
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false); box.current?.querySelector<HTMLElement>('.deck-btn')?.focus() }
     else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !(e.target as Element).closest('.kit-select')) { // dort öffnen die Pfeile das Select
@@ -69,11 +73,17 @@ function DeckMenu({ busy, onSend }: { busy: boolean; onSend: (text: string) => b
   )
   return (
     <div className="deck-act" ref={box} onKeyDown={onKey}>
-      <button type="button" className={`plain deck-btn ${open ? 'on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="Fürs ganze Deck" title="Fürs ganze Deck: übersetzen, Notizen, kürzen …" disabled={busy} onClick={() => setOpen(!open)}>
+      <button type="button" className={`plain deck-btn ${open ? 'on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="Aufträge an die KI" title="Text umschreiben, Deck übersetzen, Notizen für alle Folien, kürzen …" disabled={busy} onClick={() => setOpen(!open)}>
         <Sparkles size={19} aria-hidden />
       </button>
       {open && (
-        <div className="menu deck-menu material" role="menu" aria-label="Fürs ganze Deck">
+        <div className="menu deck-menu material" role="menu" aria-label="Aufträge an die KI">
+          {target && <>
+            <div className="deck-head">Gewählter Text · {target.label}</div>
+            {REWRITE.map(([label, task]) => <Fragment key={label}>{row(label, () => goTarget(task))}</Fragment>)}
+            {row('Übersetzen ins', () => goTarget(`Übersetze den gewählten Text ins ${sprache}e.`), <Select value={sprache} onChange={(e) => setSprache(e.target.value)} aria-label="Sprache">{SPRACHEN.map((l) => <option key={l}>{l}</option>)}</Select>)}
+            <hr />
+          </>}
           <div className="deck-head">Fürs ganze Deck</div>
           {row('Übersetzen ins', () => go(AUFTRAG.uebersetzen(sprache)), <Select value={sprache} onChange={(e) => setSprache(e.target.value)} aria-label="Sprache">{SPRACHEN.map((l) => <option key={l}>{l}</option>)}</Select>)}
           {row('Sprechernotizen für alle Folien', () => go(AUFTRAG.notizen))}
@@ -158,7 +168,7 @@ export function AskBar(p: Props) {
       <form className="cap material" onSubmit={(e) => { e.preventDefault(); submit() }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
-        <DeckMenu busy={p.busy} onSend={p.onSend} />
+        <DeckMenu busy={p.busy} onSend={p.onSend} target={p.target} onTarget={p.onTarget} />
         {p.target && (
           <span className="cap-token">
             {p.target.label}
