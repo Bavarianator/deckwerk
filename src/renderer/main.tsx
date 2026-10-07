@@ -99,8 +99,9 @@ function Host({ mode }: { mode: string }) {
       }))
       return { fit, els }
     },
-    async hideExportables(on: boolean) {
-      document.body.classList.toggle('hide-exportables', on)
+    async hideExportables(on: boolean | 'text') { // 'text': nur Text ausblenden (Word-Export: alles andere bleibt im Hintergrundbild)
+      document.body.classList.toggle('hide-exportables', on === true)
+      document.body.classList.toggle('hide-text', on === 'text')
       await frames()
     },
     async renderAll(deck: Deck, geo?: PrintGeo) {

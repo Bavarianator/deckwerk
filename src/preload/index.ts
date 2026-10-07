@@ -78,7 +78,7 @@ const api = {
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
-  exportDeck: (format: 'pptx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions): Promise<string> => invoke('deck:export', format, print),
+  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions): Promise<string> => invoke('deck:export', format, print),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),

@@ -85,8 +85,8 @@ const fitWindow = (win: BrowserWindow, w: number, h: number) => {
 
 export interface Rendered { measured: Measured; png?: Buffer; background?: Buffer }
 
-/** Render slide i: measure; optionally capture the full slide and/or the background (everything non-native). */
-export function renderSlide(deck: Deck, i: number, opts: { png?: boolean; background?: boolean } = {}): Promise<Rendered> {
+/** Render slide i: measure; optionally capture the full slide and/or the background (everything non-native; 'text' = nur ohne Text, für Word). */
+export function renderSlide(deck: Deck, i: number, opts: { png?: boolean; background?: boolean | 'text' } = {}): Promise<Rendered> {
   return serial(async () => {
     const win = await host('render')
     const { w, h } = sizeOf(deck)
@@ -95,7 +95,7 @@ export function renderSlide(deck: Deck, i: number, opts: { png?: boolean; backgr
     const out: Rendered = { measured }
     if (opts.png) out.png = await snap(win, h, w)
     if (opts.background) {
-      await call(win, 'dw.hideExportables(true)')
+      await call(win, `dw.hideExportables(${JSON.stringify(opts.background)})`)
       out.background = await snap(win, h, w)
       await call(win, 'dw.hideExportables(false)')
     }

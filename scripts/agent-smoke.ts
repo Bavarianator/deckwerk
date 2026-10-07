@@ -216,6 +216,7 @@ assert.match((await run('find_images', {})).text, /Keine .*Bilder|nicht konfigur
 }
 assert.match((await run('export_deck', { format: 'pptx' })).text, /deck\.pptx/)
 assert.match((await run('export_deck', { format: 'zip' })).text, /deck\.zip/)
+assert.match((await run('export_deck', { format: 'docx' })).text, /deck\.docx/)
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
 assert.equal(events, 13, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 3 aus dem Klischee-Test + 1 Feinsatz-Test
