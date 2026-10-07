@@ -464,3 +464,14 @@ button.setup-opt { cursor: pointer; }
 .dw-hidden .thumb-slide > *, .dw-hidden .grid-thumb > :first-child { opacity: 0.4; } /* nur die Folie, Auswahlring und Haken bleiben kräftig */
 .work-nav .thumb-off { display: block; margin-top: 4px; color: var(--muted); }
 .grid-off { flex: none; margin-top: 2px; color: var(--muted); }
+
+/* Suchen & Ersetzen */
+.find-bar { position: fixed; top: 60px; right: 16px; z-index: 16; display: flex; flex-direction: column; gap: 4px; width: 440px; max-width: calc(100% - 32px); padding: 6px; border-radius: 12px; }
+.app:has(.work-panel.format) .find-bar { right: 324px; } /* Panel „Anpassen“ nicht verdecken */
+.find-row { display: flex; align-items: center; gap: 2px; }
+.find-row input { flex: 1; min-width: 0; height: 30px; margin-right: 4px; }
+.find-row .plain { height: 30px; padding: 0 7px; }
+.find-rep { padding-left: 30px; }
+.find-count { min-width: 76px; padding: 0 4px; font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.find-where { padding: 0 8px 2px 30px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--faint); }
+.find-skip { color: var(--danger); }

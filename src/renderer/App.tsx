@@ -12,6 +12,7 @@ import type { Target } from './ui/AskBar'
 import { BuildView, type StoryItem } from './ui/BuildView'
 import { ChatChoices, type Msg } from './ui/Chat'
 import { EditorScreen } from './ui/EditorScreen'
+import { FindBar } from './ui/FindBar'
 import { KeyDialog } from './ui/KeyDialog'
 import { Logo } from './ui/Logo'
 import { FormatSheet } from './ui/FormatSheet'
@@ -54,6 +55,7 @@ export default function App() {
   const [settings, setSettings] = useState<SectionId | null>(null) // Einstellungen: Zahnrad, Wolke, Key-Dialog, „Alle Einstellungen“ im Assistenten
   const [formats, setFormats] = useState(false)
   const [printing, setPrinting] = useState(false) // Sheet „PDF für die Druckerei“
+  const [find, setFind] = useState<{ replace: boolean; n: number } | null>(null) // Suchen & Ersetzen; n zählt Strg+F/H zum Neufokussieren
   const [view, setView] = useState<View>('slide') // einzelne Folie oder Übersicht aller Folien
   const [target, setTarget] = useState<Target | null>(null) // gewähltes Element als Bezug für die KI-Leiste
   const [story, setStory] = useState<StoryItem[] | null>(null) // geplante Storyline der KI (plan_storyline)
@@ -297,8 +299,12 @@ export default function App() {
       const mod = e.ctrlKey || e.metaKey
       const k = e.key.toLowerCase()
       if (mod && k === 's') deck && actions.onSave()
+      // auch beim Tippen: der Fokus wandert ins Suchfeld, bearbeiteter Folientext wird dabei per onBlur übernommen
+      else if (mod && !e.altKey && (k === 'f' || k === 'h') && deck && view === 'slide' && !document.querySelector('[aria-modal="true"]'))
+        setFind((f) => ({ replace: k === 'h', n: (f?.n ?? 0) + 1 }))
       else if (e.key === '/' && !typing && !mod) document.querySelector<HTMLInputElement>('.cap input')?.focus() // Wunsch an die KI
       else if (e.key === 'Escape' && panel === 'insert') setPanel(null)
+      else if (e.key === 'Escape' && find && !typing && !picked.length && !document.querySelector('[aria-modal="true"]')) setFind(null) // Fokus liegt nicht in der Suchleiste; bei Auswahl hebt Esc erst die Auswahl auf (Stage)
       else if (mod && k === 'z' && !typing && !busy) e.shiftKey ? redo() : undo()
       else if (mod && k === 'y' && !typing && !busy) redo()
       else if ((e.key === 'F5' || (e.metaKey && e.altKey && e.code === 'KeyP')) && deck?.slides.length) present(e.shiftKey ? index : 0) // ⌥⌘P: Mac-Tastaturen brauchen für F5 fn
@@ -410,6 +416,9 @@ export default function App() {
         </>
       )}
       {home && status?.error && <div className="toast material" role="alert">{status.text}</div>}
+      {find && deck && !building && view === 'slide' && (
+        <FindBar deck={deck} index={index} busy={busy} replace={find.replace} focus={find.n} onJump={setSel} onReplace={commit} onClose={() => setFind(null)} />
+      )}
       {printing && deck && <PrintSheet deck={deck} onExport={(o) => actions.onExport('print', o)} onClose={() => setPrinting(false)} />}
       {formats && deck && <FormatSheet deck={deck} index={index} onApply={(id) => commit((d) => resizeDeck(d, id))} onCopies={saveCopies} onClose={() => setFormats(false)} />}
       {look && deck && <LookSheet deck={deck} busy={busy} patchDeck={patchDeck} pickImage={api.pickImage} onAsk={(t) => send(t)} onClose={() => setLook(false)} />}

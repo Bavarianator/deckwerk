@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 const GROUPS: { name: string; keys: [string, string][] }[] = [
   { name: 'Allgemein', keys: [
     ['Strg+S', 'Speichern'], ['Strg+Z', 'Rückgängig'], ['Strg+Umschalt+Z oder Strg+Y', 'Wiederholen'], ['/', 'Wunsch an die KI'],
+    ['Strg+F', 'Im ganzen Deck suchen'], ['Strg+H', 'Suchen und ersetzen'],
     ['?', 'Diese Übersicht'], ['F5', 'Präsentieren ab Folie 1'], ['Umschalt+F5', 'Präsentieren ab dieser Folie'],
     ['← → bzw. Bild↑ Bild↓', 'Folie wechseln (wenn nichts ausgewählt ist)'],
   ] },
