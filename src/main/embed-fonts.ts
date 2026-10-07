@@ -23,7 +23,7 @@ function nameOf(name: Buffer, id: number): string {
     const r = 6 + i * 12, plat = name.readUInt16BE(r), enc = name.readUInt16BE(r + 2), nid = name.readUInt16BE(r + 6)
     if (nid !== id) continue
     const len = name.readUInt16BE(r + 8), off = base + name.readUInt16BE(r + 10), s = name.subarray(off, off + len)
-    if (plat === 3 && (enc === 1 || enc === 10)) return s.swap16().toString('utf16le')
+    if (plat === 3 && (enc === 1 || enc === 10)) return Buffer.from(s).swap16().toString('utf16le') // Kopie: swap16 dreht sonst die Schrift selbst um
     if (plat === 1) mac = s.toString('latin1')
   }
   return mac
