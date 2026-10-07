@@ -15,7 +15,8 @@ function host(mode: 'render' | 'print' | 'overview'): Promise<BrowserWindow> {
       const offscreen = mode !== 'print'
       const win = new BrowserWindow({
         show: false, width: 1280 * ZOOM, height: 721 * ZOOM, useContentSize: true, frame: false, enableLargerThanScreen: true,
-        webPreferences: { offscreen, zoomFactor: offscreen ? ZOOM : 1, backgroundThrottling: false },
+        // spellcheck aus: Electron prüft standardmäßig, Wellenlinien unter editierbarem Text landeten sonst im Export
+        webPreferences: { offscreen, zoomFactor: offscreen ? ZOOM : 1, backgroundThrottling: false, spellcheck: false },
       })
       if (offscreen) win.webContents.setFrameRate(60)
       win.setContentSize(1280 * ZOOM, 721 * ZOOM)

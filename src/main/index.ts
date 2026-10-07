@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { MEDIA_EXT, profileOf } from '../shared/deck'
 import type { createEngine } from './engine'
+import { setupSpellcheck } from './spellcheck'
 import { localAsset } from './sync'
 
 // Schwere Module (Engine, Agent, MCP, pptxgenjs, lucide …) erst nach dem Fenster laden: der Splash erscheint sofort,
@@ -88,6 +89,7 @@ app.whenReady().then(async () => {
     // Zweiter Klick aufs Symbol holt das offene Fenster nach vorn statt einer zweiten Instanz (CLI/MCP dürfen parallel laufen)
     if (!app.requestSingleInstanceLock()) return app.quit()
     const win = createWindow()
+    setupSpellcheck(win)
     // Die versteckten Render-Fenster (render.ts) halten die App sonst nach dem Schließen am Leben: window-all-closed kommt nie,
     // und ein zweiter Start griff auf das zerstörte Fenster zu („Object has been destroyed“). Speichern (ipc.ts flush) läuft vorher.
     win.on('closed', () => app.quit())
