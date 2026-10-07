@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import type { z } from 'zod'
 import { LAYOUTS } from '../shared/layouts'
-import { Backdrop, Box, ChartBox, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, rgba, useSlide } from './slide'
+import { Backdrop, Box, ChartBox, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, rgba, useSlide, type PhotoRef } from './slide'
 import { annotation } from '../shared/charts'
 import { sizeOf } from '../shared/deck'
 import { EXTRA_COMPONENTS } from './layouts-extra'
@@ -59,18 +59,25 @@ function useWide() {
 }
 const longestWord = (texts: (string | undefined)[]) => Math.max(0, ...texts.flatMap((t) => t?.split(/[\s-]+/) ?? []).map((x) => x.length))
 
+// Variante side: Foto randabfallend rechts neben einer schmalen Textspalte auf dem Grund, ohne Verlauf (Maße in slide.css „Bild neben Text“)
+function SidePhoto({ image }: { image: PhotoRef }) {
+  return <div className="media right side-media"><Img {...image} slot="image" /></div>
+}
+const SIDE_SAFE = 'safe-left side-safe'
+
 function Cover({ c, v }: Props<'cover'>) {
   const { theme } = useSlide()
   const img = photoOf(c.image)
   const photo = !!img?.src
+  const side = photo && v === 'side' // ohne Foto wie left
   return (
-    <Frame decor="hero" media={photo && <Backdrop image={img!} scrim={v === 'center' ? 'full' : v === 'bottom' ? 'bottom' : 'left'} />}>
-      <div className={`cover ${v === 'center' ? 'center' : v === 'bottom' ? 'bottom' : ''} ${photo ? 'on-photo' : ''}`} style={photo ? onPhoto(theme) : undefined}>
+    <Frame decor="hero" media={photo && (side ? <SidePhoto image={img!} /> : <Backdrop image={img!} scrim={v === 'center' ? 'full' : v === 'bottom' ? 'bottom' : 'left'} />)} safeClass={side ? SIDE_SAFE : undefined}>
+      <div className={`cover ${v === 'center' ? 'center' : v === 'bottom' ? 'bottom' : side ? 'side' : ''} ${photo && !side ? 'on-photo' : ''}`} style={photo && !side ? onPhoto(theme) : undefined}>
         <div className="cover-top">{theme.logo && <Img src={theme.logo} slot="_logo" className="cover-logo" contain />}</div>
         <div className="cover-main">
           <Eyebrow text={c.eyebrow} center={v === 'center'} />
-          <T role="display" slot="title" maxLines={3} className="cover-title">{c.title}</T>
-          {c.subtitle && <T role="body" slot="subtitle" maxLines={2} className="cover-sub">{c.subtitle}</T>}
+          <T role="display" slot="title" maxLines={side ? 4 : 3} className="cover-title">{c.title}</T>
+          {c.subtitle && <T role="body" slot="subtitle" maxLines={side ? 4 : 2} className="cover-sub">{c.subtitle}</T>}
         </div>
         <div className="cover-bottom">{c.meta && <T role="label" slot="meta" className="muted">{c.meta}</T>}</div>
       </div>
@@ -352,16 +359,17 @@ function Process({ c }: Props<'process'>) {
   )
 }
 
-function Closing({ c }: Props<'closing'>) {
+function Closing({ c, v }: Props<'closing'>) {
   const { theme } = useSlide()
   const img = photoOf(c.image)
   const photo = !!img?.src
+  const side = photo && v === 'side'
   return (
-    <Frame decor="hero" media={photo && <Backdrop image={img!} scrim="left" />}>
-      <div className={`closing ${photo ? 'on-photo' : ''}`} style={photo ? onPhoto(theme) : undefined}>
+    <Frame decor="hero" media={photo && (side ? <SidePhoto image={img!} /> : <Backdrop image={img!} scrim="left" />)} safeClass={side ? SIDE_SAFE : undefined}>
+      <div className={`closing ${side ? 'side' : photo ? 'on-photo' : ''}`} style={photo && !side ? onPhoto(theme) : undefined}>
         <div className="closing-main">
-          <T role="display" slot="title" maxLines={3} className="cover-title">{c.title}</T>
-          {c.subtitle && <T role="body" slot="subtitle" maxLines={2} className="cover-sub">{c.subtitle}</T>}
+          <T role="display" slot="title" maxLines={side ? 4 : 3} className="cover-title">{c.title}</T>
+          {c.subtitle && <T role="body" slot="subtitle" maxLines={side ? 4 : 2} className="cover-sub">{c.subtitle}</T>}
         </div>
         <div className="closing-bottom">
           {c.contact?.length ? (
@@ -392,17 +400,18 @@ function PhotoSlide({ c, v }: Props<'photo'>) {
   const img = photoOf(c.image)
   const photo = !!img?.src
   const card = v === 'card'
+  const side = photo && v === 'side'
   const text = (
     <>
       <Eyebrow text={c.eyebrow} />
-      <T role="h1" slot="title" maxLines={3}>{c.title}</T>
-      {c.subtitle && <T role="body" slot="subtitle" maxLines={3} className="muted">{c.subtitle}</T>}
+      <T role="h1" slot="title" maxLines={side ? 5 : 3}>{c.title}</T>
+      {c.subtitle && <T role="body" slot="subtitle" maxLines={side ? 4 : 3} className="muted">{c.subtitle}</T>}
     </>
   )
-  // Ohne Foto: Akzentfläche statt Bild, damit Text und Kontrast stimmen
+  // Ohne Foto: Akzentfläche statt Bild, damit Text und Kontrast stimmen (side dann wie text-bottom)
   return (
-    <Frame decor="hero" tone={photo ? undefined : 'accent'} media={photo && <Backdrop image={img!} scrim={card ? 'none' : v === 'text-left' ? 'left' : 'bottom'} />}>
-      <div className={`photo-slide ps-${v ?? 'text-bottom'}`} style={photo && !card ? onPhoto(theme) : undefined}>
+    <Frame decor="hero" tone={photo ? undefined : 'accent'} media={photo && (side ? <SidePhoto image={img!} /> : <Backdrop image={img!} scrim={card ? 'none' : v === 'text-left' ? 'left' : 'bottom'} />)} safeClass={side ? SIDE_SAFE : undefined}>
+      <div className={`photo-slide ps-${v === 'side' && !side ? 'text-bottom' : v ?? 'text-bottom'}`} style={photo && !card && !side ? onPhoto(theme) : undefined}>
         {card ? <PhotoCard>{text}</PhotoCard> : <div className="photo-text">{text}</div>}
       </div>
     </Frame>

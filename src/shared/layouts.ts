@@ -47,7 +47,7 @@ const cover = z.object({
   title: z.string().min(3).max(70),
   subtitle: z.string().max(120).optional(),
   meta: z.string().max(60).optional().describe('z. B. "Max Muster · Oktober 2026"'),
-  image: photo.optional().describe('Vollbildfoto hinter dem Titel (mit Verlauf); weglassen = Theme-Dekor'),
+  image: photo.optional().describe('Vollbildfoto hinter dem Titel (mit Verlauf), bei Variante side rechts neben dem Text; weglassen = Theme-Dekor'),
 })
 
 const agenda = z.object({
@@ -144,7 +144,7 @@ const closing = z.object({
   subtitle: z.string().max(120).optional(),
   contact: z.array(z.string().max(48)).max(3).optional(),
   qr: z.string().max(300).optional().describe('URL als QR-Code unten rechts (z. B. Terminbuchung, Unterlagen)'),
-  image: photo.optional().describe('Vollbildfoto hinter dem Schluss (mit Verlauf)'),
+  image: photo.optional().describe('Vollbildfoto hinter dem Schluss (mit Verlauf), bei Variante side rechts neben dem Text'),
 })
 
 const photoSlide = z.object({
@@ -172,7 +172,7 @@ const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const LAYOUTS = {
   cover: L({
-    id: 'cover', name: 'Titelfolie', when: 'Erste Folie. Titel = Versprechen des Decks. Variante bottom: übergroßer Titel unten links (Plakat, Stil mutig, stark mit Foto).', variants: ['left', 'center', 'bottom'],
+    id: 'cover', name: 'Titelfolie', when: 'Erste Folie. Titel = Versprechen des Decks. Variante bottom: übergroßer Titel unten links (Plakat, Stil mutig, stark mit Foto). Variante side: Foto randabfallend rechts auf etwa 7/12 der Breite, Text links auf dem Grund in schmaler Spalte, ohne Verlauf – bevorzugt statt Vollbild mit Verlauf, wenn das Foto keine ruhige Fläche für Text hat.', variants: ['left', 'center', 'bottom', 'side'],
     schema: cover, defaultBuild: 'none', footer: false,
     samples: {
       min: { title: 'Q3-Review' },
@@ -336,7 +336,8 @@ export const LAYOUTS = {
     },
   }),
   closing: L({
-    id: 'closing', name: 'Abschluss', when: 'Letzte Folie: klare Bitte/nächster Schritt statt nur „Danke“.',
+    id: 'closing', name: 'Abschluss', when: 'Letzte Folie: klare Bitte/nächster Schritt statt nur „Danke“. Variante side: Foto randabfallend rechts auf etwa 7/12 der Breite, Text links auf dem Grund in schmaler Spalte, ohne Verlauf – bevorzugt statt Vollbild mit Verlauf, wenn das Foto keine ruhige Fläche für Text hat.',
+    variants: ['left', 'side'],
     schema: closing, defaultBuild: 'none', footer: false,
     samples: {
       min: { title: 'Danke' },
@@ -345,8 +346,8 @@ export const LAYOUTS = {
     },
   }),
   photo: L({
-    id: 'photo', name: 'Vollbildfoto', when: 'Emotionaler Einstieg, Produkt oder Ort groß zeigen, Kapitelwechsel mit Bild. Braucht ein starkes Querformat-Foto.',
-    variants: ['text-bottom', 'text-left', 'card'],
+    id: 'photo', name: 'Vollbildfoto', when: 'Emotionaler Einstieg, Produkt oder Ort groß zeigen, Kapitelwechsel mit Bild. Braucht ein starkes Querformat-Foto. Variante side: Foto randabfallend rechts auf etwa 7/12 der Breite, Text links auf dem Grund in schmaler Spalte, ohne Verlauf – bevorzugt statt Vollbild mit Verlauf, wenn das Foto keine ruhige Fläche für Text hat.',
+    variants: ['text-bottom', 'text-left', 'card', 'side'],
     schema: photoSlide, defaultBuild: 'fade', footer: false,
     samples: {
       min: { title: 'Hier fängt es an', image: noPhoto },
