@@ -258,8 +258,20 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
     else if (op === 'rmLocal') { if (await touched(rel)) return; await rm(join(home, rel), { force: true }); gone.add(rel); res.deleted++; res.changed.push(join(home, rel)) } // entfernt gelöscht
     else if (op === 'rmRemote') { await must(await dav('DELETE', rel), `Löschen ${rel}`); gone.add(rel); res.deleted++ } // lokal gelöscht
     else gone.add(rel)
-    if (op === 'up' || op === 'down' || op === 'conflict') { moved++; movedBytes += sizeOf(rel, op); report() }
+    if (op === 'up' || op === 'down' || op === 'conflict') {
+      moved++; movedBytes += sizeOf(rel, op); report()
+      if (moved % 20 === 0) saving = saving.then(saveState, saveState) // nacheinander, nie zwei Schreibvorgänge gleichzeitig
+    }
   }
+  // Zwischenstand alle 20 Übertragungen: wird die App mitten im ersten großen Upload beendet, muss der nächste Lauf
+  // nicht alles noch einmal herunterladen und vergleichen. Atomar über eine Punktdatei (vom Sync ausgenommen).
+  const saveState = async () => {
+    const files: State = { ...old, ...next }
+    for (const rel of gone) delete files[rel]
+    await writeFile(`${statePath}.tmp`, JSON.stringify({ base: `${s.user}@${base}`, files }))
+    await rename(`${statePath}.tmp`, statePath)
+  }
+  let saving: Promise<void> = Promise.resolve()
   const queue = [...plan]
   let failed: { e: unknown } | null = null // erster Fehler, auch wenn jemand undefined wirft
   const worker = async () => { while (!failed && queue.length) await step(queue.shift()!).catch((e) => { failed ??= { e } }) }
@@ -276,9 +288,8 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
     }
   } finally {
     // auch nach einem Abbruch (Netz weg): Erledigtes merken, Unerledigtes behält seinen alten Stand
-    const files: State = { ...old, ...next }
-    for (const rel of gone) delete files[rel]
-    await writeFile(statePath, JSON.stringify({ base: `${s.user}@${base}`, files }))
+    await saving.catch(() => {})
+    await saveState()
   }
   res.changed.sort() // parallel erledigt, aber stets gleiche Reihenfolge
   return res
