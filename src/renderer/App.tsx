@@ -324,9 +324,9 @@ export default function App() {
         <Start
           onSubmit={send} model={model} onModel={pickModel}
           onOpen={actions.onOpen} onOpenPath={actions.onOpenPath} onKey={() => setSetup(true)}
-          onBlank={() => {
+          onBlank={(size) => {
             // leer beginnen wie in Canva: eine leere Folie, alles Weitere von Hand oder per KI
-            const d: Deck = { title: 'Neues Design', theme: { id: THEMES[0].id }, transition: 'fade', mode: 'click', slides: [{ id: `s-${newId()}`, layout: 'blank', content: {} }] }
+            const d: Deck = { title: 'Neues Design', theme: { id: THEMES[0].id }, transition: 'fade', mode: 'click', slides: [{ id: `s-${newId()}`, layout: 'blank', content: {} }], ...(size && { size }) }
             setDoc({ deck: d, past: [], future: [], local: true })
           }}
         />

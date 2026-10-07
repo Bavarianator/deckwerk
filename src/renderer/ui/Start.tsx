@@ -1,9 +1,10 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“, die zuletzt bearbeiteten Decks (auch per MCP gebaute) und Vorlagen.
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp, Image as ImageIcon, Paperclip, Settings, X } from 'lucide-react'
-import { profileOf, type Deck } from '../../shared/deck'
+import { FORMATS, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
+import { Select } from './kit'
 import { Logo } from './Logo'
 
 // Angehängte Dateien (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateinamen
@@ -33,11 +34,22 @@ export function useSource() {
 
 interface Recent { path: string; title: string; mtime: number; deck: Deck }
 
-const EXAMPLES: [string, string][] = [
+// Dritter Eintrag: Format, das der Chip mitsetzt
+const EXAMPLES: [string, string, string?][] = [
   ['Pitch für ein Schul-Start-up', 'Erstelle einen 10-Folien-Pitch für Ortho-Bot, ein KI-Rechtschreibtool für Schulen – Zielgruppe Geschäftsführung'],
   ['Projektstatus für die Geschäftsführung', 'Projektstatus für die Geschäftsführung: ERP-Migration zu 70 % fertig, Budget im Plan, ein Risiko beim Datenimport'],
   ['Strategie 2027 fürs Vertriebsteam', 'Strategie 2027 für unser Vertriebsteam: drei Wachstumshebel, Roadmap und Budget, etwa 12 Folien'],
-  ['Flyer für ein Sommerfest', 'Gestalte einen Flyer (A4) für unser Sommerfest am 12. Juli ab 15 Uhr im Innenhof: Musik, Grill, Kinderprogramm – Anmeldung über unsere Webseite'],
+  ['Flyer für ein Sommerfest', 'Gestalte einen Flyer (A4) für unser Sommerfest am 12. Juli ab 15 Uhr im Innenhof: Musik, Grill, Kinderprogramm – Anmeldung über unsere Webseite', 'flyer'],
+]
+
+// Formatwahl neben dem Modell: ask geht unsichtbar an die KI, format gilt für „Leer beginnen“ (ohne = 16:9)
+const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatId; ask?: string }[] = [
+  { id: 'auto', name: 'Automatisch', hint: 'Deckwerk wählt passend zu deinem Wunsch' },
+  { id: 'praesentation', name: 'Präsentation', hint: '16:9 für Beamer und Bildschirm', ask: 'Format: Präsentation 16:9 (create_deck format 16:9).' },
+  { id: 'flyer', name: 'Flyer', hint: 'A4 hoch, zum Drucken', format: 'a4', ask: 'Format: Flyer, A4 hoch (create_deck format a4, Layout flyer; Rückseite flyer-back nur auf Wunsch).' },
+  { id: 'dokument', name: 'Dokument', hint: 'A4 hoch: Handout, Bericht oder Angebot', format: 'a4', ask: 'Format: Dokument, A4 hoch, z. B. Handout, Bericht oder Angebot (create_deck format a4).' },
+  { id: 'social', name: 'Social-Post', hint: 'Karussell im Hochformat 4:5', format: '4:5', ask: 'Format: Social-Media-Karussell 4:5 (create_deck format 4:5).' },
+  { id: 'story', name: 'Story', hint: 'Hochkant 9:16', format: '9:16', ask: 'Format: Story 9:16 (create_deck format 9:16).' },
 ]
 
 // A4 (Flyer, Fließtext) zählt Seiten, alles andere Folien
@@ -56,7 +68,7 @@ interface Props {
   onSubmit: (text: string, context?: string) => boolean
   model: string
   onModel: (id: string) => void
-  onBlank: () => void
+  onBlank: (size?: Size) => void
   onOpen: () => void
   onOpenPath: (path: string) => void
   onKey: () => void
@@ -64,6 +76,8 @@ interface Props {
 
 export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey }: Props) {
   const [text, setText] = useState('')
+  const [fmt, setFmt] = useState('auto')
+  const choice = FORMAT_CHOICES.find((f) => f.id === fmt)!
   const [recent, setRecent] = useState<Recent[]>([])
   const [all, setAll] = useState(false)
   const [templates, setTemplates] = useState<Deck[]>([])
@@ -82,7 +96,8 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
     const ask = text.trim() || (!srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
       ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
       : 'Mach aus diesen Dateien eine Präsentation.')
-    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, srcs.length ? sourceContext(srcs) : undefined)) { setText(''); clear() }
+    const context = [choice.ask, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
+    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { setText(''); clear() }
   }
 
   return (
@@ -115,6 +130,9 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
           <div className="home-field-bar">
             <div className="home-field-l">
               <ModelSelect value={model} onChange={onModel} />
+              <Select className="model-select ghost format-select" value={fmt} onChange={(e) => setFmt(e.target.value)} aria-label="Format" title="Format">
+                {FORMAT_CHOICES.map((f) => <option key={f.id} value={f.id} data-hint={f.hint}>{f.name}</option>)}
+              </Select>
               {srcs.map((s) => (
                 <span key={s.name} className="pill" title={s.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>{isImage(s.name) ? <ImageIcon size={13} /> : <Paperclip size={13} />}{s.name}<button type="button" className="plain" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={13} /></button></span>
               ))}
@@ -125,9 +143,9 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
           </div>
         </form>
         <div className="home-chips">
-          {EXAMPLES.map(([label, full]) => <button key={label} className="pill" onClick={() => { setText(full); ref.current?.focus() }}>{label}</button>)}
+          {EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
         </div>
-        <button className="plain tint home-blank" onClick={onBlank}>Leer beginnen und frei gestalten</button>
+        <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>Leer beginnen und frei gestalten</button>
       </main>
 
       {recent.length > 0 && (
