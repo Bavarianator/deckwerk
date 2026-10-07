@@ -55,8 +55,9 @@ export async function buildDocx(deck: Deck, pages: DocxPage[], fonts: EmbedFont[
 
   const run = (r: Run, el: TextEl, f: string) => {
     const sz = Math.round((r.sizePx ?? el.sizePx) * 1.5), track = TW(r.trackingPx ?? el.trackingPx)
-    const rPr = `<w:rPr><w:rFonts w:ascii="${f}" w:hAnsi="${f}" w:cs="${f}"/>${r.bold ? '<w:b/><w:bCs/>' : ''}${r.italic ? '<w:i/><w:iCs/>' : ''}${el.upper ? '<w:caps/>' : ''}` +
-      `<w:color w:val="${hex(r.color)}"/>${track ? `<w:spacing w:val="${track}"/>` : ''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>${r.underline ? '<w:u w:val="single"/>' : ''}<w:lang w:val="de-DE"/></w:rPr>`
+    const hollow = el.effect?.type === 'hollow' // Kontur: gemessene Farbe ist transparent → Words Umriss-Effekt in der Konturfarbe
+    const rPr = `<w:rPr><w:rFonts w:ascii="${f}" w:hAnsi="${f}" w:cs="${f}"/>${r.bold ? '<w:b/><w:bCs/>' : ''}${r.italic ? '<w:i/><w:iCs/>' : ''}${el.upper ? '<w:caps/>' : ''}${hollow ? '<w:outline/>' : ''}` +
+      `<w:color w:val="${hex(hollow ? el.effect!.color : r.color)}"/>${track ? `<w:spacing w:val="${track}"/>` : ''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>${r.underline ? '<w:u w:val="single"/>' : ''}<w:lang w:val="de-DE"/></w:rPr>`
     const xml = `<w:r>${rPr}<w:t xml:space="preserve">${esc(r.text)}</w:t>${r.breakAfter ? '<w:br/>' : ''}</w:r>`
     return r.link ? `<w:hyperlink r:id="${rel('hyperlink', r.link, true)}">${xml}</w:hyperlink>` : xml
   }

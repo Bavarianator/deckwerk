@@ -93,7 +93,7 @@ Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien al
 
 - `save_deck` speichert nach `~/Deckwerk/<titel>/deck.json`. Nenne den Pfad; der Nutzer öffnet die Datei in der Deckwerk-App (Doppelklick auf `deck.json`) und kann dort weiterarbeiten.
 - Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `docx` (Word: Text bearbeitbar, Gestaltung als Hintergrundbild), `pdf`, `png`, `zip` (alle Bilder plus PDF in einer Datei, für Karussells) oder `md` (Handout). Pfade nennen; bei Nicht-16:9 tragen die Dateien das Format im Namen (`-4x5`, `-a4`).
-- Flyer für die Druckerei: `export_deck` mit `print` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm; `size` a3/a5). Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB; bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
+- Flyer für die Druckerei: `export_deck` mit `format: "print"` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm; `size` a3/a5). Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB; bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
 - Kurzer Bericht: Folienzahl, Storyline in einem Satz, getroffene Annahmen und was der Nutzer ersetzen muss (Zahlen, Zitate, Fotos).
 
 ## Häufige Fehler
