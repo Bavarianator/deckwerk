@@ -111,6 +111,7 @@ export function EditorScreen(p: Props) {
             onPatch={(q, tag) => patchItem(item.id, q, tag)}
             onMore={() => p.onPanel('format')}
             onAsk={() => document.querySelector<HTMLInputElement>('.cap input')?.focus()}
+            onRewrite={(text) => p.onSend(`${t.label}: ${text}`, t.context)}
           />
         )}
         <Stage deck={p.deck} index={p.index} busy={p.busy} sel={p.picked} onSel={p.onPick} onItems={p.onItems} patchSlide={p.patchSlide} onEdit={p.onEdit} onTarget={p.onTarget} />
