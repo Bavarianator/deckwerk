@@ -27,7 +27,7 @@ void (async () => {
       text('body', 60, 240, [run('Mehr unter '), run('deckwerk.de', { link: 'https://deckwerk.de/?a=1&b=2', underline: true })]),
     ]),
     page([
-      text('quote', 100, 400, [run('Gedreht & zentriert')], { align: 'center', rot: -8 }),
+      text('quote', 100, 400, [run('Gedreht & zentriert', { color: '#000000' })], { align: 'center', rot: -8, effect: { type: 'hollow', color: '#D7261E' } }),
       text('leer', 100, 600, [run('')]),
     ]),
   ], [{ family: 'Archivo', regular: ttf }])
@@ -43,7 +43,7 @@ void (async () => {
   assert.equal(doc.split('<w:pageBreakBefore/>').length - 1, 1)
   assert.equal(doc.split('txBox="1"').length - 1, 3, 'Box und leerer Text erzeugen kein Textfeld')
   assert.equal(doc.split('behindDoc="1"').length - 1, 2)
-  for (const s of ['>Kapitel eins</w:t><w:br/>', '<w:caps/>', '>Gedreht &#38; zentriert</w:t>', 'rot="21120000"', '<w:jc w:val="center"/>', 'w:ascii="Archivo"', '<w:sz w:val="72"/>'])
+  for (const s of ['>Kapitel eins</w:t><w:br/>', '<w:caps/>', '>Gedreht &#38; zentriert</w:t>', 'rot="21120000"', '<w:jc w:val="center"/>', 'w:ascii="Archivo"', '<w:sz w:val="72"/>', '<w:outline/><w:color w:val="D7261E"/>'])
     assert.ok(doc.includes(s), `fehlt im Dokument: ${s}`)
   const link = doc.match(/<w:hyperlink r:id="(rId\d+)">/)?.[1]
   assert.ok(link && docRels.includes(`Id="${link}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://deckwerk.de/?a=1&#38;b=2" TargetMode="External"`), 'Hyperlink-Relationship')
