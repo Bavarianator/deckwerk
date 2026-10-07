@@ -12,9 +12,10 @@ import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
-import { assetUrl, buildTools, defaultBrand, localizeDeck, saveBrand, STYLE_FILE } from './tools'
+import { assetUrl, BRAND_FILE, buildTools, defaultBrand, localizeDeck, saveBrand, STYLE_FILE } from './tools'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { createSyncer, localAsset, testSync, type SyncSettings } from './sync'
+import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -233,21 +234,29 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     agent = null // nächster send nutzt den neuen Key
     return r?.ok ? 'geprüft' : 'ungeprüft'
   })
+  ipcMain.handle('key:clear', async () => {
+    await rm(keyFile, { force: true })
+    agent?.abort()
+    agent = null
+  })
   // Hilfe-Links der Einrichtung öffnen im Browser; nur diese Ziele, der Renderer kann keine beliebige Adresse öffnen
-  const HILFE = { 'api-keys': 'https://platform.claude.com/settings/keys', claude: 'https://code.claude.com/docs/en/setup', node: 'https://nodejs.org/' }
+  const HILFE = {
+    'api-keys': 'https://platform.claude.com/settings/keys', claude: 'https://code.claude.com/docs/en/setup', node: 'https://nodejs.org/',
+    mistral: 'https://console.mistral.ai/api-keys', openai: 'https://platform.openai.com/api-keys', unsplash: 'https://unsplash.com/oauth/applications',
+  }
   ipcMain.handle('hilfe:open', (_, id: string) => {
     if (!Object.hasOwn(HILFE, id)) throw new Error(`Unbekannter Link: ${id}`)
     return shell.openExternal(HILFE[id as keyof typeof HILFE])
   })
 
-  // KI-Bilder (Einrichtung → Bilder): Keys bleiben im Main-Prozess, generate_image liest sie beim Aufruf
+  // KI-Bilder (Einstellungen → Bilder): Keys bleiben im Main-Prozess, generate_image liest sie beim Aufruf
   ipcMain.handle('imageSettings:get', () => imageStatus())
   ipcMain.handle('imageSettings:set', (_, patch: unknown) => saveImageSettings(patch))
 
   ipcMain.handle('sync:get', () => syncer.status())
   ipcMain.handle('sync:run', () => syncer.run())
   ipcMain.handle('sync:test', (_, s: SyncSettings) => testSync(s))
-  ipcMain.handle('sync:set', async (_, s: SyncSettings | null) => {
+  const saveSync = async (s: SyncSettings | null) => {
     const sent = () => { if (!win.isDestroyed()) win.webContents.send('sync:status', syncer.status()) } // auch die Wolke in der Kopfleiste
     if (!s) { syncCfg = null; await rm(syncFile, { force: true }); sent(); return syncer.status() }
     if (!safeStorage.isEncryptionAvailable()) throw new Error('Keine sichere Schlüsselablage verfügbar, das Passwort kann nicht gespeichert werden.')
@@ -261,7 +270,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     await writeFile(syncFile, safeStorage.encryptString(JSON.stringify(next)), { mode: 0o600 })
     sent()
     return syncer.run()
-  })
+  }
+  ipcMain.handle('sync:set', (_, s: SyncSettings | null) => saveSync(s))
 
   ipcMain.handle('image:pick', async () => {
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'svg'] }] })
@@ -311,6 +321,23 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
   ipcMain.handle('brand:get', () => defaultBrand() ?? null)
   ipcMain.handle('brand:set', (_e, b: BrandKit) => saveBrand(b))
+  ipcMain.handle('brand:clear', () => rm(BRAND_FILE, { force: true }))
+  ipcMain.handle('style:get', () => readFile(STYLE_FILE, 'utf8').catch(() => ''))
+  ipcMain.handle('style:set', async (_, text: unknown) => {
+    if (typeof text !== 'string') throw new Error('Ungültiger Hausstil.')
+    if (text.length > 20_000) throw new Error('Der Hausstil ist zu lang (höchstens 20 000 Zeichen).')
+    await mkdir(dirname(STYLE_FILE), { recursive: true })
+    await writeFile(STYLE_FILE, text)
+  })
+  ipcMain.handle('app:info', () => ({
+    version: app.getVersion(), electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node,
+    platform: `${process.platform} ${process.arch}`, home: HOME,
+  }))
+  ipcMain.handle('app:openHome', async () => {
+    await mkdir(HOME, { recursive: true })
+    const err = await shell.openPath(HOME)
+    if (err) throw new Error(err)
+  })
   ipcMain.handle('style:open', async () => {
     await mkdir(HOME, { recursive: true })
     if (!existsSync(STYLE_FILE)) await writeFile(STYLE_FILE, '# Hausstil\n\n<!-- Gilt für jedes Deck. Eine Vorliebe pro Zeile; die KI ergänzt hier, wenn du „merk dir …“ sagst. -->\n')
@@ -442,13 +469,65 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (!CLIS.includes(cli as Cli)) throw new Error(`Unbekanntes Werkzeug: ${String(cli)}`)
     return cli as Cli
   }
-  // Angemeldet? Nur Codex sagt das schnell (`codex login status`, Exit-Code); bei den anderen null = unbekannt
-  const loggedIn = (cli: Cli): Promise<boolean | null> => cli !== 'codex' || !clis.codex ? Promise.resolve(null)
-    : new Promise((ok) => execFile(clis.codex!, ['login', 'status'], { timeout: 10_000 }, (e) => ok(!e)))
+  // Angemeldet? Claude Code und Codex fragen; Vibe: Mistral-Key gefunden, sonst unbekannt (er kann im Schlüsselbund liegen)
+  const loggedIn = async (cli: Cli): Promise<{ login: boolean | null; who?: string }> =>
+    cli === 'vibe' ? { login: vibeKey() || null } : clis[cli] ? cliStatus(clis[cli]!, cli) : { login: null }
   ipcMain.handle('setup:status', async () => (detect(), {
     key: hasApiKey(),
-    clis: await Promise.all(CLIS.map(async (c) => ({ id: c, name: CLI_NAME[c], found: !!clis[c], mcp: registered(c) && skillOk(c), login: await loggedIn(c) }))),
+    clis: await Promise.all(CLIS.map(async (c) => ({ id: c, name: CLI_NAME[c], found: !!clis[c], mcp: registered(c) && skillOk(c), ...await loggedIn(c) }))),
   }))
+
+  // Konten (Einstellungen): eine Anmeldung zur Zeit, CLI oder Nextcloud; eine neue bricht die laufende ab.
+  // url: Anmeldeseite zum erneuten Öffnen, code: reicht einen Code aus dem Browser an das CLI
+  type Login = { ctrl: AbortController; url: string; code?: (c: string) => void }
+  let login: Login | null = null
+  const runLogin = async <T>(fn: (l: Login) => Promise<T>): Promise<T> => {
+    login?.ctrl.abort()
+    const l: Login = { ctrl: new AbortController(), url: '' }
+    login = l
+    try { return await fn(l) } finally { if (login === l) login = null }
+  }
+  const loginUrl = (l: Login, url: string, code: boolean) => { l.url = url; if (!win.isDestroyed()) win.webContents.send('account:url', { url, code }) }
+  win.on('closed', () => login?.ctrl.abort()) // sonst hielte Codex seinen Port 1455 nach dem Beenden belegt
+  const loginCli = (c: unknown): { cli: LoginCli; bin: string } => {
+    const cli = cliArg(c)
+    if (cli === 'vibe') throw new Error('Vibe hat keine Anmeldung, nur einen Mistral-Schlüssel.')
+    detect()
+    const bin = clis[cli]
+    if (!bin) throw new Error(`${CLI_NAME[cli]} ist nicht installiert.`)
+    return { cli, bin }
+  }
+  ipcMain.handle('account:login', (_, c: unknown) => {
+    const { cli, bin } = loginCli(c)
+    return runLogin(async (l) => {
+      const r = cliLogin(bin, cli, (e) => loginUrl(l, e.url, e.code), l.ctrl.signal)
+      l.code = r.code
+      await r.done
+    })
+  })
+  ipcMain.handle('account:code', (_, c: unknown) => {
+    if (typeof c !== 'string' || !c.trim() || c.length > 2000) throw new Error('Den Code aus dem Browser vollständig einfügen.')
+    if (!login?.code) throw new Error('Gerade läuft keine Anmeldung, die einen Code erwartet.')
+    login.code(c)
+  })
+  ipcMain.handle('account:cancel', () => { login?.ctrl.abort(); login = null })
+  ipcMain.handle('account:open', () => {
+    if (!login?.url || !/^https?:\/\//i.test(login.url)) throw new Error('Gerade läuft keine Anmeldung.')
+    return shell.openExternal(login.url)
+  })
+  ipcMain.handle('account:logout', (_, c: unknown) => {
+    const { cli, bin } = loginCli(c)
+    return cliLogout(bin, cli)
+  })
+  ipcMain.handle('account:vibeKey', (_, k: unknown) => setVibeKey(k as string | null)) // prüft Typ und Länge selbst
+  ipcMain.handle('sync:nextcloud', async (_, server: unknown) => {
+    if (typeof server !== 'string' || !server.trim() || server.length > 500) throw new Error('Die Adresse deiner Nextcloud eingeben, z. B. cloud.example.de.')
+    const s = await runLogin((l) => nextcloudLogin(server, {
+      signal: l.ctrl.signal,
+      open: (url) => { loginUrl(l, url, false); shell.openExternal(url).catch(() => {}) }, // klappt das nicht: Seite über account:url bzw. account:open
+    }))
+    return saveSync(s)
+  })
   // Modell-Dropdown: Claude (Key oder Claude Code), Vibe mit den Modellen aus seiner config.toml (die aktive zuerst),
   // Codex mit den sichtbaren Modellen seines Katalogs. Ohne Liste bleibt die Voreinstellung des CLI („vibe:“, „codex:“).
   const vibeModels = (): ChatModels['vibe'] => {
