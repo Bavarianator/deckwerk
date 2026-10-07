@@ -1,7 +1,7 @@
-// Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“ und die zuletzt bearbeiteten Decks.
+// Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“, die zuletzt bearbeiteten Decks (auch per MCP gebaute) und Vorlagen.
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp, Image as ImageIcon, Paperclip, Settings, X } from 'lucide-react'
-import type { Deck } from '../../shared/deck'
+import { profileOf, type Deck } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Logo } from './Logo'
@@ -39,6 +39,12 @@ const EXAMPLES: [string, string][] = [
   ['Strategie 2027 fürs Vertriebsteam', 'Strategie 2027 für unser Vertriebsteam: drei Wachstumshebel, Roadmap und Budget, etwa 12 Folien'],
 ]
 
+// A4 (Flyer, Fließtext) zählt Seiten, alles andere Folien
+const pages = (d: Deck) => {
+  const n = d.slides.length
+  return `${n} ${profileOf(d) === 'doc' ? (n === 1 ? 'Seite' : 'Seiten') : n === 1 ? 'Folie' : 'Folien'}`
+}
+
 const day = (t: number) => new Date(new Date(t).toDateString()).getTime()
 const when = (t: number) => {
   const days = Math.round((day(Date.now()) - day(t)) / 864e5)
@@ -61,7 +67,13 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   const [templates, setTemplates] = useState<Deck[]>([])
   useEffect(() => { window.api.templates().then(setTemplates, () => setTemplates([])) }, [])
   const ref = useRef<HTMLTextAreaElement>(null)
-  useEffect(() => { window.api.recent(8).then(setRecent, () => setRecent([])) }, [])
+  useEffect(() => {
+    // bei jedem Fokus neu: Decks, die Claude Code oder Codex per MCP speichern, erscheinen ohne Neustart
+    const load = () => window.api.recent(8).then(setRecent, () => {}) // Fehler: alte Liste bleibt
+    void load()
+    window.addEventListener('focus', load)
+    return () => window.removeEventListener('focus', load)
+  }, [])
   const { srcs, attach, remove, clear, err } = useSource()
   const submit = () => {
     const ask = text.trim() || (!srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
@@ -115,21 +127,6 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         <button className="plain tint home-blank" onClick={onBlank}>Leer beginnen und frei gestalten</button>
       </main>
 
-      {templates.length > 0 && (
-        <section className="home-recent" aria-label="Vorlagen">
-          <h2>Mit einer Vorlage beginnen</h2>
-          <div className="home-shelf">
-            {templates.map((d) => (
-              <button key={d.title} className="home-deck" title="Öffnet eine Kopie, die Vorlage bleibt unverändert" onClick={() => window.api.saveCopy(d).then(onOpenPath)}>
-                <div className="home-deck-cover"><SlideView deck={d} index={0} width={232} /></div>
-                <b>{d.title}</b>
-                <span>{d.slides.length} Folien</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
       {recent.length > 0 && (
         <section className="home-recent" aria-label="Zuletzt">
           <h2>Zuletzt</h2>
@@ -138,7 +135,22 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
               <button key={r.path} className="home-deck" onClick={() => onOpenPath(r.path)}>
                 <div className="home-deck-cover"><SlideView deck={r.deck} index={0} width={232} /></div>
                 <b>{r.title}</b>
-                <span>{when(r.mtime)} · {r.deck.slides.length} Folien</span>
+                <span>{when(r.mtime)} · {pages(r.deck)}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {templates.length > 0 && (
+        <section className="home-recent" aria-label="Vorlagen">
+          <h2>Mit einer Vorlage beginnen</h2>
+          <div className="home-shelf">
+            {templates.map((d) => (
+              <button key={d.title} className="home-deck" title="Öffnet eine Kopie, die Vorlage bleibt unverändert" onClick={() => window.api.saveCopy(d).then(onOpenPath)}>
+                <div className="home-deck-cover"><SlideView deck={d} index={0} width={232} /></div>
+                <b>{d.title}</b>
+                <span>{pages(d)}</span>
               </button>
             ))}
           </div>
