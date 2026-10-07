@@ -75,6 +75,35 @@ const texte: string[] = [] // Fortschritt für die Oberfläche: erst vergleichen
 eq((await sync(C, s, fetch, (t) => texte.push(t))).conflicts, 1)
 ok(readdirSync(join(C, 'pitch/versions')).length === 1)
 eq(texte, ['Vergleicht 1 von 1 Dateien', 'Überträgt 0 von 2 Dateien', 'Überträgt 1 von 2 Dateien', 'Überträgt 2 von 2 Dateien']) // MB erst ab 1 MB
+// mehrere Übertragungen gleichzeitig (bis 4), neue Ordner trotzdem nur einmal angelegt
+const D = join(root, 'zweitrechner')
+for (let i = 0; i < 6; i++) put(D, `neu/bild${i}.png`, `PNG${i}`)
+let laufend = 0, hoechstens = 0, mkcols = 0
+const zaehlt: typeof fetch = async (u, i) => {
+  if (i?.method === 'MKCOL' && String(u).endsWith('/neu/')) mkcols++
+  if (i?.method !== 'PUT') return fetch(u, i)
+  hoechstens = Math.max(hoechstens, ++laufend)
+  await new Promise((r) => setTimeout(r, 20))
+  try { return await fetch(u, i) } finally { laufend-- }
+}
+eq((await sync(D, s, zaehlt)).up, 6)
+ok(hoechstens >= 2 && hoechstens <= 4, `gleichzeitig: ${hoechstens}`)
+eq(mkcols, 1)
+// Fehler mitten im parallelen Lauf: der erste Fehler kommt an, Fertiges ist gemerkt, der nächste Lauf lädt nur den Rest
+for (let i = 0; i < 6; i++) put(D, `zwei/bild${i}.png`, `P${i}`)
+const hoch: string[][] = [[], []]
+const merkt = (lauf: number, kaputt: boolean): typeof fetch => async (u, i) => {
+  if (i?.method !== 'PUT') return fetch(u, i)
+  if (kaputt && String(u).endsWith('bild3.png')) return new Response('', { status: 507 })
+  const r = await fetch(u, i)
+  if (r.ok) hoch[lauf].push(String(u))
+  return r
+}
+await sync(D, s, merkt(0, true)).then(() => ok(false, 'Fehler verschluckt'), (e) => ok(/507/.test(e.message), e.message))
+await sync(D, s, merkt(1, false))
+ok(!hoch[1].some((u) => hoch[0].includes(u)), 'schon Hochgeladenes noch einmal hochgeladen')
+eq(hoch[0].length + hoch[1].length, 6)
+for (const k of [...files.keys()]) if (/\/Deckwerk\/(neu|zwei)(\/|$)/.test(k)) files.delete(k) // spätere Blöcke (Löschbremse) zählen die Dateien auf dem Server
 // hängender Server: verständliche Meldung statt einer englischen DOMException
 const hang: typeof fetch = async () => { throw Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }) }
 await sync(A, s, hang).then(() => ok(false, 'Zeitüberschreitung übersehen'), (e) => ok(/antwortet nicht/.test(e.message), e.message))

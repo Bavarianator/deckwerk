@@ -142,14 +142,23 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
   const res: SyncResult = { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] }
   const uploaded: string[] = []
 
+  const dirJobs = new Map<string, Promise<void>>()
   const mkcols = async (rel: string) => {
     const parts = rel.split('/').slice(0, -1)
     for (let i = 1; i <= parts.length; i++) {
       const d = parts.slice(0, i).join('/')
       if (madeDirs.has(d)) continue
-      const r = await dav('MKCOL', `${d}/`)
-      if (!r.ok && r.status !== 405) await must(r, `Ordner ${d} anlegen`) // 405 = gibt es schon
-      madeDirs.add(d)
+      // gleichzeitige Uploads in denselben neuen Ordner legen ihn nur einmal an
+      let job = dirJobs.get(d)
+      if (!job) {
+        job = (async () => {
+          const r = await dav('MKCOL', `${d}/`)
+          if (!r.ok && r.status !== 405) await must(r, `Ordner ${d} anlegen`) // 405 = gibt es schon
+          madeDirs.add(d)
+        })()
+        dirJobs.set(d, job)
+      }
+      await job
     }
   }
   const up = async (rel: string) => {
@@ -237,20 +246,26 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
   let moved = 0, movedBytes = 0
   const report = () => onProgress?.(`Überträgt ${moved} von ${moves.length} Dateien${totalBytes >= 1e6 ? ` · ${mb(movedBytes)} von ${mb(totalBytes)} MB` : ''}`)
   if (moves.length) report()
+  // bis zu 4 Dateien gleichzeitig: bei vielen kleinen Dateien bremst sonst die Wartezeit je Anfrage (Nextcloud ~2 s), nicht die Leitung.
+  // Beim ersten Fehler holt kein Arbeiter mehr Neues; gespeichert wird erst, wenn alle fertig sind.
+  const step = async ([rel, op]: [string, Op]) => {
+    const l = local.get(rel), r = remote.get(rel)
+    if (op === 'same') next[rel] = { ...l!, etag: r!.etag }
+    else if (op === 'keep') next[rel] = old[rel]
+    else if (op === 'conflict') await conflict(rel)
+    else if (op === 'up') await up(rel)
+    else if (op === 'down') await down(rel)
+    else if (op === 'rmLocal') { if (await touched(rel)) return; await rm(join(home, rel), { force: true }); gone.add(rel); res.deleted++; res.changed.push(join(home, rel)) } // entfernt gelöscht
+    else if (op === 'rmRemote') { await must(await dav('DELETE', rel), `Löschen ${rel}`); gone.add(rel); res.deleted++ } // lokal gelöscht
+    else gone.add(rel)
+    if (op === 'up' || op === 'down' || op === 'conflict') { moved++; movedBytes += sizeOf(rel, op); report() }
+  }
+  const queue = [...plan]
+  let failed: { e: unknown } | null = null // erster Fehler, auch wenn jemand undefined wirft
+  const worker = async () => { while (!failed && queue.length) await step(queue.shift()!).catch((e) => { failed ??= { e } }) }
   try {
-    for (const [rel, op] of plan) {
-      const l = local.get(rel), r = remote.get(rel)
-      if (op === 'up' || op === 'down' || op === 'conflict') { moved++; movedBytes += sizeOf(rel, op) }
-      if (op === 'same') next[rel] = { ...l!, etag: r!.etag }
-      else if (op === 'keep') next[rel] = old[rel]
-      else if (op === 'conflict') await conflict(rel)
-      else if (op === 'up') await up(rel)
-      else if (op === 'down') await down(rel)
-      else if (op === 'rmLocal') { if (await touched(rel)) continue; await rm(join(home, rel), { force: true }); gone.add(rel); res.deleted++; res.changed.push(join(home, rel)) } // entfernt gelöscht
-      else if (op === 'rmRemote') { await must(await dav('DELETE', rel), `Löschen ${rel}`); gone.add(rel); res.deleted++ } // lokal gelöscht
-      else gone.add(rel)
-      if (op === 'up' || op === 'down' || op === 'conflict') report()
-    }
+    await Promise.all([1, 2, 3, 4].map(worker))
+    if (failed) throw (failed as { e: unknown }).e
     // ETags der hochgeladenen Dateien aus einer frischen Liste: manche Server liefern beim PUT keinen, andere ändern ihn
     // danach noch (X-OC-Mtime setzt die Zeit, rclone leitet den ETag daraus ab)
     if (uploaded.length) {
@@ -265,6 +280,7 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
     for (const rel of gone) delete files[rel]
     await writeFile(statePath, JSON.stringify({ base: `${s.user}@${base}`, files }))
   }
+  res.changed.sort() // parallel erledigt, aber stets gleiche Reihenfolge
   return res
 }
 
