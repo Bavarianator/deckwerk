@@ -1,6 +1,7 @@
 // Kopfleiste im Editor: zurück zu den Decks, Titel mit Zustand, Einfügen/Anpassen/Look, Export, Präsentieren.
 import { useContext, useEffect, useRef, useState } from 'react'
 import { ShortcutSheet } from './ShortcutSheet'
+import { VersionsSheet } from './VersionsSheet'
 import { CloudButton } from './settings/CloudSection'
 import { OpenSettings } from './settings/parts'
 import { ChevronLeft, Keyboard, LayoutGrid, PanelLeft, Palette, Play, Plus, RectangleHorizontal, Settings, Share, SlidersHorizontal } from 'lucide-react'
@@ -32,6 +33,7 @@ interface Props {
   canPrint: boolean // A4-Deck: Eintrag „PDF für die Druckerei“
   onPrint: () => void
   onPresent: () => void
+  onRestore: (file: string) => void // Version aus dem Versionsverlauf über den Öffnen-Weg wiederherstellen
 }
 
 export function TopBar(p: Props) {
@@ -45,6 +47,7 @@ export function TopBar(p: Props) {
     return () => removeEventListener('pointerdown', close)
   }, [menu])
   const [keys, setKeys] = useState(false)
+  const [versions, setVersions] = useState(false)
   useEffect(() => {
     const open = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
@@ -96,6 +99,7 @@ export function TopBar(p: Props) {
               <hr />
               {p.canPrint && <button role="menuitem" onClick={() => { setMenu(false); p.onPrint() }}>PDF für die Druckerei …</button>}
               <button role="menuitem" onClick={() => { setMenu(false); p.onFormats() }}>Anderes Format …</button>
+              <button role="menuitem" className="versions-entry" disabled={!p.path} title={p.path ? undefined : 'Erst nach dem ersten Speichern'} onClick={() => { setMenu(false); setVersions(true) }}>Versionsverlauf …</button>
             </div>
           )}
         </div>
@@ -103,6 +107,7 @@ export function TopBar(p: Props) {
       </div>
     </header>
     {keys && <ShortcutSheet onClose={() => setKeys(false)} />}
+    {versions && <VersionsSheet onRestore={p.onRestore} onClose={() => setVersions(false)} />}
     </>
   )
 }

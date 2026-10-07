@@ -1,0 +1,21 @@
+/* Versionsverlauf (VersionsSheet): links Liste nach Tagen, rechts Vorschau der gewählten Version */
+.versions-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 40px; padding: 16px 48px 0; }
+.versions-list { min-height: 0; overflow-y: auto; padding-bottom: 32px; }
+.versions-list section + section { margin-top: 18px; }
+.versions-list h2 { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.versions-list button { display: flex; align-items: baseline; justify-content: space-between; width: 100%; padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--text); text-align: left; cursor: pointer; }
+.versions-list button:hover { background: var(--hover); }
+.versions-list button.on { background: var(--accent-soft); }
+.versions-list button.on b { color: var(--accent); }
+.versions-list b { font-size: 14px; font-weight: 600; }
+.versions-list span { font-size: 12.5px; color: var(--muted); }
+.versions-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; }
+.versions-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 14px; }
+.versions-bar b { color: var(--text); font-weight: 600; }
+.versions-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, 240px); align-content: start; gap: 20px; padding-bottom: 32px; }
+.versions-thumb { border-radius: 8px; overflow: hidden; pointer-events: none; box-shadow: 0 1px 2px rgb(22 22 26 / 0.06), 0 10px 24px rgb(22 22 26 / 0.12); }
+.versions-note { margin: 0; color: var(--muted); font-size: 14px; }
+.versions-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 0 48px 80px; text-align: center; }
+.versions-empty h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+.versions-empty p { max-width: 420px; margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.menu .versions-entry:disabled { opacity: 0.4; cursor: default; background: transparent; color: var(--text); } /* Eintrag im Exportieren-Menü (TopBar), solange das Deck nie gespeichert wurde */
