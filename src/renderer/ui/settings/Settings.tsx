@@ -1,6 +1,6 @@
-// Einstellungen: alle Abschnitte an einem Ort, links die Navigation, rechts der aktive Abschnitt. Die Einrichtung (SetupSheet) bleibt für den ersten Start.
+// Einstellungen: eigene Seite über dem ganzen Fenster, links die Navigation, rechts der aktive Abschnitt. Die Einrichtung (SetupSheet) bleibt für den ersten Start.
 import { useEffect, useRef, useState, type ComponentType } from 'react'
-import { Cloud, Image, Info, Palette, Sparkles, SquareTerminal, type LucideIcon } from 'lucide-react'
+import { ChevronLeft, Cloud, Image, Info, Palette, Sparkles, SquareTerminal, type LucideIcon } from 'lucide-react'
 import { AgentenSection } from './AgentenSection'
 import { AllgemeinSection } from './AllgemeinSection'
 import { BilderSection } from './BilderSection'
@@ -37,17 +37,20 @@ export function Settings({ section, model, onModel, onChanged, onClose }: { sect
   const { Page } = SECTIONS.find((s) => s.id === cur)!
   return (
     // übrige Tasten nicht an die Kürzel des Editors durchreichen; Esc muss bis zum document
-    <div className="setup" role="dialog" aria-modal="true" aria-labelledby="settings-title"
+    <div className="settings" role="dialog" aria-modal="true" aria-label="Einstellungen"
       onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation() }}>
-      <div className="setup-card material settings">
+      <header className="top">
+        <div className="top-l"><button type="button" className="plain tint" onClick={onClose}><ChevronLeft size={16} />Zurück</button></div>
+        <b>Einstellungen</b>
+        <div className="top-r"><button type="button" className="pill tint" onClick={onClose}>Fertig</button></div>
+      </header>
+      <div className="settings-body">
         <nav className="settings-nav" ref={nav} aria-label="Abschnitte">
-          <h1>Einstellungen</h1>
           {SECTIONS.map(({ id, name, Icon }) => (
             <button key={id} type="button" aria-current={id === cur ? 'page' : undefined} onClick={() => setCur(id)}><Icon size={16} />{name}</button>
           ))}
         </nav>
         <div className="settings-page" key={cur}><Page model={model} onModel={onModel} onChanged={onChanged} go={setCur} /></div>
-        <button type="button" className="pill tint settings-done" onClick={onClose}>Fertig</button>
       </div>
     </div>
   )

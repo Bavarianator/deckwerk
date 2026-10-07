@@ -170,6 +170,15 @@ const api = {
   /** Nextcloud-Anmeldung im Browser (Login Flow v2): legt ein App-Passwort an, speichert den Zugang und gleicht ab.
    * Seite kommt auch über onLogin, Abbruch über loginCancel. */
   nextcloudLogin: (server: string): Promise<SyncStatus> => invoke('sync:nextcloud', server),
+  /** Cloud über einen Sync-Ordner (Dropbox, OneDrive, Google Drive, iCloud …): Deckwerk spiegelt nach <ordner>/Deckwerk.
+   * setSyncFolder prüft den Ordner, speichert und gleicht ab; der Zugang hat dann url file:///… und keinen Nutzer. */
+  setSyncFolder: (path: string): Promise<SyncStatus> => invoke('sync:folder', path),
+  /** vorhandene übliche Sync-Ordner der folder-Anbieter aus src/shared/clouds.ts (id = Anbieter) */
+  cloudFolders: (): Promise<{ id: string; path: string }[]> => invoke('cloud:folders'),
+  /** Ordner wählen (Dialog, startet bei start); null = abgebrochen */
+  pickCloudFolder: (start?: string): Promise<string | null> => invoke('cloud:pickFolder', start),
+  /** Hilfeseite eines Anbieters aus CLOUDS (z. B. App-Passwort anlegen) im Browser öffnen */
+  cloudHelp: (id: string): Promise<void> => invoke('cloud:help', id),
   onSync(cb: (s: SyncStatus) => void): () => void {
     const h = (_: unknown, s: SyncStatus) => cb(s)
     ipcRenderer.on('sync:status', h)

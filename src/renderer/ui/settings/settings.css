@@ -1,19 +1,20 @@
 /* Einstellungen (settings/Settings.tsx). Bausteine aus der Einrichtung (.setup-choice, .setup-opt, .setup-key, .setup-box) werden mitbenutzt. */
 
 /* ---------- Rahmen, Navigation, Kopf, Zeilen (Settings.tsx, parts.tsx) ---------- */
-.setup-card.settings { position: relative; flex-direction: row; gap: 0; width: min(920px, calc(100% - 48px)); height: min(700px, calc(100vh - 48px)); min-height: 0; padding: 0; overflow: hidden; }
-.settings-nav { flex: none; display: flex; flex-direction: column; gap: 2px; width: 200px; box-sizing: border-box; padding: 24px 12px; border-right: 1px solid var(--border); }
-.settings-nav h1 { margin: 0 0 14px; padding: 0 10px; font-size: 15px; font-weight: 700; }
+/* Eigene Seite über dem ganzen Fenster: über Editor und Look (30) und dem Fehler-Toast (40) nicht im Weg, unter der Einrichtung (50) */
+.settings { position: fixed; inset: 0; z-index: 35; display: flex; flex-direction: column; background: var(--bg); animation: kit-tip 0.15s ease-out; }
+.settings > .top { flex: none; border-bottom: 1px solid var(--border); }
+.settings-body { flex: 1; min-height: 0; display: flex; }
+.settings-nav { flex: none; display: flex; flex-direction: column; gap: 2px; width: 220px; box-sizing: border-box; padding: 20px 12px; background: var(--panel-2); border-right: 1px solid var(--border); }
 .settings-nav button { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font-size: 13.5px; text-align: left; white-space: nowrap; cursor: pointer; }
 .settings-nav button:hover { background: var(--hover); }
 .settings-nav button svg { flex: none; color: var(--muted); }
 .settings-nav button[aria-current='page'] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .settings-nav button[aria-current='page'] svg { color: var(--accent); }
-.settings-page { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 28px 32px; text-align: left; }
-.settings-page > * { flex-shrink: 0; } /* scrollen statt stauchen */
+/* scrollt über die ganze Breite (Scrollbalken am Fensterrand), der Inhalt bleibt eine lesbare Spalte */
+.settings-page { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 40px 56px 64px; text-align: left; }
+.settings-page > * { flex-shrink: 0; max-width: 720px; box-sizing: border-box; } /* scrollen statt stauchen; gleiche Kante auch für gepolsterte Blöcke mit width: 100% */
 .settings-page > button { align-self: flex-start; }
-.settings-done { position: absolute; top: 24px; right: 28px; }
-.settings-head { padding-right: 90px; } /* Platz für „Fertig“ */
 .settings-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .settings-head p { max-width: 560px; margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--muted); }
 .settings-row { align-items: center; }
@@ -25,13 +26,10 @@
 .settings-act, .settings-row > .settings-act { flex: none; display: flex; flex-direction: row; gap: 8px; align-items: center; }
 .settings-row-text code { overflow-wrap: anywhere; }
 @media (max-width: 720px) {
-  .setup-card.settings { flex-direction: column; }
-  .settings-nav { flex-direction: row; width: auto; overflow-x: auto; padding: 12px 110px 12px 12px; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: none; }
-  .settings-nav h1 { display: none; }
+  .settings-body { flex-direction: column; }
+  .settings-nav { flex-direction: row; width: auto; overflow-x: auto; padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--border); scrollbar-width: none; }
   .settings-nav button { flex: none; }
-  .settings-done { top: 13px; right: 16px; }
-  .settings-page { padding: 20px; }
-  .settings-head { padding-right: 0; }
+  .settings-page { padding: 24px 16px 40px; }
 }
 
 /* ---------- KI-Zugang (KiSection.tsx) ---------- */
@@ -45,11 +43,25 @@
 /* ---------- Cloud, Wolke in der Kopfleiste, Bilder (CloudSection.tsx, BilderSection.tsx) ---------- */
 .plain.cloud-btn.off { color: var(--faint); } /* .plain setzt die Textfarbe, deshalb doppelte Klasse */
 .plain.cloud-btn.error { color: var(--danger); }
-.cloud-login { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 8px; color: var(--text); }
-.cloud-dav { width: 100%; }
-.cloud-dav summary { padding: 6px 0; color: var(--accent); font-size: 13.5px; cursor: pointer; }
-.cloud-dav > p { margin: 4px 0 10px; font-size: 13px; line-height: 1.5; color: var(--muted); }
-.cloud-go { display: flex; justify-content: flex-end; margin-top: 10px; }
+.cloud-login { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--text); }
+/* Anbieterliste: eine Zeile pro Dienst, Klick klappt das Formular darunter auf (eine Spalte, Felder volle Breite) */
+.cloud-item { border-bottom: 1px solid var(--border); }
+.cloud-item:last-child { border-bottom: 0; }
+.cloud-item > .setup-opt { width: 100%; align-items: center; border-bottom: 0; }
+.cloud-item > .setup-opt:hover:not(:disabled) { background: var(--hover); }
+.cloud-item > .setup-opt:disabled { cursor: default; }
+.cloud-item > .setup-opt > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.cloud-item > .setup-opt > svg { flex: none; color: var(--faint); transition: transform 0.15s; }
+.cloud-item > .setup-opt[aria-expanded='true'] > svg { transform: rotate(180deg); }
+.cloud-form, .cloud-form form { display: flex; flex-direction: column; gap: 12px; }
+.cloud-form { padding: 0 16px 16px; }
+.cloud-hint { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }
+.cloud-link { align-self: flex-start; height: 26px; padding: 0; }
+.cloud-field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.cloud-field input { width: 100%; height: 34px; box-sizing: border-box; }
+.cloud-go { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cloud-form .error { margin: 0; font-size: 13px; line-height: 1.5; }
+.settings-row-text b { overflow-wrap: anywhere; } /* lange Ordnerpfade in „Verbunden mit …“ */
 
 /* ---------- Marke, Agenten, Allgemein (MarkeSection.tsx, AgentenSection.tsx, AllgemeinSection.tsx) ---------- */
 .settings-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); }

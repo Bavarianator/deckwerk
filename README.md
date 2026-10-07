@@ -113,7 +113,11 @@ Ein Doppelklick auf eine `deck.json` im Dateimanager öffnet sie in Deckwerk, au
 
 ### Cloud-Sync
 
-Unter Einstellungen → Cloud (oder per Klick auf die Wolke in der Kopfleiste) verbindest du Deckwerk mit deiner Cloud. Bei Nextcloud reicht die Adresse: „Anmelden“ öffnet den Login im Browser, Deckwerk bekommt dabei ein eigenes App-Passwort und sieht dein Passwort nie. Andere WebDAV-Speicher wie ownCloud, pCloud, Koofr, Box, eine Synology oder MagentaCLOUD verbindest du unter „Anderer Anbieter (WebDAV)“ mit Adresse, Nutzername und App-Passwort. Deckwerk spiegelt dann `~/Deckwerk` in den Ordner `Deckwerk/` deiner Cloud: beim Start, 5 Sekunden nach jedem Speichern, beim Zurückkehren ins Fenster und über „Jetzt abgleichen“. Die Wolke zeigt den Zustand: abgeglichen, läuft gerade, Fehler oder noch nicht eingerichtet. Die Android-App gleicht mit demselben Ordner ab.
+Unter Einstellungen → Cloud (oder per Klick auf die Wolke in der Kopfleiste) wählst du deinen Dienst aus einer Liste:
+
+- **Im Browser anmelden:** Nextcloud (nur die Adresse) und MagentaCLOUD. Deckwerk bekommt dabei ein eigenes App-Passwort und sieht dein Passwort nie.
+- **Über die App auf diesem Rechner:** Dropbox, OneDrive, Google Drive und iCloud Drive haben kein WebDAV. Deckwerk legt dann den Ordner `Deckwerk` in deren Sync-Ordner (wird meist von selbst gefunden), die App des Dienstes lädt ihn hoch.
+- **Mit Nutzername und Passwort:** GMX, WEB.DE, STRATO und IONOS HiDrive, pCloud, Koofr, Infomaniak kDrive, Hetzner Storage Box, ownCloud und Synology. Die Adresse ist hinterlegt, ein Link führt zur Anleitung für das App-Passwort. Jeder andere WebDAV-Dienst geht mit eigener Adresse. Deckwerk spiegelt dann `~/Deckwerk` in den Ordner `Deckwerk/` deiner Cloud: beim Start, 5 Sekunden nach jedem Speichern, beim Zurückkehren ins Fenster und über „Jetzt abgleichen“. Die Wolke zeigt den Zustand: abgeglichen, läuft gerade, Fehler oder noch nicht eingerichtet. Die Android-App gleicht mit demselben Ordner ab.
 
 Versionen, Exporte und das Freisteller-Modell bleiben lokal. Hast du dasselbe Deck auf zwei Geräten geändert, gewinnt die neuere Fassung. Die ältere landet in `versions/` und lässt sich von dort wiederherstellen. Gelöschte Dateien werden auch auf den anderen Geräten gelöscht.
 

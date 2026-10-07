@@ -4,8 +4,8 @@ import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { basename, dirname, join, resolve } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { PRINT_SIZES, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
@@ -14,7 +14,9 @@ import { setRemoteState, startRemote, stopRemote, type RemoteState } from './rem
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { assetUrl, BRAND_FILE, buildTools, defaultBrand, localizeDeck, saveBrand, STYLE_FILE } from './tools'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
-import { createSyncer, localAsset, testSync, type SyncSettings } from './sync'
+import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
+import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
+import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 
 const HOME = join(homedir(), 'Deckwerk')
@@ -69,7 +71,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (!path || dirty || !files.includes(path) || !existsSync(path)) return
     try { deck = readDeck(path); agent?.setDeck(deck); if (!win.isDestroyed()) win.webContents.send('deck:synced', deck) } catch (e) { console.warn('[sync] Deck neu laden:', e) }
   }
-  const syncer = createSyncer(HOME, () => syncCfg, (st) => { if (!win.isDestroyed()) win.webContents.send('sync:status', st) }, syncChanged)
+  const syncFetch = syncFetchFor(HOME) // Ordner-Ziele nie in HOME, auch wenn der Ordner später per Link dorthin zeigt
+  const syncer = createSyncer(HOME, () => syncCfg, (st) => { if (!win.isDestroyed()) win.webContents.send('sync:status', st) }, syncChanged, syncFetch)
   syncer.later(3000)
   // Änderungen anderer Geräte bzw. des MCP-Prozesses: beim Zurückkehren ins Fenster und alle 5 Minuten abholen
   win.on('focus', () => syncer.later(1000))
@@ -263,8 +266,13 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const url = String(s.url).trim(), user = String(s.user).trim()
     // gespeichertes Passwort nur für denselben Zugang, nie an eine neue Adresse
     const next = { url, user, pass: String(s.pass) || (syncCfg?.url === url && syncCfg.user === user ? syncCfg.pass : '') }
-    if (!next.url || !next.user || !next.pass) throw new Error('Adresse, Nutzername und App-Passwort ausfüllen.')
-    await testSync(next)
+    // Ordner-Zugang (Dropbox & Co.) ohne Nutzer und Passwort; geprüft auch hier, weil sync:set file:-Adressen durchreicht
+    if (isFolder(url)) {
+      let dir: string
+      try { dir = fileURLToPath(url) } catch { throw new Error('Diesen Ordner kann Deckwerk nicht nutzen: Die Adresse ist ungültig.') }
+      await checkSyncFolder(dir, HOME)
+    } else if (!next.url || !next.user || !next.pass) throw new Error('Adresse, Nutzername und App-Passwort ausfüllen.')
+    await testSync(next, syncFetch)
     syncCfg = next
     await mkdir(dirname(syncFile), { recursive: true })
     await writeFile(syncFile, safeStorage.encryptString(JSON.stringify(next)), { mode: 0o600 })
@@ -272,6 +280,29 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return syncer.run()
   }
   ipcMain.handle('sync:set', (_, s: SyncSettings | null) => saveSync(s))
+  // Cloud über den Sync-Ordner einer Desktop-App: Deckwerk spiegelt nach <ordner>/Deckwerk, die App lädt hoch
+  ipcMain.handle('sync:folder', (_, dir: unknown) => {
+    if (typeof dir !== 'string' || !dir.trim() || !isAbsolute(dir)) throw new Error('Diesen Ordner kann Deckwerk nicht nutzen: Bitte einen Ordner auswählen.')
+    return saveSync({ url: pathToFileURL(dir).href, user: '', pass: '' })
+  })
+  ipcMain.handle('cloud:folders', async () => {
+    const found: { id: string; path: string }[] = []
+    for (const c of CLOUDS) for (const f of c.folders ?? []) {
+      const path = await findFolder(f)
+      if (path) { found.push({ id: c.id, path }); break }
+    }
+    return found
+  })
+  ipcMain.handle('cloud:pickFolder', async (_, start?: unknown) => {
+    const r = await dialog.showOpenDialog(win, { properties: ['openDirectory', 'createDirectory'], defaultPath: typeof start === 'string' && existsSync(start) ? start : undefined })
+    return r.canceled || !r.filePaths[0] ? null : r.filePaths[0]
+  })
+  // nur Links aus CLOUDS und nur https: der Renderer kann keine beliebige Adresse öffnen
+  ipcMain.handle('cloud:help', (_, id: unknown) => {
+    const help = CLOUDS.find((c) => c.id === id)?.help
+    if (!help?.startsWith('https://')) throw new Error('Für diesen Anbieter gibt es keine Hilfeseite.')
+    return shell.openExternal(help)
+  })
 
   ipcMain.handle('image:pick', async () => {
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'svg'] }] })

@@ -17,15 +17,23 @@ interface State { [path: string]: { mtime: number; size: number; etag: string } 
 const STATE = '.sync-state.json'
 // nicht gespiegelt: Versionen, Exporte, Modelle, Importe, Punktdateien (auch .sync-state.json, .setup-done)
 const SKIP = new Set(['versions', 'out', 'models', '.import', 'exports'])
-const skip = (name: string) => name.startsWith('.') || SKIP.has(name)
+// Systemdateien von Windows, macOS und Cloud-Apps (Ordnersymbol, Vorschaubilder) gehören zu keinem Deck: auf beiden Seiten
+// übergehen, sonst landen sie in ~/Deckwerk bzw. würden lokal gelöscht, wenn nur eine Seite sie zeigt
+const JUNK = new Set(['desktop.ini', 'thumbs.db', 'icon\r'])
+const skip = (name: string) => name.startsWith('.') || SKIP.has(name) || JUNK.has(name.toLowerCase())
 
-/** WebDAV-Basis inkl. Deckwerk/. Nur ein Host (ohne Pfad) → Nextcloud/ownCloud-Pfad /remote.php/dav/files/<nutzer>/ */
+/** Ordner-Zugang (file:-Adresse, Groß- und Kleinschreibung egal) statt WebDAV-Server */
+export const isFolder = (url: string) => { try { return new URL(url.trim()).protocol === 'file:' } catch { return false } }
+
+/** WebDAV-Basis inkl. Deckwerk/. Nur ein Host (ohne Pfad) → Nextcloud/ownCloud-Pfad /remote.php/dav/files/<nutzer>/.
+ * file:///ordner (Sync-Ordner von Dropbox & Co., siehe sync-folder.ts) → file:///ordner/Deckwerk/ */
 export function davBase(s: Pick<SyncSettings, 'url' | 'user'>): string {
   let u: URL
   try { u = new URL(s.url.trim().includes('://') ? s.url.trim() : `https://${s.url.trim()}`) } catch { throw new Error('Cloud-Sync: Die WebDAV-Adresse ist ungültig.') }
-  if (u.pathname === '/' || u.pathname === '') u.pathname = `/remote.php/dav/files/${encodeURIComponent(s.user)}/`
+  const file = u.protocol === 'file:'
+  if (!file && (u.pathname === '/' || u.pathname === '')) u.pathname = `/remote.php/dav/files/${encodeURIComponent(s.user)}/`
   if (!u.pathname.endsWith('/')) u.pathname += '/'
-  return `${u.origin}${u.pathname}Deckwerk/`
+  return `${file ? `file://${u.host}` : u.origin}${u.pathname}Deckwerk/` // file: hat origin „null“; host nur bei Windows-Freigaben
 }
 
 // Deck-Pfade sind absolut; auf einem anderen Gerät liegt der Deckwerk-Ordner woanders → beim Lesen auf den lokalen umleiten
@@ -259,7 +267,7 @@ export function createSyncer(home: string, settings: () => SyncSettings | null, 
   let timer: ReturnType<typeof setTimeout> | undefined
   const status = (): SyncStatus => {
     const s = settings()
-    return { url: s?.url ?? '', user: s?.user ?? '', hasPass: !!s?.pass, busy, at, text, error }
+    return { url: s?.url ?? '', user: s?.user ?? '', hasPass: !!s?.pass || isFolder(s?.url ?? ''), busy, at, text, error } // Ordner-Zugang braucht kein Passwort
   }
   async function run(): Promise<SyncStatus> {
     const s = settings()
