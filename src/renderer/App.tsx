@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import '@fontsource-variable/inter'
 import './ui/app.css'
 import './ui/shell.css'
-import { FORMATS, profileOf, type Deck, type PrintOptions, type FormatId, type Item, type Slide } from '../shared/deck'
+import { FORMATS, profileOf, sizeOf, type Deck, type Size, type PrintOptions, type FormatId, type Item, type Slide } from '../shared/deck'
 import { newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
 import { THEMES } from '../shared/themes'
@@ -30,6 +30,8 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e)).rep
 // local = Änderung kam aus der UI und muss an Main/Agent; Agent-Änderungen sind dort schon bekannt.
 interface Doc { deck: Deck | null; past: Deck[]; future: Deck[]; tag?: string; local?: boolean }
 const fresh = (deck: Deck | null): Doc => ({ deck, past: [], future: [] })
+// Folien-Zwischenablage: gilt für die Sitzung, auch nach Deckwechsel; size = Format der Quelle zum Umrechnen beim Einfügen
+const slideClip: { slides: Slide[]; size: Size } = { slides: [], size: sizeOf(null) }
 
 export default function App() {
   const [doc, setDoc] = useState<Doc>(fresh(null))
@@ -177,6 +179,25 @@ export default function App() {
     })
     setSel(i + 1)
   }, [commit])
+  // Kopieren in Deck-Reihenfolge; Einfügen ist ein Undo-Schritt und zeigt die erste eingefügte Folie
+  const copySlides = useCallback((idx: number[]) => {
+    if (!deck) return
+    slideClip.slides = structuredClone([...idx].sort((a, b) => a - b).flatMap((i) => deck.slides[i] ?? []))
+    slideClip.size = sizeOf(deck)
+  }, [deck])
+  const pasteSlides = useCallback((at: number) => {
+    const { slides: clip, size } = slideClip
+    if (!clip.length) return 0
+    commit((d) => {
+      const slides = [...d.slides]
+      const fit = resizeDeck({ ...d, size, slides: clip }, sizeOf(d)).slides // anderes Format: freie Elemente umrechnen
+      slides.splice(at, 0, ...structuredClone(fit).map((s) => ({ ...s, id: `s-${newId()}` }))) // Elemente behalten ihre IDs wie bei dupSlide
+      return { ...d, slides }
+    })
+    setSel(at)
+    return clip.length
+  }, [commit])
+  const canPaste = useCallback(() => slideClip.slides.length > 0, [])
   const delSlide = useCallback((i: number) => commit((d) => ({ ...d, slides: d.slides.filter((_, j) => j !== i) })), [commit])
   const onMove = useCallback((from: number, to: number) => {
     commit((d) => {
@@ -343,7 +364,7 @@ export default function App() {
           />
           {deck && view === 'grid' ? (
             <Overview
-              deck={deck} busy={busy} onMove={onMove} onDup={dupSlide} onDel={delSlide} onAsk={send}
+              deck={deck} index={index} busy={busy} onMove={onMove} onDup={dupSlide} onDel={delSlide} onCopy={copySlides} onPaste={pasteSlides} onAsk={send}
               onOpen={(i) => { setSel(i); setView('slide') }}
             />
           ) : <EditorScreen
@@ -364,6 +385,9 @@ export default function App() {
             addSlide={addSlide}
             dupSlide={dupSlide}
             delSlide={delSlide}
+            copySlides={copySlides}
+            pasteSlides={pasteSlides}
+            canPaste={canPaste}
             patchSlide={patchSlide}
             pickImage={api.pickImage}
             nav={nav}
