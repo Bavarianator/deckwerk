@@ -6,9 +6,9 @@ import { ChevronLeft, CloudAlert, CloudCheck, CloudSync, LayoutGrid, PanelLeft, 
 export interface Status { text: string; error?: boolean }
 export type Panel = 'insert' | 'format' | null
 export type View = 'slide' | 'grid'
-type Format = 'pptx' | 'pdf' | 'png' | 'zip' | 'md'
+type Format = 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md'
 
-const FORMAT: Record<Format, string> = { pptx: 'PowerPoint (.pptx)', pdf: 'PDF', png: 'Bilder (.png)', zip: 'Bilder + PDF (.zip)', md: 'Handout (.md)' }
+const FORMAT: Record<Format, string> = { pptx: 'PowerPoint (.pptx)', docx: 'Word (.docx)', pdf: 'PDF', png: 'Bilder (.png)', zip: 'Bilder + PDF (.zip)', md: 'Handout (.md)' }
 
 interface Props {
   title: string

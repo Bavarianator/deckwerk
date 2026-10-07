@@ -13,6 +13,8 @@
 .slide [contenteditable]:focus { box-shadow: 0 0 0 2px var(--accent); border-radius: 3px; }
 .hide-exportables .slide [data-pptx] { visibility: hidden !important; }
 .hide-exportables .slide [data-pptx]::before { visibility: visible; } /* Linien als ::before an Boxen gehören ins Hintergrundbild */
+.hide-text .slide [data-pptx="text"] { visibility: hidden !important; } /* Word-Export: nur der Text wird nativ */
+.hide-text .slide [data-pptx="text"]::before { visibility: visible; }
 
 /* ---------- decor ---------- */
 .decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }

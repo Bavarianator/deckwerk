@@ -6,7 +6,8 @@ import { formatSuffix, sizeOf, type Deck, type Measured } from '../shared/deck'
 import { handout } from '../shared/handout'
 import { lintDeck } from '../shared/lint'
 import type { Engine } from './agent'
-import { buildPptx } from './export-pptx'
+import { buildDocx } from './export-docx'
+import { buildPptx, fontsOf } from './export-pptx'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 
 const slug = (s: string) => s.toLowerCase().replace(/[äöüß]/g, (c) => ({ ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' })[c]!).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'deck'
@@ -73,12 +74,17 @@ export function createEngine(): Engine {
         return [`${base}.zip`]
       }
       const slides: Rendered[] = []
-      for (let i = 0; i < deck.slides.length; i++) slides.push(await renderSlide(deck, i, { png: format === 'png', background: format === 'pptx' }))
+      // Word: nur der Text wird nativ (bearbeitbare Textfelder), Fotos, Flächen und Diagramme bleiben im Hintergrundbild
+      for (let i = 0; i < deck.slides.length; i++) slides.push(await renderSlide(deck, i, { png: format === 'png', background: format === 'docx' ? 'text' : format === 'pptx' }))
       if (format === 'png') {
         await mkdir(base, { recursive: true })
         const files = slides.map((_, i) => join(base, `${String(i + 1).padStart(2, '0')}.png`))
         await Promise.all(files.map((f, i) => writeFile(f, slides[i].png!)))
         return files
+      }
+      if (format === 'docx') {
+        await writeFile(`${base}.docx`, await buildDocx(deck, slides.map((s) => ({ measured: s.measured, background: s.background! })), fontsOf(deck)))
+        return [`${base}.docx`]
       }
       await writeFile(`${base}.pptx`, await buildPptx(deck, slides.map((s) => ({ measured: s.measured, background: s.background! }))))
       return [`${base}.pptx`]

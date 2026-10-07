@@ -269,8 +269,14 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
     anims.push({ transition: transitionOf(deck, i), steps: [...pulses, ...stepsFor(preset, groups, deck.mode), ...itemSteps] })
   })
   const buf = await patchShapes((await pptx.write({ outputType: 'nodebuffer' })) as Buffer, patches)
+  return embedFonts(await postProcess(await injectAnimations(buf, anims), deck), fontsOf(deck))
+}
+
+// Einzubettende Schriften eines Decks: Theme (Titel, Text, Mono) und freie Elemente mit eigener Schrift (auch für Word)
+export function fontsOf(deck: Deck): EmbedFont[] {
+  const t = resolveTheme(deck.theme)
   const free = deck.slides.flatMap((s) => s.items ?? []).flatMap((it) => (it.font && it.font in FONTS ? [FONTS[it.font as FontName]] : []))
-  return embedFonts(await postProcess(await injectAnimations(buf, anims), deck), embedList([t.head, t.body, ...(t.mono ? [t.mono] : []), ...free]))
+  return embedList([t.head, t.body, ...(t.mono ? [t.mono] : []), ...free])
 }
 
 // Premium-Schriften des Themes (head/body mit `embed`) als TTF-Buffer für embedFonts; Office-Schriften brauchen nichts.

@@ -63,6 +63,11 @@ lap('export_deck')
 const file = r.content[0].text!.split('\n')[1]
 assert.ok(existsSync(file) && statSync(file).size > 10_000, `PPTX fehlt: ${file}`)
 
+r = await call('export_deck', { format: 'docx' })
+lap('export_deck docx')
+const docx = r.content[0].text!.split('\n')[1]
+assert.ok(existsSync(docx) && statSync(docx).size > 10_000, `DOCX fehlt: ${docx}`)
+
 r = await call('save_deck')
 assert.ok(existsSync(join(home, 'e2e-test', 'deck.json')))
 await client.close()

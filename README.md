@@ -14,7 +14,7 @@ Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwe
 - **Frei gestalten.** Texte, Formen, Fotos, Icons, Diagramme, QR-Codes, Video und Audio. Dazu Gruppen, Zuschnitt, Freisteller, Ausrichten, Hilfslinien und das Umwandeln von Layout-Folien in freie Elemente.
 - **Ein Look für alles.** 11 Themes, eigene Designs von der KI, eigene Schriften, 8 Formate von 16:9 über Instagram bis A4 (Layouts, Schriftgrößen und Lint passen sich an), ein Brand-Kit für jedes neue Deck und ein Hausstil, den sich die KI dauerhaft merkt.
 - **Präsentieren.** Referentenansicht mit Notizen, Uhr und Sprechzeit, Laserpointer und Stift, Handy als Fernbedienung.
-- **Export.** PowerPoint mit editierbaren Objekten, Animationen und eingebetteten Schriften, dazu PDF, PNG, ein ZIP mit allen Bildern plus PDF (Karussell) und ein Handout als Markdown.
+- **Export.** PowerPoint mit editierbaren Objekten, Animationen und eingebetteten Schriften, Word mit bearbeitbarem Text, dazu PDF, PNG, ein ZIP mit allen Bildern plus PDF (Karussell) und ein Handout als Markdown.
 - **Auch aus Claude Code.** Deckwerk ist ein MCP-Server: Decks lassen sich direkt aus dem Terminal bauen und bearbeiten.
 
 ## Installation
@@ -126,7 +126,7 @@ Versionen, Exporte und das Freisteller-Modell bleiben lokal. Hast du dasselbe De
 
 ### Exportieren
 
-**Exportieren** erzeugt PowerPoint, PDF, PNG (eine Datei pro Folie), ein ZIP (alle Bilder plus PDF) oder ein Handout (Markdown mit Notizen). Bei Nicht-16:9 steht das Format im Dateinamen (`-4x5`, `-a4`). Die Dateien landen im Ordner des Decks.
+**Exportieren** erzeugt PowerPoint, Word (eine Seite pro Folie: Text in bearbeitbaren Textfeldern mit eingebetteten Schriften, Fotos, Flächen und Diagramme als Hintergrundbild), PDF, PNG (eine Datei pro Folie), ein ZIP (alle Bilder plus PDF) oder ein Handout (Markdown mit Notizen). Bei Nicht-16:9 steht das Format im Dateinamen (`-4x5`, `-a4`). Die Dateien landen im Ordner des Decks.
 
 Bei A4-Decks gibt es zusätzlich „PDF für die Druckerei …“. Die Datei (`…-druck.pdf`) hat Endformat plus Beschnitt (Standard 3 mm, wählbar je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm), keine Schnittmarken; randabfallende Fotos laufen gespiegelt in den Beschnitt. Das Endformat A3, A4 oder A5 ist wählbar; A4-Seiten werden verlustfrei skaliert. Die Farben bleiben RGB: Die genannten Druckereien wandeln selbst nach CMYK, leuchtende Akzente werden dabei etwas matter (print24 verlangt CMYK). Bei großer Auflage lohnt ein Probedruck. Die Seitenzahl muss zur Bestellung passen (1 oder 2), lösche nicht gewählte Entwürfe vorher.
 
@@ -223,7 +223,7 @@ Unter Wayland hängt Chromiums PDF-Druck, deshalb starten alle Skripte Electron 
 
 | Befehl | Zweck |
 |---|---|
-| `npm run render examples/pitch.json` | Deck rendern → `exports/<slug>.pptx`, `.pdf`, `.zip`, `<slug>/NN.png` und Lint-Report |
+| `npm run render examples/pitch.json` | Deck rendern → `exports/<slug>.pptx`, `.docx`, `.pdf`, `.zip`, `<slug>/NN.png` und Lint-Report |
 | `npm run check:layouts` | Stresstest: jedes Layout × Variante × Beispiel × Theme (dauert rund eine Stunde) |
 | `npm run dist:linux` | AppImage bauen → `dist/Deckwerk-x86_64.AppImage` |
 | `npm run smoke` | KI-Werkzeuge und MCP-Server gegen eine Mock-Engine (ohne Electron, ohne API-Key) |
@@ -241,6 +241,7 @@ GitHub Actions prüft jeden Push (`.github/workflows/ci.yml`): Typecheck, Smoke-
 - `src/main/`: Electron-Main.
   - `engine.ts`, `render.ts`: Rendern in einem Offscreen-Chromium.
   - `export-pptx.ts`: PowerPoint-Export.
+  - `export-docx.ts`: Word-Export.
   - `agent.ts`: Chat über die API.
   - `claude-agent.ts`: Chat über Claude Code.
   - `tools.ts`: KI-Werkzeuge.

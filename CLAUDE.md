@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Deckwerk ist eine Electron-App (React-Oberfläche), in der eine KI Präsentationen aus einem festen Layout-Katalog baut. Die Engine misst jede Folie, passt Schriftgrößen an, prüft per Lint und exportiert PPTX, PDF, PNG und Markdown. Code, Kommentare, Doku und UI-Texte sind deutsch; neue Texte ebenso.
+Deckwerk ist eine Electron-App (React-Oberfläche), in der eine KI Präsentationen aus einem festen Layout-Katalog baut. Die Engine misst jede Folie, passt Schriftgrößen an, prüft per Lint und exportiert PPTX, Word (DOCX), PDF, PNG und Markdown. Code, Kommentare, Doku und UI-Texte sind deutsch; neue Texte ebenso.
 
 ## Befehle
 
