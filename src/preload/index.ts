@@ -154,6 +154,9 @@ const api = {
   /** Über Deckwerk; openHome öffnet den Deckwerk-Ordner im Dateimanager */
   appInfo: (): Promise<AppInfo> => invoke('app:info'),
   openHome: (): Promise<void> => invoke('app:openHome'),
+  /** Rechtschreibprüfung (Deutsch/Englisch) an/aus; gilt sofort und bleibt gespeichert */
+  spellcheck: (): Promise<boolean> => invoke('spellcheck:get'),
+  setSpellcheck: (on: boolean): Promise<void> => invoke('spellcheck:set', on),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
   setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
   setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),

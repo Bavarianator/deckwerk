@@ -1,6 +1,7 @@
-// Allgemein: Version, Speicherort, Datenschutz, Hinweis auf die Tastenkürzel.
+// Allgemein: Version, Speicherort, Rechtschreibprüfung, Datenschutz, Hinweis auf die Tastenkürzel.
 import { useEffect, useState } from 'react'
 import type { AppInfo } from '../../../preload'
+import { Switch } from '../kit'
 import { Logo } from '../Logo'
 import { Group, Head, Row, type SectionProps } from './parts'
 
@@ -8,7 +9,8 @@ const OS: Record<string, string> = { linux: 'Linux', darwin: 'macOS', win32: 'Wi
 
 export function AllgemeinSection({ go }: SectionProps) {
   const [info, setInfo] = useState<AppInfo | null>(null)
-  useEffect(() => { void window.api.appInfo().then(setInfo) }, [])
+  const [spell, setSpell] = useState(true)
+  useEffect(() => { void window.api.appInfo().then(setInfo); void window.api.spellcheck().then(setSpell) }, [])
   return (
     <>
       <Head title="Allgemein" />
@@ -25,6 +27,13 @@ export function AllgemeinSection({ go }: SectionProps) {
         <Row title={<code>{info?.home ?? '…'}</code>} action={<button type="button" className="pill" onClick={() => void window.api.openHome()}>Ordner öffnen</button>}>
           Decks liegen als Dateien auf diesem Rechner, alte Stände unter versions/.
         </Row>
+      </Group>
+      <Group label="Editor">
+        <div className="setup-opt settings-row">
+          {/* macOS prüft mit dem System, sonst lädt Electron Hunspell-Wörterbücher vom Google-CDN */}
+          <Switch checked={spell} label={<b>Rechtschreibprüfung</b>} onChange={(on) => { setSpell(on); void window.api.setSpellcheck(on) }}
+            hint={info?.platform.startsWith('darwin') ? 'Deutsch und Englisch, mit der Rechtschreibprüfung von macOS.' : 'Deutsch und Englisch. Die Wörterbücher lädt Deckwerk einmalig von einem Google-Server herunter.'} />
+        </div>
       </Group>
       <Group label="Datenschutz">
         <Row title="Kein Konto">Deckwerk hat kein Konto bei uns.</Row>
