@@ -298,6 +298,21 @@
 /* Wort-für-Wort-Animation (PresentScreen): Wörter brauchen inline-block, damit translate greift */
 .dw-word { display: inline-block; }
 
+/* ---------- Bild neben Text: Variante side von cover, closing, photo ----------
+   Foto randabfallend rechts auf 7/12, Text links auf dem Grund in schmaler Spalte; kein Verlauf, kein Rahmen.
+   min(): in 4:3 und A4 quer bliebe die Spalte sonst zu schmal für lange Wörter (mindestens 520 px inkl. Rand und Abstand). */
+.media.side-media { width: min(58.333%, calc(100% - 520px)); }
+.safe.side-safe { right: calc(min(58.333%, calc(100% - 520px)) + 64px); }
+:is(.cover, .closing).side .cover-title { font-size: calc(var(--fs-display) * var(--hs) * 0.68); line-height: 1.08; } /* schmale Spalte */
+.cover.side .cover-main { justify-content: safe flex-end; gap: 20px; padding-bottom: 24px; } /* Titel unten verankert; safe: Überlauf nach unten, damit Autofit ihn misst */
+.cover.side .cover-bottom { height: auto; min-height: 28px; } /* Absender bricht in der Spalte um */
+.closing.side .closing-main { justify-content: flex-start; gap: 20px; } /* Titel oben, Kontakt und QR unten */
+.closing.side :is(.closing-bottom, .contact) { flex-direction: column; align-items: flex-start; gap: 24px; }
+.closing.side .contact { gap: 6px; }
+.closing.side .closing-bottom > :empty { display: none; }
+.closing.side .cover-logo { background-position: left center; }
+.photo-slide.ps-side { justify-content: flex-start; }
+
 /* ---------- Bauteile: Theme-Hebel elements (Klasse el-* am .slide, gesetzt in Frame) ----------
    solid = Karten, Flächen und Punkte wie oben. line (redaktionell): keine Flächen, 1px-Kopflinie in Textfarbe, Betonung mit
    2px-Akzentlinie, kleine Nummern, Striche statt Punkte. plain (Keynote/Swiss): nur Schriftgröße und Abstand, Betonung über
@@ -342,6 +357,7 @@
 .fmt-tall .media, .fmt-tall .media.right { left: 0; right: 0; top: 0; bottom: auto; width: auto; height: 42%; }
 .fmt-tall .safe.safe-right, .fmt-tall .safe.safe-left { left: 72px; right: 72px; top: calc(42% + 40px); }
 .fmt-tall .footer.safe-right, .fmt-tall .footer.safe-left { left: 72px; right: 72px; }
+.fmt-tall :is(.cover, .closing).side .cover-title { font-size: calc(var(--fs-display) * var(--hs)); } /* Text unter dem Bild hat die volle Breite */
 .fmt-tall .hdr, .fmt-tall.rule-under.fr-top .safe > .hdr > *, .fmt-tall.fr-band .hdr > * { max-width: none; }
 /* split wird zum Band: die Akzentfläche liegt oben statt links */
 .fmt-tall.fr-split .safe { left: 0; right: 0; top: 0; padding: 0 72px; }
