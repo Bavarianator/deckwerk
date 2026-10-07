@@ -6,7 +6,7 @@ import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/p
 import { homedir } from 'node:os'
 import { basename, dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import type { BrandKit, Deck } from '../shared/deck'
+import { PRINT_SIZES, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
@@ -189,10 +189,14 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return path
   })
 
-  ipcMain.handle('deck:export', async (_, format: ExportFormat) => {
+  ipcMain.handle('deck:export', async (_, format: ExportFormat, printIn?: PrintOptions) => {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Exportieren.')
+    // Vertrauensgrenze: print kommt aus dem Renderer, nur bekannte Größe und Beschnitt 0–5 mm durchlassen
+    const size = typeof printIn?.size === 'string' && Object.hasOwn(PRINT_SIZES, printIn.size) ? printIn.size : undefined
+    const bleed = typeof printIn?.bleed === 'number' && Number.isFinite(printIn.bleed) ? Math.min(5, Math.max(0, printIn.bleed)) : undefined
+    const print: PrintOptions = { size, bleed }
     await mkdir(outDir(), { recursive: true })
-    const [file] = await engine.exportDeck(deck, format, outDir())
+    const [file] = await engine.exportDeck(deck, format, outDir(), print)
     shell.showItemInFolder(file)
     return file
   })
@@ -356,7 +360,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Kopie als eigenes Deck unter ~/Deckwerk/<titel>/deck.json speichern (Formate: Quadrat, Story …); das offene Deck bleibt
   // Vorlagen-Galerie (Canva „Vorlagen“): kuratierte Decks aus examples/, Bildpfade aufgelöst; geöffnet wird immer eine Kopie
   ipcMain.handle('templates:list', () =>
-    ['foto', 'canva-look', 'quartal', 'strategie'].flatMap((name) => {
+    ['foto', 'canva-look', 'quartal', 'strategie', 'flyer'].flatMap((name) => {
       const file = join(app.getAppPath(), 'examples', `${name}.json`)
       try { return [readDeck(file)] } catch { return [] }
     }))

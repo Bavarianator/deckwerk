@@ -161,6 +161,13 @@ export const formatSuffix = (size: Size | undefined): string => {
 }
 export const sizeOf = (deck: Pick<Deck, 'size'> | null | undefined): Size => deck?.size ?? { w: 1280, h: 720 }
 
+// Druck-PDF (Export „print“): Seite = Endformat + Beschnitt ringsum, TrimBox/BleedBox gesetzt, keine Schnittmarken.
+// Beschnitt je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm (Stand 10/2026).
+// Farben bleiben RGB (Chromium kann kein CMYK); diese Druckereien wandeln selbst, print24 verlangt CMYK.
+// size skaliert A4-Seiten (hoch oder quer, Verhältnis 1:√2) verlustfrei auf ein anderes A-Format; weglassen = Foliengröße.
+export const PRINT_SIZES = { a3: [297, 420], a4: [210, 297], a5: [148, 210] } as const // mm, hochkant
+export interface PrintOptions { size?: keyof typeof PRINT_SIZES; bleed?: number } // bleed in mm (0–5), Standard 3
+
 // Profil aus der Größe: bestimmt Lint-Grenzen und Guide-Regeln. A4 = Dokument, Quadrat/Hochformat = Social, sonst Folien.
 export type Profile = 'slides' | 'social' | 'doc'
 export function profileOf(deck: Pick<Deck, 'size'> | null | undefined): Profile {
@@ -247,6 +254,7 @@ export interface ImgEl extends Base {
   kind: 'img'; src: string; radius: number; fit: 'cover' | 'contain'
   focus: { x: number; y: number } // background-position in 0..1 (Zuschnitt bzw. Ausrichtung)
   under?: boolean // Foto liegt unter Text (Vollbild): Überlappung erlaubt, Kontrast wird gegen das Overlay geprüft
+  nat?: { w: number; h: number } // Pixelgröße der Bilddatei (vom Render-Host), für die Druckauflösung im Lint
   look?: 'duotone' | 'mono'
   mask?: MaskId
   adjust?: Adjust

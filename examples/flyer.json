@@ -46,6 +46,27 @@
     "cta": "Ausprobieren",
     "contact": ["github.com/Bavarianator/deckwerk"],
     "qr": "https://github.com/Bavarianator/deckwerk"
+   } },
+  { "id": "rueckseite", "layout": "flyer-back",
+   "content": {
+    "eyebrow": "Programm · 14. Oktober",
+    "title": "So läuft der Pitch Day",
+    "intro": "Ein Abend, fünf Teams, ein Werkzeug: Wir zeigen live, wie aus Stichpunkten ein Deck wird, das man dem Chef zeigen kann.",
+    "items": [
+     { "head": "18:00", "text": "Ankommen, Getränke und kurze Begrüßung" },
+     { "head": "18:30", "text": "Live-Demo: vom Briefing bis zur fertigen PowerPoint in zehn Minuten" },
+     { "head": "19:15", "text": "Fünf Teams pitchen ihre Idee mit einem Deck aus Deckwerk" },
+     { "head": "20:00", "text": "Fragen und Antworten, danach offener Austausch" }
+    ],
+    "facts": [
+     { "label": "Wann", "value": "14. Oktober, 18 Uhr" },
+     { "label": "Wo", "value": "Stadtbibliothek, Saal 2" },
+     { "label": "Eintritt", "value": "frei, Anmeldung erbeten" }
+    ],
+    "cta": "Jetzt kostenlos testen",
+    "contact": ["github.com/Bavarianator/deckwerk"],
+    "qr": "https://github.com/Bavarianator/deckwerk",
+    "legal": "Veranstalter: Deckwerk-Projekt. Deckwerk ist freie Software, Programmänderungen vorbehalten."
    } }
  ]
 }

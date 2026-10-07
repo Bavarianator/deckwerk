@@ -2,12 +2,12 @@ import { nativeImage } from 'electron'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import JSZip from 'jszip'
-import { formatSuffix, type Deck, type Measured } from '../shared/deck'
+import { formatSuffix, sizeOf, type Deck, type Measured } from '../shared/deck'
 import { handout } from '../shared/handout'
 import { lintDeck } from '../shared/lint'
 import type { Engine } from './agent'
 import { buildPptx } from './export-pptx'
-import { renderOverview, renderPdf, renderSlide, type Rendered } from './render'
+import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 
 const slug = (s: string) => s.toLowerCase().replace(/[äöüß]/g, (c) => ({ ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' })[c]!).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'deck'
 
@@ -48,7 +48,7 @@ export function createEngine(): Engine {
     async lint(deck) {
       return lintDeck(deck, await measure(deck))
     },
-    async exportDeck(deck, format, outDir) {
+    async exportDeck(deck, format, outDir, print) {
       await mkdir(outDir, { recursive: true })
       const base = join(outDir, slug(deck.title) + formatSuffix(deck.size)) // Format im Namen: gleiche Titel in 4:5 und A4 überschreiben sich nicht
       if (format === 'md') {
@@ -58,6 +58,12 @@ export function createEngine(): Engine {
       if (format === 'pdf') {
         await writeFile(`${base}.pdf`, await renderPdf(deck))
         return [`${base}.pdf`]
+      }
+      if (format === 'print') {
+        // Name nach Druckformat: flyer-a5-druck.pdf, flyer-a4-quer-druck.pdf; ohne Format wie das Deck (flyer-a4-druck.pdf)
+        const file = `${print?.size ? join(outDir, `${slug(deck.title)}-${print.size}${sizeOf(deck).w > sizeOf(deck).h ? '-quer' : ''}`) : base}-druck.pdf`
+        await writeFile(file, await renderPrintPdf(deck, print))
+        return [file]
       }
       if (format === 'zip') {
         const zip = new JSZip()

@@ -11,7 +11,7 @@ import '@fontsource/gelasio/400.css'
 import '@fontsource/gelasio/700.css'
 import '@fontsource/gelasio/400-italic.css'
 import './fonts.css'
-import type { Deck, Measured } from '../shared/deck'
+import { sizeOf, type Deck, type Measured } from '../shared/deck'
 import { SlideView, loadCustomFont } from './slide'
 import { PresentScreen } from './ui/PresentScreen'
 import { autofit, extract } from './measure'
@@ -45,9 +45,35 @@ async function svgToPng(svg: string, w: number, h: number): Promise<string> {
   return canvas.toDataURL('image/png')
 }
 
+// Druck-PDF (render.ts renderPrintPdf): Seite und Beschnitt in pt, Folie um den Beschnitt versetzt und auf das Endformat skaliert; bx/by = Beschnitt in Folien-px
+interface PrintGeo { pageW: number; pageH: number; bleed: number; fx: number; fy: number; bx: number; by: number }
+
+// Beschnitt durch Spiegeln am Rand (wie Acrobats „Beschnittzugabe durch Spiegeln“): 8 Klone der fertigen Folie in Kantenstreifen
+// und Ecken, an der Schnittkante gespiegelt. So laufen Fotos, Flächen, Dekor und freie Elemente ohne Layout-Änderung in den Beschnitt
+// und bleiben Vektor. Text liegt nie dort (Lint-Regel frame: ≥ 24 px vom Rand). cloneNode übernimmt keine Canvas-Pixel; Diagramme
+// liegen nie am Rand. Die Teile ragen OVER px unter die Folie bzw. die Nachbarteile (Achse OVER/2 innerhalb der Kante, Spalte x landet
+// links bei bx + OVER − x): Viewer glätten aneinanderstoßende Kanten einzeln, an den Stößen schien sonst eine weiße Haarlinie durch.
+const OVER = 2
+function mirrorBleed(box: HTMLElement, w: number, h: number, bx: number, by: number) {
+  const host = box.firstElementChild, slide = box.querySelector('.slide')!
+  // erst Kanten, dann Ecken, alles vor der Folie im DOM: Spätere liegen oben, die Folie über allem
+  for (const [ix, iy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const clip = Object.assign(document.createElement('div'), { className: 'bleed-clip' })
+    // Lage per transform statt left/top: Kästen, die per Layout neben der Folie liegen, zählt Chromium beim Drucken trotz
+    // overflow:hidden als Überbreite und verkleinert dann die ganze Seite (bis auf 2/3)
+    const at = (i: number, b: number, len: number) => (i < 0 ? -b : i ? len - OVER : 0)
+    clip.style.cssText = `position:absolute;overflow:hidden;left:0;top:0;width:${ix ? bx + OVER : w}px;height:${iy ? by + OVER : h}px;transform:translate(${at(ix, bx, w)}px, ${at(iy, by, h)}px)`
+    const c = slide.cloneNode(true) as HTMLElement
+    const axis = (i: number, b: number, len: number) => (i < 0 ? b + OVER : i ? len : 0)
+    Object.assign(c.style, { position: 'absolute', left: '0', top: '0', transformOrigin: '0 0', transform: `translate(${axis(ix, bx, w)}px, ${axis(iy, by, h)}px) scale(${ix ? -1 : 1}, ${iy ? -1 : 1})` })
+    clip.append(c)
+    box.insertBefore(clip, host)
+  }
+}
+
 // Offscreen host driven by the main process: render one slide, autofit, measure. Also used for PDF (all slides).
 function Host({ mode }: { mode: string }) {
-  const [state, setState] = useState<{ deck: Deck; index: number } | null>(null)
+  const [state, setState] = useState<{ deck: Deck; index: number; geo?: PrintGeo } | null>(null)
   ;(window as any).dw = {
     // 1px marker row below the slide; its colour tells the main process which job a painted frame belongs to
     mark(seq: number) {
@@ -65,21 +91,52 @@ function Host({ mode }: { mode: string }) {
       const fit = autofit(root) // idempotent; SlideView already ran it, this returns the settled result
       const els = extract(root)
       for (const e of els) if (e.kind === 'icon' && e.svg) e.png = await svgToPng(e.svg, e.box.w * 4, e.box.h * 4)
+      // Pixelgröße der Bilddatei für die Druckauflösung im Lint; dekodiert sind die Bilder durch imagesLoaded schon
+      await Promise.all(els.map((e) => {
+        if (e.kind !== 'img' || !e.src) return
+        const img = Object.assign(new Image(), { src: e.src })
+        return img.decode().then(() => void (e.nat = { w: img.naturalWidth, h: img.naturalHeight }), () => {})
+      }))
       return { fit, els }
     },
     async hideExportables(on: boolean) {
       document.body.classList.toggle('hide-exportables', on)
       await frames()
     },
-    async renderAll(deck: Deck) {
+    async renderAll(deck: Deck, geo?: PrintGeo) {
+      document.querySelectorAll('.bleed-clip').forEach((e) => e.remove()) // Spiegel-Klone des letzten Druck-PDFs; React kennt sie nicht
       await fontsLoaded()
       await loadCustomFont(deck)
-      flushSync(() => setState({ deck, index: -1 }))
+      flushSync(() => setState({ deck, index: -1, geo }))
       await frames(3)
       await imagesLoaded(document)
+      if (!geo) return
+      const { w, h } = sizeOf(deck)
+      for (const box of document.querySelectorAll<HTMLElement>('.bleed-slide')) mirrorBleed(box, w, h, geo.bx, geo.by)
+      await frames()
     },
   }
   if (!state) return null
+  const g = state.geo
+  if (mode === 'print' && g) {
+    const { w, h } = sizeOf(state.deck)
+    const n = state.deck.slides.length
+    // Eigene Root-Klasse (.print-root setzt break-after am slide-host); Umbruch nach jeder Seite außer der letzten (keine Leerseite).
+    // Chromium-Fallen: Seite auch nur Bruchteile breiter als das Papier → alles verkleinert, deshalb Breite automatisch. Folie per Layout
+    // höher als die Seite (A5) → Rest verschoben/gespiegelt, deshalb contain: strict. left/top auf ganze px gerundet → Versatz im transform.
+    return (
+      <div className="print-bleed">
+        {state.deck.slides.map((_, i) => (
+          <div key={i} style={{ contain: 'strict', height: `${g.pageH}pt`, breakAfter: i < n - 1 ? 'page' : undefined }}>
+            <div className="bleed-slide" style={{ position: 'absolute', left: 0, top: 0, width: w, height: h, transform: `translate(${g.bleed}pt, ${g.bleed}pt) scale(${g.fx}, ${g.fy})`, transformOrigin: '0 0' }}>
+              <SlideView deck={state.deck} index={i} print />
+            </div>
+          </div>
+        ))}
+        <style>{`@page { size: ${g.pageW}pt ${g.pageH}pt; margin: 0; }`}</style>{/* nach den @page der SlideViews: gewinnt */}
+      </div>
+    )
+  }
   if (mode === 'print')
     return (
       <div className="print-root">

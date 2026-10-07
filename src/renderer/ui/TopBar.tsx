@@ -27,6 +27,8 @@ interface Props {
   onLook: () => void
   onExport: (format: Format) => void
   onFormats: () => void // Sheet „Formate“ (Quadrat, Story, A4 …)
+  canPrint: boolean // A4-Deck: Eintrag „PDF für die Druckerei“
+  onPrint: () => void
   onPresent: () => void
 }
 
@@ -85,6 +87,7 @@ export function TopBar(p: Props) {
                 <button key={f} role="menuitem" onClick={() => { setMenu(false); p.onExport(f) }}>{FORMAT[f]}</button>
               ))}
               <hr />
+              {p.canPrint && <button role="menuitem" onClick={() => { setMenu(false); p.onPrint() }}>PDF für die Druckerei …</button>}
               <button role="menuitem" onClick={() => { setMenu(false); p.onFormats() }}>Anderes Format …</button>
             </div>
           )}

@@ -4,9 +4,10 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { icons, Search, X } from 'lucide-react'
 import { SHAPES, type ChartSpec, type Deck, type Item } from '../../shared/deck'
 import { TEXT_PRESETS, newChart, newIcon, newImage, newShape, newText } from '../../shared/items'
-import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../../shared/layouts'
+import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { SHAPE_PATHS } from '../slide'
+import { layoutIdsFor } from './Elements'
 import { imageRatio } from './itemOps'
 
 const SHAPE_NAMES: Record<string, string> = { rect: 'Rechteck', ellipse: 'Kreis', triangle: 'Dreieck', diamond: 'Raute', hexagon: 'Sechseck', star: 'Stern', arrow: 'Pfeil', line: 'Linie' }
@@ -43,9 +44,9 @@ export function InsertSearch({ deck, disabled, onAdd, onAddSlide, children }: Pr
       shapes: SHAPES.filter((x) => hit(SHAPE_NAMES[x] ?? x) || hit(x) || 'form'.startsWith(s)),
       icons: ICONS.filter(([, k]) => words.some((w) => k.includes(w))).slice(0, 32),
       charts: CHARTS.filter(([type, name]) => hit(name) || hit(type) || 'diagramm'.startsWith(s)),
-      layouts: LAYOUT_IDS.filter((id) => hit(LAYOUTS[id].name) || 'folie vorlage'.includes(s)),
+      layouts: layoutIdsFor(deck).filter((id) => hit(LAYOUTS[id].name) || 'folie vorlage'.includes(s)),
     }
-  }, [s]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s, deck.size?.w, deck.size?.h]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const findPhotos = async () => {
     setPhotos({ urls: [], busy: true })

@@ -133,6 +133,15 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     ? `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`
     : `${count} Wörter auf der ${prof.unit} – zu viel für dieses Format (Ziel: unter ${prof.goal}). Kürzen oder auf eine weitere ${prof.unit} verteilen.`)
   if (/"(src|image)":""/.test(JSON.stringify(s.content ?? {}))) add('warn', 'image', 'Kein Bild gesetzt – es wird ein Platzhalter angezeigt. Mit find_images ein Foto suchen oder eigenes Bild einsetzen.')
+  // Druck: Ein Querformat-Foto mit 2560 px, das per cover eine A4-Seite füllt, hat nur ~146 ppi. Logos (_-Slots) und kleine Bilder zählen nicht.
+  if (profileOf(deck) === 'doc')
+    for (const e of m.els) {
+      if (e.kind !== 'img' || !e.src || !e.nat?.w || !e.nat.h || e.slot.startsWith('_') || e.box.w * e.box.h < (pw * ph) / 12) continue
+      const c = e.crop ?? { w: 1, h: 1 } // Zuschnitt (freie Bilder): nur der Ausschnitt füllt die Box
+      const r = [e.box.w / c.w / e.nat.w, e.box.h / c.h / e.nat.h] // CSS-px pro Bildpixel
+      const ppi = Math.round(96 / (e.fit === 'cover' || e.crop ? Math.max(...r) : Math.min(...r)))
+      if (ppi < 250) add('warn', 'print-res', `Foto für den Druck zu klein: ca. ${ppi} ppi bei A4-Größe (Druckereien verlangen 250–300 ppi). Hochformat-Foto nehmen (find_images orientation portrait), ein größeres Bild wählen oder das Foto kleiner einsetzen.`, e.slot)
+    }
   // Live-Test: die KI lässt highlight trotz Schema-Hinweis weg, dann trägt keine Farbe die Aussage des Titels
   const chart = s.content?.chart
   if (chart && !chart.highlight && chart.categories?.length > 2 && chart.type !== 'waterfall')

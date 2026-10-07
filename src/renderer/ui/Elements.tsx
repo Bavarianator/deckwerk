@@ -2,13 +2,22 @@
 // Klick fügt in die Mitte der Folie ein, Ziehen legt das Element an der Mausposition ab.
 import { useMemo, useState, type ReactNode } from 'react'
 import { Film, icons, ImagePlus, Music, QrCode as QrCodeIcon, Search } from 'lucide-react'
-import { SHAPES, type ChartSpec, type Deck, type Item } from '../../shared/deck'
+import { FORMATS, SHAPES, sizeOf, type ChartSpec, type Deck, type FormatId, type Item } from '../../shared/deck'
 import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newMedia, newQr, newShape, newText } from '../../shared/items'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { SHAPE_PATHS } from '../slide'
 import { imageRatio } from './itemOps'
 import { videoPoster } from './media'
+
+// Layouts mit `sizes` (Flyer, Fließtext, Angebot) nur im passenden Deck-Format; Muster wie in lint.ts
+export function layoutIdsFor(deck: Deck): LayoutId[] {
+  const { w, h } = sizeOf(deck)
+  return LAYOUT_IDS.filter((id) => {
+    const sizes = (LAYOUTS[id] as { sizes?: FormatId[] }).sizes
+    return !sizes || sizes.some((f) => FORMATS[f].w === w && FORMATS[f].h === h)
+  })
+}
 
 interface Props { deck: Deck; disabled: boolean; onAdd: (it: Item) => void; onAddSlide: (layout: LayoutId) => void; pickImage: () => Promise<string | null> }
 
@@ -138,7 +147,7 @@ export function Elements({ deck, disabled, onAdd, onAddSlide, pickImage }: Props
       <section>
         <h3>Folienvorlagen</h3>
         <div className="el-layouts">
-          {LAYOUT_IDS.map((id) => (
+          {layoutIdsFor(deck).map((id) => (
             <button key={id} type="button" className="el-layout" disabled={disabled} onClick={() => onAddSlide(id)} title={LAYOUTS[id].when}>{LAYOUTS[id].name}</button>
           ))}
         </div>

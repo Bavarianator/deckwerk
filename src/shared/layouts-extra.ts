@@ -128,11 +128,32 @@ const flyer = z.object({
   image: photo.optional().describe('ein starkes Foto (Mensch, Produkt, Ort); weglassen = typografischer Flyer'),
   points: z.array(z.object({
     head: z.string().min(1).max(40).describe('Grund oder Vorteil in 2–5 Wörtern, gern mit Zahl'),
-    text: z.string().max(80).optional().describe('ein kurzer Satz dazu; bei drei Gründen nebeneinander höchstens ~40 Zeichen'),
+    text: z.string().max(80).optional().describe('ein kurzer Satz dazu, höchstens ~40 Zeichen (eine Zeile neben dem Kopf)'),
   })).max(4).optional().describe('2–4 Gründe, Programmpunkte oder Fakten; weniger ist stärker'),
   cta: z.string().min(2).max(60).describe('Handlungsaufforderung, z. B. „Jetzt kostenlos testen“ oder „Anmelden bis 30. Oktober“'),
   contact: z.array(z.string().max(50)).max(3).optional().describe('Web, Mail, Ort oder Termin; je eine Zeile'),
-  qr: z.string().max(120).optional().describe('kurze URL für den QR-Code (Anmeldung, Webseite, Demo); je kürzer, desto gröber das Muster und desto sicherer der Scan im Druck'),
+  // nur vollständige URLs: sonst kodiert der QR-Code bloßen Text, und Handys öffnen nichts
+  qr: z.string().max(120).regex(/^(https?:\/\/|mailto:|tel:)\S+$/i, 'vollständige URL mit https:// (kurz halten)').optional()
+    .describe('vollständige, kurze URL mit https:// für den QR-Code (Anmeldung, Webseite, Demo); je kürzer, desto gröber das Muster und desto sicherer der Scan im Druck'),
+})
+
+// Flyer-Rückseite (A4 hoch, Seite 2 im beidseitigen Druck): Details, die vorn keinen Platz haben, und dieselbe Handlung wie vorn.
+const flyerBack = z.object({
+  eyebrow: z.string().max(40).optional().describe('Anlass und Datum, z. B. „Programm · 14. Oktober“'),
+  title: z.string().min(3).max(60).describe('Aussage als Satz, z. B. „So läuft der Pitch Day“'),
+  intro: z.string().max(200).optional().describe('ein bis zwei Sätze Einleitung'),
+  items: z.array(z.object({
+    head: z.string().min(1).max(24).describe('Uhrzeit, Stichwort oder Preis, z. B. „18:00“, „Live-Demo“, „49 €“'),
+    text: z.string().max(110).describe('ein Satz dazu'),
+  })).min(2).max(6).describe('2–6 Zeilen Programm, Leistungen, Preise oder Fakten'),
+  facts: z.array(z.object({
+    label: z.string().min(1).max(16).describe('z. B. Wann, Wo, Eintritt'),
+    value: z.string().min(1).max(40),
+  })).max(4).optional().describe('Eckdaten in einer Zeile, 2–4 Stück'),
+  cta: flyer.shape.cta.describe('dieselbe Handlungsaufforderung wie auf der Vorderseite'),
+  contact: flyer.shape.contact,
+  qr: flyer.shape.qr,
+  legal: z.string().max(160).optional().describe('Impressum oder Veranstalter, Bildnachweis; klein gesetzt'),
 })
 
 const iconGrid = z.object({
@@ -366,6 +387,28 @@ export const EXTRA_LAYOUTS = {
         cta: 'Jetzt kostenlos testen', contact: ['deckwerk.app', 'hallo@deckwerk.app'], qr: 'https://example.com',
       },
       max: { eyebrow: words(40), title: words(60), subtitle: words(140), image: { src: '' }, points: rep(4, (i) => ({ head: words(40, i), text: words(80, i) })), cta: words(60), contact: rep(3, (i) => words(50, i)), qr: 'https://example.com/anmeldung' },
+    },
+  }),
+  'flyer-back': L({
+    id: 'flyer-back', name: 'Flyer-Rückseite (A4)', sizes: ['a4'],
+    when: 'Nur A4 hoch: Rückseite zu flyer bei beidseitigem Druck (Seite 2). Details, die vorn keinen Platz haben: Programm, Leistungen oder Preise als Liste (head = Uhrzeit, Stichwort oder Preis), Eckdaten wie Wann, Wo, Eintritt, genau eine Handlung (dieselbe wie vorn) mit QR-Code und Kontakt, Impressum klein.',
+    schema: flyerBack, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'So läuft der Abend', items: [{ head: '18:00', text: 'Ankommen' }, { head: '18:30', text: 'Live-Demo' }], cta: 'Jetzt anmelden' },
+      typ: {
+        eyebrow: 'Programm · 14. Oktober', title: 'So läuft der Pitch Day',
+        intro: 'Ein Abend, fünf Teams, ein Werkzeug: Wir zeigen live, wie aus Stichpunkten ein fertiges Deck wird.',
+        items: [
+          { head: '18:00', text: 'Ankommen, Getränke und kurze Begrüßung im Foyer' },
+          { head: '18:30', text: 'Live-Demo: vom Briefing bis zur fertigen PowerPoint in zehn Minuten' },
+          { head: '19:15', text: 'Fünf Teams pitchen ihre Idee mit einem Deck aus Deckwerk' },
+          { head: '20:00', text: 'Fragen und Antworten, danach offener Austausch' },
+        ],
+        facts: [{ label: 'Wann', value: '14. Oktober, 18 Uhr' }, { label: 'Wo', value: 'Stadtbibliothek, Saal 2' }, { label: 'Eintritt', value: 'frei' }],
+        cta: 'Jetzt anmelden', contact: ['example.com/anmeldung', 'hallo@example.com'], qr: 'https://example.com/anmeldung',
+        legal: 'Veranstalter: Deckwerk-Projekt, Musterweg 1, 12345 Musterstadt. Foto: Deckwerk.',
+      },
+      max: { eyebrow: words(40), title: words(60), intro: words(200), items: rep(6, (i) => ({ head: words(24, i), text: words(110, i) })), facts: rep(4, (i) => ({ label: words(16, i), value: words(40, i) })), cta: words(60), contact: rep(3, (i) => words(50, i)), qr: 'https://example.com/anmeldung', legal: words(160) },
     },
   }),
   'icon-grid': L({

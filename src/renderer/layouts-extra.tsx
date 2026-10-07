@@ -277,7 +277,7 @@ function Flyer({ c, v }: Props<'flyer'>) {
         </div>
         {!top && !full && sub}
         {pts.length > 0 && (
-          <div className={`fly-pts n${pts.length}`} data-fit data-slot="points">
+          <div className="fly-pts" data-fit data-slot="points">
             {pts.map((p, i) => (
               <div className="fly-pt" key={i}>
                 <T role="h3" slot={`points.${i}.head`} build={i} className="fly-pt-head">{p.head}</T>
@@ -286,16 +286,60 @@ function Flyer({ c, v }: Props<'flyer'>) {
             ))}
           </div>
         )}
-        <div className="fly-foot">
-          <div className="fly-act">
-            {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="fly-qr" build={pts.length} />}
-            <div className="fly-act-text">
-              <T role="h2" slot="cta" maxLines={2} className="fly-cta" build={pts.length}>{c.cta}</T>
-              {c.contact?.map((x, i) => <T key={i} role="label" slot={`contact.${i}`} className="fly-contact" build={pts.length}>{x}</T>)}
-            </div>
-          </div>
-          {theme.logo && <Img src={theme.logo} slot="_logo" className="fly-logo" contain />}
+        <FlyerAction c={c} build={pts.length} />
+      </div>
+    </Frame>
+  )
+}
+
+// Aktionsblock beider Flyerseiten: QR-Code, Handlung, Kontakt, Logo (gleiches DOM, damit Vorder- und Rückseite zusammenpassen).
+function FlyerAction({ c, build }: { c: { cta: string; contact?: string[]; qr?: string }; build: number }) {
+  const { theme } = useSlide()
+  return (
+    <div className="fly-foot">
+      <div className="fly-act">
+        {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="fly-qr" build={build} />}
+        <div className="fly-act-text">
+          <T role="h2" slot="cta" maxLines={2} className="fly-cta" build={build}>{c.cta}</T>
+          {c.contact?.map((x, i) => <T key={i} role="label" slot={`contact.${i}`} className="fly-contact" build={build}>{x}</T>)}
         </div>
+      </div>
+      {theme.logo && <Img src={theme.logo} slot="_logo" className="fly-logo" contain />}
+    </div>
+  )
+}
+
+// Flyer-Rückseite: Titel, Programm oder Preise als Liste mit fester Kopfspalte, Eckdaten in einer Zeile, unten derselbe Aktionsblock wie vorn.
+function FlyerBack({ c }: Props<'flyer-back'>) {
+  const n = c.items.length
+  return (
+    <Frame safeClass="fly-safe">
+      <div className="fly flb">
+        <div className="fly-head">
+          {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="fly-eyebrow">{c.eyebrow}</T>}
+          <T role="h1" slot="title" maxLines={3} className="flb-title">{c.title}</T>
+          {c.intro && <T role="body" slot="intro" maxLines={4} className="fly-sub">{c.intro}</T>}
+        </div>
+        <div className="flb-list" data-fit data-slot="items">
+          {c.items.map((it, i) => (
+            <div className="flb-row" key={i}>
+              <T role="h3" slot={`items.${i}.head`} build={i} className="flb-head">{it.head}</T>
+              <T role="body" slot={`items.${i}.text`} build={i}>{it.text}</T>
+            </div>
+          ))}
+        </div>
+        {!!c.facts?.length && (
+          <div className={`flb-facts n${c.facts.length}`}>
+            {c.facts.map((f, i) => (
+              <div className="flb-fact" key={i}>
+                <T role="label" slot={`facts.${i}.label`} build={n} className="muted">{f.label}</T>
+                <T role="h3" slot={`facts.${i}.value`} build={n} className="flb-head">{f.value}</T>
+              </div>
+            ))}
+          </div>
+        )}
+        <FlyerAction c={c} build={n} />
+        {c.legal && <T role="label" slot="legal" className="muted flb-legal">{c.legal}</T>}
       </div>
     </Frame>
   )
@@ -508,6 +552,6 @@ function Logos({ c }: Props<'logos'>) {
 
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
-  table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
+  table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
 }

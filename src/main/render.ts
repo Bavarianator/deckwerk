@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron'
 import { join } from 'node:path'
-import { sizeOf, type Deck, type Measured } from '../shared/deck'
+import { PRINT_SIZES, profileOf, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
+import { setPrintBoxes } from './pdf-boxes'
 
 // Offscreen Chromium windows that render slides with the exact same React code as the app.
 // Render at zoom 2 → 2560x1440 captures (crisp backgrounds), while the CSS layout stays 1280x720.
@@ -109,6 +110,29 @@ export function renderPdf(deck: Deck): Promise<Buffer> {
     fitWindow(win, w, h + 1)
     await call(win, `dw.renderAll(${JSON.stringify(deck)})`)
     return win.webContents.printToPDF({ pageSize: { width: w / 96, height: h / 96 }, printBackground: true, margins: { top: 0, bottom: 0, left: 0, right: 0 }, preferCSSPageSize: true })
+  })
+}
+
+// Druck-PDF: Seite = Endformat + Beschnitt ringsum, die Folie (w×h px) auf das Endformat skaliert. Chromium rundet die Papiergröße
+// auf ganze pt; ragt die Seite auch nur um Bruchteile darüber hinaus, verkleinert es den ganzen Inhalt (bis auf 2/3). Deshalb Seite
+// in ganzen pt und Endformat = Seite − 2·Beschnitt: weicht höchstens 0,5 pt (0,18 mm) vom Nennmaß ab, der Beschnitt bleibt ringsum gleich.
+const PT = 72 / 25.4 // pt je mm
+export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buffer> {
+  const { w, h } = sizeOf(deck)
+  const a4 = profileOf(deck) === 'doc' // A4 hoch oder quer
+  if (opts.size && !a4) throw new Error(`Druckformat ${opts.size.toUpperCase()} geht nur bei A4-Decks (hoch oder quer); dieses Deck ist ${w}×${h} px. Ohne Format wird es in seiner eigenen Größe gedruckt.`)
+  const [pw, ph] = PRINT_SIZES[opts.size ?? 'a4']
+  const [tw, th] = a4 ? (w > h ? [ph, pw] : [pw, ph]) : [(w * 25.4) / 96, (h * 25.4) / 96] // Endformat in mm
+  const bleed = (Math.min(5, Math.max(0, opts.bleed ?? 3)) || 0) * PT
+  const pageW = Math.round(tw * PT + 2 * bleed), pageH = Math.round(th * PT + 2 * bleed)
+  const fx = ((pageW - 2 * bleed) * 4) / 3 / w, fy = ((pageH - 2 * bleed) * 4) / 3 / h // 1 pt = 4/3 CSS-px
+  const geo = { pageW, pageH, bleed, fx, fy, bx: (bleed * 4) / 3 / fx, by: (bleed * 4) / 3 / fy }
+  return serial(async () => {
+    const win = await host('print')
+    fitWindow(win, w, h + 1)
+    await call(win, `dw.renderAll(${JSON.stringify(deck)}, ${JSON.stringify(geo)})`)
+    const pdf = await win.webContents.printToPDF({ pageSize: { width: pageW / 72, height: pageH / 72 }, printBackground: true, margins: { top: 0, bottom: 0, left: 0, right: 0 }, preferCSSPageSize: true })
+    return setPrintBoxes(pdf, bleed)
   })
 }
 

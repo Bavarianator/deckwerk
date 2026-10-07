@@ -99,7 +99,7 @@ Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewäh
   - „In freie Elemente umwandeln“ macht jeden Text, jede Form und jedes Bild der Folie frei verschiebbar.
   - „Farben dieser Folie“ ersetzt eine Farbe überall auf der Folie.
 - **Kontextmenü (Rechtsklick):** Ebenen, Gruppen, Sperren, sichere Ränder einblenden und eigene Hilfslinien setzen.
-- **Formate:** „Exportieren“ → „Anderes Format …“ rechnet das Deck auf ein anderes Format um oder legt Kopien in weiteren Formaten an: 16:9, 4:3, Quadrat, 4:5, Story 9:16, A4 hoch oder quer, Link-Vorschau. Freie Elemente wandern mit, Layouts ordnen sich neu an: Hoch- und Quadratformate stapeln Bild und Text, Social-Formate setzen größere Schrift, A4 kleinere. Der Lint rechnet je Format mit eigenen Grenzen (Social bis 30, A4 bis 350 Wörter je Seite). Für A4 gibt es die Layouts „Fließtext“, „Angebot“ und „Flyer“ (Foto oben, Vollbild oder typografisch, mit Handlungsaufforderung und QR-Code).
+- **Formate:** „Exportieren“ → „Anderes Format …“ rechnet das Deck auf ein anderes Format um oder legt Kopien in weiteren Formaten an: 16:9, 4:3, Quadrat, 4:5, Story 9:16, A4 hoch oder quer, Link-Vorschau. Freie Elemente wandern mit, Layouts ordnen sich neu an: Hoch- und Quadratformate stapeln Bild und Text, Social-Formate setzen größere Schrift, A4 kleinere. Der Lint rechnet je Format mit eigenen Grenzen (Social bis 30, A4 bis 350 Wörter je Seite). Für A4 gibt es die Layouts „Fließtext“, „Angebot“, „Flyer“ (Foto oben, Vollbild oder typografisch, mit Handlungsaufforderung und QR-Code) und „Flyer-Rückseite“ (Programm, Eckdaten, eine Handlung mit QR-Code, Impressum). Der QR-Code braucht eine vollständige URL (`https://`, `mailto:`, `tel:`). Layouts mit festem Format erscheinen in den Folienvorlagen nur im passenden Format; auf dem Startbildschirm gibt es den Beispiel-Chip „Flyer für ein Sommerfest“, und die Vorlagen-Galerie enthält den Flyer. Der Lint warnt bei Fotos, die für den Druck zu klein sind (unter 250 ppi).
 
 ### Speichern und Versionen
 
@@ -127,6 +127,8 @@ Versionen, Exporte und das Freisteller-Modell bleiben lokal. Hast du dasselbe De
 ### Exportieren
 
 **Exportieren** erzeugt PowerPoint, PDF, PNG (eine Datei pro Folie), ein ZIP (alle Bilder plus PDF) oder ein Handout (Markdown mit Notizen). Bei Nicht-16:9 steht das Format im Dateinamen (`-4x5`, `-a4`). Die Dateien landen im Ordner des Decks.
+
+Bei A4-Decks gibt es zusätzlich „PDF für die Druckerei …“. Die Datei (`…-druck.pdf`) hat Endformat plus Beschnitt (Standard 3 mm, wählbar je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm), keine Schnittmarken; randabfallende Fotos laufen gespiegelt in den Beschnitt. Das Endformat A3, A4 oder A5 ist wählbar; A4-Seiten werden verlustfrei skaliert. Die Farben bleiben RGB: Die genannten Druckereien wandeln selbst nach CMYK, leuchtende Akzente werden dabei etwas matter (print24 verlangt CMYK). Bei großer Auflage lohnt ein Probedruck. Die Seitenzahl muss zur Bestellung passen (1 oder 2), lösche nicht gewählte Entwürfe vorher.
 
 In der PowerPoint-Datei sind Texte, Formen, Bilder, Diagramme, Video und Audio native, editierbare Objekte. Animationen und Folienübergänge kommen mit, die Schriften der Premium-Themes sind eingebettet. PDF und PNG entsprechen der Vorschau pixelgenau.
 
