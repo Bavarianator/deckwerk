@@ -8,12 +8,17 @@ import { dirname, join } from 'node:path'
 export function setupSpellcheck(win: BrowserWindow) {
   const wc = win.webContents, ses = wc.session
   const off = join(app.getPath('appData'), 'deckwerk', 'spellcheck-off')
-  // macOS nutzt die Systemprüfung und erkennt die Sprache selbst; sonst Hunspell-Wörterbücher (einmaliger Download)
-  if (process.platform !== 'darwin') ses.setSpellCheckerLanguages(['de-DE', 'en-US'])
-  ses.setSpellCheckerEnabled(!existsSync(off))
-  ipcMain.handle('spellcheck:get', () => ses.isSpellCheckerEnabled())
-  ipcMain.handle('spellcheck:set', async (_, on: boolean) => {
+  // macOS nutzt die Systemprüfung und erkennt die Sprache selbst; sonst Hunspell-Wörterbücher (einmaliger Download).
+  // Sprachen nur bei eingeschalteter Prüfung setzen: sie stoßen den Download an, und wer sie ausschaltet, soll keinen haben.
+  const enable = (on: boolean) => {
+    if (on && process.platform !== 'darwin') ses.setSpellCheckerLanguages(['de-DE', 'en-US'])
     ses.setSpellCheckerEnabled(on)
+  }
+  enable(!existsSync(off))
+  ipcMain.handle('spellcheck:get', () => ses.isSpellCheckerEnabled())
+  ipcMain.handle('spellcheck:set', async (_, on: unknown) => {
+    on = on === true
+    enable(on as boolean)
     if (on) await rm(off, { force: true })
     else await mkdir(dirname(off), { recursive: true }).then(() => writeFile(off, ''))
   })

@@ -526,6 +526,8 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
   }, [deck, slide, sel, items, busy, act, add, onItems, onSel, crop]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onContext = (e: React.MouseEvent) => {
+    // im gerade bearbeiteten Text das Menü von Electron zeigen (Rechtschreib-Vorschläge, Kopieren, Einfügen)
+    if ((e.target as HTMLElement).closest<HTMLElement>('[contenteditable]')?.isContentEditable && (e.target as HTMLElement).closest('[contenteditable]')!.contains(document.activeElement)) return
     e.preventDefault()
     const id = (e.target as HTMLElement).closest<HTMLElement>('[data-item]')?.dataset.item
     if (id && !sel.includes(id)) onSel([id])

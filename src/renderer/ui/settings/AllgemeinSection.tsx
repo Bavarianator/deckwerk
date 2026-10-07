@@ -31,7 +31,7 @@ export function AllgemeinSection({ go }: SectionProps) {
       <Group label="Editor">
         <div className="setup-opt settings-row">
           {/* macOS prüft mit dem System, sonst lädt Electron Hunspell-Wörterbücher vom Google-CDN */}
-          <Switch checked={spell} label={<b>Rechtschreibprüfung</b>} onChange={(on) => { setSpell(on); void window.api.setSpellcheck(on) }}
+          <Switch checked={spell} label={<b>Rechtschreibprüfung</b>} onChange={(on) => { setSpell(on); window.api.setSpellcheck(on).catch(() => setSpell(!on)) }}
             hint={info?.platform.startsWith('darwin') ? 'Deutsch und Englisch, mit der Rechtschreibprüfung von macOS.' : 'Deutsch und Englisch. Die Wörterbücher lädt Deckwerk einmalig von einem Google-Server herunter.'} />
         </div>
       </Group>
