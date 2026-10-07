@@ -5,7 +5,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { MEDIA_EXT } from '../shared/deck'
+import { MEDIA_EXT, profileOf } from '../shared/deck'
 import type { createEngine } from './engine'
 import { localAsset } from './sync'
 
@@ -65,7 +65,7 @@ async function renderCli(engine: ReturnType<typeof createEngine>, file: string, 
   const issues = await engine.lint(deck)
   for (const i of issues) console.log(`${i.severity === 'error' ? '✗' : '!'} Folie ${i.slide + 1} [${i.rule}] ${i.message}`)
   console.log(`${issues.filter((i) => i.severity === 'error').length} Fehler, ${issues.filter((i) => i.severity === 'warn').length} Warnungen`)
-  for (const f of ['pptx', 'pdf', 'png', 'zip'] as const) {
+  for (const f of ['pptx', 'pdf', 'png', 'zip', ...(profileOf(deck) === 'doc' ? (['print'] as const) : [])] as const) {
     const files = await engine.exportDeck(deck, f, outDir)
     console.log(`→ ${f}: ${files.length > 1 ? dirname(files[0]) : files[0]}`)
   }

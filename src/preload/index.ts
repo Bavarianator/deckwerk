@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { BrandKit, CustomFont, Deck } from '../shared/deck'
+import type { BrandKit, CustomFont, Deck, PrintOptions } from '../shared/deck'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
 import type { SyncStatus } from '../main/sync'
@@ -77,7 +77,8 @@ const api = {
   recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
-  exportDeck: (format: 'pptx' | 'pdf' | 'png' | 'zip' | 'md'): Promise<string> => invoke('deck:export', format),
+  /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
+  exportDeck: (format: 'pptx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions): Promise<string> => invoke('deck:export', format, print),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),

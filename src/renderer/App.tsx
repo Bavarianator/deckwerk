@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import '@fontsource-variable/inter'
 import './ui/app.css'
 import './ui/shell.css'
-import { FORMATS, type Deck, type FormatId, type Item, type Slide } from '../shared/deck'
+import { FORMATS, profileOf, type Deck, type PrintOptions, type FormatId, type Item, type Slide } from '../shared/deck'
 import { newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
 import { THEMES } from '../shared/themes'
@@ -15,6 +15,7 @@ import { EditorScreen } from './ui/EditorScreen'
 import { KeyDialog } from './ui/KeyDialog'
 import { Logo } from './ui/Logo'
 import { FormatSheet } from './ui/FormatSheet'
+import { PrintSheet } from './ui/PrintSheet'
 import { LookSheet } from './ui/LookSheet'
 import { PresentScreen } from './ui/PresentScreen'
 import { SetupSheet } from './ui/SetupSheet'
@@ -47,6 +48,7 @@ export default function App() {
   const [look, setLook] = useState(false)
   const [setup, setSetup] = useState<boolean | string>(false) // Einrichtung: beim ersten Start von selbst (state().setupDone), sonst über das Zahnrad; Text = Schritt, mit dem sie aufgeht
   const [formats, setFormats] = useState(false)
+  const [printing, setPrinting] = useState(false) // Sheet „PDF für die Druckerei“
   const [view, setView] = useState<View>('slide') // einzelne Folie oder Übersicht aller Folien
   const [target, setTarget] = useState<Target | null>(null) // gewähltes Element als Bezug für die KI-Leiste
   const [story, setStory] = useState<StoryItem[] | null>(null) // geplante Storyline der KI (plan_storyline)
@@ -223,9 +225,9 @@ export default function App() {
       setSaved(true)
       setStatus({ text: `Gespeichert: ${p}` })
     }),
-    onExport: (format: 'pptx' | 'pdf' | 'png' | 'zip' | 'md') => guard(async () => {
-      setStatus({ text: `Exportiere ${format.toUpperCase()} …` })
-      setStatus({ text: `Exportiert: ${await api.exportDeck(format)}` })
+    onExport: (format: 'pptx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions) => guard(async () => {
+      setStatus({ text: `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
+      setStatus({ text: `Exportiert: ${await api.exportDeck(format, print)}` })
     }),
   }
 
@@ -335,6 +337,8 @@ export default function App() {
             onLook={openLook}
             onExport={actions.onExport}
             onFormats={() => { setPicked([]); setFormats(true) }}
+            canPrint={!!deck && profileOf(deck) === 'doc'}
+            onPrint={() => setPrinting(true)}
             onPresent={() => present(0)}
           />
           {deck && view === 'grid' ? (
@@ -373,6 +377,7 @@ export default function App() {
         </>
       )}
       {home && status?.error && <div className="toast material" role="alert">{status.text}</div>}
+      {printing && deck && <PrintSheet deck={deck} onExport={(o) => actions.onExport('print', o)} onClose={() => setPrinting(false)} />}
       {formats && deck && <FormatSheet deck={deck} index={index} onApply={(id) => commit((d) => resizeDeck(d, id))} onCopies={saveCopies} onClose={() => setFormats(false)} />}
       {look && deck && <LookSheet deck={deck} busy={busy} patchDeck={patchDeck} pickImage={api.pickImage} onAsk={(t) => send(t)} onClose={() => setLook(false)} />}
       {setup && <SetupSheet model={model} onModel={pickModel} start={typeof setup === 'string' ? setup : undefined} onKeySaved={() => { void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} onClose={() => { setSetup(false); void api.state().then((s) => setHasKey(s.hasKey)); void loadChoices() }} />}

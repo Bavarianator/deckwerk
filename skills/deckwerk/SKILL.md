@@ -18,7 +18,7 @@ Rufe `read_guide` mit `part` 1, 2, … auf, bis die Antwort „Teil n von n“ m
 ## 2. Briefing und Material
 
 - Höchstens 2–3 Rückfragen: Zielgruppe, Ziel oder Entscheidung, Umfang und Anlass. Fehlt etwas, triff eine sinnvolle Annahme und nenne sie.
-- **Format:** Standard ist 16:9. Für Instagram (Karussell 4:5 oder 1:1, Story 9:16) oder Druck (A4) beim Anlegen `create_deck` mit `format` aufrufen; Gerüst und Textmenge stehen im Guide §3 (Karussell, A4-Dokument mit `doc-text`/`offer`, Flyer mit `flyer`).
+- **Format:** Standard ist 16:9. Für Instagram (Karussell 4:5 oder 1:1, Story 9:16) oder Druck (A4) beim Anlegen `create_deck` mit `format` aufrufen; Gerüst und Textmenge stehen im Guide §3 (Karussell, A4-Dokument mit `doc-text`/`offer`, Flyer mit `flyer`; beidseitig `flyer` + `flyer-back`).
 - **Quellmaterial:** Nennt der Nutzer Dateien (Bericht, README, Tabelle, Notizen), lies sie selbst und übernimm nur belegte Zahlen. Fehlt eine Zahl, nimm einen deutlich markierten Platzhalter und liste ihn am Ende auf. Nie stillschweigend erfinden.
 - **Vorhandenes Deck:** `open_deck` mit dem Pfad, dann `get_deck`. Gezielt mit `update_slide` ändern statt neu bauen.
 
@@ -93,6 +93,7 @@ Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien al
 
 - `save_deck` speichert nach `~/Deckwerk/<titel>/deck.json`. Nenne den Pfad; der Nutzer öffnet die Datei in der Deckwerk-App (Doppelklick auf `deck.json`) und kann dort weiterarbeiten.
 - Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `pdf`, `png`, `zip` (alle Bilder plus PDF in einer Datei, für Karussells) oder `md` (Handout). Pfade nennen; bei Nicht-16:9 tragen die Dateien das Format im Namen (`-4x5`, `-a4`).
+- Flyer für die Druckerei: `export_deck` mit `print` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm; `size` a3/a5). Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB; bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
 - Kurzer Bericht: Folienzahl, Storyline in einem Satz, getroffene Annahmen und was der Nutzer ersetzen muss (Zahlen, Zitate, Fotos).
 
 ## Häufige Fehler

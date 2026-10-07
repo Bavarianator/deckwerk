@@ -4,21 +4,21 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod'
 import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
-import type { Deck, Measured } from '../shared/deck'
+import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } from '../shared/deck'
 import type { Issue } from '../shared/lint'
-import { LAYOUTS, LAYOUT_IDS } from '../shared/layouts'
+import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
 import guide from './design-guide.md?raw'
 import { buildCatalog, buildTools, houseStyle, mimeOf, recentLooks, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
-export type ExportFormat = 'pptx' | 'pdf' | 'png' | 'md' | 'zip' // zip = PNG je Folie + PDF in einer Datei (Social-Karussell, Druck)
+export type ExportFormat = 'pptx' | 'pdf' | 'png' | 'md' | 'zip' | 'print' // zip = PNG je Folie + PDF in einer Datei (Social-Karussell); print = PDF für die Druckerei (PrintOptions in deck.ts)
 export interface Engine {
   measure(deck: Deck, indices?: number[]): Promise<Measured[]> // Autofit + Messung, Reihenfolge wie indices
   renderPng(deck: Deck, indices: number[], width?: number): Promise<Buffer[]> // PNG pro Folie (default 1024 px breit)
   renderOverview(deck: Deck): Promise<Buffer> // Kontaktbogen aller Folien, 1 PNG
   lint(deck: Deck): Promise<Issue[]>
-  exportDeck(deck: Deck, format: ExportFormat, outDir: string): Promise<string[]>
+  exportDeck(deck: Deck, format: ExportFormat, outDir: string, print?: PrintOptions): Promise<string[]> // print nur bei format 'print'
   thumbnail?(img: Buffer, width: number): Buffer | null // JPEG-Vorschau eines Bildes ohne Rendern; null = Format unbekannt (WebP)
 }
 
@@ -62,12 +62,19 @@ const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { 
 
 // Ein Beispiel-Deck (typ-Sample pro Layout) rendern → Bilder für den ersten User-Turn. Stabil → cachebar.
 async function catalogThumbnails(engine: Engine): Promise<BetaContentBlockParam[]> {
-  const deck: Deck = {
-    title: 'Katalog', theme: { id: 'beratung' }, transition: 'none', mode: 'click',
-    slides: LAYOUT_IDS.map((id) => ({ id: `cat-${id}`, layout: id, content: LAYOUTS[id].samples.typ })),
+  // Layouts mit sizes (A4-Dokumente, Flyer) im eigenen Format zeigen, sonst sieht die KI sie in 16:9; ein Deck je Format
+  const fmt = (id: LayoutId): FormatId => (LAYOUTS[id] as { sizes?: FormatId[] }).sizes?.[0] ?? '16:9'
+  const pngs = new Map<LayoutId, Buffer>()
+  for (const f of new Set(LAYOUT_IDS.map(fmt))) {
+    const ids = LAYOUT_IDS.filter((id) => fmt(id) === f)
+    const deck: Deck = {
+      title: 'Katalog', theme: { id: 'beratung' }, transition: 'none', mode: 'click', size: { w: FORMATS[f].w, h: FORMATS[f].h },
+      slides: ids.map((id) => ({ id: `cat-${id}`, layout: id, content: LAYOUTS[id].samples.typ })),
+    }
+    const out = await engine.renderPng(deck, ids.map((_, i) => i), 512)
+    ids.forEach((id, i) => pngs.set(id, out[i]))
   }
-  const pngs = await engine.renderPng(deck, deck.slides.map((_, i) => i), 512)
-  return pngs.flatMap((p, i) => [{ type: 'text', text: `Layout ${LAYOUT_IDS[i]}:` } as BetaContentBlockParam, img(p)])
+  return LAYOUT_IDS.flatMap((id) => [{ type: 'text', text: `Layout ${id}:` } as BetaContentBlockParam, img(pngs.get(id)!)])
 }
 
 // Tool-Status-Chips für die UI (auch für den Chat über Claude Code, claude-agent.ts)

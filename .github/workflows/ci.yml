@@ -25,7 +25,7 @@ jobs:
           $E scripts/validate-examples.ts --format=esm --outfile=out/validate-examples.mjs && node out/validate-examples.mjs
           $E scripts/check-sync.ts --format=esm --outfile=out/check-sync.mjs && node out/check-sync.mjs
           $E scripts/check-brand.ts --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
-          for c in check-recolor check-handout check-lint-profile story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
+          for c in check-recolor check-handout check-lint-profile check-pdf-boxes story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
           $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
       - name: Bildschirm und Chromium-Sandbox
         run: |
