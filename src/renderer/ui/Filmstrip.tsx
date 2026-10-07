@@ -1,20 +1,20 @@
-// Filmstreifen: kleine Folien, Klick wählt aus, Drag & Drop sortiert um, Folien anlegen/duplizieren/löschen.
+// Filmstreifen: kleine Folien, Klick wählt aus, Drag & Drop sortiert um, Folien anlegen/duplizieren/ausblenden/löschen.
 // Rechtsklick öffnet ein Kontextmenü; mit Fokus auf einer Folie: Strg+C/V/D, Entf.
 import { memo, useEffect, useRef, useState } from 'react'
 import { confirmDialog } from './kit'
-import { Blend, Copy, Plus, Trash2 } from 'lucide-react'
+import { Blend, Copy, EyeOff, Plus, Trash2 } from 'lucide-react'
 import type { Deck } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { TRANSITION } from './LookSheet'
 
 interface Props {
   deck: Deck; sel: number; disabled: boolean; onSelect: (i: number) => void; onMove: (from: number, to: number) => void; onAdd: (at?: number) => void
-  onDup: (i: number) => void; onDel: (i: number) => void; onCopy: (idx: number[]) => void; onPaste: (at: number) => number; canPaste: () => boolean
+  onDup: (i: number) => void; onDel: (i: number) => void; onHide: (i: number) => void; onCopy: (idx: number[]) => void; onPaste: (at: number) => number; canPaste: () => boolean
 }
 
 const off = { opacity: 0.4, cursor: 'default' } // .ctx-menu kennt kein :disabled
 
-export const Filmstrip = memo(function Filmstrip({ deck, sel, disabled, onSelect, onMove, onAdd, onDup, onDel, onCopy, onPaste, canPaste }: Props) {
+export const Filmstrip = memo(function Filmstrip({ deck, sel, disabled, onSelect, onMove, onAdd, onDup, onDel, onHide, onCopy, onPaste, canPaste }: Props) {
   const from = useRef<number | null>(null)
   const [over, setOver] = useState<number | null>(null)
   const [menu, setMenu] = useState<{ i: number; x: number; y: number } | null>(null)
@@ -49,9 +49,9 @@ export const Filmstrip = memo(function Filmstrip({ deck, sel, disabled, onSelect
           key={s.id}
           role="button"
           tabIndex={0}
-          aria-label={`Folie ${i + 1}`}
+          aria-label={`Folie ${i + 1}${s.hidden ? ', ausgeblendet' : ''}`}
           aria-current={i === sel}
-          className={`thumb ${i === sel ? 'active' : ''} ${over === i && from.current !== i ? 'over' : ''}`}
+          className={`thumb ${i === sel ? 'active' : ''} ${over === i && from.current !== i ? 'over' : ''} ${s.hidden ? 'dw-hidden' : ''}`}
           draggable={!disabled}
           onClick={(e) => { e.currentTarget.focus(); onSelect(i) }}
           onContextMenu={(e) => {
@@ -59,7 +59,7 @@ export const Filmstrip = memo(function Filmstrip({ deck, sel, disabled, onSelect
             if (disabled) return
             e.currentTarget.focus()
             onSelect(i)
-            setMenu({ i, x: Math.min(e.clientX, innerWidth - 240), y: Math.min(e.clientY, innerHeight - 200) }) // im Fenster halten (Menü ca. 240 × 200 px)
+            setMenu({ i, x: Math.min(e.clientX, innerWidth - 240), y: Math.min(e.clientY, innerHeight - 230) }) // im Fenster halten (Menü ca. 240 × 230 px)
           }}
           onKeyDown={(e) => {
             const mod = e.ctrlKey || e.metaKey, cmd = mod && !e.shiftKey && !e.altKey, k = e.key.toLowerCase()
@@ -81,6 +81,7 @@ export const Filmstrip = memo(function Filmstrip({ deck, sel, disabled, onSelect
           <span className="thumb-num">
             {i + 1}
             {i > 0 && s.transition && <span className="thumb-tr" title={`Übergang zu dieser Folie: ${TRANSITION[s.transition]}`}><Blend size={11} /></span>}
+            {s.hidden && <span className="thumb-off" title="Ausgeblendet: fehlt beim Präsentieren und im Export"><EyeOff size={11} /></span>}
           </span>
           {!disabled && (
             <span className="thumb-acts">
@@ -98,6 +99,7 @@ export const Filmstrip = memo(function Filmstrip({ deck, sel, disabled, onSelect
           <button onClick={pick(() => onDup(menu.i))}>Duplizieren <kbd>Strg+D</kbd></button>
           <button onClick={pick(() => onCopy([menu.i]))}>Kopieren <kbd>Strg+C</kbd></button>
           <button disabled={!canPaste()} style={canPaste() ? undefined : off} onClick={pick(() => onPaste(menu.i + 1))}>Einfügen <kbd>Strg+V</kbd></button>
+          <button onClick={pick(() => onHide(menu.i))}>{deck.slides[menu.i]?.hidden ? 'Einblenden' : 'Folie ausblenden'}</button>
           <hr />
           <button className="danger" disabled={deck.slides.length < 2} style={deck.slides.length < 2 ? off : undefined} onClick={pick(() => del(menu.i))}>Löschen <kbd>Entf</kbd></button>
         </div>

@@ -67,6 +67,7 @@ export interface Slide {
   notes?: string
   items?: Item[] // freie Elemente über dem Layout (Canvas: ziehen, skalieren, drehen); Reihenfolge = Ebenen
   bg?: { color?: string; image?: string; gradient?: [string, string]; angle?: number } // eigener Folienhintergrund statt Theme-Fläche; gradient = Verlauf (Winkel in Grad, Standard 135)
+  hidden?: boolean // ausgeblendet (Canva „Seite ausblenden“): fehlt beim Präsentieren und im Export, PowerPoint behält sie versteckt
 }
 
 // ---- freie Elemente (wie in Canva): Position in px auf der 1280x720-Folie ----
@@ -188,6 +189,15 @@ export interface Deck {
   style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
   slides: Slide[]
+}
+// Folien, die präsentiert und exportiert werden (PDF, PNG, Word, Handout); ausgeblendete fehlen
+export const visibleSlides = (deck: Deck): Slide[] => deck.slides.filter((s) => !s.hidden)
+// Präsentieren: nur sichtbare Folien. start (Index im ganzen Deck) rückt von einer ausgeblendeten Folie auf die nächste
+// sichtbare, hinter der letzten auf die letzte. Sind alle ausgeblendet, läuft das ganze Deck, statt leer abzustürzen.
+export function showOf(deck: Deck, start: number): { deck: Deck; start: number } {
+  const slides = visibleSlides(deck)
+  if (!slides.length) return { deck, start }
+  return { deck: { ...deck, slides }, start: Math.min(deck.slides.slice(0, start).filter((s) => !s.hidden).length, slides.length - 1) }
 }
 // Übergang an der Grenze zu Folie i (die erste Folie hat keinen)
 export const transitionOf = (deck: Deck, i: number): Transition => (i <= 0 ? 'none' : deck.slides[i]?.transition ?? deck.transition)

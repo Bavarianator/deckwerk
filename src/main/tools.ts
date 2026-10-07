@@ -238,6 +238,9 @@ function strayKeys(s: JsonSchema, v: unknown, path: string): string[] {
   return []
 }
 
+// Markiert ausgeblendete Folien in jeder Auflistung für die KI
+const hid = (s: Slide | undefined) => (s?.hidden ? ' (ausgeblendet)' : '')
+
 function fmtIssues(issues: Issue[]): string {
   return issues.map((i) => `  - [${i.severity}] ${i.rule}${i.slot ? ` @${i.slot}` : ''}: ${i.message}`).join('\n')
 }
@@ -258,7 +261,7 @@ async function report(ctx: ToolContext, deck: Deck, indices: number[]): Promise<
       const own = issues.filter((x) => x.slide === i)
       const errors = own.filter((x) => x.severity === 'error').length
       const fit = m ? `Autofit head ${m.fit.head}/body ${m.fit.body}${m.fit.ok ? '' : ', Überlauf: ' + m.fit.overflow.map((o) => `${o.slot} +${Math.round(o.overPx)}px (${o.kind})`).join(', ')}` : 'nicht gemessen'
-      const head = `Folie ${i + 1} (${s.id}, ${s.layout}): ${errors ? `${errors} FEHLER` : 'OK'} · ${fit}${m ? ` · ${motionOf(deck, i, m)}` : ''}`
+      const head = `Folie ${i + 1} (${s.id}, ${s.layout})${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · ${fit}${m ? ` · ${motionOf(deck, i, m)}` : ''}`
       return own.length ? `${head}\n${fmtIssues(own)}` : head
     })
     .join('\n')
@@ -395,7 +398,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'update_slide',
-      description: 'Eine Folie ändern: Inhalt (Patch, wird mit dem Bestand gemischt), Layout, Variante, Build, Notes. Gibt Autofit und Lint zurück.',
+      description: 'Eine Folie ändern: Inhalt (Patch, wird mit dem Bestand gemischt), Layout, Variante, Build, Notes, Ausblenden. Gibt Autofit und Lint zurück.',
       inputSchema: z.object({
         id: z.string(),
         layout: layoutId.optional().describe('Layout wechseln; dann content vollständig mitgeben'),
@@ -409,6 +412,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         notes: z.string().max(1500).nullable().optional(),
         items: z.array(itemSchema).max(60).nullable().optional().describe('Ersetzt alle freien Elemente der Folie (vorhandene IDs mitgeben, um sie zu behalten); null = alle entfernen'),
         bg: slideBg.nullable().optional(),
+        hidden: z.boolean().optional().describe('true = Folie ausblenden (fehlt beim Präsentieren und in PDF, PNG, Word, Handout; in PowerPoint versteckt), false = wieder einblenden'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
@@ -428,6 +432,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.notes !== undefined) s.notes = i.notes ? typeset(i.notes) : undefined
         if (i.items !== undefined) s.items = withIds((i.items ?? undefined) as Item[] | undefined)
         if (i.bg !== undefined) s.bg = i.bg ?? undefined
+        if (i.hidden !== undefined) s.hidden = i.hidden || undefined
         ctx.setDeck(deck)
         return { text: await report(ctx, deck, [idx]) }
       },
@@ -442,7 +447,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if ([...i.order].sort().join() !== have) throw new Error(`order muss genau alle IDs enthalten: ${deck.slides.map((s) => s.id).join(', ')}`)
         deck.slides = i.order.map((id) => deck.slides[indexOf(deck, id)])
         ctx.setDeck(deck)
-        return { text: `Neue Reihenfolge: ${deck.slides.map((s, k) => `${k + 1}:${s.layout}`).join(' ')}` }
+        return { text: `Neue Reihenfolge: ${deck.slides.map((s, k) => `${k + 1}:${s.layout}${hid(s)}`).join(' ')}` }
       },
     }),
     tool({
@@ -514,7 +519,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const deck = needDeck(ctx)
         const idx = i.ids.map((id) => indexOf(deck, id))
         const bufs = await ctx.engine.renderPng(deck, idx, i.width)
-        return { text: idx.map((k) => `Folie ${k + 1} (${deck.slides[k].id}, ${deck.slides[k].layout})`).join('\n'), images: bufs }
+        return { text: idx.map((k) => `Folie ${k + 1} (${deck.slides[k].id}, ${deck.slides[k].layout})${hid(deck.slides[k])}`).join('\n'), images: bufs }
       },
     }),
     tool({
@@ -554,7 +559,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run() {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
-        return { text: `Kontaktbogen: ${deck.slides.length} Folien, Reihenfolge ${deck.slides.map((s) => s.layout).join(' → ')}\n${ART_DIRECTOR}`, images: [await ctx.engine.renderOverview(deck)] }
+        return { text: `Kontaktbogen: ${deck.slides.length} Folien, Reihenfolge ${deck.slides.map((s) => s.layout + hid(s)).join(' → ')}\n${ART_DIRECTOR}`, images: [await ctx.engine.renderOverview(deck)] }
       },
     }),
     tool({
@@ -566,7 +571,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const issues = await ctx.engine.lint(deck)
         const e = issues.filter((x) => x.severity === 'error').length
         if (!issues.length) return { text: 'Keine Probleme. Das Deck ist sauber.' }
-        return { text: `${e} Fehler, ${issues.length - e} Warnungen:\n` + issues.map((x) => `  - Folie ${x.slide + 1} (${x.slideId}) [${x.severity}] ${x.rule}${x.slot ? ` @${x.slot}` : ''}: ${x.message}`).join('\n') }
+        return { text: `${e} Fehler, ${issues.length - e} Warnungen:\n` + issues.map((x) => `  - Folie ${x.slide + 1} (${x.slideId})${hid(deck.slides[x.slide])} [${x.severity}] ${x.rule}${x.slot ? ` @${x.slot}` : ''}: ${x.message}`).join('\n') }
       },
     }),
     tool({

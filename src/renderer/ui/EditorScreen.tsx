@@ -95,7 +95,7 @@ export function EditorScreen(p: Props) {
     <div className="work">
       {p.nav && p.deck && (
         <aside className="work-nav" aria-label="Folienübersicht">
-          <Filmstrip deck={p.deck} sel={p.index} disabled={p.busy} onSelect={p.onSelect} onMove={p.onMove} onAdd={(at) => p.addSlide('blank', at)} onDup={p.dupSlide} onDel={p.delSlide} onCopy={p.copySlides} onPaste={p.pasteSlides} canPaste={p.canPaste} />
+          <Filmstrip deck={p.deck} sel={p.index} disabled={p.busy} onSelect={p.onSelect} onMove={p.onMove} onAdd={(at) => p.addSlide('blank', at)} onDup={p.dupSlide} onDel={p.delSlide} onHide={(i) => p.patchSlide(i, { hidden: !p.deck!.slides[i].hidden || undefined })} onCopy={p.copySlides} onPaste={p.pasteSlides} canPaste={p.canPaste} />
         </aside>
       )}
       <div className="work-center" onPointerDownCapture={(e) => { if ((e.target as HTMLElement).closest('.stage-canvas')) setDragging(true) }}>

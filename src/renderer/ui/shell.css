@@ -459,3 +459,8 @@ button.setup-opt { cursor: pointer; }
 .el-gen-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .el-mine { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .el-mine .el-photo { aspect-ratio: 1; }
+
+/* Ausgeblendete Folien */
+.dw-hidden .thumb-slide > *, .dw-hidden .grid-thumb > :first-child { opacity: 0.4; } /* nur die Folie, Auswahlring und Haken bleiben kräftig */
+.work-nav .thumb-off { display: block; margin-top: 4px; color: var(--muted); }
+.grid-off { flex: none; margin-top: 2px; color: var(--muted); }

@@ -228,6 +228,7 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
   deck.slides.forEach((s, i) => {
     const { measured, background } = slides[i]
     const slide = pptx.addSlide()
+    slide.hidden = !!s.hidden // <p:sld show="0">: in PowerPoint ausgeblendet
     slide.background = { data: `image/png;base64,${background.toString('base64')}` }
     const groups = new Map<number, string[]>()
     const pulses: AnimStep[] = []
