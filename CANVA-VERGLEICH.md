@@ -44,6 +44,37 @@ Nebenbei behoben: PDF-Export hing unter Wayland (Electron jetzt mit `--ozone-pla
 
 ---
 
+### Nachtrag 07.10.2026
+
+Abgleich gegen den Code und gegen Canva (Stand Oktober 2026: Canva AI 2.0, Visual Suite 2.0, Magic Studio).
+
+**Seit dem 27.09. dazugekommen:** Stil übertragen, Pipette und Dokumentfarben, Vorlagen-Galerie (5 Decks), Formate von Social bis A4 und Druck-PDF (3.3), Fernbedienung, Laser und Stift (3.4), KI-Bilder (3.5), Word-Export. Am 07.10. außerdem:
+
+| Funktion (Canva-Gegenstück) | Wo |
+|---|---|
+| Ebenen-Panel (Position → Ebenen): auswählen, Reihenfolge ziehen, sperren, Gruppen bleiben zusammen | `ui/LayersPanel.tsx`, `itemOps.ts` moveNextTo, Test `scripts/check-layers.ts` |
+| Suchen & Ersetzen (Strg+F / Strg+H) im ganzen Deck, schema-sicher | `shared/find.ts`, `ui/FindBar.tsx`, Test `scripts/check-find.ts` |
+| Rechtschreibprüfung Deutsch/Englisch mit Vorschlägen | `main/spellcheck.ts`, Einstellungen → Allgemein |
+| Seite ausblenden: Präsentieren und Export überspringen, PowerPoint `show="0"` | `deck.ts` hidden/showOf, `engine.ts`, Test `scripts/check-hidden.ts` |
+| Versionsverlauf mit Vorschau und Wiederherstellen | `ui/VersionsSheet.tsx`, `ipc.ts` versions:* |
+| Uploads (Deine Bilder) und Magic Media im Einfügen-Panel | `ui/Elements.tsx`, `tools.ts` makeImage |
+| Übersetzen (3.3) als Deck-Auftrag | `ui/AskBar.tsx`, Guide „Aufträge fürs ganze Deck“ |
+
+**Noch offen**, nach Wirkung sortiert:
+- Tabelle als freies Element bzw. native PowerPoint-Tabelle mit Zeilen-/Spalten-Editor (2.1).
+- Aufzählungen und Links per Knopf in freien Textfeldern (heute nur Layout „bullets“ bzw. `[Text](url)`).
+- „Andere Gestaltung“ mit 3–4 Mini-Vorschauen und Layoutwechsel per `convertsTo` (1.6).
+- Verlauf-Editor (bis 3 Stopps, Winkel, radial) für Formen und Hintergrund, `bg.pattern` (1.7, 3.1).
+- Animationen: Geschwindigkeit des Übergangs, Verzögerung, Dauer, „mit/nach vorherigem“ (2.5).
+- Lineale, Raster, gespeicherte Hilfslinien (3.1).
+- Bildfilter-Presets und Tönung (2.6); Masken blob/teardrop/rounded, Geräte-Mockups, Foto auf Platzhalter ziehen (1.5).
+- Formen wave, cloud, callout, bracket, arc, pie und `custGeom`-Export (1.4); Frame `split-photo`, Donut-Mitte (1.1, 1.2).
+- Schriftwahl mit Vorschau, weitere OFL-Familien (2.3); Online-Video in PPTX (2.4).
+- Aufzeichnen (Present and record), Live-Umfragen und Quiz.
+- PowerPoint-Abnahme in echtem PowerPoint (§8.4).
+
+Weiterhin bewusst draußen (§7): Kommentare, Teilen-Links, Zusammenarbeit, Canva Live, Whiteboard, Stock-Bibliothek, Magic Eraser/Grab/Expand, Bogentext und Deko als Standard.
+
 ## 1. Kurzfazit
 
 Deckwerk ist technisch weiter als Canva, sieht aber noch nicht so aus.

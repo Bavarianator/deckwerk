@@ -78,6 +78,7 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 
   Angeboten wird nur, was installiert ist. Steht das gespeicherte Modell nicht mehr zur Verfügung, nimmt Deckwerk das erste verfügbare. Die Wahl gilt ab der nächsten Nachricht und bleibt gespeichert. Wechselst du den Anbieter, beginnt ein neues Gespräch; das Deck bleibt. Vibe und Codex antworten spürbar langsamer als Claude.
 - Unter den Notizen schreibt „Schreiben lassen“ die Sprechernotizen, „Überarbeiten“ verbessert vorhandene. Daneben steht die geschätzte Sprechzeit.
+- **✦ in der KI-Leiste:** Aufträge fürs ganze Deck mit einem Klick: übersetzen (9 Sprachen), Sprechernotizen für alle Folien, auf 5–15 Folien kürzen, als E-Mail, Newsletter oder Blogartikel zusammenfassen (Antwort im Chat, das Deck bleibt) und Rechtschreibung prüfen. Ist ein Element gewählt, auch ein Textfeld des Layouts, stehen oben dessen Text-Aktionen: kürzer, ausführlicher, einfacher, förmlicher, lockerer, korrigieren, übersetzen. Bei freien Textelementen gibt es dieselben Aktionen in der Objektleiste unter „Umschreiben“. „Rückgängig“ in der Blase nimmt die ganze KI-Runde zurück.
 - **Brand-Kit:** Im Look-Dialog „Als Standard speichern“ legt Farben, Schriften und Logo (auch eines für dunklen Grund) in `~/Deckwerk/brand.json` ab. Jedes Deck, das die KI neu anlegt, bekommt die Marke automatisch, das Logo steht auf Titel- und Schlussfolie, bei A4 auf Seite 1 (kein Wasserzeichen auf jeder Folie); „Standard übernehmen“ wendet sie auf ein bestehendes Deck an.
 - **Hausstil:** Sag „merk dir …“, und die KI trägt die Vorliebe in `~/Deckwerk/hausstil.md` ein. Die Datei gilt für jedes künftige Deck und lässt sich von Hand bearbeiten.
 - **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/Deckwerk/assets`. Findet sie dort nichts Passendes und ist ein Unsplash-Key eingerichtet (Einstellungen → Bilder → Fotosuche oder `UNSPLASH_ACCESS_KEY`), sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
@@ -91,6 +92,7 @@ Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewäh
 - **Skalieren und drehen:** 8 Griffe skalieren, der runde Griff dreht (Umschalt: in 15°-Schritten). Doppelklick oder Enter bearbeitet Text.
 - **Elemente:**
   - Text-Presets, 8 Formen, Icon-Suche, Fotos (Upload, Suche, Zwischenablage, Drag & Drop), Diagramme mit Datentabelle, QR-Codes, Video und Audio.
+  - „Bild erzeugen“: Beschreibung eingeben, Quer, Hoch oder Quadrat wählen, die KI-Bild-Funktion aus Einstellungen → Bilder erzeugt es. „Deine Bilder“ zeigt die neuesten Bilder aus `~/Deckwerk/assets` zum Wiederverwenden.
   - Aus dem Layout-Katalog lassen sich fertige Folien einfügen.
 - **Bilder:**
   - Doppelklick schneidet zu.
@@ -101,13 +103,17 @@ Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewäh
   - „In freie Elemente umwandeln“ macht jeden Text, jede Form und jedes Bild der Folie frei verschiebbar.
   - „Farben dieser Folie“ ersetzt eine Farbe überall auf der Folie.
 - **Kontextmenü (Rechtsklick):** Ebenen, Gruppen, Sperren, sichere Ränder einblenden und eigene Hilfslinien setzen.
+- **Ebenen:** Unter „Anpassen“ listet „Ebenen“ alle freien Elemente der Folie, oberstes zuerst. Klick wählt, Ziehen ändert die Reihenfolge (Gruppen bleiben zusammen), das Schloss sperrt.
+- **Suchen & Ersetzen:** Strg+F sucht im ganzen Deck (Folientexte, freie Texte, Notizen, Titel), Strg+H ersetzt. Bild- und Linkadressen bleiben unberührt; Stellen, die danach zu lang oder leer für ihr Feld wären, überspringt Deckwerk.
+- **Rechtschreibprüfung:** Deutsch und Englisch, Vorschläge per Rechtsklick. Abschalten unter Einstellungen → Allgemein. Unter Linux und Windows lädt Deckwerk die Wörterbücher einmalig von einem Google-Server.
+- **Folien ausblenden:** Rechtsklick im Filmstreifen oder „Ausblenden“ in der Übersicht. Ausgeblendete Folien überspringt Deckwerk beim Präsentieren und im PDF-, Bild-, Word- und Handout-Export; in der PowerPoint-Datei sind sie enthalten, aber ausgeblendet.
 - **Formate:** „Exportieren“ → „Anderes Format …“ rechnet das Deck auf ein anderes Format um oder legt Kopien in weiteren Formaten an: 16:9, 4:3, Quadrat, 4:5, Story 9:16, A4 hoch oder quer, Link-Vorschau. Freie Elemente wandern mit, Layouts ordnen sich neu an: Hoch- und Quadratformate stapeln Bild und Text, Social-Formate setzen größere Schrift, A4 kleinere. Der Lint rechnet je Format mit eigenen Grenzen (Social bis 30, A4 bis 350 Wörter je Seite). Für A4 gibt es die Layouts „Fließtext“, „Angebot“, „Flyer“ (Foto oben, Vollbild oder typografisch, mit Handlungsaufforderung und QR-Code) und „Flyer-Rückseite“ (Programm, Eckdaten, eine Handlung mit QR-Code, Impressum). Der QR-Code braucht eine vollständige URL (`https://`, `mailto:`, `tel:`). Layouts mit festem Format erscheinen in den Folienvorlagen nur im passenden Format; auf dem Startbildschirm gibt es den Beispiel-Chip „Flyer für ein Sommerfest“, und die Vorlagen-Galerie enthält den Flyer. Der Lint warnt bei Fotos, die für den Druck zu klein sind (unter 250 ppi).
 
 ### Speichern und Versionen
 
 Deckwerk speichert automatisch. Jede Änderung, ob von dir oder von der KI, landet nach 1,5 Sekunden in `~/Deckwerk/<titel>/deck.json`. Schließt du das Fenster oder öffnest ein anderes Deck, sichert Deckwerk offene Änderungen vorher, auch einen Text, den du gerade tippst.
 
-Höchstens alle 10 Minuten legt Deckwerk den vorigen Stand unter `<deck>/versions/` ab, pro Deck bis zu 100 Versionen. Um zu einer Version zurückzukehren, öffnest du sie über „Deck öffnen“. Sie wird wieder zum Deck, und der bisherige Stand wandert selbst in die Versionen.
+Höchstens alle 10 Minuten legt Deckwerk den vorigen Stand unter `<deck>/versions/` ab, pro Deck bis zu 100 Versionen. „Exportieren“ → „Versionsverlauf …“ zeigt sie nach Tagen sortiert mit Vorschau der Folien; „Diese Version wiederherstellen“ macht sie wieder zum Deck, und der bisherige Stand wandert selbst in die Versionen.
 
 Ein Doppelklick auf eine `deck.json` im Dateimanager öffnet sie in Deckwerk, auch wenn die App schon läuft. Ein Deck-Ordner lässt sich weitergeben: Bildpfade relativ zur deck.json (`assets/foto.jpg`) löst Deckwerk beim Öffnen auf.
 
