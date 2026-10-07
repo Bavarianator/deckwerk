@@ -1,6 +1,6 @@
 // Brand-Kit: Auflösung im Theme und brand.json als Standard für create_deck: npx esbuild scripts/check-brand.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
 import { deepStrictEqual as eq, ok } from 'node:assert'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Deck } from '../src/shared/deck'
@@ -35,4 +35,11 @@ eq(deck!.theme.brand, { primary: '#AABBCC' })
 writeFileSync(BRAND_FILE, '{kaputt')
 eq(defaultBrand(), undefined) // kaputte Datei bricht create_deck nicht
 ok(true)
+// Schriften: Familienname lesbar (PowerPoint/Word ordnen eingebettete Schriften darüber zu), fontFamilyOf lässt die Datei unverändert
+const { fontFamilyOf } = await import('../src/main/embed-fonts')
+for (const f of readdirSync('assets/fonts').filter((f) => f.endsWith('.ttf'))) {
+  const ttf = readFileSync(join('assets/fonts', f)), before = Buffer.from(ttf), family = fontFamilyOf(ttf)
+  ok(/^[\x20-\x7e]+$/.test(family), `${f}: Familienname „${family}“`)
+  ok(ttf.equals(before), `${f}: fontFamilyOf verändert die Schrift`)
+}
 console.log('check-brand: ok')
