@@ -41,6 +41,10 @@ const api = {
   open: (): Promise<AppState | null> => invoke('deck:open'),
   /** wie open, aber ohne Dialog */
   openPath: (path: string): Promise<AppState> => invoke('deck:openPath', path),
+  /** Versionsverlauf des offenen Decks, neueste zuerst (at in ms); leer, solange es nicht gespeichert ist */
+  versions: (): Promise<{ file: string; at: number; slides: number; title: string }[]> => invoke('versions:list'),
+  /** Version nur zum Ansehen; wiederherstellen = openPath(file) */
+  readVersion: (file: string): Promise<Deck> => invoke('versions:read', file),
   /** Kopie als neues Deck unter ~/Deckwerk speichern, liefert den Pfad */
   saveCopy: (deck: Deck): Promise<string> => invoke('deck:saveCopy', deck),
   /** Publikumsfenster auf dem zweiten Bildschirm; false = nur ein Bildschirm */

@@ -368,6 +368,7 @@ export default function App() {
             canPrint={!!deck && profileOf(deck) === 'doc'}
             onPrint={() => setPrinting(true)}
             onPresent={() => present(0)}
+            onRestore={actions.onOpenPath}
           />
           {deck && view === 'grid' ? (
             <Overview

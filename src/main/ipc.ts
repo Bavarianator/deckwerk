@@ -2,7 +2,7 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage, screen, shell } from 'electron'
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -427,6 +427,31 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     await writeFile(file, JSON.stringify(copy, null, 2))
     return file
   })
+  // Versionsverlauf: die Stände aus snapshot() des offenen Decks, neueste zuerst; wiederhergestellt wird über deck:openPath (restore())
+  const versionsDir = () => (path ? join(dirname(path), 'versions') : null)
+  ipcMain.handle('versions:list', async () => {
+    const dir = versionsDir()
+    if (!dir) return []
+    const names = (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith('.json'))
+    const found = await Promise.all(names.map(async (name) => {
+      const file = join(dir, name)
+      try {
+        const d = readDeck(file)
+        // Dateiname aus snapshot(): Ortszeit „2026-10-07T14-03-05“; fremde Namen → mtime
+        const m = name.match(/^(\d{4})-(\d\d)-(\d\d)T(\d\d)-(\d\d)-(\d\d)/)
+        const at = m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime() : (await stat(file)).mtimeMs
+        return { file, at, slides: d.slides.length, title: d.title }
+      } catch { return null }
+    }))
+    return found.filter((x) => x !== null).sort((a, b) => b.at - a.at)
+  })
+  // Vertrauensgrenze: der Pfad kommt aus dem Renderer und muss genau im versions-Ordner des offenen Decks liegen
+  ipcMain.handle('versions:read', async (_, f: string) => {
+    const dir = versionsDir()
+    const real = dir && typeof f === 'string' ? await realpath(f).catch(() => null) : null
+    if (!dir || !real || !real.endsWith('.json') || dirname(real) !== (await realpath(dir).catch(() => null))) throw new Error('Diese Version gehört nicht zum offenen Deck.')
+    return readDeck(real, dirname(dirname(real))) // Bildpfade relativ zum Deck-Ordner wie nach dem Wiederherstellen
+  })
 
   // Referentenansicht auf zwei Bildschirmen: Publikum im Vollbild auf dem anderen Display (index.html#audience),
   // der Referent steuert; Befehle (weiter/gehe zu) werden durchgereicht, beide Fenster laufen dieselbe Logik.
@@ -636,10 +661,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   }))
 }
 
-function readDeck(file: string): Deck {
+function readDeck(file: string, dir = dirname(file)): Deck {
   const d = JSON.parse(readFileSync(file, 'utf8'))
   if (!Array.isArray(d?.slides) || !d.theme) throw new Error('Das ist keine gültige deck.json.')
-  return localizeDeck(d, dirname(file)) // relative Bildpfade (Deck-Ordner mit assets/ weitergegeben) auflösen
+  return localizeDeck(d, dir) // relative Bildpfade (Deck-Ordner mit assets/ weitergegeben) auflösen
 }
 
 // ~/Deckwerk/<titel-slug>, bei Kollision mit -2, -3 …
