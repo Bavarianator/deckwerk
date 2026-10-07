@@ -100,8 +100,17 @@ export function distribute(items: Item[], ids: string[], axis: 'x' | 'y'): Item[
   return items.map((it) => (pos.has(it.id) ? { ...it, [axis]: pos.get(it.id) } : it))
 }
 
-// Zwischenablage für Elemente, auch über Folien hinweg
-export const clip: { items: Item[] } = { items: [] }
+// Zwischenablage für Elemente und kopierten Stil, auch über Folien hinweg (Kontextmenü, Inspector und Kürzel teilen sie)
+export const clip: { items: Item[]; style: Partial<Item> | null } = { items: [], style: null }
+
+// „Stil übertragen“: Aussehen ohne Inhalt und Position
+const STYLE_KEYS = ['font', 'size', 'color', 'bold', 'italic', 'underline', 'upper', 'align', 'lineHeight', 'spacing', 'effect', 'effectColor',
+  'fill', 'fill2', 'stroke', 'strokeW', 'dash', 'radius', 'shadow', 'opacity', 'look', 'mask', 'adjust'] as const satisfies readonly (keyof Item)[]
+export const copyStyle = (it: Item) => { clip.style = Object.fromEntries(STYLE_KEYS.filter((k) => it[k] !== undefined).map((k) => [k, it[k]])) }
+export const pasteStyle = (items: Item[], ids: string[]): Item[] => {
+  const s = clip.style
+  return s ? items.map((it) => (ids.includes(it.id) ? { ...it, ...Object.fromEntries(STYLE_KEYS.map((k) => [k, s[k]])) } : it)) : items
+}
 
 // asset://-URL wie ipc.ts (pathToFileURL-Kodierung pro Pfadsegment)
 export const assetOf = (path: string) => `asset://local${path.split('/').map(encodeURIComponent).join('/')}`
