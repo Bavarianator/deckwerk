@@ -466,7 +466,7 @@ button.setup-opt { cursor: pointer; }
 .grid-off { flex: none; margin-top: 2px; color: var(--muted); }
 
 /* Suchen & Ersetzen */
-.find-bar { position: fixed; top: 60px; right: 16px; z-index: 16; display: flex; flex-direction: column; gap: 4px; width: 440px; max-width: calc(100% - 32px); padding: 6px; border-radius: 12px; }
+.find-bar { position: fixed; top: 60px; right: 16px; z-index: 21; /* über dem Einfügen-Panel (20) */ display: flex; flex-direction: column; gap: 4px; width: 440px; max-width: calc(100% - 32px); padding: 6px; border-radius: 12px; }
 .app:has(.work-panel.format) .find-bar { right: 324px; } /* Panel „Anpassen“ nicht verdecken */
 .find-row { display: flex; align-items: center; gap: 2px; }
 .find-row input { flex: 1; min-width: 0; height: 30px; margin-right: 4px; }

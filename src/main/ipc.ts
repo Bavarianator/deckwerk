@@ -415,12 +415,18 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return { urls, note: urls.length ? undefined : out.text }
   })
   // Einfügen-Panel (Canva „Magic Media“): dieselbe Bild-KI wie generate_image, Datei landet unter ~/Deckwerk/assets
+  let generating = false
   ipcMain.handle('image:generate', async (_, prompt: unknown, orientation: unknown) => {
     if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 2000) throw new Error('Bitte das Bild beschreiben (höchstens 2000 Zeichen).')
     if (typeof orientation !== 'string' || !Object.hasOwn(IMAGE_SIZE, orientation)) throw new Error(`Unbekanntes Format: ${orientation}`)
-    const img = await makeImage(prompt.trim(), orientation as Orientation, assets)
-    if (!img) throw new Error(NO_IMAGE_AI)
-    return assetUrl(img.file)
+    // eine Erzeugung zur Zeit aus dem Panel: jeder Aufruf kostet beim Anbieter Geld
+    if (generating) throw new Error('Es wird schon ein Bild erzeugt. Bitte kurz warten.')
+    generating = true
+    try {
+      const img = await makeImage(prompt.trim(), orientation as Orientation, assets)
+      if (!img) throw new Error(NO_IMAGE_AI)
+      return assetUrl(img.file)
+    } finally { generating = false }
   })
   // „Deine Bilder“ (Canva „Uploads“): die neuesten Bilder unter ~/Deckwerk/assets, auch aus Unterordnern wie import-*
   ipcMain.handle('assets:list', async () => {

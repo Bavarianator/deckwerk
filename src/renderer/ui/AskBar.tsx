@@ -63,6 +63,7 @@ function DeckMenu({ busy, onSend, target, onTarget }: { busy: boolean; onSend: (
       const at = items.indexOf(document.activeElement as HTMLElement)
       items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
       e.preventDefault()
+      e.stopPropagation() // sonst blättert App.tsx die Folie
     }
   }
   const row = (label: string, run: () => void, select?: ReactNode) => (
