@@ -4,12 +4,13 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as RPE } from 'react'
 import { LoaderCircle, Minus, Plus, TriangleAlert } from 'lucide-react'
 import { sizeOf, type Box, type Deck, type Item, type Measured, type Slide } from '../../shared/deck'
-import { elsToItems, newImage, newMedia } from '../../shared/items'
+import { elsToItems, newImage, newMedia, newShape, newText } from '../../shared/items'
+import { resolveTheme } from '../../shared/themes'
 import { extract, eyebrowRules } from '../measure'
 import { videoPoster } from './media'
 import { SlideView } from '../slide'
 import type { Target } from './AskBar'
-import { assetOf, clip, cloneItems, coverCrop, geoOf, groupItems, imageRatio, isGroup, removeItems, reorder, ungroupItems, withGroups, type Geo, type Order } from './itemOps'
+import { assetOf, clip, cloneItems, copyStyle, coverCrop, geoOf, groupItems, imageRatio, isGroup, pasteStyle, removeItems, reorder, ungroupItems, withGroups, type Geo, type Order } from './itemOps'
 
 interface Props {
   deck: Deck | null
@@ -37,6 +38,10 @@ const rotV = (x: number, y: number, deg: number) => {
   const r = (deg * Math.PI) / 180
   return { x: x * Math.cos(r) - y * Math.sin(r), y: x * Math.sin(r) + y * Math.cos(r) }
 }
+// Text-Kürzel mit Strg/⌘ (⇧ = Umschalt); Komma/Punkt per e.code, weil Umschalt e.key ändert; Größe in Schritten wie die ObjectBar
+const TEXT_FLAG: Record<string, 'bold' | 'italic' | 'underline' | 'upper'> = { b: 'bold', i: 'italic', u: 'underline', '⇧k': 'upper' }
+const TEXT_ALIGN: Record<string, Item['align']> = { '⇧l': 'left', '⇧c': 'center', '⇧r': 'right' }
+const TEXT_SIZE: Record<string, number> = { '⇧Comma': 1 / 1.1, '⇧Period': 1.1 }
 const HANDLES: [number, number][] = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]]
 
 type Drag =
@@ -114,7 +119,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     }
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
-      if (!(e.ctrlKey || e.metaKey) || e.altKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || document.querySelector('[aria-modal="true"], dialog[open]')) return
       if (e.key === '+' || e.key === '=') zoomBy(1.25)
       else if (e.key === '-') zoomBy(0.8)
       else if (e.key === '0') setZoom(null)
@@ -457,7 +462,8 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     if (!slide) return
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement
-      if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest('.kit-select, [role=listbox], dialog') || busy) return // Dropdowns und Dialoge bedienen ihre Tasten selbst
+      if (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest('.kit-select, [role=listbox], dialog, .filmstrip') || busy) return // Dropdowns, Dialoge und Filmstreifen bedienen ihre Tasten selbst
+      if (document.querySelector('[aria-modal="true"], dialog[open]')) return // offenes Sheet: Fokus liegt nach Klicks oft auf body
       const mod = e.ctrlKey || e.metaKey, key = e.key.toLowerCase()
       if (crop) { // im Zuschnitt: Enter übernimmt, Esc verwirft, sonst nichts
         if (e.key === 'Enter' || e.key === 'Escape') finishCrop(e.key === 'Enter')
@@ -468,12 +474,40 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
       const has = sel.length > 0
       const step = e.shiftKey ? 10 : 1
       const nudge: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }
+      const free = items.filter((it) => sel.includes(it.id) && !it.locked).map((it) => it.id)
+      const texts = items.filter((it) => free.includes(it.id) && it.kind === 'text')
+      const setTexts = (p: (it: Item) => Partial<Item>) => onItems((l) => l.map((it) => (texts.some((x) => x.id === it.id) ? { ...it, ...p(it) } : it)))
+      const combo = mod && !e.altKey ? `${e.shiftKey ? '⇧' : ''}${e.code === 'Comma' || e.code === 'Period' ? e.code : key}` : ''
+      const textFlag = TEXT_FLAG[combo], textAlign = TEXT_ALIGN[combo], textSize = TEXT_SIZE[combo]
+      const onCanvas = t === document.body || !!t.closest('.stage') // Fokus auf Knöpfen, Menüs und Panels: Buchstaben und Tab gehören dorthin
       if (has && nudge[e.key] && !mod) {
         const [dx, dy] = nudge[e.key]
         onItems((l) => l.map((it) => (sel.includes(it.id) && !it.locked ? { ...it, x: it.x + dx, y: it.y + dy } : it)), `nudge-${sel.join()}`)
       } else if (has && (e.key === 'Delete' || e.key === 'Backspace')) act('delete')
       else if (has && e.key === 'Escape') onSel([])
       else if (has && e.key === 'Enter' && sel.length === 1 && byId(sel[0])?.kind === 'text') setEditing(sel[0])
+      else if (!mod && !e.altKey && !e.shiftKey && !e.repeat && ['t', 'r', 'c', 'l'].includes(key) && onCanvas) { // Einfügen wie in Canva, Farben wie im Panel „Elemente“
+        const c = resolveTheme(deck!.theme).c
+        const it = key === 't' ? { ...newText('body'), color: c.text } : newShape(({ r: 'rect', c: 'ellipse', l: 'line' } as const)[key as 'r'], c.accent)
+        add([{ ...it, x: Math.round((W - it.w) / 2), y: Math.round((H - it.h) / 2) }])
+        if (key === 't') setEditing(it.id)
+      }
+      // vor Strg+C/V/L: Strg+Alt+C/V und Strg+Umschalt+C/L dürfen nicht kopieren, einfügen oder sperren
+      else if (mod && e.altKey && !e.getModifierState('AltGraph') && (e.code === 'KeyC' || e.code === 'KeyV')) { // Stil übertragen; AltGr meldet Strg+Alt
+        if (e.code === 'KeyC' && byId(sel[0])) copyStyle(byId(sel[0])!)
+        else if (e.code === 'KeyV' && free.length && clip.style) onItems((l) => pasteStyle(l, free))
+        else return
+      } else if (textFlag || textAlign || textSize) {
+        if (!texts.length || (textFlag && e.repeat)) return // gehaltene Taste schaltet nicht hin und her
+        if (textFlag) { const on = !texts.every((it) => it[textFlag]); setTexts(() => ({ [textFlag]: on || undefined })) }
+        else if (textAlign) setTexts(() => ({ align: textAlign }))
+        else setTexts((it) => ({ size: Math.min(400, Math.max(6, Math.round((it.size ?? 32) * textSize))) })) // Grenzen wie im Inspector
+      } else if (has && e.key === 'Tab' && !mod && !e.altKey && onCanvas) {
+        const n = items.length, i = items.findIndex((it) => it.id === sel[0]), d = e.shiftKey ? -1 : 1
+        const next = Array.from({ length: n }, (_, j) => items[(((i + d * (j + 1)) % n) + n) % n]).find((it) => !it.locked)
+        if (!next) return
+        onSel([next.id])
+      }
       else if (mod && key === 'a') onSel(items.filter((it) => !it.locked).map((it) => it.id))
       else if (mod && key === 'v') act('paste')
       else if (has && mod && key === 'c') act('copy')
@@ -489,7 +523,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     }
     addEventListener('keydown', onKey, true)
     return () => removeEventListener('keydown', onKey, true)
-  }, [slide, sel, items, busy, act, onItems, onSel, crop]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [deck, slide, sel, items, busy, act, add, onItems, onSel, crop]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onContext = (e: React.MouseEvent) => {
     e.preventDefault()

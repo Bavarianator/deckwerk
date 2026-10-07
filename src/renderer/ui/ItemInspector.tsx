@@ -9,7 +9,7 @@ import {
 import { ANIM_DIRS, DASHES, ITEM_ANIMS, type AnimDir, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
 import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
 import { FONT_NAMES, resolveTheme } from '../../shared/themes'
-import { align, cloneItems, distribute, groupItems, isGroup, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
+import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
 import { Select } from './kit'
 import { animateItem } from './PresentScreen'
 import { removeBackground } from './media'
@@ -36,11 +36,6 @@ const ALIGNS: [Align, LucideIcon, string][] = [
 ]
 const ORDERS: [Order, LucideIcon, string][] = [['front', ArrowUpToLine, 'Ganz nach vorne'], ['forward', ChevronUp, 'Nach vorne'], ['backward', ChevronDown, 'Nach hinten'], ['back', ArrowDownToLine, 'Ganz nach hinten']]
 
-// „Stil übertragen“: Aussehen ohne Inhalt und Position; Zwischenablage gilt für die ganze Sitzung
-const STYLE_KEYS = ['font', 'size', 'color', 'bold', 'italic', 'underline', 'upper', 'align', 'lineHeight', 'spacing', 'effect', 'effectColor',
-  'fill', 'fill2', 'stroke', 'strokeW', 'dash', 'radius', 'shadow', 'opacity', 'look', 'mask', 'adjust'] as const satisfies readonly (keyof Item)[]
-let styleClip: Partial<Item> | null = null
-
 const Field = ({ label, children }: { label: string; children: ReactNode }) => <label className="field"><span>{label}</span>{children}</label>
 const Btn = ({ icon: I, label, on, ...rest }: { icon: LucideIcon; label: string; on?: boolean; onClick: () => void; disabled?: boolean }) => (
   <button type="button" className={`icon-btn ${on ? 'on' : ''}`} title={label} aria-label={label} aria-pressed={on} {...rest}><I size={15} /></button>
@@ -54,11 +49,26 @@ function Num({ value, onChange, min, max, step = 1, suffix }: { value: number; o
   )
 }
 
+// „#abc“, „A1B2C3“ … → „#AABBCC“; ungültig → null
+const hexOf = (s: string) => {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(s.trim())
+  return m && `#${(m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1]).toUpperCase()}`
+}
+
 // Farbwahl mit Theme-Farben als Schnellwahl
 function Color({ value, onChange, swatches, tag, allowNone }: { value?: string; onChange: (v: string | undefined, tag?: string) => void; swatches: string[]; tag: string; allowNone?: boolean }) {
   return (
     <div className="color">
       <input type="color" value={value ?? '#000000'} onChange={(e) => onChange(e.target.value.toUpperCase(), tag)} />
+      {/* Hex-Eingabe: übernimmt bei Enter/Verlassen, Ungültiges springt zurück; key setzt das Feld bei neuer Farbe neu auf */}
+      <input type="text" key={value} defaultValue={value ?? ''} spellCheck={false} aria-label="Farbe als Hex-Wert" placeholder="#RRGGBB"
+        style={{ flex: 'none', width: 82, height: 30, fontSize: 12 }}
+        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+        onBlur={(e) => {
+          const v = hexOf(e.target.value)
+          e.target.value = v ?? value ?? ''
+          if (v && v !== value?.toUpperCase()) onChange(v)
+        }} />
       {'EyeDropper' in window && (
         <button type="button" className="icon-btn" title="Farbe vom Bildschirm aufnehmen" aria-label="Pipette"
           onClick={() => new (window as unknown as { EyeDropper: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper().open().then((r) => onChange(r.sRGBHex.toUpperCase(), tag), () => {})}>
@@ -147,8 +157,8 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
       </h3>
       <fieldset disabled={locked} className="plain">
         <div className="btn-row" role="group" aria-label="Stil übertragen">
-          <Btn icon={Paintbrush} label="Stil kopieren" disabled={!it} onClick={() => { styleClip = Object.fromEntries(STYLE_KEYS.filter((k) => it![k] !== undefined).map((k) => [k, it![k]])); bump((n) => n + 1) }} />
-          <Btn icon={ClipboardPaste} label="Stil einfügen" disabled={!styleClip} onClick={() => styleClip && set(Object.fromEntries(STYLE_KEYS.map((k) => [k, styleClip![k]])))} />
+          <Btn icon={Paintbrush} label="Stil kopieren (Strg+Alt+C)" disabled={!it} onClick={() => { copyStyle(it!); bump((n) => n + 1) }} />
+          <Btn icon={ClipboardPaste} label="Stil einfügen (Strg+Alt+V)" disabled={!clip.style} onClick={() => onItems((l) => pasteStyle(l, picked))} />
         </div>
         <div className="btn-row" role="group" aria-label={chosen.length > 1 ? 'Aneinander ausrichten' : 'An der Folie ausrichten'}>
           {ALIGNS.map(([a, I, label]) => <Btn key={a} icon={I} label={`${label} ausrichten`} onClick={() => onItems((l) => align(l, picked, a, sizeOf(deck)))} />)}
