@@ -1,22 +1,46 @@
-// Einrichtung beim ersten Start (und später über das Zahnrad): Willkommen → KI-Zugang → Modell → Agenten (Claude Code, Codex, Vibe) →
-// Verbindung testen → Bilder (KI-Bilder über Mammouth, OpenAI oder Codex) → Fertig. Jeder Schritt zeigt, was schon erledigt ist; nichts davon ist Pflicht.
+// Einrichtung beim ersten Start (und später über das Zahnrad). Kurz für alle: Willkommen → KI-Zugang (geführt: Claude-Abo, ChatGPT-Abo
+// oder API-Schlüssel) → Fertig. „Mehr Einstellungen“ ergänzt Modell → Agenten (Claude Code, Codex, Vibe) → Verbindung testen →
+// Bilder (KI-Bilder über Mammouth, OpenAI oder Codex) → Cloud (WebDAV-Sync). Jeder Schritt zeigt, was schon erledigt ist; nichts davon ist Pflicht.
 import { useContext, useEffect, useState, type ReactNode } from 'react'
-import { ArrowLeft, Check, Copy, KeyRound, LayoutGrid, LoaderCircle, Palette, Sparkles, Terminal, Wand2 } from 'lucide-react'
+import { ArrowLeft, Check, Cloud, Copy, ExternalLink, FileDown, HardDrive, KeyRound, LoaderCircle, MousePointerClick, Sparkles, Wand2 } from 'lucide-react'
 import { AUTO, AUTO_CHOICE, MODELS, routeOf } from '../../shared/models'
 import { ChatChoices } from './Chat'
 import { Select } from './kit'
 import { Logo } from './Logo'
-import type { ChatCli, CliStatus, ImageProvider, ImageStatus } from '../../preload'
+import type { ChatCli, CliStatus, ImageProvider, ImageStatus, SyncStatus } from '../../preload'
 
 type Status = { key: boolean; clis: CliStatus[] }
-const STEPS = ['Willkommen', 'KI-Zugang', 'Modell', 'Agenten', 'Testen', 'Bilder', 'Fertig']
+const ALLE = ['Willkommen', 'KI-Zugang', 'Modell', 'Agenten', 'Testen', 'Bilder', 'Cloud', 'Fertig']
+const KURZ = ['Willkommen', 'KI-Zugang', 'Fertig'] // der Rest steckt unter „Mehr Einstellungen“ (gemerkt pro Rechner)
+const TERMINAL = navigator.userAgent.includes('Mac') ? 'Programme → Dienstprogramme → Terminal' : 'meist mit Strg+Alt+T'
+const CLAUDE_NATIV = 'curl -fsSL https://claude.ai/install.sh | bash' // nativer Installer von Anthropic, braucht kein Node.js
+type Weg = 'claude' | 'codex' | 'key'
+const WEGE: { id: Weg; titel: string; text: string }[] = [
+  { id: 'claude', titel: 'Ich habe ein Claude-Abo', text: 'Pro oder Max: Deckwerk nutzt dein Abo über Claude Code, ohne Extrakosten.' },
+  { id: 'codex', titel: 'Ich habe ein ChatGPT-Abo', text: 'Plus oder Pro: Deckwerk nutzt dein Abo über Codex.' },
+  { id: 'key', titel: 'Ich nehme einen API-Schlüssel', text: 'Ohne Abo: Du zahlst bei Anthropic nur, was die KI tatsächlich arbeitet.' },
+]
+const merken = (an?: boolean) => { try { if (an !== undefined) localStorage.setItem('setup-mehr', an ? '1' : '0'); return localStorage.getItem('setup-mehr') === '1' } catch { return !!an } }
+
+// Befehl zum Abtippen sparen: Code plus Kopieren-Knopf
+function Befehl({ text }: { text: string }) {
+  const [kopiert, setKopiert] = useState(false)
+  return (
+    <span className="setup-befehl">
+      <code>{text}</code>
+      <button type="button" className="pill" onClick={() => { void navigator.clipboard.writeText(text); setKopiert(true) }}>
+        {kopiert ? <Check size={13} /> : <Copy size={13} />}{kopiert ? 'Kopiert' : 'Kopieren'}
+      </button>
+    </span>
+  )
+}
 const IMG_APIS = [
   { id: 'mammouth', name: 'Mammouth', env: 'MAMMOUTH_API_KEY', placeholder: 'sk-…', hint: 'API-Key aus deinem Mammouth-Konto: ein Abo, viele Bildmodelle.' },
   { id: 'openai', name: 'OpenAI', env: 'OPENAI_API_KEY', placeholder: 'sk-…', hint: 'API-Key von platform.openai.com, abgerechnet pro Bild.' },
 ] as const
 const IMAGE_MODELS = ['gpt-image-2', 'gemini-3-pro-image-preview', 'gemini-3.1-flash-image-preview']
 const INSTALL: Record<ChatCli, string> = {
-  claude: 'npm install -g @anthropic-ai/claude-code',
+  claude: CLAUDE_NATIV,
   codex: 'npm install -g @openai/codex',
   vibe: 'uv tool install mistral-vibe',
 }
@@ -27,13 +51,20 @@ const PROMPTS = [
   'Öffne mein letztes Deckwerk-Deck und kürze Folie 4.',
 ]
 
-interface Props { model: string; onModel: (id: string) => void; onKeySaved: () => void; onClose: () => void }
+/** start: Schritt, mit dem die Einrichtung aufgeht (z. B. „KI-Zugang“ aus dem Key-Dialog) */
+interface Props { model: string; onModel: (id: string) => void; onKeySaved: () => void; onClose: () => void; start?: string }
 
-export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
-  const [step, setStep] = useState(0)
+export function SetupSheet({ model, onModel, onKeySaved, onClose, start }: Props) {
+  const [mehr, setMehr] = useState(() => merken())
+  const steps = mehr ? ALLE : KURZ
+  const [step, setStep] = useState(() => Math.max(0, steps.indexOf(start ?? '')))
+  const toggleMehr = () => { const neu = !mehr; merken(neu); setMehr(neu); setStep(Math.max(0, (neu ? ALLE : KURZ).indexOf(steps[step]))) }
   const [s, setS] = useState<Status | null>(null)
+  const [weg, setWeg] = useState<Weg | null>(null)
+  const [andere, setAndere] = useState(false) // schon startklar: weitere Wege erst auf Klick zeigen
+  const [keyInfo, setKeyInfo] = useState<'' | 'geprüft' | 'ungeprüft'>('')
   const [key, setKey] = useState('')
-  const [busy, setBusy] = useState<'' | 'key' | 'test' | 'all' | 'img' | ChatCli>('')
+  const [busy, setBusy] = useState<'' | 'key' | 'test' | 'all' | 'img' | 'sync' | ChatCli>('')
   const [err, setErr] = useState('')
   const [tools, setTools] = useState<number | null>(null)
   const [copied, setCopied] = useState(-1)
@@ -42,7 +73,10 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
   const [imgModel, setImgModel] = useState('')
   const showImg = (x: ImageStatus) => { setImg(x); setImgModel(x.model) }
   const load = () => window.api.setupStatus().then(setS)
-  useEffect(() => { void load(); void window.api.imageSettings().then(showImg) }, [])
+  const [sync, setSync] = useState<SyncStatus | null>(null)
+  const [dav, setDav] = useState({ url: '', user: '', pass: '' })
+  useEffect(() => { void load(); void window.api.imageSettings().then(showImg); void window.api.syncStatus().then((x) => { setSync(x); setDav({ url: x.url, user: x.user, pass: '' }) }) }, [])
+  useEffect(() => window.api.onSync(setSync), [])
   useEffect(() => setErr(''), [step])
 
   const run = async (what: typeof busy, fn: () => Promise<void>) => {
@@ -51,7 +85,8 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
     try { await fn() } catch (e) { setErr((e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')) }
     setBusy('')
   }
-  const saveKey = () => run('key', async () => { await window.api.setApiKey(key); setKey(''); onKeySaved(); await load() })
+  const saveKey = () => run('key', async () => { setKeyInfo(await window.api.setApiKey(key)); setKey(''); onKeySaved(); await load() })
+  const saveSync = (off = false) => run('sync', async () => { setSync(await window.api.setSync(off ? null : dav)); setDav((d) => (off ? { url: '', user: '', pass: '' } : { ...d, pass: '' })) })
   const saveImg = (patch: Parameters<typeof window.api.setImageSettings>[0]) => run('img', async () => showImg(await window.api.setImageSettings(patch)))
   const install = (cli: ChatCli) => run(cli, async () => { await window.api.setupMcp(cli); await load() })
   const open = s?.clis.filter((c) => c.found && !c.mcp) ?? [] // gefunden, aber Deckwerk noch nicht eingetragen
@@ -67,8 +102,23 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
   ]
   const test = () => run('test', async () => { setTools(null); setTools(await window.api.setupMcpTest()) })
   const copy = (i: number) => { void navigator.clipboard.writeText(PROMPTS[i]); setCopied(i) }
-  const next = () => setStep((x) => Math.min(STEPS.length - 1, x + 1))
+  const next = () => setStep((x) => Math.min(steps.length - 1, x + 1))
   const on = (cli: ChatCli) => kind === cli && !(cli === 'claude' && s?.key) // Claude mit Key läuft über die API
+  const gefunden = s?.clis.filter((c) => c.found) ?? []
+  const aktiv = s?.key ? null : gefunden.find((c) => c.id === kind && c.login !== false) // CLI, über das der Chat läuft
+  const bereit = !!s?.key || !!aktiv
+  // Noch kein Zugang: alle paar Sekunden nachsehen, damit ein frisch installiertes CLI von selbst auftaucht …
+  const zugang = steps[step] === 'KI-Zugang'
+  useEffect(() => {
+    if (!zugang || bereit) return
+    const t = setInterval(() => void load(), 4000)
+    return () => clearInterval(t)
+  }, [zugang, bereit])
+  // … und es dann gleich als Chat-Weg wählen
+  useEffect(() => {
+    const c = !bereit && gefunden.find((x) => x.login !== false)
+    if (c) useCli(c.id)
+  }, [s])
   const mcp = s?.clis.filter((c) => c.mcp).map((c) => c.name).join(', ') // wo Deckwerk eingetragen ist
   const codex = s?.clis.find((c) => c.id === 'codex'), codexReady = !!codex?.found && codex.login !== false
   const ok = <span className="setup-ok" aria-label="erledigt"><Check size={14} strokeWidth={3} /></span>
@@ -78,42 +128,80 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
     <>
       <Logo size={56} />
       <h1 id="setup-title">Willkommen bei Deckwerk</h1>
-      <p className="setup-sub">Ein Satz genügt. Deckwerk schreibt die Storyline, baut die Folien und prüft jede einzelne.</p>
+      <p className="setup-sub">Sag in einem Satz, was du zeigen willst. Deckwerk baut daraus eine fertige Präsentation.</p>
       <ul className="setup-feats">
-        <li><Wand2 size={18} /><span><b>Aus einem Satz ein Deck</b>Action Titles, Layouts, Diagramme und Animationen, geprüft als Bild.</span></li>
-        <li><LayoutGrid size={18} /><span><b>Frei gestalten wie in Canva</b>Formen, Fotos, Icons und Diagramme direkt auf der Folie.</span></li>
-        <li><Palette size={18} /><span><b>Ein Look für alles</b>Themes, eigene Designs von der KI, Formate von Quadrat bis A4.</span></li>
-        <li><Terminal size={18} /><span><b>Auch aus Claude Code, Codex und Vibe</b>Decks direkt aus dem Terminal bauen und bearbeiten.</span></li>
+        <li><Wand2 size={18} /><span><b>Aus einem Satz eine Präsentation</b>Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.</span></li>
+        <li><MousePointerClick size={18} /><span><b>Alles bleibt änderbar</b>Klick auf eine Folie und ändere Text, Bilder und Farben, oder sag einfach, was anders sein soll.</span></li>
+        <li><FileDown size={18} /><span><b>Als PowerPoint oder PDF</b>Weitergeben, weiterbearbeiten oder direkt aus Deckwerk vortragen.</span></li>
+        <li><HardDrive size={18} /><span><b>Deine Dateien bleiben bei dir</b>Präsentationen liegen als Datei auf deinem Rechner. Ein Konto bei uns gibt es nicht.</span></li>
       </ul>
     </>,
     <>
-      <h1 id="setup-title">KI-Zugang</h1>
-      <p className="setup-sub">Deckwerk arbeitet mit dem Login deines Agenten-CLIs oder mit einem Anthropic-API-Key. Ein Zugang reicht.</p>
-      <div className="setup-choice" role="radiogroup" aria-label="Chat über">
-        {!s ? <p>{spin} Wird geprüft …</p> : s.clis.map((c) => (
-          <button key={c.id} role="radio" aria-checked={on(c.id)} disabled={!c.found}
-            className={`setup-opt ${on(c.id) ? 'on' : ''}`} onClick={() => useCli(c.id)}>
-            {on(c.id) ? ok : <span className="setup-num" />}
-            <span><b>{c.name.replace(/ /g, '-')}-Login</b><span>{!c.found ? 'Nicht installiert (siehe Schritt 4).'
-              : c.login === false ? <>Gefunden, aber nicht angemeldet. Einmal im Terminal <code>{LOGIN[c.id]}</code> ausführen.</>
-              : on(c.id) ? 'Der Chat läuft über dein Abo, kein API-Key nötig.' : 'Gefunden. Anklicken, um den Chat darüber zu führen.'}</span></span>
-          </button>
-        ))}
-        <div className={`setup-opt ${s?.key ? 'on' : ''}`}>
-          {s?.key ? ok : <span className="setup-num" />}
-          <span>
-            <b>Anthropic-API-Key</b>
-            {s?.key ? 'Hinterlegt und verschlüsselt auf diesem Rechner gespeichert. Hat Vorrang vor dem Login.' : 'Optional. Wird verschlüsselt gespeichert und verlässt den Rechner nur zur Anthropic-API.'}
-            {!s?.key && (
-              <form className="setup-key" onSubmit={(e) => { e.preventDefault(); if (key.trim()) saveKey() }}>
-                <KeyRound size={15} />
-                <input type="password" placeholder="sk-ant-…" value={key} onChange={(e) => setKey(e.target.value)} aria-label="API-Key" />
-                <button className="pill tint" disabled={!key.trim() || busy === 'key'}>{busy === 'key' ? spin : 'Speichern'}</button>
-              </form>
-            )}
-          </span>
+      <h1 id="setup-title">Woher kommt die KI?</h1>
+      <p className="setup-sub">Deckwerk denkt mit einer KI, die du schon hast oder schnell einrichtest. Ein Weg reicht, ändern kannst du ihn jederzeit.</p>
+      {!s ? <p>{spin} Wird geprüft …</p> : bereit && (
+        <div className="setup-box done">{ok}<span><b>Startklar.</b> {s.key ? 'Deckwerk nutzt deinen API-Schlüssel.' : `Deckwerk nutzt dein ${aktiv!.name.replace(/ /g, '-')}-Login.`}
+          {aktiv?.id === 'claude' && <> Falls Claude Code noch nach der Anmeldung fragt: einmal <code>claude</code> im Terminal starten.</>}</span></div>
+      )}
+      {gefunden.length > 0 && (
+        <div className="setup-choice" role="radiogroup" aria-label="Chat über">
+          <p className="setup-group">Auf diesem Rechner gefunden</p>
+          {gefunden.map((c) => (
+            <button key={c.id} role="radio" aria-checked={on(c.id)} className={`setup-opt ${on(c.id) ? 'on' : ''}`} onClick={() => useCli(c.id)}>
+              {on(c.id) ? ok : <span className="setup-num" />}
+              <span><b>{c.name}</b><span>{c.login === false ? <>Noch nicht angemeldet. Einmal im Terminal <code>{LOGIN[c.id]}</code> eingeben.</>
+                : s?.key && c.id === 'claude' ? 'Der API-Schlüssel hat Vorrang.' : on(c.id) ? 'Der Chat läuft über dein Abo.' : 'Anklicken, um den Chat darüber zu führen.'}</span></span>
+            </button>
+          ))}
         </div>
-      </div>
+      )}
+      {bereit && !andere ? <button className="plain tint" onClick={() => setAndere(true)}>Einen anderen Zugang einrichten</button> : (
+        <div className="setup-choice" role="radiogroup" aria-label="Weg zur KI">
+          <p className="setup-group">{bereit ? 'Einen anderen Zugang einrichten' : 'Noch kein Zugang? Wähle, was auf dich zutrifft'}</p>
+          {WEGE.map((w) => {
+            const fertig = w.id === 'key' ? s?.key : gefunden.some((c) => c.id === w.id && c.login !== false)
+            return (
+              <button key={w.id} role="radio" aria-checked={weg === w.id} className={`setup-opt ${weg === w.id ? 'on' : ''}`} onClick={() => { setErr(''); setWeg(weg === w.id ? null : w.id) }}>
+                {fertig ? ok : <span className="setup-num" />}
+                <span><b>{w.titel}</b>{w.text}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {weg === 'claude' && (
+        <ol className="setup-anleitung">
+          <li>Ein Terminal öffnen: {TERMINAL}.</li>
+          <li>Diesen Befehl einfügen und mit Enter bestätigen:<Befehl text={CLAUDE_NATIV} /></li>
+          <li>Danach <code>claude</code> eingeben, Enter drücken und im Browser mit deinem Claude-Konto anmelden.</li>
+          <li className="setup-status">{gefunden.some((c) => c.id === 'claude') ? <>{ok} Claude Code ist da. Deckwerk nutzt es, sobald du angemeldet bist.</> : <>{spin} Deckwerk schaut alle paar Sekunden nach und merkt es von selbst.</>}</li>
+          <li className="setup-status"><button className="plain tint" onClick={() => void window.api.openHilfe('claude')}>Ausführliche Anleitung im Browser <ExternalLink size={13} /></button></li>
+        </ol>
+      )}
+      {weg === 'codex' && (
+        <ol className="setup-anleitung">
+          <li>Codex braucht Node.js. Falls es fehlt: <button className="plain tint" onClick={() => void window.api.openHilfe('node')}>nodejs.org öffnen <ExternalLink size={13} /></button> und die LTS-Version installieren.</li>
+          <li>Ein Terminal öffnen ({TERMINAL}), diesen Befehl einfügen und mit Enter bestätigen:<Befehl text={INSTALL.codex} /></li>
+          <li>Danach <code>codex login</code> eingeben und im Browser mit deinem ChatGPT-Konto anmelden.</li>
+          <li className="setup-status">{codexReady ? <>{ok} Codex ist bereit.</> : <>{spin} Deckwerk schaut alle paar Sekunden nach und merkt es von selbst.</>}</li>
+        </ol>
+      )}
+      {weg === 'key' && (
+        <ol className="setup-anleitung">
+          <li><button className="pill" onClick={() => void window.api.openHilfe('api-keys')}>Anthropic-Konsole öffnen <ExternalLink size={13} /></button> und dich anmelden oder ein Konto anlegen.</li>
+          <li>Unter „Billing“ etwas Guthaben aufladen.</li>
+          <li>Unter „API keys“ auf „Create key“ klicken und den Schlüssel kopieren. Er wird nur einmal angezeigt.</li>
+          <li>
+            Hier einfügen:
+            <form className="setup-key" onSubmit={(e) => { e.preventDefault(); if (key.trim()) saveKey() }}>
+              <KeyRound size={15} />
+              <input type="password" placeholder="sk-ant-…" value={key} onChange={(e) => setKey(e.target.value)} aria-label="API-Schlüssel" />
+              <button className="pill tint" disabled={!key.trim() || busy === 'key'}>{busy === 'key' ? <>{spin}Prüfe …</> : 'Prüfen und speichern'}</button>
+            </form>
+            {s?.key && <p>{ok} {keyInfo === 'ungeprüft' ? 'Gespeichert. Prüfen ging gerade nicht, weil keine Internetverbindung bestand.' : 'Der Schlüssel ist verschlüsselt auf diesem Rechner gespeichert.'}</p>}
+          </li>
+        </ol>
+      )}
     </>,
     <>
       <h1 id="setup-title">Welches Modell?</h1>
@@ -214,16 +302,44 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
       </div>
     </>,
     <>
-      <Logo size={56} />
-      <h1 id="setup-title">Alles bereit</h1>
-      <p className="setup-sub">{mcp ? `Starte in ${mcp} eine neue Sitzung, damit Deckwerk dort geladen wird. Dann zum Beispiel:` : 'Leg auf dem Startbildschirm los. Später in Claude Code, Codex oder Vibe zum Beispiel:'}</p>
-      <div className="setup-prompts">
-        {PROMPTS.map((p, i) => (
-          <button key={p} className="setup-prompt" onClick={() => copy(i)} title="Kopieren">
-            <span>„{p}“</span>{copied === i ? <Check size={14} /> : <Copy size={14} />}
-          </button>
-        ))}
+      <h1 id="setup-title">Cloud-Sync</h1>
+      <p className="setup-sub">Deine Decks und Bilder landen im Ordner „Deckwerk“ deiner Cloud und kommen so auf andere Rechner und aufs Handy. Geht mit jedem WebDAV-Anbieter: Nextcloud, ownCloud, pCloud, Koofr, Box, Synology, MagentaCLOUD …</p>
+      <div className={`setup-box ${sync?.hasPass ? 'done' : ''}`}>
+        {sync?.hasPass ? <>{ok}<span><b>Verbunden mit {sync.user}.</b> {sync.busy ? 'Synchronisiert gerade …' : sync.at ? `${new Date(sync.at).toLocaleTimeString('de')}: ${sync.text}` : 'Noch kein Abgleich.'}</span></>
+          : <p>Bei Nextcloud reicht die Adresse des Servers. Lege dort unter Einstellungen → Sicherheit ein <b>App-Passwort</b> an, statt dein Login-Passwort zu verwenden.</p>}
       </div>
+      <form className="setup-choice" onSubmit={(e) => { e.preventDefault(); saveSync() }}>
+        <div className="setup-opt"><span><b>Adresse</b>
+          <span className="setup-key"><Cloud size={15} /><input placeholder="cloud.example.de oder https://…/webdav" value={dav.url} onChange={(e) => setDav({ ...dav, url: e.target.value })} aria-label="WebDAV-Adresse" /></span></span></div>
+        <div className="setup-opt"><span><b>Nutzername</b>
+          <span className="setup-key"><input value={dav.user} autoComplete="username" onChange={(e) => setDav({ ...dav, user: e.target.value })} aria-label="Nutzername" /></span></span></div>
+        <div className="setup-opt"><span><b>App-Passwort</b>
+          <span className="setup-key"><KeyRound size={15} /><input type="password" autoComplete="current-password" placeholder={sync?.hasPass ? 'gespeichert, leer lassen' : ''} value={dav.pass} onChange={(e) => setDav({ ...dav, pass: e.target.value })} aria-label="App-Passwort" /></span></span></div>
+        <div className="setup-nav">
+          {sync?.hasPass ? <button type="button" className="plain" disabled={!!busy} onClick={() => saveSync(true)}>Sync ausschalten</button> : <span />}
+          <span>
+            {sync?.hasPass && <button type="button" className="pill" disabled={!!busy || sync.busy} onClick={() => run('sync', async () => setSync(await window.api.syncRun()))}>Jetzt abgleichen</button>}{' '}
+            <button className="pill tint" disabled={!!busy || !dav.url.trim() || !dav.user.trim() || (!dav.pass && !sync?.hasPass)}>{busy === 'sync' ? <>{spin}Verbinde …</> : 'Verbinden und abgleichen'}</button>
+          </span>
+        </div>
+      </form>
+    </>,
+    <>
+      <Logo size={56} />
+      <h1 id="setup-title">{bereit ? 'Alles bereit' : 'Schau dich ruhig erst um'}</h1>
+      <p className="setup-sub">{bereit
+        ? 'Schreib auf dem Startbildschirm in einem Satz, was du zeigen willst, zum Beispiel „Quartalsbericht für die Geschäftsführung, 8 Folien“. Den Rest macht Deckwerk.'
+        : 'Ohne KI-Zugang kannst du Vorlagen öffnen, bearbeiten, präsentieren und exportieren. Den Zugang richtest du später über das Zahnrad oben rechts ein.'}</p>
+      {(mehr || mcp) && <>
+        <p className="setup-sub">{mcp ? `Starte in ${mcp} eine neue Sitzung, damit Deckwerk dort geladen wird. Dann zum Beispiel:` : 'Später in Claude Code, Codex oder Vibe zum Beispiel:'}</p>
+        <div className="setup-prompts">
+          {PROMPTS.map((p, i) => (
+            <button key={p} className="setup-prompt" onClick={() => copy(i)} title="Kopieren">
+              <span>„{p}“</span>{copied === i ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+          ))}
+        </div>
+      </>}
       <div className="setup-keys">
         <span><kbd>/</kbd> Wunsch an die KI</span><span><kbd>F5</kbd> Präsentieren</span><span><kbd>P</kbd> Referentenansicht</span><span><kbd>Strg</kbd>+<kbd>Z</kbd> Rückgängig</span>
       </div>
@@ -235,17 +351,18 @@ export function SetupSheet({ model, onModel, onKeySaved, onClose }: Props) {
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); e.stopPropagation() }}>
       <div className="setup-card material">
         <ol className="setup-steps" aria-label="Schritte">
-          {STEPS.map((t, i) => (
+          {steps.map((t, i) => (
             <li key={t}><button className={i === step ? 'on' : i < step ? 'done' : ''} aria-current={i === step ? 'step' : undefined} onClick={() => setStep(i)}>{t}</button></li>
           ))}
+          <li><button className="setup-mehr" aria-pressed={mehr} title="Modell, Agenten, Bilder und Cloud" onClick={toggleMehr}>{mehr ? 'Weniger' : 'Mehr Einstellungen'}</button></li>
         </ol>
-        <div className="setup-page" key={step}>{pages[step]}</div>
+        <div className="setup-page" key={steps[step]}>{pages[ALLE.indexOf(steps[step])]}</div>
         {err && <p className="error" role="alert">{err}</p>}
         <div className="setup-nav">
           {step > 0 ? <button className="plain" onClick={() => setStep(step - 1)}><ArrowLeft size={15} />Zurück</button> : <button className="plain" onClick={onClose}>Überspringen</button>}
-          {step < STEPS.length - 1
+          {step < steps.length - 1
             ? <button className="pill tint" onClick={next}>{step === 0 ? 'Einrichten' : 'Weiter'}</button>
-            : <button className="pill tint" onClick={onClose}><Sparkles size={15} />Erstes Deck erstellen</button>}
+            : <button className="pill tint" onClick={onClose}><Sparkles size={15} />{bereit ? 'Erstes Deck erstellen' : 'Vorlagen ansehen'}</button>}
         </div>
       </div>
     </div>

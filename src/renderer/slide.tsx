@@ -4,10 +4,11 @@ import QRCode from 'qrcode'
 import { GRAPHICS } from '../shared/items'
 import { Chart, registerables, type ChartConfiguration, type Plugin } from 'chart.js'
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
-import { sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
+import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
 import { FONTS, HEAD_ROLES, SCALE, duotoneOf, ensureContrast, mix, resolveTheme, withTone, type FontName, type Theme } from '../shared/themes'
 import { LAYOUTS, buildOf } from '../shared/layouts'
-import { COMPONENTS } from './layouts'
+import { AIRY } from '../shared/lint'
+import { COMPONENTS, splitUnit } from './layouts'
 import { autofit } from './measure'
 import './slide.css'
 
@@ -37,18 +38,25 @@ export const splitParts = (nodes: ReactNode[], by: 'word' | 'letter'): ReactNode
       : by === 'letter' ? [...n].map((c, j) => <span key={`${i}.${j}`} className="dw-part">{c}</span>)
         : n.split(/(\s+)/).map((w, j) => (!w.trim() ? w : <span key={`${i}.${j}`} className="dw-part dw-word">{w}</span>)))
 
-export function T(p: { role: keyof typeof SCALE; slot: string; children: string; maxLines?: number; build?: number; className?: string; style?: CSSProperties }) {
-  const { editable, onEdit, words } = useSlide()
+export function T(p: { role: keyof typeof SCALE; slot: string; children: string; maxLines?: number; build?: number; className?: string; style?: CSSProperties; unit?: boolean }) {
+  const { editable, onEdit, words, theme } = useSlide()
   const head = HEAD_ROLES.includes(p.role) || p.role === 'h2' || p.role === 'h3'
+  const mono = theme.mono && (p.role === 'eyebrow' || p.role === 'footer') // Mono-Labels: CSS über --font-label, PPTX über data-face
+  const sub = theme.subBody && (p.role === 'h2' || p.role === 'h3') // Zwischentitel in der Textschrift (CSS: .sub-body)
   const canEdit = editable && !p.slot.startsWith('_')
+  // unit: Einheit einer Kennzahl klein (.unit); innerText ergibt beim Bearbeiten wieder den ganzen Text
+  const [pre, num, post] = p.unit ? splitUnit(p.children) : ['', '', '']
+  const nodes = pre || post ? [pre && <span key="pre" className="unit">{pre}</span>, num, post && <span key="post" className="unit">{post}</span>].filter(Boolean) : rich(p.children)
   return (
     <div
+      key={p.unit ? p.children : undefined} // Bearbeiten ersetzt die Spans durch Klartext: neuer Wert → neu aufbauen
       className={`t r-${p.role} ${p.className ?? ''}`}
       style={p.style}
       data-pptx="text"
       data-slot={p.slot}
       data-role={p.role}
       data-font={head ? 'head' : 'body'}
+      data-face={mono ? 'IBM Plex Mono' : sub ? theme.body.pptx : undefined}
       data-hardwrap={head ? '' : undefined}
       data-maxlines={p.maxLines}
       data-build={p.build}
@@ -56,7 +64,7 @@ export function T(p: { role: keyof typeof SCALE; slot: string; children: string;
       suppressContentEditableWarning
       onBlur={canEdit ? (e) => e.currentTarget.innerText.trim() !== plain(p.children) && onEdit?.(p.slot, e.currentTarget.innerText.trim()) : undefined}
     >
-      {words && p.build !== undefined ? splitParts(rich(p.children), 'word') : rich(p.children)}
+      {words && p.build !== undefined ? splitParts(nodes, 'word') : nodes}
     </div>
   )
 }
@@ -69,9 +77,9 @@ export function Box(p: { slot: string; className?: string; children?: ReactNode;
   )
 }
 
-export type Focus = 'center' | 'top' | 'bottom' | 'left' | 'right'
+export type Focus = 'center' | 'top' | 'bottom' | 'left' | 'right' | { x: number; y: number } // x/y 0..1: freier Fokuspunkt
 export type Look = 'natural' | 'duotone' | 'mono'
-const FOCUS_POS: Record<Focus, string> = { center: '50% 50%', top: '50% 25%', bottom: '50% 80%', left: '20% 50%', right: '80% 50%' }
+const FOCUS_POS: Record<Extract<Focus, string>, string> = { center: '50% 50%', top: '50% 25%', bottom: '50% 80%', left: '20% 50%', right: '80% 50%' }
 
 // Foto oder Logo. under = liegt unter Text (Vollbild), look = Duotone/Mono (PPTX: „Neu einfärben“), round = Kreismaske.
 // Der Radius kommt aus dem CSS (border-radius) und wird im Export zu roundRect.
@@ -103,7 +111,7 @@ export function Img(p: { src: string; slot: string; className?: string; contain?
   // Zuschnitt: Bild so groß, dass der Ausschnitt die Box füllt; background-position in % bezieht sich auf den Überstand
   const pic: CSSProperties = c
     ? { backgroundImage: `url("${p.src}")`, backgroundSize: `${100 / c.w}% ${100 / c.h}%`, backgroundPosition: `${c.w < 1 ? (c.x / (1 - c.w)) * 100 : 0}% ${c.h < 1 ? (c.y / (1 - c.h)) * 100 : 0}%` }
-    : { backgroundImage: `url("${p.src}")`, backgroundSize: p.contain ? 'contain' : 'cover', ...(p.focus && { backgroundPosition: FOCUS_POS[p.focus] }) }
+    : { backgroundImage: `url("${p.src}")`, backgroundSize: p.contain ? 'contain' : 'cover', ...(p.focus && { backgroundPosition: typeof p.focus === 'string' ? FOCUS_POS[p.focus] : `${p.focus.x * 100}% ${p.focus.y * 100}%` }) }
   const [dark, light] = duotoneOf(theme)
   return (
     <div
@@ -169,7 +177,7 @@ function chartConfig(spec: ChartSpec, t: Theme, print: boolean): ChartConfigurat
     ? [{ label: spec.series[0]?.name ?? '', data: spec.categories.map((_, i) => [wf.base[i], wf.base[i] + wf.up[i] + wf.down[i] + wf.total[i]]), backgroundColor: spec.categories.map((_, i) => wfColor(i)), borderRadius: 4, maxBarThickness: 72 }]
     : spec.series.map((s, i) => ({
         label: s.name, data: s.values, backgroundColor: perPoint ?? perSeries[i], borderColor: perSeries[i], pointBackgroundColor: perSeries[i],
-        borderWidth: line ? 3 : 0, borderRadius: line || stacked ? 0 : 6, maxBarThickness: 64, tension: 0, pointRadius: line ? 4 : 0,
+        borderWidth: line ? 3 : 0, borderRadius: line || stacked ? 0 : 2, maxBarThickness: 96, tension: 0, pointRadius: line ? 4 : 0,
       }))
 
   const valueText = (di: number, i: number) => {
@@ -190,7 +198,8 @@ function chartConfig(spec: ChartSpec, t: Theme, print: boolean): ChartConfigurat
             return ctx.fillText(spec.series[di].name, p.x + 10, p.y)
           }
           if (!labels || (stacked && !spec.series[di].values[i])) return
-          ctx.font = `600 14px "${t.body.css}"`
+          const focus = perPoint?.[i] === t.c.chart[0] && !stacked && !wf // betonter Balken: Wert größer
+          ctx.font = focus ? `700 19px "${t.body.css}"` : `600 14px "${t.body.css}"`
           if (stacked || wf) { // wie PowerPoint: bei gestapelten Balken nur innen möglich
             const fill = wf ? wfColor(i) : (perPoint ?? perSeries)[perPoint ? i : di]
             if (Math.abs(horizontal ? p.x - p.base : p.base - p.y) < 20) { // zu schmal für innen: Wasserfall darüber, Stapel weglassen
@@ -324,6 +333,7 @@ function themeVars(t: Theme): CSSProperties {
     '--on-accent-soft': ensureContrast(mix(t.c.fill!, t.c.onAccent, 0.85), t.c.fill!, 4.6),
     '--font-head': `'${t.head.css}'`, '--font-body': `'${t.body.css}'`, '--head-weight': t.head.weight, '--head-tracking': `${t.head.tracking}em`,
     '--radius': `${t.radius}px`, '--head-scale': t.headScale ?? 1,
+    ...(t.mono && { '--font-label': `'${t.mono.css}'` }),
   }
   for (const [role, steps] of Object.entries(SCALE)) v[`--fs-${role}`] = `${steps[0]}px`
   return v as CSSProperties
@@ -337,9 +347,10 @@ export const photoOf = (v: unknown): PhotoRef | undefined => (typeof v === 'stri
 
 export const rgba = (hex: string, a: number) => `rgba(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')}, ${a})`
 const SCRIM = {
-  left: (d: string) => `linear-gradient(90deg, ${rgba(d, 0.9)} 0%, ${rgba(d, 0.8)} 55%, ${rgba(d, 0.25)} 100%)`,
-  bottom: (d: string) => `linear-gradient(0deg, ${rgba(d, 0.92)} 0%, ${rgba(d, 0.7)} 42%, ${rgba(d, 0)} 80%)`,
-  full: (d: string) => `linear-gradient(0deg, ${rgba(d, 0.84)} 0%, ${rgba(d, 0.84)} 100%)`, // Text mittig auf dem Foto
+  // weich auslaufend (mehrere Stopps statt linearer Rampe): mehr Foto, Text bleibt lesbar (Lint prüft den Kontrast)
+  left: (d: string) => `linear-gradient(90deg, ${rgba(d, 0.9)} 0%, ${rgba(d, 0.8)} 50%, ${rgba(d, 0.62)} 80%, ${rgba(d, 0.4)} 90%, ${rgba(d, 0.15)} 100%)`,
+  bottom: (d: string) => `linear-gradient(0deg, ${rgba(d, 0.9)} 0%, ${rgba(d, 0.8)} 50%, ${rgba(d, 0.66)} 78%, ${rgba(d, 0.3)} 92%, ${rgba(d, 0.1)} 100%)`,
+  full: (d: string) => `linear-gradient(0deg, ${rgba(d, 0.7)} 0%, ${rgba(d, 0.7)} 100%)`, // Text mittig auf dem Foto
   none: () => '',
 }
 
@@ -366,20 +377,27 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
   const def = LAYOUTS[s.layout as keyof typeof LAYOUTS] as { tone?: Tone; footer: boolean; frames?: FrameId[] } | undefined
   const theme = withTone(ctx.theme, s.tone ?? p.tone ?? (def?.tone && (ctx.theme.sectionTone ?? def.tone)))
   const frame = s.frame && def?.frames?.includes(s.frame) ? s.frame : 'top'
+  // Fußzeile nur als Navigation: Kapitel links, „3 / 12“ rechts; Vortrag (mutig) und luftige Folien ohne. A4 liest man wie ein Dokument: Decktitel und Seite wie bisher.
+  const doc = profileOf(deck) === 'doc', nav = !doc && deck.style !== 'mutig'
+  const left = doc ? deck.title : nav ? deck.slides.slice(0, index).findLast((x) => x.layout === 'section')?.content?.title : undefined
+  const page = doc ? String(index + 1) : nav ? `${index + 1} / ${deck.slides.length}` : undefined
+  // Logo nie als Wasserzeichen auf jeder Folie: nur Titel- und Schlussfolie, bei A4 (Angebot ohne Titelfolie) wie ein Briefkopf auf Seite 1
+  const logo = doc && index === 0 ? theme.logo : undefined
+  const footer = def?.footer && (doc || !AIRY.includes(s.layout)) && (left || page || logo)
   return (
     <SlideCtx.Provider value={{ ...ctx, theme }}>
-      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} ${theme.rule ? `rule-${theme.rule}` : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
+      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} prof-${profileOf(deck)} ${sizeOf(deck).w / sizeOf(deck).h <= 1.2 ? 'fmt-tall' : ''} ${sizeOf(deck).w <= 800 ? 'fmt-narrow' : ''} el-${theme.elements ?? 'line'} ${theme.rule ? `rule-${theme.rule}` : ''} ${theme.subBody ? 'sub-body' : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
         {s.bg?.image ? <div className="backdrop"><Img src={s.bg.image} slot="_bg" under /></div> : <Decor kind={p.decor ?? 'content'} id={s.decor ?? theme.decor} />}
         {p.media}
         <div className={`safe ${p.safeClass ?? ''}`} data-fit data-slot="_slide">
           {p.children}
         </div>
-        {def?.footer && (
+        {footer && (
           <div className={`footer ${p.safeClass ?? ''}`}>
-            <T role="footer" slot="_footer.title">{deck.title}</T>
+            {left && <T role="footer" slot="_footer.title">{left}</T>}
             <div className="footer-right">
-              {theme.logo && <Img src={theme.logo} slot="_footer.logo" className="footer-logo" contain />}
-              <T role="footer" slot="_footer.page">{String(index + 1)}</T>
+              {logo && <Img src={logo} slot="_footer.logo" className="footer-logo" contain />}
+              {page && <T role="footer" slot="_footer.page">{page}</T>}
             </div>
           </div>
         )}
@@ -475,8 +493,9 @@ export function QrCode(p: { text: string; slot: string; color: string; bg: strin
     if (!p.text) return { n: 1, path: '' }
     const m = QRCode.create(p.text, { errorCorrectionLevel: 'M' }).modules
     let path = ''
-    for (let y = 0; y < m.size; y++) for (let x = 0; x < m.size; x++) if (m.get(x, y)) path += `M${x + 2} ${y + 2}h1v1h-1z`
-    return { n: m.size + 4, path }
+    // Ruhezone 4 Module (ISO 18004): auf Foto oder Farbfläche scannen Handys sonst unzuverlässig
+    for (let y = 0; y < m.size; y++) for (let x = 0; x < m.size; x++) if (m.get(x, y)) path += `M${x + 4} ${y + 4}h1v1h-1z`
+    return { n: m.size + 8, path }
   }, [p.text])
   return (
     <span {...p.attrs} className={`icon ${p.className ?? ''}`} data-pptx="icon" data-qr={p.text} data-slot={p.slot} data-build={p.build} style={p.style}>

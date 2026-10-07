@@ -25,6 +25,10 @@ export interface Theme {
   rule?: 'over' | 'under' // feine Linie über bzw. unter dem Folienkopf
   sectionTone?: Tone // Ton der Kapiteltrenner, Standard accent
   vivid?: boolean // kräftiger Farbgrund erlaubt (Stil mutig): calmBg greift nicht
+  mutig?: boolean // Katalog-Theme nur für den Deck-Stil mutig
+  mono?: FontRef // Schrift für Eyebrow und Fußzeile (Mono-Labels)
+  subBody?: boolean // Zwischentitel (h2/h3) in der Textschrift fett: Plakat-Schriften sind dafür zu schwer und breit
+  elements?: 'line' | 'plain' | 'solid' // Bauteile (Klasse el-* am .slide); themeFromSpec setzt es immer (eigene Designs ohne Angabe: solid wie vor dem Hebel)
   logo?: string
 }
 
@@ -49,6 +53,8 @@ const FONT_LIST = {
   'IBM Plex Sans': { css: 'IBM Plex Sans', pptx: 'IBM Plex Sans', embed: 'IBMPlexSans' },
   'IBM Plex Serif': { css: 'IBM Plex Serif', pptx: 'IBM Plex Serif', embed: 'IBMPlexSerif', serif: true },
   'Source Serif 4': { css: 'Source Serif 4', pptx: 'Source Serif 4', embed: 'SourceSerif4', serif: true },
+  'Archivo Black': { css: 'Archivo Black', pptx: 'Archivo Black', embed: 'ArchivoBlack', single: true },
+  'IBM Plex Mono': { css: 'IBM Plex Mono', pptx: 'IBM Plex Mono', embed: 'IBMPlexMono' },
 } satisfies Record<string, FontRef>
 export type FontName = keyof typeof FONT_LIST
 export const FONTS: Record<FontName, FontRef> = FONT_LIST
@@ -81,7 +87,7 @@ const CORE_THEMES: Theme[] = [
       accent: '#0B5563', accent2: '#8A939C', onAccent: '#FFFFFF', border: '#DDE1E5', good: '#1E7A45', bad: '#B83227',
       chart: ['#0B5563', '#A3ABB3', '#C9CED3', '#5B7F8C', '#3E4C59'],
     },
-    head: { ...FONTS['IBM Plex Sans'], weight: 700, tracking: -0.015 }, body: FONTS['IBM Plex Sans'], radius: 2, decor: 'none', rule: 'under',
+    head: { ...FONTS['IBM Plex Sans'], weight: 700, tracking: -0.015 }, body: FONTS['IBM Plex Sans'], radius: 2, decor: 'none', rule: 'under', elements: 'line',
   },
   {
     id: 'keynote', name: 'Keynote', dark: true,
@@ -90,7 +96,7 @@ const CORE_THEMES: Theme[] = [
       accent: '#3D9BFF', accent2: '#6E6E73', onAccent: '#0B0B0C', border: '#2C2C30', good: '#5BD08A', bad: '#FF6B5E',
       chart: ['#3D9BFF', '#6E6E73', '#A1A1A6', '#48484D', '#D1D1D6'],
     },
-    head: { ...FONTS.Inter, weight: 700, tracking: -0.03 }, body: FONTS.Inter, radius: 4, decor: 'none', headScale: 1.22, sectionTone: 'normal',
+    head: { ...FONTS.Inter, weight: 700, tracking: -0.03 }, body: FONTS.Inter, radius: 4, decor: 'none', headScale: 1.22, sectionTone: 'normal', elements: 'plain',
   },
   {
     id: 'schweiz', name: 'Schweiz', dark: false,
@@ -99,7 +105,7 @@ const CORE_THEMES: Theme[] = [
       accent: '#D7261E', accent2: '#8C8C8C', onAccent: '#FFFFFF', border: '#DADAD6', good: '#1E7A3C', bad: '#D7261E',
       chart: ['#D7261E', '#8C8C8C', '#BDBDBA', '#111111', '#5C5C5C'],
     },
-    head: { ...FONTS.Archivo, weight: 700, tracking: -0.03 }, body: FONTS.Archivo, radius: 0, decor: 'none', headScale: 1.22, rule: 'over',
+    head: { ...FONTS.Archivo, weight: 700, tracking: -0.03 }, body: FONTS.Archivo, radius: 0, decor: 'none', headScale: 1.22, rule: 'over', elements: 'line',
   },
   {
     id: 'redaktion', name: 'Redaktion', dark: false,
@@ -108,7 +114,7 @@ const CORE_THEMES: Theme[] = [
       accent: '#1F3A8A', accent2: '#9A9CA3', onAccent: '#FFFFFF', border: '#E0DDD5', good: '#2F6B3F', bad: '#A8321F',
       chart: ['#1F3A8A', '#A3A6AD', '#C8CAD0', '#5A6B99', '#3A3D45'],
     },
-    head: { ...FONTS['Source Serif 4'], weight: 400, tracking: -0.012 }, body: FONTS['Source Sans 3'], radius: 2, decor: 'none', headScale: 1.22, rule: 'over', sectionTone: 'invert',
+    head: { ...FONTS['Source Serif 4'], weight: 400, tracking: -0.012 }, body: FONTS['Source Sans 3'], radius: 2, decor: 'none', headScale: 1.22, rule: 'over', sectionTone: 'invert', elements: 'line',
   },
   {
     id: 'zen', name: 'Zen', dark: true,
@@ -117,7 +123,7 @@ const CORE_THEMES: Theme[] = [
       accent: '#E3A857', accent2: '#7D7B76', onAccent: '#1C1D1F', border: '#35373A', good: '#8CC99A', bad: '#E88A7A',
       chart: ['#E3A857', '#7D7B76', '#B5B2AB', '#55575B', '#D8D5CE'],
     },
-    head: { ...FONTS['IBM Plex Serif'], weight: 400, tracking: -0.012 }, body: FONTS['IBM Plex Sans'], radius: 0, decor: 'none', headScale: 1.22, sectionTone: 'normal',
+    head: { ...FONTS['IBM Plex Serif'], weight: 400, tracking: -0.012 }, body: FONTS['IBM Plex Sans'], radius: 0, decor: 'none', headScale: 1.22, sectionTone: 'normal', elements: 'plain',
   },
 ]
 
@@ -152,8 +158,6 @@ const BASE_THEMES: Theme[] = [
   },
 ]
 
-export const THEMES: Theme[] = [...CORE_THEMES, ...[...BASE_THEMES, ...EXTRA_THEMES].map((t) => ({ ...t, legacy: true }))]
-export const CATALOG_THEMES = THEMES.filter((t) => !t.legacy)
 
 const oklch = converter('oklch')
 
@@ -180,19 +184,21 @@ function withBrand(base: Theme, b?: BrandKit): Theme {
     id: `${base.id}+brand`,
     c: { ...base.c, accent, accent2, onAccent, chart: [accent, accent2, ...base.c.chart.slice(2)] },
     head: b.headFont && b.headFont in FONTS ? { ...base.head, ...FONTS[b.headFont as FontName] } : base.head,
-    logo: b.logo,
+    body: b.bodyFont && b.bodyFont in FONTS ? FONTS[b.bodyFont as FontName] : base.body,
+    logo: (base.dark && b.logoDark) || b.logo,
   }
 }
 
 // Titelschrift mit passendem Gewicht und Laufweite (Einschnitt-Schriften nur 400)
 const headRef = (f: FontRef, weight = 700) => ({ ...f, weight: f.single ? 400 : weight, tracking: f.serif ? -0.012 : -0.022 })
 
-// Grund nur fast weiß oder fast schwarz und kaum bunt: mittlere, pastellige oder kräftige Gründe verraten Laien-Design sofort.
+// Grund hell oder dunkel und wenig bunt: getöntes Papier (Salbei, Sand, Eisblau) und tiefe Dunkeltöne (Nachtblau, Tannengrün)
+// bleiben erhalten; mittlere, pastellige oder kräftige Gründe verraten Laien-Design sofort und werden gedämpft.
 function calmBg(hex: string): string {
   const c = oklch(hex)
   if (!c) return hex
   const dark = c.l < 0.6
-  return formatHex(clampChroma({ ...c, l: dark ? Math.min(c.l, 0.24) : Math.max(c.l, 0.955), c: Math.min(c.c ?? 0, dark ? 0.045 : 0.01) }, 'oklch'))!
+  return formatHex(clampChroma({ ...c, l: dark ? Math.min(c.l, 0.27) : Math.max(c.l, 0.93), c: Math.min(c.c ?? 0, dark ? 0.065 : 0.03) }, 'oklch'))!
 }
 
 // Stil mutig: kräftiger Grund bleibt in Farbton und Sättigung, verlässt aber das mittlere Helligkeitsband. Dort hielte weder
@@ -224,12 +230,15 @@ export function themeFromSpec(s: ThemeSpec): Theme {
     head: headRef(head, s.titleWeight === 'regular' ? 400 : 700),
     body: FONTS[s.bodyFont as FontName] ?? FONTS.Calibri,
     radius: s.radius, decor: s.decor, texture: s.texture,
-    headScale: s.titleSize === 'large' ? 1.22 : undefined,
+    headScale: s.titleSize === 'huge' ? 1.45 : s.titleSize === 'large' ? 1.22 : undefined,
     rule: s.rule === 'none' ? undefined : s.rule,
     sectionTone: s.sectionTone,
     vivid: s.vivid,
+    mono: s.labelFont === 'mono' ? FONTS['IBM Plex Mono'] : undefined,
+    elements: s.elements ?? 'solid', // Designs von vor dem Hebel behalten ihre Kästen; neue setzt tools.ts auf line
   }
 }
+
 
 // Base theme (+ brand kit), with every text colour pushed to WCAG AA on the surfaces it is used on.
 // Kuratierte Schriftpaare [Titel, Text] für „Schriften mischen“
@@ -319,3 +328,17 @@ export function withTone(t: Theme, tone: Tone = 'normal'): Theme {
   }
   return t
 }
+
+// Stil mutig: Plakat, Magazin, Neo-Mono, Pastell. Über themeFromSpec, damit Flächen und Kontraste dieselben Leitplanken haben.
+const MUTIG_THEMES: Theme[] = ([
+  ['plakat', { name: 'Plakat', bg: '#FFD60A', text: '#111111', accent: '#111111', accent2: '#FFFFFF', headFont: 'Archivo Black', bodyFont: 'Archivo', radius: 0, decor: 'none', titleSize: 'huge', sectionTone: 'invert', vivid: true, elements: 'solid' }],
+  ['magazin', { name: 'Magazin', bg: '#FFFFFF', accent: '#C8102E', headFont: 'DM Serif Display', bodyFont: 'DM Sans', radius: 0, decor: 'none', titleSize: 'huge', rule: 'over', labelFont: 'mono', elements: 'line' }],
+  ['neomono', { name: 'Neo-Mono', bg: '#0E0E0E', accent: '#FF5B2E', headFont: 'IBM Plex Sans', bodyFont: 'IBM Plex Sans', radius: 0, decor: 'none', titleSize: 'large', rule: 'under', sectionTone: 'normal', labelFont: 'mono', elements: 'plain' }],
+  ['pastell', { name: 'Pastell', bg: '#E6E0FF', accent: '#2A2FBF', headFont: 'Plus Jakarta Sans', bodyFont: 'DM Sans', radius: 12, decor: 'none', titleSize: 'large', vivid: true, elements: 'solid' }],
+] as [string, ThemeSpec][]).map(([id, spec]) => {
+  const t = themeFromSpec(spec)
+  return { ...t, id, mutig: true, subBody: id === 'plakat', head: id === 'pastell' ? { ...t.head, tracking: -0.01 } : t.head } // Plus Jakarta läuft von Haus aus eng
+})
+
+export const THEMES: Theme[] = [...CORE_THEMES, ...MUTIG_THEMES, ...[...BASE_THEMES, ...EXTRA_THEMES].map((t) => ({ ...t, legacy: true, elements: 'solid' as const }))]
+export const CATALOG_THEMES = THEMES.filter((t) => !t.legacy)

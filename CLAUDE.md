@@ -13,7 +13,7 @@ npm run typecheck           # tsc über das ganze Projekt
 npm run smoke               # KI-Tools + MCP-Server gegen Mock-Engine (ohne Electron, ohne API-Key)
 npm run render examples/pitch.json   # → exports/<slug>.pptx/.pdf/<slug>/NN.png + Lint-Report
 npm run mcp:e2e             # MCP-Server gegen die echte Engine (E2E_HEADLESS=1: ohne Bildschirm)
-npm run check:layouts       # Stresstest Layout × Variante × Beispiel × Theme, ~1 h; eingrenzen mit DW_THEMES=beratung,keynote
+npm run check:layouts       # Stresstest Layout × Variante × Beispiel × Theme, ~1 h; eingrenzen mit DW_THEMES=beratung,keynote, DW_LAYOUTS=doc-text,offer; DW_FORMATS=4:5,a4 prüft zusätzlich alle Layouts in diesen Formaten
 npm run smoke:claude        # App-Chat über echtes `claude -p` (kostet Anfragen); DECKWERK_CLI=codex|vibe
 npm run verify:pptx -- exports/<slug>.pptx   # PPTX gegen LibreOffice-Rendering (README „PPTX-Treue-Check“)
 npm run dist:linux          # AppImage
@@ -40,6 +40,7 @@ Snapshots tragen eine Markierungszeile mit Sequenznummer, weil `capturePage` son
 - Die `samples` speisen den Stresstest und die Katalog-Vorschaubilder für die KI.
 - Linien auf `data-pptx`-Boxen als `::before`: `border-top` wird in der PPTX zum Rahmen ringsum.
 - Keine generischen Klassennamen in `slide.css`, sonst leaken UI-Klassen wie `.plain` in die Folien.
+- Formate: `profileOf(deck)` (`deck.ts`) leitet aus der Größe `slides`/`social`/`doc` ab. Daran hängen die Lint-Grenzen (`PROFILE` in `lint.ts`) und der Schriftfaktor im Autofit (`measure.ts`). `Frame` setzt `prof-*`, `fmt-tall` und `fmt-narrow` am `.slide`; der Block „Formate“ am Ende von `slide.css` stapelt Spalten und setzt Bilder nach oben. Layouts mit `sizes` (Fließtext, Angebot) gelten nur in diesen Formaten, der Stresstest prüft sie dort.
 
 **KI-Werkzeuge** (`src/main/tools.ts`): `buildTools(ctx)` ist die einzige Definition. Sie ist SDK- und Electron-frei, damit die Smoke-Tests sie unter Node laufen lassen können. Drei Wege nutzen sie:
 - `DeckAgent` (`src/main/agent.ts`): Anthropic-API, Tool-Runner, Systemprompt = `src/main/design-guide.md` (per `?raw`) + `buildCatalog()` + Hausstil `~/Deckwerk/hausstil.md`.
@@ -59,10 +60,12 @@ Jedes ändernde Tool antwortet mit Autofit und Lint pro Folie; daran korrigiert 
 - `asset://` und der PPTX-Export laden nur Dateien, deren Endung auf `MEDIA_EXT` (`src/shared/deck.ts`) passt. Neue Medientypen dort ergänzen.
 
 **Ablage und Einstellungen**:
+- Brand-Kit (Farben, Schriften, Logo) in `~/Deckwerk/brand.json`: `create_deck` wendet es an, solange `brand` nicht gesetzt ist (`defaultBrand()` in `tools.ts`); `DECKWERK_HOME` setzt es in Tests um.
 - Decks liegen unter `~/Deckwerk/<titel>/deck.json`, alte Stände in `versions/`. Bilder liegen in `~/Deckwerk/assets/`.
 - In Tests setzt `DECKWERK_HOME` das Deck-Verzeichnis um.
 - Der Anthropic-Key liegt mit `safeStorage` verschlüsselt im userData.
 - Gemeinsame Einstellungen für App, Entwicklung und MCP-Prozess liegen unter `appData/deckwerk/`, weil sich das userData zwischen diesen Wegen unterscheidet. Dazu gehören `setup-done` und `image-settings.bin` (Bild-KI: Mammouth/OpenAI-Key, Anbieter, Modell).
+- Cloud-Sync (`src/main/sync.ts`, Electron-frei, läuft auch in der Android-Engine): WebDAV-Spiegel von `~/Deckwerk` ohne `versions/`, `out/`, `models/`, Punktdateien; Abgleich über `.sync-state.json`, Konflikt → neuere gewinnt, ältere deck.json nach `versions/`. Zugang in `appData/deckwerk/sync.bin`. Selbsttest `scripts/check-sync.ts`.
 - Weitere Schlüssel kommen aus der Umgebung: `UNSPLASH_ACCESS_KEY`, `MAMMOUTH_API_KEY`, `OPENAI_API_KEY`, `IMAGE_MODEL`.
 
 ## Gestaltungskurs

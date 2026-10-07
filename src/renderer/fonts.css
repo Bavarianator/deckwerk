@@ -39,6 +39,11 @@
 @font-face { font-family: 'Archivo'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/Archivo-Bold.ttf') format('truetype'); }
 @font-face { font-family: 'Archivo'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/Archivo-Italic.ttf') format('truetype'); }
 @font-face { font-family: 'Archivo'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/Archivo-BoldItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Archivo Black'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/ArchivoBlack-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/IBMPlexMono-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/IBMPlexMono-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/IBMPlexMono-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'IBM Plex Mono'; font-style: italic; font-weight: 700; font-display: block; src: url('../../assets/fonts/IBMPlexMono-BoldItalic.ttf') format('truetype'); }
 @font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-weight: 400; font-display: block; src: url('../../assets/fonts/IBMPlexSans-Regular.ttf') format('truetype'); }
 @font-face { font-family: 'IBM Plex Sans'; font-style: normal; font-weight: 700; font-display: block; src: url('../../assets/fonts/IBMPlexSans-Bold.ttf') format('truetype'); }
 @font-face { font-family: 'IBM Plex Sans'; font-style: italic; font-weight: 400; font-display: block; src: url('../../assets/fonts/IBMPlexSans-Italic.ttf') format('truetype'); }

@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { MEDIA_EXT } from '../shared/deck'
 import type { createEngine } from './engine'
+import { localAsset } from './sync'
 
 // Schwere Module (Engine, Agent, MCP, pptxgenjs, lucide …) erst nach dem Fenster laden: der Splash erscheint sofort,
 // und der Renderer lädt parallel zum Main-Prozess. Die Preload-Brücke wiederholt Aufrufe, bis registerIpc steht.
@@ -64,7 +65,7 @@ async function renderCli(engine: ReturnType<typeof createEngine>, file: string, 
   const issues = await engine.lint(deck)
   for (const i of issues) console.log(`${i.severity === 'error' ? '✗' : '!'} Folie ${i.slide + 1} [${i.rule}] ${i.message}`)
   console.log(`${issues.filter((i) => i.severity === 'error').length} Fehler, ${issues.filter((i) => i.severity === 'warn').length} Warnungen`)
-  for (const f of ['pptx', 'pdf', 'png'] as const) {
+  for (const f of ['pptx', 'pdf', 'png', 'zip'] as const) {
     const files = await engine.exportDeck(deck, f, outDir)
     console.log(`→ ${f}: ${files.length > 1 ? dirname(files[0]) : files[0]}`)
   }
@@ -73,7 +74,7 @@ async function renderCli(engine: ReturnType<typeof createEngine>, file: string, 
 app.whenReady().then(async () => {
   // CORS-Header, damit Canvas Pixel lesen darf (Video-Poster, Freisteller); stream + Range für Video/Audio
   protocol.handle('asset', async (req) => {
-    const file = decodeURIComponent(new URL(req.url).pathname)
+    const file = localAsset(decodeURIComponent(new URL(req.url).pathname))
     if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
     const res = await net.fetch(pathToFileURL(file).toString(), { headers: req.headers })
     const headers = new Headers(res.headers)

@@ -4,15 +4,17 @@ import { execFile } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, extname, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
+import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, transitionOf, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide } from '../shared/deck'
+import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef } from '../shared/deck'
 import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
 import type { Issue } from '../shared/lint'
+import { typeset } from '../shared/typo'
 import type { Engine } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 
@@ -23,6 +25,7 @@ export interface ToolContext {
   assetDir: string // eigene Bilder für find_images; Unsplash-Downloads landen auch hier
   outDir: string // Exportziel
   unsplashKey?: string // Unsplash Access Key; ohne Key sucht find_images nur lokal
+  previews?: false // Bildsuche der UI (image:find) braucht nur die Pfade, keine Vorschaubilder
   ask?(q: { question: string; options: string[] }): void // nur im App-Chat: Rückfrage mit Antwort-Buttons
   storyline?(slides: { title: string; layout: string }[]): void // nur im App-Chat: geplante Folien für die Entstehen-Ansicht
   choice?(c: { question: string; options: { label: string; image: string }[] }): void // nur im App-Chat: Auswahl-Karten (image = PNG als data:-URL)
@@ -30,6 +33,10 @@ export interface ToolContext {
 // Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt
 export const STYLE_FILE = join(homedir(), 'Deckwerk', 'hausstil.md')
 export const houseStyle = () => { try { return readFileSync(STYLE_FILE, 'utf8').trim() } catch { return '' } }
+// Brand-Kit des Nutzers für jedes neue Deck (Farben, Schriften, Logo); DECKWERK_HOME: Tests
+export const BRAND_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'brand.json')
+export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(BRAND_FILE, 'utf8'))) } catch { return undefined } }
+export const saveBrand = (b: BrandKit) => { mkdirSync(dirname(BRAND_FILE), { recursive: true }); writeFileSync(BRAND_FILE, JSON.stringify(b, null, 2)) }
 
 export interface ToolOutput { text: string; images?: Buffer[] } // PNG oder JPEG, siehe mimeOf
 export const mimeOf = (b: Buffer): 'image/png' | 'image/jpeg' => (b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : 'image/png')
@@ -63,10 +70,12 @@ const brand = z.object({
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Markenfarbe #RRGGBB'),
   secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   logo: z.string().optional().describe('Pfad zum Logo (aus find_images)'),
+  logoDark: z.string().optional().describe('Logo für dunklen Grund; fehlt es, gilt logo'),
   headFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).optional().describe('Headline-Schrift; Office: Arial, Calibri, Georgia; Premium (eingebettet): alle übrigen, siehe customTheme.headFont'),
+  bodyFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).optional().describe('Schrift für Fließtext'),
 })
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
-const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil (Design-Guide §6 „Stil des Decks“): sachlich = Zurückhaltung (Standard), mutig = kräftige Farben, Plakat-Typo, mehr Farbflächen, markante Bilder. Wählt der Nutzer im Look-Bereich oder per Wunsch („mutiger“).')
+const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil, beim Anlegen immer setzen (Design-Guide §6 „Stil des Decks“). Nach Anlass: mutig für Vortrag, Schule/Unterricht, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social; sachlich für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot. Steht im Kontext „Deck-Stil: …“ oder wünscht der Nutzer einen Stil, gilt der. mutig = kräftige Farbgründe, Plakat-Typo, mehr Farbflächen, markante Bilder.')
 // Zeichen jeder Schrift, damit die KI Paare nach Stimmung wählt
 const FONT_MOOD: Record<FontName, string> = {
   Fraunces: 'warme Display-Serif mit Charakter: editorial, Magazin, Handwerk, Kultur',
@@ -87,12 +96,55 @@ const FONT_MOOD: Record<FontName, string> = {
   'IBM Plex Sans': 'sachliche Profi-Grotesk mit Charakter: Beratung, Finanzen, Technik, Zahlen',
   'IBM Plex Serif': 'nüchterne Serif, Partner zu IBM Plex Sans: Vortrag, Forschung, Reflexion',
   'Source Serif 4': 'redaktionelle Buch-Serif: Bericht, Stiftung, Verwaltung, Wissenschaft',
+  'Archivo Black': 'Plakat-Grotesk in Black (nur ein Schnitt), nur als Titelschrift im Stil mutig: Kampagne, Event, laute Ansagen',
+  'IBM Plex Mono': 'Monospace, nicht als Titel- oder Textschrift: nur über labelFont mono für Eyebrow und Fußzeile',
 }
 // Standardschriften generierter Designs: nur auf ausdrücklichen Wunsch, nie in eigenen Vorschlägen (propose_looks)
 const AI_FONTS: string[] = ['Space Grotesk', 'Instrument Serif']
+const oklch = converter('oklch')
+// Klischees generierter Decks (Guide §6) nur als Hinweis: der Nutzer darf sie wollen, die KI soll sie nicht von sich aus wählen
+function aiTells(t: { headFont?: string; bodyFont?: string; accent?: string; bg?: string }): string {
+  const out = [...new Set([t.headFont, t.bodyFont])].filter((f): f is string => !!f && AI_FONTS.includes(f))
+    .map((f) => `Hinweis: ${f} ist eine Standardschrift generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
+  const a = t.accent ? oklch(t.accent) : undefined, h = a?.h ?? -1, c = a?.c ?? 0
+  const dark = (oklch(t.bg ?? '#fff')?.l ?? 1) < 0.4
+  if (h >= 265 && h <= 300 && c > 0.12) out.push(`Hinweis: Akzent ${t.accent} (Lila-Blau) ist eine Standardfarbe generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
+  if (dark && h >= 115 && h <= 135 && c > 0.15) out.push(`Hinweis: Säuregrün ${t.accent} auf dunklem Grund ist eine Standardfarbe generierter Decks (Design-Guide §6). Nur behalten, wenn der Nutzer sie ausdrücklich will.`)
+  return out.map((x) => x + '\n').join('')
+}
+// Designtyp (Guide §6 „Abwechslung“): die fünf Merkmale, an denen man Decks auf einen Blick unterscheidet; font/akzent nur zur Anzeige
+export interface LookTyp { hell: 'hell' | 'dunkel'; schrift: 'Serif' | 'Sans'; gewicht: 'regular' | 'bold'; grund: 'kräftig' | 'getönt' | 'neutral'; bauteile: 'line' | 'plain' | 'solid'; font: string; akzent: string }
+export function lookTyp(ref: ThemeRef): LookTyp {
+  const t = resolveTheme(ref), bg = oklch(t.c.bg), l = bg?.l ?? 1, c = bg?.c ?? 0
+  const tinted = t.dark ? c > 0.02 : l < 0.955 && c > 0.006
+  return { hell: t.dark ? 'dunkel' : 'hell', schrift: t.head.serif ? 'Serif' : 'Sans', gewicht: t.head.weight < 600 && !(t.head.single && !t.head.serif) ? 'regular' : 'bold', grund: t.vivid ? 'kräftig' : tinted ? 'getönt' : 'neutral', bauteile: t.elements ?? 'line', font: t.head.css, akzent: t.c.accent }
+}
+export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schrift === b.schrift && a.gewicht === b.gewicht && a.grund === b.grund && a.bauteile === b.bauteile
+const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}, Bauteile ${{ line: 'Linie', plain: 'frei', solid: 'Fläche' }[t.bauteile]}`
+// Zuletzt gebaute Decks, neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
+export function recentLooks(except?: string): { title: string; typ: LookTyp }[] {
+  const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
+  let dirs: string[]
+  try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models'].includes(d)) } catch { return [] }
+  const files = dirs.flatMap((d) => { const f = join(home, d, 'deck.json'); try { return [{ f, t: statSync(f).mtimeMs }] } catch { return [] } }).sort((a, b) => b.t - a.t)
+  const out: { title: string; typ: LookTyp }[] = []
+  for (const { f } of files.slice(0, 12)) { // begrenzt: mit Brand-Kit zählt kein Deck, sonst würde jede deck.json gelesen
+    if (out.length >= 4) break
+    try {
+      const d = JSON.parse(readFileSync(f, 'utf8')) as Deck
+      if (!d.theme.brand && d.title !== except) out.push({ title: String(d.title).replace(/\s+/g, ' ').slice(0, 80), typ: lookTyp(d.theme) })
+    } catch {}
+  }
+  return out
+}
+// Hinweis, wenn ein Design im Typ einem der 3 neuesten Decks gleicht; '' sonst
+function repeats(typ: LookTyp, recent: { title: string; typ: LookTyp }[]): string {
+  const alike = recent.slice(0, 3).filter((r) => sameLook(r.typ, typ)).map((r) => `„${r.title}“`)
+  return alike.length ? `gleicht im Typ deinen letzten Decks ${alike.join(', ')} (${typText(typ)}). Ändere mindestens eins: Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt), Titelgewicht oder Bauteile (line/plain) – außer der Nutzer will eine Serie (Design-Guide §6 „Abwechslung“).` : ''
+}
 const themeSpec = z.object({
   name: z.string().min(2).max(40).describe('Name, z. B. "Nordlicht Finance"'),
-  bg: hexColor.describe('Hintergrund: fast weiß oder fast schwarz, höchstens leicht in Richtung der Akzentfarbe getönt (die Engine dämpft alles andere)'),
+  bg: hexColor.describe('Grund: fast Weiß, getöntes Papier (Salbei, Sand, Eisblau, Rosé) oder tiefer Dunkelton (Nachtblau, Tannengrün, Aubergine, Graphit); die Engine begrenzt Helligkeit und Sättigung. Kräftige Farbgründe nur mit vivid (Stil mutig).'),
   text: hexColor.optional().describe('Textfarbe; weglassen = automatisch passend'),
   accent: hexColor.describe('Hauptakzent mit Charakter (Zahlen, Hervorhebungen, Akzentflächen); wird bei Bedarf für Kontrast nachgedunkelt/aufgehellt'),
   accent2: hexColor.optional().describe('Zweitfarbe für Vergleichsserien und Duotone; weglassen = neutrales Grau (empfohlen: eine Akzentfarbe reicht)'),
@@ -101,11 +153,13 @@ const themeSpec = z.object({
   radius: z.number().int().min(0).max(28).describe('Eckenradius in px: 0–4 empfohlen; über 8 wirkt es schnell generiert'),
   decor: z.enum(DECORS).describe('Hintergrundmotiv; none empfohlen. blobs/glow (unscharfe Farbkreise) nur auf ausdrücklichen Wunsch'),
   texture: z.enum(['grain']).optional().describe('feine Papierkörnung, nur auf Wunsch'),
-  titleSize: z.enum(['normal', 'large']).optional().describe('large = Plakat-Titel (Vortrag, Swiss, Editorial); normal = sachlich (Chef-Update, viele Daten)'),
+  titleSize: z.enum(['normal', 'large', 'huge']).optional().describe('large = Plakat-Titel (Vortrag, Swiss, Editorial); huge = übergroße Titel, nur im Stil mutig; normal = sachlich (Chef-Update, viele Daten)'),
   titleWeight: z.enum(['regular', 'bold']).optional().describe('regular wirkt edel und redaktionell (am besten mit Serif und titleSize large), bold sachlich und kräftig'),
   rule: z.enum(['none', 'over', 'under']).optional().describe('feine Linie: over = Kopflinie über dem Titel (Swiss, Redaktion), under = Trennlinie unter dem Kopf (Beratung), none = pur'),
   sectionTone: z.enum(TONES).optional().describe('Kapiteltrenner: accent = Akzentfläche (Standard), invert = Hell/Dunkel getauscht, normal = nur große Typo auf dem Grund'),
-  vivid: z.boolean().optional().describe('nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf fast Weiß/Schwarz zu dämpfen; Textfarbe kommt automatisch mit Kontrast'),
+  vivid: z.boolean().optional().describe('nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf Papier- bzw. Dunkeltöne zu dämpfen; Textfarbe kommt automatisch mit Kontrast'),
+  labelFont: z.enum(['body', 'mono']).optional().describe('mono = Eyebrow und Fußzeile in IBM Plex Mono (Magazin, Tech); body = Textschrift (Standard)'),
+  elements: z.enum(['line', 'plain', 'solid']).optional().describe('Bauteile (Design-Guide §6): line = offen, Kopflinien statt Kästen, kurze Striche als Marker (Standard, redaktionell, Beratung); plain = nur Typografie und Weißraum, keine Linien, große leichte Nummern (Keynote, Zen, Tech); solid = Akzentflächen für Hervorhebungen, nur im Stil mutig'),
 })
 
 const FRAME_HINT = 'Komposition: top = Titel oben (Standard), split = Titel auf Akzentfläche links, band = Titel im Farbband oben, center = Kopf zentriert. Nur die im Katalog genannten Frames des Layouts.'
@@ -144,6 +198,14 @@ export function newSlideId(deck: Deck): string {
   }
 }
 
+// Feinsatz rekursiv über alle Strings; Quellen, Links und Symbolnamen bleiben unberührt
+const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus'])
+const typesetDeep = (v: unknown, key?: string): unknown =>
+  typeof v === 'string' ? (key && NO_TYPESET.has(key) ? v : typeset(v))
+    : Array.isArray(v) ? v.map((x) => typesetDeep(x, key))
+    : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typesetDeep(x, k)]))
+    : v
+
 // Validiert content gegen das Layout-Schema. Wirft mit konkretem Hinweis.
 // Unbekannte Felder (z. B. „kicker“ statt „eyebrow“) würde zod still verwerfen; der Inhalt fehlte dann ohne Meldung.
 export function validateContent(layout: string, content: unknown, where: string): Record<string, unknown> {
@@ -152,7 +214,7 @@ export function validateContent(layout: string, content: unknown, where: string)
   const r = def.schema.safeParse(content)
   const json = z.toJSONSchema(def.schema) as JsonSchema
   const stray = [...new Set(strayKeys(json, content, ''))]
-  if (r.success && !stray.length) return r.data as Record<string, unknown>
+  if (r.success && !stray.length) return typesetDeep(r.data) as Record<string, unknown>
   const { $schema: _, ...schema } = json as Record<string, unknown>
   throw new Error([
     `${where} (${layout}): Inhalt ungültig.`,
@@ -248,7 +310,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         brief: z.object({ audience: z.string().max(120), goal: z.string().max(200), tone: z.string().max(60) }).optional(),
         theme: z.enum(THEME_IDS).default(THEME_IDS[0]).describe('Katalog-Theme; wird ignoriert, wenn customTheme gesetzt ist'),
         customTheme: themeSpec.optional().describe('Eigenes Design für genau dieses Deck (Standard). Vorgehen und Regeln im Design-Guide §6'),
-        brand: brand.optional(),
+        brand: brand.nullable().optional().describe('Brand-Kit; weglassen = das gespeicherte Brand-Kit des Nutzers (~/Deckwerk/brand.json), falls es eines gibt; null = ohne Marke'),
         transition: z.enum(TRANSITIONS).default('fade'),
         mode: z.enum(['click', 'auto']).default('click').describe('click = Vortrag (Builds per Klick), auto = Selbstlauf'),
         motion: z.enum(MOTIONS).optional().describe('Bewegungsstil wie Canva „Magic Animate“: none = keine Aufbauten, calm = nur Einblenden (Vorstand, Behörde), standard = Layout-Standard, lively = Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom (Pitch, Event)'),
@@ -256,9 +318,10 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         format: format.optional().describe('Folienformat; weglassen = 16:9-Präsentation'),
       }),
       async run(i) {
-        const deck: Deck = { title: i.title, brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand, custom: i.customTheme }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style === 'mutig' ? 'mutig' : undefined, slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
+        const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' } }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         ctx.setDeck(deck)
-        return { text: `Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'sachlich'}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
+        return { text: `${aiTells(deck.theme.custom ?? {})}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -280,12 +343,14 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       }),
       async run(i) {
         const deck = needDeck(ctx)
-        if (i.title) deck.title = i.title
+        if (i.title) deck.title = typeset(i.title)
         if (i.brief) deck.brief = { ...deck.brief, ...i.brief }
         if (i.theme) { deck.theme.id = i.theme; delete deck.theme.custom }
         if (i.customTheme === null) { delete deck.theme.custom; if (deck.theme.id === 'custom') deck.theme.id = THEME_IDS[0] }
         else if (i.customTheme) {
-          const merged = { ...deck.theme.custom, ...i.customTheme }
+          // Neues eigenes Design (keins vorher oder neuer Name): Bauteile line; Korrekturen an einem alten Design behalten seine Bauteile
+          const fresh = !deck.theme.custom || (!!i.customTheme.name && i.customTheme.name !== deck.theme.custom.name)
+          const merged = { ...deck.theme.custom, ...(fresh && { elements: 'line' as const }), ...i.customTheme }
           const r = themeSpec.safeParse(merged)
           if (!r.success) throw new Error(`customTheme unvollständig: ${z.prettifyError(r.error)}\nBeim ersten Setzen alle Pflichtfelder angeben.`)
           deck.theme.custom = r.data
@@ -295,14 +360,14 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.transition) deck.transition = i.transition
         if (i.mode) deck.mode = i.mode
         if (i.motion) deck.motion = i.motion === 'standard' ? undefined : i.motion
-        if (i.style) deck.style = i.style === 'mutig' ? 'mutig' : undefined
+        if (i.style) deck.style = i.style
         if (i.shuffle !== undefined) deck.theme.shuffle = i.shuffle || undefined
         if (i.fonts !== undefined) deck.theme.fonts = i.fonts ?? undefined
         if (i.format) Object.assign(deck, resizeDeck(deck, i.format))
         ctx.setDeck(deck)
         const look = i.theme || i.customTheme || i.brand !== undefined || i.shuffle !== undefined || i.fonts !== undefined // Theme geändert → neue Vorschau
         return {
-          text: `Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'sachlich' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
+          text: `${i.customTheme ? aiTells(deck.theme.custom ?? {}) : ''}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
           images: look ? await themePreview(ctx, deck) : undefined,
         }
       },
@@ -317,7 +382,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run(i) {
         const deck = needDeck(ctx)
         const fresh: Slide[] = i.slides.map((s, k) => ({
-          id: '', layout: s.layout, variant: s.variant, build: s.build, transition: s.transition, tone: s.tone, decor: s.decor, frame: (checkFrame(s.layout, s.frame, `slides[${k}]`), s.frame), notes: s.notes, items: withIds(s.items as Item[]), bg: s.bg,
+          id: '', layout: s.layout, variant: s.variant, build: s.build, transition: s.transition, tone: s.tone, decor: s.decor, frame: (checkFrame(s.layout, s.frame, `slides[${k}]`), s.frame), notes: s.notes && typeset(s.notes), items: withIds(s.items as Item[]), bg: s.bg,
           content: validateContent(s.layout, s.content, `slides[${k}]`),
         }))
         for (const s of fresh) { s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
@@ -360,7 +425,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.frame !== undefined) s.frame = i.frame ?? undefined
         if (i.build !== undefined) s.build = i.build ?? undefined
         if (i.transition !== undefined) s.transition = i.transition ?? undefined
-        if (i.notes !== undefined) s.notes = i.notes ?? undefined
+        if (i.notes !== undefined) s.notes = i.notes ? typeset(i.notes) : undefined
         if (i.items !== undefined) s.items = withIds((i.items ?? undefined) as Item[] | undefined)
         if (i.bg !== undefined) s.bg = i.bg ?? undefined
         ctx.setDeck(deck)
@@ -455,26 +520,31 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'propose_looks',
       description: 'Zwei bis drei deutlich verschiedene Looks zur Auswahl rendern (je Cover, Kennzahlen, Diagramm, Kapiteltrenner). Für neue Decks, vor create_deck. Der Nutzer wählt; danach create_deck mit genau diesem customTheme bzw. Katalog-Theme.',
-      inputSchema: z.object({ looks: z.array(z.union([z.enum(CATALOG_THEMES.map((t) => t.id) as [string, ...string[]]), themeSpec])).min(2).max(3).describe('Eigene Entwürfe für dieses Thema (Design-Guide §6): einer hell und sachlich, einer dunkel oder plakativ; sie unterscheiden sich in Struktur (Serif/Sans, titleSize, rule, sectionTone), nicht nur in der Farbe. Ein Katalog-Theme als dritter Look ist erlaubt.') }),
+      inputSchema: z.object({ looks: z.array(z.union([z.enum(CATALOG_THEMES.map((t) => t.id) as [string, ...string[]]), themeSpec])).min(2).max(3).describe('Eigene Entwürfe für dieses Thema (Design-Guide §6): einer hell und sachlich, einer dunkel oder plakativ, ein dritter als Überraschung (unerwartet, aber aus dem Thema begründet); sie unterscheiden sich in Struktur (Serif/Sans, titleSize, rule, sectionTone, labelFont), nicht nur in der Farbe. Ein Katalog-Theme ist erlaubt, im Stil mutig auch plakat/magazin/neomono/pastell.') }),
       async run(i) {
         const title = ctx.getDeck()?.title ?? 'Vorschau'
-        const refs = i.looks.map((l) => (typeof l === 'string' ? { id: l } : { id: 'custom', custom: l }))
+        const refs = i.looks.map((l) => (typeof l === 'string' ? { id: l } : { id: 'custom', custom: { ...l, elements: l.elements ?? 'line' } }))
         const tell = i.looks.flatMap((l) => (typeof l === 'string' ? [] : [l.headFont, l.bodyFont])).find((f) => AI_FONTS.includes(f))
         if (tell) throw new Error(`${tell} ist eine Standardschrift generierter Designs und gehört nicht in eigene Vorschläge. Andere Schrift wählen (Design-Guide §6); hat der Nutzer sie ausdrücklich gewünscht, direkt create_deck mit diesem customTheme.`)
         // Guide §6: Entwürfe unterscheiden sich in der Struktur, sonst sieht der Nutzer nur Umfärbungen desselben Looks
-        const traits = refs.map((r) => { const t = resolveTheme(r); return { 'hell/dunkel': t.dark, 'Serif/Sans': !!t.head.serif, titleSize: (t.headScale ?? 1) > 1, titleWeight: t.head.weight, rule: t.rule ?? 'none', sectionTone: t.sectionTone ?? 'accent', Farbgrund: !!t.vivid } })
+        const traits = refs.map((r) => { const t = resolveTheme(r); return { 'hell/dunkel': t.dark, 'Serif/Sans': !!t.head.serif, titleSize: (t.headScale ?? 1) > 1, titleWeight: t.head.weight, rule: t.rule ?? 'none', sectionTone: t.sectionTone ?? 'accent', Farbgrund: !!t.vivid, Bauteile: t.elements ?? 'line' } })
         for (let a = 0; a < traits.length; a++)
           for (let b = a + 1; b < traits.length; b++) {
             const same = Object.keys(traits[a]).filter((k) => traits[a][k as keyof (typeof traits)[0]] === traits[b][k as keyof (typeof traits)[0]])
-            if (same.length > 3) throw new Error(`Look ${a + 1} und ${b + 1} unterscheiden sich kaum, gleich sind: ${same.join(', ')}. Ändere bei einem mindestens ${same.length - 3} davon, damit der Nutzer echte Alternativen sieht.`)
+            if (same.length > 4) throw new Error(`Look ${a + 1} und ${b + 1} unterscheiden sich kaum, gleich sind: ${same.join(', ')}. Ändere bei einem mindestens ${same.length - 4} davon, damit der Nutzer echte Alternativen sieht.`)
           }
+        // Guide §6 „Abwechslung“: mindestens ein Look hebt sich im Typ von den letzten Decks ab (mit Brand-Kit gilt dessen Look)
+        const recent = defaultBrand() ? [] : recentLooks()
+        const reps = refs.map((r) => repeats(lookTyp(r), recent))
+        if (reps.every(Boolean)) throw new Error(`Alle Looks gleichen im Typ deinen letzten Decks (${recent.slice(0, 3).map((r) => `„${r.title}“: ${typText(r.typ)}`).join('; ')}). Baue mindestens einen Look in Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt), Titelgewicht oder Bauteile (line/plain) anders – außer der Nutzer will eine Serie, dann create_deck direkt (Design-Guide §6 „Abwechslung“).`)
         const images = (await Promise.all(refs.map((theme) => themePreview(ctx, { title, theme, transition: 'fade', mode: 'click', slides: [] })))).map((b) => b[0])
         if (images.some((b) => !b)) throw new Error('Vorschau fehlgeschlagen, bitte einzeln mit create_deck prüfen.')
         const label = (l: (typeof i.looks)[number]) => (typeof l === 'string' ? CATALOG_THEMES.find((t) => t.id === l)!.name : l.name)
         const names = i.looks.map((l, k) => `${k + 1}. ${label(l)}`).join('\n')
-        if (!ctx.choice) return { text: `Looks (Bilder in dieser Reihenfolge):\n${names}\nZeig dem Nutzer die Namen und frag, welchen er möchte.`, images }
+        const hints = i.looks.map((l) => (typeof l === 'string' ? '' : aiTells(l))).join('') + reps.map((x, k) => x && `Hinweis: Look ${k + 1} ${x}\n`).join('')
+        if (!ctx.choice) return { text: `${hints}Looks (Bilder in dieser Reihenfolge):\n${names}\nZeig dem Nutzer die Namen und frag, welchen er möchte.`, images }
         ctx.choice({ question: 'Welcher Look soll es werden?', options: i.looks.map((l, k) => ({ label: label(l), image: `data:${mimeOf(images[k])};base64,${images[k].toString('base64')}` })) })
-        return { text: `Looks zur Auswahl angezeigt:\n${names}\nBeende jetzt den Turn ohne weiteren Text; die Wahl kommt als nächste Nachricht (Name des Looks).`, images }
+        return { text: `${hints}Looks zur Auswahl angezeigt:\n${names}\nBeende jetzt den Turn ohne weiteren Text; die Wahl kommt als nächste Nachricht (Name des Looks).`, images }
       },
     }),
     tool({
@@ -512,20 +582,24 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'find_images',
       readOnly: true,
-      description: 'Bilder finden: eigene Dateien im Asset-Ordner, Fotos aus dem Netz (Unsplash mit Key, sonst Openverse: freie Bilder von Wikimedia Commons, Flickr u. a., ohne Key) oder ein Bild direkt per `url` (Link vom Nutzer oder aus der Websuche). Treffer werden heruntergeladen und als Vorschau mitgeliefert. Rückgabe: asset://-Pfade für `image.src`, mit Maßen, Lizenz und Bildnachweis für die Notes. Setze `image.focus` nach dem Vorschaubild (wo Gesicht oder Motiv sitzt), wenn es nicht mittig ist.',
+      description: 'Bilder finden: eigene Dateien im Asset-Ordner, Fotos aus dem Netz (Unsplash mit Key, sonst Openverse: freie Bilder von Wikimedia Commons, Flickr u. a., ohne Key) oder ein Bild direkt per `url` (Link vom Nutzer oder aus der Websuche; asset://-Pfade aus dem Material des Nutzers zeigt es nur an). Eigene Dateien kommen neueste zuerst. Treffer werden heruntergeladen und als Vorschau mitgeliefert. Rückgabe: asset://-Pfade für `image.src`, mit Maßen, Lizenz und Bildnachweis für die Notes. Setze `image.focus` nach dem Vorschaubild (wo Gesicht oder Motiv sitzt), wenn es nicht mittig ist.',
       inputSchema: z.object({
         query: z.string().max(80).optional().describe('lokal: Teil des Dateinamens; Netz: englische Suchbegriffe, z. B. "teacher classroom"'),
         source: z.enum(['auto', 'local', 'unsplash', 'web']).default('auto').describe('auto = lokal, ohne lokalen Treffer aus dem Netz (Unsplash, sonst Openverse); web = Openverse'),
-        url: z.string().url().max(2000).optional().describe('Bild direkt von dieser Adresse übernehmen. Nur Bilder, die der Nutzer genannt hat oder die verwendet werden dürfen (freie Lizenz, eigene Website); Quelle in die Notes'),
+        url: z.string().url().max(2000).optional().describe('Bild direkt von dieser Adresse übernehmen. Nur Bilder, die der Nutzer genannt hat oder die verwendet werden dürfen (freie Lizenz, eigene Website); Quelle in die Notes. Auch asset://-Pfade aus Quellmaterial oder Anhängen des Nutzers, um sie vor dem Einbauen anzusehen'),
         limit: z.number().int().min(1).max(5).default(3),
-        orientation: z.enum(['landscape', 'portrait', 'squarish']).default('landscape').describe('Unsplash: landscape für Vollbild/Cover/Galerie, portrait für Porträts (quote), squarish für Kacheln'),
+        orientation: z.enum(['landscape', 'portrait', 'squarish']).default('landscape').describe('Unsplash: landscape für Vollbild/Cover/Galerie, portrait für Porträts (quote) und Hochformat-Decks (4:5, 9:16, A4), squarish für Kacheln und Quadrat-Decks'),
       }),
       async run(i) {
-        if (i.url) return fromUrl(ctx, i.url)
+        if (i.url) return i.url.startsWith('asset:') ? fromAsset(ctx, i.url) : fromUrl(ctx, i.url)
         const q = i.query?.toLowerCase()
-        let local: string[] = []
-        try { local = readdirSync(ctx.assetDir).filter((f) => /\.(png|jpe?g|svg|webp)$/i.test(f) && (!q || f.toLowerCase().includes(q))).map((f) => assetUrl(join(ctx.assetDir, f))) } catch {}
-        if (i.source === 'local' || (i.source === 'auto' && local.length)) return { text: local.length ? local.join('\n') : `Keine passenden Bilder in ${ctx.assetDir}.` }
+        let local: { file: string; t: number }[] = []
+        try {
+          local = readdirSync(ctx.assetDir, { recursive: true, encoding: 'utf8' }).filter((f) => IMG_FILE.test(f) && (!q || f.toLowerCase().includes(q)))
+            .flatMap((f) => { const file = join(ctx.assetDir, f), st = statSync(file, { throwIfNoEntry: false }); return st?.isFile() ? [{ file, t: st.mtimeMs }] : [] })
+            .sort((a, b) => b.t - a.t)
+        } catch {}
+        if (i.source === 'local' || (i.source === 'auto' && local.length)) return localImages(ctx, local.map((h) => h.file), i.limit)
         if (!i.query) return { text: `${local.length ? '' : 'Keine lokalen Bilder. '}Für Fotos aus dem Netz eine englische query angeben.` }
         if (i.source === 'unsplash' && !ctx.unsplashKey) throw new Error('Unsplash ist nicht konfiguriert (UNSPLASH_ACCESS_KEY fehlt). source "web" sucht ohne Key.')
         return i.source !== 'web' && ctx.unsplashKey ? unsplash(ctx, i.query, i.limit, i.orientation) : openverse(ctx, i.query, i.limit, i.orientation)
@@ -537,7 +611,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       description: 'Bild per KI erzeugen (Szene, Stimmung, Illustration, ruhige Bildfläche), wenn find_images nichts Passendes liefert oder der Nutzer es will. Dauert 20–120 s und kostet: alle Bilder des Plans in einer Antwort gleichzeitig anfordern (sie laufen parallel), erst einen Bildplan machen (2–5 Schlüsselfolien wie Cover, Kapitelwechsel, Höhepunkt, Abschluss) und einen Stilsatz, der wörtlich an jeden Prompt kommt. Nie für echte Personen, Logos, Marken, echte Produkte oder Orte des Nutzers (das wären Fälschungen), Diagramme oder Text. Kein KI-Look (Neon, Roboter, Glühbirnen, glänzendes 3D). Regeln im Design-Guide §6 „KI-Bilder“. Rückgabe: asset://-Pfad für `image.src` plus Vorschau.',
       inputSchema: z.object({
         prompt: z.string().min(10).max(1500).describe('Englisch, in dieser Reihenfolge: Motiv und Handlung, Umgebung, Ausschnitt mit ruhiger Fläche für den Titel (z. B. "subject on the right, calm empty left half"), Licht und Stimmung, Stilsatz des Decks mit Theme-Farben als Wort plus Hex, zum Schluss "no text, no letters, no logos, no watermark". Konkrete Szene statt abstraktem Begriff.'),
-        orientation: z.enum(['landscape', 'portrait', 'square']).default('landscape').describe('landscape für cover, photo, closing und gallery; square für image-text, section und big-number; portrait selten'),
+        orientation: z.enum(['landscape', 'portrait', 'square']).default('landscape').describe('landscape für cover, photo, closing und gallery; square für image-text, section und big-number; portrait für Hochformat-Decks (4:5, 9:16, A4), sonst selten'),
         provider: z.enum(IMAGE_PROVIDERS).optional().describe('nur auf Wunsch des Nutzers; weglassen = der erste eingerichtete (Mammouth, OpenAI, Codex)'),
       }),
       async run(i) {
@@ -546,8 +620,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), pdf (pixelgenau), png (eine Datei pro Folie) oder md (Handout: Titel, Inhalte, Notizen).',
-      inputSchema: z.object({ format: z.enum(['pptx', 'pdf', 'png', 'md']) }),
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell) oder md (Handout: Titel, Inhalte, Notizen). Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
+      inputSchema: z.object({ format: z.enum(['pptx', 'pdf', 'png', 'zip', 'md']) }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
@@ -601,12 +675,12 @@ async function unsplash(ctx: ToolContext, query: string, limit: number, orientat
   mkdirSync(ctx.assetDir, { recursive: true })
   const lines: string[] = [], images: Buffer[] = []
   for (const h of hits) {
-    // 1920 px statt „regular“ (1080): Vollbildfotos werden mit 2560 px exportiert
-    const [full, thumb] = await Promise.all([get(`${h.urls.raw}&w=1920&q=82&fm=jpg`).then((r) => r.arrayBuffer()), get(h.urls.small).then((r) => r.arrayBuffer())])
+    // 2560 px statt „regular“ (1080): Vollbildfotos werden mit 2560 px exportiert, so bleiben sie scharf
+    const [full, thumb] = await Promise.all([get(`${h.urls.raw}&w=2560&q=82&fm=jpg`).then((r) => r.arrayBuffer()), get(h.urls.small).then((r) => r.arrayBuffer())])
     const file = join(ctx.assetDir, `unsplash-${h.id.replace(/[^\w-]/g, '')}.jpg`)
     writeFileSync(file, Buffer.from(full))
     get(h.links.download_location).catch(() => {}) // Unsplash-Richtlinie: Download zählen
-    lines.push(`${assetUrl(file)} — 1920×${Math.round((1920 * h.height) / h.width)} px, ${h.alt_description ?? h.description ?? query} (Foto: ${h.user.name} / Unsplash, ${h.user.links.html})`)
+    lines.push(`${assetUrl(file)} — 2560×${Math.round((2560 * h.height) / h.width)} px, ${h.alt_description ?? h.description ?? query} (Foto: ${h.user.name} / Unsplash, ${h.user.links.html})`)
     images.push(Buffer.from(thumb))
   }
   return { text: `${hits.length} Unsplash-Fotos geladen (Reihenfolge wie die Vorschaubilder). Bildnachweis in die Speaker Notes übernehmen:\n${lines.join('\n')}`, images }
@@ -642,9 +716,28 @@ export function webpSize(b: Buffer): { width: number; height: number } | null {
   return null
 }
 
+// Pixelmaße aus dem Dateikopf (PNG, GIF, JPEG, WebP), ohne Electron; null = unbekannt (SVG, kaputt)
+export function imageSize(b: Buffer): { width: number; height: number } | null {
+  if (b.length >= 24 && b.readUInt32BE(0) === 0x89504e47) return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) }
+  if (b.length >= 10 && b.toString('latin1', 0, 4) === 'GIF8') return { width: b.readUInt16LE(6), height: b.readUInt16LE(8) }
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    // JPEG: Segmente bis zum Frame-Kopf SOF0–SOF15 (ohne DHT C4, JPG C8, DAC CC)
+    for (let i = 2; i + 9 < b.length;) {
+      if (b[i] !== 0xff) return null
+      const m = b[i + 1]
+      if (m === 0xff) { i++; continue } // Füllbyte
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { width: b.readUInt16BE(i + 7), height: b.readUInt16BE(i + 5) }
+      i += 2 + b.readUInt16BE(i + 2)
+    }
+    return null
+  }
+  return webpSize(b)
+}
+
 // Vorschau, die ins Modell passt: JPEG/PNG verkleinert nativeImage in Millisekunden; andere Formate (WebP) rendert die Engine,
 // gleich in Vorschaugröße (in Originalgröße, mit Render-Zoom 3840 px, dauerte jede Offscreen-Aufnahme 30–40 s).
 async function preview(ctx: ToolContext, img: Buffer, src: string, w0: number, h0: number, width = 768): Promise<Buffer[]> {
+  if (ctx.previews === false) return []
   const thumb = ctx.engine.thumbnail?.(img, width)
   if (thumb) return [thumb]
   const w = Math.round(width / 2), h = Math.round((w * h0) / w0) // Render-Zoom 2 → genau `width` Pixel breit
@@ -655,6 +748,39 @@ async function preview(ctx: ToolContext, img: Buffer, src: string, w0: number, h
     console.warn('[tools] Bildvorschau übersprungen:', (e as Error).message)
     return []
   }
+}
+
+// Eigene Bilder (auch Unterordner wie import-*/ aus dem Quellmaterial): Maße für die Trefferzeile, SVG/AVIF ohne lesbare Pixelmaße
+const IMG_FILE = /\.(png|jpe?g|gif|webp|svg|avif)$/i
+function dims(buf: Buffer, file: string): { label: string; w: number; h: number } {
+  const s = imageSize(buf)
+  if (!s) return { label: extname(file).slice(1).toUpperCase(), w: 1600, h: 1000 }
+  const r = s.width / s.height
+  return { label: `${s.width}×${s.height} px, ${r > 1.1 ? 'quer' : r < 0.9 ? 'hoch' : 'quadratisch'}`, w: s.width, h: s.height }
+}
+
+// Bild aus dem Asset-Ordner ansehen, ohne es zu kopieren; die KI wählt den Pfad, deshalb nur dort und nur Bilddateien
+async function fromAsset(ctx: ToolContext, url: string): Promise<ToolOutput> {
+  const file = resolve(decodeURIComponent(new URL(url).pathname))
+  if (!IMG_FILE.test(file) || !file.startsWith(resolve(ctx.assetDir) + sep)) throw new Error(`Nur Bilder aus dem Asset-Ordner (${ctx.assetDir}) lassen sich ansehen.`)
+  const buf = readFileSync(file), d = dims(buf, file), src = assetUrl(file)
+  return { text: `Bild: ${src} — ${d.label}
+Als Logo: update_deck mit brand (logo = dieser Pfad; vorhandene Brand-Felder mitgeben, sonst gehen die Farben verloren); es steht dann nur auf Titel- und Schlussfolie (A4: Seite 1), nie auf jeder Folie. Als Foto oder Abbildung: image.src, image.focus nach der Vorschau.`, images: await preview(ctx, buf, src, d.w, d.h, 640) }
+}
+
+// Lokale Treffer (neueste zuerst): die ersten `limit` mit Vorschau und Maßen, der Rest nur als Pfad, höchstens 30 Zeilen
+async function localImages(ctx: ToolContext, files: string[], limit: number): Promise<ToolOutput> {
+  if (!files.length) return { text: `Keine passenden Bilder in ${ctx.assetDir}.` }
+  const lines: string[] = [], images: Buffer[] = []
+  for (const [n, file] of files.slice(0, 30).entries()) {
+    const src = assetUrl(file)
+    if (n >= limit) { lines.push(src); continue }
+    const buf = readFileSync(file), d = dims(buf, file)
+    images.push(...(await preview(ctx, buf, src, d.w, d.h, 512)))
+    lines.push(`${src} — ${d.label}`)
+  }
+  const more = files.length > 30 ? `\n… und ${files.length - 30} weitere, query eingrenzen` : ''
+  return { text: `${files.length} eigene Bilder, neueste zuerst (die ersten ${Math.min(limit, files.length)} mit Vorschau, gleiche Reihenfolge):\n${lines.join('\n')}${more}`, images }
 }
 
 async function fromUrl(ctx: ToolContext, url: string): Promise<ToolOutput> {
@@ -781,6 +907,7 @@ export function buildCatalog(): string {
       `Wann: ${L.when}`,
       L.variants?.length ? `Varianten: ${L.variants.join(', ')}` : null,
       L.frames?.length ? `Frames: top, ${L.frames.join(', ')}` : null,
+      (L as { sizes?: FormatId[] }).sizes ? `Nur im Format: ${(L as { sizes?: FormatId[] }).sizes!.join(', ')} (create_deck format)` : null,
       `Default-Build: ${L.defaultBuild}`,
       `Schema: ${JSON.stringify(schema)}`,
     ].filter(Boolean).join('\n')
@@ -791,11 +918,11 @@ export function buildCatalog(): string {
     'Ausnahme: freie Elemente (`items` in add_slides/update_slide: Text, Form, Bild, Icon, Diagramm mit x/y/w/h in px auf 1280×720, Drehung, Deckkraft). Nur auf Layout blank oder wenn der Nutzer ausdrücklich frei gestaltet bzw. ein Element „wie in Canva“ platziert haben will. Mindestens 48 px Rand, Text ab 20 px, prüfe das Ergebnis mit render_slides. get_deck zeigt vorhandene items mit IDs.',
     ...layouts,
     '## Themes',
-    'Entwirf für jedes Deck ein eigenes Design (create_deck.customTheme) nach Design-Guide §6: Farbe, Schriftpaar und Struktur (titleSize, titleWeight, rule, sectionTone) aus Thema, Branche und Anlass. Die Katalog-Themes sind erprobte Vorbilder dafür und die Wahl, wenn es schnell gehen soll: beratung (hell, Daten, Chef-Update), keynote (dunkel, Plakat-Titel), schweiz (streng, Kopflinie), redaktion (Serif regular, Kopflinie), zen (dunkel, Serif, fotolastig). Die Engine leitet Flächen, Ränder, Sekundärtext und Diagrammfarben ab, dämpft den Grund und sichert Kontraste.',
+    'Entwirf für jedes Deck ein eigenes Design (create_deck.customTheme) nach Design-Guide §6: Farbe, Schriftpaar und Struktur (titleSize, titleWeight, rule, sectionTone) aus Thema, Branche und Anlass. Die Katalog-Themes sind erprobte Vorbilder dafür und die Wahl, wenn es schnell gehen soll: beratung (hell, Daten, Chef-Update), keynote (dunkel, Plakat-Titel), schweiz (streng, Kopflinie), redaktion (Serif regular, Kopflinie), zen (dunkel, Serif, fotolastig). Nur im Stil mutig: plakat (Signalgelb, Black-Titel), magazin (Papier, riesige Serif, Mono-Labels), neomono (Off-Black, Signalorange, Plex, Mono-Labels), pastell (Lavendel, rund, freundlich). Die Engine leitet Flächen, Ränder, Sekundärtext und Diagrammfarben ab, dämpft den Grund und sichert Kontraste.',
     'Schriften (Premium-Schriften werden in die PPTX eingebettet):',
     FONT_NAMES.map((f) => `- ${f}: ${FONT_MOOD[f]}`).join('\n'),
     'Katalog-Themes:',
-    CATALOG_THEMES.map((t) => `- ${t.id}: ${t.name}${t.dark ? ' (dunkel)' : ''}`).join('\n'),
+    CATALOG_THEMES.map((t) => `- ${t.id}: ${t.name}${t.dark ? ' (dunkel)' : ''}${t.mutig ? ' (nur Stil mutig)' : ''}`).join('\n'),
     '## Folien-Ton und Dekor',
     'Pro Folie optional `tone`: normal | accent (Akzentfläche, Standard bei section) | invert (Hell/Dunkel getauscht). Für Rhythmus: Kapiteltrenner, Kernaussage oder den Höhepunkt des Decks auf accent/invert setzen, höchstens jede 3.–4. Folie. `decor` wählt das Hintergrundmotiv (none, blobs, glow, rings, grid, stripe, dots); Standard kommt vom Theme (none). Motive nur auf ausdrücklichen Wunsch.',
     '## Animationen',

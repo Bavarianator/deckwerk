@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { BuildPreset, Deck, FrameId, Slide, Tone } from './deck'
+import type { BuildPreset, Deck, FormatId, FrameId, Slide, Tone } from './deck'
 import { EXTRA_LAYOUTS, FOCI, LOOKS, photo } from './layouts-extra' // Foto-Schema liegt dort, weil beide Kataloge es brauchen
 export { FOCI, LOOKS, photo }
 
@@ -17,6 +17,7 @@ export interface LayoutDef<S extends z.ZodObject = z.ZodObject> {
   defaultBuild: BuildPreset
   tone?: Tone // Standard-Ton der Folie
   footer: boolean
+  sizes?: FormatId[] // nur in diesen Formaten sinnvoll (z. B. Dokumente in A4); der Stresstest prüft sie dort statt in 16:9
   samples: { min: z.infer<S>; typ: z.infer<S>; max: z.infer<S> }
 }
 
@@ -171,7 +172,7 @@ const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const LAYOUTS = {
   cover: L({
-    id: 'cover', name: 'Titelfolie', when: 'Erste Folie. Titel = Versprechen des Decks.', variants: ['left', 'center'],
+    id: 'cover', name: 'Titelfolie', when: 'Erste Folie. Titel = Versprechen des Decks. Variante bottom: übergroßer Titel unten links (Plakat, Stil mutig, stark mit Foto).', variants: ['left', 'center', 'bottom'],
     schema: cover, defaultBuild: 'none', footer: false,
     samples: {
       min: { title: 'Q3-Review' },
@@ -207,7 +208,7 @@ export const LAYOUTS = {
     },
   }),
   statement: L({
-    id: 'statement', name: 'Kernaussage', when: 'Eine einzige starke Botschaft, Zitat oder These. Maximal 1–2 pro Deck.',
+    id: 'statement', name: 'Kernaussage', when: 'Eine einzige starke Botschaft, Zitat oder These. Maximal 1–2 pro Deck. Standard linksbündig; Variante center nur für kurze Sätze. Variante poster: 1–8 Wörter riesig, bricht bewusst den Rhythmus (Höhepunkt, einmal pro Deck, im Stil mutig bis zu dreimal).', variants: ['left', 'center', 'poster'],
     schema: statement, defaultBuild: 'fade', footer: false,
     samples: {
       min: { text: 'Kunden bleiben, wenn es **einfach** ist.' },
@@ -233,8 +234,8 @@ export const LAYOUTS = {
     },
   }),
   'two-column': L({
-    id: 'two-column', name: 'Zwei Spalten', when: 'Gegenüberstellung (vorher/nachher, Problem/Lösung, Option A/B). Variante highlight-right betont die rechte Seite.',
-    variants: ['equal', 'highlight-right'], frames: ['band'], schema: twoColumn, defaultBuild: 'stagger', footer: true,
+    id: 'two-column', name: 'Zwei Spalten', when: 'Gegenüberstellung (vorher/nachher, Problem/Lösung, Option A/B). Standard rule: offene Spalten mit Kopflinie. highlight-right betont die rechte Seite als Fläche; equal = zwei graue Karten (nur auf Wunsch).',
+    variants: ['rule', 'equal', 'highlight-right'], frames: ['band'], schema: twoColumn, defaultBuild: 'stagger', footer: true,
     samples: {
       min: { title: 'Heute gegenüber morgen', left: { heading: 'Heute' }, right: { heading: 'Morgen' } },
       typ: {

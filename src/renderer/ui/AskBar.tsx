@@ -1,9 +1,9 @@
 // KI-Leiste: eine Kapsel für Wünsche an die KI (mit Bezug auf das gewählte Element), darüber eine kurze Blase mit
 // Status, Antwort oder Rückfrage und auf Wunsch der ganze Verlauf. Ersetzt die Chat-Spalte.
 import { useState, type ReactNode } from 'react'
-import { ArrowUp, Check, CircleAlert, History, LoaderCircle, Paperclip, Sparkles, Square, Undo2, X } from 'lucide-react'
+import { ArrowUp, Check, CircleAlert, History, Image as ImageIcon, LoaderCircle, Paperclip, Sparkles, Square, Undo2, X } from 'lucide-react'
 import { ChatLog, ChoiceCards, ModelSelect, TOOL, type Msg } from './Chat'
-import { sourceContext, useSource } from './Start'
+import { isImage, sourceContext, useSource } from './Start'
 
 // label steht in der Kapsel, context geht nur an die KI; slot und rect (Fensterkoordinaten) für Werkzeuge am Objekt
 export interface Target { label: string; context: string; slot?: string; rect?: { left: number; top: number; width: number; height: number } }
@@ -25,14 +25,14 @@ export function AskBar(p: Props) {
   const [draft, setDraft] = useState('')
   const [history, setHistory] = useState(false)
   const [seen, setSeen] = useState(0) // Blase ist bis zu dieser Nachrichtenzahl weggeklickt
-  const { src, setSrc, err, attach } = useSource()
+  const { srcs, attach, remove, clear, err } = useSource()
   const submit = () => {
-    const text = draft.trim() || (src ? 'Nutze dieses Dokument für das Deck.' : '')
+    const text = draft.trim() || (srcs.length ? 'Nutze diese Dateien für das Deck.' : '')
     const t = p.target
-    const ctx = [t?.context, src && sourceContext(src)].filter(Boolean).join('\n\n') || undefined
-    if (text && p.onSend(`${t ? `${t.label}: ` : ''}${text}${src ? ` · ${src.name}` : ''}`, ctx)) {
+    const ctx = [t?.context, srcs.length > 0 && sourceContext(srcs)].filter(Boolean).join('\n\n') || undefined
+    if (text && p.onSend(`${t ? `${t.label}: ` : ''}${text}${srcs.length ? ` · ${srcs.map((s) => s.name).join(', ')}` : ''}`, ctx)) {
       setDraft('')
-      setSrc(null)
+      clear()
       p.onTarget(null)
     }
   }
@@ -92,7 +92,7 @@ export function AskBar(p: Props) {
       {bubble}
       <form className="cap material" onSubmit={(e) => { e.preventDefault(); submit() }}
         onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { const f = e.dataTransfer.files[0]; if (f) { e.preventDefault(); attach(window.api.pathOf(f)) } }}>
+        onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
         <Sparkles size={19} aria-hidden />
         {p.target && (
           <span className="cap-token">
@@ -100,13 +100,13 @@ export function AskBar(p: Props) {
             <button type="button" aria-label="Bezug entfernen" onClick={() => p.onTarget(null)}><X size={11} strokeWidth={2.6} /></button>
           </span>
         )}
-        {src && (
-          <span className="cap-token" title={src.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>
-            <Paperclip size={11} />{src.name}
-            <button type="button" aria-label="Anhang entfernen" onClick={() => setSrc(null)}><X size={11} strokeWidth={2.6} /></button>
+        {srcs.map((s) => (
+          <span key={s.name} className="cap-token file" title={s.cut ? `${s.name} (zu lang, die KI bekommt den Anfang)` : s.name}>
+            {isImage(s.name) ? <ImageIcon size={11} /> : <Paperclip size={11} />}<span>{s.name}</span>
+            <button type="button" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={11} strokeWidth={2.6} /></button>
           </span>
-        )}
-        {err && <span className="cap-token error" role="alert">{err}</span>}
+        ))}
+        {err && <span className="cap-token error" role="alert" title={err}>{err}</span>}
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -114,12 +114,12 @@ export function AskBar(p: Props) {
           placeholder={p.busy ? 'Deckwerk arbeitet …' : p.target ? 'Was soll sich hier ändern?' : 'Sag Deckwerk, was sich ändern soll'}
           aria-label="Wunsch an die KI"
         />
-        <button type="button" className="plain" aria-label="Dokument anhängen" title="Dokument anhängen: Text, Markdown, Word, PowerPoint, PDF (oder hierher ziehen)" disabled={p.busy} onClick={() => attach()}><Paperclip size={16} /></button>
+        <button type="button" className="plain" aria-label="Dateien anhängen" title="Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)" disabled={p.busy} onClick={() => attach()}><Paperclip size={16} /></button>
         <button type="button" className="plain" aria-label="Verlauf" aria-pressed={history} disabled={!p.msgs.length} onClick={() => setHistory(!history)}><History size={16} /></button>
         <ModelSelect value={p.model} onChange={p.onModel} />
         {p.busy
           ? <button type="button" className="round stop" aria-label="Stoppen" onClick={p.onAbort}><Square size={12} fill="currentColor" /></button>
-          : <button type="submit" className="round" aria-label="Senden (Enter)" disabled={!draft.trim() && !src}><ArrowUp size={17} strokeWidth={2.4} /></button>}
+          : <button type="submit" className="round" aria-label="Senden (Enter)" disabled={!draft.trim() && !srcs.length}><ArrowUp size={17} strokeWidth={2.4} /></button>}
       </form>
     </div>
   )

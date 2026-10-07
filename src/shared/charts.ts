@@ -16,7 +16,8 @@ export const fmt = (v: number, dec = 1) => v.toLocaleString('de-DE', { minimumFr
 // perPoint nur bei genau einer Serie (eine Farbe pro Balken), sonst eine Farbe pro Serie.
 export function chartColors(spec: ChartSpec, t: Theme): { perSeries: string[]; perPoint?: string[] } {
   const grey = (k: number) => mix(t.c.bg, t.c.muted, 0.55 - 0.12 * (k % 3))
-  const h = spec.highlight
+  // ohne Vorgabe: bei Balken mit einer Serie die letzte Kategorie (meist „heute“) betonen statt alles bunt
+  const h = spec.highlight ?? ((spec.type === 'bar' || spec.type === 'hbar') && spec.series.length === 1 && spec.categories.length > 2 ? spec.categories.at(-1) : undefined)
   const si = h ? spec.series.findIndex((s) => s.name === h) : -1
   const ci = h ? spec.categories.indexOf(h) : -1
   if (si >= 0) {

@@ -12,6 +12,7 @@
 .slide [contenteditable]:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 3px; }
 .slide [contenteditable]:focus { box-shadow: 0 0 0 2px var(--accent); border-radius: 3px; }
 .hide-exportables .slide [data-pptx] { visibility: hidden !important; }
+.hide-exportables .slide [data-pptx]::before { visibility: visible; } /* Linien als ::before an Boxen gehören ins Hintergrundbild */
 
 /* ---------- decor ---------- */
 .decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -32,11 +33,12 @@
 .slide.dark .decor.grain::after { mix-blend-mode: screen; opacity: 0.06; }
 
 /* ---------- frame ---------- */
+/* 16:9-Maße; Hoch- und Quadratformate überschreibt der Block „Formate“ am Ende (.fmt-tall / .fmt-narrow, gesetzt in Frame) */
 .safe { position: absolute; left: 72px; right: 72px; top: 60px; bottom: 72px; display: flex; flex-direction: column; overflow: hidden; }
 .footer { position: absolute; left: 72px; right: 72px; bottom: 24px; height: 22px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .footer > .t { max-width: 70%; white-space: nowrap; overflow: hidden; }
-.footer-right { display: flex; align-items: center; gap: 16px; }
 .footer-logo { height: 20px; width: 90px; background-repeat: no-repeat; background-position: right center; }
+.footer-right { display: flex; align-items: center; gap: 16px; margin-left: auto; } /* rechts, auch ohne Kapitel links */
 .safe-right { left: 664px; }
 .safe-left { right: 664px; }
 
@@ -51,15 +53,16 @@
 .slide { --hs: calc(1 + (var(--head-scale, 1) - 1) * var(--head-fit, 1)); }
 .r-display { font-size: calc(var(--fs-display) * var(--hs)); line-height: 1.06; }
 .r-statement { font-size: calc(var(--fs-statement) * var(--hs)); line-height: 1.16; }
-.r-h1 { font-size: calc(var(--fs-h1) * var(--hs)); line-height: 1.14; }
+.sub-body .r-h2, .sub-body .r-h3 { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.01em; }
+.r-h1 { font-size: calc(var(--fs-h1) * min(var(--hs), 1.25)); line-height: 1.14; } /* Inhaltstitel wachsen höchstens wie large: huge gilt für Cover, Kapitel, Statement */
 .r-kpi { font-size: var(--fs-kpi); line-height: 1.05; letter-spacing: -0.03em; white-space: nowrap; }
 .r-h2 { font-size: var(--fs-h2); line-height: 1.22; letter-spacing: calc(var(--head-tracking) / 2); }
 .r-h3 { font-size: var(--fs-h3); line-height: 1.24; letter-spacing: calc(var(--head-tracking) / 2); }
 .r-body { font-size: var(--fs-body); line-height: 1.38; }
 .r-label { font-size: var(--fs-label); line-height: 1.32; }
 .r-small { font-size: var(--fs-small); line-height: 1.42; color: var(--muted); }
-.r-eyebrow { font-size: var(--fs-eyebrow); line-height: 1.2; font-weight: 700; letter-spacing: 0.01em; color: var(--muted); }
-.r-footer { font-size: var(--fs-footer); line-height: 1.2; letter-spacing: 0.02em; color: var(--muted); }
+.r-eyebrow { font-family: var(--font-label, var(--font-body)); font-size: var(--fs-eyebrow); line-height: 1.2; font-weight: 700; letter-spacing: 0.01em; color: var(--muted); }
+.r-footer { font-family: var(--font-label, var(--font-body)); font-size: var(--fs-footer); line-height: 1.2; letter-spacing: 0.02em; color: var(--muted); }
 .muted, .muted-body { color: var(--muted); }
 
 /* ---------- shared blocks ---------- */
@@ -82,6 +85,8 @@
 .cover-bottom { flex: none; height: 28px; display: flex; align-items: flex-end; }
 .cover.center .cover-main { align-items: center; text-align: center; margin: 0 auto; }
 .cover.center .cover-bottom { justify-content: center; }
+.cover.bottom .cover-main { justify-content: flex-end; padding-bottom: 28px; max-width: 1100px; } /* Titel groß unten links an der Kante */
+.cover.bottom .cover-title { font-size: calc(var(--fs-display) * var(--hs, 1) * 1.15); line-height: 1.02; }
 .closing-bottom { flex: none; display: flex; justify-content: space-between; align-items: flex-end; min-height: 40px; }
 .closing-bottom .cover-logo { background-position: right center; }
 .closing-right { display: flex; align-items: flex-end; gap: 28px; }
@@ -102,13 +107,20 @@
 .agenda-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 
 /* ---------- section / statement ---------- */
-.section { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; max-width: 980px; }
-.section-num { color: var(--muted); }
+.section { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; max-width: 980px; padding-bottom: 12px; } /* Titel unten links, Nummer übergroß darüber */
+.section-num { color: var(--muted); line-height: 0.9; margin-bottom: auto; font-variant-numeric: tabular-nums; }
 .section-sub { color: var(--muted); max-width: 780px; }
-.statement { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 30px; }
+.statement { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 30px; }
+.statement.center { align-items: center; text-align: center; }
 .statement-text { max-width: 1040px; }
 .statement-text strong { color: var(--accent); font-weight: inherit; }
-.statement-source { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.statement-source { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.statement.center .statement-source { align-items: center; }
+/* Plakat: wenige Wörter füllen die Breite, oben links verankert; Kennung und Quelle klein unten */
+.statement.poster { justify-content: space-between; gap: 24px; }
+.statement.poster .statement-text { max-width: none; }
+.statement.poster .statement-text.big { font-size: calc(var(--fs-display) * var(--hs) * var(--poster-k, 1.9)); line-height: 0.96; letter-spacing: -0.035em; }
+.statement-poster-foot { display: flex; flex-direction: column; gap: 8px; }
 .dash { width: 40px; height: 2px; background: var(--accent); }
 
 /* ---------- bullets ---------- */
@@ -137,6 +149,17 @@
 .col-card.hl { background: var(--fill); --text: var(--on-accent); --muted: var(--on-accent-soft); color: var(--text); }
 .col-card.hl .pdot { background: var(--on-accent); }
 .col-card .r-body { color: var(--text); }
+.col-rule { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 28px 0 4px; } /* unten Luft für Unterlängen von Display-Serifen */ /* offene Spalten mit kräftiger Kopflinie statt grauer Karten */
+.col-rule::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--text); }
+.col-rule.hl::before { background: var(--accent); }
+/* bis 3 Punkte je Spalte: Kopf und Punkte größer, mehr Luft (wie .bullets.few; Autofit skaliert über --fs-* mit) */
+.cols.few .col-card { gap: 22px; }
+.cols.few .card { padding: 36px 32px; }
+.cols.few .col-rule { padding-top: 36px; }
+.cols.few .col-card > .r-h2 { font-size: calc(var(--fs-h2) * 1.3); }
+.cols.few .col-card .r-body { font-size: calc(var(--fs-body) * 1.15); } /* halbe Breite: kleinerer Faktor als bei bullets, sonst bricht jeder Punkt um */
+.cols.few .points { gap: 20px; }
+.cols.few .pdot { margin-top: calc(var(--fs-body) * 1.15 * 0.69 - 4px); }
 
 /* ---------- image + text ---------- */
 .media { position: absolute; left: 0; top: 0; bottom: 0; width: 600px; overflow: hidden; }
@@ -161,10 +184,12 @@
 .kpis.kpi-row .kpi-value { align-self: last baseline; }
 .kpis.kpi-row > .kpi-plain:first-child { padding-left: 0; }
 .kpi-rule { position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
-.kpi-plain.big .kpi-value { font-size: calc(var(--fs-kpi) * 1.25); }
+.kpi-plain.big .kpi-value { font-size: calc(var(--fs-kpi) * 1.5); }
 .kpi-value { color: var(--accent); }
 .kpis.kpi-row .kpi-value { color: var(--text); }
 .kpis.kpi-row .kpi-plain.big .kpi-value { color: var(--accent); }
+/* Einheit einer Kennzahl (big-number, kpi-grid): klein auf derselben Grundlinie, ohne die enge Laufweite der Zahl */
+.t .unit { font-size: 0.45em; letter-spacing: 0; }
 .kpi-delta { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .kpi-delta .r-small { color: inherit; font-weight: 700; }
 .kpi-delta.positive { color: var(--good); }
@@ -188,23 +213,26 @@
 
 /* ---------- timeline ---------- */
 .tl { margin: 0 0 auto; position: relative; display: grid; column-gap: 28px; }
-.tl-axis { position: absolute; left: 0; right: 0; top: 7px; height: 2px; background: var(--border); }
+.tl-axis { position: absolute; left: 0; right: 0; top: 6px; height: 4px; background: var(--border); }
 .tl-item { position: relative; min-width: 0; display: flex; flex-direction: column; }
 .tl-dot { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg); margin: 0 0 22px 0; }
 .tl-card { flex: 1; gap: 12px; padding: 0 12px 4px 0; min-height: 0; background: transparent; border-radius: 0; } /* offene Spalten statt Karten */
 .tl.dense .tl-card { background: transparent; box-shadow: none; padding: 0; min-height: 0; }
 .tl.dense .tl-dot { margin-left: 0; }
-.tl-date { color: var(--accent); font-weight: 700; }
+.tl-date { color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tl:not(.dense) .tl-date { font-size: calc(var(--fs-h2) * 1.5); line-height: 1.1; }
 
 /* ---------- process ---------- */
-.proc { margin: 0 0 auto; display: flex; align-items: stretch; }
+.proc { margin: 0 0 auto; display: flex; align-items: stretch; gap: 28px; }
 .proc-card { flex: 1 1 0; gap: 14px; padding: 28px 12px 4px 0; min-height: 0; background: transparent; border-radius: 0; position: relative; } /* offene Spalten statt Karten */
 .proc-card::before { content: ''; position: absolute; left: 0; right: 12px; top: 0; height: 2px; background: var(--border); } /* Pseudo-Element: landet im Hintergrundbild, nicht als Rahmen in der PPTX */
-.proc-arrow { flex: none; width: 40px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
 .proc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.proc-badge { display: flex; align-items: center; }
-.proc-badge .t { color: var(--accent); font-weight: 700; line-height: 1; }
+.proc-num { color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
 .proc-icon { color: var(--accent); }
+/* bis 3 Schritte: Nummer in Kennzahlgröße (Rolle kpi), Titel und Beschreibung größer, mehr Luft */
+.proc.few .proc-card { gap: 20px; padding-top: 36px; }
+.proc.few .proc-card > .r-h2 { font-size: calc(var(--fs-h2) * 1.35); }
+.proc.few .proc-card > .r-body { font-size: calc(var(--fs-body) * 1.2); }
 
 /* ---------- print (PDF) ---------- */
 @page { size: 1280px 720px; margin: 0; }
@@ -269,3 +297,72 @@
 .dw-fitting * { translate: none !important; scale: none !important; }
 /* Wort-für-Wort-Animation (PresentScreen): Wörter brauchen inline-block, damit translate greift */
 .dw-word { display: inline-block; }
+
+/* ---------- Bauteile: Theme-Hebel elements (Klasse el-* am .slide, gesetzt in Frame) ----------
+   solid = Karten, Flächen und Punkte wie oben. line (redaktionell): keine Flächen, 1px-Kopflinie in Textfarbe, Betonung mit
+   2px-Akzentlinie, kleine Nummern, Striche statt Punkte. plain (Keynote/Swiss): nur Schriftgröße und Abstand, Betonung über
+   die Akzentfarbe. Linien als ::before: border-top würde in der PPTX zum Rahmen ringsum. */
+:is(.el-line, .el-plain) :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card, .agenda-row.active) { background: transparent; border-radius: 0; }
+:is(.el-line, .el-plain) :is(.col-card.hl, .kpi-card.hl) { --text: inherit; --muted: inherit; --good: inherit; --bad: inherit; } /* Text wie auf der Folie statt onAccent */
+:is(.el-line, .el-plain) .kpis:has(> .hl) .kpi-value { color: var(--text); }
+:is(.el-line, .el-plain) :is(.col-card.hl > .r-h2, .kpi-card.hl .kpi-value, .agenda-row.active .agenda-text > .r-h2) { color: var(--accent); }
+:is(.el-line, .el-plain) .bullet-icon:has(> .bullet-num) { width: auto; height: auto; justify-content: flex-start; }
+:is(.el-line, .el-plain) .chart-ann { border: 0; border-radius: 0; padding-inline: 0; }
+/* line */
+.el-line :is(.bullet-card, .kpi-card.card, .take-card) { padding: 28px 0 4px; }
+.el-line .cols .card { padding: 28px 0 4px; }
+.el-line .cols.few .card { padding-top: 36px; }
+.el-line .take-card { justify-content: flex-start; }
+.el-line :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card, .agenda-row.active) { position: relative; }
+.el-line :is(.bullet-card, .col-card.card, .kpi-card.card, .take-card)::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--text); }
+.el-line :is(.col-card.hl, .kpi-card.hl, .take-card)::before { height: 2px; background: var(--accent); }
+.el-line .agenda-row.active::before { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 2px; background: var(--accent); }
+.el-line .proc-card::before { height: 1px; background: var(--text); }
+.el-line .col-rule::before { height: 1px; } /* hl (auch .col-card.hl) bekommt oben 2px Akzent */
+.el-line :is(.agenda-num, .proc-num) { font-size: var(--fs-label); line-height: 1.32; }
+.el-line .agenda.few .agenda-row { align-items: baseline; }
+.el-line :is(.bullet-dot, .pdot) { width: 14px; height: 2px; border-radius: 0; position: relative; top: 4px; } /* Strich mittig zur ersten Zeile wie der 10-px-Punkt */
+.el-line .pdot { top: 3px; } /* 8-px-Punkt */
+.el-line .col-card.hl .pdot { background: var(--accent); }
+.el-line .tl-axis { top: 7px; height: 2px; }
+.el-line .tl-dot { width: 24px; height: 4px; border: 0; border-radius: 0; margin: 6px 0 28px; } /* Mitte auf der Achse, Text beginnt wie beim Punkt */
+/* plain */
+.el-plain :is(.bullet-card, .kpi-card.card, .take-card) { padding: 0 0 4px; }
+.el-plain .cols .col-card { padding: 0 0 4px; }
+.el-plain :is(.col-rule, .proc-card)::before { content: none; }
+.el-plain .proc-card { padding-top: 0; }
+.el-plain :is(.bullet-dot, .pdot, .tl-axis, .tl-dot, .kpi-rule, .dash) { display: none; }
+.el-plain .agenda-row { border-bottom-color: transparent; }
+.el-plain :is(.agenda-num, .proc-num, .bullet-num) { font-weight: 400; color: var(--muted); }
+.el-plain .agenda:not(.few) .agenda-num { font-size: calc(var(--fs-h2) * 1.6); line-height: 1; } /* an der Textstufe: Autofit verkleinert bei langen Listen die Zeilen, nicht den Folientitel */
+.el-plain .bullet-num { font-size: var(--fs-h1); line-height: 1; }
+
+/* ---------- Formate: Hochformat, Quadrat (.fmt-tall) und schmale Seiten (.fmt-narrow, bis 800 px) ---------- */
+/* Bild oben statt an der Seite: sonst bleiben im Hochformat nur wenige Pixel für den Text */
+.fmt-tall .media, .fmt-tall .media.right { left: 0; right: 0; top: 0; bottom: auto; width: auto; height: 42%; }
+.fmt-tall .safe.safe-right, .fmt-tall .safe.safe-left { left: 72px; right: 72px; top: calc(42% + 40px); }
+.fmt-tall .footer.safe-right, .fmt-tall .footer.safe-left { left: 72px; right: 72px; }
+.fmt-tall .hdr, .fmt-tall.rule-under.fr-top .safe > .hdr > *, .fmt-tall.fr-band .hdr > * { max-width: none; }
+/* split wird zum Band: die Akzentfläche liegt oben statt links */
+.fmt-tall.fr-split .safe { left: 0; right: 0; top: 0; padding: 0 72px; }
+.fmt-tall.fr-split .hdr { position: static; width: auto; margin: 0 -72px 28px; padding: 56px 72px 36px; justify-content: flex-start; gap: 14px; }
+.fmt-tall.fr-split .footer { left: 72px; }
+.fmt-tall.fr-split :is(.bullets, .tb, .pc) { justify-content: flex-start; }
+.fmt-tall.fr-split :is(.bullets.as-cards, .cols, .kpis, .ig, .team, .pr, .lg) { align-content: start; }
+.fmt-tall.fr-split :is(.tl, .proc) { margin: 0; }
+/* Nebeneinander wird untereinander (Raster mit Inline-Spalten brauchen !important) */
+.fmt-narrow .bign.poster { --bign-k: 1.3; }
+.fmt-narrow .bign-top { flex-direction: column; gap: 24px; }
+.fmt-narrow .bign-side { width: auto; }
+/* Social-Formate vergrößern die Schrift schon im Autofit (Breite / 750): Plakatfaktor kleiner, sonst passt kein Wort in die Zeile */
+.prof-social .statement.poster { --poster-k: 1.2; }
+.prof-social .bign.poster { --bign-k: 1.2; }
+.fmt-narrow :is(.agenda, .chart-wrap.with-take, .sum.with-rec, .mx.with-take, .fn.with-take, .psol, .ms, .cols, .pc-cols) { grid-template-columns: 1fr; }
+.fmt-narrow .agenda { gap: 28px; }
+.fmt-narrow :is(.kpis, .pr, .team, .lg, .tl, .opt) { grid-template-columns: 1fr !important; }
+.fmt-tall .proc { flex-direction: column; gap: 8px; }
+.fmt-tall .proc-card { flex: none; padding-bottom: 12px; }
+.fmt-tall .tl { grid-template-columns: 1fr !important; }
+.fmt-tall .kpis:not(.n1) { grid-template-columns: repeat(2, 1fr) !important; } /* Social-Schrift ist groß: vier Kennzahlen nebeneinander passen nicht */
+.fmt-tall .kpis.n2, .fmt-tall .kpis.n3 { grid-template-columns: 1fr !important; }
+.prof-social .footer { bottom: 40px; height: auto; } /* Fußzeile wächst mit der Social-Schrift: sonst reicht ihr Kasten in den Rand */

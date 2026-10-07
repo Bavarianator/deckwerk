@@ -161,6 +161,7 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .present-layer { position: absolute; inset: 0; }
 /* Morph (PresentScreen.nameSlots): gleiche Elemente wandern an ihren neuen Platz, ruhiger als die übrigen Übergänge */
 ::view-transition-group(*) { animation-duration: 0.7s; animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
+@media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: 0.01s; } }
 /* Text: natürliche Größe statt auf die Boxbreite gestreckt, wächst um --dw-r (Schriftgröße neu/alt, gesetzt in nameSlots) */
 ::view-transition-old(.dw-text), ::view-transition-new(.dw-text) { inline-size: auto; block-size: auto; transform-origin: 0 0; animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
 ::view-transition-old(.dw-center), ::view-transition-new(.dw-center) { inset-inline-start: 50%; translate: -50% 0; transform-origin: 50% 0; }

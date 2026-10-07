@@ -10,12 +10,15 @@ import { chaptersOf, titleOf } from './story'
 
 const DUR = 400
 const EASE = 'cubic-bezier(.2,.7,.2,1)'
+const SOFT = 'cubic-bezier(.65,0,.35,1)' // Schieben: weich an- und auslaufend
+// Systemeinstellung „Bewegung reduzieren“: nur Überblenden, kein Zoom, keine Bewegung
+const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 // translate/scale statt transform, damit eigene Transforms der Layouts erhalten bleiben
 const POP: Keyframe[] = [{ opacity: 0, scale: '.5' }, { opacity: 1, scale: '1.06', offset: 0.7 }, { opacity: 1, scale: '1' }]
 const KF: Record<Exclude<BuildPreset, 'none'>, Keyframe[]> = {
   fade: [{ opacity: 0 }, { opacity: 1 }],
-  list: [{ opacity: 0, translate: '0 12px' }, { opacity: 1, translate: '0 0' }],
-  stagger: [{ opacity: 0, translate: '0 24px' }, { opacity: 1, translate: '0 0' }],
+  list: [{ opacity: 0, translate: '0 12px', filter: 'blur(6px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0)' }],
+  stagger: [{ opacity: 0, translate: '0 14px', filter: 'blur(8px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0)' }],
   wipe: [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
   'zoom-kpi': [{ opacity: 0, scale: '.6' }, { opacity: 1, scale: '1' }],
   pan: [{ opacity: 0, translate: '-40px 0' }, { opacity: 1, translate: '0 0' }],
@@ -83,10 +86,11 @@ export function playTransition(t: Transition, d: number, incoming: HTMLElement, 
     wipe: [{ clipPath: d > 0 ? 'inset(0 100% 0 0)' : 'inset(0 0 0 100%)' }, { clipPath: 'inset(0 0 0 0)' }],
     split: [{ clipPath: 'inset(0 50%)' }, { clipPath: 'inset(0 0%)' }],
     circle: [{ clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(75% at 50% 50%)' }],
-    zoom: [{ scale: '0.6', opacity: 0 }, { scale: '1', opacity: 1 }],
+    zoom: [{ scale: '0.96', opacity: 0 }, { scale: '1', opacity: 1 }],
     slide: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }], stack: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }],
   }
-  const opts = { duration: DUR, easing: EASE }
+  if (still()) return incoming.animate(frames.fade!, { duration: DUR, easing: EASE })
+  const opts = t === 'push' || t === 'slide' || t === 'cover' || t === 'stack' ? { duration: 550, easing: SOFT } : { duration: DUR, easing: EASE }
   if (t === 'push') outgoing?.animate([{ translate: '0 0' }, { translate: `0 ${-100 * d}%` }], { ...opts, fill: 'forwards' })
   if (t === 'slide') outgoing?.animate([{ translate: '0 0' }, { translate: `${-100 * d}% 0` }], { ...opts, fill: 'forwards' })
   if (t === 'stack') outgoing?.animate([{ scale: '1', opacity: 1 }, { scale: '.9', opacity: 0.4 }], { ...opts, fill: 'forwards' }) // alte Folie tritt zurück
@@ -161,6 +165,7 @@ function prepareItems(root: HTMLElement, mode: Deck['mode'], keep: Set<string>):
 
 function prepareBuilds(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>): Animation[][] {
   if (preset === 'none') return []
+  if (still()) preset = 'fade'
   if (preset === 'photo') photoZoom(root)
   const groups = new Map<number, HTMLElement[]>()
   for (const el of root.querySelectorAll<HTMLElement>('[data-build]')) {
