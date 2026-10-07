@@ -59,7 +59,10 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       assetDir: join(home, 'assets'),
       outDir: outDir(),
       unsplashKey: process.env.UNSPLASH_ACCESS_KEY, // ponytail: Wert beim Start; nach save_deck exportiert export_deck weiter nach ~/Deckwerk/out
-    }),
+    }).map((t) =>
+      // Neues Deck = neuer Ordner: sonst überschreibt save_deck das zuvor gespeicherte Deck
+      t.name === 'create_deck' ? { ...t, run: async (i: unknown) => { const out = await t.run(i); path = null; return out } } : t,
+    ),
     {
       name: 'read_guide',
       description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen.',
@@ -81,7 +84,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
     },
     {
       name: 'save_deck',
-      description: 'Deck als deck.json speichern (~/Deckwerk/<titel>/deck.json, danach immer dorthin). Die App kann die Datei öffnen.',
+      description: 'Deck als deck.json speichern (~/Deckwerk/<titel>/deck.json, danach dorthin; ein neues Deck per create_deck bekommt beim Speichern einen eigenen Ordner). Die App kann die Datei öffnen.',
       inputSchema: z.object({ name: z.string().max(60).optional().describe('Ordnername statt Titel-Slug') }),
       async run(i: { name?: string }) {
         if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
