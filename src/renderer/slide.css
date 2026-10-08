@@ -34,10 +34,18 @@
 }
 .slide.dark .decor.grain::after { mix-blend-mode: screen; opacity: 0.06; }
 
+/* Signatur (Token signature, Klasse .sig in Frame): ein ruhiges Element in der Hintergrundebene, wird mit ins Bild gerastert.
+   edge = Farbkante am Rand (liegt im Rand, nie über Inhalt), passepartout = Rahmenlinie mit Abstand; rule läuft über .rule-over */
+.sig { position: absolute; pointer-events: none; }
+.sig-edge.sig-left { left: 0; top: 0; bottom: 0; width: var(--sig-s); background: var(--sig-c); }
+.sig-edge.sig-top { left: 0; right: 0; top: 0; height: var(--sig-s); background: var(--sig-c); }
+.sig-passepartout { inset: 20px; border: var(--sig-s) solid var(--sig-c); }
+
 /* ---------- frame ---------- */
 /* 16:9-Maße; Hoch- und Quadratformate überschreibt der Block „Formate“ am Ende (.fmt-tall / .fmt-narrow, gesetzt in Frame) */
-.safe { position: absolute; left: 72px; right: 72px; top: 60px; bottom: 72px; display: flex; flex-direction: column; overflow: hidden; }
-.footer { position: absolute; left: 72px; right: 72px; bottom: 24px; height: 22px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+/* Ränder aus dem Theme-Token margin (--m-*, gesetzt in themeVars); die Fallbacks sind die Standardmaße */
+.safe { position: absolute; left: var(--m-l, 72px); right: var(--m-r, 72px); top: var(--m-t, 60px); bottom: var(--m-b, 72px); display: flex; flex-direction: column; overflow: hidden; }
+.footer { position: absolute; left: var(--m-l, 72px); right: var(--m-r, 72px); bottom: var(--m-foot, 24px); height: 22px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .footer > .t { max-width: 70%; white-space: nowrap; overflow: hidden; }
 .footer-logo { height: 20px; width: 90px; background-repeat: no-repeat; background-position: right center; }
 .footer-right { display: flex; align-items: center; gap: 16px; margin-left: auto; } /* rechts, auch ohne Kapitel links */
@@ -53,22 +61,29 @@
 /* Plakat-Titel (--head-scale) schrumpfen mit dem Autofit zurück: --head-fit geht pro Titelstufe von 1 auf 0,
    in der kleinsten Stufe ist der Titel so groß wie im normalen Design und passt damit überall, wo das passt. */
 .slide { --hs: calc(1 + (var(--head-scale, 1) - 1) * var(--head-fit, 1)); }
-.r-display { font-size: calc(var(--fs-display) * var(--hs)); line-height: 1.06; }
-.r-statement { font-size: calc(var(--fs-statement) * var(--hs)); line-height: 1.16; }
+/* Zeilenabstand (Token leading, --lh/--lh-head aus themeVars): Mehr Abstand gibt wie der Plakat-Titel mit dem Autofit nach, in der
+   kleinsten Titelstufe gilt der normale; damit passt jede Folie, die ohne Token passt. Engerer Abstand gilt immer. */
+.slide {
+  --lhf: calc(min(var(--lh, 1), 1) + max(var(--lh, 1) - 1, 0) * var(--head-fit, 1));
+  --lhf-head: calc(min(var(--lh-head, 1), 1) + max(var(--lh-head, 1) - 1, 0) * var(--head-fit, 1));
+}
+.r-display { font-size: calc(var(--fs-display) * var(--hs)); line-height: calc(1.06 * var(--lhf-head)); }
+.r-statement { font-size: calc(var(--fs-statement) * var(--hs)); line-height: calc(1.16 * var(--lhf-head)); }
 .sub-body .r-h2, .sub-body .r-h3 { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.01em; }
-.r-h1 { font-size: calc(var(--fs-h1) * min(var(--hs), 1.25)); line-height: 1.14; } /* Inhaltstitel wachsen höchstens wie large: huge gilt für Cover, Kapitel, Statement */
+.r-h1 { font-size: calc(var(--fs-h1) * min(var(--hs), 1.25)); line-height: calc(1.14 * var(--lhf-head)); } /* Inhaltstitel wachsen höchstens wie large: huge gilt für Cover, Kapitel, Statement */
 .r-kpi { font-size: var(--fs-kpi); line-height: 1.05; letter-spacing: -0.03em; white-space: nowrap; }
-.r-h2 { font-size: var(--fs-h2); line-height: 1.22; letter-spacing: calc(var(--head-tracking) / 2); }
-.r-h3 { font-size: var(--fs-h3); line-height: 1.24; letter-spacing: calc(var(--head-tracking) / 2); }
-.r-body { font-size: var(--fs-body); line-height: 1.38; }
-.r-label { font-size: var(--fs-label); line-height: 1.32; }
-.r-small { font-size: var(--fs-small); line-height: 1.42; color: var(--muted); }
+.r-h2 { font-size: var(--fs-h2); line-height: calc(1.22 * var(--lhf-head)); letter-spacing: calc(var(--head-tracking) / 2); }
+.r-h3 { font-size: var(--fs-h3); line-height: calc(1.24 * var(--lhf-head)); letter-spacing: calc(var(--head-tracking) / 2); }
+.r-body { font-size: var(--fs-body); line-height: calc(1.38 * var(--lhf)); }
+.r-label { font-size: var(--fs-label); line-height: calc(1.32 * var(--lhf)); }
+.r-small { font-size: var(--fs-small); line-height: calc(1.42 * var(--lhf)); color: var(--muted); }
 .r-eyebrow { font-family: var(--font-label, var(--font-body)); font-size: var(--fs-eyebrow); line-height: 1.2; font-weight: 700; letter-spacing: 0.01em; color: var(--muted); }
 .r-footer { font-family: var(--font-label, var(--font-body)); font-size: var(--fs-footer); line-height: 1.2; letter-spacing: 0.02em; color: var(--muted); }
+.lab-caps :is(.r-eyebrow, .footer .r-footer) { text-transform: uppercase; letter-spacing: 0.08em; } /* Token labels: caps (Quellen bleiben im Satz) */
 .muted, .muted-body { color: var(--muted); }
 
 /* ---------- shared blocks ---------- */
-.hdr { flex: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 40px; max-width: 1000px; }
+.hdr { flex: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 40px; max-width: var(--measure, 1000px); } /* --measure: Token measure */
 .eyebrow-wrap { display: flex; align-items: center; gap: 12px; }
 .eyebrow-wrap.center { justify-content: center; }
 .card { background: var(--surface); border-radius: var(--radius); padding: 32px; display: flex; flex-direction: column; gap: 14px; overflow: hidden; min-width: 0; min-height: 0; }
@@ -82,12 +97,12 @@
 .cover, .closing { flex: 1; display: flex; flex-direction: column; }
 .cover-top { flex: none; height: 40px; }
 .cover-logo { height: 40px; width: 200px; background-repeat: no-repeat; background-position: left center; }
-.cover-main, .closing-main { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 24px; max-width: 1000px; }
+.cover-main, .closing-main { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 24px; max-width: var(--measure, 1000px); }
 .cover-sub { color: var(--muted); max-width: 860px; }
 .cover-bottom { flex: none; height: 28px; display: flex; align-items: flex-end; }
 .cover.center .cover-main { align-items: center; text-align: center; margin: 0 auto; }
 .cover.center .cover-bottom { justify-content: center; }
-.cover.bottom .cover-main { justify-content: flex-end; padding-bottom: 28px; max-width: 1100px; } /* Titel groß unten links an der Kante */
+.cover.bottom .cover-main { justify-content: flex-end; padding-bottom: 28px; max-width: var(--measure, 1100px); } /* Titel groß unten links an der Kante */
 .cover.bottom .cover-title { font-size: calc(var(--fs-display) * var(--hs, 1) * 1.15); line-height: 1.02; }
 .closing-bottom { flex: none; display: flex; justify-content: space-between; align-items: flex-end; min-height: 40px; }
 .closing-bottom .cover-logo { background-position: right center; }
@@ -109,12 +124,12 @@
 .agenda-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 
 /* ---------- section / statement ---------- */
-.section { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; max-width: 980px; padding-bottom: 12px; } /* Titel unten links, Nummer übergroß darüber */
+.section { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; max-width: var(--measure, 980px); padding-bottom: 12px; } /* Titel unten links, Nummer übergroß darüber */
 .section-num { color: var(--muted); line-height: 0.9; margin-bottom: auto; font-variant-numeric: tabular-nums; }
 .section-sub { color: var(--muted); max-width: 780px; }
 .statement { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 30px; }
 .statement.center { align-items: center; text-align: center; }
-.statement-text { max-width: 1040px; }
+.statement-text { max-width: var(--measure, 1040px); }
 .statement-text strong { color: var(--accent); font-weight: inherit; }
 .statement-source { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
 .statement.center .statement-source { align-items: center; }
@@ -126,7 +141,7 @@
 .dash { width: 40px; height: 2px; background: var(--accent); }
 
 /* ---------- bullets ---------- */
-.bullets { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; gap: 26px; max-width: 1000px; }
+.bullets { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; gap: 26px; max-width: var(--measure, 1000px); }
 .bullet { display: flex; gap: 22px; align-items: flex-start; }
 .bullets:not(.has-sub) .bullet:has(.bullet-icon) { align-items: center; }
 .bullet-icon { flex: none; width: 40px; height: 40px; color: var(--text); display: flex; align-items: center; justify-content: center; }
@@ -247,7 +262,7 @@
 .photo-slide.ps-text-left { justify-content: center; }
 .photo-text { display: flex; flex-direction: column; gap: 14px; max-width: 920px; }
 .photo-slide.ps-text-left .photo-text { max-width: 600px; }
-.on-photo .cover-main, .on-photo .closing-main { max-width: 820px; }
+.on-photo .cover-main, .on-photo .closing-main { max-width: calc(892px - var(--m-l, 72px)); } /* rechte Kante fest: dort läuft der Verlauf aus */
 .on-photo.center .cover-main { max-width: 1000px; }
 .photo-card { display: flex; flex-direction: column; gap: 16px; max-width: 640px; padding: 40px 44px; border-radius: var(--radius); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22); }
 
@@ -256,7 +271,7 @@
 .gal-img { position: relative; flex: 1; min-height: 0; border-radius: var(--radius); overflow: hidden; }
 
 .quote { flex: 1; min-height: 0; display: flex; align-items: center; gap: 72px; }
-.quote-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 22px; max-width: 1000px; }
+.quote-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 22px; max-width: var(--measure, 1000px); }
 .quote:not(.with-portrait) .quote-body { margin: 0 auto; }
 .quote-portrait { flex: none; position: relative; width: 300px; height: 300px; border-radius: 50%; overflow: hidden; }
 .quote-portrait[data-mask] { border-radius: 0; height: 380px; }
@@ -267,31 +282,33 @@
 /* ---------- Kompositionen (Slide.frame) ---------- */
 /* split: Titel auf randabfallender Akzentfläche links. Die Fläche ist Hintergrund des .hdr (wird ins Hintergrundbild gerastert),
    dadurch misst der Kontrast-Lint den Text gegen die Akzentfarbe. */
-.fr-split .safe { left: 0; top: 0; bottom: 0; padding: 60px 0 72px 560px; }
+/* Die randabfallende Fläche gibt schon Luft: split behält die Standardränder (Token margin gilt hier nicht), sonst bliebe dem Inhalt zu wenig Platz */
+.fr-split .safe { left: 0; right: 72px; top: 0; bottom: 0; padding: 60px 0 72px 560px; }
 .fr-split .hdr {
   position: absolute; left: 0; top: 0; bottom: 0; width: 492px; max-width: none; margin: 0;
   padding: 60px 48px 72px 72px; justify-content: center; gap: 20px; background: var(--fill);
   --text: var(--on-accent); --muted: var(--on-accent-soft); --accent: var(--on-accent); color: var(--text);
 }
-.fr-split .footer { left: 560px; }
+.fr-split .footer { left: 560px; right: 72px; }
 /* Inhalt beginnt sonst direkt unter dem Kopf (einheitliche Lage, kein Loch unter dem Titel); neben dem Titel bleibt er mittig */
 .fr-split :is(.bullets, .tb, .pc) { justify-content: center; }
 .fr-split :is(.bullets.as-cards, .cols, .kpis, .ig, .team, .pr, .lg) { align-content: center; }
 .fr-split :is(.tl, .proc) { margin: auto 0; }
 /* band: Titel in einem vollbreiten Farbband oben */
-.fr-band .safe { top: 0; left: 0; right: 0; padding: 0 72px; }
+.fr-band .safe { top: 0; left: 0; right: 0; padding: 0 var(--m-r, 72px) 0 var(--m-l, 72px); }
 .fr-band .hdr {
-  margin: 0 -72px 28px; padding: 48px 72px 32px; max-width: none; background: var(--fill);
+  margin: 0 calc(-1 * var(--m-r, 72px)) 28px calc(-1 * var(--m-l, 72px)); padding: 48px var(--m-r, 72px) 32px var(--m-l, 72px); max-width: none; background: var(--fill);
   --text: var(--on-accent); --muted: var(--on-accent-soft); --accent: var(--on-accent); color: var(--text);
 }
-.fr-band .hdr > * { max-width: 1060px; }
+.fr-band .hdr > * { max-width: var(--measure, 1060px); }
 /* Theme-Linie (rule): Kopflinie über dem Folienkopf (Swiss, Redaktion) bzw. Trennlinie darunter (Beratung).
    Nur bei Titel oben; als Rahmen eines Containers ohne data-pptx landet sie im Hintergrundbild.
    Beide nehmen sich ihren Platz aus Rand bzw. Abstand, damit dichte Folien nicht überlaufen. */
-.rule-over.fr-top .safe:has(> .hdr) { top: 36px; } /* 36 + 2 + 22 = 60: Titel steht wie ohne Linie */
-.rule-over.fr-top .safe:has(> .hdr)::before { content: ''; flex: none; height: 2px; background: var(--text); margin-bottom: 22px; }
+/* Signatur rule (Token signature) nutzt dieselbe Linie: Länge --rule-w, Stärke --rule-s, Farbe --rule-c */
+.rule-over.fr-top .safe:has(> .hdr) { top: calc(var(--m-t, 60px) - 24px); } /* 36 + 2 + 22 = 60: Titel steht wie ohne Linie */
+.rule-over.fr-top .safe:has(> .hdr)::before { content: ''; flex: none; width: var(--rule-w, auto); height: var(--rule-s, 2px); background: var(--rule-c, var(--text)); margin-bottom: calc(24px - var(--rule-s, 2px)); }
 .rule-under.fr-top .safe > .hdr { max-width: none; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
-.rule-under.fr-top .safe > .hdr > * { max-width: 1000px; }
+.rule-under.fr-top .safe > .hdr > * { max-width: var(--measure, 1000px); }
 /* center: Kopf zentriert */
 .fr-center .hdr { align-self: center; align-items: center; text-align: center; }
 .fr-center .eyebrow-wrap { justify-content: center; }
@@ -303,8 +320,8 @@
 /* ---------- Bild neben Text: Variante side von cover, closing, photo ----------
    Foto randabfallend rechts auf 7/12, Text links auf dem Grund in schmaler Spalte; kein Verlauf, kein Rahmen.
    min(): in 4:3 und A4 quer bliebe die Spalte sonst zu schmal für lange Wörter (mindestens 520 px inkl. Rand und Abstand). */
-.media.side-media { width: min(58.333%, calc(100% - 520px)); }
-.safe.side-safe { right: calc(min(58.333%, calc(100% - 520px)) + 64px); }
+.media.side-media { width: min(58.333%, calc(100% - 448px - var(--m-l, 72px))); }
+.safe.side-safe { right: calc(min(58.333%, calc(100% - 448px - var(--m-l, 72px))) + 64px); }
 :is(.cover, .closing).side .cover-title { font-size: calc(var(--fs-display) * var(--hs) * 0.68); line-height: 1.08; } /* schmale Spalte */
 .cover.side .cover-main { justify-content: safe flex-end; gap: 20px; padding-bottom: 24px; } /* Titel unten verankert; safe: Überlauf nach unten, damit Autofit ihn misst */
 .cover.side .cover-bottom { height: auto; min-height: 28px; } /* Absender bricht in der Spalte um */
@@ -357,14 +374,14 @@
 /* ---------- Formate: Hochformat, Quadrat (.fmt-tall) und schmale Seiten (.fmt-narrow, bis 800 px) ---------- */
 /* Bild oben statt an der Seite: sonst bleiben im Hochformat nur wenige Pixel für den Text */
 .fmt-tall .media, .fmt-tall .media.right { left: 0; right: 0; top: 0; bottom: auto; width: auto; height: 42%; }
-.fmt-tall .safe.safe-right, .fmt-tall .safe.safe-left { left: 72px; right: 72px; top: calc(42% + 40px); }
-.fmt-tall .footer.safe-right, .fmt-tall .footer.safe-left { left: 72px; right: 72px; }
+.fmt-tall .safe.safe-right, .fmt-tall .safe.safe-left { left: var(--m-l, 72px); right: var(--m-r, 72px); top: calc(42% + 40px); }
+.fmt-tall .footer.safe-right, .fmt-tall .footer.safe-left { left: var(--m-l, 72px); right: var(--m-r, 72px); }
 .fmt-tall :is(.cover, .closing).side .cover-title { font-size: calc(var(--fs-display) * var(--hs)); } /* Text unter dem Bild hat die volle Breite */
 .fmt-tall .hdr, .fmt-tall.rule-under.fr-top .safe > .hdr > *, .fmt-tall.fr-band .hdr > * { max-width: none; }
 /* split wird zum Band: die Akzentfläche liegt oben statt links */
-.fmt-tall.fr-split .safe { left: 0; right: 0; top: 0; padding: 0 72px; }
-.fmt-tall.fr-split .hdr { position: static; width: auto; margin: 0 -72px 28px; padding: 56px 72px 36px; justify-content: flex-start; gap: 14px; }
-.fmt-tall.fr-split .footer { left: 72px; }
+.fmt-tall.fr-split .safe { left: 0; right: 0; top: 0; padding: 0 var(--m-r, 72px) 0 var(--m-l, 72px); }
+.fmt-tall.fr-split .hdr { position: static; width: auto; margin: 0 calc(-1 * var(--m-r, 72px)) 28px calc(-1 * var(--m-l, 72px)); padding: 56px var(--m-r, 72px) 36px var(--m-l, 72px); justify-content: flex-start; gap: 14px; }
+.fmt-tall.fr-split .footer { left: var(--m-l, 72px); right: var(--m-r, 72px); }
 .fmt-tall.fr-split :is(.bullets, .tb, .pc) { justify-content: flex-start; }
 .fmt-tall.fr-split :is(.bullets.as-cards, .cols, .kpis, .ig, .team, .pr, .lg) { align-content: start; }
 .fmt-tall.fr-split :is(.tl, .proc) { margin: 0; }
@@ -384,3 +401,13 @@
 .fmt-tall .kpis:not(.n1) { grid-template-columns: repeat(2, 1fr) !important; } /* Social-Schrift ist groß: vier Kennzahlen nebeneinander passen nicht */
 .fmt-tall .kpis.n2, .fmt-tall .kpis.n3 { grid-template-columns: 1fr !important; }
 .prof-social .footer { bottom: 40px; height: auto; } /* Fußzeile wächst mit der Social-Schrift: sonst reicht ihr Kasten in den Rand */
+
+/* ---------- Aufzählung in freien Texten: jede Zeile ein Punkt, hängender Einzug, Marker in Textfarbe ---------- */
+/* Marker als ::before: Messung und PPTX sehen nur den Text; der Export setzt buChar/buAutoNum mit dem padding-left als Einzug */
+.free-text[data-list] { counter-reset: dw-li; }
+.free-text > .dw-li { position: relative; padding-left: 1em; }
+.free-text[data-list='number'] > .dw-li { padding-left: 1.5em; }
+.free-text > .dw-li:not([data-empty])::before { content: '•'; position: absolute; left: 0; }
+.free-text[data-list='number'] > .dw-li:not([data-empty]) { counter-increment: dw-li; }
+.free-text[data-list='number'] > .dw-li[data-empty] { counter-set: dw-li 0; } /* Leerzeile: neue Nummerierung wie in PowerPoint (counter-reset am Geschwister zählt in Chromium weiter) */
+.free-text[data-list='number'] > .dw-li:not([data-empty])::before { content: counter(dw-li) '.'; }

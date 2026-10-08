@@ -64,6 +64,11 @@ function SidePhoto({ image }: { image: PhotoRef }) {
   return <div className="media right side-media"><Img {...image} slot="image" /></div>
 }
 const SIDE_SAFE = 'safe-left side-safe'
+// Logo innerhalb von Frame lesen: dort gilt der Folien-Ton (heroTone), und withTone wählt das Logo für hellen bzw. dunklen Grund
+function Logo() {
+  const { theme } = useSlide()
+  return theme.logo ? <Img src={theme.logo} slot="_logo" className="cover-logo" contain /> : null
+}
 
 function Cover({ c, v }: Props<'cover'>) {
   const { theme } = useSlide()
@@ -73,7 +78,7 @@ function Cover({ c, v }: Props<'cover'>) {
   return (
     <Frame decor="hero" media={photo && (side ? <SidePhoto image={img!} /> : <Backdrop image={img!} scrim={v === 'center' ? 'full' : v === 'bottom' ? 'bottom' : 'left'} />)} safeClass={side ? SIDE_SAFE : undefined}>
       <div className={`cover ${v === 'center' ? 'center' : v === 'bottom' ? 'bottom' : side ? 'side' : ''} ${photo && !side ? 'on-photo' : ''}`} style={photo && !side ? onPhoto(theme) : undefined}>
-        <div className="cover-top">{theme.logo && <Img src={theme.logo} slot="_logo" className="cover-logo" contain />}</div>
+        <div className="cover-top"><Logo /></div>
         <div className="cover-main">
           <Eyebrow text={c.eyebrow} center={v === 'center'} />
           <T role="display" slot="title" maxLines={side ? 4 : 3} className="cover-title">{c.title}</T>
@@ -378,7 +383,7 @@ function Closing({ c, v }: Props<'closing'>) {
             </div>
           ) : <div />}
           <div className="closing-right">
-            {theme.logo && <Img src={theme.logo} slot="_logo" className="cover-logo" contain />}
+            <Logo />
             {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="closing-qr" />}
           </div>
         </div>

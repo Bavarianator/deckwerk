@@ -9,8 +9,9 @@ const REL_FONT = 'http://schemas.openxmlformats.org/officeDocument/2006/relation
 function tables(ttf: Buffer): Map<string, Buffer> {
   const n = ttf.readUInt16BE(4), out = new Map<string, Buffer>()
   for (let i = 0; i < n; i++) {
-    const o = 12 + i * 16
-    out.set(ttf.toString('latin1', o, o + 4), ttf.subarray(ttf.readUInt32BE(o + 8), ttf.readUInt32BE(o + 8) + ttf.readUInt32BE(o + 12)))
+    const o = 12 + i * 16, at = ttf.readUInt32BE(o + 8), end = at + ttf.readUInt32BE(o + 12)
+    if (end > ttf.length) throw new Error('TTF abgeschnitten') // halb geladene Datei: nicht einbetten
+    out.set(ttf.toString('latin1', o, o + 4), ttf.subarray(at, end))
   }
   return out
 }
@@ -105,16 +106,23 @@ export async function embedFonts(pptx: Buffer, fonts: EmbedFont[]): Promise<Buff
   let types = await zip.file('[Content_Types].xml')!.async('string')
   if (!types.includes('Extension="fntdata"')) types = types.replace('</Types>', '<Default Extension="fntdata" ContentType="application/x-fontdata"/></Types>')
   let rid = Math.max(0, ...[...rels.matchAll(/Id="rId(\d+)"/g)].map((m) => +m[1])), n = 0
-  const entries = fonts.map((f) => {
+  const entries = fonts.flatMap((f) => {
     const faces: [string, Buffer | undefined][] = [['regular', f.regular], ['bold', f.bold], ['italic', f.italic], ['boldItalic', f.boldItalic]]
-    const refs = faces.filter((x): x is [string, Buffer] => !!x[1]).map(([face, ttf]) => {
+    // kaputte Schnitte überspringen statt den ganzen Export scheitern zu lassen
+    const eots = faces.flatMap(([face, ttf]): [string, Buffer][] => {
+      if (!ttf) return []
+      try { return [[face, ttfToEot(ttf)]] } catch (e) { console.warn(`[export] ${f.family} ${face} nicht einbettbar:`, (e as Error).message); return [] }
+    })
+    if (!eots.length) return []
+    const refs = eots.map(([face, eot]) => {
       const file = `fonts/font${++n}.fntdata`, id = `rId${++rid}`
-      zip.file(`ppt/${file}`, ttfToEot(ttf))
+      zip.file(`ppt/${file}`, eot)
       rels = rels.replace('</Relationships>', `<Relationship Id="${id}" Type="${REL_FONT}" Target="${file}"/></Relationships>`)
       return `<p:${face} r:id="${id}"/>`
     })
-    return `<p:embeddedFont><p:font typeface="${f.family.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}" pitchFamily="${f.serif ? 18 : 34}" charset="0"/>${refs.join('')}</p:embeddedFont>`
+    return [`<p:embeddedFont><p:font typeface="${f.family.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}" pitchFamily="${f.serif ? 18 : 34}" charset="0"/>${refs.join('')}</p:embeddedFont>`]
   })
+  if (!entries.length) return pptx
   const lst = `<p:embeddedFontLst>${entries.join('')}</p:embeddedFontLst>`
   // Schema-Reihenfolge: … notesSz, smartTags, embeddedFontLst, custShowLst, …, defaultTextStyle
   pres = pres.includes('<p:embeddedFontLst>')

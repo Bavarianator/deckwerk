@@ -4,11 +4,13 @@ import { useEffect, useState, type ReactNode } from 'react'
 import {
   AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight,
   AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
-  ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
+  ClipboardPaste, Crop, Eraser, Group, Italic, List, ListOrdered, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
-import { ANIM_DIRS, DASHES, ITEM_ANIMS, type AnimDir, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
+import { ANIM_DIRS, DASHES, ITEM_ANIMS, animStartOf, type Adjust, type AnimDir, type AnimStart, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
 import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
-import { FONT_NAMES, resolveTheme } from '../../shared/themes'
+import { FONT_NAMES, duotoneOf, resolveTheme, withTone } from '../../shared/themes'
+import { LAYOUTS, type LayoutId } from '../../shared/layouts'
+import { adjustCss } from '../slide'
 import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
 import { Select } from './kit'
 import { animateItem } from './PresentScreen'
@@ -22,10 +24,35 @@ const EFFECT_NAME: Record<TextEffect, string> = { none: 'Ohne', shadow: 'Schatte
 const ADJUST_NAME = { bright: 'Helligkeit', contrast: 'Kontrast', sat: 'Sättigung', blur: 'Weichzeichnen' }
 const DASH_NAME: Record<Dash, string> = { solid: 'Durchgehend', dash: 'Gestrichelt', dot: 'Gepunktet' }
 const END_NAME: Record<LineEnd, string> = { none: 'Ohne', arrow: 'Pfeil', triangle: 'Spitze', dot: 'Punkt' }
+// Bildfilter wie in Canva, nur aus Anpassung und Look gebaut, damit der Export nativ bleibt (adjustBlip/recolor). Bewusst ruhige Werte.
+export const IMG_PRESETS: { name: string; adjust?: Adjust; look?: Item['look'] }[] = [
+  { name: 'Original' },
+  { name: 'Klar', adjust: { bright: 5, contrast: 12 } },
+  { name: 'Sanft', adjust: { bright: 8, contrast: -15, sat: -10 } },
+  { name: 'Kräftig', adjust: { contrast: 15, sat: 30 } },
+  { name: 'Matt', adjust: { bright: 5, contrast: -20, sat: -30 } },
+  { name: 'Schwarz\u00adweiß', look: 'mono' }, // weiches Trennzeichen: passt in die schmale Kachel
+  { name: 'S/W hart', look: 'mono', adjust: { contrast: 30 } },
+  { name: 'Duotone', look: 'duotone' },
+]
+// Aktiv nur bei exakt gleichen Werten (0 = nicht gesetzt, natural = kein Look)
+export const presetOf = (it: Pick<Item, 'adjust' | 'look'>) => {
+  const key = (look?: Item['look'], a?: Adjust) => [look ?? 'natural', ...(['bright', 'contrast', 'sat', 'blur'] as const).map((k) => a?.[k] || 0)].join()
+  return IMG_PRESETS.find((p) => key(p.look, p.adjust) === key(it.look, it.adjust))
+}
+// Richtung eines Verlaufs in CSS-Grad, Standard 135; umgekehrt = Farben tauschen
+const GRAD_DIRS: [number, string, string][] = [[90, '→', 'Nach rechts'], [135, '↘', 'Nach rechts unten'], [180, '↓', 'Nach unten'], [45, '↗', 'Nach rechts oben']]
+export const GradAngle = ({ value = 135, onChange }: { value?: number; onChange: (angle: number | undefined) => void }) => (
+  <div className="seg icons grad-dirs" role="group" aria-label="Richtung des Verlaufs">
+    {GRAD_DIRS.map(([a, arrow, label]) => <button key={a} type="button" title={label} aria-label={label} aria-pressed={value === a} onClick={() => onChange(a === 135 ? undefined : a)}>{arrow}</button>)}
+  </div>
+)
 // Namen wie in Canva; Schreibmaschine und Wort für Wort nur für Text, Atmen pulsiert ohne Klick
 const DIRECTED: ItemAnim[] = ['float', 'pan', 'drift', 'wipe'] // Animationen mit Richtung (Canva-Pfeile)
 const DIR_ICON: Record<AnimDir, LucideIcon> = { right: ArrowRight, left: ArrowLeft, up: ArrowUp, down: ArrowDown }
 const DIR_NAME: Record<AnimDir, string> = { right: 'Nach rechts', left: 'Nach links', up: 'Nach oben', down: 'Nach unten' }
+// Start wie in PowerPoint: [Kurzform für die schmale Leiste, voller Name]
+const START: Record<AnimStart, [string, string]> = { click: ['Bei Klick', 'Bei Klick'], with: ['Zugleich', 'Mit vorherigem'], after: ['Danach', 'Nach vorherigem'] }
 const ANIM: Record<ItemAnim, string> = {
   none: 'Keine', fade: 'Einblenden', float: 'Aufsteigen', pan: 'Schwenken', drift: 'Treiben', pop: 'Pop', zoom: 'Zoomen', tumble: 'Purzeln',
   stomp: 'Stampfen', baseline: 'Grundlinie', wipe: 'Wischen', typewriter: 'Schreibmaschine', ascend: 'Wort für Wort', breathe: 'Atmen (pulsiert ohne Klick)',
@@ -126,6 +153,7 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
   const [, bump] = useState(0) // neu zeichnen, sobald ein Stil kopiert ist
   if (!chosen.length) return null
   const t = resolveTheme(deck.theme)
+  const duo = duotoneOf(withTone(t, slide.tone ?? LAYOUTS[slide.layout as LayoutId]?.tone)) // wie der Export: Akzent-Folien tönen anders
   // Theme- und Markenfarben, dann die im Deck am häufigsten benutzten Farben (Canva „Dokumentfarben“)
   const used = deck.slides.flatMap((s) => s.items ?? []).flatMap((x) => [x.fill, x.fill2, x.stroke, x.color]).filter((c): c is string => !!c).map((c) => c.toUpperCase())
   const docColors = [...new Set(used)].sort((a, b) => used.filter((c) => c === b).length - used.filter((c) => c === a).length).slice(0, 6)
@@ -212,6 +240,22 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
                 <button key={sp ?? 'normal'} type="button" aria-pressed={chosen[0].animSpeed === sp} onClick={() => { set({ animSpeed: sp }); preview(chosen[0].anim!, chosen[0].animDir, sp) }}>{sp === 'slow' ? 'Langsam' : sp === 'fast' ? 'Schnell' : 'Normal'}</button>
               ))}
             </div>
+            {/* Atmen pulsiert ab Folienbeginn ohne Ende: Start und Verzögerung greifen dort nicht */}
+            {chosen[0].anim !== 'breathe' && (
+              <>
+                <div className="field">
+                  <span>Start</span>
+                  <div className="seg" role="group" aria-label="Start">
+                    {(['click', 'with', 'after'] as const).map((st) => (
+                      <button key={st} type="button" aria-pressed={animStartOf(chosen[0].animStart, deck.mode) === st} disabled={st === 'click' && deck.mode === 'auto'}
+                        aria-label={START[st][1]} title={st === 'click' && deck.mode === 'auto' ? 'Im Selbstlauf gibt es keine Klicks' : START[st][1]}
+                        onClick={() => set({ animStart: st === 'click' ? undefined : st })}>{START[st][0]}</button>
+                    ))}
+                  </div>
+                </div>
+                <Field label="Verzögerung"><Num value={chosen[0].animDelay ?? 0} min={0} max={10} step={0.1} suffix="s" onChange={(d) => set({ animDelay: Math.min(Math.max(d, 0), 10) || undefined }, `anim-delay-${chosen[0].id}`)} /></Field>
+              </>
+            )}
           </div>
         )}
 
@@ -237,6 +281,9 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
               <Btn icon={AlignLeft} label="Linksbündig" on={(it.align ?? 'left') === 'left'} onClick={() => set({ align: 'left' })} />
               <Btn icon={AlignCenter} label="Zentriert" on={it.align === 'center'} onClick={() => set({ align: 'center' })} />
               <Btn icon={AlignRight} label="Rechtsbündig" on={it.align === 'right'} onClick={() => set({ align: 'right' })} />
+              <span className="stage-sep" />
+              <Btn icon={List} label="Aufzählung" on={it.list === 'bullet'} onClick={() => set({ list: it.list === 'bullet' ? undefined : 'bullet' })} />
+              <Btn icon={ListOrdered} label="Nummerierung" on={it.list === 'number'} onClick={() => set({ list: it.list === 'number' ? undefined : 'number' })} />
             </div>
             <Field label="Laufweite"><input type="range" min={-5} max={40} value={Math.round((it.spacing ?? 0) * 100)} onChange={(e) => set({ spacing: +e.target.value / 100 || undefined }, `sp-${it.id}`)} /></Field>
             <Field label="Farbe"><Color value={it.color ?? t.c.text} onChange={(color, tag) => set({ color }, tag)} swatches={swatches} tag={`color-${it.id}`} /></Field>
@@ -259,6 +306,9 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
               <Field label="Verlauf zu">
                 <Color value={it.fill2} allowNone onChange={(fill2, tag) => set({ fill2 }, tag)} swatches={swatches} tag={`fill2-${it.id}`} />
               </Field>
+            )}
+            {(it.shape === 'rect' || it.shape === 'ellipse') && it.fill && it.fill2 && (
+              <div className="field"><span>Richtung</span><GradAngle value={it.gradAngle} onChange={(gradAngle) => set({ gradAngle })} /></div>
             )}
             <Field label={it.shape === 'line' ? 'Linienfarbe' : 'Rahmen'}><Color value={it.stroke} allowNone={it.shape !== 'line'} onChange={(stroke, tag) => set({ stroke, strokeW: stroke ? it.strokeW || 3 : undefined }, tag)} swatches={swatches} tag={`stroke-${it.id}`} /></Field>
             <div className="field-row">
@@ -289,6 +339,21 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
 
         {it?.kind === 'image' && (
           <>
+            <div className="field">
+              <span>Filter</span>
+              <div className="img-presets">
+                {IMG_PRESETS.map((p) => (
+                  // Vorschau wie Img in slide.tsx: Anpassung außen, Graustufen und Duotone-Ebenen innen
+                  <button key={p.name} type="button" className="img-presets-item" aria-pressed={presetOf(it) === p} onClick={() => set({ adjust: p.adjust && { ...p.adjust }, look: p.look })}>
+                    <span className="img-presets-pic" style={{ filter: adjustCss(p.adjust) }}>
+                      <span style={{ backgroundImage: `url("${it.src ?? ''}")`, filter: p.look ? 'grayscale(1) contrast(1.05)' : undefined }} />
+                      {p.look === 'duotone' && <><span style={{ background: duo[1], mixBlendMode: 'multiply' }} /><span style={{ background: duo[0], mixBlendMode: 'screen' }} /></>}
+                    </span>
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
             <Field label="Look">
               <Select value={it.look ?? 'natural'} onChange={(e) => set({ look: e.target.value === 'natural' ? undefined : (e.target.value as Item['look']) })}>
                 <option value="natural">Original</option><option value="duotone">Duotone (Theme-Farben)</option><option value="mono">Schwarzweiß</option>

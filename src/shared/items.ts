@@ -1,9 +1,16 @@
 // Freie Elemente (Slide.items): Schema für KI-Tools und Fabriken für die Canvas. Positionen in px auf 1280x720.
 import { z } from 'zod'
 import { ANIM_DIRS, DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
+import { fontInfo, suggestFont } from './font-catalog'
 import { FONT_NAMES } from './themes'
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/)
+// Schriftname: gebündelt (FONT_NAMES) oder aus dem Schriftkatalog (lädt die Engine bei Bedarf). String statt Enum: die Liste kostete
+// sonst in jeder Anfrage Tokens; Tippfehler bekommen einen Vorschlag.
+const knownFont = (n: string) => (FONT_NAMES as string[]).includes(n) || fontInfo(n)?.family === n
+const unknownFont = { error: (iss: { input: unknown }) => { const n = String(iss.input), s = suggestFont(n); return `Schrift „${n}“ gibt es nicht${s ? ` – meintest du „${s}“?` : '. Erlaubt: gebündelte Schriften und der Schriftkatalog (Systemprompt, „Themes“)'}` } }
+export const fontName = z.string().max(60).refine(knownFont, unknownFont)
+
 export const itemSchema = z.object({
   id: z.string().max(40).optional().describe('weglassen = neu; vorhandene ID = dieses Element ersetzen'),
   kind: z.enum(['text', 'shape', 'image', 'icon', 'chart', 'video', 'audio', 'qr', 'graphic']).describe('qr: text = URL; graphic: handgezeichnete Deko (graphic = Name), Farbe über color'),
@@ -16,18 +23,21 @@ export const itemSchema = z.object({
   anim: z.enum(ITEM_ANIMS).optional().describe('Auftritt beim Präsentieren wie in Canva (je ein Klick): typewriter/ascend nur für Text, breathe pulsiert ohne Klick. Design-Guide §8'),
   animDir: z.enum(ANIM_DIRS).optional().describe('Richtung der Bewegung bei pan, drift, wipe, float (Standard: pan/drift/wipe nach rechts, float nach oben)'),
   animSpeed: z.enum(['slow', 'fast']).optional().describe('Tempo der Animation; weglassen = normal'),
+  animStart: z.enum(['click', 'with', 'after']).optional().describe('Start wie in PowerPoint: click = bei Klick, with = mit vorherigem, after = nach vorherigem; weglassen = je ein Klick (Selbstlauf: nacheinander). Nicht für breathe'),
+  animDelay: z.number().min(0).max(10).optional().describe('Verzögerung vor dem Auftritt in Sekunden. Nicht für breathe'),
   text: z.string().max(600).optional(),
-  font: z.enum(['head', 'body', ...FONT_NAMES]).optional().describe('head/body = Theme-Schrift'),
+  font: z.string().max(60).refine((n) => n === 'head' || n === 'body' || knownFont(n), unknownFont).optional().describe('head/body = Theme-Schrift, sonst Schriftname wie customTheme.headFont'),
   size: z.number().min(8).max(400).optional().describe('Schriftgröße in px (1 px = 0,75 pt)'),
   color: hex.optional().describe('Text- oder Iconfarbe; weglassen = Theme'),
   bold: z.boolean().optional(), italic: z.boolean().optional(), underline: z.boolean().optional(), upper: z.boolean().optional(),
+  list: z.enum(['bullet', 'number']).optional().describe('Aufzählung: jede Zeile des Texts ein Punkt bzw. nummeriert'),
   effect: z.enum(TEXT_EFFECTS).optional().describe('Texteffekt: shadow, lift (weicher Schatten), hollow (nur Kontur), neon (Leuchten)'), effectColor: hex.optional(),
   align: z.enum(['left', 'center', 'right']).optional(),
   lineHeight: z.number().min(0.7).max(3).optional(), spacing: z.number().min(-0.1).max(0.5).optional(),
   shape: z.enum(SHAPES).optional(),
   lineStart: z.enum(LINE_ENDS).optional(), lineEnd: z.enum(LINE_ENDS).optional().describe('Linienenden der Form line: arrow = offene Spitze, triangle = gefüllt, dot = Punkt'),
   dash: z.enum(DASHES).optional().describe('Strichart von Linie oder Umriss'),
-  fill: hex.optional(), fill2: hex.optional().describe('Verlauf zu dieser Farbe (Rechteck/Ellipse)'),
+  fill: hex.optional(), fill2: hex.optional().describe('Verlauf zu dieser Farbe (Rechteck/Ellipse)'), gradAngle: z.number().min(0).max(360).optional().describe('Winkel des Verlaufs in Grad, Standard 135'),
   stroke: hex.optional(), strokeW: z.number().min(0).max(40).optional(),
   radius: z.number().min(0).max(400).optional(), shadow: z.boolean().optional(),
   src: z.string().optional().describe('asset://-Pfad aus find_images'),
@@ -171,9 +181,10 @@ export function elsToItems(els: El[]): Item[] {
           effect: e.effect?.type, effectColor: e.effect?.color }]
       }
       case 'box': {
-        const g = e.gradient?.stops
+        const g = e.gradient?.stops, ang = e.gradient && Math.round(e.gradient.angle)
         if (!e.fill && !e.border && !g) return []
         return [{ ...at, kind: 'shape', shape: e.ellipse ? 'ellipse' : e.shape ?? 'rect', fill: g ? g[0].color : e.fill?.color, fill2: g && g.length > 1 ? g[g.length - 1].color : undefined,
+          gradAngle: ang !== undefined && ang !== 135 ? ang : undefined,
           opacity: e.fill && e.fill.alpha < 1 ? e.fill.alpha : undefined, stroke: e.border?.color, strokeW: e.border?.width, radius: e.radius || undefined, shadow: e.shadow ? true : undefined,
           lineStart: e.lineStart, lineEnd: e.lineEnd, dash: e.dash }]
       }

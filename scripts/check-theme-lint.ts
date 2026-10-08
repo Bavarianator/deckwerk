@@ -32,6 +32,19 @@ assert.deepEqual(errors(spec('#FFFFFF', '#0B6E4F', { headFont: 'Space Grotesk' }
 assert.match(lintTheme(spec('#FFFFFF', '#0B6E4F', { headFont: 'Inter tigth' }))[0].message, /Inter Tight/)
 assert.ok(errors(spec('#FFFFFF', '#0B6E4F', { bodyFont: 'Anton' })).includes('pairing'))
 assert.ok(errors(spec('#FFFFFF', '#0B6E4F', { titleSize: 'huge', measure: 'narrow' })).includes('overflow'))
+// vivid (Stil mutig): kräftiger Farbgrund ohne Grund-Regeln, ohne vivid bleibt Signalgelb ein Mittelton
+assert.deepEqual(lintTheme(spec('#FFD100', '#111111', { vivid: true })).filter((i) => i.rule.startsWith('bg-')), [])
+assert.ok(errors(spec('#FFD100', '#111111')).includes('bg-mid'))
+// Farbfamilien wie früher in tools.ts: Säuregrün auf Dunkel (Fehler), Lila-Blau ab Chroma 0.12 (Warnung)
+assert.ok(errors(spec('#121214', '#84CC16')).includes('cliche'))
+assert.ok(lintTheme(spec('#FFFFFF', '#957FD0')).some((i) => i.rule === 'cliche' && i.level === 'warn'))
+// override macht jeden Fehler zur Warnung, auch unbekannte Schrift und Paarung
+assert.ok(errors(spec('#FFFFFF', '#0B6E4F', { headFont: 'Inter tigth', bodyFont: 'Anton' })).includes('font-unknown'))
+assert.deepEqual(errors(spec('#FFFFFF', '#0B6E4F', { headFont: 'Inter tigth', bodyFont: 'Anton' }), true), [])
+// Brand-Kit: Markenfarbe und Markenschriften sind Vorgabe, kein Lint
+assert.deepEqual(lintTheme(spec('#FFFFFF', '#6366F1', { headFont: 'Space Grotesk' }), { brand: { accent: true, headFont: true } }).filter((i) => i.level === 'error'), [])
+// Plakat-Nachbau: Archivo Black steht im Katalog
+assert.deepEqual(errors(spec('#FFD100', '#111111', { headFont: 'Archivo Black', bodyFont: 'Archivo', vivid: true })), [])
 
 // Zwei fast gleiche Vorschläge fallen auf
 const a = spec('#FFFFFF', '#0B6E4F', { name: 'A' }), b = spec('#FDFDFB', '#0E7A57', { name: 'B' })

@@ -1,7 +1,7 @@
 // Präsentationsmodus: Vollbild, Builds per Web Animations API mit denselben Presets wie der PPTX-Export.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { flushSync } from 'react-dom'
-import { morphNames, morphText, showOf, sizeOf, transitionOf, type AnimDir, type AnimSpeed, type BuildPreset, type Deck, type ItemAnim, type MorphEl, type Transition } from '../../shared/deck'
+import { itemSteps, morphNames, morphText, showOf, sizeOf, transitionOf, transitionSpeedOf, type AnimDir, type AnimSpeed, type BuildPreset, type Deck, type Item, type ItemAnim, type MorphEl, type Transition } from '../../shared/deck'
 import { fmtSec, speakSec } from '../../shared/handout'
 import { LAYOUTS, buildOf, type LayoutId } from '../../shared/layouts'
 import type { Ink } from '../../preload'
@@ -79,7 +79,7 @@ export function animateItem(el: HTMLElement, anim: ItemAnim, delay = 0, dir = el
 
 // Übergänge wie in PowerPoint (animations.ts): neue Folie wird aufgedeckt oder hereingeschoben, push schiebt die alte mit
 // hinaus. d = Richtung (1 vorwärts, −1 rückwärts). Morph läuft getrennt (nameSlots); hier wird es zum Überblenden.
-export function playTransition(t: Transition, d: number, incoming: HTMLElement, outgoing?: HTMLElement | null): Animation {
+export function playTransition(t: Transition, d: number, incoming: HTMLElement, outgoing?: HTMLElement | null, speed?: AnimSpeed): Animation {
   const frames: Partial<Record<Transition, Keyframe[]>> = {
     fade: [{ opacity: 0 }, { opacity: 1 }], dissolve: [{ opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0)' }],
     push: [{ translate: `0 ${100 * d}%` }, { translate: '0 0' }], cover: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }],
@@ -90,7 +90,8 @@ export function playTransition(t: Transition, d: number, incoming: HTMLElement, 
     slide: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }], stack: [{ translate: `${100 * d}% 0` }, { translate: '0 0' }],
   }
   if (still()) return incoming.animate(frames.fade!, { duration: DUR, easing: EASE })
-  const opts = t === 'push' || t === 'slide' || t === 'cover' || t === 'stack' ? { duration: 550, easing: SOFT } : { duration: DUR, easing: EASE }
+  const f = speed ? SPEED[speed] : 1
+  const opts = t === 'push' || t === 'slide' || t === 'cover' || t === 'stack' ? { duration: 550 * f, easing: SOFT } : { duration: DUR * f, easing: EASE }
   if (t === 'push') outgoing?.animate([{ translate: '0 0' }, { translate: `0 ${-100 * d}%` }], { ...opts, fill: 'forwards' })
   if (t === 'slide') outgoing?.animate([{ translate: '0 0' }, { translate: `${-100 * d}% 0` }], { ...opts, fill: 'forwards' })
   if (t === 'stack') outgoing?.animate([{ scale: '1', opacity: 1 }, { scale: '.9', opacity: 0.4 }], { ...opts, fill: 'forwards' }) // alte Folie tritt zurück
@@ -99,7 +100,7 @@ export function playTransition(t: Transition, d: number, incoming: HTMLElement, 
     const band = incoming.parentElement!.appendChild(document.createElement('div'))
     band.style.cssText = `position:absolute;inset:0;z-index:2;background:${getComputedStyle(incoming.querySelector('.slide') ?? incoming).getPropertyValue('--accent') || '#16161a'}`
     const [from, to] = d > 0 ? ['inset(0 100% 0 0)', 'inset(0 0 0 100%)'] : ['inset(0 0 0 100%)', 'inset(0 100% 0 0)']
-    const long = { duration: DUR * 2, easing: 'cubic-bezier(.6,0,.4,1)' }
+    const long = { duration: DUR * 2 * f, easing: 'cubic-bezier(.6,0,.4,1)' }
     band.animate([{ clipPath: from }, { clipPath: 'inset(0 0 0 0)', offset: 0.5 }, { clipPath: to }], long).finished.finally(() => band.remove())
     return incoming.animate([{ opacity: 0 }, { opacity: 0, offset: 0.5 }, { opacity: 1, offset: 0.5 }, { opacity: 1 }], long)
   }
@@ -112,10 +113,15 @@ const inkPos = (e: { clientX: number; clientY: number; currentTarget: Element })
   return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]
 }
 
-// Legt pausierte Animationen an (fill: both → Elemente sind sofort versteckt) und liefert die Klick-Schritte.
+// Legt pausierte Animationen an (fill: both → Elemente sind sofort versteckt) und liefert die Schritte. Der erste läuft
+// von selbst (Layout-Aufbau, außer Liste per Klick), jeder weitere per Klick.
 // keep = Slots, die per Morph schon von der vorigen Folie herübergewandert sind: die treten nicht noch einmal auf.
-function prepare(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>): Animation[][] {
-  return [...prepareBuilds(root, preset, mode, keep), ...prepareItems(root, mode, keep)]
+function prepare(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>, items?: Item[]): Animation[][] {
+  const { steps: builds, chain } = prepareBuilds(root, preset, mode, keep)
+  const steps = preset !== 'none' && !(preset === 'list' && mode === 'click') ? builds : [[], ...builds]
+  const [joined, ...clicks] = prepareItems(root, mode, keep, items, steps.at(-1)!, chain)
+  steps.at(-1)!.push(...joined) // mit/nach vorherigem: hängt am letzten Aufbau-Schritt
+  return [...steps, ...clicks]
 }
 
 // Morph wie in PowerPoint/Keynote: zugeordnete Elemente (morphNames: gleicher Text/Bild, sonst gleicher Slot) bekommen auf
@@ -150,21 +156,29 @@ function nameSlots(root: HTMLElement, prev?: Named[]): { list: Named[]; came: Se
   return { list: own.map((e, k) => ({ ...e, slot: names[k] })), came: new Set(own.filter((_, k) => before.has(names[k])).map((e) => e.slot)) }
 }
 
-// Freie Elemente mit Auftritt: je ein Klick (Selbstlauf: nacheinander, alles in einem Schritt). Atmen läuft sofort und
-// ohne Ende mit, ist also kein Schritt (finish() auf einer endlosen Animation würfe).
-function prepareItems(root: HTMLElement, mode: Deck['mode'], keep: Set<string>): Animation[][] {
+// Freie Elemente mit Auftritt nach Start und Verzögerung (itemSteps, wie im PPTX-Export). Schritt 0 hängt an prev an,
+// dessen letzte Kette bei chain ms beginnt. Atmen läuft sofort und ohne Ende mit, ist also kein Schritt (finish() auf
+// einer endlosen Animation würfe).
+function prepareItems(root: HTMLElement, mode: Deck['mode'], keep: Set<string>, items: Item[] | undefined, prev: Animation[], chain: number): Animation[][] {
   const els = [...root.querySelectorAll<HTMLElement>('[data-anim]')].filter((el) => !keep.has(el.dataset.slot!))
   els.filter((el) => el.dataset.anim === 'breathe').forEach((el) => animateItem(el, 'breathe'))
-  const steps = els.filter((el) => el.dataset.anim !== 'breathe').map((el, i) => {
-    const as = animateItem(el, el.dataset.anim as ItemAnim, mode === 'click' ? 0 : i * 500)
+  const runs = els.filter((el) => el.dataset.anim !== 'breathe').map((el) => {
+    const as = animateItem(el, el.dataset.anim as ItemAnim)
     as.forEach((a) => a.pause())
-    return as
+    return { as, it: items?.find((x) => x.id === el.dataset.item) }
   })
-  return mode === 'click' || !steps.length ? steps : [steps.flat()]
+  const end = (as: Animation[]) => Math.max(0, ...as.map((a) => Number(a.effect?.getComputedTiming().endTime ?? 0)))
+  return itemSteps(runs.map(({ as, it }) => ({ start: it?.animStart, delay: it?.animDelay, ms: end(as) })), mode, end(prev), chain).map((step) =>
+    step.flatMap(({ k, at }) => runs[k].as.map((a) => {
+      a.effect?.updateTiming({ delay: at + Number(a.effect.getTiming().delay ?? 0) })
+      return a
+    })))
 }
 
-function prepareBuilds(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>): Animation[][] {
-  if (preset === 'none') return []
+// chain = Beginn der letzten Kette wie in der PPTX (stepsFor): wipe, words und Liste ohne Klick bauen Gruppe für Gruppe
+// in eigenen Ketten auf, die übrigen in einer; dort setzt „Zugleich“ eines freien Elements an
+function prepareBuilds(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>): { steps: Animation[][]; chain: number } {
+  if (preset === 'none') return { steps: [], chain: 0 }
   if (still()) preset = 'fade'
   if (preset === 'photo') photoZoom(root)
   const groups = new Map<number, HTMLElement[]>()
@@ -176,15 +190,15 @@ function prepareBuilds(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'
   const sorted = [...groups.entries()].sort((a, b) => a[0] - b[0])
   if (preset === 'words') {
     // Canva „Aufstieg“: Text Wort für Wort (.dw-part aus slide.tsx), Gruppen nacheinander, Flächen blenden mit ein
-    let t = 0
+    let t = 0, chain = 0
     const all = sorted.flatMap(([, els]) => {
-      const start = t
+      const start = (chain = t)
       const as = els.flatMap((el) => (el.querySelector('.dw-part') ? animateItem(el, 'ascend', start) : [el.animate(KF.fade, { duration: DUR, delay: start, easing: EASE, fill: 'both' })]))
       t = Math.max(start + DUR, ...as.map((a) => Number(a.effect?.getTiming().delay ?? 0) + 400))
       return as
     })
     all.forEach((a) => a.pause())
-    return [all]
+    return { steps: [all], chain }
   }
   const perClick = preset === 'list' && mode === 'click'
   const steps = sorted.map(([, els], gi) =>
@@ -194,7 +208,8 @@ function prepareBuilds(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'
       a.pause()
       return a
     }))
-  return perClick ? steps : [steps.flat()]
+  const chain = !perClick && (preset === 'wipe' || preset === 'list') ? Math.max(0, sorted.length - 1) * 150 : 0
+  return { steps: perClick ? steps : [steps.flat()], chain }
 }
 
 // Referentenansicht: Folie links, rechts „Als Nächstes“ und Notizen, unten die Kapitel als Fortschritt
@@ -238,6 +253,8 @@ export function PresentScreen({ deck: all, start: at, onExit, mode = 'solo' }: {
     const dir = i > view.i ? 1 : -1
     // Übergang der Grenze zwischen beiden Folien, rückwärts gespiegelt
     if (transitionOf(deck, Math.max(i, view.i)) === 'morph' && document.startViewTransition && inRef.current) {
+      const sp = transitionSpeedOf(deck, Math.max(i, view.i))
+      document.documentElement.style.setProperty('--dw-morph', `${700 * (sp ? SPEED[sp] : 1)}ms`) // Dauer in app.css
       const old = nameSlots(inRef.current).list
       const vt = document.startViewTransition(() => flushSync(() => setView({ i, from: null, dir })))
       morph.current = { old, done: vt.finished }
@@ -293,13 +310,12 @@ export function PresentScreen({ deck: all, start: at, onExit, mode = 'solo' }: {
     const m = morph.current
     morph.current = null
     const keep = m ? nameSlots(root, m.old).came : new Set<string>()
-    const steps = prepare(root, presetOf(deck, view.i), deck.mode, keep)
+    const steps = prepare(root, presetOf(deck, view.i), deck.mode, keep, deck.slides[view.i].items)
     if (view.dir < 0) {
       steps.flat().forEach((a) => a.finish()) // rückwärts: Folie fertig aufgebaut zeigen
       pending.current = []
     } else pending.current = steps
-    const builds = presetOf(deck, view.i) !== 'none' // erster Schritt = Layout-Aufbau, läuft von selbst (außer Liste per Klick)
-    const auto = view.dir > 0 && builds && !(presetOf(deck, view.i) === 'list' && deck.mode === 'click') ? pending.current.shift() : undefined
+    const auto = pending.current.shift() // erster Schritt läuft von selbst (prepare)
     const begin = () => {
       auto?.forEach((a) => a.play())
       if (deck.mode === 'auto') pending.current.splice(0).flat().forEach((a) => a.play()) // Selbstlauf: auch freie Elemente ohne Klick
@@ -311,7 +327,7 @@ export function PresentScreen({ deck: all, start: at, onExit, mode = 'solo' }: {
       setView((v) => ({ ...v, from: null }))
       return begin()
     }
-    const anim = playTransition(t, view.dir, root, outRef.current)
+    const anim = playTransition(t, view.dir, root, outRef.current, transitionSpeedOf(deck, Math.max(view.i, view.from ?? 0)))
     anim.finished.then(() => { setView((v) => ({ ...v, from: null })); begin() }, () => {})
   }, [view.i])
 

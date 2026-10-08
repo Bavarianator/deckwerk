@@ -15,8 +15,8 @@ interface Remote extends Entry { etag: string }
 interface State { [path: string]: { mtime: number; size: number; etag: string } }
 
 const STATE = '.sync-state.json'
-// nicht gespiegelt: Versionen, Exporte, Modelle, Importe, Punktdateien (auch .sync-state.json, .setup-done)
-const SKIP = new Set(['versions', 'out', 'models', '.import', 'exports'])
+// nicht gespiegelt: Versionen, Exporte, Modelle, Schrift-Cache (lädt jedes Gerät selbst), Importe, Punktdateien (auch .sync-state.json, .setup-done)
+const SKIP = new Set(['versions', 'out', 'models', 'fonts', '.import', 'exports'])
 // Systemdateien von Windows, macOS und Cloud-Apps (Ordnersymbol, Vorschaubilder) gehören zu keinem Deck: auf beiden Seiten
 // übergehen, sonst landen sie in ~/Deckwerk bzw. würden lokal gelöscht, wenn nur eine Seite sie zeigt
 const JUNK = new Set(['desktop.ini', 'thumbs.db', 'icon\r'])
