@@ -1,6 +1,7 @@
 import { converter, formatHex, wcagContrast, clampChroma, interpolate } from 'culori'
 import type { BrandKit, ChartStrategy, DecorId, HeroTone, ImageStyle, Labels, Leading, Margin, Measure, Signature, ThemeRef, ThemeSpec, ThemeTune, Tone } from './deck'
 import { EXTRA_THEMES } from './themes-extra'
+import { fontInfo } from './font-catalog'
 
 // embed: Dateistamm in assets/fonts (<embed>-Regular|Bold|Italic|BoldItalic.ttf); dieselbe TTF misst im Renderer und wird in die PPTX eingebettet.
 export interface FontRef { css: string; pptx: string; embed?: string; serif?: boolean; single?: boolean; files?: { regular: string; bold?: string } } // files: eigene Schrift (asset://) // single: nur ein Schnitt (Titel in 400)
@@ -272,6 +273,10 @@ function vividBg(hex: string): string {
   return formatHex(clampChroma({ ...c, l: c.l < 0.57 ? Math.min(c.l, 0.42) : Math.max(c.l, 0.74) }, 'oklch'))!
 }
 
+// Gebündelte Schrift zum Namen; Katalogschriften über ihren Ersatz gleicher Anmutung (in Renderer und Main gleich).
+// ponytail: Katalogschriften selbst (ThemeRef.fontFiles) löst der Renderer noch nicht auf, bis dahin gilt der Ersatz
+const bundled = (n: string): FontRef | undefined => FONTS[n as FontName] ?? FONTS[fontInfo(n)?.fallback as FontName]
+
 // Eigenes Theme aus wenigen Vorgaben (KI oder Nutzer): Flächen und Ränder als Mischung von Grund und Text, Akzente mit Mindestkontrast.
 export function themeFromSpec(s: ThemeSpec): Theme {
   const bg = s.vivid ? vividBg(s.bg) : calmBg(s.bg)
@@ -279,7 +284,7 @@ export function themeFromSpec(s: ThemeSpec): Theme {
   const text = ensureContrast(s.text ?? mix(bg, dark ? '#FFFFFF' : mix('#000000', s.accent, 0.15), 0.92), bg, 10) // Schwarz mit einer Spur Akzent, nie reines #000
   const accent = ensureContrast(s.accent, bg, 3)
   const accent2 = ensureContrast(s.accent2 ?? mix(bg, text, 0.5), bg, 3) // ohne Vorgabe neutral: eine Akzentfarbe reicht
-  const head = FONTS[s.headFont as FontName] ?? FONTS.Arial
+  const head = bundled(s.headFont) ?? FONTS.Arial
   return applyTokens({
     id: 'custom', name: s.name, dark,
     c: {
@@ -291,7 +296,7 @@ export function themeFromSpec(s: ThemeSpec): Theme {
       chart: chartOf('focus', { bg, text, accent, accent2 }),
     },
     head: headRef(head, s.titleWeight === 'regular' ? 400 : 700),
-    body: FONTS[s.bodyFont as FontName] ?? FONTS.Calibri,
+    body: bundled(s.bodyFont) ?? FONTS.Calibri,
     radius: s.radius, decor: s.decor, texture: s.texture,
     sectionTone: s.sectionTone,
     vivid: s.vivid,
