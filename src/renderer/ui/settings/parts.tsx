@@ -10,7 +10,8 @@ export interface SectionProps { model: string; onModel: (id: string) => void; on
 /** Öffnet die Einstellungen (optional bei einem Abschnitt); App stellt die Funktion bereit */
 export const OpenSettings = createContext<(s?: SectionId) => void>(() => {})
 
-export const TERMINAL = navigator.userAgent.includes('Mac') ? 'Programme → Dienstprogramme → Terminal' : 'meist mit Strg+Alt+T'
+export const MAC = navigator.userAgent.includes('Mac')
+export const TERMINAL = MAC ? 'Programme → Dienstprogramme → Terminal' : 'meist mit Strg+Alt+T'
 export const CLAUDE_NATIV = 'curl -fsSL https://claude.ai/install.sh | bash' // nativer Installer von Anthropic, braucht kein Node.js
 export const INSTALL: Record<ChatCli, string> = {
   claude: CLAUDE_NATIV,

@@ -16,7 +16,7 @@ const GROUPS: { name: string; keys: [string, string][] }[] = [
   { name: 'Elemente', keys: [
     ['Klick', 'Auswählen'], ['Umschalt+Klick', 'Zur Auswahl hinzufügen'], ['Rahmen aufziehen', 'Mehrere auswählen'], ['Strg+A', 'Alle auswählen'],
     ['Tab / Umschalt+Tab', 'Nächstes / voriges Element'], ['Pfeiltasten', 'Verschieben (mit Umschalt 10 px)'],
-    ['Umschalt beim Ziehen', 'Nur waagerecht oder senkrecht'], ['Alt beim Ziehen', 'Kopie ziehen'], ['Strg beim Ziehen', 'Ohne Einrasten'],
+    ['Umschalt beim Ziehen', 'Nur waagerecht oder senkrecht'], ['Alt beim Ziehen', 'Ohne Einrasten'],
     ['Umschalt an einer Ecke', 'Seitenverhältnis frei bzw. fest'], ['Umschalt beim Drehen', 'In 15°-Schritten'],
     ['Doppelklick', 'Text bearbeiten, Bild zuschneiden, in Gruppe wählen'], ['Enter', 'Text bearbeiten'], ['Esc', 'Auswahl aufheben'],
     ['Entf', 'Löschen'], ['Strg+C / Strg+X', 'Kopieren / Ausschneiden'], ['Strg+D', 'Duplizieren'], ['Strg+G', 'Gruppieren'],
