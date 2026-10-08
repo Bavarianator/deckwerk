@@ -444,3 +444,4 @@ Aus einem langen Video (Vortrag, Interview, Podcast) werden kurze Hochkant-Clips
 - `focus` je part aus den Standbildern: horizontale Mitte des Sprechers (0 = links, 1 = rechts). Ein 9:16-Ausschnitt zeigt aus einem Querformat nur etwa ein Drittel der Breite.
 - `hook`: höchstens 70 Zeichen, macht neugierig, löst nicht schon alles auf; kein Clickbait, keine Emojis.
 - `captions`: `wort` als Standard (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige Inhalte, `aus` nur auf Wunsch.
+- `pauses`: `kurz` für Talking Heads mit Denkpausen oder stockendem Sprechen (Pausen ab 0,6 s schrumpfen beim Export auf 0,3 s), `lassen` bei Musik, Vorführungen oder bewusst gesetzten Pausen.

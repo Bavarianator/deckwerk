@@ -234,6 +234,7 @@ const clip = z.object({
   }).refine((p) => p.end > p.start + 0.2, 'end muss nach start liegen')).min(1).max(20).describe('Ausschnitte, nacheinander abgespielt (Jump Cuts): ganze Sätze, zusammen meist 20–60 s'),
   hook: z.string().max(70).optional().describe('Einstiegszeile oben in den ersten Sekunden: macht neugierig, ohne Clickbait'),
   captions: z.enum(['wort', 'satz', 'aus']).optional().describe('Untertitel aus dem Transkript (nur im MP4): wort = wenige Wörter, aktuelles Wort in Akzentfarbe (Standard); satz = ganze Zeilen; aus'),
+  pauses: z.enum(['kurz', 'lassen']).optional().describe('Sprechpausen (nur im MP4): kurz = Pausen ab 0,6 s auf 0,3 s kürzen, der Clip wirkt zügiger; lassen = unverändert (Standard)'),
 })
 
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d

@@ -30,7 +30,7 @@ const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).
 // Floskeln generierter Texte; Wortstamm + beliebige Endung, damit Flexionen greifen. „Hebel“ fehlt bewusst (oft legitim).
 const FLOSKELN = /(?<![\p{L}\d])(nahtlos\p{L}*|ganzheitlich\p{L}*|innovativ(?:e[rnms]?)?|revolution[äa]r\p{L}*|maßgeschneidert\p{L}*|synergie\p{L}*|mehrwert(?!steuer)\p{L}*|auf (?:das |die )?nächsten? (?:level|stufe)|game[- ]?changer|in der heutigen (?:schnelllebigen )?(?:welt|zeit)|schnelllebig\p{L}*|entfessel\p{L}*|transformativ\p{L}*|potenzial\p{L}* (?:\p{L}+ )?(?:entfalt|freisetz|freizusetz|freigesetzt)\p{L}*|aus einer hand|zukunftssicher\p{L}*|state of the art|leuchtturm(?:projekt\p{L}*)?)(?![\p{L}\d])/giu
 const EMOJI = /\p{Emoji_Presentation}/u // nur Bild-Emoji; Pfeile, Häkchen und ©®™ sind Satzzeichen
-const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr', 'video', 'captions']) // Bild-, Link- und Icon-Felder sieht niemand als Text
+const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr', 'video', 'captions', 'pauses']) // Bild-, Link- und Icon-Felder sieht niemand als Text
 const textsOf = (v: unknown, key = ''): string[] =>
   NO_TEXT.has(key) ? [] : typeof v === 'string' ? [v.replace(/\*\*/g, '').replace(/\]\([^)]*\)/g, ']')]
     : Array.isArray(v) ? v.flatMap((x) => textsOf(x, key))

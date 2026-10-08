@@ -7,7 +7,7 @@ import { homedir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
-import type { VideoInfo } from '../shared/video'
+import type { Quiet, VideoInfo } from '../shared/video'
 import { download } from './download'
 
 // Statische Builds mit libass und libx264 (ffmpeg-static, GPL); darwin-arm64 für den Mac-Fork
@@ -107,6 +107,20 @@ export async function frames(file: string, times: number[], width = 640): Promis
     const jpg = await ff(['-ss', String(Math.max(0, t)), '-i', file, '-frames:v', '1', '-vf', `scale=${Math.round(width)}:-2`, '-q:v', '4', '-f', 'image2pipe', '-c:v', 'mjpeg', 'pipe:1'])
     if (!jpg.length) throw new Error(`Kein Bild bei ${t} s in ${basename(file)} (Video zu kurz?)`)
     out.push(jpg)
+  }
+  return out
+}
+
+/** Stillen ab min Sekunden zwischen from und to, in Sekunden des Quellvideos. ponytail: feste Schwelle −35 dB; bei lautem Grundrauschen findet sie nichts und der Clip bleibt ungekürzt. Upgrade: Schwelle relativ zum gemessenen Pegel. */
+export async function silences(file: string, from: number, to: number, min: number): Promise<Quiet[]> {
+  const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-ss', from.toFixed(3), '-t', (to - from).toFixed(3), '-i', file, '-vn', '-af', `silencedetect=noise=-35dB:d=${min}`, '-f', 'null', '-'])
+  if (r.code !== 0) throw new Error(`Pausen in ${basename(file)} nicht messbar:\n${r.err.trim().split('\n').slice(-5).join('\n')}`)
+  // Zeiten ab 0 = from; eine Stille bis zum Ende hat bei älterem ffmpeg kein silence_end
+  const out: Quiet[] = []
+  for (const m of r.err.matchAll(/silence_(start|end): (-?[\d.]+)/g)) {
+    const t = Math.min(to, Math.max(from, from + Number(m[2])))
+    if (m[1] === 'start') out.push([t, to])
+    else if (out.length) out[out.length - 1][1] = t
   }
   return out
 }
