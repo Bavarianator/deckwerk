@@ -31,7 +31,7 @@ const names = listed.map((t) => t.name).sort()
 // ohne readOnlyHint führt Claude Code Aufrufe nacheinander aus (4 KI-Bilder dauerten so über 6 min)
 assert.equal(listed.find((t) => t.name === 'generate_image')?.annotations?.readOnlyHint, true)
 assert.equal(listed.find((t) => t.name === 'add_slides')?.annotations?.readOnlyHint, undefined, 'Deck-Änderungen bleiben seriell')
-assert.equal(names.length, 20)
+assert.equal(names.length, 22)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 // read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
 const parts = guideParts()
@@ -61,5 +61,7 @@ r = await call('save_deck'); assert.match(r.content[0].text!, /\/leer\/deck\.jso
 assert.equal(JSON.parse(readFileSync(join(home, 'mcp-test/deck.json'), 'utf8')).slides.length, 2)
 r = await call('open_deck', { path: 'mcp-test/deck.json' }); assert.match(r.content[0].text!, /2 Folien/)
 assert.match((await call('export_deck', { format: 'pdf' })).content[0].text!, /deck\.pdf/)
+r = await call('transcribe_video', { video: '/x/talk.mp4' }) // Mock-Engine ohne video
+assert.equal(r.isError, true); assert.match(r.content[0].text!, /nur in der Deckwerk-App und im MCP-Server/)
 await client.close()
 console.log(`MCP OK · ${names.length} Tools · ${home}`)

@@ -342,4 +342,4 @@ export interface Measured {
 
 // Dateien, die ein Deck über asset:// bzw. file:// einbinden darf (Protokoll-Handler und PPTX-Export). Alles andere
 // wird verweigert, damit eine fremde deck.json keine beliebigen Dateien (Schlüssel, Zugangsdaten) in eine PPTX zieht.
-export const MEDIA_EXT = /\.(png|jpe?g|gif|webp|svg|avif|bmp|mp4|webm|mov|m4v|ogv|mp3|wav|m4a|ogg|oga|aac|opus|flac|ttf|otf|woff2?)$/i
+export const MEDIA_EXT = /\.(png|jpe?g|gif|webp|svg|avif|bmp|mp4|webm|mov|m4v|mkv|ogv|mp3|wav|m4a|ogg|oga|aac|opus|flac|ttf|otf|woff2?)$/i

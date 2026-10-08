@@ -1,21 +1,22 @@
 // Die 12 KI-Tools, SDK-frei: DeckAgent (agent.ts) und MCP-Server hängen an derselben Definition.
 // Fehler werfen ein Error mit konkreter Meldung; der Aufrufer macht daraus is_error / isError.
 import { execFile } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, extname, join, resolve, sep } from 'node:path'
+import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, PRINT_SIZES, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef } from '../shared/deck'
+import { BUILDS, DECORS, FORMATS, FRAMES, MEDIA_EXT, MOTIONS, PRINT_SIZES, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef } from '../shared/deck'
 import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
 import type { Issue } from '../shared/lint'
 import { typeset } from '../shared/typo'
-import type { Engine } from './agent'
+import { mmss, transcriptLines } from '../shared/video'
+import type { Engine, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 
 export interface ToolContext {
@@ -46,7 +47,7 @@ export function localizeDeck(deck: Deck, dir: string): Deck {
   const walk = (o: any): void => {
     for (const k of Object.keys(o ?? {})) {
       const v = o[k]
-      if ((k === 'src' || k === 'image' || k === 'poster') && typeof v === 'string' && v && !/^(asset|data|file|https?):/.test(v)) o[k] = assetUrl(resolve(dir, v))
+      if ((k === 'src' || k === 'image' || k === 'poster' || k === 'video') && typeof v === 'string' && v && !/^(asset|data|file|https?):/.test(v)) o[k] = assetUrl(resolve(dir, v))
       else if (v && typeof v === 'object') walk(v)
     }
   }
@@ -199,7 +200,7 @@ export function newSlideId(deck: Deck): string {
 }
 
 // Feinsatz rekursiv über alle Strings; Quellen, Links und Symbolnamen bleiben unberührt
-const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus'])
+const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus', 'video'])
 const typesetDeep = (v: unknown, key?: string): unknown =>
   typeof v === 'string' ? (key && NO_TYPESET.has(key) ? v : typeset(v))
     : Array.isArray(v) ? v.map((x) => typesetDeep(x, key))
@@ -214,7 +215,11 @@ export function validateContent(layout: string, content: unknown, where: string)
   const r = def.schema.safeParse(content)
   const json = z.toJSONSchema(def.schema) as JsonSchema
   const stray = [...new Set(strayKeys(json, content, ''))]
-  if (r.success && !stray.length) return typesetDeep(r.data) as Record<string, unknown>
+  if (r.success && !stray.length) {
+    const c = typesetDeep(r.data) as Record<string, unknown>
+    if (layout === 'clip' && typeof c.video === 'string' && isAbsolute(c.video)) c.video = assetUrl(c.video) // der Renderer lädt Videos nur über asset://
+    return c
+  }
   const { $schema: _, ...schema } = json as Record<string, unknown>
   throw new Error([
     `${where} (${layout}): Inhalt ungültig.`,
@@ -302,6 +307,52 @@ const indexOf = (deck: Deck, id: string): number => {
 }
 
 function tool<S extends z.ZodType>(t: ToolDef<S>): ToolDef<S> { return t }
+
+// Lange Arbeiten (Transkript, Video-Export) laufen im Hintergrund weiter; ein Aufruf wartet höchstens JOB_WAIT.ms. Grund: Vibe und
+// Codex brechen Tool-Aufrufe nach 300 s ab, der API-Agent hält bei Deck-Tools die Sperre. Der nächste Aufruf mit gleichem Schlüssel
+// hängt sich an den laufenden Job oder holt sein Ergebnis ab; danach ist der Job vergessen.
+export const JOB_WAIT = { ms: 240_000 } // Tests setzen ihn kürzer
+// ponytail: nie abgeholte Ergebnisse bleiben bis Prozessende in der Map (klein: Pfadlisten, Transkripte); Ablaufzeit, falls das stört
+const jobs = new Map<string, { promise: Promise<unknown>; pct: number }>()
+async function job<T>(key: string, start: (onProgress: (pct: number) => void) => Promise<T>): Promise<{ value: T } | { pct: number }> {
+  let j = jobs.get(key)
+  if (!j) {
+    const nj = { promise: Promise.resolve() as Promise<unknown>, pct: 0 }
+    nj.promise = start((pct) => { nj.pct = pct })
+    nj.promise.catch(() => {}) // den Fehler holt der nächste Aufruf ab; unbeobachtet würde Node den Prozess beenden
+    jobs.set(key, (j = nj))
+  }
+  const cur = j
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const waiting = new Promise<'waiting'>((ok) => { timer = setTimeout(ok, JOB_WAIT.ms, 'waiting') })
+  try {
+    const r = await Promise.race([cur.promise.then((value) => ({ value: value as T })), waiting])
+    if (r === 'waiting') return { pct: Math.round(cur.pct) }
+    if (jobs.get(key) === cur) jobs.delete(key)
+    return r
+  } catch (e) {
+    if (jobs.get(key) === cur) jobs.delete(key)
+    throw e
+  } finally {
+    clearTimeout(timer)
+  }
+}
+const stillRunning = (what: string, pct: number) => `${what} läuft noch (${pct} %). Rufe dasselbe Tool gleich noch einmal mit denselben Eingaben auf; die Arbeit läuft im Hintergrund weiter.`
+
+// Quellvideo der Video-Tools: asset://-URL oder absoluter Pfad → Datei. Nur Video-Endungen, die asset:// auch ausliefert (MEDIA_EXT).
+function videoFile(ctx: ToolContext, video: string): { file: string; v: VideoTools } {
+  const v = ctx.engine.video
+  if (!v) throw new Error('Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server.')
+  const path = video.startsWith('asset:') ? decodeURIComponent(new URL(video).pathname) : video
+  if (!isAbsolute(path)) throw new Error(`video "${video}": asset://-Pfad aus dem Anhang („Video: asset://…“) oder absoluten Dateipfad angeben.`)
+  const file = resolve(path)
+  if (!/\.(mp4|webm|mov|m4v|ogv|mkv)$/i.test(file)) throw new Error(`${file} ist kein unterstütztes Video (mp4, webm, mov, m4v, mkv, ogv).`)
+  if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Video nicht gefunden: ${file}`)
+  return { file, v }
+}
+const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“) oder absoluter Dateipfad')
+const TRANSCRIPT_MAX = 30_000 // Zeichen je Antwort; der Rest seitenweise über from
+const VIDEO_NEXT = 'Weiter (Guide § Video): 3–5 stärkste Momente wählen, je 20–60 s, Schnitte nur an Segmentgrenzen; video_frames an den Startzeiten für focus; create_deck format 9:16, je Short eine Folie im Layout clip; render_slides; export_deck clips.'
 
 export function buildTools(ctx: ToolContext): ToolDef[] {
   return [
@@ -626,17 +677,62 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen) oder print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten). Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für das Video aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, andere Folien als Standbild). Video-Exporte laufen im Hintergrund: meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
       inputSchema: z.object({
-        format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print']),
+        format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print: A4-Seiten verlustfrei auf A3 oder A5 skalieren; weglassen = Format des Decks'),
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
-        const paths = await ctx.engine.exportDeck(deck, i.format, ctx.outDir, { size: i.size, bleed: i.bleed })
-        return { text: `Exportiert (${i.format}):\n${paths.join('\n')}` }
+        const print = { size: i.size, bleed: i.bleed }
+        const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
+        const r = await job(key, (onProgress) => ctx.engine.exportDeck(deck, i.format, ctx.outDir, print, onProgress))
+        if (!('value' in r)) return { text: stillRunning('Export', r.pct) }
+        return { text: `Exportiert (${i.format}):\n${r.value.join('\n')}` }
+      },
+    }),
+    tool({
+      name: 'transcribe_video',
+      readOnly: true,
+      description: 'Erster Schritt für Shorts aus einem langen Video: transkribiert lokal (Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video). Beim ersten Mal lädt Deckwerk das Sprachmodell (~510 MB); die Erkennung dauert grob ein Viertel der Videolänge und läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit demselben video auf. Danach 3–5 stärkste Momente wählen, je 0–10 bewertet: Hook (die ersten 3 s packen), ohne Vorwissen verständlich, Bogen von Setup zu Payoff, zitierfähig, Ende mit abgeschlossenem Gedanken; nur die stärksten nehmen. Je Short 20–60 s, Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze und Abschweifungen über mehrere parts herausschneiden, Clips überlappen höchstens 5 s. Dann video_frames für focus, create_deck format 9:16, je Short eine Folie im Layout clip (hook ≤ 70 Zeichen ohne Clickbait und Emojis, captions wort), export_deck clips. Ablauf: read_guide § Video.',
+      inputSchema: z.object({
+        video: videoInput,
+        from: z.number().min(0).optional().describe('nur Segmente ab dieser Sekunde (lange Videos seitenweise lesen)'),
+        to: z.number().min(0).optional().describe('nur Segmente bis zu dieser Sekunde'),
+      }),
+      async run(i) {
+        const { file, v } = videoFile(ctx, i.video)
+        const r = await job(`transcribe:${file}`, (onProgress) => Promise.all([v.probe(file), v.transcribe(file, onProgress)]))
+        if (!('value' in r)) return { text: stillRunning('Transkription', r.pct) }
+        const [info, t] = r.value
+        const from = i.from ?? 0, to = i.to ?? Infinity, all = transcriptLines(t), lines: string[] = []
+        let size = 0, more = ''
+        for (const [k, s] of t.segments.entries()) {
+          if (s.end <= from || s.start >= to) continue
+          if ((size += all[k].length + 1) > TRANSCRIPT_MAX) { more = `… weiter mit from=${s.start.toFixed(1)}`; break }
+          lines.push(all[k])
+        }
+        const head = `Video: ${assetUrl(file)} · ${mmss(info.duration)} · ${info.w}×${info.h} · Sprache ${t.lang} · ${t.segments.length} Segmente`
+        return { text: [head, ...lines, ...(lines.length ? [] : ['(keine Sprache in diesem Bereich)']), ...(more ? [more] : []), '', VIDEO_NEXT].join('\n') }
+      },
+    }),
+    tool({
+      name: 'video_frames',
+      readOnly: true,
+      description: 'Standbilder eines Videos (JPEG, 640 px breit) zu 1–12 Zeitpunkten, z. B. an den Startzeiten der gewählten parts. Zweck: den Sprecher finden und focus je part setzen (horizontale Bildmitte, 0 = links, 1 = rechts), Szenenwechsel und schwache Bilder erkennen. Zeiten hinter dem Ende gelten als Ende.',
+      inputSchema: z.object({ video: videoInput, times: z.array(z.number().min(0)).min(1).max(12).describe('Sekunden im Video') }),
+      async run(i) {
+        const { file, v } = videoFile(ctx, i.video)
+        const info = await v.probe(file)
+        const times = i.times.map((t) => Math.min(t, Math.max(0, info.duration - 0.1))) // genau am Ende liefert ffmpeg kein Bild
+        const images = await v.frames(file, times)
+        const share = Math.round(100 * Math.min(1, (info.h * 9) / 16 / info.w))
+        return {
+          text: `${images.length} Standbilder aus ${assetUrl(file)} (${info.w}×${info.h}, ${mmss(info.duration)}), Reihenfolge wie die Bilder:\n${times.map((t, k) => `${k + 1}. ${t.toFixed(1)} s (${mmss(t)})`).join('\n')}\nEin 9:16-Short zeigt ${share} % der Bildbreite um focus: Gesicht und Gestik müssen drin bleiben. Wechselt die Szene innerhalb eines parts, den part dort teilen.`,
+          images,
+        }
       },
     }),
     tool({
