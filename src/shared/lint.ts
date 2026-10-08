@@ -1,6 +1,6 @@
 import { wcagContrast } from 'culori'
 import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl } from './deck'
-import { FORMATS, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
+import { FORMATS, itemClicks, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { LAYOUTS, buildOf } from './layouts'
 
 export interface Issue {
@@ -256,7 +256,7 @@ export function lintMotion(deck: Deck, measured: Measured[]): Issue[] {
     const m = measured[i]
     if (deck.mode !== 'click' || !m) return
     const groups = new Set(m.els.flatMap((e) => (e.build === undefined ? [] : [e.build]))).size
-    const clicks = (buildOf(deck, i) === 'list' ? groups : 0) + m.els.filter((e) => e.anim && e.anim !== 'none' && e.anim !== 'breathe').length
+    const clicks = (buildOf(deck, i) === 'list' ? groups : 0) + itemClicks(s)
     if (clicks > 5) warn(i, 'clicks', `${clicks} Klicks, bis die Folie steht – der Vortrag stockt. Aufbau stagger statt list, weniger animierte Elemente oder Folie teilen.`)
   })
   return out

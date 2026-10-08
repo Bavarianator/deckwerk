@@ -2,7 +2,7 @@
 // Jede Wahl gilt sofort (Undo-fähig), „Abbrechen“ stellt den Stand beim Öffnen wieder her.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Sparkles, X } from 'lucide-react'
-import { MOTIONS, TRANSITIONS, sizeOf, type BrandKit, type Deck, type Motion, type ThemeTune, type Transition } from '../../shared/deck'
+import { MOTIONS, TRANSITIONS, sizeOf, type AnimSpeed, type BrandKit, type Deck, type Motion, type ThemeTune, type Transition } from '../../shared/deck'
 import { FONT_PAIRS, THEMES, resolveTheme, themeFromSpec } from '../../shared/themes'
 import { SlideView } from '../slide'
 import { OWN_DESIGN } from './Chat'
@@ -49,7 +49,7 @@ interface Props {
 }
 
 export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: Props) {
-  const [orig] = useState(() => ({ theme: deck.theme, transition: deck.transition, mode: deck.mode, motion: deck.motion, builds: new Map(deck.slides.map((s) => [s.id, s.build])) }))
+  const [orig] = useState(() => ({ theme: deck.theme, transition: deck.transition, transitionSpeed: deck.transitionSpeed, mode: deck.mode, motion: deck.motion, builds: new Map(deck.slides.map((s) => [s.id, s.build])) }))
   const sheet = useRef<HTMLDivElement>(null)
   const stage = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(720)
@@ -76,19 +76,19 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   const preview = (i: number) => ({ ...deck, theme: themeRef(ids[(i + ids.length) % ids.length]) })
 
   // Übergang wählen spielt ihn auf der großen Karte vor: Folie 2 kommt über Folie 1 (wie beim Präsentieren)
-  const [demo, setDemo] = useState<{ t: Transition; n: number } | null>(null)
+  const [demo, setDemo] = useState<{ t: Transition; n: number; speed?: AnimSpeed } | null>(null)
   const base = useRef<HTMLDivElement>(null)
   const incoming = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!demo || !incoming.current) return
-    const a = playTransition(demo.t, 1, incoming.current, base.current)
+    const a = playTransition(demo.t, 1, incoming.current, base.current, demo.speed)
     let timer = 0
     a.finished.then(() => { timer = window.setTimeout(() => setDemo(null), 900) }, () => {})
     return () => { clearTimeout(timer); a.cancel(); base.current?.getAnimations().forEach((x) => x.cancel()) }
   }, [demo])
-  const chooseTransition = (x: Transition) => {
-    patchDeck({ transition: x })
-    setDemo(x !== 'none' && x !== 'morph' && deck.slides.length > 1 ? { t: x, n: Date.now() } : null)
+  const chooseTransition = (x: Transition, speed = deck.transitionSpeed) => {
+    patchDeck({ transition: x, transitionSpeed: speed })
+    setDemo(x !== 'none' && x !== 'morph' && deck.slides.length > 1 ? { t: x, n: Date.now(), speed } : null)
   }
 
   const t = themeOf(ids[at])
@@ -208,6 +208,13 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
             <Select value={deck.transition} aria-label="Übergang" onChange={(e) => chooseTransition(e.target.value as Transition)}>
               {TRANSITIONS.map((x) => <option key={x} value={x}>{TRANSITION[x]}</option>)}
             </Select>
+            {deck.transition !== 'none' && (
+              <div className="seg" role="group" aria-label="Tempo der Übergänge">
+                {(['slow', undefined, 'fast'] as const).map((sp) => (
+                  <button key={sp ?? 'normal'} aria-pressed={deck.transitionSpeed === sp} onClick={() => chooseTransition(deck.transition, sp)}>{sp === 'slow' ? 'Langsam' : sp === 'fast' ? 'Schnell' : 'Normal'}</button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="look-group">
             <b>Ablauf</b>
