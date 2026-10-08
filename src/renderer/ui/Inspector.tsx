@@ -3,14 +3,14 @@
 import type { ReactNode } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { BUILDS, DECORS, TONES, TRANSITIONS, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
-import { ItemInspector } from './ItemInspector'
+import { GradAngle, ItemInspector } from './ItemInspector'
 import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
 import { Select } from './kit'
 import { SlideLooks } from './SlideLooks'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { extract, eyebrowRules } from '../measure'
-import { FONT_NAMES, THEMES, themeFromSpec } from '../../shared/themes'
+import { FONT_NAMES, THEMES, mix, themeFromSpec } from '../../shared/themes'
 import { colorsOf, elsToItems, recolor } from '../../shared/items'
 
 const FRAME: Record<FrameId, string> = { top: 'Titel oben', split: 'Titel links auf Farbfläche', band: 'Titel im Farbband', center: 'Zentriert' }
@@ -103,13 +103,27 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
               </Select>
             </Field>
             <div className="field">
-              <span>Hintergrund {(slide.bg?.color || slide.bg?.image) && <button type="button" className="link" onClick={() => patchSlide(index, { bg: undefined })}>Theme</button>}</span>
+              <span>Hintergrund {(slide.bg?.color || slide.bg?.image || slide.bg?.gradient) && <button type="button" className="link" onClick={() => patchSlide(index, { bg: undefined })}>Theme</button>}</span>
               <div className="field-row">
-                <input type="color" aria-label="Hintergrundfarbe" value={slide.bg?.color ?? base.c.bg} onChange={(e) => patchSlide(index, { bg: { ...slide.bg, color: e.target.value.toUpperCase() } }, `bg-${slide.id}`)} />
+                {/* Verlauf schlägt Farbe (wie Frame rendert): mit Verlauf ist die erste Farbe sein Anfang */}
+                <input type="color" aria-label={slide.bg?.gradient ? 'Verlauf von' : 'Hintergrundfarbe'} value={slide.bg?.gradient?.[0] ?? slide.bg?.color ?? base.c.bg}
+                  onChange={(e) => { const c = e.target.value.toUpperCase(); patchSlide(index, { bg: { ...slide.bg, ...(slide.bg?.gradient ? { gradient: [c, slide.bg.gradient[1]] } : { color: c }) } }, `bg-${slide.id}`) }} />
                 {slide.bg?.image
                   ? <button type="button" className="btn" onClick={() => patchSlide(index, { bg: { ...slide.bg, image: undefined } })}><X size={14} /> Bild</button>
                   : <button type="button" className="btn" onClick={async () => { const src = await pickImage(); if (src) patchSlide(index, { bg: { ...slide.bg, image: src } }) }}><ImagePlus size={14} /> Bild</button>}
               </div>
+              {slide.bg?.gradient ? (
+                <>
+                  <div className="field-row">
+                    <input type="color" aria-label="Verlauf zu" value={slide.bg.gradient[1]} onChange={(e) => patchSlide(index, { bg: { ...slide.bg, gradient: [slide.bg!.gradient![0], e.target.value.toUpperCase()] } }, `bg2-${slide.id}`)} />
+                    <button type="button" className="btn" onClick={() => patchSlide(index, { bg: { ...slide.bg, color: slide.bg!.gradient![0], gradient: undefined, angle: undefined } })}><X size={14} /> Verlauf</button>
+                  </div>
+                  <GradAngle value={slide.bg.angle} onChange={(angle) => patchSlide(index, { bg: { ...slide.bg, angle } })} />
+                </>
+              ) : (
+                // ruhiger Vorschlag: Richtung Akzent getönt statt voller Akzentfarbe
+                <button type="button" className="btn" disabled={!!slide.bg?.image} title={slide.bg?.image ? 'Das Hintergrundbild liegt über dem Verlauf' : undefined} onClick={() => { const c = slide.bg?.color ?? base.c.bg; patchSlide(index, { bg: { ...slide.bg, color: undefined, gradient: [c, mix(c, base.c.accent, 0.35).toUpperCase()] } }) }}>Verlauf</button>
+              )}
             </div>
             <Field label="Animation">
               <Select value={slide.build ?? ''} onChange={(e) => patchSlide(index, { build: (e.target.value || undefined) as BuildPreset | undefined })}>

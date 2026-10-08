@@ -317,3 +317,13 @@ textarea.mono { font-family: ui-monospace, monospace; font-size: 12px; }
 .slide-looks-item:not(:disabled) { cursor: pointer; }
 .slide-looks-item:hover:not(:disabled), .slide-looks-item:focus-visible { border-color: var(--accent); outline: none; }
 .slide-looks-thumb { display: block; pointer-events: none; }
+
+/* ---------- Bildfilter und Verlaufsrichtung (ItemInspector, Hintergrund im Inspector) ---------- */
+.img-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.img-presets-item { display: grid; align-content: start; min-width: 0; gap: 3px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 11px; line-height: 1.2; text-align: center; cursor: pointer; }
+.img-presets-pic { position: relative; display: block; aspect-ratio: 1; border-radius: 6px; overflow: hidden; isolation: isolate; box-shadow: inset 0 0 0 1px var(--border); }
+.img-presets-pic > span { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.img-presets-item:hover .img-presets-pic, .img-presets-item:focus-visible .img-presets-pic { outline: 1px solid var(--border-strong); outline-offset: 1px; }
+.img-presets-item[aria-pressed='true'] { color: var(--text); font-weight: 600; }
+.img-presets-item[aria-pressed='true'] .img-presets-pic { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seg.grad-dirs { justify-self: start; margin-left: 0; }

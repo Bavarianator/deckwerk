@@ -174,9 +174,10 @@ export function elsToItems(els: El[]): Item[] {
           effect: e.effect?.type, effectColor: e.effect?.color }]
       }
       case 'box': {
-        const g = e.gradient?.stops
+        const g = e.gradient?.stops, ang = e.gradient && Math.round(e.gradient.angle)
         if (!e.fill && !e.border && !g) return []
         return [{ ...at, kind: 'shape', shape: e.ellipse ? 'ellipse' : e.shape ?? 'rect', fill: g ? g[0].color : e.fill?.color, fill2: g && g.length > 1 ? g[g.length - 1].color : undefined,
+          gradAngle: ang !== undefined && ang !== 135 ? ang : undefined,
           opacity: e.fill && e.fill.alpha < 1 ? e.fill.alpha : undefined, stroke: e.border?.color, strokeW: e.border?.width, radius: e.radius || undefined, shadow: e.shadow ? true : undefined,
           lineStart: e.lineStart, lineEnd: e.lineEnd, dash: e.dash }]
       }
