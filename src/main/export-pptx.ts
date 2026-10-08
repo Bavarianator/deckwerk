@@ -6,7 +6,8 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
 import { webpSize } from './tools'
-import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, transitionSpeedOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured, type Run, type TextEl } from '../shared/deck'
+import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, transitionSpeedOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type FontFiles, type ImgEl, type Measured, type Run, type TextEl } from '../shared/deck'
+import { fontInfo } from '../shared/font-catalog'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
 import { localAsset } from './sync'
@@ -297,10 +298,14 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
   return embedFonts(await postProcess(await injectAnimations(buf, anims), deck), fontsOf(deck))
 }
 
-// Einzubettende Schriften eines Decks: Theme (Titel, Text, Mono) und freie Elemente mit eigener Schrift (auch für Word)
+// Einzubettende Schriften eines Decks: Theme (Titel, Text, Mono) und freie Elemente mit eigener Schrift (auch für Word).
+// Katalogfamilien freier Texte nur, wenn withDeckFonts sie geladen hat (ThemeRef.fontFiles); sonst steht dort der Ersatz.
 export function fontsOf(deck: Deck): EmbedFont[] {
   const t = resolveTheme(deck.theme)
-  const free = deck.slides.flatMap((s) => s.items ?? []).flatMap((it) => (it.font && it.font in FONTS ? [FONTS[it.font as FontName]] : []))
+  const free = deck.slides.flatMap((s) => s.items ?? []).flatMap((it): FontRef[] => {
+    const files = it.font ? deck.theme.fontFiles?.[it.font] : undefined
+    return !it.font ? [] : it.font in FONTS ? [FONTS[it.font as FontName]] : files ? [{ css: it.font, pptx: it.font, files, serif: /serif|slab/.test(fontInfo(it.font)?.cat ?? '') }] : []
+  })
   return embedList([t.head, t.body, ...(t.mono ? [t.mono] : []), ...free])
 }
 
@@ -310,9 +315,9 @@ function embedList(fonts: FontRef[]): EmbedFont[] {
   for (const f of fonts) {
     if ((!f.embed && !f.files) || out.has(f.pptx)) continue
     const file = (url?: string) => { const p = url && assetPath(url); return p && existsSync(p) ? readFileSync(p) : undefined }
-    if (f.files) { // eigene Schrift des Nutzers
-      const regular = file(f.files.regular)
-      if (regular) out.set(f.pptx, { family: f.pptx, regular, bold: file(f.files.bold), serif: f.serif })
+    if (f.files) { // eigene Schrift des Nutzers oder Katalogschrift (ThemeRef.fontFiles, mit Kursiven)
+      const fl: FontFiles = f.files, regular = file(fl.regular)
+      if (regular) out.set(f.pptx, { family: f.pptx, regular, bold: file(fl.bold), italic: file(fl.italic), boldItalic: file(fl.boldItalic), serif: f.serif })
       continue
     }
     const face = (name: string) => { const p = join(app.getAppPath(), 'assets/fonts', `${f.embed}-${name}.ttf`); return existsSync(p) ? readFileSync(p) : undefined }

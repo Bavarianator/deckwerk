@@ -10,14 +10,16 @@ import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
 import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune } from '../shared/deck'
-import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
+import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
-import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
+import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
+import { FONT_CATALOG, type FontCat } from '../shared/font-catalog'
 import type { Issue } from '../shared/lint'
 import { axesOf, lintLooks, lintTheme, type ThemeIssue } from '../shared/theme-lint'
 import { typeset } from '../shared/typo'
 import type { Engine } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
+import { fontNeeds, withDeckFonts, withFonts } from './webfonts'
 
 export interface ToolContext {
   engine: Engine
@@ -72,8 +74,8 @@ const brand = z.object({
   secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   logo: z.string().optional().describe('Pfad zum Logo (aus find_images)'),
   logoDark: z.string().optional().describe('Logo für dunklen Grund; fehlt es, gilt logo'),
-  headFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).optional().describe('Headline-Schrift; Office: Arial, Calibri, Georgia; Premium (eingebettet): alle übrigen, siehe customTheme.headFont'),
-  bodyFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).optional().describe('Schrift für Fließtext'),
+  headFont: fontName.optional().describe('Headline-Schrift; Office: Arial, Calibri, Georgia; alle übrigen werden eingebettet, siehe customTheme.headFont'),
+  bodyFont: fontName.optional().describe('Schrift für Fließtext'),
 })
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil, beim Anlegen immer setzen (Design-Guide §6 „Stil des Decks“). Nach Anlass: mutig für Vortrag, Schule/Unterricht, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social; sachlich für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot. Steht im Kontext „Deck-Stil: …“ oder wünscht der Nutzer einen Stil, gilt der. mutig = kräftige Farbgründe, Plakat-Typo, mehr Farbflächen, markante Bilder.')
@@ -137,8 +139,8 @@ const themeSpec = z.object({
   text: hexColor.optional().describe('Textfarbe; weglassen = automatisch passend'),
   accent: hexColor.describe('Hauptakzent mit Charakter (Zahlen, Hervorhebungen, Akzentflächen); wird bei Bedarf für Kontrast nachgedunkelt/aufgehellt'),
   accent2: hexColor.optional().describe('Zweitfarbe für Vergleichsserien und Duotone; weglassen = neutrales Grau (empfohlen: eine Akzentfarbe reicht)'),
-  headFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).describe('Titelschrift'),
-  bodyFont: z.enum(FONT_NAMES as [FontName, ...FontName[]]).describe('Textschrift (Sans empfohlen)'),
+  headFont: fontName.describe('Titelschrift: gebündelte Schrift oder Familie aus dem Schriftkatalog'),
+  bodyFont: fontName.describe('Textschrift (Sans empfohlen)'),
   radius: z.number().int().min(0).max(28).describe('Eckenradius in px: 0–4 empfohlen; über 8 wirkt es schnell generiert'),
   decor: z.enum(DECORS).describe('Hintergrundmotiv; none empfohlen. blobs/glow (unscharfe Farbkreise) nur auf ausdrücklichen Wunsch'),
   texture: z.enum(['grain']).optional().describe('feine Papierkörnung, nur auf Wunsch'),
@@ -178,9 +180,8 @@ const mergeTune = (old: ThemeTune | undefined, patch: z.infer<typeof tuneSpec> |
   return Object.keys(t).length ? (t as ThemeTune) : undefined
 }
 const override = z.string().min(3).max(200).optional().describe('Nur auf ausdrücklichen Wunsch des Nutzers: Begründung (z. B. Markenvorgabe), warum ein vom Theme-Lint abgelehntes Design so bleiben soll; Fehler werden dann zu Hinweisen')
-// Rauschen: „sehr verbreitet“ betrifft derzeit nur gebündelte Schriften, die einzige Wahl im Schema (FONT_NAMES).
-// Kommen Katalogschriften ins Schema, diesen Filter auf die gebündelten eingrenzen.
-const fontNoise = (x: ThemeIssue) => x.rule === 'font-common'
+// Rauschen: „sehr verbreitet“ bei gebündelten Schriften (die erprobte Grundauswahl); bei Katalogschriften bleibt der Hinweis
+const fontNoise = (x: ThemeIssue) => x.rule === 'font-common' && (FONT_NAMES as string[]).includes(x.message.split(' ist ')[0])
 // Theme-Lint (theme-lint.ts) für ein eigenes Design, wie es gerendert wird: ein Brand-Kit ersetzt Akzent und ggf. Schriften (withBrand), das ist Vorgabe
 function lintFor(s: ThemeSpec, kit: BrandKit | undefined, override?: string): ThemeIssue[] {
   const spec = kit ? { ...s, accent: kit.primary, headFont: kit.headFont ?? s.headFont, bodyFont: kit.bodyFont ?? s.bodyFont } : s
@@ -343,6 +344,15 @@ const indexOf = (deck: Deck, id: string): number => {
 function tool<S extends z.ZodType>(t: ToolDef<S>): ToolDef<S> { return t }
 
 export function buildTools(ctx: ToolContext): ToolDef[] {
+  // Speichern für Theme- und Folienänderungen: braucht das Deck andere Katalogschriften als vorher (Theme, freie Texte), lädt
+  // withDeckFonts sie (offline: Ersatz) und trägt fontFiles ein. Liefert den Hinweis fürs Ergebnis, sonst ''.
+  const put = async (deck: Deck, fresh = false): Promise<string> => {
+    const prev = ctx.getDeck()
+    let notes: string[] = []
+    if (fresh || !prev || fontNeeds(prev) !== fontNeeds(deck)) ({ theme: deck.theme, notes } = await withDeckFonts(deck))
+    ctx.setDeck(deck)
+    return notes.length ? `Schriften: ${notes.join('; ')}\n` : ''
+  }
   return [
     tool({
       name: 'create_deck',
@@ -364,9 +374,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run(i) {
         const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' }, tune: mergeTune(undefined, i.tune) }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         const hints = deck.theme.custom ? checkTheme(lintFor({ ...deck.theme.custom, ...deck.theme.tune }, deck.theme.brand, i.override), 'customTheme') + shadowed(i.customTheme, deck.theme.tune) : ''
-        ctx.setDeck(deck)
+        const fonts = await put(deck, true)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
-        return { text: `${hints}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `${hints}${fonts}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -383,7 +393,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         motion: z.enum(MOTIONS).optional().describe('Bewegungsstil wie Canva „Magic Animate“: none = keine Aufbauten, calm = nur Einblenden (Vorstand, Behörde), standard = Layout-Standard, lively = Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom (Pitch, Event)'),
         style: deckStyle.optional(),
         shuffle: z.number().int().min(0).max(5).optional().describe('Farbvariante des Themes wie Canva „Stile mischen“: 0 = Original, 1 = Akzente getauscht, 2 = Hell/Dunkel getauscht, 3 = beides, 4/5 = getönter Grund'),
-        fonts: z.tuple([z.enum(FONT_NAMES as [FontName, ...FontName[]]), z.enum(FONT_NAMES as [FontName, ...FontName[]])]).nullable().optional().describe('Schriftpaar [Titel, Text] über das Theme legen; null = Theme-Schriften'),
+        fonts: z.tuple([fontName, fontName]).nullable().optional().describe('Schriftpaar [Titel, Text] über das Theme legen; null = Theme-Schriften'),
         format: format.optional().describe('Magic Resize: Deck in ein anderes Format bringen; freie Elemente werden mitskaliert, Layouts ordnen sich neu an. Danach render_overview prüfen.'),
         tune: tuneSpec.optional(),
         override,
@@ -416,10 +426,10 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.shuffle !== undefined) deck.theme.shuffle = i.shuffle || undefined
         if (i.fonts !== undefined) deck.theme.fonts = i.fonts ?? undefined
         if (i.format) Object.assign(deck, resizeDeck(deck, i.format))
-        ctx.setDeck(deck)
+        const fonts = await put(deck)
         const look = i.theme || i.customTheme || i.tune || i.brand !== undefined || i.shuffle !== undefined || i.fonts !== undefined // Theme geändert → neue Vorschau
         return {
-          text: `${hints}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
+          text: `${hints}${fonts}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: { ...deck.theme, fontFiles: undefined }, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
           images: look ? await themePreview(ctx, deck) : undefined,
         }
       },
@@ -441,8 +451,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         deck.slides.splice(-fresh.length, fresh.length)
         const at = Math.min(i.at ?? deck.slides.length, deck.slides.length)
         deck.slides.splice(at, 0, ...fresh)
-        ctx.setDeck(deck)
-        return { text: await report(ctx, deck, fresh.map((_, k) => at + k)) }
+        const fonts = await put(deck)
+        return { text: fonts + await report(ctx, deck, fresh.map((_, k) => at + k)) }
       },
     }),
     tool({
@@ -482,8 +492,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.items !== undefined) s.items = withIds((i.items ?? undefined) as Item[] | undefined)
         if (i.bg !== undefined) s.bg = i.bg ?? undefined
         if (i.hidden !== undefined) s.hidden = i.hidden || undefined
-        ctx.setDeck(deck)
-        return { text: await report(ctx, deck, [idx]) }
+        const fonts = await put(deck)
+        return { text: fonts + await report(ctx, deck, [idx]) }
       },
     }),
     tool({
@@ -598,11 +608,13 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const recent = kit ? [] : recentLooks()
         const reps = refs.map((r) => repeats(lookTyp(r), recent))
         if (reps.every(Boolean)) throw new Error(`Alle Looks gleichen im Typ deinen letzten Decks (${recent.slice(0, 3).map((r) => `„${r.title}“: ${typText(r.typ)}`).join('; ')}). Baue mindestens einen Look in Grund (getönt, dunkel, im Stil mutig kräftig), Schrift (Sans statt Serif oder umgekehrt), Titelgewicht oder Bauteile (line/plain) anders – außer der Nutzer will eine Serie, dann create_deck direkt (Design-Guide §6 „Abwechslung“).`)
-        const images = (await Promise.all(refs.map((theme) => themePreview(ctx, { title, theme, transition: 'fade', mode: 'click', slides: [] })))).map((b) => b[0])
+        const loaded = await Promise.all(refs.map((r) => withFonts(r))) // Vorschau in den gewählten Schriften (offline: Ersatz)
+        const images = (await Promise.all(loaded.map(({ ref: theme }) => themePreview(ctx, { title, theme, transition: 'fade', mode: 'click', slides: [] })))).map((b) => b[0])
+        const fontNotes = [...new Set(loaded.flatMap((l) => l.notes))]
         if (images.some((b) => !b)) throw new Error('Vorschau fehlgeschlagen, bitte einzeln mit create_deck prüfen.')
         const label = (l: (typeof i.looks)[number]) => (typeof l === 'string' ? CATALOG_THEMES.find((t) => t.id === l)!.name : l.name)
         const names = i.looks.map((l, k) => `${k + 1}. ${label(l)}`).join('\n')
-        const hints = lint + similar + reps.map((x, k) => x && `Hinweis: Look ${k + 1} ${x}\n`).join('')
+        const hints = lint + similar + reps.map((x, k) => x && `Hinweis: Look ${k + 1} ${x}\n`).join('') + (fontNotes.length ? `Schriften: ${fontNotes.join('; ')}\n` : '')
         if (!ctx.choice) return { text: `${hints}Looks (Bilder in dieser Reihenfolge):\n${names}\nZeig dem Nutzer die Namen und frag, welchen er möchte.`, images }
         ctx.choice({ question: 'Welcher Look soll es werden?', options: i.looks.map((l, k) => ({ label: label(l), image: `data:${mimeOf(images[k])};base64,${images[k].toString('base64')}` })) })
         return { text: `${hints}Looks zur Auswahl angezeigt:\n${names}\nBeende jetzt den Turn ohne weiteren Text; die Wahl kommt als nächste Nachricht (Name des Looks).`, images }
@@ -972,6 +984,12 @@ function codexImage(prompt: string, orientation: Orientation): Promise<Buffer> {
   })
 }
 
+// Katalogschriften kompakt (nur Namen, nach Art): ohne gebündelte und ohne markierte (Standard generierter Designs, sehr verbreitet)
+function catalogFonts(): string {
+  const cats: Record<FontCat, string> = { grotesk: 'Grotesk', humanist: 'Humanistisch', geometric: 'Geometrisch', condensed: 'Condensed', serif: 'Serif', 'display-serif': 'Display-Serif', slab: 'Slab', mono: 'Mono' }
+  return (Object.keys(cats) as FontCat[]).map((c) => `${cats[c]}: ${FONT_CATALOG.filter((f) => f.cat === c && !f.flag && !(f.family in FONTS)).map((f) => f.family + (f.role === 'head' ? '*' : '')).join(', ')}`).join(' · ')
+}
+
 // Layout-Katalog für den Systemprompt: id, wann, Varianten, Default-Build, JSON-Schema. Stabil → Prompt-Caching.
 export function buildCatalog(): string {
   const layouts = LAYOUT_IDS.map((id) => {
@@ -996,6 +1014,7 @@ export function buildCatalog(): string {
     'Entwirf für jedes Deck ein eigenes Design (create_deck.customTheme) nach Design-Guide §6: Farbe, Schriftpaar und Struktur (titleSize, titleWeight, rule, sectionTone, sparsam Feinschliff wie signature, margin, heroTone) aus Thema, Branche und Anlass. Der Theme-Lint lehnt Klischees mit konkreter Korrektur ab. Die Katalog-Themes sind erprobte Vorbilder dafür und die Wahl, wenn es schnell gehen soll (Feinschliff per `tune`): beratung (hell, Daten, Chef-Update), keynote (dunkel, Plakat-Titel), schweiz (streng, Kopflinie), redaktion (Serif regular, Kopflinie), zen (dunkel, Serif, fotolastig). Nur im Stil mutig: plakat (Signalgelb, Black-Titel), magazin (Papier, riesige Serif, Mono-Labels), neomono (Off-Black, Signalorange, Plex, Mono-Labels), pastell (Lavendel, rund, freundlich). Die Engine leitet Flächen, Ränder, Sekundärtext und Diagrammfarben ab, dämpft den Grund und sichert Kontraste.',
     'Schriften (Premium-Schriften werden in die PPTX eingebettet):',
     FONT_NAMES.map((f) => `- ${f}: ${FONT_MOOD[f]}`).join('\n'),
+    `Dazu Familien aus dem Schriftkatalog für headFont, bodyFont, fonts, brand und freie Texte (lädt die Engine bei Bedarf und bettet sie ein, offline gilt ein ähnlicher gebündelter Ersatz; * = nur Titel): ${catalogFonts()}`,
     'Katalog-Themes:',
     CATALOG_THEMES.map((t) => `- ${t.id}: ${t.name}${t.dark ? ' (dunkel)' : ''}${t.mutig ? ' (nur Stil mutig)' : ''}`).join('\n'),
     '## Folien-Ton und Dekor',

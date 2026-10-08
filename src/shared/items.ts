@@ -1,9 +1,16 @@
 // Freie Elemente (Slide.items): Schema für KI-Tools und Fabriken für die Canvas. Positionen in px auf 1280x720.
 import { z } from 'zod'
 import { ANIM_DIRS, DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
+import { fontInfo, suggestFont } from './font-catalog'
 import { FONT_NAMES } from './themes'
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/)
+// Schriftname: gebündelt (FONT_NAMES) oder aus dem Schriftkatalog (lädt die Engine bei Bedarf). String statt Enum: die Liste kostete
+// sonst in jeder Anfrage Tokens; Tippfehler bekommen einen Vorschlag.
+const knownFont = (n: string) => (FONT_NAMES as string[]).includes(n) || fontInfo(n)?.family === n
+const unknownFont = { error: (iss: { input: unknown }) => { const n = String(iss.input), s = suggestFont(n); return `Schrift „${n}“ gibt es nicht${s ? ` – meintest du „${s}“?` : '. Erlaubt: gebündelte Schriften und der Schriftkatalog (Systemprompt, „Themes“)'}` } }
+export const fontName = z.string().max(60).refine(knownFont, unknownFont)
+
 export const itemSchema = z.object({
   id: z.string().max(40).optional().describe('weglassen = neu; vorhandene ID = dieses Element ersetzen'),
   kind: z.enum(['text', 'shape', 'image', 'icon', 'chart', 'video', 'audio', 'qr', 'graphic']).describe('qr: text = URL; graphic: handgezeichnete Deko (graphic = Name), Farbe über color'),
@@ -19,7 +26,7 @@ export const itemSchema = z.object({
   animStart: z.enum(['click', 'with', 'after']).optional().describe('Start wie in PowerPoint: click = bei Klick, with = mit vorherigem, after = nach vorherigem; weglassen = je ein Klick (Selbstlauf: nacheinander). Nicht für breathe'),
   animDelay: z.number().min(0).max(10).optional().describe('Verzögerung vor dem Auftritt in Sekunden. Nicht für breathe'),
   text: z.string().max(600).optional(),
-  font: z.enum(['head', 'body', ...FONT_NAMES]).optional().describe('head/body = Theme-Schrift'),
+  font: z.string().max(60).refine((n) => n === 'head' || n === 'body' || knownFont(n), unknownFont).optional().describe('head/body = Theme-Schrift, sonst Schriftname wie customTheme.headFont'),
   size: z.number().min(8).max(400).optional().describe('Schriftgröße in px (1 px = 0,75 pt)'),
   color: hex.optional().describe('Text- oder Iconfarbe; weglassen = Theme'),
   bold: z.boolean().optional(), italic: z.boolean().optional(), underline: z.boolean().optional(), upper: z.boolean().optional(),

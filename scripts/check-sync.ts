@@ -48,8 +48,10 @@ const older = (home: string, rel: string) => utimesSync(join(home, rel), new Dat
 
 // 1) PC lädt hoch (Versionen bleiben lokal), Handy lädt herunter
 put(A, 'pitch/deck.json', '{"v":1}'); put(A, 'pitch/versions/alt.json', 'x'); put(A, 'assets/foto.png', 'PNG'); put(A, '.setup-done', '')
+put(A, 'fonts/Newsreader/Newsreader-Regular.ttf', 'TTF') // Schrift-Cache lädt jedes Gerät selbst
 eq(await sync(A, s), { up: 2, down: 0, deleted: 0, conflicts: 0, changed: [] })
 ok(!files.has('/remote.php/dav/files/anna/Deckwerk/pitch/versions/alt.json'))
+ok(![...files.keys()].some((f) => f.includes('/fonts/')))
 eq((await sync(B, s)).changed.sort(), [join(B, "assets/foto.png"), join(B, "pitch/deck.json")])
 eq(get(B, 'pitch/deck.json'), '{"v":1}')
 eq(await sync(A, s), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] }) // ETag-Fallback für foto.png greift

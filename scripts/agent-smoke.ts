@@ -29,6 +29,7 @@ const run = (name: string, input: unknown) => T[name].run(T[name].inputSchema.pa
 const fails = async (p: Promise<unknown>, re: RegExp) => { try { await p } catch (e) { assert.match((e as Error).message, re); return } assert.fail('sollte werfen') }
 const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
+process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts): Ersatz und Hinweis statt Download
 
 assert.equal(tools.length, 16)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -246,7 +247,7 @@ assert.equal(events, 14, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   assert.deepEqual(recentLooks('Alt 1').map((r) => r.title), ['Alt 2'])
   let d: Deck | null = null
   const T4 = Object.fromEntries(buildTools({ engine, getDeck: () => d, setDeck: (x) => { d = x }, assetDir: '/nonexistent', outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
-  const make = (input: unknown) => T4.create_deck.run(T4.create_deck.inputSchema.parse(input))
+  const make = async (input: unknown) => T4.create_deck.run(T4.create_deck.inputSchema.parse(input))
   const same = await make({ title: 'Neu', style: 'sachlich', brand: null, customTheme: look('Papier', '#FFFFFF', { headFont: 'Lora', titleWeight: 'regular' }) })
   assert.equal(d!.style, 'sachlich'); assert.match(same.text, /^Hinweis: Dieses Design gleicht im Typ deinen letzten Decks „Alt \d“, „Alt \d“ \(hell, Serif-Titel regular, Grund neutral, Bauteile Linie\)/m)
   // anderes Bauteil-Vokabular = anderer Typ: kein Hinweis
@@ -279,6 +280,13 @@ assert.equal(events, 14, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   // Plakat-Nachbau: Archivo Black auf kräftigem Grund
   await make({ title: 'Plakat', brand: null, style: 'mutig', customTheme: { name: 'Plakat', bg: '#FFD100', text: '#111111', accent: '#111111', headFont: 'Archivo Black', bodyFont: 'Archivo', radius: 0, decor: 'none', titleSize: 'huge', vivid: true, elements: 'solid' } })
   assert.equal(d!.theme.custom?.headFont, 'Archivo Black')
+  // Katalogschriften: Tippfehler mit Vorschlag, offline Ersatz im Ergebnis, „sehr verbreitet“ nur bei Katalogschriften
+  await fails(make({ title: 'Typo', brand: null, customTheme: look('Typo', '#FFFFFF', { headFont: 'Newsreder' }) }), /meintest du „Newsreader“/)
+  assert.match((await make({ title: 'Zeitung', brand: null, customTheme: look('Zeitung', '#FFFFFF', { headFont: 'Newsreader', bodyFont: 'Roboto' }) })).text, /Roboto ist sehr verbreitet[\s\S]*Schriften: Newsreader: nicht verfügbar \(offline\), Ersatz Georgia/)
+  const slide = async (font: string) => T4.add_slides.run(T4.add_slides.inputSchema.parse({ slides: [{ layout: 'blank', content: {}, items: [{ kind: 'text', text: 'x', font, x: 60, y: 60, w: 400, h: 40 }] }] }))
+  await fails(slide('Inter Tigt'), /meintest du „Inter Tight“/)
+  assert.match((await slide('Inter Tight')).text, /^Schriften: .*Inter Tight: nicht verfügbar \(offline\), Ersatz Inter\n/)
+  assert.doesNotMatch((await slide('head')).text, /Schriften/, 'gleiche Schriften: kein neuer Ladeversuch')
   assert.doesNotMatch((await make({ title: 'Nacht', brand: null, customTheme: look('Nacht', '#12261E', { headFont: 'Inter' }) })).text, /gleicht im Typ/)
   put('nacht', json('Nacht', look('Nacht', '#12261E', { headFont: 'Inter', elements: 'line' })))
   await fails(T4.propose_looks.run(T4.propose_looks.inputSchema.parse({ looks: [look('Papier', '#FFFFFF', { titleWeight: 'regular', titleSize: 'large', rule: 'over' }), look('Nachtblau', '#12261E', { headFont: 'Inter' })] })), /Alle Looks gleichen im Typ/)
