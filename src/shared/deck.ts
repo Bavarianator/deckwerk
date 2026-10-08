@@ -165,12 +165,14 @@ export interface Item {
   lineHeight?: number // Faktor
   spacing?: number // Laufweite in em
   upper?: boolean
+  list?: 'bullet' | 'number' // Aufzählung: jede Zeile ein Punkt (PPTX: native Aufzählungszeichen bzw. Nummern)
   effect?: TextEffect; effectColor?: string // Texteffekt; Farbe für Neon/Kontur, sonst Textfarbe
   // shape (fill auch Texthintergrund)
   shape?: ShapeId
   lineStart?: LineEnd; lineEnd?: LineEnd // Linienenden (Form line)
   dash?: Dash // Strichart für Linie und Umriss
   fill?: string; fill2?: string // fill2 = Verlauf (nur Rechteck/Ellipse)
+  gradAngle?: number // Winkel des Verlaufs in Grad (CSS-Sinn, Standard 135)
   stroke?: string; strokeW?: number
   radius?: number
   shadow?: boolean
