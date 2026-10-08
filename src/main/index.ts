@@ -1,7 +1,7 @@
 import { app, BrowserWindow, net, protocol } from 'electron'
 import { spawn } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
-import { readFile, writeFile } from 'node:fs/promises'
+import { readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -77,9 +77,27 @@ app.whenReady().then(async () => {
   protocol.handle('asset', async (req) => {
     const file = localAsset(decodeURIComponent(new URL(req.url).pathname))
     if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
-    const res = await net.fetch(pathToFileURL(file).toString(), { headers: req.headers })
+    // net.fetch schneidet bei Range zwar die Bytes zu, antwortet aber mit 200 ohne Content-Range: dann hält Chromium Videos für nicht spulbar.
+    // Darum Range selbst auflösen (auch bytes=100- und bytes=-500) und als 206 beantworten.
+    const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range') ?? '')
+    let part: { start: number; end: number; size: number } | undefined
+    if (m && (m[1] || m[2])) {
+      const size = (await stat(file)).size
+      const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2])), end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1
+      if (start > end) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } })
+      part = { start, end, size }
+    }
+    const ask = new Headers(req.headers)
+    if (part) ask.set('Range', `bytes=${part.start}-${part.end}`)
+    const res = await net.fetch(pathToFileURL(file).toString(), { headers: ask })
     const headers = new Headers(res.headers)
     headers.set('Access-Control-Allow-Origin', '*')
+    headers.set('Accept-Ranges', 'bytes')
+    if (part && res.status === 200) {
+      headers.set('Content-Range', `bytes ${part.start}-${part.end}/${part.size}`)
+      headers.set('Content-Length', String(part.end - part.start + 1))
+      return new Response(res.body, { status: 206, headers })
+    }
     return new Response(res.body, { status: res.status, headers })
   })
   const argv = process.argv
