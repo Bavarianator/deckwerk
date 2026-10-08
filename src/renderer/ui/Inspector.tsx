@@ -2,7 +2,7 @@
 // Deck-weite Einstellungen (Theme, Übergang, Ablauf, Marke) stehen im Look, die Notizen unter der Folie.
 import type { ReactNode } from 'react'
 import { ImagePlus, X } from 'lucide-react'
-import { BUILDS, DECORS, TONES, TRANSITIONS, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
+import { BUILDS, DECORS, TONES, TRANSITIONS, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
 import { ItemInspector } from './ItemInspector'
 import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
@@ -124,6 +124,14 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
                   {TRANSITIONS.map((x) => <option key={x} value={x}>{TRANSITION[x]}</option>)}
                 </Select>
               </Field>
+            )}
+            {transitionOf(deck, index) !== 'none' && (
+              // Normal = Tempo des Decks
+              <div className="seg" role="group" aria-label="Tempo des Übergangs">
+                {(['slow', undefined, 'fast'] as const).map((sp) => (
+                  <button key={sp ?? 'normal'} type="button" aria-pressed={transitionSpeedOf(deck, index) === sp} onClick={() => patchSlide(index, { transitionSpeed: sp })}>{sp === 'slow' ? 'Langsam' : sp === 'fast' ? 'Schnell' : 'Normal'}</button>
+                ))}
+              </div>
             )}
           </section>
         )}
