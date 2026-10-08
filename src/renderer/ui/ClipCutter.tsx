@@ -1,6 +1,6 @@
 // Schneiden: Feinschliff an den Ausschnitten einer Clip-Folie, nachdem die KI sie gesetzt hat.
 // Bewusst schlicht: Anfang/Ende ziehen oder an der Abspielposition setzen, teilen, löschen, Bildausschnitt. Hook und Untertitel gibt es nur im MP4.
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import { Pause, Play, Plus, Scissors, Trash2 } from 'lucide-react'
 import type { Size } from '../../shared/deck'
@@ -12,6 +12,7 @@ import './cutter.css'
 const MIN = 0.3 // kürzester Ausschnitt; das Schema verlangt end > start + 0.2
 const MAX = 20 // Schema: höchstens 20 Ausschnitte
 const r2 = (s: number) => Math.round(s * 100) / 100
+const fl = (s: number) => Math.floor(s * 100) / 100 // Enden abrunden, damit sie nicht hinter das Videoende ragen
 const clock = (s: number) => { const d = Math.round(s * 10); return `${Math.floor(d / 600)}:${String(Math.floor(d / 10) % 60).padStart(2, '0')},${d % 10}` }
 const secs = (s: number) => `${s.toFixed(1).replace('.', ',')} s`
 
@@ -28,7 +29,8 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
   const video = useRef<HTMLVideoElement>(null)
   const box = useRef<HTMLDivElement>(null)
   const src = content.video.startsWith('/') ? assetOf(content.video) : content.video // assetOf kodiert auch # und ?
-  const end = dur || Math.max(...parts.map((p) => p.end)) + 10 // ohne Metadaten: etwas Luft hinter dem letzten Ausschnitt
+  const top = useRef(Math.max(0, ...content.parts.map((x) => x.end))) // ohne Metadaten gilt das größte ursprüngliche Ende als Grenze, sie wächst nicht mit
+  const end = dur || top.current
   const p = parts[Math.min(sel, parts.length - 1)]
   const changed = JSON.stringify(parts) !== JSON.stringify(content.parts)
 
@@ -45,7 +47,7 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
   const setEdge = (i: number, edge: 'start' | 'end', s: number) => {
     const x = parts[i]
     if (!Number.isFinite(s)) return
-    patch(i, edge === 'start' ? { start: r2(Math.max(0, Math.min(s, x.end - MIN))) } : { end: r2(Math.max(x.start + MIN, Math.min(end, s))) }) // Mindestlänge vor Videoende: KI-Zeiten können dahinter liegen
+    patch(i, edge === 'start' ? { start: r2(Math.max(0, Math.min(s, x.end - MIN))) } : { end: Math.max(x.start + MIN, fl(Math.min(end, s))) }) // Mindestlänge vor Videoende: KI-Zeiten können dahinter liegen
   }
   // Anfang/Ende an der Abspielposition nur, wenn sie im Ausschnitt liegt: sonst würde er still auf die Mindestlänge schrumpfen
   const canStart = t <= p.end - MIN, canEnd = t >= p.start + MIN
@@ -63,7 +65,7 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
   const canAdd = parts.length < MAX && end - t >= MIN
   const add = () => {
     if (!canAdd) return
-    setParts((l) => [...l.slice(0, sel + 1), { start: r2(t), end: r2(Math.min(end, t + 5)) }, ...l.slice(sel + 1)])
+    setParts((l) => [...l.slice(0, sel + 1), { start: r2(t), end: fl(Math.min(end, t + 5)) }, ...l.slice(sel + 1)])
     setSel(sel + 1)
   }
   const toggle = () => {
@@ -105,21 +107,32 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
     if (!changed || await confirmDialog({ title: 'Schnitt verwerfen?', text: 'Deine Änderungen an den Ausschnitten gehen verloren.', ok: 'Verwerfen', danger: true })) onClose()
   }
 
+  // Auf window in der Capture-Phase: nach „Teilen“ (Button wird disabled) liegt der Fokus auf body, ein Dialog-Handler griffe nicht mehr und App.tsx blätterte die Folie weg
   const onKey = (e: KeyboardEvent) => {
+    if (document.querySelector('dialog[open]')) return // Rückfrage „Verwerfen?“ bedient sich selbst
+    const el = e.target as HTMLElement
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName) && e.key !== 'Escape') return
     e.stopPropagation() // App und Stage sollen nicht blättern, rückgängig machen oder Elemente verschieben
-    const typing = /^(INPUT|SELECT|TEXTAREA)$/.test((e.target as HTMLElement).tagName)
+    const btn = !!el.closest('button'), k = e.key.toLowerCase()
     if (e.key === 'Escape') void close()
-    else if (typing || e.ctrlKey || e.metaKey || e.altKey) return
-    else if (e.key === ' ') toggle()
+    else if ((e.ctrlKey && !e.getModifierState('AltGraph')) || e.metaKey) return // [ ] sind auf deutschen Tastaturen AltGr+8/9 bzw. Option+5/6
+    else if (e.key === ' ' && !btn) toggle()
     else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') seek(t + (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 1 : 0.1))
     else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') setSel(Math.max(0, Math.min(parts.length - 1, sel + (e.key === 'ArrowUp' ? -1 : 1))))
-    else if ((e.key === 'i' || e.key === '[') && canStart) setEdge(sel, 'start', t)
-    else if ((e.key === 'o' || e.key === ']') && canEnd) setEdge(sel, 'end', t)
-    else if (e.key === 's') split()
-    else if (e.key === 'Delete' || e.key === 'Backspace') remove()
+    else if ((k === 'i' || e.key === '[') && canStart) setEdge(sel, 'start', t)
+    else if ((k === 'o' || e.key === ']') && canEnd) setEdge(sel, 'end', t)
+    else if (k === 's') split()
+    else if (e.key === 'Delete' && !btn) remove()
     else return
     e.preventDefault()
   }
+  const onKeyRef = useRef(onKey)
+  onKeyRef.current = onKey
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => onKeyRef.current(e)
+    addEventListener('keydown', h, true)
+    return () => removeEventListener('keydown', h, true)
+  }, [])
 
   // Detail-Zeitleiste: gewählter Ausschnitt mit etwas Rand. Beim Ziehen fest, sonst läuft die Leiste unter dem Griff weg.
   const around = (x: Part) => { const pad = Math.max(2, (x.end - x.start) * 0.25); return { from: Math.max(0, x.start - pad), to: Math.min(Math.max(end, x.end), x.end + pad) } }
@@ -129,7 +142,7 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
   useEffect(() => { if (!dragging.current) setWin(around(p)) }, [sel, p.start, p.end, end, settled])
 
   return createPortal(
-    <div className="look cut" ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Clip schneiden" onKeyDown={onKey}>
+    <div className="look cut" ref={box} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Clip schneiden">
       <header className="top">
         <div className="top-l"><button className="plain tint" onClick={() => void close()}>Abbrechen</button></div>
         <b>Schneiden</b>
@@ -190,7 +203,7 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
             <input type="range" min={0} max={1} step={0.01} value={p.focus ?? 0.5} onChange={(e) => patch(sel, { focus: r2(e.currentTarget.valueAsNumber) })} aria-label="Bildausschnitt von links nach rechts" />
           </label>
         )}
-        <p className="look-hint">Leertaste abspielen · ← → 0,1 s (mit Umschalt 1 s) · I / O Anfang und Ende · S teilen · ↑ ↓ Ausschnitt wählen · Hook und Untertitel siehst du erst im MP4</p>
+        <p className="look-hint">Leertaste abspielen · ← → 0,1 s (mit Umschalt 1 s) · I / O oder [ ] Anfang und Ende · S teilen · Entf löschen · ↑ ↓ Ausschnitt wählen · Hook und Untertitel siehst du erst im MP4</p>
       </div>
     </div>,
     document.body,
@@ -229,8 +242,8 @@ function Strip({ label, from, to, parts, sel, t, onSeek, onSel, onEdge, onDragEn
           <div key={i} className={`cut-part${i === sel ? ' on' : ''}`} style={{ left: pct(x.start), width: `calc(${pct(x.end)} - ${pct(x.start)})` }}>
             <span>{i + 1}</span>
             {onEdge && i === sel && <>
-              <i className="cut-grip l" role="slider" aria-label="Anfang ziehen" aria-valuenow={x.start} onPointerDown={drag((s) => onEdge('start', s), false)} />
-              <i className="cut-grip r" role="slider" aria-label="Ende ziehen" aria-valuenow={x.end} onPointerDown={drag((s) => onEdge('end', s), false)} />
+              <i className="cut-grip l" aria-hidden onPointerDown={drag((s) => onEdge('start', s), false)} />
+              <i className="cut-grip r" aria-hidden onPointerDown={drag((s) => onEdge('end', s), false)} />
             </>}
           </div>
         ))}

@@ -42,7 +42,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
   const texts = items.filter((it) => it.kind === 'text')
   const base = deck.theme.custom ? themeFromSpec(deck.theme.custom) : THEMES.find((t) => t.id === deck.theme.id) ?? THEMES[0]
   const [cutting, setCutting] = useState(false)
-  const clip = slide?.layout === 'clip' && slide.content?.video ? slide : null // Schneiden nur mit Quellvideo
+  const clip = slide?.layout === 'clip' && slide.content?.video && slide.content.parts?.length ? slide : null // Schneiden nur mit Quellvideo und Ausschnitten
   useEffect(() => { if (!clip) setCutting(false) }, [!clip]) // KI hat Layout oder Video geändert: nicht beim nächsten Clip von selbst öffnen
 
   return (
