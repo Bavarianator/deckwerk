@@ -27,7 +27,7 @@ curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/script
 
 Der Installer lädt die fertige App aus dem neuesten Release nach `~/.local/share/deckwerk`. Git und Node.js brauchst du dafür nicht. Er legt einen Startmenü-Eintrag an und öffnet `deck.json`-Dateien per Doppelklick mit Deckwerk. Sind Claude Code, Codex oder Vibe installiert, trägt er Deckwerk dort als MCP-Server ein.
 
-**Aktualisieren:** Den Befehl erneut ausführen. Er holt den neuesten Release und ersetzt die App; deine Decks und Einstellungen bleiben.
+**Aktualisieren:** `deckwerk update` im Terminal (der Installer legt den Befehl `deckwerk` nach `~/.local/bin`) oder in Deckwerk unter Einstellungen → Allgemein → „Nach Updates suchen“. Beides führt den Installationsbefehl erneut aus: holt den neuesten Release und ersetzt die App; deine Decks und Einstellungen bleiben. Deckwerk fragt nie von selbst nach Updates.
 
 **Entfernen:**
 

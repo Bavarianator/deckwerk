@@ -22,7 +22,7 @@ command -v vibe >/dev/null 2>&1 && vibe mcp remove deckwerk >/dev/null 2>&1 && e
 command -v codex >/dev/null 2>&1 && codex mcp remove deckwerk >/dev/null 2>&1 && echo "→ Aus Codex entfernt"
 rm -rf "$HOME/.claude/skills/deckwerk" "${CODEX_HOME:-$HOME/.codex}/skills/deckwerk" && echo "→ Skill aus Claude Code und Codex entfernt"
 
-rm -f "$HOME/.local/share/applications/deckwerk.desktop" "$HOME/.local/share/mime/packages/deckwerk.xml"
+rm -f "$HOME/.local/bin/deckwerk" "$HOME/.local/share/applications/deckwerk.desktop" "$HOME/.local/share/mime/packages/deckwerk.xml"
 command -v update-mime-database >/dev/null 2>&1 && update-mime-database "$HOME/.local/share/mime" >/dev/null 2>&1
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1
 echo "→ Startmenü-Eintrag und Dateizuordnung entfernt"
