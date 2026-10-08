@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune } from '../shared/deck'
 import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -310,7 +310,7 @@ async function report(ctx: ToolContext, deck: Deck, indices: number[]): Promise<
 function motionOf(deck: Deck, i: number, m: Measured): string {
   const preset = buildOf(deck, i)
   const groups = new Set(m.els.flatMap((e) => (e.build === undefined ? [] : [e.build]))).size
-  const clicks = deck.mode === 'click' ? (preset === 'list' ? groups : 0) + m.els.filter((e) => e.anim && e.anim !== 'none' && e.anim !== 'breathe').length : 0
+  const clicks = deck.mode === 'click' ? (preset === 'list' ? groups : 0) + itemClicks(deck.slides[i]) : 0
   const build = preset === 'none' || !groups ? 'ohne Aufbau' : `Aufbau ${preset} (${groups} ${groups > 1 ? 'Gruppen' : 'Gruppe'})`
   return `Übergang ${transitionOf(deck, i)}, ${build}${clicks ? `, ${clicks} Klick${clicks > 1 ? 's' : ''}` : ''}`
 }

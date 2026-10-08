@@ -260,6 +260,8 @@ export const transitionSpeedOf = (deck: Deck, i: number): AnimSpeed | undefined 
 
 // Start eines Element-Auftritts; im Selbstlauf gibt es keine Klicks, dort läuft alles nacheinander
 export const animStartOf = (start: AnimStart | undefined, mode: Deck['mode']): AnimStart => (mode === 'auto' ? (start === 'with' ? 'with' : 'after') : start ?? 'click')
+// Klicks der freien Elemente im Klick-Modus: „mit/nach vorherigem“ und Atmen brauchen keinen
+export const itemClicks = (s: Slide) => (s.items ?? []).filter((it) => it.anim && it.anim !== 'none' && it.anim !== 'breathe' && animStartOf(it.animStart, 'click') === 'click').length
 // Ablauf der Element-Auftritte wie in PowerPoint (animations.ts): click = neuer Schritt, with = zugleich mit dem vorigen
 // (gleicher Kettenbeginn), after = wenn alles Bisherige im Schritt fertig ist; delay (s) kommt jeweils dazu, ms = Dauer.
 // Liefert je Schritt die Elemente (k = Index) mit Startzeit in ms ab Schrittbeginn. Schritt 0 läuft ohne Klick und hängt
