@@ -30,7 +30,7 @@ jobs:
           $E scripts/check-brand.ts --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
           for c in check-recolor check-handout check-docx check-lint-profile check-pdf-boxes story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
           $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
-          for c in check-looks check-webfonts check-animations; do $E scripts/$c.ts --format=esm --outfile=out/$c.mjs && node out/$c.mjs; done
+          for c in check-looks check-webfonts check-animations check-theme-tokens; do $E scripts/$c.ts --format=esm --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-gradient.ts --loader:.css=empty --loader:.md=text --outfile=out/check-gradient.cjs && node out/check-gradient.cjs
           $E scripts/check-free-text.ts --format=cjs --external:electron --loader:.css=empty --loader:.md=text --jsx=automatic --outfile=out/check-free-text.cjs && node out/check-free-text.cjs
           npm run check:theme-lint
