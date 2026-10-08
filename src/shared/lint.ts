@@ -13,7 +13,7 @@ export interface Issue {
 }
 
 const MARGIN = 24 // no text closer to the slide edge than this
-export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank'] // absichtlich luftig
+export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank', 'clip'] // absichtlich luftig
 // Grenzen je Profil (aus der Foliengröße): Folien werden projiziert, Social-Posts aufs Handy skaliert, A4 gedruckt und gelesen.
 // Nur Folien haben Struktur-, Rhythmus- und Leere-Regeln; Karussells wiederholen Layouts mit Absicht, Dokumente sind dichter und ruhiger.
 const PROFILE = {
@@ -30,7 +30,7 @@ const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).
 // Floskeln generierter Texte; Wortstamm + beliebige Endung, damit Flexionen greifen. „Hebel“ fehlt bewusst (oft legitim).
 const FLOSKELN = /(?<![\p{L}\d])(nahtlos\p{L}*|ganzheitlich\p{L}*|innovativ(?:e[rnms]?)?|revolution[äa]r\p{L}*|maßgeschneidert\p{L}*|synergie\p{L}*|mehrwert(?!steuer)\p{L}*|auf (?:das |die )?nächsten? (?:level|stufe)|game[- ]?changer|in der heutigen (?:schnelllebigen )?(?:welt|zeit)|schnelllebig\p{L}*|entfessel\p{L}*|transformativ\p{L}*|potenzial\p{L}* (?:\p{L}+ )?(?:entfalt|freisetz|freizusetz|freigesetzt)\p{L}*|aus einer hand|zukunftssicher\p{L}*|state of the art|leuchtturm(?:projekt\p{L}*)?)(?![\p{L}\d])/giu
 const EMOJI = /\p{Emoji_Presentation}/u // nur Bild-Emoji; Pfeile, Häkchen und ©®™ sind Satzzeichen
-const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr']) // Bild-, Link- und Icon-Felder sieht niemand als Text
+const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr', 'video', 'captions']) // Bild-, Link- und Icon-Felder sieht niemand als Text
 const textsOf = (v: unknown, key = ''): string[] =>
   NO_TEXT.has(key) ? [] : typeof v === 'string' ? [v.replace(/\*\*/g, '').replace(/\]\([^)]*\)/g, ']')]
     : Array.isArray(v) ? v.flatMap((x) => textsOf(x, key))

@@ -6,20 +6,28 @@ import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod'
 import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } from '../shared/deck'
 import type { Issue } from '../shared/lint'
+import type { Transcript, VideoInfo } from '../shared/video'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
 import guide from './design-guide.md?raw'
 import { buildCatalog, buildTools, houseStyle, mimeOf, recentLooks, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
-export type ExportFormat = 'pptx' | 'docx' | 'pdf' | 'png' | 'md' | 'zip' | 'print' // docx = Word, Text bearbeitbar auf Hintergrundbild; zip = PNG je Folie + PDF in einer Datei (Social-Karussell); print = PDF für die Druckerei (PrintOptions in deck.ts)
+export type ExportFormat = 'pptx' | 'docx' | 'pdf' | 'png' | 'md' | 'zip' | 'print' | 'mp4' | 'clips' // docx = Word, Text bearbeitbar auf Hintergrundbild; zip = PNG je Folie + PDF in einer Datei (Social-Karussell); print = PDF für die Druckerei (PrintOptions in deck.ts); mp4 = ganzes Deck als Video, clips = je Clip-Folie eine MP4 (export-video.ts)
 export interface Engine {
   measure(deck: Deck, indices?: number[]): Promise<Measured[]> // Autofit + Messung, Reihenfolge wie indices
   renderPng(deck: Deck, indices: number[], width?: number): Promise<Buffer[]> // PNG pro Folie (default 1024 px breit)
   renderOverview(deck: Deck): Promise<Buffer> // Kontaktbogen aller Folien, 1 PNG
   lint(deck: Deck): Promise<Issue[]>
-  exportDeck(deck: Deck, format: ExportFormat, outDir: string, print?: PrintOptions): Promise<string[]> // print nur bei format 'print'
+  exportDeck(deck: Deck, format: ExportFormat, outDir: string, print?: PrintOptions, onProgress?: (pct: number) => void): Promise<string[]> // print nur bei format 'print'; onProgress nur bei mp4/clips
   thumbnail?(img: Buffer, width: number): Buffer | null // JPEG-Vorschau eines Bildes ohne Rendern; null = Format unbekannt (WebP)
+  video?: VideoTools // fehlt in den Mock-Engines der Smoke-Tests
+}
+// Video-Schnitt (ffmpeg.ts, transcribe.ts); file = absoluter Pfad einer Videodatei
+export interface VideoTools {
+  probe(file: string): Promise<VideoInfo>
+  frames(file: string, times: number[]): Promise<Buffer[]> // JPEG je Zeitpunkt (s), 640 px breit
+  transcribe(file: string, onProgress?: (pct: number) => void): Promise<Transcript> // lokales Whisper, gecacht je Datei
 }
 
 export type AgentEvent =
