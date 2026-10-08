@@ -6,7 +6,7 @@ import {
   AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
   ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
-import { ANIM_DIRS, DASHES, ITEM_ANIMS, type AnimDir, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
+import { ANIM_DIRS, DASHES, ITEM_ANIMS, animStartOf, type AnimDir, type AnimStart, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
 import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
 import { FONT_NAMES, resolveTheme } from '../../shared/themes'
 import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
@@ -26,6 +26,8 @@ const END_NAME: Record<LineEnd, string> = { none: 'Ohne', arrow: 'Pfeil', triang
 const DIRECTED: ItemAnim[] = ['float', 'pan', 'drift', 'wipe'] // Animationen mit Richtung (Canva-Pfeile)
 const DIR_ICON: Record<AnimDir, LucideIcon> = { right: ArrowRight, left: ArrowLeft, up: ArrowUp, down: ArrowDown }
 const DIR_NAME: Record<AnimDir, string> = { right: 'Nach rechts', left: 'Nach links', up: 'Nach oben', down: 'Nach unten' }
+// Start wie in PowerPoint: [Kurzform für die schmale Leiste, voller Name]
+const START: Record<AnimStart, [string, string]> = { click: ['Bei Klick', 'Bei Klick'], with: ['Zugleich', 'Mit vorherigem'], after: ['Danach', 'Nach vorherigem'] }
 const ANIM: Record<ItemAnim, string> = {
   none: 'Keine', fade: 'Einblenden', float: 'Aufsteigen', pan: 'Schwenken', drift: 'Treiben', pop: 'Pop', zoom: 'Zoomen', tumble: 'Purzeln',
   stomp: 'Stampfen', baseline: 'Grundlinie', wipe: 'Wischen', typewriter: 'Schreibmaschine', ascend: 'Wort für Wort', breathe: 'Atmen (pulsiert ohne Klick)',
@@ -212,6 +214,22 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
                 <button key={sp ?? 'normal'} type="button" aria-pressed={chosen[0].animSpeed === sp} onClick={() => { set({ animSpeed: sp }); preview(chosen[0].anim!, chosen[0].animDir, sp) }}>{sp === 'slow' ? 'Langsam' : sp === 'fast' ? 'Schnell' : 'Normal'}</button>
               ))}
             </div>
+            {/* Atmen pulsiert ab Folienbeginn ohne Ende: Start und Verzögerung greifen dort nicht */}
+            {chosen[0].anim !== 'breathe' && (
+              <>
+                <div className="field">
+                  <span>Start</span>
+                  <div className="seg" role="group" aria-label="Start">
+                    {(['click', 'with', 'after'] as const).map((st) => (
+                      <button key={st} type="button" aria-pressed={animStartOf(chosen[0].animStart, deck.mode) === st} disabled={st === 'click' && deck.mode === 'auto'}
+                        aria-label={START[st][1]} title={st === 'click' && deck.mode === 'auto' ? 'Im Selbstlauf gibt es keine Klicks' : START[st][1]}
+                        onClick={() => set({ animStart: st === 'click' ? undefined : st })}>{START[st][0]}</button>
+                    ))}
+                  </div>
+                </div>
+                <Field label="Verzögerung"><Num value={chosen[0].animDelay ?? 0} min={0} max={10} step={0.1} suffix="s" onChange={(d) => set({ animDelay: Math.min(Math.max(d, 0), 10) || undefined }, `anim-delay-${chosen[0].id}`)} /></Field>
+              </>
+            )}
           </div>
         )}
 

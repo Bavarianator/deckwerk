@@ -109,6 +109,7 @@ export interface Slide {
   content: any // validated by the layout's zod schema (src/shared/layouts.ts)
   build?: BuildPreset // default comes from the layout
   transition?: Transition // Übergang zu dieser Folie (meist morph); ohne = Deck-Übergang
+  transitionSpeed?: AnimSpeed // Tempo des Übergangs zu dieser Folie; ohne = Deck-Tempo
   tone?: Tone // default comes from the layout (section: accent)
   decor?: DecorId // default comes from the theme
   frame?: FrameId // Komposition; default top
@@ -141,6 +142,8 @@ export type ItemAnim = (typeof ITEM_ANIMS)[number]
 export const ANIM_DIRS = ['right', 'left', 'up', 'down'] as const
 export type AnimDir = (typeof ANIM_DIRS)[number]
 export type AnimSpeed = 'slow' | 'fast' // ohne = normal
+// Start wie in PowerPoint: bei Klick, mit vorherigem (gleichzeitig), nach vorherigem (wenn er fertig ist)
+export type AnimStart = 'click' | 'with' | 'after'
 export interface Item {
   id: string
   kind: 'text' | 'shape' | 'image' | 'icon' | 'chart' | 'video' | 'audio' | 'qr' | 'graphic' // qr: text = Inhalt; graphic: Name aus GRAPHICS
@@ -151,6 +154,7 @@ export interface Item {
   locked?: boolean
   anim?: ItemAnim // Auftritt beim Präsentieren (nacheinander per Klick)
   animDir?: AnimDir; animSpeed?: AnimSpeed
+  animStart?: AnimStart; animDelay?: number // ohne Start: Klick-Modus je ein Klick, Selbstlauf nacheinander; Verzögerung in s (0–10)
   // text
   text?: string
   font?: 'head' | 'body' | string // head/body = Theme-Schrift, sonst FontName
@@ -233,6 +237,7 @@ export interface Deck {
   // custom hat Vorrang vor id; shuffle = Farbvariante (Canva „Stile mischen“), fonts = Schriftpaar [Titel, Text]
   theme: ThemeRef
   transition: Transition
+  transitionSpeed?: AnimSpeed // Tempo der Übergänge; ohne = normal
   motion?: Motion // Bewegungsstil des Decks (Canva „Magic Animate“); einzelne Folien-builds haben Vorrang
   style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
@@ -249,6 +254,27 @@ export function showOf(deck: Deck, start: number): { deck: Deck; start: number }
 }
 // Übergang an der Grenze zu Folie i (die erste Folie hat keinen)
 export const transitionOf = (deck: Deck, i: number): Transition => (i <= 0 ? 'none' : deck.slides[i]?.transition ?? deck.transition)
+export const transitionSpeedOf = (deck: Deck, i: number): AnimSpeed | undefined => deck.slides[i]?.transitionSpeed ?? deck.transitionSpeed
+
+// Start eines Element-Auftritts; im Selbstlauf gibt es keine Klicks, dort läuft alles nacheinander
+export const animStartOf = (start: AnimStart | undefined, mode: Deck['mode']): AnimStart => (mode === 'auto' ? (start === 'with' ? 'with' : 'after') : start ?? 'click')
+// Ablauf der Element-Auftritte wie in PowerPoint (animations.ts): click = neuer Schritt, with = zugleich mit dem vorigen
+// (gleicher Kettenbeginn), after = wenn alles Bisherige im Schritt fertig ist; delay (s) kommt jeweils dazu, ms = Dauer.
+// Liefert je Schritt die Elemente (k = Index) mit Startzeit in ms ab Schrittbeginn. Schritt 0 läuft ohne Klick und hängt
+// am vorigen Schritt (Layout-Aufbau), der nach `end` ms fertig ist und dessen letzte Kette bei `chain` ms beginnt;
+// jeder weitere Schritt startet per Klick.
+export function itemSteps(items: { start?: AnimStart; delay?: number; ms: number }[], mode: Deck['mode'], end = 0, chain = 0): { k: number; at: number }[][] {
+  const steps: { k: number; at: number }[][] = [[]]
+  items.forEach((it, k) => {
+    const start = animStartOf(it.start, mode)
+    if (start === 'click') { steps.push([]); chain = end = 0 }
+    else if (start === 'after') chain = end
+    const at = chain + (it.delay ?? 0) * 1000
+    steps.at(-1)!.push({ k, at })
+    end = Math.max(end, at + it.ms)
+  })
+  return steps
+}
 
 // Morph-Zuordnung, gleich in App (PresentScreen), PPTX und Lint. key = Text bzw. Bildquelle: Gleicher Inhalt wandert zuerst
 // (Agenda-Punkt → Kapiteltitel, Kennzahl → große Zahl, Galeriebild → Vollbild), danach gleicher Slot. Liefert für jedes

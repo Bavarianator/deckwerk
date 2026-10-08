@@ -16,6 +16,8 @@ export const itemSchema = z.object({
   anim: z.enum(ITEM_ANIMS).optional().describe('Auftritt beim Präsentieren wie in Canva (je ein Klick): typewriter/ascend nur für Text, breathe pulsiert ohne Klick. Design-Guide §8'),
   animDir: z.enum(ANIM_DIRS).optional().describe('Richtung der Bewegung bei pan, drift, wipe, float (Standard: pan/drift/wipe nach rechts, float nach oben)'),
   animSpeed: z.enum(['slow', 'fast']).optional().describe('Tempo der Animation; weglassen = normal'),
+  animStart: z.enum(['click', 'with', 'after']).optional().describe('Start wie in PowerPoint: click = bei Klick, with = mit vorherigem, after = nach vorherigem; weglassen = je ein Klick (Selbstlauf: nacheinander). Nicht für breathe'),
+  animDelay: z.number().min(0).max(10).optional().describe('Verzögerung vor dem Auftritt in Sekunden. Nicht für breathe'),
   text: z.string().max(600).optional(),
   font: z.enum(['head', 'body', ...FONT_NAMES]).optional().describe('head/body = Theme-Schrift'),
   size: z.number().min(8).max(400).optional().describe('Schriftgröße in px (1 px = 0,75 pt)'),

@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
 import { webpSize } from './tools'
-import { MEDIA_EXT, morphKey, morphNames, sizeOf, transitionOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
+import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, transitionSpeedOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
 import { localAsset } from './sync'
@@ -233,7 +233,8 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
     const groups = new Map<number, string[]>()
     const pulses: AnimStep[] = []
     const photos: string[] = []
-    const itemSteps: AnimStep[] = [] // freie Elemente: je eins pro Klick (Selbstlauf: nacheinander) nach dem Layout-Aufbau
+    const itemSteps: AnimStep[] = [] // freie Elemente nach dem Layout-Aufbau: Start und Verzögerung je Element (animStartOf)
+    const itemOf = new Map((s.items ?? []).map((it) => [`items.${it.id}`, it])) // Slot freier Elemente (slide.tsx FreeItem)
     const used = new Set<string>()
     const ts = withTone(t, s.tone ?? LAYOUTS[s.layout as keyof typeof LAYOUTS]?.tone) // Chart-Farben der Folie
     // Morph in PowerPoint ordnet Formen mit gleichem „!!“-Namen einander zu – dieselbe Zuordnung wie in der App (morphNames)
@@ -258,16 +259,16 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
       // Canva-Foto-Zoom: randlose (under) und halbseitige Fotos (volle Höhe) vergrößern sich langsam ab Folienbeginn
       if (el.kind === 'img' && (el.under || (el.box.y <= 1 && el.box.y + el.box.h >= sizeOf(deck).h - 1))) photos.push(name)
       if (el.anim && el.anim !== 'none') {
-        const fx = ITEM_FX[el.anim], f = el.animSpeed === 'slow' ? 1.6 : el.animSpeed === 'fast' ? 0.6 : 1
-        const step: AnimStep = { shape: name, ...fx, durMs: Math.round((fx.durMs ?? 500) * f), dir: el.animDir, gapMs: fx.by ? Math.round((fx.by === 'word' ? 120 : 45) * f) : undefined, trigger: deck.mode === 'click' ? 'click' : 'after' }
-        if (el.anim === 'breathe') pulses.push({ ...step, trigger: 'with' }) // läuft ab Folienbeginn, ohne Klick
+        const fx = ITEM_FX[el.anim], f = el.animSpeed === 'slow' ? 1.6 : el.animSpeed === 'fast' ? 0.6 : 1, it = itemOf.get(el.slot)
+        const step: AnimStep = { shape: name, ...fx, durMs: Math.round((fx.durMs ?? 500) * f), dir: el.animDir, gapMs: fx.by ? Math.round((fx.by === 'word' ? 120 : 45) * f) : undefined, trigger: animStartOf(it?.animStart, deck.mode), delayMs: Math.round((it?.animDelay ?? 0) * 1000) }
+        if (el.anim === 'breathe') pulses.push({ ...step, trigger: 'with', delayMs: 0 }) // läuft ab Folienbeginn, ohne Klick
         else itemSteps.push(step)
       }
     }
     if (s.notes) slide.addNotes(s.notes)
     const preset = buildOf(deck, i)
     if (preset === 'photo') pulses.push(...photos.map((shape): AnimStep => ({ shape, effect: 'grow', trigger: 'with', durMs: 12000 })))
-    anims.push({ transition: transitionOf(deck, i), steps: [...pulses, ...stepsFor(preset, groups, deck.mode), ...itemSteps] })
+    anims.push({ transition: transitionOf(deck, i), speed: transitionSpeedOf(deck, i), steps: [...pulses, ...stepsFor(preset, groups, deck.mode), ...itemSteps] })
   })
   const buf = await patchShapes((await pptx.write({ outputType: 'nodebuffer' })) as Buffer, patches)
   return embedFonts(await postProcess(await injectAnimations(buf, anims), deck), fontsOf(deck))
