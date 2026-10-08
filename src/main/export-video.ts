@@ -6,8 +6,8 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
-import { PAD, STILL, clipWords, cropRect, cues, outSize, partsLength, type Captions, type ClipContent, type Cue, type Part, type Transcript } from '../shared/video'
-import { probe, runFfmpeg } from './ffmpeg'
+import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, outSize, partsLength, tighten, type Captions, type ClipContent, type Cue, type Part, type Pauses, type Quiet, type Transcript } from '../shared/video'
+import { probe, runFfmpeg, silences } from './ffmpeg'
 import { localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
@@ -86,7 +86,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (bad >= 0) throw new Error(`${where}: Ausschnitt ${bad + 1} endet nicht nach seinem Anfang (start ${parts[bad].start} s, end ${parts[bad].end} s).`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean }
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses }
 
 /** Eine Clip-Szene als MP4: je part ein eigener Input (schnelles Suchen), Zuschnitt auf size, concat, Hook und Untertitel per libass. Gibt die Länge (s) zurück. */
 export async function encodeClip(job: ClipJob, out: string, dir: string, onProgress?: (pct: number) => void): Promise<number> {
@@ -94,8 +94,12 @@ export async function encodeClip(job: ClipJob, out: string, dir: string, onProgr
   const info = await probe(job.file)
   const late = job.parts.findIndex((p) => p.start >= info.duration - 0.2)
   if (late >= 0) throw new Error(`Ausschnitt ${late + 1} beginnt bei ${job.parts[late].start} s, das Video ist nur ${info.duration.toFixed(1)} s lang.`)
-  const parts = padParts(job.parts, info.duration), dur = partsLength(parts), { size } = job
-  const words = job.transcript && job.captions !== 'aus' ? clipWords(job.transcript, parts) : []
+  // Pausen kürzen vor padParts: an jeder gekürzten Pause bleibt je Seite PAD stehen, ohne dass sich etwas doppelt.
+  // ponytail: jedes Teilstück wird ein eigener Input mit eigenem Decoder; bei Dutzenden Pausen in 4K wird das schwer. Upgrade: Teilstücke eines parts aus einem Input per trim/atrim + concat
+  const quiet: Quiet[] = []
+  if (job.pauses === 'kurz' && info.audio) for (const p of job.parts) quiet.push(...(await silences(job.file, p.start, p.end, MIN_PAUSE)))
+  const parts = padParts(tighten(job.parts, quiet), info.duration), dur = partsLength(parts), { size } = job
+  const words = job.transcript && job.captions !== 'aus' ? clipWords(job.transcript, parts, quiet) : []
   const joined = seamless(parts)
   const graph = parts.map((p, i) => {
     const c = cropRect(info, size, p.focus), len = p.end - p.start
@@ -171,7 +175,7 @@ export async function exportVideo(deck: Deck, target: string, format: 'mp4' | 'c
         const file = videoPath(clip.video, i + 1), captions = clip.captions ?? 'wort'
         const transcript = captions === 'aus' ? null : await transcriptOf(file)
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
-        await encodeClip({ file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, loudnorm: format === 'clips' }, out, dir, step(weights[k]))
+        await encodeClip({ file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, loudnorm: format === 'clips', pauses: clip.pauses }, out, dir, step(weights[k]))
       } else {
         const [{ renderSlide }, { nativeImage }] = await Promise.all([import('./render'), import('electron')])
         const png = join(dir, `folie-${n2(k + 1)}.png`)

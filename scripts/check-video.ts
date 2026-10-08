@@ -5,8 +5,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { assSubs, encodeClip, padParts, seamless } from '../src/main/export-video'
-import { ffmpegBin, frames, pcm16k, probe, runFfmpeg } from '../src/main/ffmpeg'
-import { PAD, clipWords, cropRect, cues, partsLength, type Transcript } from '../src/shared/video'
+import { ffmpegBin, frames, pcm16k, probe, runFfmpeg, silences } from '../src/main/ffmpeg'
+import { MIN_PAUSE, PAD, clipWords, cropRect, cues, estimateWords, partsLength, tighten, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -68,6 +68,20 @@ async function main() {
     assert.deepEqual(seamless(gap), [false, true])
     assert.deepEqual(seamless(padParts(parts, 12)), [false, false])
 
+    // Pausen kürzen: part an der Stille geteilt (focus bleibt), reine Stille bleibt; nach padParts bleiben 2·PAD Pause, nichts doppelt sich
+    const quiet: [number, number][] = [[3, 4.5], [9.5, 11]]
+    assert.deepEqual(tighten([{ start: 1, end: 10, focus: 0.3 }], quiet), [{ start: 1, end: 3, focus: 0.3 }, { start: 4.5, end: 9.5, focus: 0.3 }])
+    assert.deepEqual(tighten([{ start: 3.2, end: 4.4 }], quiet), [{ start: 3.2, end: 4.4 }])
+    assert.deepEqual(tighten([{ start: 1, end: 10 }], [[9.5, 11], [3, 4.5]]), tighten([{ start: 1, end: 10 }], quiet), 'Reihenfolge der Stillen egal')
+    const kurz = padParts(tighten([{ start: 1, end: 10 }], quiet), 12)
+    assert.ok(kurz[0].end <= kurz[1].start, 'gepolsterte Teile überlappen nicht')
+    near(kurz[1].start - kurz[0].end, 1.5 - 2 * PAD, 1e-9, 'gekürzte Pause')
+    near(partsLength(kurz), 2 + 5 + 4 * PAD, 1e-9, 'Länge gekürzt')
+    // Wortzeiten überspringen die Stille, kein Wort fällt mit der Pause weg
+    const seg = { start: 1, end: 6, text: 'eins zwei drei vier' }
+    for (const w of estimateWords(seg, [[2.5, 4.5]])) assert.ok((w.start + w.end) / 2 < 2.5 || (w.start + w.end) / 2 > 4.5, `${w.w} mitten in der Pause`)
+    assert.equal(clipWords({ duration: 12, lang: 'de', segments: [seg] }, padParts(tighten([{ start: 1, end: 6 }], [[2.5, 4.5]]), 12), [[2.5, 4.5]]).length, 4)
+
     // ASS: Hook, ein Dialogue je Wortzustand, Escaping, Farbe &HBBGGRR&
     const ass = assSubs({ size: out, font: 'Archivo', bold: true, accent: '#FF8800', hook: 'Warum {das} \\N klappt', hookDur: 4, cues: cues(words, 'wort'), mode: 'wort' })
     assert.ok(ass.includes('Dialogue: 0,0:00:00.00,0:00:04.00,Hook,,0,0,0,,Warum \\{das\\} ＼N klappt'), ass)
@@ -100,11 +114,22 @@ async function main() {
     await assert.rejects(encodeClip({ file: src, parts: [{ start: 3, end: 3 }], captions: 'aus', transcript: null, size: out, font, accent: '#FF8800' }, nahtlos, dir), /Ausschnitt 1 endet nicht/)
     if (process.env.KEEP) await runFfmpeg(['-ss', '0.5', '-i', clip, '-frames:v', '1', resolve(process.env.KEEP)]) // Sichtprüfung: KEEP=bild.png
 
+    // Pausen kürzen am echten Ton: 2 s Stille bei 4–6 s, part 1–10 → 9 s − 2 s + 2·PAD Restpause + 2·PAD Rand
+    const pause = join(dir, 'pause.mp4'), pauseClip = join(dir, 'pause-clip.mp4')
+    await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=30:duration=12', '-f', 'lavfi', '-i', "aevalsrc='if(between(t,4,6),0,0.5*sin(2*PI*440*t))':s=48000:d=12", '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', pause])
+    const still = await silences(pause, 1, 10, MIN_PAUSE)
+    assert.equal(still.length, 1, JSON.stringify(still)); near(still[0][0], 4, 0.05, 'Stille Anfang'); near(still[0][1], 6, 0.05, 'Stille Ende')
+    const tr2: Transcript = { duration: 12, lang: 'de', segments: [{ start: 1, end: 10, text: 'eins zwei drei vier fünf sechs' }] }
+    near(await encodeClip({ file: pause, parts: [{ start: 1, end: 10 }], captions: 'wort', transcript: tr2, size: out, font, accent: '#FF8800', pauses: 'kurz' }, pauseClip, dir), 7 + 4 * PAD, 0.06, 'Länge mit kurzen Pausen')
+    near((await probe(pauseClip)).duration, 7 + 4 * PAD, 0.4, 'Clip-Länge mit kurzen Pausen')
+    assert.deepEqual(await silences(pauseClip, 0, 7 + 4 * PAD, 0.5), [], 'keine lange Pause mehr im Clip')
+    near(await encodeClip({ file: pause, parts: [{ start: 1, end: 10 }], captions: 'aus', transcript: null, size: out, font, accent: '#FF8800', pauses: 'lassen' }, pauseClip, dir), 9 + 2 * PAD, 0.01, 'lassen kürzt nichts')
+
     // ohne Ton und ohne Untertitel: anullsrc, kein ass-Filter
     const stumm = join(dir, 'stumm.mp4'), stummClip = join(dir, 'stumm-clip.mp4')
     await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=30:duration=4', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', stumm])
     assert.equal((await probe(stumm)).audio, false)
-    await encodeClip({ file: stumm, parts: [{ start: 0.5, end: 2 }], captions: 'aus', transcript: null, size: { w: 1080, h: 1080 }, font, accent: '#FF8800' }, stummClip, dir)
+    await encodeClip({ file: stumm, parts: [{ start: 0.5, end: 2 }], captions: 'aus', transcript: null, size: { w: 1080, h: 1080 }, font, accent: '#FF8800', pauses: 'kurz' }, stummClip, dir) // ohne Ton: kurz misst nichts
     const s = await probe(stummClip)
     assert.deepEqual([s.w, s.h, s.audio], [1080, 1080, true])
     await assert.rejects(encodeClip({ file: stumm, parts: [{ start: 5, end: 6 }], captions: 'aus', transcript: null, size: out, font, accent: '#000000' }, stummClip, dir), /nur 4\.0 s lang/)

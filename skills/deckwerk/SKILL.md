@@ -102,7 +102,7 @@ Will der Nutzer Clips aus einem Video, gilt Guide §11 „Video“:
 1. `transcribe_video` mit dem Video (asset://-Pfad aus dem Anhang oder absoluter Pfad). Meldet es „läuft noch“, gleich noch einmal aufrufen; beim ersten Mal lädt Deckwerk das Sprachmodell.
 2. 3–5 stärkste Momente wählen, je 0–10 bewertet: Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen von Setup zu Payoff, zitierfähig, Ende mit abgeschlossenem Gedanken. Je Short 20–60 s, Schnitte nur an Segmentgrenzen, Füllsätze über mehrere `parts` herausschneiden, höchstens 5 s Überlappung.
 3. `video_frames` an den Startzeiten, daraus `focus` je part (Mitte des Sprechers).
-4. `create_deck` mit `format: "9:16"`, je Short eine Folie im Layout `clip` (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`).
+4. `create_deck` mit `format: "9:16"`, je Short eine Folie im Layout `clip` (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`; `pauses` `kurz` bei Denkpausen im Gesprochenen).
 5. `render_slides`, dann `export_deck` mit `clips` (je Short eine MP4; „läuft noch“ → noch einmal aufrufen). Pfade nennen.
 
 ## Häufige Fehler

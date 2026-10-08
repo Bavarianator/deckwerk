@@ -7,32 +7,58 @@ export interface Transcript { duration: number; lang: string; segments: Segment[
 export interface VideoInfo { duration: number; w: number; h: number } // w/h so, wie das Video angezeigt wird (Drehung berücksichtigt)
 export interface Part { start: number; end: number; focus?: number } // focus: horizontaler Bildmittelpunkt 0..1
 export type Captions = 'wort' | 'satz' | 'aus'
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions }
+export type Pauses = 'kurz' | 'lassen'
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses }
+export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
 export const CAPTIONS: Captions[] = ['wort', 'satz', 'aus']
 export const PAD = 0.15 // Puffer an jedem Schnitt, damit kein Wort angeschnitten wird
 export const STILL = 3 // Sekunden je Folie ohne Video im MP4
+export const MIN_PAUSE = 0.6 // pauses 'kurz': Stillen ab dieser Länge fallen weg, padParts lässt je Seite PAD stehen
 
 export const partsLength = (parts: Part[]) => parts.reduce((s, p) => s + Math.max(0, p.end - p.start), 0)
 
-/** Wortzeiten eines Segments nach Zeichenanteil. ponytail: geschätzt (±0,3 s); echte Zeiten per DTW über Cross-Attention, falls die Wort-Hervorhebung sichtbar daneben liegt. */
-export function estimateWords(seg: Segment): Word[] {
+// start–end ohne die Stillen
+function speech(start: number, end: number, quiet: Quiet[]): Quiet[] {
+  const out: Quiet[] = []
+  let t = start
+  for (const [a, b] of [...quiet].sort((x, y) => x[0] - y[0])) {
+    if (b <= t || a >= end) continue
+    if (a > t) out.push([t, a])
+    t = Math.max(t, b)
+  }
+  if (t < end) out.push([t, end])
+  return out
+}
+
+/** Pausen kürzen: jeden part an den Stillen teilen, die Stille fällt weg. Ein part aus reiner Stille bleibt, wie er ist. */
+export const tighten = (parts: Part[], quiet: Quiet[]): Part[] => parts.flatMap((p) => {
+  const s = speech(p.start, p.end, quiet)
+  return s.length ? s.map(([start, end]) => ({ ...p, start, end })) : [p]
+})
+
+/** Wortzeiten eines Segments nach Zeichenanteil, verteilt über die Sprechzeit ohne die Stillen in quiet. Ein Wort liegt ganz im Sprechstück seiner Mitte, sonst fiele es mit einer gekürzten Pause weg. ponytail: geschätzt (±0,3 s); echte Zeiten per DTW über Cross-Attention, falls die Wort-Hervorhebung sichtbar daneben liegt. */
+export function estimateWords(seg: Segment, quiet: Quiet[] = []): Word[] {
   const ws = seg.text.trim().split(/\s+/).filter(Boolean)
   const chars = ws.reduce((s, w) => s + w.length + 1, 0)
-  const span = Math.max(0, seg.end - seg.start)
-  let t = seg.start
+  const spans = speech(seg.start, seg.end, quiet)
+  if (!spans.length) spans.push([seg.start, Math.max(seg.start, seg.end)]) // nur Stille oder leeres Segment
+  const total = spans.reduce((s, [a, b]) => s + b - a, 0)
+  let t = 0 // Sprechzeit bis zum Wortanfang
   return ws.map((w) => {
-    const d = (span * (w.length + 1)) / chars
-    const word = { w, start: t, end: t + d }
+    const d = (total * (w.length + 1)) / chars
+    let mid = t + d / 2, k = 0
+    while (k < spans.length - 1 && mid > spans[k][1] - spans[k][0]) mid -= spans[k][1] - spans[k][0], k++
+    const [a, b] = spans[k]
     t += d
-    return word
+    return { w, start: Math.max(a, a + mid - d / 2), end: Math.min(b, a + mid + d / 2) }
   })
 }
 
 /** Wörter der parts auf der Zeitachse des fertigen Clips: part 2 beginnt dort, wo part 1 endet. Ein Wort gehört zum part, in dem seine Mitte liegt. */
-export function clipWords(t: Transcript, parts: Part[]): Word[] {
-  const all = t.segments.flatMap((s) => s.words?.length ? s.words : estimateWords(s))
+export function clipWords(t: Transcript, parts: Part[], quiet: Quiet[] = []): Word[] {
+  const all = t.segments.flatMap((s) => s.words?.length ? s.words : estimateWords(s, quiet))
   const out: Word[] = []
   let offset = 0
   for (const p of parts) {
