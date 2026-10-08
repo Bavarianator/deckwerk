@@ -32,7 +32,7 @@ jobs:
           $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
       - name: Bildschirm und Chromium-Sandbox
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb ffmpeg
           # Ubuntu 24.04 sperrt unprivilegierte User-Namespaces per AppArmor; die Sandbox braucht sie
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Rendern und Export (PPTX, PDF, PNG)

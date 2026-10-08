@@ -11,6 +11,7 @@ Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwe
 - **Aus einem Satz ein Deck.** Storyline nach dem Pyramidenprinzip, Action Titles, 29 Layouts, Diagramme und Animationen. Jede Folie wird gerendert und geprüft: Überlauf, Kontrast, Struktur, Eintönigkeit.
 - **Quellmaterial nutzen.** PDF, Word, PowerPoint, Text, Markdown, CSV oder JSON anhängen, und die KI baut das Deck daraus. Auf Wunsch recherchiert sie im Web.
 - **Eigene Bilder und Logos.** Fotos, Screenshots und Logos (PNG, JPG, WebP, GIF, SVG) einfach mit anhängen, auch mehrere Dateien auf einmal. Abbildungen aus PDF, Word und PowerPoint kommen mit. Die KI sieht sich jedes Bild an, setzt Fotos auf die passende Folie und ein Logo auf Titel- und Schlussfolie.
+- **Shorts aus langen Videos.** Die KI transkribiert ein angehängtes Video, wählt die stärksten Momente und schneidet daraus Hochkant-Clips mit Hook und Untertiteln als MP4.
 - **Frei gestalten.** Texte, Formen, Fotos, Icons, Diagramme, QR-Codes, Video und Audio. Dazu Gruppen, Zuschnitt, Freisteller, Ausrichten, Hilfslinien und das Umwandeln von Layout-Folien in freie Elemente.
 - **Ein Look für alles.** 11 Themes, eigene Designs von der KI, eigene Schriften, 8 Formate von 16:9 über Instagram bis A4 (Layouts, Schriftgrößen und Lint passen sich an), ein Brand-Kit für jedes neue Deck und ein Hausstil, den sich die KI dauerhaft merkt.
 - **Präsentieren.** Referentenansicht mit Notizen, Uhr und Sprechzeit, Laserpointer und Stift, Handy als Fernbedienung.
@@ -83,6 +84,20 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 - **Hausstil:** Sag „merk dir …“, und die KI trägt die Vorliebe in `~/Deckwerk/hausstil.md` ein. Die Datei gilt für jedes künftige Deck und lässt sich von Hand bearbeiten.
 - **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/Deckwerk/assets`. Findet sie dort nichts Passendes und ist ein Unsplash-Key eingerichtet (Einstellungen → Bilder → Fotosuche oder `UNSPLASH_ACCESS_KEY`), sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
 - **KI-Bilder:** Die KI kann Bilder auch selbst erzeugen, mit `gpt-image-2` über [Mammouth](https://mammouth.ai) oder OpenAI, ohne Key auch über Codex mit deinem ChatGPT-Login (einmal `codex login`). Eingerichtet wird das unter Einstellungen → **Bilder**: Keys (verschlüsselt gespeichert), bevorzugter Anbieter und Modell, z. B. `gemini-3-pro-image-preview` bei Mammouth. Ohne Vorgabe nimmt die KI den ersten eingerichteten Anbieter in der Reihenfolge Mammouth, OpenAI, Codex; „mach das Bild mit Codex“ wählt gezielt. Alternativ gelten `MAMMOUTH_API_KEY`, `OPENAI_API_KEY` und `IMAGE_MODEL` aus der Umgebung. Die Bilder landen in `~/Deckwerk/assets`.
+
+### Video-Schnitt
+
+Häng ein langes Video an (MP4, MOV, M4V, WebM oder MKV) und schreib etwa „Mach drei Shorts daraus“. Den Schnitt bedient nur die KI, im Chat der App und über MCP in Claude Code, Codex und Vibe:
+
+1. Sie transkribiert das Video.
+2. Sie wählt die 3–5 stärksten Momente: packender Einstieg, ohne Vorwissen verständlich, ein Bogen bis zur Pointe, ein abgeschlossener Gedanke am Ende.
+3. Sie sieht sich Standbilder an und legt den Bildausschnitt auf den Sprecher.
+4. Sie baut ein Deck in 9:16 mit einer Folie im Layout „Videoclip“ je Short. Füllsätze schneidet sie heraus (Jump Cuts).
+5. Sie exportiert jeden Short als eigene MP4 mit Hook und Untertiteln, auf Wunsch auch das ganze Deck als ein Video.
+
+Das Video wird nicht kopiert, Deckwerk verweist nur auf die Datei. Die Spracherkennung (Whisper) läuft lokal. Beim ersten Mal lädt Deckwerk das Modell (rund 510 MB) nach `~/Deckwerk/models`; die Erkennung dauert dann etwa ein Viertel der Videolänge. ffmpeg nimmt Deckwerk aus dem System, sonst lädt es ein statisches ffmpeg bei Bedarf nach.
+
+Die Kriterien für gute Momente und die Idee dahinter stammen von [BridgeClip](https://github.com/bridge-mind/bridgeclip) (MIT, © 2026 BridgeMind).
 
 ### Folien frei gestalten
 
@@ -198,7 +213,7 @@ Bei einer Quellcode-Installation nutzt der Server den vorhandenen Build und baut
 | `~/Deckwerk/assets/` | Eigene, eingefügte und freigestellte Bilder, geladene Fotos |
 | `~/Deckwerk/hausstil.md` | Hausstil für alle Decks |
 | `~/Deckwerk/brand.json` | Brand-Kit (Farben, Schriften, Logo) für neue Decks |
-| `~/Deckwerk/models/` | Modell für den Freisteller |
+| `~/Deckwerk/models/` | Modelle für Freisteller und Spracherkennung, bei Bedarf ffmpeg |
 | `~/Deckwerk/.sync-state.json` | Stand des letzten Cloud-Abgleichs |
 | `~/.config/deckwerk/` | Einstellungen und API-Key, verschlüsselt über den System-Schlüsselbund |
 

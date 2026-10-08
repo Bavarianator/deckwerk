@@ -117,6 +117,7 @@ Wähle das Layout nach der Form der Aussage, nicht nach Abwechslung um jeden Pre
 | Termine, Phasen, Roadmap | `timeline` |
 | Ablauf in 3–5 Schritten | `process` |
 | Nächste Schritte, Ask, Kontakt | `closing` |
+| Short aus einem langen Video (Reel, TikTok, YouTube Shorts) | `clip` (Abschnitt 11) |
 
 - Eine einzelne große Zahl: `big-number` (mit Foto für Emotion). Bei 2–4 Zahlen `kpi-grid` mit `focus`.
 - Behauptet der Titel eine Zahl oder einen Anteil („bindet die Hälfte des Budgets“), muss diese Zahl auf der Folie dominieren: `chart` mit `highlight`, `kpi-grid` oder `statement`, nicht als Nebensatz in Prozess-Karten.
@@ -416,3 +417,30 @@ Jedes Layout hat einen sinnvollen Default. Weiche nur mit Grund davon ab. `pan`,
 - Lint `titel-formel`: fast alle Titel sind gleich gebaute Satz-Zweizeiler. Abhilfe: Bühnenfolien auf ein Wort oder einen kurzen Satz kürzen, eine Behauptung (≤ 5 Wörter) oder eine Frage einstreuen.
 - Lint `echo`: der Schluss zeigt dasselbe Foto wie das Cover. Abhilfe: anderes Motiv oder Schluss ohne Foto; den Bogen über Sprache oder Motiv schlagen.
 - Lint `ornament`: Eyebrow auf mehr als einem Drittel der Folien. Abhilfe: `eyebrow` nur auf Cover und wo es Orientierung gibt (Kapitel, Stand) lassen, sonst weglassen.
+
+## 11. Video (Shorts aus langen Videos)
+
+Aus einem langen Video (Vortrag, Interview, Podcast) werden kurze Hochkant-Clips. Eine Folie im Layout `clip` ist ein Short; die Engine schneidet, setzt den Zuschnitt und brennt Hook und Untertitel ein.
+
+**Ablauf:**
+1. `transcribe_video` mit dem Video aus dem Anhang („Video: asset://…“). Das erste Mal lädt Deckwerk das Sprachmodell, die Erkennung dauert etwa ein Viertel der Videolänge. Meldet das Tool „läuft noch“, rufe es gleich noch einmal auf. Lange Transkripte kommen seitenweise (`from`).
+2. 3–5 Momente wählen (Kriterien unten), dem Nutzer kurz mit Zeiten und Begründung nennen.
+3. `video_frames` an den Startzeiten der Ausschnitte: Wo sitzt der Sprecher, wechselt die Szene?
+4. `create_deck` mit `format: "9:16"`, dann je Short eine Folie `clip` (`add_slides`).
+5. `render_slides` zur Kontrolle, dann `export_deck` mit `clips` (je Short eine MP4). Auch hier gilt: „läuft noch“ → gleich noch einmal.
+
+**Kriterien** (je 0–10, nur die stärksten nehmen; lieber drei sehr gute als fünf mittlere):
+- **Hook:** Die ersten 3 Sekunden packen (Behauptung, Frage, Überraschung), kein „Also, ähm“.
+- **Eigenständig:** ohne Vorwissen verständlich, kein „wie ich vorhin sagte“.
+- **Bogen:** von Setup zu Payoff, nicht nur Anlauf.
+- **Zitierfähig:** ein Satz, den man weitererzählen würde.
+- **Ende:** ein abgeschlossener Gedanke, kein Abbruch mitten in der Erklärung.
+
+**Regeln:**
+- 20–60 s je Short (`parts` zusammen).
+- Schnitte nur an Segmentgrenzen des Transkripts, nie mitten im Satz.
+- Shorts überlappen höchstens 5 s.
+- Füllsätze, Wiederholungen und Abschweifungen herausschneiden: ein Short besteht dann aus mehreren `parts` (Jump Cuts).
+- `focus` je part aus den Standbildern: horizontale Mitte des Sprechers (0 = links, 1 = rechts). Ein 9:16-Ausschnitt zeigt aus einem Querformat nur etwa ein Drittel der Breite.
+- `hook`: höchstens 70 Zeichen, macht neugierig, löst nicht schon alles auf; kein Clickbait, keine Emojis.
+- `captions`: `wort` als Standard (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige Inhalte, `aus` nur auf Wunsch.
