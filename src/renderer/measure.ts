@@ -66,7 +66,7 @@ function parseColor(s: string): { color: string; alpha: number } | undefined {
 }
 
 // linear-gradient aus dem berechneten Stil (Chromium normalisiert Farben zu rgb/rgba). Nur lineare Verläufe mit 2+ Stops.
-function parseGradient(s: string): Gradient | undefined {
+export function parseGradient(s: string): Gradient | undefined {
   const m = s.match(/^linear-gradient\((.*)\)$/)
   if (!m) return undefined
   const parts = m[1].split(/,(?![^(]*\))/).map((x) => x.trim())

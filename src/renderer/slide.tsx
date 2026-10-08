@@ -84,7 +84,7 @@ const FOCUS_POS: Record<Extract<Focus, string>, string> = { center: '50% 50%', t
 // Foto oder Logo. under = liegt unter Text (Vollbild), look = Duotone/Mono (PPTX: „Neu einfärben“), round = Kreismaske.
 // Der Radius kommt aus dem CSS (border-radius) und wird im Export zu roundRect.
 // Bildanpassung als CSS-Filter (Export: patch-xml.ts adjustBlip mit denselben Prozentwerten)
-const adjustCss = (a?: Adjust) =>
+export const adjustCss = (a?: Adjust) =>
   a ? [a.bright && `brightness(${1 + a.bright / 100})`, a.contrast && `contrast(${1 + a.contrast / 100})`, a.sat && `saturate(${1 + a.sat / 100})`, a.blur && `blur(${a.blur / 10}px)`].filter(Boolean).join(' ') || undefined : undefined
 
 // Bildrahmen: clip-path aus derselben Form wie im Export, in Pixeln der aktuellen Box (Autofit kann die Box noch ändern)
@@ -612,7 +612,7 @@ function FreeItem({ it }: { it: Item }) {
             {...attrs}
             data-pptx="box" data-slot={slot} data-ellipse={shape === 'ellipse' ? '' : undefined}
             style={{
-              ...pos, backgroundColor: fill, backgroundImage: it.fill && it.fill2 ? `linear-gradient(135deg, ${fill}, ${rgba(it.fill2, alpha)})` : undefined,
+              ...pos, backgroundColor: fill, backgroundImage: it.fill && it.fill2 ? `linear-gradient(${it.gradAngle ?? 135}deg, ${fill}, ${rgba(it.fill2, alpha)})` : undefined,
               border: it.stroke && it.strokeW ? `${it.strokeW}px ${it.dash === 'dash' ? 'dashed' : it.dash === 'dot' ? 'dotted' : 'solid'} ${it.stroke}` : undefined,
               borderRadius: shape === 'ellipse' ? '50%' : it.radius, boxShadow: it.shadow ? '0px 12px 32px rgba(0, 0, 0, 0.28)' : undefined,
             }}
