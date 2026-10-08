@@ -30,15 +30,17 @@ jobs:
           $E scripts/check-brand.ts --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
           for c in check-recolor check-handout check-docx check-lint-profile check-pdf-boxes story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
           $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
-          for c in check-looks check-webfonts check-animations check-theme-tokens; do $E scripts/$c.ts --format=esm --outfile=out/$c.mjs && node out/$c.mjs; done
+          for c in check-looks check-webfonts check-theme-tokens; do $E scripts/$c.ts --format=esm --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-gradient.ts --loader:.css=empty --loader:.md=text --outfile=out/check-gradient.cjs && node out/check-gradient.cjs
           $E scripts/check-free-text.ts --format=cjs --external:electron --loader:.css=empty --loader:.md=text --jsx=automatic --outfile=out/check-free-text.cjs && node out/check-free-text.cjs
           npm run check:theme-lint
       - name: Bildschirm und Chromium-Sandbox
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libxml2-utils
           # Ubuntu 24.04 sperrt unprivilegierte User-Namespaces per AppArmor; die Sandbox braucht sie
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Animationen im PPTX-XML (braucht xmllint)
+        run: npx esbuild --bundle --platform=node --log-level=warning scripts/check-animations.ts --format=esm --outfile=out/check-animations.mjs && node out/check-animations.mjs
       - name: Rendern und Export (PPTX, PDF, PNG)
         run: xvfb-run -a npm run render examples/pitch.json
       - name: MCP-Server Ende-zu-Ende
