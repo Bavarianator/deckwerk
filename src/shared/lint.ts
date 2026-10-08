@@ -1,7 +1,8 @@
 import { wcagContrast } from 'culori'
 import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl } from './deck'
-import { FORMATS, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
+import { FORMATS, itemClicks, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { LAYOUTS, buildOf } from './layouts'
+import { marginsOf, resolveTheme } from './themes'
 
 export interface Issue {
   slide: number // 0-based index
@@ -118,7 +119,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
         }
       }
     }
-    if (t.font === 'head' && t.lines > 1) {
+    if (t.font === 'head' && t.lines > 1 && !t.list) { // Aufzählung: kurze Punkte sind normal
       const last = t.runs.map((r) => r.text + (r.breakAfter ? '\n' : ' ')).join('').trim().split('\n').pop() ?? ''
       if (last.trim().split(/\s+/).length === 1) add('warn', 'widow', `"${t.slot}" endet mit einem einzelnen Wort in der letzten Zeile – umformulieren.`, t.slot)
     }
@@ -157,7 +158,8 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     if (used.length) {
       const [x0, y0] = [Math.min(...used.map((e) => e.box.x)), Math.min(...used.map((e) => e.box.y))]
       const [x1, y1] = [Math.max(...used.map((e) => e.box.x + e.box.w)), Math.max(...used.map((e) => e.box.y + e.box.h))]
-      const fill = ((Math.min(x1, W - 72) - Math.max(x0, 72)) * (Math.min(y1, H - 72) - Math.max(y0, 60))) / ((W - 144) * (H - 132))
+      const mg = marginsOf(resolveTheme(deck.theme).margin, { w: W, h: H }) // Satzspiegel nach dem Token margin
+      const fill = ((Math.min(x1, W - mg.r) - Math.max(x0, mg.l)) * (Math.min(y1, H - mg.b) - Math.max(y0, mg.t))) / ((W - mg.l - mg.r) * (H - mg.t - mg.b))
       if (fill < SPARSE) add('warn', 'sparse', `Folie wirkt leer: Titel und Inhalt füllen nur ${Math.round(fill * 100)} % des Satzspiegels. Mehr Substanz ergänzen (Zahl, Beispiel, Beleg), ein Foto dazunehmen (image-text), auf eine luftige Form wechseln (statement, big-number) oder mit der Nachbarfolie zusammenlegen.`)
     }
   }
@@ -256,7 +258,7 @@ export function lintMotion(deck: Deck, measured: Measured[]): Issue[] {
     const m = measured[i]
     if (deck.mode !== 'click' || !m) return
     const groups = new Set(m.els.flatMap((e) => (e.build === undefined ? [] : [e.build]))).size
-    const clicks = (buildOf(deck, i) === 'list' ? groups : 0) + m.els.filter((e) => e.anim && e.anim !== 'none' && e.anim !== 'breathe').length
+    const clicks = (buildOf(deck, i) === 'list' ? groups : 0) + itemClicks(s)
     if (clicks > 5) warn(i, 'clicks', `${clicks} Klicks, bis die Folie steht – der Vortrag stockt. Aufbau stagger statt list, weniger animierte Elemente oder Folie teilen.`)
   })
   return out

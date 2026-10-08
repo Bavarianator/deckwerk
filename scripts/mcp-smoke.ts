@@ -19,6 +19,7 @@ const engine: Engine = {
 }
 
 const home = mkdtempSync(join(tmpdir(), 'deckwerk-mcp-'))
+process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts)
 const [a, b] = InMemoryTransport.createLinkedPair()
 await createMcpServer(engine, { home }).connect(a)
 const client = new Client({ name: 'smoke', version: '0' })

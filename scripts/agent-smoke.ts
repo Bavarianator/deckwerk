@@ -29,6 +29,7 @@ const run = (name: string, input: unknown) => T[name].run(T[name].inputSchema.pa
 const fails = async (p: Promise<unknown>, re: RegExp) => { try { await p } catch (e) { assert.match((e as Error).message, re); return } assert.fail('sollte werfen') }
 const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
+process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts): Ersatz und Hinweis statt Download
 
 assert.equal(tools.length, 16)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -78,24 +79,38 @@ assert.equal(autoPick('Ein Pitch für unser Café', false).model, 'claude-opus-5
 assert.equal(autoPick('Überarbeite alle Folien im Ton', true).model, 'claude-opus-5-5')
 assert.deepEqual(autoPick('Mach den Titel kürzer (Folie 3, Element title)', true), { model: 'claude-sonnet-5-5', effort: 'medium', why: 'Änderung' })
 const look = (name: string, bg: string, more = {}) => ({ name, bg, accent: '#C4552D', headFont: 'Fraunces', bodyFont: 'Manrope', radius: 4, decor: 'none', ...more })
-await fails(run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel', '#12261E')] }), /unterscheiden sich kaum/) // nur umgefärbt
-await fails(run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel', '#12261E', { headFont: 'Space Grotesk', titleSize: 'large', rule: 'over' })] }), /Standardschrift/)
-const looks = await run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel', '#12261E', { headFont: 'Inter', titleSize: 'large', rule: 'over' })] }) as { text: string; images: Buffer[] }
+await fails(run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E')] }), /unterscheiden sich kaum/) // nur umgefärbt
+await fails(run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E', { margin: 'generous' })] }), /unterscheiden sich kaum/) // ein neues Merkmal reicht nicht
+await fails(run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E', { headFont: 'Space Grotesk', titleSize: 'large', rule: 'over' })] }), /Look 2 Dunkel: Theme-Lint lehnt ab[\s\S]*Space Grotesk ist Standard generierter Designs/)
+await fails(run('propose_looks', { looks: [look('Creme', '#F6F1E7'), look('Dunkel', '#12261E', { headFont: 'Inter', titleSize: 'large', rule: 'over' })] }), /bg-tint[\s\S]*cliche: Creme \+ Terrakotta/)
+const looks = await run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E', { headFont: 'Inter', titleSize: 'large', rule: 'over' })] }) as { text: string; images: Buffer[] }
 assert.equal(looks.images.length, 2); assert.match(looks.text, /Hell[\s\S]*Dunkel/)
 await fails(run('add_slides', { slides: [{ layout: 'cover', content: { title: 'x' } }] }), /create_deck/)
-// KI-Klischees in create_deck/update_deck: Hinweis statt Ablehnung (der Nutzer darf sie wünschen)
-assert.match((await run('create_deck', { title: 'Test', customTheme: look('Tech', '#0E0E0E', { headFont: 'Space Grotesk', accent: '#C6F432' }) })).text, /^Hinweis: Space Grotesk[\s\S]*Hinweis: Säuregrün/)
-assert.match((await run('update_deck', { customTheme: { accent: '#7C3AED', headFont: 'Fraunces' } })).text, /^Hinweis: Akzent #7C3AED/)
-assert.doesNotMatch((await run('update_deck', { customTheme: { accent: '#C4552D' } })).text, /Hinweis/)
+// Theme-Lint in create_deck/update_deck: Klischees abgelehnt (mit Korrektur), mit override (Wunsch des Nutzers) nur Hinweis
+await fails(run('create_deck', { title: 'Test', customTheme: look('Violett', '#FFFFFF', { accent: '#7C3AED' }) }), /customTheme: Theme-Lint lehnt ab:[\s\S]*cliche: KI-Violett[\s\S]*override/)
+assert.equal(deck, null, 'abgelehntes Theme legt kein Deck an')
+assert.match((await run('create_deck', { title: 'Test', customTheme: look('Violett', '#FFFFFF', { accent: '#7C3AED' }), override: 'Markenfarbe des Nutzers' })).text, /^Theme-Hinweise \(customTheme\):\n[\s\S]*\[warn\] cliche: KI-Violett/)
+await fails(run('update_deck', { customTheme: { headFont: 'Space Grotesk' } }), /Space Grotesk ist Standard generierter Designs/)
+assert.equal(deck!.theme.custom?.headFont, 'Fraunces', 'abgelehnte Änderung lässt das Deck stehen')
+assert.doesNotMatch((await run('update_deck', { customTheme: { accent: '#1E5B3A' } })).text, /cliche|\[warn\]|sehr verbreitet/)
+await fails(run('update_deck', { tune: { titleSize: 'huge', measure: 'narrow' } }), /overflow/) // tune über eigenem Theme wird mitgeprüft
+assert.equal(Object.keys(deck!.theme.tune ?? {}).length, 0, 'abgelehntes tune bleibt draußen')
 const created = await run('create_deck', { title: 'Test', theme: 'midnight' })
 assert.equal(deck!.theme.id, 'midnight'); assert.equal(deck!.transition, 'fade')
 assert.equal(deck!.style, undefined); assert.match(created.text, /Stil nicht gewählt/)
+// tune: Feinschliff über dem Katalog-Theme, wird gemischt; null entfernt einen Wert
+await run('update_deck', { tune: { margin: 'generous', signature: { kind: 'rule' } } })
+assert.equal(deck!.theme.tune?.margin, 'generous')
+await run('update_deck', { tune: { margin: null } })
+assert.deepEqual(deck!.theme.tune, { signature: { kind: 'rule' } })
 // Stil-Regler: mutig setzen und zurück; vivid hält den kräftigen Grund (nur aus dem mittleren Helligkeitsband geschoben)
 await run('update_deck', { style: 'mutig', customTheme: look('Koralle', '#FFD100', { vivid: true }) })
 assert.equal(deck!.style, 'mutig'); assert.equal(resolveTheme(deck!.theme).c.bg.toLowerCase(), '#ffd100')
-await run('update_deck', { style: 'sachlich', customTheme: { vivid: false } })
+await fails(run('update_deck', { customTheme: { vivid: false } }), /bg-mid/) // ohne vivid ist Signalgelb ein Mittelton
+await run('update_deck', { style: 'sachlich', customTheme: { vivid: false }, override: 'Test: die Engine dämpft' })
 assert.equal(deck!.style, 'sachlich'); assert.notEqual(resolveTheme(deck!.theme).c.bg.toLowerCase(), '#ffd100', 'ohne vivid dämpft die Engine')
 await run('update_deck', { theme: 'midnight' })
+assert.deepEqual(deck!.theme.tune, { signature: { kind: 'rule' } }, 'Theme-Wechsel behält tune')
 await fails(run('add_slides', { slides: [{ layout: 'cover', content: { title: 'Okay' } }, { layout: 'agenda', content: { title: 'Agenda', items: [] } }] }), /slides\[1\] \(agenda\)[\s\S]*items/)
 assert.equal(deck!.slides.length, 0, 'Batch mit Fehler ändert nichts')
 // unbekannte Felder (Live-Test: kicker statt eyebrow, body statt sub) nicht still verwerfen, sondern die erlaubten nennen
@@ -219,7 +234,7 @@ assert.match((await run('export_deck', { format: 'zip' })).text, /deck\.zip/)
 assert.match((await run('export_deck', { format: 'docx' })).text, /deck\.docx/)
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
-assert.equal(events, 13, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 3 aus dem Klischee-Test + 1 Feinsatz-Test
+assert.equal(events, 14, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 2 aus dem Theme-Lint-Test + 2 tune + 1 Feinsatz-Test
 
 // Abwechslung: neues Deck im selben Typ wie die letzten Decks → Hinweis (eigenes Tool-Set, damit events stimmt)
 {
@@ -232,9 +247,9 @@ assert.equal(events, 13, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   assert.deepEqual(recentLooks('Alt 1').map((r) => r.title), ['Alt 2'])
   let d: Deck | null = null
   const T4 = Object.fromEntries(buildTools({ engine, getDeck: () => d, setDeck: (x) => { d = x }, assetDir: '/nonexistent', outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
-  const make = (input: unknown) => T4.create_deck.run(T4.create_deck.inputSchema.parse(input))
+  const make = async (input: unknown) => T4.create_deck.run(T4.create_deck.inputSchema.parse(input))
   const same = await make({ title: 'Neu', style: 'sachlich', brand: null, customTheme: look('Papier', '#FFFFFF', { headFont: 'Lora', titleWeight: 'regular' }) })
-  assert.equal(d!.style, 'sachlich'); assert.match(same.text, /^Hinweis: Dieses Design gleicht im Typ deinen letzten Decks „Alt \d“, „Alt \d“ \(hell, Serif-Titel regular, Grund neutral, Bauteile Linie\)/)
+  assert.equal(d!.style, 'sachlich'); assert.match(same.text, /^Hinweis: Dieses Design gleicht im Typ deinen letzten Decks „Alt \d“, „Alt \d“ \(hell, Serif-Titel regular, Grund neutral, Bauteile Linie\)/m)
   // anderes Bauteil-Vokabular = anderer Typ: kein Hinweis
   assert.doesNotMatch((await make({ title: 'Frei', brand: null, customTheme: look('Papier', '#FFFFFF', { headFont: 'Lora', titleWeight: 'regular', elements: 'plain' }) })).text, /gleicht im Typ/)
   assert.equal(d!.theme.custom?.elements, 'plain')
@@ -247,7 +262,31 @@ assert.equal(events, 13, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   const upd = (customTheme: object) => T4.update_deck.run(T4.update_deck.inputSchema.parse({ customTheme }))
   d = { ...d!, theme: { id: 'custom', custom: look('Alt', '#FFFFFF') as never } }
   await upd({ accent: '#1F5E7A' }); assert.equal(d!.theme.custom?.elements, undefined)
-  await upd(look('Ganz neu', '#F2ECE0')); assert.equal(d!.theme.custom?.elements, 'line')
+  await upd(look('Ganz neu', '#F5F3EE')); assert.equal(d!.theme.custom?.elements, 'line')
+  // Altes Deck mit Lint-Fehler (Creme + Terrakotta, von vor dem Theme-Lint): Feinschliff und Korrekturen gehen, der alte Fehler ist nur Hinweis
+  d = { ...d!, theme: { id: 'custom', custom: look('Alt', '#F6F1E7') as never } }
+  const tuned = await T4.update_deck.run(T4.update_deck.inputSchema.parse({ tune: { margin: 'generous' } }))
+  assert.equal(d!.theme.tune?.margin, 'generous'); assert.match(tuned.text, /\[error, schon vorher\] bg-tint/)
+  await upd({ radius: 2 }); assert.equal(d!.theme.custom?.radius, 2)
+  await fails(upd({ accent: '#7C3AED' }), /KI-Violett/) // neue Fehler weiter abgelehnt
+  assert.match((await upd({ margin: 'asymmetric' })).text, /tune überschreibt customTheme\.margin; mit tune \{ margin: null \} entfernen/)
+  // Altlast Space Grotesk: kleine Korrektur geht, ein neuer Entwurf (anderer Name) mit derselben Schrift nicht
+  d = { ...d!, theme: { id: 'custom', custom: look('Alt', '#FFFFFF', { headFont: 'Space Grotesk' }) as never } }
+  await upd({ radius: 0 }); assert.equal(d!.theme.custom?.radius, 0)
+  await fails(upd(look('Neuer Entwurf', '#FFFFFF', { headFont: 'Space Grotesk' })), /Space Grotesk ist Standard generierter Designs/)
+  // Brand-Kit: Markenfarbe und -schrift sind Vorgabe, auch wenn sie wie ein Klischee aussehen
+  await make({ title: 'Marke', brand: { primary: '#6366F1', headFont: 'Space Grotesk' }, customTheme: look('Marke', '#FFFFFF', { accent: '#6366F1', headFont: 'Space Grotesk' }) })
+  assert.equal(d!.theme.brand?.primary, '#6366F1')
+  // Plakat-Nachbau: Archivo Black auf kräftigem Grund
+  await make({ title: 'Plakat', brand: null, style: 'mutig', customTheme: { name: 'Plakat', bg: '#FFD100', text: '#111111', accent: '#111111', headFont: 'Archivo Black', bodyFont: 'Archivo', radius: 0, decor: 'none', titleSize: 'huge', vivid: true, elements: 'solid' } })
+  assert.equal(d!.theme.custom?.headFont, 'Archivo Black')
+  // Katalogschriften: Tippfehler mit Vorschlag, offline Ersatz im Ergebnis, „sehr verbreitet“ nur bei Katalogschriften
+  await fails(make({ title: 'Typo', brand: null, customTheme: look('Typo', '#FFFFFF', { headFont: 'Newsreder' }) }), /meintest du „Newsreader“/)
+  assert.match((await make({ title: 'Zeitung', brand: null, customTheme: look('Zeitung', '#FFFFFF', { headFont: 'Newsreader', bodyFont: 'Roboto' }) })).text, /Roboto ist sehr verbreitet[\s\S]*Schriften: Newsreader: nicht verfügbar \(offline\), Ersatz Georgia/)
+  const slide = async (font: string) => T4.add_slides.run(T4.add_slides.inputSchema.parse({ slides: [{ layout: 'blank', content: {}, items: [{ kind: 'text', text: 'x', font, x: 60, y: 60, w: 400, h: 40 }] }] }))
+  await fails(slide('Inter Tigt'), /meintest du „Inter Tight“/)
+  assert.match((await slide('Inter Tight')).text, /^Schriften: .*Inter Tight: nicht verfügbar \(offline\), Ersatz Inter\n/)
+  assert.doesNotMatch((await slide('head')).text, /Schriften/, 'gleiche Schriften: kein neuer Ladeversuch')
   assert.doesNotMatch((await make({ title: 'Nacht', brand: null, customTheme: look('Nacht', '#12261E', { headFont: 'Inter' }) })).text, /gleicht im Typ/)
   put('nacht', json('Nacht', look('Nacht', '#12261E', { headFont: 'Inter', elements: 'line' })))
   await fails(T4.propose_looks.run(T4.propose_looks.inputSchema.parse({ looks: [look('Papier', '#FFFFFF', { titleWeight: 'regular', titleSize: 'large', rule: 'over' }), look('Nachtblau', '#12261E', { headFont: 'Inter' })] })), /Alle Looks gleichen im Typ/)

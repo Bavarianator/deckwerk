@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { BrandKit, CustomFont, Deck, PrintOptions } from '../shared/deck'
+import type { BrandKit, CustomFont, Deck, PrintOptions, ThemeRef } from '../shared/deck'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
 import type { SyncStatus } from '../main/sync'
@@ -143,6 +143,8 @@ const api = {
   pickMedia: (kind: 'video' | 'audio'): Promise<string | null> => invoke('media:pick', kind),
   /** TTF wählen (Regular, optional Bold); Familienname aus der Datei; null = abgebrochen */
   pickFont: (): Promise<CustomFont | null> => invoke('font:pick'),
+  /** Katalogschriften des Decks laden (Cache ~/Deckwerk/fonts, offline gebündelter Ersatz) → Theme mit fontFiles; notes z. B. „Newsreader geladen“ */
+  ensureFonts: (deck: Deck): Promise<{ theme: ThemeRef; notes: string[] }> => invoke('font:ensure', deck),
   /** data-URL (PNG/JPEG/WebP) unter ~/Deckwerk/assets speichern → asset://-URL */
   saveAsset: (dataUrl: string, name: string): Promise<string> => invoke('asset:save', dataUrl, name),
   /** Text aus TXT/MD/CSV/DOCX/PPTX/PDF lesen; ohne Pfad per Dialog, null = abgebrochen */
