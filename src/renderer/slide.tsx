@@ -22,6 +22,18 @@ export const useSlide = () => useContext(SlideCtx)
 
 // sichtbarer Text ohne Markup (Vergleich beim Bearbeiten, sonst ginge Markup schon beim bloßen Anklicken verloren)
 const plain = (text: string) => text.replaceAll('**', '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+// Text nach dem Bearbeiten: sichtbar unverändert → Original samt Markup. Sonst (Tippfehler) kommen **fett** und Links zurück,
+// deren Text genau einmal im neuen Text steht; geänderte oder mehrdeutige Teile werden Klartext.
+export function edited(before: string, typed: string): string {
+  if (typed === plain(before)) return before
+  const hits = [...before.matchAll(/\*\*(.+?)\*\*|\[([^\]]+)\]\((?:https?:|mailto:)[^)\s]+\)/g)].flatMap((m) => {
+    const txt = m[1] ?? m[2], at = typed.indexOf(txt)
+    return at >= 0 && typed.indexOf(txt, at + 1) < 0 ? [{ at, end: at + txt.length, md: m[0] }] : []
+  }).sort((a, b) => a.at - b.at)
+  let out = '', pos = 0
+  for (const h of hits) if (h.at >= pos) { out += typed.slice(pos, h.at) + h.md; pos = h.end }
+  return out + typed.slice(pos)
+}
 // **fett** und [Text](https://…) → Link (als span: ein <a> würde im Electron-Fenster navigieren; PPTX: nativer Hyperlink)
 const rich = (text: string) =>
   text.split(/(\*\*.+?\*\*|\[[^\]]+\]\((?:https?:|mailto:)[^)\s]+\))/g).map((part, i) => {
@@ -62,7 +74,7 @@ export function T(p: { role: keyof typeof SCALE; slot: string; children: string;
       data-build={p.build}
       contentEditable={canEdit || undefined}
       suppressContentEditableWarning
-      onBlur={canEdit ? (e) => e.currentTarget.innerText.trim() !== plain(p.children) && onEdit?.(p.slot, e.currentTarget.innerText.trim()) : undefined}
+      onBlur={canEdit ? (e) => { const t = edited(p.children, e.currentTarget.innerText.trim()); if (t !== p.children) onEdit?.(p.slot, t) } : undefined}
     >
       {words && p.build !== undefined ? splitParts(nodes, 'word') : nodes}
     </div>
@@ -547,15 +559,23 @@ function FreeItem({ it }: { it: Item }) {
   switch (it.kind) {
     case 'text': {
       const edit = editable && editing === it.id
+      const text = it.text ?? ''
+      const by = live && (it.anim === 'typewriter' || it.anim === 'ascend') ? (it.anim === 'ascend' ? 'word' : 'letter') : undefined
+      const body = (s: string) => (by ? splitParts(rich(s), by) : rich(s))
       return (
         <div
+          key={text} // Bearbeiten baut den DOM um (Zeilen, Spans): neuer Text → neu aufbauen statt abgleichen
           {...attrs}
           className="t free-text"
           data-pptx="text" data-slot={slot} data-role="free" data-font={it.font === 'body' ? 'body' : 'head'} data-face={it.font && it.font !== 'head' && it.font !== 'body' ? it.font : undefined}
           data-effect={it.effect && it.effect !== 'none' ? JSON.stringify({ type: it.effect, color: it.effectColor ?? it.color ?? theme.c.text }) : undefined}
+          data-list={it.list}
           contentEditable={edit || undefined}
           suppressContentEditableWarning
-          onBlur={edit ? (e) => onEdit?.(slot, e.currentTarget.innerText.replace(/\n$/, '')) : undefined}
+          // Aufzählung: Zeilen aus den Zeilen-Divs (innerText gäbe für eine leere Zeile <div><br></div> zwei Umbrüche zu viel)
+          onBlur={edit ? (e) => onEdit?.(slot, edited(text, it.list
+            ? [...e.currentTarget.childNodes].map((n) => (n instanceof HTMLElement ? n.innerText : n.textContent ?? '').replace(/\n$/, '')).join('\n')
+            : e.currentTarget.innerText.replace(/\n$/, ''))) : undefined}
           style={{
             ...pos, height: undefined, minHeight: 10, fontFamily: fontCss(it), fontSize: it.size ?? 32, fontWeight: it.bold ? 700 : 400,
             fontStyle: it.italic ? 'italic' : undefined, textDecoration: it.underline ? 'underline' : undefined, color: it.color ?? theme.c.text,
@@ -564,7 +584,8 @@ function FreeItem({ it }: { it: Item }) {
             ...effectCss(it.effect, it.effectColor ?? it.color ?? theme.c.text),
           }}
         >
-          {live && (it.anim === 'typewriter' || it.anim === 'ascend') ? splitParts([it.text ?? ''], it.anim === 'ascend' ? 'word' : 'letter') : it.text ?? ''}
+          {/* Aufzählung: jede Zeile ein Block, Marker per CSS (::before), damit Messung und Export nur den Text sehen */}
+          {it.list ? text.split('\n').map((line, i) => <div key={i} className="dw-li" data-empty={line.trim() ? undefined : ''}>{line.trim() ? body(line) : <br />}</div>) : body(text)}
         </div>
       )
     }

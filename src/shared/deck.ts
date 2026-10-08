@@ -323,6 +323,7 @@ export interface TextEl extends Base {
   align: 'left' | 'center' | 'right'
   upper: boolean
   runs: Run[]
+  list?: { type: NonNullable<Item['list']>; indentPx: number } // Aufzählung (freier Text): jeder Absatz ein Punkt, hängender Einzug
   lines: number
   bg: string // effective background colour behind the text (for contrast lint)
 }

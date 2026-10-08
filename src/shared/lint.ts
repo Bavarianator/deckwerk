@@ -118,7 +118,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
         }
       }
     }
-    if (t.font === 'head' && t.lines > 1) {
+    if (t.font === 'head' && t.lines > 1 && !t.list) { // Aufzählung: kurze Punkte sind normal
       const last = t.runs.map((r) => r.text + (r.breakAfter ? '\n' : ' ')).join('').trim().split('\n').pop() ?? ''
       if (last.trim().split(/\s+/).length === 1) add('warn', 'widow', `"${t.slot}" endet mit einem einzelnen Wort in der letzten Zeile – umformulieren.`, t.slot)
     }

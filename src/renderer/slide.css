@@ -384,3 +384,13 @@
 .fmt-tall .kpis:not(.n1) { grid-template-columns: repeat(2, 1fr) !important; } /* Social-Schrift ist groß: vier Kennzahlen nebeneinander passen nicht */
 .fmt-tall .kpis.n2, .fmt-tall .kpis.n3 { grid-template-columns: 1fr !important; }
 .prof-social .footer { bottom: 40px; height: auto; } /* Fußzeile wächst mit der Social-Schrift: sonst reicht ihr Kasten in den Rand */
+
+/* ---------- Aufzählung in freien Texten: jede Zeile ein Punkt, hängender Einzug, Marker in Textfarbe ---------- */
+/* Marker als ::before: Messung und PPTX sehen nur den Text; der Export setzt buChar/buAutoNum mit dem padding-left als Einzug */
+.free-text[data-list] { counter-reset: dw-li; }
+.free-text > .dw-li { position: relative; padding-left: 1em; }
+.free-text[data-list='number'] > .dw-li { padding-left: 1.5em; }
+.free-text > .dw-li:not([data-empty])::before { content: '•'; position: absolute; left: 0; }
+.free-text[data-list='number'] > .dw-li:not([data-empty]) { counter-increment: dw-li; }
+.free-text[data-list='number'] > .dw-li[data-empty] { counter-set: dw-li 0; } /* Leerzeile: neue Nummerierung wie in PowerPoint (counter-reset am Geschwister zählt in Chromium weiter) */
+.free-text[data-list='number'] > .dw-li:not([data-empty])::before { content: counter(dw-li) '.'; }
