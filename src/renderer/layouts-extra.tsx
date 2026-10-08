@@ -550,8 +550,39 @@ function Logos({ c }: Props<'logos'>) {
   )
 }
 
+// Bewerbung – Deckblatt: zwei Pole wie in einer gedruckten Mappe. Oben Stelle und Unternehmen, unten Foto, Name und Kontakt,
+// rechts daneben der Inhalt der Mappe als Liste mit Haarlinien (Linien an Hüllen ohne data-pptx, sonst fehlen sie im Hintergrundbild).
+function ApplicationCover({ c }: Props<'application-cover'>) {
+  const img = photoOf(c.photo)
+  const toc = c.contents ?? []
+  return (
+    <Frame safeClass="bw-safe">
+      <div className="bw">
+        <div className="bw-head">
+          {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="bw-eyebrow">{c.eyebrow}</T>}
+          <T role="display" slot="title" maxLines={3} className="bw-title">{c.title}</T>
+          {c.org && <T role="body" slot="org" maxLines={2} className="bw-org">{c.org}</T>}
+        </div>
+        <div className={`bw-foot ${toc.length ? 'with-toc' : ''}`}>
+          <div className="bw-person">
+            {img && <div className="bw-photo">{img.src ? <Img {...img} slot="photo" build={0} /> : <div className="placeholder" />}</div>}
+            <T role="h1" slot="name" maxLines={2} className="bw-name" build={0}>{c.name}</T>
+            {c.contact?.map((x, i) => <T key={i} role="label" slot={`contact.${i}`} className="bw-contact" build={0}>{x}</T>)}
+          </div>
+          {toc.length > 0 && (
+            <div className="bw-toc">
+              <T role="eyebrow" slot="_toc.label" className="bw-toc-label" build={1}>Inhalt</T>
+              {toc.map((x, i) => <div className="bw-toc-row" key={i}><T role="body" slot={`contents.${i}`} build={1}>{x}</T></div>)}
+            </div>
+          )}
+        </div>
+      </div>
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
-  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
+  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos, 'application-cover': ApplicationCover,
 }

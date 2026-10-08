@@ -294,3 +294,24 @@
 .flb-facts + .fly-foot { margin-top: 0; } /* Eckdaten und Handlung bilden einen Block am Fuß */
 .flb-fact { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .t.flb-legal { flex: none; margin-top: -8px; color: var(--muted); }
+
+/* ---------- Bewerbung – Deckblatt (A4 hoch): Stelle oben, Foto, Name und Kontakt unten, Inhalt der Mappe daneben ---------- */
+.safe.bw-safe { left: 94px; right: 76px; top: 100px; bottom: 90px; } /* Ränder wie DIN 5008 (links 25 mm, rechts 20 mm): dieselbe Satzkante wie das Anschreiben */
+.bw { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.bw-head { flex: none; display: flex; flex-direction: column; gap: 14px; }
+.t.bw-eyebrow { color: var(--accent); font-size: calc(var(--fs-eyebrow) * 1.25); } /* einziger Akzent der Seite */
+.t.bw-title { line-height: 1.04; }
+.t.bw-org { font-size: calc(var(--fs-body) * 1.25); line-height: 1.3; }
+.bw-foot { flex: none; margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: end; }
+.bw-foot.with-toc { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.bw-person { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bw-photo { position: relative; width: 168px; aspect-ratio: 35 / 45; margin-bottom: 24px; } /* Passbild-Format 35 × 45 mm */
+.bw-photo .img { position: absolute; inset: 0; }
+.t.bw-name { margin-bottom: 12px; font-size: calc(var(--fs-h1) * min(var(--hs), 1.25) * 1.2); line-height: 1.08; }
+.t.bw-contact { font-size: calc(var(--fs-label) * 1.15); line-height: 1.45; }
+.bw-toc { display: flex; flex-direction: column; min-width: 0; }
+.t.bw-toc-label { margin-bottom: 10px; }
+.bw-toc-row { position: relative; padding: 9px 0; }
+.bw-toc-row::before, .bw-toc-row:last-child::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }
+.bw-toc-row:last-child::after { top: auto; bottom: 0; }
+.bw-toc-row .t { text-wrap: pretty; }
