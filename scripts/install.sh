@@ -51,6 +51,7 @@ if [ -z "$SOURCE" ]; then
   # MCP-Server: Vibe und Codex starten ihn ohne DISPLAY, dann headless (gleicher Aufruf wie mcpCmd in src/main/ipc.ts)
   WRAP='if [ -n "$DISPLAY$WAYLAND_DISPLAY" ]; then exec "$0" --ozone-platform=x11 --mcp; else exec "$0" --ozone-platform=headless --disable-gpu --mcp; fi'
   set -- /bin/sh -c "$WRAP" "$RUN"
+  UPDATE='curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh'
 else
   need git "https://git-scm.com"
   need node "Node.js 22 oder neuer, https://nodejs.org"
@@ -85,7 +86,23 @@ else
   ICON="$DIR/assets/icon.png"
   SKILL="$DIR/skills/deckwerk/SKILL.md"
   set -- "$RUN" --mcp
+  UPDATE="sh '$DIR/scripts/install.sh'"
 fi
+
+# Befehl „deckwerk“ im Terminal: ohne Argument startet die App, „deckwerk update“ aktualisiert (gleicher Weg wie diese Installation).
+# Atomar ersetzen (mv), damit ein laufendes „deckwerk update“ nicht in einer überschriebenen Datei weiterliest.
+BIN="$HOME/.local/bin"
+mkdir -p "$BIN"
+cat > "$BIN/.deckwerk.neu" <<EOF
+#!/bin/sh
+# Von scripts/install.sh angelegt. deckwerk [Optionen] startet Deckwerk, deckwerk update aktualisiert es.
+case "\${1:-}" in
+  update|aktualisieren) exec sh -c "$UPDATE" ;;
+  *) exec "$RUN" "\$@" ;;
+esac
+EOF
+chmod +x "$BIN/.deckwerk.neu" && mv "$BIN/.deckwerk.neu" "$BIN/deckwerk"
+case ":$PATH:" in *":$BIN:"*) ;; *) echo "  Hinweis: $BIN steht nicht im PATH, sonst gäbe es den Befehl „deckwerk“ im Terminal." ;; esac
 
 # Startmenü-Eintrag und Dateizuordnung: Doppelklick auf eine deck.json öffnet sie in Deckwerk
 mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/mime/packages"
@@ -144,4 +161,4 @@ if command -v codex >/dev/null 2>&1; then
     { skill_to "${CODEX_HOME:-$HOME/.codex}/skills" || true; } && echo "→ In Codex eingerichtet, mit Skill"
 fi
 
-echo "Fertig. Starten: Startmenü „Deckwerk“ oder $RUN"
+echo "Fertig. Starten: Startmenü „Deckwerk“ oder Befehl „deckwerk“; aktualisieren: „deckwerk update“."
