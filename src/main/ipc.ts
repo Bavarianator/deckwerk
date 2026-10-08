@@ -13,6 +13,7 @@ import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/mod
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, type Orientation } from './tools'
+import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
 import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
@@ -364,6 +365,14 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     version: app.getVersion(), electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node,
     platform: `${process.platform} ${process.arch}`, home: HOME,
   }))
+  ipcMain.handle('update:check', () => checkUpdate(app.getVersion()))
+  ipcMain.handle('update:install', async () => {
+    if (!(await checkUpdate(app.getVersion())).canInstall) throw new Error('Diese Installation aktualisiert sich nicht selbst. Im Terminal: deckwerk update')
+    await installUpdate()
+    // das alte Verzeichnis ist ersetzt: neu starten, auch wenn die Fenster noch Dateien daraus halten
+    app.relaunch({ execPath: join(APP_DIR, 'AppRun'), args: process.argv.slice(1) })
+    app.exit(0)
+  })
   ipcMain.handle('app:openHome', async () => {
     await mkdir(HOME, { recursive: true })
     const err = await shell.openPath(HOME)
