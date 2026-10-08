@@ -23,7 +23,11 @@ export interface ThemeRef {
   // Schriften aus dem Katalog (src/shared/font-catalog.ts), in ~/Deckwerk/fonts geladen: Familie → Schnitte als asset://-URL.
   // Zwischengewichte sind eigene Familien („Inter SemiBold“, nur regular). Fehlt ein Eintrag, greift der gebündelte Ersatz.
   fontFiles?: Record<string, FontFiles>
+  tune?: ThemeTune // Feinschliff über dem Theme (Katalog oder eigen): gesetzte Tokens schlagen die des Themes
 }
+// Struktur-Tokens, die Nutzer (Look → Gestaltung) und KI (update_deck) auf jedes Theme legen können; Farben und Schriften bleiben im Theme
+export const TUNE_KEYS = ['titleSize', 'headWeight', 'headTracking', 'leading', 'labels', 'labelFont', 'margin', 'measure', 'rule', 'elements', 'signature', 'heroTone', 'field', 'chart', 'images'] as const
+export type ThemeTune = Partial<Pick<ThemeSpec, (typeof TUNE_KEYS)[number]>>
 export interface FontFiles { regular: string; bold?: string; italic?: string; boldItalic?: string }
 // Eigene Schrift (TTF, vom Nutzer gewählt): im Renderer per FontFace, in der PPTX eingebettet. Pfade als asset://-URL.
 export interface CustomFont { family: string; regular: string; bold?: string }
@@ -58,7 +62,7 @@ export interface ThemeSpec {
   vivid?: boolean // kräftiger Farbgrund (Stil mutig); sonst dämpft themeFromSpec den Grund auf Papier- bzw. Dunkeltöne
   labelFont?: 'body' | 'mono' // mono = Eyebrow und Fußzeile in IBM Plex Mono
   elements?: 'line' | 'plain' | 'solid' // Bauteile: line = offen mit Kopflinien, keine Flächen (Standard); plain = nur Typografie und Weißraum, keine Linien und Flächen; solid = Farbflächen (Stil mutig)
-  // Themes-Fundament (theme-lint.ts, theme-refs.ts): noch nicht in themeFromSpec, tools.ts und Guide verdrahtet
+  // Themes-Fundament (theme-lint.ts, theme-refs.ts); auch als ThemeRef.tune über jedem Theme
   field?: string // Farbe großer Flächen (Kapitel, split/band, hervorgehobene Karten); Standard = accent
   headWeight?: HeadWeight
   headTracking?: number // em, −0.05 … +0.02
