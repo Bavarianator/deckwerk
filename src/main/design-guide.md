@@ -151,6 +151,7 @@ Gute Decks (Apple-Keynotes, McKinsey, Presentation Zen, Swiss Style) wirken durc
 5. **Schriftpaar** (höchstens zwei Familien), Text immer gut lesbar:
    - Grotesk pur: `IBM Plex Sans`, `Inter`, `Archivo`, `Manrope`, `Plus Jakarta Sans`, `DM Sans` jeweils für Titel und Text
    - Serif-Titel + Grotesk-Text: `Source Serif 4` + `Source Sans 3`, `IBM Plex Serif` + `IBM Plex Sans`, `Lora` + `Source Sans 3`, `Lora` + `Inter`, `Fraunces` + `DM Sans` (Handwerk, Kultur), `Fraunces` + `Manrope`, `DM Serif Display` + `Inter` (Display-Serif, nur Titel ab `large`), `Playfair Display` + `Source Sans 3` (Mode, festliche Anlässe), `Playfair Display` + `Inter`
+   - Weitere Familien aus dem Schriftkatalog (Liste unter „Themes“) gehen ebenso; die Engine lädt sie bei Bedarf.
    - Serif-Titel in `regular` ist eine Richtung von vielen. Grotesk-Titel in `bold` ist genauso gut und bei Technik, Handel, Sport und Verwaltung oft passender.
 6. **Struktur – das macht das Design eigen:**
    - `titleSize`: `large` = Plakat-Titel für Vortrag, Strategie, wenig Text; `normal` für Datenfolien und Chef-Updates.
