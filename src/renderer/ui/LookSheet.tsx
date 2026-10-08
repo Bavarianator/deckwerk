@@ -28,7 +28,7 @@ const SPACE: TuneRow[] = [
   ['margin', 'Ränder', 'Abstand zum Folienrand; Bundsteg = breiter Rand links', [['standard', 'Standard'], ['generous', 'Großzügig'], ['asymmetric', 'Bundsteg']]],
   ['signature', 'Signatur', 'Ein wiederkehrendes Element: Haarlinie über dem Titel, Farbkante am Rand oder Rahmen mit Abstand', [['none', 'Keine'], ['rule', 'Linie'], ['edge', 'Kante'], ['passepartout', 'Rahmen']]],
   ['heroTone', 'Titel- und Schlussfolie', 'Grund der Titel- und Schlussfolie', [['normal', 'Normal'], ['field', 'Farbfläche'], ['invert', 'Invertiert']]],
-  ['images', 'Bilder', 'Fotos einheitlich: Originalfarben, schwarzweiß oder in Theme-Farben', [['natural', 'Natürlich'], ['mono', 'Schwarzweiß'], ['duotone', 'Duoton']]],
+  ['images', 'Bilder', 'Fotos einheitlich: Originalfarben, schwarzweiß oder in Theme-Farben', [['natural', 'Natürlich'], ['mono', 'Schwarzweiß'], ['duotone', 'Duotone']]],
   ['chart', 'Diagramme', 'Fokus = eine Reihe in der Akzentfarbe, Rest grau; Zwei Farben = Akzent und Zweitfarbe; Tonal = Abstufungen einer Farbe', [['focus', 'Fokus'], ['duo', 'Zwei Farben'], ['tonal', 'Tonal']]],
 ]
 // nur diese Schlüssel zählt und entfernt das Panel; weitere (headTracking, rule, elements, labelFont) setzt die KI und bleiben
