@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
 import { webpSize } from './tools'
-import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, transitionSpeedOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
+import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, transitionSpeedOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured, type Run, type TextEl } from '../shared/deck'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
 import { localAsset } from './sync'
@@ -100,14 +100,36 @@ const lineOf = (el: BoxEl): PptxGenJS.ShapeLineProps =>
     ? { color: hex(el.border.color), width: PT(el.border.width), dashType: el.dash ? DASH[el.dash] : undefined, beginArrowType: el.lineStart ? ARROW[el.lineStart] : undefined, endArrowType: el.lineEnd ? ARROW[el.lineEnd] : undefined }
     : { type: 'none' }
 
+// Aufzählung: Marker je Lauf, weil PptxGenJS die Absatz-Eigenschaften je Lauf schreibt; leere Absätze ohne Marker
+export function listBullets(runs: Run[], list: NonNullable<TextEl['list']>): PptxGenJS.TextPropsOptions['bullet'][] {
+  const paras: Run[][] = [[]]
+  runs.forEach((r, i) => { paras[paras.length - 1].push(r); if (r.breakAfter && i < runs.length - 1) paras.push([]) })
+  const b = list.type === 'number' ? { type: 'number' as const, indent: PT(list.indentPx) } : { indent: PT(list.indentPx) }
+  return paras.flatMap((p) => p.map(() => (p.some((r) => r.text.trim()) ? b : undefined)))
+}
+
+// Aufzählung im XML: Marker in der Schrift des Textes wie in der App (PptxGenJS setzt für Nummern +mj-lt = Titelschrift).
+// Nummern: LibreOffice beginnt bei jedem startAt neu, PptxGenJS schreibt es an jeden Absatz. Nur der erste Absatz eines
+// Blocks behält es; nach einer Leerzeile (buNone) zählt auch PowerPoint wieder ab 1 – wie die App (slide.css).
+export const listXml = (sp: string) => {
+  let prev = false
+  return sp.replace(/<a:buFont typeface="\+mj-lt"\/>/g, '<a:buFontTx/>').replace(/<a:buChar\b/g, '<a:buFontTx/><a:buChar').replace(/<a:p>[\s\S]*?<\/a:p>/g, (p) => {
+    const num = p.includes('<a:buAutoNum')
+    const out = num && prev ? p.replace(/(<a:buAutoNum\b[^>]*?) startAt="\d+"/g, '$1') : p
+    prev = num
+    return out
+  })
+}
+
 function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: string) {
   const b = el.box
   switch (el.kind) {
     case 'text': {
       const extra = b.w * WRAP_SLACK
       const x = el.align === 'center' ? b.x - extra / 2 : el.align === 'right' ? b.x - extra : b.x
+      const bullets = el.list ? listBullets(el.runs, el.list) : []
       slide.addText(
-        el.runs.map((r) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined,
+        el.runs.map((r, i) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined, bullet: bullets[i],
           // eigene Größe (Einheit); Laufweite 0 als 0.001, weil PptxGenJS falsy Werte vom Feld erbt (dessen Laufweite ist negativ)
           ...(r.sizePx && { fontSize: PT(r.sizePx), charSpacing: PT(r.trackingPx ?? 0) || 0.001 }) } })),
         {
@@ -250,6 +272,7 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
       addEl(pptx, slide, el, ts, name)
       if (el.kind === 'box' && el.gradient) patches.push({ slide: i + 1, name, fn: gradFill(el.gradient) })
       if (el.kind === 'text' && el.effect) patches.push({ slide: i + 1, name, fn: textEffect(el.effect, el.sizePx) })
+      if (el.kind === 'text' && el.list) patches.push({ slide: i + 1, name, fn: listXml })
       if (el.kind === 'img' && el.mask) patches.push({ slide: i + 1, name, fn: maskShape(el.mask) })
       else if (el.kind === 'img' && el.fit === 'cover' && !el.round && el.radius > 0.5) patches.push({ slide: i + 1, name, fn: roundRect(el.radius, el.box.w, el.box.h) })
       if (el.kind === 'img' && el.adjust) patches.push({ slide: i + 1, name, fn: adjustBlip(el.adjust) })

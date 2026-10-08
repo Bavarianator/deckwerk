@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import {
   AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight,
   AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
-  ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
+  ClipboardPaste, Crop, Eraser, Group, Italic, List, ListOrdered, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
 import { ANIM_DIRS, DASHES, ITEM_ANIMS, animStartOf, type Adjust, type AnimDir, type AnimStart, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
 import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
@@ -281,6 +281,9 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
               <Btn icon={AlignLeft} label="Linksbündig" on={(it.align ?? 'left') === 'left'} onClick={() => set({ align: 'left' })} />
               <Btn icon={AlignCenter} label="Zentriert" on={it.align === 'center'} onClick={() => set({ align: 'center' })} />
               <Btn icon={AlignRight} label="Rechtsbündig" on={it.align === 'right'} onClick={() => set({ align: 'right' })} />
+              <span className="stage-sep" />
+              <Btn icon={List} label="Aufzählung" on={it.list === 'bullet'} onClick={() => set({ list: it.list === 'bullet' ? undefined : 'bullet' })} />
+              <Btn icon={ListOrdered} label="Nummerierung" on={it.list === 'number'} onClick={() => set({ list: it.list === 'number' ? undefined : 'number' })} />
             </div>
             <Field label="Laufweite"><input type="range" min={-5} max={40} value={Math.round((it.spacing ?? 0) * 100)} onChange={(e) => set({ spacing: +e.target.value / 100 || undefined }, `sp-${it.id}`)} /></Field>
             <Field label="Farbe"><Color value={it.color ?? t.c.text} onChange={(color, tag) => set({ color }, tag)} swatches={swatches} tag={`color-${it.id}`} /></Field>
