@@ -38,6 +38,7 @@ export const FONT_CATALOG: FontInfo[] = [
   f('Host Grotesk', 'grotesk', 'offen, warm, menschlich', 'both', W(300, 800), true, 'Inter'),
   f('Onest', 'grotesk', 'klar, freundlich, gut lesbar', 'both', W(100, 900), false, 'Inter'),
   f('Familjen Grotesk', 'grotesk', 'skandinavisch-eigenwillig, markante Kurven', 'head', W(400, 700), true, 'Archivo', { pairs: ['Inter', 'Work Sans'] }),
+  f('Archivo Black', 'grotesk', 'Plakat-Grotesk in Black, laute Ansagen', 'head', [400], false, 'Archivo Black', { pairs: ['Archivo'] }), // nur ein Schnitt (Black als 400)
   f('Libre Franklin', 'grotesk', 'amerikanische Zeitungsgrotesk, direkt', 'both', W(100, 900), true, 'Archivo'),
   f('Chivo', 'grotesk', 'kräftig, eigenständig, gut in Schwarz', 'both', W(100, 900), true, 'Archivo'),
   f('Albert Sans', 'grotesk', 'geometrisch-skandinavisch, hell und offen', 'both', W(100, 900), true, 'Inter'),
