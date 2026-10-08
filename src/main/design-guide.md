@@ -166,7 +166,7 @@ Gute Decks (Apple-Keynotes, McKinsey, Presentation Zen, Swiss Style) wirken durc
      - Wähle `line` oder `plain` passend zum Charakter, `solid` nur im Stil mutig. Die Bauteile prägen jede Inhaltsfolie und unterscheiden Decks stärker als die Farbe.
 7. **Feinschliff (optional):** Wähle ein bis drei Tokens, die die Leitidee tragen, nicht alle gleichzeitig.
    - `signature`: genau **ein** wiederkehrendes Element statt Deko. `rule` = Haarlinie über dem Titel (`length` short oder full), `edge` = Farbkante am Rand (`side` left oder top, `size` in px), `passepartout` = Rahmenlinie mit Abstand. Nicht zusätzlich `rule: "over"`.
-   - `margin`: `generous` = mehr Luft (Zen, Premium), `asymmetric` = breiter Bundsteg links (Bericht, Magazin). `measure`: `narrow` ≈ 760 px Satzbreite für ruhige Lesefolien (nie mit `titleSize: "huge"`), `wide` = volle Breite für Daten.
+   - `margin`: `generous` = mehr Luft (Zen, Premium), `asymmetric` = breiter Bundsteg links (Bericht, Magazin; zentrierte Varianten stehen dann rund 40 px rechts der Mitte, für zentrierte Kompositionen `standard` oder `generous`). `measure`: `narrow` ≈ 760 px Satzbreite für ruhige Lesefolien (nie mit `titleSize: "huge"`), `wide` = volle Breite für Daten.
    - `leading`: `tight` für große Titel, `open` für Lesetext. `labels: "caps"` setzt Eyebrow und Fußzeile in Versalien (Leitsystem, Magazin).
    - `headWeight` (300–900; gebündelte Schriften nur 400/700) und `headTracking` (em; −0.02 bis −0.04 für große Grotesk-Titel).
    - `field`: Farbe großer Flächen (Kapitel, `split`, `band`) als zweite Stimme neben dem Akzent, z. B. Signalgelb zu schwarzem Akzent; sonst weglassen. `heroTone`: Titel- und Schlussfolie als `field`-Fläche oder `invert`.

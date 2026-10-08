@@ -2,6 +2,7 @@ import { wcagContrast } from 'culori'
 import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl } from './deck'
 import { FORMATS, itemClicks, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { LAYOUTS, buildOf } from './layouts'
+import { marginsOf, resolveTheme } from './themes'
 
 export interface Issue {
   slide: number // 0-based index
@@ -157,7 +158,8 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     if (used.length) {
       const [x0, y0] = [Math.min(...used.map((e) => e.box.x)), Math.min(...used.map((e) => e.box.y))]
       const [x1, y1] = [Math.max(...used.map((e) => e.box.x + e.box.w)), Math.max(...used.map((e) => e.box.y + e.box.h))]
-      const fill = ((Math.min(x1, W - 72) - Math.max(x0, 72)) * (Math.min(y1, H - 72) - Math.max(y0, 60))) / ((W - 144) * (H - 132))
+      const mg = marginsOf(resolveTheme(deck.theme).margin, { w: W, h: H }) // Satzspiegel nach dem Token margin
+      const fill = ((Math.min(x1, W - mg.r) - Math.max(x0, mg.l)) * (Math.min(y1, H - mg.b) - Math.max(y0, mg.t))) / ((W - mg.l - mg.r) * (H - mg.t - mg.b))
       if (fill < SPARSE) add('warn', 'sparse', `Folie wirkt leer: Titel und Inhalt füllen nur ${Math.round(fill * 100)} % des Satzspiegels. Mehr Substanz ergänzen (Zahl, Beispiel, Beleg), ein Foto dazunehmen (image-text), auf eine luftige Form wechseln (statement, big-number) oder mit der Nachbarfolie zusammenlegen.`)
     }
   }
