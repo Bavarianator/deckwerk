@@ -1,0 +1,16 @@
+{
+ "title": "Bewerbung",
+ "size": { "w": 794, "h": 1123 },
+ "theme": { "id": "redaktion" },
+ "slides": [
+  { "id": "deckblatt", "layout": "application-cover",
+   "content": {
+    "eyebrow": "Bewerbung",
+    "title": "als Pflegefachkraft in der ambulanten Pflege",
+    "org": "bei der Sozialstation Musterstadt",
+    "name": "Vorname Nachname",
+    "contact": ["Musterweg 1", "12345 Musterstadt", "Telefon 0123 456789"],
+    "contents": ["Anschreiben", "Lebenslauf", "Examenszeugnis", "Arbeitszeugnisse"]
+   } }
+ ]
+}

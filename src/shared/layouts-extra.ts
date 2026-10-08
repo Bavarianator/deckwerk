@@ -224,6 +224,17 @@ const logos = z.object({
   mono: z.boolean().optional().describe('Logos einheitlich einfärben (ruhiger)'),
 })
 
+// Bewerbung – Deckblatt (A4 hoch): oben Stelle und Unternehmen, unten Foto, Name und Kontakt, daneben der Inhalt der Mappe.
+const applicationCover = z.object({
+  eyebrow: z.string().max(30).optional().describe('kleine Überzeile, z. B. „Bewerbung“ oder „Bewerbung · Kennziffer 2026-14“'),
+  title: z.string().min(3).max(70).describe('die Stelle, z. B. „als Pflegefachkraft“ (mit eyebrow „Bewerbung“) oder „Bewerbung als Pflegefachkraft“'),
+  org: z.string().max(60).optional().describe('Unternehmen oder Einrichtung, z. B. „bei der Muster GmbH“'),
+  name: z.string().min(2).max(40).describe('Vor- und Nachname der Bewerberin oder des Bewerbers; fehlt er, „[Vorname Nachname]“'),
+  photo: photo.optional().describe('Bewerbungsfoto (Hochformat), nur ein eigenes Foto des Nutzers, nie ein Stockfoto; weglassen = ohne Foto'),
+  contact: z.array(z.string().min(1).max(50)).max(4).optional().describe('Anschrift, Telefon, E-Mail; je eine Zeile, nie erfinden'),
+  contents: z.array(z.string().min(1).max(40)).max(6).optional().describe('Inhalt der Mappe in Reihenfolge, z. B. „Anschreiben“, „Lebenslauf“, „Zeugnisse“; nur bei mehr als zwei Anlagen'),
+})
+
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const EXTRA_LAYOUTS = {
@@ -534,6 +545,21 @@ export const EXTRA_LAYOUTS = {
       min: { title: 'Drei Partner', logos: [{ name: 'Stadt Nord' }, { name: 'Bildungswerk' }, { name: 'Lernfabrik' }] },
       typ: { eyebrow: 'Partner', title: 'Über 40 Schulen und drei Träger arbeiten bereits mit uns', logos: ['Stadt Nord', 'Bildungswerk Süd', 'Lernfabrik', 'Kreis Mitte', 'Grundschule am Park', 'Schulverbund West'].map((name) => ({ name })) },
       max: { eyebrow: words(28), title: words(90), logos: rep(12, (i) => ({ name: words(22, i) })), mono: true },
+    },
+  }),
+  'application-cover': L({
+    id: 'application-cover', name: 'Bewerbung – Deckblatt (A4)', sizes: ['a4'],
+    when: 'Nur A4 hoch: Deckblatt einer Bewerbungsmappe (optional, vor Anschreiben und Lebenslauf). Oben die Stelle (title, z. B. „als Pflegefachkraft“ mit eyebrow „Bewerbung“; Kennziffer gern dazu) und das Unternehmen (org), unten Name, Bewerbungsfoto und Kontakt. Reihenfolge der Bewerbung, alles in einem Deck und Theme: application-cover, dann letter (Anschreiben), dann cv (Lebenslauf). Kontaktdaten und Foto nie erfinden: fehlen sie, Platzhalter in eckigen Klammern setzen (z. B. „[Telefon]“, Foto mit src "") und nachfragen; als Foto nur ein eigenes Bild des Nutzers, nie ein Stockfoto. contents nur, wenn mehr als zwei Anlagen folgen. Für Online-Bewerbungen ist das Deckblatt verzichtbar.',
+    schema: applicationCover, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Bewerbung als Erzieherin', name: 'Mara' },
+      typ: {
+        eyebrow: 'Bewerbung', title: 'als Pflegefachkraft in der ambulanten Pflege', org: 'bei der Sozialstation Musterstadt',
+        name: 'Vorname Nachname', photo: { src: '' },
+        contact: ['Musterweg 1', '12345 Musterstadt', 'Telefon 0123 456789'],
+        contents: ['Anschreiben', 'Lebenslauf', 'Examenszeugnis', 'Arbeitszeugnisse'],
+      },
+      max: { eyebrow: words(30), title: words(70), org: words(60), name: words(40), photo: { src: '' }, contact: rep(4, (i) => words(50, i)), contents: rep(6, (i) => words(40, i)) },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>
