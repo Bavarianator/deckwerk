@@ -29,44 +29,52 @@ const CLICHES: { name: string; bg?: (b: Lch) => boolean; accent: string; level: 
 
 const SANS: FontCat[] = ['grotesk', 'humanist', 'geometric']
 
-export function lintTheme(s: ThemeSpec, opts: { override?: boolean } = {}): ThemeIssue[] {
+// brand: vom Brand-Kit des Nutzers vorgegeben (Akzent, Schriften) – das ist Markenvorgabe und wird nicht gelintet
+export function lintTheme(s: ThemeSpec, opts: { override?: boolean; brand?: { accent?: boolean; headFont?: boolean; bodyFont?: boolean } } = {}): ThemeIssue[] {
   const out: ThemeIssue[] = []
   const add = (level: ThemeIssue['level'], rule: string, message: string) => out.push({ level: level === 'error' && opts.override ? 'warn' : level, rule, message })
   const bg = ok(s.bg), acc = ok(s.accent)
 
   // Grund: sehr hell und fast neutral oder sehr dunkel. Mitteltöne tragen keinen Text, Creme/Pastell wirkt generiert.
-  if (bg.l > 0.25 && bg.l < 0.94) add('error', 'bg-mid', `Grund ${s.bg} ist ein Mittelton (OKLCH L ${bg.l.toFixed(2)}). Hell: L ≥ 0.94 (z. B. #FAFAF8), dunkel: L ≤ 0.25 (z. B. #121214).`)
+  // vivid (Stil mutig) will genau so einen kräftigen Farbgrund; den Textkontrast sichert dort die Engine.
+  if (s.vivid) { /* keine Grund-Regeln */ }
+  else if (bg.l > 0.25 && bg.l < 0.94) add('error', 'bg-mid', `Grund ${s.bg} ist ein Mittelton (OKLCH L ${bg.l.toFixed(2)}). Hell: L ≥ 0.94 (z. B. #FAFAF8), dunkel: L ≤ 0.25 (z. B. #121214).`)
   // gemessen: gute Off-Whites C ≤ 0.0055 (#FAFAF8, #F3F2EF), warmes Papier ~0.011, Creme/Eisblau/Mint/Lavendel ab 0.014
   else if (bg.l >= 0.94 && bg.c > 0.013) add('error', 'bg-tint', `Grund ${s.bg} ist Creme/Pastell (Chroma ${bg.c.toFixed(3)}). Fast neutral bleiben (C ≤ 0.006, z. B. #FAFAF8, #F3F2EF); Wärme über einen Hauch Gelb.`)
   else if (bg.l >= 0.94 && bg.c > 0.008) add('warn', 'bg-tint', `Grund ${s.bg} ist merklich getönt (Chroma ${bg.c.toFixed(3)}), wie Papier. Gewollt? Sonst neutraler (C ≤ 0.006).`)
   else if (bg.l <= 0.25 && bg.c > 0.05) add('warn', 'bg-tint', `Dunkler Grund ${s.bg} ist stark gefärbt (Chroma ${bg.c.toFixed(3)}), das wirkt schnell wie ein App-Theme. Fast-Schwarz mit leichtem Farbstich ist edler.`)
 
+  const brand = opts.brand ?? {}
   // Akzent: kräftig, aber nicht Neon
-  if (acc.c > 0.26) add('error', 'neon', `Akzent ${s.accent} ist Neon (Chroma ${acc.c.toFixed(2)}). Unter 0.2 bleiben; Wirkung kommt aus der Seltenheit, nicht der Sättigung.`)
+  if (brand.accent) { /* Markenfarbe */ }
+  else if (acc.c > 0.26) add('error', 'neon', `Akzent ${s.accent} ist Neon (Chroma ${acc.c.toFixed(2)}). Unter 0.2 bleiben; Wirkung kommt aus der Seltenheit, nicht der Sättigung.`)
   else if (acc.c > 0.22) add('warn', 'neon', `Akzent ${s.accent} ist sehr gesättigt (Chroma ${acc.c.toFixed(2)}). 0.08–0.18 wirkt hochwertiger.`)
-  if (wcagContrast(s.accent, s.bg) < 3) add('info', 'accent-contrast', `Akzent ${s.accent} hat nur ${wcagContrast(s.accent, s.bg).toFixed(1)}:1 auf dem Grund; die Engine dunkelt/hellt ihn ab. Für große Flächen field nutzen.`)
+  if (!brand.accent && wcagContrast(s.accent, s.bg) < 3) add('info', 'accent-contrast', `Akzent ${s.accent} hat nur ${wcagContrast(s.accent, s.bg).toFixed(1)}:1 auf dem Grund; die Engine dunkelt/hellt ihn ab. Für große Flächen field nutzen.`)
   if (s.text && wcagContrast(s.text, s.bg) < 8) add('info', 'text-contrast', `Text ${s.text} hat ${wcagContrast(s.text, s.bg).toFixed(1)}:1; die Engine hebt ihn auf 8:1 an.`)
   if (s.field && dist(s.field, s.accent) < 8) add('warn', 'field', `field ${s.field} ist fast gleich dem Akzent – weglassen (Standard = Akzent) oder als eigene Stimme wählen.`)
 
-  // Klischee-Paletten
+  // Klischee-Paletten, dazu die Farbfamilien drumherum (Säuregrün auf Dunkel, Lila-Blau)
   for (const c of CLICHES)
-    if (dist(s.accent, c.accent) <= 12 && (!c.bg || c.bg(bg)))
+    if (!brand.accent && dist(s.accent, c.accent) <= 12 && (!c.bg || c.bg(bg)))
       add(c.level, 'cliche', `${c.name} ist eine typische Palette generierter Decks. Akzent aus dem Stoff des Themas ableiten.`)
-  if (acc.c > 0.15 && acc.h >= 270 && acc.h <= 305 && !out.some((i) => i.rule === 'cliche')) add('warn', 'cliche', `Violett-Akzent ${s.accent}: Lila-Blau gilt als KI-Look. Nur mit Grund (Marke, Thema).`)
+  const cliche = () => out.some((i) => i.rule === 'cliche')
+  if (!brand.accent && bg.l < 0.4 && acc.c > 0.15 && acc.h >= 115 && acc.h <= 135 && !cliche()) add('error', 'cliche', `Säuregrün ${s.accent} auf dunklem Grund ist eine typische Palette generierter Decks. Akzent aus dem Stoff des Themas ableiten.`)
+  if (!brand.accent && acc.c > 0.12 && acc.h >= 265 && acc.h <= 305 && !cliche()) add('warn', 'cliche', `Violett-Akzent ${s.accent}: Lila-Blau gilt als KI-Look. Nur mit Grund (Marke, Thema).`)
 
   // Schriften
   const head = fontInfo(s.headFont), body = fontInfo(s.bodyFont)
-  for (const [name, info] of [[s.headFont, head], [s.bodyFont, body]] as const) {
-    if (!info) { out.push({ level: 'error', rule: 'font', message: `Schrift „${name}“ ist nicht im Katalog${suggestFont(name) ? ` – meintest du „${suggestFont(name)}“?` : '.'}` }); continue }
+  for (const [name, info, given] of [[s.headFont, head, brand.headFont], [s.bodyFont, body, brand.bodyFont]] as const) {
+    if (given) continue
+    if (!info) { add('error', 'font-unknown', `Schrift „${name}“ ist nicht im Katalog${suggestFont(name) ? ` – meintest du „${suggestFont(name)}“?` : '.'}`); continue }
     if (info.flag === 'slop') add('error', 'font', `${info.family} ist Standard generierter Designs. Nur auf ausdrücklichen Wunsch (override).`)
-    else if (info.flag === 'common') add('info', 'font', `${info.family} ist sehr verbreitet – gut, wenn Neutralität gewollt ist; eigenständiger wirkt eine weniger bekannte Familie.`)
+    else if (info.flag === 'common') add('info', 'font-common', `${info.family} ist sehr verbreitet – gut, wenn Neutralität gewollt ist; eigenständiger wirkt eine weniger bekannte Familie.`)
   }
-  if (body && body.role === 'head') out.push({ level: 'error', rule: 'pairing', message: `${body.family} ist eine Titelschrift, als Text unleserlich. Textschrift mit role both/body wählen.` })
-  if (head && body && head.family !== body.family) {
+  if (!brand.bodyFont && body && body.role === 'head') add('error', 'pairing', `${body.family} ist eine Titelschrift, als Text unleserlich. Textschrift mit role both/body wählen.`)
+  if (!brand.headFont && !brand.bodyFont && head && body && head.family !== body.family) {
     if (head.cat === 'display-serif' && body.cat === 'display-serif') add('error', 'pairing', 'Zwei Display-Serifen: eine für Titel, für Text eine ruhige Serif oder Grotesk.')
     else if (SANS.includes(head.cat) && SANS.includes(body.cat) && head.family.split(' ')[0] !== body.family.split(' ')[0]) add('warn', 'pairing', `Zwei verschiedene serifenlose (${head.family} + ${body.family}) wirken wie ein Versehen. Besser eine Familie in zwei Gewichten oder Kontrast (Serif + Grotesk).`)
   }
-  if (head && s.headWeight && s.headWeight !== 400 && s.headWeight !== 700 && !head.weights.includes(s.headWeight))
+  if (!brand.headFont && head && s.headWeight && s.headWeight !== 400 && s.headWeight !== 700 && !head.weights.includes(s.headWeight))
     add('info', 'weight', `${head.family} hat kein Gewicht ${s.headWeight}; verfügbar: ${head.weights.join(', ')}. Die Engine nimmt das nächste.`)
 
   // Satz: Kombinationen, bei denen Titel überlaufen oder zerfasern
