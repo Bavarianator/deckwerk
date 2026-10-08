@@ -19,6 +19,8 @@ export type ImageProvider = 'mammouth' | 'openai' | 'codex'
 export interface ImageStatus { mammouth: 'app' | 'env' | null; openai: 'app' | 'env' | null; unsplash: 'app' | 'env' | null; provider: ImageProvider | null; model: string }
 /** Über Deckwerk: Versionen und der Ordner mit Decks, Bildern, brand.json und hausstil.md */
 export interface AppInfo { version: string; electron: string; chrome: string; node: string; platform: string; home: string }
+/** canInstall: die fertige Linux-App kann sich selbst ersetzen; sonst gilt `deckwerk update` im Terminal bzw. git */
+export interface UpdateInfo { current: string; latest: string; newer: boolean; canInstall: boolean }
 /** hasKey: irgendein KI-Zugang (API-Key oder ein Agenten-CLI) */
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
@@ -158,6 +160,9 @@ const api = {
   /** Über Deckwerk; openHome öffnet den Deckwerk-Ordner im Dateimanager */
   appInfo: (): Promise<AppInfo> => invoke('app:info'),
   openHome: (): Promise<void> => invoke('app:openHome'),
+  /** Nach einer neueren Version suchen (nur auf Knopfdruck); installUpdate ersetzt die App und startet sie neu */
+  checkUpdate: (): Promise<UpdateInfo> => invoke('update:check'),
+  installUpdate: (): Promise<void> => invoke('update:install'),
   /** Rechtschreibprüfung (Deutsch/Englisch) an/aus; gilt sofort und bleibt gespeichert */
   spellcheck: (): Promise<boolean> => invoke('spellcheck:get'),
   setSpellcheck: (on: boolean): Promise<void> => invoke('spellcheck:set', on),
