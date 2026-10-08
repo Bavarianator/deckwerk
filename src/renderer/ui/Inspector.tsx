@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import { ImagePlus, X } from 'lucide-react'
 import { BUILDS, DECORS, TONES, TRANSITIONS, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
+import { FontPicker, ensureFonts } from './FontPicker'
 import { GradAngle, ItemInspector } from './ItemInspector'
 import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
@@ -10,7 +11,7 @@ import { Select } from './kit'
 import { SlideLooks } from './SlideLooks'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { extract, eyebrowRules } from '../measure'
-import { FONT_NAMES, THEMES, mix, themeFromSpec } from '../../shared/themes'
+import { THEMES, mix, themeFromSpec } from '../../shared/themes'
 import { colorsOf, elsToItems, recolor } from '../../shared/items'
 
 const FRAME: Record<FrameId, string> = { top: 'Titel oben', split: 'Titel links auf Farbfläche', band: 'Titel im Farbband', center: 'Zentriert' }
@@ -40,6 +41,13 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
   const items = slide?.items ?? []
   const colors = colorsOf(items)
   const texts = items.filter((it) => it.kind === 'text')
+  const mixed = !texts.every((it) => it.font === texts[0]?.font)
+  // Katalogschrift: nach dem Setzen laden lassen (Main bestimmt fontFiles aus dem Deck mit der Wahl)
+  const setFonts = (font: string) => {
+    const fn = (l: Item[]) => l.map((it) => (it.kind === 'text' ? { ...it, font } : it))
+    onItems(fn)
+    void ensureFonts({ ...deck, slides: deck.slides.with(index, { ...slide, items: fn(items) }) }, font)
+  }
   const base = deck.theme.custom ? themeFromSpec(deck.theme.custom) : THEMES.find((t) => t.id === deck.theme.id) ?? THEMES[0]
 
   return (
@@ -82,12 +90,9 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
             )}
             {texts.length > 1 && (
               <Field label="Schrift aller Texte">
-                <Select value={texts.every((it) => it.font === texts[0].font) ? texts[0].font ?? 'head' : ''} onChange={(e) => onItems((l) => l.map((it) => (it.kind === 'text' ? { ...it, font: e.target.value } : it)))}>
-                  <option value="" disabled>Gemischt</option>
-                  <option value="head">Theme: Titel</option>
-                  <option value="body">Theme: Text</option>
-                  {FONT_NAMES.map((f) => <option key={f} value={f}>{f}</option>)}
-                </Select>
+                {/* „Gemischt“ nur, solange es stimmt: als aktueller Eintrag löst die Wahl nichts aus */}
+                <FontPicker aria-label="Schrift aller Texte" value={mixed ? '' : texts[0].font ?? 'head'} placeholder={mixed ? 'Gemischt' : undefined}
+                  extra={[['head', 'Theme: Titel'], ['body', 'Theme: Text']]} onChange={(f) => f && setFonts(f)} />
               </Field>
             )}
             <Field label="Ton">

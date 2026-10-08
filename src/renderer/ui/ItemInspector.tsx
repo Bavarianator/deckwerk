@@ -8,10 +8,11 @@ import {
 } from 'lucide-react'
 import { ANIM_DIRS, DASHES, ITEM_ANIMS, animStartOf, type Adjust, type AnimDir, type AnimStart, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
 import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
-import { FONT_NAMES, duotoneOf, resolveTheme, withTone } from '../../shared/themes'
+import { duotoneOf, resolveTheme, withTone } from '../../shared/themes'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { adjustCss } from '../slide'
 import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
+import { FontPicker, ensureFonts } from './FontPicker'
 import { Select } from './kit'
 import { animateItem } from './PresentScreen'
 import { removeBackground } from './media'
@@ -262,11 +263,13 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
         {it?.kind === 'text' && (
           <>
             <Field label="Schrift">
-              <Select value={it.font ?? 'head'} onChange={(e) => set({ font: e.target.value })}>
-                <option value="head">Theme: Titel ({t.head.pptx})</option>
-                <option value="body">Theme: Text ({t.body.pptx})</option>
-                {FONT_NAMES.map((f) => <option key={f} value={f}>{f}</option>)}
-              </Select>
+              <FontPicker aria-label="Schrift" value={it.font ?? 'head'} extra={[['head', `Theme: Titel (${t.head.pptx})`], ['body', `Theme: Text (${t.body.pptx})`]]}
+                onChange={(font) => {
+                  if (!font) return
+                  const fn = (l: Item[]) => l.map((x) => (picked.includes(x.id) ? { ...x, font } : x))
+                  onItems(fn)
+                  void ensureFonts({ ...deck, slides: deck.slides.with(index, { ...slide, items: fn(items) }) }, font) // Katalogschrift laden lassen
+                }} />
             </Field>
             <div className="field-row">
               <Field label="Größe"><Num value={it.size ?? 32} min={6} max={400} suffix="px" onChange={(size) => set({ size }, `size-${it.id}`)} /></Field>
