@@ -7,7 +7,8 @@ import { ItemInspector } from './ItemInspector'
 import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
 import { Select } from './kit'
-import { LAYOUTS, nextLook, type LayoutId } from '../../shared/layouts'
+import { SlideLooks } from './SlideLooks'
+import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { extract, eyebrowRules } from '../measure'
 import { FONT_NAMES, THEMES, themeFromSpec } from '../../shared/themes'
 import { colorsOf, elsToItems, recolor } from '../../shared/items'
@@ -49,7 +50,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
         {slide && (
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
-            {(def?.variants || def?.frames) && <button type="button" className="btn wide" title="Nächste Kombination aus Variante, Komposition und Ton" onClick={() => patchSlide(index, nextLook(slide))}>Andere Gestaltung</button>}
+            {(def?.variants || def?.frames) && <SlideLooks deck={deck} index={index} patchSlide={patchSlide} />}
             {slide.layout !== 'blank' && (
               <button type="button" className="btn wide" title="Alle Texte, Formen, Bilder und Icons der Folie werden frei verschiebbar wie in Canva. Rückgängig mit Strg+Z."
                 onClick={() => {
