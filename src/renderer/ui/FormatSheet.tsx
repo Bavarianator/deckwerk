@@ -8,7 +8,7 @@ import { SlideView } from '../slide'
 
 const IDS = Object.keys(FORMATS) as FormatId[]
 const HINT: Partial<Record<FormatId, string>> = {
-  '1:1': 'LinkedIn, Instagram', '4:5': 'Instagram-Feed', '9:16': 'Story, Reel', a4: 'Handout zum Ausdrucken', 'a4-quer': 'Ausdruck quer', og: 'Vorschau in E-Mail und Chat',
+  '1:1': 'LinkedIn, Instagram', '4:5': 'Instagram-Feed', '9:16': 'Story, Reel', a4: 'Handout zum Ausdrucken', 'a4-quer': 'Ausdruck quer', og: 'Vorschau in E-Mail und Chat', visitenkarte: 'Druck mit Beschnitt',
 }
 
 interface Props { deck: Deck; index: number; onApply: (id: FormatId) => void; onCopies: (ids: FormatId[]) => void; onClose: () => void }

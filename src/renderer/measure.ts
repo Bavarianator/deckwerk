@@ -8,8 +8,9 @@ const COMBOS = Array.from({ length: 16 }, (_, i) => [i >> 2, i & 3]).sort((a, b)
 
 function applySteps(root: HTMLElement, head: number, body: number) {
   root.style.setProperty('--head-fit', String(1 - head / 3)) // Plakat-Titel des Themes stufenweise auf Normalgröße
-  // Schriftgrößen sind für 1280 px Breite gewählt: Social-Posts werden aufs Handy skaliert (größer), A4 ist Druck (kleiner, nie unter 12 px)
-  const k = root.classList.contains('prof-social') ? root.offsetWidth / 750 : root.classList.contains('prof-doc') ? 0.65 : 1
+  // Schriftgrößen sind für 1280 px Breite gewählt: Social-Posts werden aufs Handy skaliert (größer), Druck ist kleiner, nie unter 12 px
+  // (A4 hoch und quer 0,65; die Visitenkarte mit 321 px nach Breite, sonst stünde der Name in A4-Größe drauf)
+  const k = root.classList.contains('prof-social') ? root.offsetWidth / 750 : root.classList.contains('prof-doc') ? Math.min(0.65, root.offsetWidth / 1221) : 1
   for (const [role, steps] of Object.entries(SCALE))
     root.style.setProperty(`--fs-${role}`, `${Math.max(Math.round(steps[HEAD_ROLES.includes(role) ? head : body] * k), k < 1 ? 12 : 0)}px`)
 }

@@ -151,6 +151,7 @@ export const FORMATS = {
   'a4': { name: 'A4 Hochformat', w: 794, h: 1123 },
   'a4-quer': { name: 'A4 Querformat', w: 1123, h: 794 },
   'og': { name: 'Link-Vorschau 1200×630', w: 1200, h: 630 },
+  'visitenkarte': { name: 'Visitenkarte 85×55 mm', w: 321, h: 208 }, // Druck: Endformat = Größe bei 96 dpi
 } as const
 export type FormatId = keyof typeof FORMATS
 export interface Size { w: number; h: number }
@@ -165,17 +166,19 @@ export const sizeOf = (deck: Pick<Deck, 'size'> | null | undefined): Size => dec
 // Druck-PDF (Export „print“): Seite = Endformat + Beschnitt ringsum, TrimBox/BleedBox gesetzt, keine Schnittmarken.
 // Beschnitt je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm (Stand 10/2026).
 // Farben bleiben RGB (Chromium kann kein CMYK); diese Druckereien wandeln selbst, print24 verlangt CMYK.
-// size skaliert A4-Seiten (hoch oder quer, Verhältnis 1:√2) verlustfrei auf ein anderes A-Format; weglassen = Foliengröße.
-export const PRINT_SIZES = { a3: [297, 420], a4: [210, 297], a5: [148, 210] } as const // mm, hochkant
+// size skaliert A4-Seiten (hoch oder quer, Verhältnis 1:√2) verlustfrei auf ein anderes A-Format (A2 = Plakat, A6 = Postkarte); weglassen = Foliengröße.
+export const PRINT_SIZES = { a2: [420, 594], a3: [297, 420], a4: [210, 297], a5: [148, 210], a6: [105, 148] } as const // mm, hochkant
 export interface PrintOptions { size?: keyof typeof PRINT_SIZES; bleed?: number } // bleed in mm (0–5), Standard 3
 
-// Profil aus der Größe: bestimmt Lint-Grenzen und Guide-Regeln. A4 = Dokument, Quadrat/Hochformat = Social, sonst Folien.
+const is = (s: Size, f: Size) => s.w === f.w && s.h === f.h
+export const isA4 = (s: Size) => is(s, FORMATS.a4) || is(s, FORMATS['a4-quer'])
+
+// Profil aus der Größe: bestimmt Lint-Grenzen und Guide-Regeln. Druck (A4, Visitenkarte) = Dokument, Quadrat/Hochformat = Social, sonst Folien.
 export type Profile = 'slides' | 'social' | 'doc'
 export function profileOf(deck: Pick<Deck, 'size'> | null | undefined): Profile {
-  const { w, h } = sizeOf(deck)
-  const a4 = (f: { w: number; h: number }) => w === f.w && h === f.h
-  if (a4(FORMATS.a4) || a4(FORMATS['a4-quer'])) return 'doc'
-  return w / h <= 1.2 ? 'social' : 'slides'
+  const s = sizeOf(deck)
+  if (isA4(s) || is(s, FORMATS.visitenkarte)) return 'doc'
+  return s.w / s.h <= 1.2 ? 'social' : 'slides'
 }
 
 export interface Deck {
