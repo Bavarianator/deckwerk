@@ -379,17 +379,33 @@ export const LAYOUTS = {
 
 export type LayoutId = keyof typeof LAYOUTS
 
-// Canva „Andere Gestaltung“: nächste Kombination aus Variante × Komposition × Ton, Inhalt bleibt gleich.
+// Canva „Andere Gestaltung“: Kombinationen aus Variante × Komposition × Ton, Inhalt bleibt gleich.
 // Layouts mit eigenem Standard-Ton (section) wechseln nur Variante und Komposition.
-export function nextLook(s: Slide): Pick<Slide, 'variant' | 'frame' | 'tone'> {
-  const def = LAYOUTS[s.layout as LayoutId] as LayoutDef | undefined
-  if (!def) return {}
-  const looks: Pick<Slide, 'variant' | 'frame' | 'tone'>[] = []
+type Look = Pick<Slide, 'variant' | 'frame' | 'tone'>
+function allLooks(def: LayoutDef): Look[] {
+  const looks: Look[] = []
   for (const variant of def.variants ?? [undefined])
     for (const frame of [undefined, ...(def.frames ?? [])])
       for (const tone of def.tone ? [undefined] : [undefined, 'invert' as const]) looks.push({ variant, frame, tone })
-  const key = (l: Pick<Slide, 'variant' | 'frame' | 'tone'>) => `${l.variant ?? def.variants?.[0]}|${l.frame ?? 'top'}|${l.tone ?? ''}`
-  return looks[(looks.findIndex((l) => key(l) === key(s)) + 1) % looks.length]
+  return looks
+}
+const lookKey = (def: LayoutDef, l: Look) => `${l.variant ?? def.variants?.[0]}|${l.frame ?? 'top'}|${!l.tone || l.tone === 'normal' ? '' : l.tone}`
+
+export function nextLook(s: Slide): Look {
+  const def = LAYOUTS[s.layout as LayoutId] as LayoutDef | undefined
+  if (!def) return {}
+  const looks = allLooks(def)
+  return looks[(looks.findIndex((l) => lookKey(def, l) === lookKey(def, s)) + 1) % looks.length]
+}
+
+// Alle anderen Kombinationen für die Vorschau-Auswahl; gleicher Ton (also sichtbar andere Komposition/Variante) vor bloßem Tonwechsel.
+export function looksOf(s: Slide): Look[] {
+  const def = LAYOUTS[s.layout as LayoutId] as LayoutDef | undefined
+  if (!def) return []
+  const cur = lookKey(def, s)
+  const sameTone = (l: Look) => lookKey(def, l).split('|')[2] === cur.split('|')[2]
+  const rest = allLooks(def).filter((l) => lookKey(def, l) !== cur)
+  return [...rest.filter(sameTone), ...rest.filter((l) => !sameTone(l))]
 }
 
 // Build einer Folie: eigener build > Bewegungsstil des Decks > Standard des Layouts.

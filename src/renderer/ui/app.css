@@ -308,3 +308,12 @@ textarea.mono { font-family: ui-monospace, monospace; font-size: 12px; }
 .keys-cols dt { color: var(--text); }
 .keys-cols dd { margin: 0; color: var(--muted); }
 .keys-cols kbd { font: inherit; font-size: 11.5px; font-weight: 600; }
+
+/* ---------- Andere Gestaltung (SlideLooks) ---------- */
+.slide-looks { display: grid; gap: 8px; margin-bottom: 10px; }
+.slide-looks-title { font-size: 12px; color: var(--muted); }
+.slide-looks-grid { display: grid; grid-template-columns: repeat(2, 118px); justify-content: space-between; gap: 8px; }
+.slide-looks-item { padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); overflow: hidden; line-height: 0; }
+.slide-looks-item:not(:disabled) { cursor: pointer; }
+.slide-looks-item:hover:not(:disabled), .slide-looks-item:focus-visible { border-color: var(--accent); outline: none; }
+.slide-looks-thumb { display: block; pointer-events: none; }
