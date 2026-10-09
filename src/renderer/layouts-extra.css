@@ -333,3 +333,31 @@
 .ur-sign { position: relative; display: flex; flex-direction: column; gap: 2px; padding-top: 12px; }
 .ur-sign::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--text); }
 .t.ur-signer { font-weight: 700; }
+
+/* ---------- Einladung (A4 hoch, druckbar als A5/A6): zwei Pole, Eckdaten als Liste mit Haarlinien ---------- */
+/* Faktoren auf die A4-Schrift (0,65 × Folie, nie unter 12 px): kleinste Schrift ~20 px, auf A6 (50 %) noch ~10 px */
+.safe.inv-safe { left: 64px; right: 64px; top: 64px; bottom: 60px; }
+/* Foto 32 % hoch; bei viel Text gibt es wie der Titel mit dem Autofit nach (--head-fit 1 → 0: bis 24 %) */
+.safe.inv-safe.inv-below { top: calc(24% + 8% * var(--head-fit, 1) + 44px); }
+.inv-media { position: absolute; left: 0; right: 0; top: 0; height: calc(24% + 8% * var(--head-fit, 1)); overflow: hidden; }
+.inv-media .img { position: absolute; inset: 0; background-position: center; }
+/* Abstände schrumpfen mit dem Autofit (Vielfache von --fs-body) */
+.inv { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: calc(var(--fs-body) * 2); }
+.inv-head { flex: 1 0 auto; display: flex; flex-direction: column; gap: calc(var(--fs-body) * 1.25); }
+.t.inv-eyebrow { color: var(--text); font-size: calc(var(--fs-eyebrow) * 1.75); }
+/* Übergröße schrumpft mit dem Autofit (--head-fit 1 → 0) wie .fly-title */
+.t.inv-title { font-size: calc(var(--fs-display) * var(--hs) * (1 + 0.3 * var(--head-fit, 1))); line-height: 1.04; letter-spacing: -0.015em; }
+.inv-type .t.inv-title { font-size: calc(var(--fs-display) * var(--hs) * (1.2 + 0.55 * var(--head-fit, 1))); line-height: 1; } /* ohne Foto trägt der Titel die Seite */
+.t.inv-text { font-size: calc(var(--fs-body) * 1.5); line-height: 1.38; text-wrap: pretty; }
+.t.inv-host { font-size: calc(var(--fs-body) * 1.5); color: var(--muted); }
+.inv-end { flex: none; display: flex; flex-direction: column; }
+.inv-fact { position: relative; display: grid; grid-template-columns: 26% minmax(0, 1fr); gap: 24px; align-items: baseline; padding: calc(var(--fs-body) * 0.9) 0; }
+.inv-fact::before, .inv-fact:last-child::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }
+.inv-fact:last-child::after { top: auto; bottom: 0; }
+.t.inv-label { font-size: calc(var(--fs-label) * 1.7); color: var(--muted); }
+.t.inv-value { font-size: calc(var(--fs-h3) * 1.7); text-wrap: pretty; }
+/* Antwort: QR-Code, daneben die Bitte groß in Akzentfarbe (die einzige Farbe auf der Karte), Logo rechts */
+.inv-foot { display: flex; align-items: center; gap: 28px; padding-top: calc(var(--fs-body) * 1.6); }
+.inv-qr { flex: none; display: block; width: 120px; height: 120px; overflow: hidden; }
+.t.inv-rsvp { flex: 1; color: var(--accent); font-size: calc(var(--fs-h2) * 1.5); line-height: 1.18; }
+.inv-logo { flex: none; margin-left: auto; height: 40px; width: 150px; background-repeat: no-repeat; background-position: right center; }
