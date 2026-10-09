@@ -194,16 +194,27 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return path
   })
 
-  ipcMain.handle('deck:export', async (_, format: ExportFormat, printIn?: PrintOptions) => {
+  let videoExport = false // ein Video-Export belegt ffmpeg und Renderfenster: kein zweiter parallel
+  ipcMain.handle('deck:export', async (e, format: ExportFormat, printIn?: PrintOptions) => {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Exportieren.')
+    const video = format === 'mp4' || format === 'clips'
+    if (video && videoExport) throw new Error('Es läuft schon ein Video-Export. Warte, bis er fertig ist.')
     // Vertrauensgrenze: print kommt aus dem Renderer, nur bekannte Größe und Beschnitt 0–5 mm durchlassen
     const size = typeof printIn?.size === 'string' && Object.hasOwn(PRINT_SIZES, printIn.size) ? printIn.size : undefined
     const bleed = typeof printIn?.bleed === 'number' && Number.isFinite(printIn.bleed) ? Math.min(5, Math.max(0, printIn.bleed)) : undefined
     const print: PrintOptions = { size, bleed }
     await mkdir(outDir(), { recursive: true })
-    const [file] = await engine.exportDeck(deck, format, outDir(), print)
-    shell.showItemInFolder(file)
-    return file
+    let last = -1
+    const onProgress = (pct: number) => {
+      const p = Math.round(pct)
+      if (p !== last && !e.sender.isDestroyed()) { last = p; e.sender.send('export:progress', p) }
+    }
+    if (video) videoExport = true
+    try {
+      const files = await engine.exportDeck(deck, format, outDir(), print, video ? onProgress : undefined)
+      if (files[0]) shell.showItemInFolder(files[0])
+      return files
+    } finally { if (video) videoExport = false }
   })
 
   ipcMain.handle('agent:send', async (_, text: string, model?: string) => {
@@ -324,7 +335,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return assetUrl(out)
   })
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {
-    const extensions = kind === 'video' ? ['mp4', 'webm', 'mov', 'm4v'] : ['mp3', 'wav', 'm4a', 'ogg', 'aac']
+    const extensions = kind === 'video' ? ['mp4', 'webm', 'mov', 'm4v', 'mkv', 'flv'] : ['mp3', 'wav', 'm4a', 'ogg', 'aac']
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: kind === 'video' ? 'Videos' : 'Audio', extensions }] })
     const file = r.filePaths[0]
     return r.canceled || !file ? null : assetUrl(file)

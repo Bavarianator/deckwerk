@@ -4,13 +4,13 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPoi
 import { createPortal } from 'react-dom'
 import { Pause, Play, Plus, Scissors, Trash2 } from 'lucide-react'
 import type { Size } from '../../shared/deck'
-import { partsLength, type ClipContent, type Part } from '../../shared/video'
+import { MAX_PARTS, partsLength, type ClipContent, type Part } from '../../shared/video'
 import { assetOf } from './itemOps'
 import { confirmDialog } from './kit'
 import './cutter.css'
 
 const MIN = 0.3 // kürzester Ausschnitt; das Schema verlangt end > start + 0.2
-const MAX = 20 // Schema: höchstens 20 Ausschnitte
+const MAX = MAX_PARTS // Schema: höchstens so viele Ausschnitte je Clip-Folie
 const r2 = (s: number) => Math.round(s * 100) / 100
 const fl = (s: number) => Math.floor(s * 100) / 100 // Enden abrunden, damit sie nicht hinter das Videoende ragen
 const clock = (s: number) => { const d = Math.round(s * 10); return `${Math.floor(d / 600)}:${String(Math.floor(d / 10) % 60).padStart(2, '0')},${d % 10}` }

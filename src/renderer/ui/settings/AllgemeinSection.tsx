@@ -63,6 +63,12 @@ export function AllgemeinSection({ go }: SectionProps) {
         </Row>
         <Row title="Schlüssel und Passwörter">Liegen verschlüsselt auf diesem Rechner.</Row>
       </Group>
+      <Group label="Modelle und Lizenzen">
+        <Row title="Spracherkennung">Parakeet-TDT-0.6B-v3 von NVIDIA (CC BY 4.0), ausgeführt mit sherpa-onnx (Apache-2.0).</Row>
+        <Row title="Videoanalyse">Silero VAD (MIT), CED (Apache-2.0), YuNet (MIT).</Row>
+        <Row title="Video laden">yt-dlp (Unlicense), TwitchDownloader (MIT).</Row>
+        <Row title="Musik">Von Openverse; der Nachweis steht im Deck.</Row>
+      </Group>
       <Group label="Tastenkürzel">
         <Row title="Übersicht">Im Editor <kbd>?</kbd> drücken.</Row>
       </Group>
