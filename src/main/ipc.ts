@@ -6,10 +6,12 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { PRINT_SIZES, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
+import { PRINT_SIZES, profileOf, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
+import type { Route } from './guide-modules'
+import { routeTask, type RouterVia } from './router'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, type Orientation } from './tools'
@@ -57,6 +59,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   let dirty = false // Änderungen (UI oder KI) seit dem letzten Speichern
   let agent: DeckAgent | CliAgent | null = null
   let agentKind: 'api' | Cli | null = null // wechselt die Modellwahl den Weg, beginnt ein neues Gespräch
+  let stops = 0 // „Stopp“ während des Routings: Der Auftrag startet danach nicht mehr
   // Agenten-CLIs mit dem Login des Nutzers (Claude Code, Codex, Vibe). Welches der Chat nutzt, entscheidet das Modell-Dropdown.
   const clis = {} as Record<Cli, string | null>
   const detect = () => { for (const c of CLIS) clis[c] = findCli(c) } // erneut in Einrichtung und Modell-Liste: frisch Installiertes zählt sofort
@@ -241,13 +244,31 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const opts = { engine, onEvent: emit, apiKey: key, deck: deck ?? undefined, outDir: outDir() }
     agent ??= kind === 'api' ? new DeckAgent(opts) : new CliAgent(kind, clis[kind]!, opts)
     agentKind = kind
-    const auto = !r && model === AUTO ? autoPick(text, !!deck?.slides.length) : null
-    agent.model = r ? r.model : auto?.model ?? modelOf(model).id // unbekannte Claude-ID → Standardmodell
-    agent.effort = auto?.effort ?? 'high'
-    if (auto) emit({ type: 'tool', name: 'auto_model', status: 'done', summary: `${modelOf(auto.model).name} (${auto.why})` })
-    await agent.send(text)
+    const isAuto = !r && model === AUTO
+    // Gesprächsstart: Haiku 5.5 wählt die Module (und bei „Auto“ das Modell) über denselben Zugang wie der Chat – API-Key im
+    // API-Weg, sonst der Login von Claude Code (Plan). Vibe/Codex: nach Regeln, der Auftrag geht nicht an einen zweiten Anbieter.
+    // Danach übernimmt das Modell (read_guide).
+    let route: Route | undefined
+    if (agent.fresh) {
+      const stop = stops
+      const via: RouterVia = kind === 'api' && key ? { kind: 'api', apiKey: key } : kind === 'claude' && clis.claude ? { kind: 'claude', bin: clis.claude } : { kind: 'none' }
+      emit({ type: 'tool', name: 'router', status: 'start' })
+      route = await routeTask({ text, profile: profileOf(deck), layoutsInDeck: deck?.slides.map((s) => s.layout) ?? [], hasDeck: !!deck?.slides.length }, via, { auto: isAuto })
+      const n = route.modules.length
+      emit({ type: 'tool', name: 'router', status: 'done', summary: `${route.source === 'haiku' ? 'Haiku' : 'Regeln'}: ${n} ${n === 1 ? 'Modul' : 'Module'}${route.reason?.startsWith('Fallback') ? ' (Haiku nicht erreichbar)' : ''}` })
+      if (stop !== stops) return
+    }
+    if (r) agent.model = r.model
+    else if (!isAuto) { agent.model = modelOf(model).id; agent.effort = 'high' } // unbekannte Claude-ID → Standardmodell
+    else if (route) { // Auto: Modell zum Gesprächsstart (Router, sonst Stichwörter), danach bleibt es für das Gespräch
+      const pick = route.model ? { model: route.model, effort: route.effort ?? 'high', why: 'Router' } : autoPick(text, !!deck?.slides.length)
+      agent.model = pick.model
+      agent.effort = pick.effort
+      emit({ type: 'tool', name: 'auto_model', status: 'done', summary: `${modelOf(pick.model).name} (${pick.why})` })
+    }
+    await agent.send(text, route)
   })
-  ipcMain.handle('agent:abort', () => agent?.abort())
+  ipcMain.handle('agent:abort', () => { stops++; agent?.abort() })
 
   // Prüft den Key vorher bei Anthropic (GET /v1/models kostet nichts). Ohne Netz wird er ungeprüft gespeichert.
   ipcMain.handle('key:set', async (_, key: string): Promise<'geprüft' | 'ungeprüft'> => {

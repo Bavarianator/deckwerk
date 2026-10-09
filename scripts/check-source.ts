@@ -1,5 +1,5 @@
 // Quellmaterial lesen (braucht vorher `npm run render examples/quartal.json` und `examples/foto.json` für die Dateien unter exports/):
-// npx esbuild scripts/check-source.ts --bundle --packages=external --platform=node --format=esm --outfile=out/check-source.mjs && node out/check-source.mjs
+// npx esbuild scripts/check-source.ts --bundle --loader:.md=text --packages=external --platform=node --format=esm --outfile=out/check-source.mjs && node out/check-source.mjs
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, truncateSync, writeFileSync } from 'node:fs'

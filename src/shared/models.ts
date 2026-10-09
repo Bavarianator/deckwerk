@@ -12,6 +12,8 @@ export const MODELS = [
 export type ModelId = (typeof MODELS)[number]['id']
 export const DEFAULT_MODEL: ModelId = 'claude-opus-5-5'
 export const modelOf = (id: unknown) => MODELS.find((m) => m.id === id) ?? MODELS[0]
+// Router zum Gesprächsstart (src/main/router.ts): wählt Module und bei „Auto“ das Modell; kein Chat-Modell
+export const ROUTER_MODEL = 'claude-haiku-5-5'
 
 // „Auto“ (Standard der App): Deckwerk wählt je Auftrag. Neue Decks, Quellmaterial und Umbauten brauchen Opus (Storyline,
 // Design, viele Folien), gezielte Änderungen schafft Sonnet in einem Bruchteil der Zeit.
