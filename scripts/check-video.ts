@@ -1,13 +1,13 @@
 // Video-Schnitt unter Node (ffmpeg, Zuschnitt, Untertitel, Clip-Szene): npx esbuild scripts/check-video.ts --bundle --platform=node --format=esm --external:./render --external:./export-pptx --external:electron --outfile=${TMPDIR:-/tmp}/check-video.mjs && DECKWERK_HOME=${TMPDIR:-/tmp}/check-video-home node ${TMPDIR:-/tmp}/check-video.mjs
 // Die externen Pfade sind die Electron-Teile, die export-video.ts erst in exportVideo lädt. Ohne ffmpeg im PATH wird ffmpeg-static geladen (~30 MB).
 import assert from 'node:assert/strict'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless } from '../src/main/export-video'
 import type { Deck } from '../src/shared/deck'
 import { ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
-import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, partsLength, tighten, type Transcript } from '../src/shared/video'
+import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, tighten, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -44,6 +44,9 @@ async function main() {
       () => console.log('  (Drehung übersprungen: ffmpeg kennt -display_rotation nicht)'),
     )
     await assert.rejects(probe(join(dir, 'fehlt.mp4')), /nicht lesbar/)
+    // Dauer aus dem Container ist fremd: ffconcat mit duration 200000 s (55 h) meldet sich, statt riesige Arrays anzulegen
+    writeFileSync(join(dir, 'lang.ffconcat'), "ffconcat version 1.0\nfile 'quelle.mp4'\nduration 200000\n")
+    await assert.rejects(probe(join(dir, 'lang.ffconcat')), /länger als 48 Stunden/)
 
     // Standbilder und Ton für Whisper
     const jpgs = await frames(src, [1, 5])
@@ -77,6 +80,10 @@ async function main() {
     assert.deepEqual(cropRect(info, out, 0), { x: 0, y: 0, w: 406, h: 720 })
     assert.deepEqual(cropRect(info, out, 0.5), { x: 437, y: 0, w: 406, h: 720 })
     assert.deepEqual(cropRect(info, out, 1), { x: 874, y: 0, w: 406, h: 720 })
+    // Ausgabegröße: 1,5-fach, längere Seite höchstens 3840 px, Seitenverhältnis bleibt
+    assert.deepEqual(outSize({ w: 720, h: 1280 }), out)
+    assert.deepEqual(outSize({ w: 50000, h: 50000 }), { w: 3840, h: 3840 })
+    assert.deepEqual(outSize({ w: 3000, h: 1000 }), { w: 3840, h: 1280 })
 
     // Wörter auf der Clip-Zeitachse (geschätzt aus dem Text), Häppchen
     const tr: Transcript = { duration: 12, lang: 'de', segments: [{ start: 1, end: 4, text: 'eins zwei drei' }, { start: 6, end: 8, text: 'vier fünf' }] }
@@ -117,6 +124,10 @@ async function main() {
     assert.ok(/^Style: Hook,Archivo,\d+,&H00FFFFFF/m.test(ass))
     const satz = assSubs({ size: out, font: 'Archivo', bold: true, accent: '#0B5563', hookDur: 4, cues: cues(words, 'satz'), mode: 'satz' })
     assert.equal(satz.match(/^Dialogue:/gm)?.length, 1, 'ohne Hook nur der Satz')
+    // einzelnes \r: für libass ein Zeilenumbruch, darf keine eigene Dialogue-Zeile einschleusen
+    const cr = assSubs({ size: out, font: 'Archivo', bold: true, accent: '#FF8800', hook: 'a\rDialogue: 0,0:00:00.00,9:00:00.00,Hook,,0,0,0,,x\r\nb\nc', hookDur: 4, cues: [], mode: 'wort' })
+    assert.ok(!cr.includes('\r') && cr.includes(',,a\\NDialogue: 0,0:00:00.00,9:00:00.00,Hook,,0,0,0,,x\\Nb\\Nc'), cr)
+    assert.equal(cr.match(/^Dialogue:/gm)?.length, 1, 'eingeschleuste Zeile')
     // Lage nach Format: Querformat kleiner und tief (7 %), 9:16 über der Plattform-Leiste (33 %), 4:5 bei 12 %. Felder: [2] Größe, [21] MarginV
     const styles = (size: { w: number; h: number }) => {
       const a = assSubs({ size, font: 'Archivo', bold: true, accent: '#FF8800', hook: 'Hook', hookDur: 4, cues: [], mode: 'wort' }).split('\n')
@@ -249,6 +260,24 @@ async function main() {
     const deck = { title: 'Musik', theme: { id: 'beratung' }, transition: 'none', mode: 'click', slides: [{ layout: 'clip', content: { video: src, parts: [{ start: 1, end: 2 }] } }] } as unknown as Deck
     await assert.rejects(exportVideo(deck, join(dir, 'x'), 'mp4', async () => null, undefined, { music: { file: stumm } }), /Die Musikdatei .*stumm\.mp4 hat keine Tonspur\./)
     await assert.rejects(exportVideo(deck, join(dir, 'x'), 'clips', async () => null, undefined, { music: { file: join(dir, 'fehlt.mp3') } }), /Die Musikdatei .*fehlt\.mp3 fehlt\./)
+
+    // Obergrenzen vor dem Encoden: höchstens MAX_PARTS Ausschnitte (nahtlose Stücke zählen nicht extra), Material höchstens 6 h
+    const clipDeck = (parts: { start: number; end: number }[]) => ({ ...deck, slides: [{ layout: 'clip', content: { video: src, parts } }] }) as unknown as Deck
+    const viele = clipDeck(Array.from({ length: 101 }, (_, k) => ({ start: k * 0.1, end: k * 0.1 + 0.05 })))
+    await assert.rejects(exportVideo(viele, join(dir, 'x'), 'clips', async () => null), /101 Ausschnitte, höchstens 100/)
+    await assert.rejects(exportVideo(clipDeck(Array.from({ length: 101 }, (_, k) => ({ start: k * 0.1, end: k * 0.1 + 0.1 })).concat({ start: 13, end: 7 * 3600 })), join(dir, 'x'), 'clips', async () => null), /7\.0 h lang, ein Video-Export geht bis 6 h/)
+    // Reste abgestürzter Exporte: Job-Ordner älter als 6 h fällt weg, ein frischer bleibt
+    const alt = join(dir, '.video-tmp-alt'), neu = join(dir, '.video-tmp-neu')
+    mkdirSync(alt); mkdirSync(neu)
+    utimesSync(alt, new Date(Date.now() - 7 * 3600e3), new Date(Date.now() - 7 * 3600e3))
+    // Exporte nacheinander: B scheitert sofort an der Prüfung, wartet aber, bis A (Musik per ffmpeg anspielen) fertig ist
+    const order: string[] = []
+    await Promise.all([
+      assert.rejects(exportVideo(deck, join(dir, 'x'), 'mp4', async () => null, undefined, { music: { file: stumm } }).finally(() => order.push('a')), /keine Tonspur/),
+      assert.rejects(exportVideo(viele, join(dir, 'x'), 'clips', async () => null).finally(() => order.push('b')), /101 Ausschnitte/),
+    ])
+    assert.deepEqual(order, ['a', 'b'], 'zwei Exporte gleichzeitig')
+    assert.ok(!existsSync(alt) && existsSync(neu), 'alter Job-Ordner weg, frischer bleibt')
 
     console.log('check-video: alles grün')
   } finally {

@@ -3,11 +3,11 @@
 // Ablauf: Szenen als Zwischenstände (mkv, PCM-Ton), je Ausgabedatei ein Endschritt (concat-Demuxer, Video kopiert, Ton einmal AAC + loudnorm + Musik).
 // Electron-Teile (renderSlide, nativeImage, Schriften) lädt erst exportVideo: assSubs, clipSegs, finish und encodeClip laufen im Selbsttest unter Node.
 import { randomBytes } from 'node:crypto'
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rename, rm, stat, statfs, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
-import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript } from '../shared/video'
+import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript } from '../shared/video'
 import { probe, runFfmpeg, silences } from './ffmpeg'
 import { localAsset } from './sync'
 
@@ -39,8 +39,8 @@ const at = (s: number) => {
   const cs = Math.max(0, Math.round(s * 100))
   return `${Math.floor(cs / 360000)}:${n2(Math.floor(cs / 6000) % 60)}:${n2(Math.floor(cs / 100) % 60)}.${n2(cs % 100)}`
 }
-// Backslash als Vollbreiten-Zeichen (ASS kennt kein Escape dafür), Klammern per \{ \} (libass), Zeilenumbruch als \N
-const esc = (s: string) => s.replace(/\\/g, '＼').replace(/[{}]/g, (c) => `\\${c}`).replace(/\r?\n/g, '\\N')
+// Backslash als Vollbreiten-Zeichen (ASS kennt kein Escape dafür), Klammern per \{ \} (libass), Zeilenumbruch als \N (auch ein einzelnes \r, libass bricht dort um)
+const esc = (s: string) => s.replace(/\\/g, '＼').replace(/[{}]/g, (c) => `\\${c}`).replace(/\r\n|\r|\n/g, '\\N')
 
 // ASS-Farbe &HBBGGRR&. Dunkle Akzente (z. B. Petrol) gingen auf Video neben der dunklen Kontur unter → halb Richtung Weiß.
 function assColor(hex: string) {
@@ -98,6 +98,9 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (!parts?.length) throw new Error(`${where}: Der Clip hat keine Ausschnitte (parts).`)
   const bad = parts.findIndex((p) => !(p.end > p.start))
   if (bad >= 0) throw new Error(`${where}: Ausschnitt ${bad + 1} endet nicht nach seinem Anfang (start ${parts[bad].start} s, end ${parts[bad].end} s).`)
+  // Obergrenze gegen fremde deck.json; nahtlose Stücke zählen nicht extra (follow teilt Ausschnitte an Sprecherwechseln)
+  const n = seamless(parts).filter((j) => !j).length
+  if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
 export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit }
@@ -204,10 +207,28 @@ function videoPath(src: string, slide: number) {
   return localAsset(p)
 }
 
+const MAX_SECONDS = 6 * 3600 // Material je Export
+const STALE = 6 * 3600e3 // Job-Ordner älter als das (ms): Rest nach einem Absturz
+let queue: Promise<unknown> = Promise.resolve()
+
 /** Deck als Video: mp4 = alle Folien hintereinander in `${base}.mp4`, clips = je Clip-Folie `${base}-01.mp4` usw. Fortschritt 0–100 über alle Szenen.
- *  o.music: Hintergrundmusik (Pfad löst der Aufrufer auf), in jeder Ausgabedatei. */
-export async function exportVideo(deck: Deck, target: string, format: 'mp4' | 'clips', transcriptOf: (file: string) => Promise<Transcript | null>, onProgress: (pct: number) => void = () => {}, o: { music?: Music } = {}): Promise<string[]> {
-  const base = resolve(target)
+ *  o.music: Hintergrundmusik (Pfad löst der Aufrufer auf), in jeder Ausgabedatei.
+ *  Exporte laufen nacheinander: UI und KI-Tool export_deck können gleichzeitig starten, jeder öffnet bis zu GROUP Decoder. */
+export function exportVideo(...a: Parameters<typeof exportOnce>): Promise<string[]> {
+  const run = queue.then(() => exportOnce(...a))
+  queue = run.catch(() => {})
+  return run
+}
+
+async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', transcriptOf: (file: string) => Promise<Transcript | null>, onProgress: (pct: number) => void = () => {}, o: { music?: Music } = {}): Promise<string[]> {
+  const base = resolve(target), parent = dirname(base)
+  // Job-Ordner abgestürzter Exporte wegräumen (mtime ändert sich mit jeder neuen Datei darin)
+  await mkdir(parent, { recursive: true })
+  for (const e of await readdir(parent, { withFileTypes: true })) {
+    if (!e.isDirectory() || !e.name.startsWith('.video-tmp-')) continue
+    const p = join(parent, e.name), st = await stat(p).catch(() => null)
+    if (st && Date.now() - st.mtimeMs > STALE) await rm(p, { recursive: true, force: true })
+  }
   const scenes = deck.slides.map((s, i) => ({ i, clip: s.layout === 'clip' ? (s.content as ClipContent) : undefined })).filter((x) => format === 'mp4' || x.clip)
   if (!scenes.length) throw new Error('Keine Clip-Folie im Deck: Einzelne Clips entstehen nur aus Folien mit dem Layout „clip“.')
   // Vorab prüfen, damit ein Fehler in Folie 5 nicht erst nach vier fertigen Szenen auffällt
@@ -225,12 +246,16 @@ export async function exportVideo(deck: Deck, target: string, format: 'mp4' | 'c
   // Gewichte für den Fortschritt: Länge je Szene, dazu je Ausgabedatei der Endschritt (Video wird nur kopiert)
   const weights = scenes.map(({ clip }) => (clip ? partsLength(clip.parts) : STILL))
   const sum = weights.reduce((a, b) => a + b, 0), total = sum * 1.2, preset = presetFor(sum)
+  if (sum > MAX_SECONDS) throw new Error(`Das Material ist zusammen ${(sum / 3600).toFixed(1)} h lang, ein Video-Export geht bis 6 h. Bitte Ausschnitte kürzen oder das Deck teilen.`)
+  // Platz grob vorab (H.264 ~1,5 MB/s bei 1080p, PCM 0,19 MB/s, ×1,5 Reserve): sonst bricht ffmpeg erst nach Minuten am vollen Datenträger ab
+  const need = sum * ((1.5e6 * size.w * size.h) / (1920 * 1080) + 0.19e6) * 1.5, fs = await statfs(parent), free = fs.bavail * fs.bsize
+  if (free < need) throw new Error(`Zu wenig freier Speicherplatz für den Video-Export: nötig sind rund ${Math.ceil(need / 1e8) / 10} GB, frei ${Math.floor(free / 1e8) / 10} GB.`)
   let done = 0
   const step = (w: number) => (pct: number) => onProgress(Math.min(100, Math.floor(((done + (w * pct) / 100) / total) * 100)))
   // Übergang ≠ none (morph = harter Schnitt): Einblende aus Schwarz am Anfang der Folie, Abblende am Ende der Szene davor.
   // ponytail: kein echter Crossfade (xfade), der bräuchte eine Neukodierung des Ganzen statt -c:v copy
   const fades = (k: number) => format === 'mp4' && k < scenes.length && !['none', 'morph'].includes(transitionOf(deck, scenes[k].i))
-  const dir = join(dirname(base), `.video-tmp-${randomBytes(4).toString('hex')}`) // nicht /tmp: tmpfs läuft bei langen Videos voll
+  const dir = join(parent, `.video-tmp-${randomBytes(4).toString('hex')}`) // nicht /tmp: tmpfs läuft bei langen Videos voll
   await mkdir(dir, { recursive: true })
   try {
     const font = scenes.some((x) => x.clip) ? await subFont(deck) : { name: 'Archivo', files: [], bold: true }

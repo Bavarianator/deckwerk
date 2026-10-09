@@ -9,7 +9,7 @@ import { MEDIA_EXT, formatSuffix, sizeOf, visibleSlides, type Deck, type Measure
 import { handout } from '../shared/handout'
 import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
-import { followParts, type ClipContent, type Segment, type Transcript } from '../shared/video'
+import { MAX_PARTS, followParts, type ClipContent, type Segment, type Transcript } from '../shared/video'
 import type { Engine } from './agent'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
@@ -177,7 +177,7 @@ export function createEngine(): Engine {
   const clipsOk = (deck: Deck) => deck.slides.every((s) => {
     if (s.layout !== 'clip') return true
     const c = s.content as ClipContent, file = mediaFile(c.video)
-    return !!file && existsSync(file) && !!c.parts?.length && c.parts.every((p) => p.end > p.start)
+    return !!file && existsSync(file) && !!c.parts?.length && c.parts.length <= MAX_PARTS && c.parts.every((p) => p.end > p.start)
   })
 
   // Untertitel und Füllwörter brauchen das Transkript nur in den Ausschnitten: nur deren Chunks rechnen. Fehler → Clip ohne Untertitel.
