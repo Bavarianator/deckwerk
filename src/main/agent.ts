@@ -28,7 +28,7 @@ export interface Engine {
 export interface VideoTools {
   probe(file: string): Promise<VideoInfo>
   frames(file: string, times: number[]): Promise<Buffer[]> // JPEG je Zeitpunkt (s), 640 px breit
-  transcribe(file: string, onProgress?: (pct: number) => void, o?: { range?: { from: number; to: number }; lang?: string; speakers?: boolean }): Promise<Transcript> // lokales Whisper, gecacht je Datei; range = nur diesen Bereich (s), speakers = Sprechertrennung
+  transcribe(file: string, onProgress?: (pct: number) => void, o?: { range?: { from: number; to: number }; lang?: string; speakers?: boolean }): Promise<Transcript> // lokal: Parakeet (sherpa-onnx), Whisper nur für Sprachen außerhalb von Parakeet; in 5-min-Stücken gecacht; range = nur diesen Bereich (s), speakers = Sprechertrennung
   highlights?(file: string, onProgress?: (pct: number) => void): Promise<Highlight[]> // Streams/lange Videos: stärkste Momente aus Lautheit, Chat, Ereignissen, Heatmap
   importUrl?(url: string, onProgress?: (pct: number) => void): Promise<{ file: string; title: string; duration: number; chat: boolean; chapters: { start: number; title: string }[] }> // Video per Link laden (yt-dlp); chat = Chat-Aufzeichnung liegt bei
 }
