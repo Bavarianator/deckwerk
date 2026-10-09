@@ -3,6 +3,7 @@
 import { Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowUp, ChevronLeft, LoaderCircle, Paperclip, Pause, Play, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
+import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { STILL, clipWords, fillerQuiet, mmss, partsLength, type ClipContent } from '../../shared/video'
@@ -24,6 +25,8 @@ const labelOf = (s: Slide) => {
   const t = typeof s.content?.title === 'string' ? s.content.title.trim() : ''
   return s.layout === 'section' ? `Zwischentitel${t ? `: ${t}` : ''}` : `Folie: ${t || (LAYOUTS[s.layout as LayoutId]?.name ?? s.layout)}`
 }
+const RANK = { error: 0, warn: 1, info: 2 }
+const count = (xs: ClipIssue[]) => xs.filter((x) => x.severity !== 'info').length // Infos zählen nicht
 const where = (s: ClipSlide, n: number) =>
   `Clip ${n} (Folie ${s.id}), Quelle ${s.content.video}, parts ${s.content.parts.map((p) => `${p.start}–${p.end}`).join(', ')}`
 
@@ -118,13 +121,29 @@ export function Deckvid(p: Props) {
   const [cache, setCache] = useState<Record<string, Cached | null>>({})
   const asked = useRef(new Set<string>()) // seit dem letzten KI-Zug oder Export schon angefragt
   const idle = !busy && !p.exporting
-  const video = clip?.content.video
+  const [fresh, setFresh] = useState<Record<string, boolean>>({}) // Cache der Quelle ist seit dem letzten KI-Zug/Export neu geladen
+  const videos = [...new Set(clips.map((s) => s.content.video))].join('\n') // alle Quellen, damit die Punkte in der Liste für jeden Clip stimmen
   useEffect(() => {
-    if (!idle) return void asked.current.clear()
-    if (!video || asked.current.has(video)) return
-    asked.current.add(video)
-    window.api.videoCached(video).then((d) => setCache((m) => ({ ...m, [video]: d })), () => asked.current.delete(video))
-  }, [video, idle])
+    if (!idle) { asked.current.clear(); setFresh((f) => Object.keys(f).length ? {} : f); return }
+    for (const video of videos.split('\n')) {
+      if (!video || asked.current.has(video)) continue
+      asked.current.add(video)
+      window.api.videoCached(video).then((d) => { setCache((m) => ({ ...m, [video]: d })); setFresh((f) => ({ ...f, [video]: true })) }, () => asked.current.delete(video))
+    }
+  }, [videos, idle])
+
+  // Prüfung je Clip; erst wenn der Cache seiner Quelle geladen ist (sonst flackert „Transkript fehlt“)
+  const issues = useMemo(() => {
+    const others = clips.map((s) => ({ video: s.content.video, parts: s.content.parts }))
+    const out: Record<string, ClipIssue[]> = {}
+    clips.forEach((s, k) => {
+      const d = cache[s.content.video]
+      if (d === undefined) return
+      const info = { duration: d?.duration, transcript: d?.transcript, music: d?.signals?.music }
+      out[s.id] = lintClip(s.content, size, info, others, k).sort((a, b) => RANK[a.severity] - RANK[b.severity])
+    })
+    return out
+  }, [slides, cache, size.w, size.h])
 
   useKey((e) => {
     if (!keysFree(e) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !slides.length) return
@@ -176,7 +195,7 @@ export function Deckvid(p: Props) {
           {slides.map((s, i) => isClip(s) ? (
             <button key={s.id} className="dv-item" aria-current={i === index} onClick={() => p.onSelect(i)}>
               <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${clipUrl(s.content.video)}?frame=${s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
-              <span><b>{s.content.hook || `Clip ${no(s)}`}</b><small>{mmss(partsLength(s.content.parts))}</small></span>
+              <span><b>{s.content.hook || `Clip ${no(s)}`}</b><small>{mmss(partsLength(s.content.parts))}<Flag xs={issues[s.id]} /></small></span>
             </button>
           ) : (
             <button key={s.id} className="dv-item dv-sep" aria-current={i === index} onClick={() => p.onSelect(i)}>{labelOf(s)}</button>
@@ -188,7 +207,7 @@ export function Deckvid(p: Props) {
 
         {clip ? (
           <ClipStage key={clip.id} clip={clip} n={no(clip)} here={here!} size={size} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
-            parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)} cached={cache[clip.content.video] ?? null}
+            parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)} cached={cache[clip.content.video] ?? null} issues={issues[clip.id] ?? []} fresh={!!fresh[clip.content.video]}
             busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()}
             onCaptions={() => p.patchSlide(index, { content: { ...clip.content, captions: clip.content.captions === 'aus' ? 'satz' : 'aus' } })} />
         ) : (
@@ -241,15 +260,40 @@ export function Deckvid(p: Props) {
   )
 }
 
+// Kleiner Punkt + Zahl in der Clip-Liste; nur Fehler und Warnungen
+function Flag({ xs }: { xs?: ClipIssue[] }) {
+  const k = xs ? count(xs) : 0
+  if (!k) return null
+  const e = xs!.filter((x) => x.severity === 'error').length
+  return <span className={`dv-flag${e ? ' err' : ''}`} role="img" aria-label={`${k} ${k === 1 ? 'Hinweis' : 'Hinweise'}${e ? `, davon ${e} Fehler` : ''}`}><i aria-hidden />{k}</span>
+}
+
+// Prüfhinweise des gewählten Clips: höchstens 4 sichtbar, Rest aufklappbar
+function Hints({ xs, busy, onFix }: { xs: ClipIssue[]; busy: boolean; // busy: KI arbeitet oder Cache noch nicht neu geladen
+   onFix: () => void }) {
+  const [all, setAll] = useState(false)
+  const shown = all ? xs : xs.slice(0, 4)
+  return (
+    <div className="dv-hints" role="group" aria-label="Prüfhinweise">
+      <ul>{shown.map((x, k) => <li key={k} className={x.severity}><span className="dv-sr">{x.severity === 'error' ? 'Fehler: ' : 'Hinweis: '}</span>{x.message}</li>)}</ul>
+      <div>
+        {xs.length > 4 && <button className="plain" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Weniger' : `+ ${xs.length - 4} weitere`}</button>}
+        {count(xs) > 0 && <button className="pill" disabled={busy} onClick={onFix}>Von der KI beheben lassen</button>}
+      </div>
+    </div>
+  )
+}
+
 interface StageProps {
   clip: ClipSlide; n: number; here: string; size: Size; accent: string
   parts: ClipContent['parts'] // alle Ausschnitte aus derselben Quelle, für die Zeitleiste
   cached: Cached | null
+  issues: ClipIssue[]; fresh: boolean
   busy: boolean; onSend: (text: string, context?: string) => boolean; undo: ReactNode; onCut: () => void; onRemove: () => void; onCaptions: () => void
 }
 
 // Vorschau, Aufträge und Quell-Zeitleiste des gewählten Clips (Bereiche main und line im Grid). key = Folien-ID: ein anderer Clip startet frisch.
-function ClipStage({ clip, n, here, size, accent, parts, cached, busy, onSend, undo, onCut, onRemove, onCaptions }: StageProps) {
+function ClipStage({ clip, n, here, size, accent, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onCaptions }: StageProps) {
   const c = clip.content
   const videoRef = useRef<HTMLVideoElement>(null)
   const player = useClipPlayer(videoRef, c.parts)
@@ -299,6 +343,8 @@ function ClipStage({ clip, n, here, size, accent, parts, cached, busy, onSend, u
           <span>{mmss(player.t)} / {mmss(player.duration)}</span>
           {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
         </div>
+        {issues.length > 0 && <Hints xs={issues} busy={busy || !fresh} onFix={() => onSend('Behebe die Prüfhinweise dieses Clips.',
+          `Clip ${n} (Folie ${clip.id}), Quelle ${c.video}, ${c.parts.map((x, i) => `Ausschnitt ${i + 1}: ${String(+x.start.toFixed(1)).replace('.', ',')}–${String(+x.end.toFixed(1)).replace('.', ',')} s`).join('; ')}\n\nPrüfhinweise:\n${issues.filter((x) => x.severity !== 'info').map((x) => `- ${x.message}`).join('\n')}`)} />}
         <div className="dv-acts" role="group" aria-label={`Clip ${n} ändern`}>
           {(wide ? WIDE_TASKS : TASKS).map(([label, text]) => <button key={label} className="pill" disabled={busy} onClick={() => onSend(text, here)}>{label}</button>)}
           <i aria-hidden />
