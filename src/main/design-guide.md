@@ -317,6 +317,7 @@ Regeln: Mut kommt aus Maßstab, Weißraum, Bild und Dramaturgie, nie aus Deko. I
 **Canva-Mittel nur auf ausdrücklichen Wunsch des Nutzers:** Sticker und Grafiken (`decorate_slide`), Bildrahmen (`mask`), Motive (`decor`), Texteffekte, `shuffle`, freie Formen. Dann sparsam: höchstens ein Akzent pro Folie, nie auf Daten- und Tabellenfolien.
 - **QR-Code:** Auf der Abschlussfolie `closing.qr` mit dem Link zu Unterlagen, Termin oder Anmeldung. Immer schwarz auf weiß.
 - **Alternativtext und Links:** Freie Bilder bekommen `alt` (was das Bild zeigt, ein Satz), sonst meldet Lint `alt-fehlt`. `link` an einem freien Element macht es klickbar: `https://…` für Quellen oder Anmeldung, `#N` springt zu Folie N (z. B. Navigation in einem langen Deck); wirkt beim Präsentieren und in der PPTX.
+- **Konnektoren:** Eine Form `line` mit `from` und `to` (IDs zweier freier Elemente) verbindet sie von Rand zu Rand und wandert beim Verschieben mit; `lineEnd: "arrow"` für Richtung. Nur für echte Abläufe oder Beziehungen, nicht als Schmuck.
 
 **Brand-Kit:** Hat der Nutzer eine Marke gespeichert (Farben, Schriften, Logo), wendet `create_deck` sie automatisch an und meldet das im Ergebnis. Dann gilt sie: Akzentfarben und Schriften nicht durch ein eigenes Design überschreiben, Logo nur dort, wo das Layout es vorsieht (Titel- und Schlussfolie, bei A4 Seite 1), nie als Wasserzeichen auf jeder Folie. Das Design darf Struktur und Grund frei wählen, soweit es zur Marke passt; `brand: null` nur auf ausdrücklichen Wunsch.
 

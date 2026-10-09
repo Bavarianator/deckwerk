@@ -13,12 +13,18 @@ export function geoOf(it: Item): Geo {
 export const removeItems = (items: Item[], ids: string[]) => items.filter((it) => !ids.includes(it.id) || it.locked)
 
 // Kopien bekommen neue IDs, Gruppen werden zu neuen Gruppen (nicht Teil des Originals)
+// Konnektoren: hängen an den Kopien, wenn beide Enden mitkopiert werden, sonst werden sie zur freien Linie
 export const cloneItems = (src: Item[], offset = 20): Item[] => {
   const groups = new Map<string, string>()
-  return src.map((it) => ({
-    ...structuredClone(it), id: newId(), x: it.x + offset, y: it.y + offset, locked: false,
-    group: it.group && (groups.get(it.group) ?? groups.set(it.group, newId()).get(it.group)),
-  }))
+  const ids = new Map(src.map((it) => [it.id, newId()]))
+  return src.map((it) => {
+    const linked = it.from && it.to && ids.has(it.from) && ids.has(it.to)
+    return {
+      ...structuredClone(it), id: ids.get(it.id)!, x: it.x + offset, y: it.y + offset, locked: false,
+      group: it.group && (groups.get(it.group) ?? groups.set(it.group, newId()).get(it.group)),
+      from: linked ? ids.get(it.from!) : undefined, to: linked ? ids.get(it.to!) : undefined,
+    }
+  })
 }
 
 // ---------- Gruppen ----------

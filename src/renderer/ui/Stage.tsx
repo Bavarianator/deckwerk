@@ -392,7 +392,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     onItems((list) => list.map((it) => {
       const g = next[it.id]
       if (!g) return it
-      const out: Item = { ...it, x: g.x, y: g.y, w: g.w, h: it.kind === 'text' ? it.h : g.h, rot: g.rot || undefined }
+      const out: Item = { ...it, x: g.x, y: g.y, w: g.w, h: it.kind === 'text' && d.kind !== 'move' ? it.h : g.h, rot: g.rot || undefined }
       if (d.kind === 'resize' && d.size && d.hx && d.hy) out.size = Math.max(6, Math.round(d.size * (g.w / d.g.w)))
       if (d.kind === 'gresize' && it.kind === 'text' && d.hx && d.hy) out.size = Math.max(6, Math.round((it.size ?? 32) * (g.w / d.start.get(it.id)!.w))) // Ecke: Schrift mit
       return out
