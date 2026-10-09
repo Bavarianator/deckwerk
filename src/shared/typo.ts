@@ -30,6 +30,7 @@ export function typeset(s: string): string {
   t = quotes(t)
     .replace(/(?<=\p{L})'(?=\p{L})/gu, '’')
     .replace(/(?<=\p{L}{2}|[)”“]) - (?=\p{L})/gu, ' – ') // nicht in Formeln („x - 3“)
+    .replace(/(?<=\S) – /g, `${NB}– `) // Gedankenstrich bleibt am Zeilenende, beginnt keine Zeile
     .replace(new RegExp(`(\\d)[ ${NB}]?(%|‰|€)`, 'g'), `$1${NB}$2`)
     .replace(new RegExp(`(\\d)[ ${NB}](${UNITS})(?![\\p{L}\\d])`, 'gu'), `$1${NB}$2`)
     .replace(new RegExp(`(Mio\\.?|Mrd\\.?|Tsd\\.?)[ ${NB}](€|\\$|£|Euro)`, 'g'), `$1${NB}$2`)

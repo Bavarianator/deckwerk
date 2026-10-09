@@ -50,7 +50,7 @@ export function T(p: { role: keyof typeof SCALE; slot: string; children: string;
   return (
     <div
       key={p.unit ? p.children : undefined} // Bearbeiten ersetzt die Spans durch Klartext: neuer Wert → neu aufbauen
-      className={`t r-${p.role} ${p.className ?? ''}`}
+      className={`t r-${p.role}${head && /^[„“‚»«"]\S/.test(p.children) ? ' hang' : ''} ${p.className ?? ''}`}
       style={p.style}
       data-pptx="text"
       data-slot={p.slot}
