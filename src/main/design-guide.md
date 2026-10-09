@@ -420,11 +420,11 @@ Jedes Layout hat einen sinnvollen Default. Weiche nur mit Grund davon ab. `pan`,
 
 ## 11. Video
 
-Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Engine schneidet, setzt den Zuschnitt, brennt Hook und Untertitel ein und legt Musik darunter. `export_deck` mit `clips` macht je Clip-Folie eine MP4, mit `mp4` wird das ganze Deck ein Video (andere Folien als Standbild von 3 s). Download, Transkript, Highlight-Suche und Export laufen im Hintergrund: Meldet ein Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf.
+Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Engine schneidet, setzt den Zuschnitt, brennt Hook und Untertitel ein und legt Musik darunter. `export_deck` mit `clips` macht je Clip-Folie eine MP4, mit `mp4` wird das ganze Deck ein Video (andere Folien als Standbild von 3 s). Download, Transkript, Highlight-Suche und Export laufen im Hintergrund: Meldet ein Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Der Export in 1080p läuft auf langsamen Rechnern mit ~10 fps (1 h Video ≈ 2–3 h); das dem Nutzer bei langen Videos vorher sagen.
 
 **Material:** Video aus dem Anhang („Video: asset://…“) oder per Link mit `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; im Zweifel nachfragen. Laufende Livestreams gehen erst nach dem Ende. Den Link als Quelle in die Notes.
 
-**Transkript:** `transcribe_video` erkennt lokal (Parakeet für 25 europäische Sprachen, sonst Whisper; beim ersten Mal ~670 MB Download). Auf langsamen Rechnern dauert das etwa ½–¾ der Länge des Bereichs. Bei Videos über 30 min deshalb erst `video_highlights`, dann nur die Fenster mit `from`/`to` transkribieren. `speakers: true` für Podcasts und Gespräche.
+**Transkript:** `transcribe_video` erkennt lokal (beim ersten Mal ~670 MB Download). Ohne `lang` nimmt es Parakeet, das nur 25 europäische Sprachen kennt: Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren: über 30 min erst `video_highlights`, dann nur die Fenster mit `from`/`to`. `speakers: true` für Podcasts und Gespräche.
 
 **Vier Abläufe:**
 1. **Short/Reel (9:16)** aus Vortrag, Interview oder Podcast: `transcribe_video` → 3–5 Momente wählen (Kriterien unten) und dem Nutzer mit Zeiten und Begründung nennen → `video_frames` als Kontaktabzug → `create_deck` mit `format: "9:16"` und `transition: "none"` → je Short eine `clip`-Folie → `render_slides` → `export_deck` mit `clips`.

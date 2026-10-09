@@ -5,12 +5,12 @@ import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/
 import { tmpdir } from 'node:os'
 import { basename, extname, join } from 'node:path'
 import JSZip from 'jszip'
+import { VIDEO_EXT } from '../shared/deck'
 import { mmss } from '../shared/video'
 import { assetUrl, imageSize } from './tools'
 
 export const SOURCE_IMG = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg']
-export const SOURCE_VIDEO = ['mp4', 'mov', 'm4v', 'webm', 'mkv', 'flv']
-export const SOURCE_EXT = ['txt', 'md', 'csv', 'json', 'docx', 'pptx', 'pdf', ...SOURCE_IMG, ...SOURCE_VIDEO]
+export const SOURCE_EXT = ['txt', 'md', 'csv', 'json', 'docx', 'pptx', 'pdf', ...SOURCE_IMG, ...VIDEO_EXT]
 export const SOURCE_MAX = 60_000 // Zeichen; der Rest wird abgeschnitten
 const MIN_PX = 150 * 150 // kleinere Abbildungen sind Icons, Linien, Zierrat
 const MAX_IMG = 20
@@ -158,7 +158,7 @@ export async function sourceText(file: string, assetDir?: string): Promise<strin
     const images = await Promise.all(parts.map((n) => (dir ? slideImages(zip, n, dir) : [])))
     return texts.map((t, i) => [`--- Folie ${i + 1} ---`, t.trim(), ...images[i].map((u) => `Bild: ${u}`)].filter(Boolean).join('\n')).join('\n\n')
   }
-  if (SOURCE_VIDEO.includes(ext)) {
+  if (VIDEO_EXT.includes(ext)) {
     // nicht kopieren (oft mehrere GB), nur verlinken. Ohne ffmpeg bleibt die Zeile ohne Maße; lädt Deckwerk es erst, wartet der Anhang höchstens 15 s
     const v = await Promise.race([import('./ffmpeg').then((m) => m.probe(file)), new Promise<null>((ok) => setTimeout(ok, 15_000, null).unref())]).catch(() => null)
     return `Video: ${assetUrl(file)}${v ? ` (${mmss(v.duration)}, ${v.w}×${v.h})` : ''}. Zuerst ${v && v.duration > 1800 ? 'video_highlights (über 30 min), dann nur die Fenster transkribieren' : 'transcribe_video'}; Abläufe für Short, ganzes Video kürzen, Stream-Highlights und Kompilation: Guide § Video.`

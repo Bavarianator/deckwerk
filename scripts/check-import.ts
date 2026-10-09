@@ -1,12 +1,12 @@
 // Import per Link (yt-dlp, Chat, Heatmap), Netzteil opt-in mit DW_NET=1 (lädt ~20 MB; TMPDIR mit ≥ 3 GB frei, optional DW_TWITCH_VOD=<id>): npx esbuild scripts/check-import.ts --bundle --platform=node --outfile=${TMPDIR:-/tmp}/check-import.cjs && DECKWERK_HOME=${TMPDIR:-/tmp}/check-import-home node ${TMPDIR:-/tmp}/check-import.cjs
 // CJS, weil jszip (CommonJS) im ESM-Bündel nicht laden könnte. Downloads und Modelle landen unter $TMPDIR.
 import assert from 'node:assert/strict'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ffmpegBin, probe, run } from '../src/main/ffmpeg'
 import { twitchBin, twitchChat, twitchVodId } from '../src/main/twitch-chat'
-import { chatTimes, chatWeight, heatPerSecond, importUrl, leftover, runTool, slimEnv } from '../src/main/ytdlp'
+import { chatTimes, chatWeight, checkUrl, heatPerSecond, importUrl, leftover, runTool, slimEnv } from '../src/main/ytdlp'
 
 // Eine Chat-Zeile wie in <id>.live_chat.json; live: Offset auf oberster Ebene (Mitschnitt eines laufenden Streams)
 const chatLine = (ms: string, item: object, live = false) =>
@@ -60,7 +60,18 @@ async function main() {
     const target = join(dir, 'nie-angelegt')
     for (const bad of ['file:///etc/passwd', '--exec=id', 'javascript:alert(1)', 'https://example.com/\nx', `https://example.com/${'a'.repeat(2000)}`])
       await assert.rejects(importUrl(bad, target, { models, ffmpeg: 'ffmpeg' }), /Link/, bad.slice(0, 40))
+    // SSRF: Ziele im eigenen Netz (auch in anderer Schreibweise) ebenso vor jedem Spawn
+    for (const bad of ['http://127.0.0.1/x', 'http://192.168.1.1/x', 'http://[::1]/x', 'http://foo.local/x', 'http://localhost:8080/x', 'http://2130706433/x', 'http://[::ffff:10.0.0.1]/x', 'http://169.254.169.254/latest', 'http://172.20.0.1/x', 'http://0.0.0.0/x'])
+      await assert.rejects(importUrl(bad, target, { models, ffmpeg: 'ffmpeg' }), /eigenen Netz/, bad)
     assert.ok(!existsSync(target), 'Zielordner darf nicht entstehen')
+    for (const ok of ['https://www.youtube.com/watch?v=jNQXAC9IVRw', 'https://www.twitch.tv/videos/1864746279', 'https://kick.com/video/x', 'https://localnews.example/v', 'https://172.32.0.1/v'])
+      assert.equal(checkUrl(ok).href, ok)
+    // Imports laufen nacheinander; ein gescheiterter hält die Warteschlange nicht an
+    const blocker = join(dir, 'datei')
+    writeFileSync(blocker, '')
+    const [a, b] = [importUrl('https://example.com/a', join(blocker, 'a'), { models, ffmpeg: 'ffmpeg' }), importUrl('https://example.com/b', join(blocker, 'b'), { models, ffmpeg: 'ffmpeg' })]
+    await assert.rejects(a, /datei\/a/)
+    await assert.rejects(b, /datei\/b/)
     console.log('offline ok')
 
     if (!process.env.DW_NET) return console.log('Netz übersprungen (DW_NET=1 setzen)')
