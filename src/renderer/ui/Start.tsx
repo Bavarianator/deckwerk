@@ -32,6 +32,18 @@ export function useSource() {
   }
   return { srcs, attach, remove: (name: string) => setSrcs((old) => old.filter((o) => o.name !== name)), clear: () => setSrcs([]), err }
 }
+// Datei-Chips der KI-Leisten (AskBar, Deckvid) samt Lesefehler
+export function SourceChips({ srcs, remove, err }: { srcs: Source[]; remove: (name: string) => void; err: string }) {
+  return <>
+    {srcs.map((s) => (
+      <span key={s.name} className="cap-token file" title={s.cut ? `${s.name} (zu lang, die KI bekommt den Anfang)` : s.name}>
+        {isImage(s.name) ? <ImageIcon size={11} /> : <Paperclip size={11} />}<span>{s.name}</span>
+        <button type="button" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={11} strokeWidth={2.6} /></button>
+      </span>
+    ))}
+    {err && <span className="cap-token error" role="alert" title={err}>{err}</span>}
+  </>
+}
 
 interface Recent { path: string; title: string; mtime: number; deck: Deck }
 
@@ -46,15 +58,19 @@ const EXAMPLES: [string, string, string?][] = [
 // Video-Chips: Label, Wunsch im Feld, ask geht unsichtbar an die KI (Abläufe: Design-Guide §11)
 export const VIDEO_EXAMPLES: [string, string, string][] = [
   ['5 Shorts', 'Mach aus meinem Video 5 Shorts mit Hook und Untertiteln.',
-    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (20–60 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips.'],
+    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (20–60 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
   ['Ganzes Video kürzen', 'Kürze mein ganzes Video: Füllsätze, Versprecher und Abschweifungen raus.',
-    'Ablauf Fulltime (Guide §11, Ablauf 2): create_deck format 16:9, transition none. transcribe_video über alles, Gestrichenes kurz nennen. Eine einzige clip-Folie mit allen behaltenen Ausschnitten als parts, pauses kurz, captions satz, kein Hook. Am Ende export_deck mit mp4.'],
+    'Ablauf Fulltime (Guide §11, Ablauf 2): create_deck format 16:9, transition none. transcribe_video über alles, Gestrichenes kurz nennen. Eine einzige clip-Folie mit allen behaltenen Ausschnitten als parts, pauses kurz, captions satz, kein Hook. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
   ['Highlights aus dem Stream', 'Finde die besten Momente in meinem Stream und mach daraus Shorts.',
-    'Ablauf Stream-Highlights (Guide §11, Ablauf 3): import_video bei Link, dann zuerst video_highlights. Nur die besten Fenster mit from/to transkribieren, nie den ganzen Stream. 5 Shorts im Format 9:16 wie im Ablauf Shorts; zusätzlich optional ein 16:9-Zusammenschnitt der Highlights. Am Ende export_deck mit clips (Zusammenschnitt: mp4).'],
+    'Ablauf Stream-Highlights (Guide §11, Ablauf 3): import_video bei Link, dann zuerst video_highlights. Nur die besten Fenster mit from/to transkribieren, nie den ganzen Stream. 5 Shorts im Format 9:16 wie im Ablauf Shorts; zusätzlich optional ein 16:9-Zusammenschnitt der Highlights. Am Ende export_deck mit clips (Zusammenschnitt: mp4). Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
   ['Zusammenschnitt', 'Schneide meine Videos zu einem Zusammenschnitt zusammen.',
-    'Ablauf Kompilation (Guide §11, Ablauf 4): create_deck format 16:9, transition none. Je Quelle transcribe_video und eine clip-Folie, dazwischen kurze Zwischentitel (Layout section), transition fade nur sparsam an Zwischentiteln. Musik über find_music nur auf Wunsch, dezent. Am Ende export_deck mit mp4.'],
+    'Ablauf Kompilation (Guide §11, Ablauf 4): create_deck format 16:9, transition none. Je Quelle transcribe_video und eine clip-Folie, dazwischen kurze Zwischentitel (Layout section), transition fade nur sparsam an Zwischentiteln. Musik über find_music nur auf Wunsch, dezent. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
 ]
 const LINK = /https?:\/\/[^\s<>"']+/g
+const linksOf = (text: string) => [...new Set((text.match(LINK) ?? []).map((u) => u.replace(/[.,;:!?)\]]+$/, '')))]
+// Nur Video-Links schalten in den Video-Modus, ein Quellenlink für eine Präsentation nicht
+const VIDEO_HOST = /^https?:\/\/([^/?#]*\.)?(youtube\.com|youtu\.be|twitch\.tv|kick\.com|vimeo\.com)([/:?#]|$)/i
+const isVideoLink = (u: string) => VIDEO_HOST.test(u) || VIDEO_FILE.test(u.replace(/[?#].*/, ''))
 
 // Formatwahl neben dem Modell: ask geht unsichtbar an die KI, format gilt für „Leer beginnen“ (ohne = 16:9)
 const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatId; ask?: string }[] = [
@@ -109,8 +125,8 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
     return () => window.removeEventListener('focus', load)
   }, [])
   const { srcs, attach, remove, clear, err } = useSource()
-  // Video oder Link im Feld: automatisch in den Video-Modus (danach frei umschaltbar)
-  const hasVideo = srcs.some((s) => VIDEO_FILE.test(s.name)) || /https?:\/\//.test(text)
+  // Video oder Video-Link im Feld: automatisch in den Video-Modus (danach frei umschaltbar)
+  const hasVideo = srcs.some((s) => VIDEO_FILE.test(s.name)) || linksOf(text).some(isVideoLink)
   useEffect(() => { if (hasVideo) { setVideo(true); setFmt('auto') } }, [hasVideo])
   const mode = (v: boolean) => { setVideo(v); setVask(undefined); if (v) setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
   const submit = () => {
@@ -118,7 +134,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
     const ask = text.trim() || (onlyVideos ? `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.` : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
       ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
       : 'Mach aus diesen Dateien eine Präsentation.')
-    const links = video ? [...new Set((text.match(LINK) ?? []).map((u) => u.replace(/[.,;:!?)\]]+$/, '')))].map((u) => `Link: ${u} – zuerst import_video`) : []
+    const links = video ? linksOf(text).map((u) => `Link: ${u} – zuerst import_video`) : []
     const context = [video ? vask : choice.ask, ...links, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
     // onSubmit liefert false bei busy oder fehlendem Key: dann nicht in die Video-Ansicht wechseln
     if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { if (video) onVideo?.(); setText(''); setVask(undefined); clear() }
@@ -153,7 +169,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             value={text}
             aria-label={video ? 'Was soll aus deinem Video werden?' : 'Worum geht es in deiner Präsentation?'}
             placeholder={video ? 'Video hierher ziehen oder Link einfügen – und sag kurz, was du brauchst' : 'Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum'}
-            onChange={(e) => { const v = e.target.value; setText(v); if (vask && v !== VIDEO_EXAMPLES.find((x) => x[2] === vask)?.[1]) setVask(undefined) }}
+            onChange={(e) => { setText(e.target.value); setVask(undefined) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
           />
           <div className="home-field-bar">

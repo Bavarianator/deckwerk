@@ -7,7 +7,7 @@ import './cutter.css'
 
 // Ausschnitt zur Quellzeit s: der laufende, wenn er s enthält (überlappende parts), sonst der erste, der s enthält, sonst der erste, der nach s endet (Lücke); -1 = hinter allen.
 // parts stehen in Abspielreihenfolge, nicht unbedingt nach Quellzeit sortiert.
-export function locate(ps: Part[], k: number, s: number) {
+function locate(ps: Part[], k: number, s: number) {
   const has = (p?: Part) => !!p && s >= p.start && s < p.end
   if (has(ps[k])) return k
   const hit = ps.findIndex(has)
@@ -78,6 +78,8 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
   return { playing, t, duration, src, part, play, playSource, pause, toggle: () => (playing ? pause() : play()), seekClip, seekSource }
 }
 
+export const clipUrl = (video: string) => (video.startsWith('/') ? assetOf(video) : video) // assetOf kodiert auch # und ?
+
 interface VideoProps {
   video: string; aspect: number; focus?: number; fit?: Fit; still?: number; videoRef: RefObject<HTMLVideoElement | null>; children?: ReactNode
   onBad?(): void; onMeta?(v: HTMLVideoElement): void; onClick?(): void
@@ -86,7 +88,7 @@ interface VideoProps {
 /** Video im Zielformat wie im MP4: crop füllt um focus, blur zeigt das ganze Bild auf unscharfem, abgedunkeltem Standbild. children liegen darüber (Hook, Untertitel).
  *  still: Sekunde, die vor dem ersten Abspielen steht; bei blur stabil halten, jeder neue Wert lässt den Main per ffmpeg ein Standbild ziehen. onBad: Chromium spielt den Codec nicht (HEVC, ProRes …) oder es gibt keine Videospur. */
 export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, videoRef, children, onBad, onMeta, onClick }: VideoProps) {
-  const url = video.startsWith('/') ? assetOf(video) : video // assetOf kodiert auch # und ?
+  const url = clipUrl(video)
   return (
     <div className={`clip-video${fit === 'blur' ? ' blur' : ''}`} style={{ aspectRatio: aspect }} onClick={onClick}>
       {fit === 'blur' && <div className="clip-video-bg" style={{ backgroundImage: `url("${url}?frame=${still ?? 0}")` }} />}
