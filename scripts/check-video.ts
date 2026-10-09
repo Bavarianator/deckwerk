@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless } from '../src/main/export-video'
 import type { Deck } from '../src/shared/deck'
-import { ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
+import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
 import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, tighten, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
@@ -32,6 +32,28 @@ async function main() {
   const dir = mkdtempSync(join(base, 'check-video-'))
   try {
     console.log('ffmpeg:', await ffmpegBin())
+
+    // Kontaktabzug: 9:16 aus 16:9, zwei parts, 3×3 Kacheln
+    const sheetSrc = join(dir, 'abzug.mp4')
+    await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=1280x720:rate=30:duration=12', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', sheetSrc])
+    const tSheet = Date.now()
+    const sheetParts = [{ start: 1, end: 4 }, { start: 8, end: 11.95, focus: 0.3 }]
+    for (const fit of ['crop', 'blur'] as const) {
+      const sheet = await contactSheet(sheetSrc, sheetParts, { size: { w: 1080, h: 1920 }, fit })
+      const jpg = join(dir, `abzug-${fit}.jpg`)
+      writeFileSync(jpg, sheet.jpg)
+      const meta = await probe(jpg).catch(() => null) // Standbild: Dauer egal, Maße zählen
+      assert.ok(meta, 'Kontaktabzug lesbar')
+      near(meta!.w, 720, 2, 'Kontaktabzug Breite')
+      near(meta!.h, 3 * ((240 * 16) / 9), 2, 'Kontaktabzug Höhe')
+      assert.equal(sheet.times.length, 9)
+      sheet.times.forEach((t, i) => {
+        assert.ok(i === 0 || t > sheet.times[i - 1], 'times monoton')
+        assert.ok(sheetParts.some((p) => t >= p.start && t <= p.end + 1e-6), `Zeit ${t} in einem part`)
+      })
+    }
+    console.log(`  Kontaktabzug ok (${Date.now() - tSheet} ms für 2 × 9 Kacheln)`)
+    if (process.env.DW_ONLY_SHEET) return
 
     // Testvideo: 12 s, 1280×720, Sinuston; dazu eine gedrehte Kopie (Handy hochkant)
     const src = join(dir, 'quelle.mp4'), rot = join(dir, 'gedreht.mp4')
