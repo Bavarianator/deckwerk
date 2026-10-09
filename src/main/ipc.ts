@@ -19,6 +19,7 @@ import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from 
 import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
 import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
+import { deckJson, withDeckFonts } from './webfonts'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -61,6 +62,25 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const detect = () => { for (const c of CLIS) clis[c] = findCli(c) } // erneut in Einrichtung und Modell-Liste: frisch Installiertes zählt sofort
   detect()
   const hasApiKey = () => existsSync(keyFile) || !!process.env.ANTHROPIC_API_KEY
+  // Katalogschriften des geöffneten Decks neu bestimmen: zuerst aus dem Cache (ohne Netz, darauf wartet das Öffnen), fehlende dann
+  // im Hintergrund laden und der UI wie beim Cloud-Sync nachreichen. Nicht als Änderung markiert: fontFiles sind Pfade dieses
+  // Rechners, jedes Öffnen bestimmt sie neu. ponytail: ändert jemand das Deck während des Downloads, verfällt dessen Ergebnis;
+  // die Schriften kommen dann mit font:ensure oder beim nächsten Öffnen (bei Bedarf: fontFiles in den neuen Stand mischen)
+  const heal = async () => {
+    const cur = deck
+    if (!cur) return
+    try {
+      const { theme } = await withDeckFonts(cur, { offline: true })
+      if (deck !== cur) return
+      const d = deck = { ...cur, theme }
+      void withDeckFonts(d).then(({ theme }) => {
+        if (deck !== d || JSON.stringify(theme) === JSON.stringify(d.theme)) return
+        deck = { ...d, theme }
+        agent?.setDeck(deck)
+        if (!win.isDestroyed()) win.webContents.send('deck:synced', deck)
+      }).catch((e) => console.warn('[fonts] Schriften nachladen:', e))
+    } catch (e) { console.warn('[fonts] Schriften beim Öffnen:', e) } // kaputte deck.json: öffnen ohne Katalogschriften
+  }
   loadImageSettings()
 
   // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/deckwerk wie image-settings.bin; Lauf beim Start und 5 s nach dem Speichern
@@ -70,7 +90,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Hat der Sync das offene Deck überschrieben, neu laden. ponytail: mit ungesicherten Änderungen gewinnt die lokale Fassung beim nächsten Speichern
   const syncChanged = (files: string[]) => {
     if (!path || dirty || !files.includes(path) || !existsSync(path)) return
-    try { deck = readDeck(path); agent?.setDeck(deck); if (!win.isDestroyed()) win.webContents.send('deck:synced', deck) } catch (e) { console.warn('[sync] Deck neu laden:', e) }
+    try { deck = readDeck(path) } catch (e) { console.warn('[sync] Deck neu laden:', e); return }
+    void heal().then(() => { agent?.setDeck(deck!); if (!win.isDestroyed()) win.webContents.send('deck:synced', deck) })
   }
   const syncFetch = syncFetchFor(HOME) // Ordner-Ziele nie in HOME, auch wenn der Ordner später per Link dorthin zeigt
   const syncer = createSyncer(HOME, () => syncCfg, (st) => { if (!win.isDestroyed()) win.webContents.send('sync:status', st) }, syncChanged, syncFetch)
@@ -98,7 +119,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const flush = () => {
     if (!dirty || !deck) return
     path ??= join(freeDir(deck.title), 'deck.json')
-    writeFileSync(path, JSON.stringify(deck, null, 2))
+    writeFileSync(path, deckJson(deck))
     dirty = false
   }
   win.on('closed', () => {
@@ -124,6 +145,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   if (first) {
     try {
       reset(readDeck(first), first)
+      void heal()
     } catch (e) {
       console.error(`[ipc] --open ${first}:`, e instanceof Error ? e.message : e)
     }
@@ -136,6 +158,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       flush()
       const file = await restore(f)
       reset(readDeck(file), file)
+      await heal()
       if (!win.isDestroyed()) win.webContents.send('deck:opened', state())
     } catch (e) {
       console.error(`[ipc] Öffnen von außen ${f}:`, e instanceof Error ? e.message : e)
@@ -158,6 +181,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     flush() // offene Änderungen zuerst, sonst überschriebe reset() eine gerade wiederhergestellte Version
     const file = await restore(r.filePaths[0])
     reset(readDeck(file), file)
+    await heal()
     return state()
   })
 
@@ -166,6 +190,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     flush()
     const file = await restore(resolve(f))
     reset(readDeck(file), file)
+    await heal()
     return state()
   })
   // zuletzt geänderte Decks unter ~/Deckwerk/*/deck.json, neueste zuerst
@@ -185,7 +210,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
     path ??= join(freeDir(deck.title), 'deck.json')
     await snapshot(path)
-    const json = JSON.stringify(deck, null, 2)
+    const json = deckJson(deck)
     dirty = false // vor dem Schreiben: eine Änderung, die währenddessen kommt, bleibt markiert
     // atomar über eine Punktdatei (vom Sync ausgenommen): ein gleichzeitiger Cloud-Abgleich liest nie eine halbe deck.json
     await writeFile(`${dirname(path)}/.deck.json.part`, json)
@@ -384,6 +409,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const err = await shell.openPath(STYLE_FILE)
     if (err) throw new Error(err)
   })
+  // Katalogschriften für ein Deck laden (offline: Ersatz) → Theme mit fontFiles; die UI übernimmt es nach einer Schriftwahl
+  ipcMain.handle('font:ensure', (_, d: Deck) => withDeckFonts(d))
   // eigene Schrift: 1–2 TTF (Regular, Bold am Dateinamen erkannt); Familienname aus der name-Tabelle, damit PowerPoint sie zuordnet
   ipcMain.handle('font:pick', async () => {
     const r = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'TrueType-Schrift', extensions: ['ttf'] }] })
@@ -456,7 +483,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     }))
   ipcMain.handle('deck:saveCopy', async (_, copy: Deck) => {
     const file = join(freeDir(copy.title), 'deck.json')
-    await writeFile(file, JSON.stringify(copy, null, 2))
+    await writeFile(file, deckJson(copy))
     return file
   })
   // Versionsverlauf: die Stände aus snapshot() des offenen Decks, neueste zuerst; wiederhergestellt wird über deck:openPath (restore())

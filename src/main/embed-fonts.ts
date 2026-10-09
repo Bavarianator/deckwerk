@@ -9,8 +9,9 @@ const REL_FONT = 'http://schemas.openxmlformats.org/officeDocument/2006/relation
 function tables(ttf: Buffer): Map<string, Buffer> {
   const n = ttf.readUInt16BE(4), out = new Map<string, Buffer>()
   for (let i = 0; i < n; i++) {
-    const o = 12 + i * 16
-    out.set(ttf.toString('latin1', o, o + 4), ttf.subarray(ttf.readUInt32BE(o + 8), ttf.readUInt32BE(o + 8) + ttf.readUInt32BE(o + 12)))
+    const o = 12 + i * 16, at = ttf.readUInt32BE(o + 8), end = at + ttf.readUInt32BE(o + 12)
+    if (end > ttf.length) throw new Error('TTF abgeschnitten') // halb geladene Datei: nicht einbetten
+    out.set(ttf.toString('latin1', o, o + 4), ttf.subarray(at, end))
   }
   return out
 }
@@ -30,6 +31,37 @@ function nameOf(name: Buffer, id: number): string {
 }
 
 const utf16 = (s: string) => Buffer.from(s, 'utf16le')
+
+// Hat die Schrift ein Zeichen? cmap Format 12 (volle Unicode-Tabelle) bzw. 4 (BMP), Plattform Unicode oder Windows
+function hasGlyph(cmap: Buffer, cp: number): boolean {
+  for (let i = 0; i < cmap.readUInt16BE(2); i++) {
+    const pid = cmap.readUInt16BE(4 + i * 8), off = cmap.readUInt32BE(8 + i * 8)
+    if (pid !== 0 && pid !== 3) continue
+    const fmt = cmap.readUInt16BE(off)
+    if (fmt === 12) {
+      for (let g = 0, n = cmap.readUInt32BE(off + 12); g < n; g++) {
+        const at = off + 16 + g * 12
+        if (cp >= cmap.readUInt32BE(at) && cp <= cmap.readUInt32BE(at + 4)) return true
+      }
+    } else if (fmt === 4 && cp <= 0xffff) {
+      const seg = cmap.readUInt16BE(off + 6) / 2, ends = off + 14, starts = ends + seg * 2 + 2, deltas = starts + seg * 2, ranges = deltas + seg * 2
+      for (let k = 0; k < seg; k++) {
+        if (cp > cmap.readUInt16BE(ends + k * 2) || cp < cmap.readUInt16BE(starts + k * 2)) continue
+        const delta = cmap.readInt16BE(deltas + k * 2), ro = cmap.readUInt16BE(ranges + k * 2)
+        const raw = ro === 0 ? cp : cmap.readUInt16BE(ranges + k * 2 + ro + (cp - cmap.readUInt16BE(starts + k * 2)) * 2)
+        if (raw !== 0 && ((raw + delta) & 0xffff) !== 0) return true
+      }
+    }
+  }
+  return false
+}
+
+// Kurzprüfung einer TTF (Schrift-Download, Kuratierung): Namen, Einbettungsrecht, echte Umrisse, fehlende Zeichen aus `chars`
+export function inspectTtf(ttf: Buffer, chars = ''): { family: string; style: string; fsType: number; glyf: boolean; missing: string[] } {
+  const t = tables(ttf), name = t.get('name'), os2 = t.get('OS/2'), cmap = t.get('cmap')
+  if (ttf.readUInt32BE(0) !== 0x00010000 || !name || !cmap) throw new Error('keine TrueType-Schrift')
+  return { family: nameOf(name, 1), style: nameOf(name, 2), fsType: os2 ? os2.readUInt16BE(8) : 0, glyf: t.has('glyf'), missing: [...chars].filter((c) => !hasGlyph(cmap, c.codePointAt(0)!)) }
+}
 
 // EOT v2.0 (0x00020001) ohne Kompression/XOR, wie ttf2eot. Alle Felder little-endian.
 export function ttfToEot(ttf: Buffer): Buffer {
@@ -74,16 +106,23 @@ export async function embedFonts(pptx: Buffer, fonts: EmbedFont[]): Promise<Buff
   let types = await zip.file('[Content_Types].xml')!.async('string')
   if (!types.includes('Extension="fntdata"')) types = types.replace('</Types>', '<Default Extension="fntdata" ContentType="application/x-fontdata"/></Types>')
   let rid = Math.max(0, ...[...rels.matchAll(/Id="rId(\d+)"/g)].map((m) => +m[1])), n = 0
-  const entries = fonts.map((f) => {
+  const entries = fonts.flatMap((f) => {
     const faces: [string, Buffer | undefined][] = [['regular', f.regular], ['bold', f.bold], ['italic', f.italic], ['boldItalic', f.boldItalic]]
-    const refs = faces.filter((x): x is [string, Buffer] => !!x[1]).map(([face, ttf]) => {
+    // kaputte Schnitte überspringen statt den ganzen Export scheitern zu lassen
+    const eots = faces.flatMap(([face, ttf]): [string, Buffer][] => {
+      if (!ttf) return []
+      try { return [[face, ttfToEot(ttf)]] } catch (e) { console.warn(`[export] ${f.family} ${face} nicht einbettbar:`, (e as Error).message); return [] }
+    })
+    if (!eots.length) return []
+    const refs = eots.map(([face, eot]) => {
       const file = `fonts/font${++n}.fntdata`, id = `rId${++rid}`
-      zip.file(`ppt/${file}`, ttfToEot(ttf))
+      zip.file(`ppt/${file}`, eot)
       rels = rels.replace('</Relationships>', `<Relationship Id="${id}" Type="${REL_FONT}" Target="${file}"/></Relationships>`)
       return `<p:${face} r:id="${id}"/>`
     })
-    return `<p:embeddedFont><p:font typeface="${f.family.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}" pitchFamily="${f.serif ? 18 : 34}" charset="0"/>${refs.join('')}</p:embeddedFont>`
+    return [`<p:embeddedFont><p:font typeface="${f.family.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)}" pitchFamily="${f.serif ? 18 : 34}" charset="0"/>${refs.join('')}</p:embeddedFont>`]
   })
+  if (!entries.length) return pptx
   const lst = `<p:embeddedFontLst>${entries.join('')}</p:embeddedFontLst>`
   // Schema-Reihenfolge: … notesSz, smartTags, embeddedFontLst, custShowLst, …, defaultTextStyle
   pres = pres.includes('<p:embeddedFontLst>')

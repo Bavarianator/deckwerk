@@ -98,7 +98,7 @@
 .slide.el-plain .tb .tb-row:not(.tb-head) { border-bottom: 0; }
 
 /* ---------- Große Zahl ---------- */
-.bign { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 22px; max-width: 980px; }
+.bign { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 22px; max-width: var(--measure, 980px); }
 .bign-value { color: var(--accent); line-height: 0.95; }
 .bign-label { max-width: 900px; }
 .bign + .source { overflow: hidden; } /* Inhaltsbereich der Schrift ragt sonst in Social-Formaten 2 px aus der Folie */
