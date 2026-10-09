@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DeckAgent, buildSystemPrompt, toRunnable, type Engine, type VideoTools } from '../src/main/agent'
 import { z } from 'zod'
-import { assetUrl, buildTools, imageSettings, JOB_WAIT, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
+import { assetUrl, buildTools, imageSettings, JOB_WAIT, jobList, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
@@ -254,10 +254,14 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   const go = (name: string, input: unknown) => T6[name].run(T6[name].inputSchema.parse(input))
   JOB_WAIT.ms = 20
   assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\)/)
+  assert.deepEqual(jobList().map(({ name, pct, done }) => ({ name, pct, done })), [{ name: 'transcribe', pct: 43, done: false }])
   finish()
+  await new Promise((r) => setTimeout(r, 5))
+  assert.equal(jobList()[0].done, true)
   const tr = await go('transcribe_video', { video: file }) // anderer Weg zur selben Datei: derselbe Job
   assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente\n\[s0\] 0\.0–4\.2 Hallo zusammen\.\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
   assert.deepEqual(seen, [{ range: undefined, lang: undefined, speakers: undefined }])
+  assert.deepEqual(jobList(), []) // abgeholt = vergessen
   // from/to bestimmen, was transkribiert wird (to höchstens bis zum Ende); Sprecher als S1, S2 …
   const win = await go('transcribe_video', { video: file, from: 60, to: 999, lang: 'de', speakers: true })
   assert.deepEqual(seen[1], { range: { from: 60, to: 75 }, lang: 'de', speakers: true })

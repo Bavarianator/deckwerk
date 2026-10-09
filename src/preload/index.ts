@@ -3,6 +3,8 @@ import type { BrandKit, CustomFont, Deck, PrintOptions } from '../shared/deck'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
 import type { SyncStatus } from '../main/sync'
+import type { Signals, Highlight } from '../shared/highlights'
+import type { Transcript } from '../shared/video'
 
 export type { SyncStatus }
 
@@ -89,6 +91,10 @@ const api = {
   recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
+  /** Cache-Daten eines Videos (asset://-URL oder Pfad), rechnet nie; null = kein erlaubtes Video */
+  videoCached: (src: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null } | null> => invoke('video:cached', src),
+  /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
+  jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
   /** alle erzeugten Dateien (bei 'clips' mehrere) */
   exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
