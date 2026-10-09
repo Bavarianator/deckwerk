@@ -235,6 +235,19 @@ const applicationCover = z.object({
   contents: z.array(z.string().min(1).max(40)).max(6).optional().describe('Inhalt der Mappe in Reihenfolge, z. B. „Anschreiben“, „Lebenslauf“, „Zeugnisse“; nur bei mehr als zwei Anlagen'),
 })
 
+// Urkunde (A4 quer): Art und Titel oben, Empfänger groß, Ort/Datum und Unterschriftsfelder unten.
+const certificate = z.object({
+  eyebrow: z.string().max(40).optional().describe('Art des Dokuments, z. B. „Teilnahmebescheinigung“, „Zertifikat“, „Auszeichnung“'),
+  title: z.string().min(3).max(50).describe('„Urkunde“ oder die Leistung, z. B. „Erste-Hilfe-Kurs bestanden“'),
+  recipient: z.string().min(2).max(50).describe('Name der Person oder des Teams ohne Anrede; steht am größten'),
+  text: z.string().max(260).optional().describe('wofür, in ganzen Sätzen: Kurs oder Leistung, Umfang in Stunden, Zeitraum, Inhalte'),
+  date: z.string().max(50).optional().describe('Ort und Datum, z. B. „Musterstadt, 8. Oktober 2026“'),
+  signers: z.array(z.object({
+    name: z.string().max(40).optional().describe('Name der unterzeichnenden Person; nur echte Namen, nie erfunden'),
+    role: z.string().min(1).max(40).describe('Funktion, z. B. „Kursleitung“, „Schulleitung“'),
+  })).max(2).optional().describe('0–2 Unterschriftsfelder: Linie zum Unterschreiben, darunter Name und Funktion'),
+})
+
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const EXTRA_LAYOUTS = {
@@ -560,6 +573,21 @@ export const EXTRA_LAYOUTS = {
         contents: ['Anschreiben', 'Lebenslauf', 'Examenszeugnis', 'Arbeitszeugnisse'],
       },
       max: { eyebrow: words(30), title: words(70), org: words(60), name: words(40), photo: { src: '' }, contact: rep(4, (i) => words(50, i)), contents: rep(6, (i) => words(40, i)) },
+    },
+  }),
+  certificate: L({
+    id: 'certificate', name: 'Urkunde (A4 quer)', sizes: ['a4-quer'],
+    when: 'Nur A4 quer: Urkunde, Zertifikat, Teilnahmebescheinigung, Auszeichnung. recipient = Name der Person oder des Teams ohne Anrede (steht am größten), title = Leistung oder schlicht „Urkunde“, eyebrow = Art des Dokuments. text sagt konkret, wofür: Kurs oder Leistung, Umfang in Stunden, Datum oder Zeitraum. Unterschriftsfelder (signers) nur mit echten Namen und Funktionen, kennst du den Namen nicht, nur die Funktion. Mehrere Empfänger = mehrere Seiten mit gleichem Text. Das Logo kommt aus dem Brand-Kit.',
+    schema: certificate, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Urkunde', recipient: 'Mara' },
+      typ: {
+        eyebrow: 'Teilnahmebescheinigung', title: 'Erste-Hilfe-Kurs', recipient: 'Mara',
+        text: 'hat am 8. Oktober 2026 erfolgreich am Erste-Hilfe-Kurs mit neun Unterrichtseinheiten teilgenommen. Inhalte: Notruf, stabile Seitenlage, Herz-Lungen-Wiederbelebung und der Einsatz eines Defibrillators.',
+        date: 'Musterstadt, 8. Oktober 2026',
+        signers: [{ name: 'Jonas', role: 'Kursleitung' }, { role: 'Geschäftsführung' }],
+      },
+      max: { eyebrow: words(40), title: words(50), recipient: words(50), text: words(260), date: words(50), signers: rep(2, (i) => ({ name: words(40, i), role: words(40, i + 1) })) },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>

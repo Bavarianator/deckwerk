@@ -1,0 +1,25 @@
+{
+ "title": "Urkunde",
+ "size": { "w": 1123, "h": 794 },
+ "theme": { "id": "redaktion" },
+ "slides": [
+  { "id": "teilnahme", "layout": "certificate",
+   "content": {
+    "eyebrow": "Teilnahmebescheinigung",
+    "title": "Erste-Hilfe-Kurs",
+    "recipient": "Mara",
+    "text": "hat am 8. Oktober 2026 erfolgreich am Erste-Hilfe-Kurs mit neun Unterrichtseinheiten teilgenommen. Inhalte: Notruf, stabile Seitenlage, Herz-Lungen-Wiederbelebung und der Einsatz eines Defibrillators.",
+    "date": "Musterstadt, 8. Oktober 2026",
+    "signers": [{ "role": "Kursleitung" }]
+   } },
+  { "id": "auszeichnung", "layout": "certificate",
+   "content": {
+    "eyebrow": "Auszeichnung",
+    "title": "Erster Platz im Vorlesewettbewerb",
+    "recipient": "Klasse 4b",
+    "text": "Die Klasse hat beim Vorlesewettbewerb der Grundschule am Park mit ihrer Lesung aus „Die kleine Hexe“ die Jury und das Publikum überzeugt.",
+    "date": "Musterstadt, 17. Juli 2026",
+    "signers": [{ "role": "Schulleitung" }, { "role": "Jury" }]
+   } }
+ ]
+}
