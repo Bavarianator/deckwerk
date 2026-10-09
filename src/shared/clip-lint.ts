@@ -1,12 +1,13 @@
 // Clip-Lint (Layout clip): prüft Länge, Schnitte, Transkript, Überschneidungen und Musik, damit sich die KI beim Schneiden selbst korrigiert. Ohne Electron/Node, läuft in Main und Renderer.
 import type { Issue } from './lint'
-import { PAD, estimateWords, mmss, partsLength, type ClipContent, type Part, type Transcript, type Word } from './video'
+import { estimateWords, mmss, partsLength, type ClipContent, type Part, type Transcript, type Word } from './video'
 
 export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[] } // music: je Quellsekunde 0..1 (Signals.music)
 // lintClip kennt die Folie nicht (slide/slideId setzt der Aufrufer); 'info' gibt es nur hier
 export type ClipIssue = Omit<Issue, 'slide' | 'slideId' | 'severity'> & { severity: Issue['severity'] | 'info' }
 
 const TOL = 0.05 // s: Kante gilt erst so weit im Wort als Schnitt im Wort
+export const SNAP = 0.4 // s: so weit rastet der Export (snapParts) Kanten selbst auf die Wortgrenze
 const SENTENCE_END = /[.!?…]["'»«“”‘’)\]]*$/
 // Bindewörter verweisen immer auf Vorheriges; Artikel/Pronomen nur mitten im Satz, am Satzanfang sind sie ein normaler Einstieg
 const CONJ = new Set(['und', 'aber', 'also', 'dann', 'deshalb', 'weil', 'außerdem', 'denn', 'oder', 'sondern', 'and', 'but', 'because', 'then'])
@@ -33,13 +34,16 @@ function gaps(t: Transcript | null | undefined, a: number, b: number): [number, 
   return out
 }
 
-/** Kanten, die in einem Wort liegen, auf die Wortgrenze legen (Start vor das Wort, Ende hinter das Wort), höchstens max s weit. Nur echte Wortzeiten. */
-export function snapToWords(parts: Part[], t: Transcript, max = 0.4): { parts: Part[]; moved: { i: number; edge: 'start' | 'end'; from: number; to: number }[] } {
+/** Kanten, die in einem Wort liegen, auf die Wortgrenze legen (Start vor das Wort, Ende hinter das Wort), höchstens max s weit. Nur echte Wortzeiten.
+ *  Nahtlose Schnitte (part beginnt, wo der vorige endet, wie seamless im Export) bleiben: eingerastet überlappten beide um das Wort, es liefe doppelt. */
+export function snapToWords(parts: Part[], t: Transcript, max = SNAP): { parts: Part[]; moved: { i: number; edge: 'start' | 'end'; from: number; to: number }[] } {
   const ws = realWords(t)
   const moved: { i: number; edge: 'start' | 'end'; from: number; to: number }[] = []
+  const joined = (j: number) => j > 0 && j < parts.length && Math.abs(parts[j - 1].end - parts[j].start) < 1e-3
   const out = parts.map((p, i) => {
     const q = { ...p }
     for (const edge of ['start', 'end'] as const) {
+      if (joined(edge === 'start' ? i : i + 1)) continue
       const w = inWord(ws, p[edge])
       if (!w) continue
       const to = edge === 'start' ? w.start : w.end
@@ -91,8 +95,8 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
     const real = realWords(t)
     const cut = new Set<string>() // Kanten mitten im Wort: dort keine zweite Meldung zur Satzgrenze
     bundle('clip-wort', snapToWords(use.map((u) => u.p), t, Infinity).moved.flatMap((m) => {
-      const w = inWord(real, m.from, PAD) // bis PAD im Wort gibt der Export das Wort ohnehin zurück
-      if (!w) return []
+      const w = inWord(real, m.from)
+      if (!w || Math.abs(m.to - m.from) <= SNAP) return [] // bis SNAP rastet der Export die Kante selbst ein
       const i = use[m.i].i, start = m.edge === 'start', edge = start ? 'Start' : 'Ende'
       cut.add(i + m.edge)
       return [{ msg: `${n(i)} ${start ? 'beginnt' : 'endet'} mitten in „${w.w.trim()}“ – ${edge} auf ${de(m.to, 2)} s legen`, ex: `${i + 1} ${edge} → ${de(m.to, 2)} s` }]
@@ -189,10 +193,11 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   const talk: Transcript = { duration: 100, lang: 'de', segments: [{ start: 0, end: 6, text: '', words: [
     { w: ' Aber', start: 1.5, end: 1.9 }, { w: ' das', start: 2, end: 2.3 }, { w: ' ist', start: 2.4, end: 2.6 }, { w: ' wichtig.', start: 2.7, end: 3.3 },
     { w: ' Es', start: 3.6, end: 3.8 }, { w: ' geht', start: 3.9, end: 4.4 }, { w: ' weiter.', start: 4.5, end: 5 }] }] }
-  const a = lintClip({ ...ok, parts: [{ start: 0, end: 4.2 }] }, wide, { transcript: talk })
-  eq(a.map((x) => x.message), ['Ausschnitt 1 endet mitten in „geht“ – Ende auf 4,4 s legen', 'Ausschnitt 1 beginnt mit „Aber“ – Start früher legen, damit der Clip für sich steht',
+  const a = lintClip({ ...ok, parts: [{ start: 0, end: 2.8 }] }, wide, { transcript: talk })
+  eq(a.map((x) => x.message), ['Ausschnitt 1 endet mitten in „wichtig.“ – Ende auf 3,3 s legen', 'Ausschnitt 1 beginnt mit „Aber“ – Start früher legen, damit der Clip für sich steht',
     'Ausschnitt 1: Stille am Anfang (1,5 s) – Start auf 1,5 s legen'], 'Wort/Satz/Einstieg, kein Satzende-Doppel')
   eq(rules(lintClip({ ...ok, parts: [{ start: 3.5, end: 4.3 }] }, wide, { transcript: talk })), ['warn:clip-satz'], 'Kante bis PAD im Wort: nur Satzende')
+  eq(rules(lintClip({ ...ok, parts: [{ start: 3.5, end: 4.1 }] }, wide, { transcript: talk })), ['warn:clip-satz'], 'Kante bis SNAP im Wort: rastet der Export ein')
   eq(msgs(lintClip({ ...ok, parts: [{ start: 1.95, end: 3.4 }] }, wide, { transcript: talk }), 'clip-satz'), ['Ausschnitt 1 beginnt mit „das“ – Start früher legen, damit der Clip für sich steht'], 'Pronomen mitten im Satz')
   eq(rules(lintClip({ ...ok, parts: [{ start: 3.5, end: 5.1 }] }, wide, { transcript: talk })), [], 'Pronomen am Satzanfang')
 
@@ -230,6 +235,9 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   const s = snapToWords([{ start: 1.6, end: 4.2, focus: 0.3 }], talk)
   eq(s, { parts: [{ start: 1.5, end: 4.4, focus: 0.3 }], moved: [{ i: 0, edge: 'start', from: 1.6, to: 1.5 }, { i: 0, edge: 'end', from: 4.2, to: 4.4 }] }, 'snap')
   eq(snapToWords([{ start: 1.6, end: 4.2 }], talk, 0.15).moved.map((m) => m.edge), ['start'], 'snap max')
+  eq(snapToWords([{ start: 1.6, end: 2.5 }, { start: 2.5, end: 4.2 }], talk), { parts: [{ start: 1.5, end: 2.5 }, { start: 2.5, end: 4.4 }],
+    moved: [{ i: 0, edge: 'start', from: 1.6, to: 1.5 }, { i: 1, edge: 'end', from: 4.2, to: 4.4 }] }, 'snap nahtlos')
+  eq(msgs(lintClip({ ...ok, parts: [{ start: 0, end: 2.5 }, { start: 2.5, end: 2.8 }] }, wide, { transcript: talk }), 'clip-wort'), ['Ausschnitt 2 endet mitten in „wichtig.“ – Ende auf 3,3 s legen'], 'nahtlos kein clip-wort')
   eq(snapToWords([{ start: 3, end: 4.2 }], { duration: 10, lang: 'de', segments: [{ start: 0, end: 6, text: 'Aber das ist wichtig. Wir machen weiter.' }] }), { parts: [{ start: 3, end: 4.2 }], moved: [] }, 'snap ohne words')
   console.log('clip-lint ok')
 }

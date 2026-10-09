@@ -19,6 +19,7 @@ export const PAD = 0.15 // Puffer an jedem Schnitt, damit kein Wort angeschnitte
 export const STILL = 3 // Sekunden je Folie ohne Video im MP4
 export const MIN_PAUSE = 0.6 // pauses 'kurz': Stillen ab dieser Länge fallen weg, padParts lässt je Seite PAD stehen
 export const MAX_PARTS = 100 // Ausschnitte je Clip-Folie (ganzes Video kürzen braucht viele)
+export const LONG_VIDEO = 600 // s: ab 10 min erst video_highlights, dann nur Fenster transkribieren (ganze lange Videos kosten Stunden und Speicher)
 // Füllwort, geprüft gegen ein einzelnes Wort (Word.w): ganzes Wort, Satzzeichen und Groß/klein egal
 export const FILLERS = /^[\p{P}\s]*(?:äh|ähm|öh|öhm|hm|hmm|mhm|uh|um|uhm|erm)[\p{P}\s]*$/iu
 

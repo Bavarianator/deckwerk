@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { basename, extname, join } from 'node:path'
 import JSZip from 'jszip'
 import { VIDEO_EXT } from '../shared/deck'
-import { mmss } from '../shared/video'
+import { LONG_VIDEO, mmss } from '../shared/video'
 import { assetUrl, imageSize } from './tools'
 
 export const SOURCE_IMG = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg']
@@ -161,7 +161,7 @@ export async function sourceText(file: string, assetDir?: string): Promise<strin
   if (VIDEO_EXT.includes(ext)) {
     // nicht kopieren (oft mehrere GB), nur verlinken. Ohne ffmpeg bleibt die Zeile ohne Maße; lädt Deckwerk es erst, wartet der Anhang höchstens 15 s
     const v = await Promise.race([import('./ffmpeg').then((m) => m.probe(file)), new Promise<null>((ok) => setTimeout(ok, 15_000, null).unref())]).catch(() => null)
-    return `Video: ${assetUrl(file)}${v ? ` (${mmss(v.duration)}, ${v.w}×${v.h})` : ''}. Zuerst ${v && v.duration > 1800 ? 'video_highlights (über 30 min), dann nur die Fenster transkribieren' : 'transcribe_video'}; Abläufe für Short, ganzes Video kürzen, Stream-Highlights und Kompilation: Guide § Video.`
+    return `Video: ${assetUrl(file)}${v ? ` (${mmss(v.duration)}, ${v.w}×${v.h})` : ''}. ${v && v.duration > LONG_VIDEO ? 'Über 10 min: erst video_highlights, dann nur die Fenster transkribieren (ganzes Video kürzen: transcribe_video mit all: true)' : 'Zuerst transcribe_video'}; Abläufe für Short, ganzes Video kürzen, Stream-Highlights und Kompilation: Guide § Video.`
   }
   if (IMG_NAME.test(file)) {
     if ((await stat(file)).size > IMG_MAX_BYTES) throw new Error('Bild ist größer als 25 MB.')

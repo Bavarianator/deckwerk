@@ -17,7 +17,7 @@ import { lintClip, type ClipIssue } from '../shared/clip-lint'
 import type { Issue } from '../shared/lint'
 import { overview, searchTranscript } from '../shared/transcript-search'
 import { typeset } from '../shared/typo'
-import { mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
+import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
 import type { Engine, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 import { contactSheet } from './ffmpeg'
@@ -266,23 +266,24 @@ function clipFile(src: unknown): string | null {
     return typeof p === 'string' && isAbsolute(p) && VIDEO_FILE.test(p) ? localAsset(p) : null
   } catch { return null } // kaputte URL
 }
-// Clip-Prüfung (lintClip) der clip-Folien an `indices`; liest nur den Cache der Engine (Transkript, Dauer), rechnet nie
-async function clipChecks(ctx: ToolContext, deck: Deck, indices: number[]): Promise<Map<number, { issues: Note[]; summary: string }>> {
+// Clip-Prüfung (lintClip) der clip-Folien an `indices`; liest nur den Cache der Engine (Transkript, Dauer, Signale), rechnet nie.
+// music: frisch getaggt (check_clip) statt Cache; im Ergebnis music = ob Musik geprüft wurde
+async function clipChecks(ctx: ToolContext, deck: Deck, indices: number[], music?: number[]): Promise<Map<number, { issues: Note[]; summary: string; music: boolean }>> {
   const clips = deck.slides.flatMap((s, i) => (s.layout === 'clip' ? [i] : []))
   const others = clips.map((i) => { const c = deck.slides[i].content as ClipContent; return { video: c.video, parts: c.parts } })
   const cache = new Map<string, Promise<Awaited<ReturnType<NonNullable<VideoTools['cached']>>> | undefined>>() // je Quelle einmal
-  const out = new Map<number, { issues: Note[]; summary: string }>()
+  const out = new Map<number, { issues: Note[]; summary: string; music: boolean }>()
   for (const i of indices) {
     const k = clips.indexOf(i)
     if (k < 0) continue
     const s = deck.slides[i], c = s.content as ClipContent, file = clipFile(c.video)
     if (file && !cache.has(file)) cache.set(file, Promise.resolve(ctx.engine.video?.cached?.(file)).catch(() => undefined))
     const d = file ? await cache.get(file) : undefined
-    // music: Signal „Musik im Hintergrund“, sobald die Engine es liefert
-    const info = { duration: d?.duration, transcript: d?.transcript, music: (d?.signals as { music?: number[] } | null | undefined)?.music }
+    // Signal „Musik im Hintergrund“ aus der Highlight-Suche, falls schon gerechnet
+    const info = { duration: d?.duration, transcript: d?.transcript, music: music ?? (d?.signals as { music?: number[] } | null | undefined)?.music }
     const issues = lintClip(c, sizeOf(deck), info, others, k).map((x) => ({ ...x, slide: i, slideId: s.id }))
     const n = c.parts.length, transcript = d?.transcript && !issues.some((x) => x.rule === 'clip-transkript') ? 'ok' : 'fehlt'
-    out.set(i, { issues, summary: `Länge ${sec(partsLength(c.parts))} s${c.pauses === 'kurz' ? ' (Quelle)' : ''} · ${n} ${n === 1 ? 'Ausschnitt' : 'Ausschnitte'} · Transkript ${transcript}` })
+    out.set(i, { issues, music: !!info.music?.length, summary: `Länge ${sec(partsLength(c.parts))} s${c.pauses === 'kurz' ? ' (Quelle)' : ''} · ${n} ${n === 1 ? 'Ausschnitt' : 'Ausschnitte'} · Transkript ${transcript}` })
   }
   return out
 }
@@ -409,7 +410,6 @@ function musicMissing(src: string): boolean {
 }
 const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad')
 const TRANSCRIPT_MAX = 30_000 // Zeichen je Antwort; der Rest seitenweise über from
-const LONG = 600 // ab 10 min: erst video_highlights, dann nur Fenster transkribieren (ganze lange Videos kosten Stunden und Speicher)
 const hms = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 const VIDEO_NEXT = 'Weiter (Guide § Video), je nach Auftrag: Short 9:16 = 3–5 stärkste Momente, je ideal 25–50 s, hart 15–60 s, hook, captions wort. Ganzes Video kürzen (Fulltime) 16:9 = eine clip-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge, pauses kurz. Stream = nur die Highlight-Fenster, daraus Shorts, optional ein 16:9-Zusammenschnitt. Kompilation = je Quelle eine clip-Folie, Zwischentitel als section oder statement. Schnitte nur an Segmentgrenzen. Dann video_frames als Kontaktabzug, create_deck im Format (transition none), add_slides, render_slides, export_deck clips (je Short eine MP4) oder mp4 (alles in einem Video).'
 const OVERVIEW_NEXT = 'Weiter: die besten Fenster mit transcribe_video (from/to) transkribieren, Stellen mit search_transcript finden, dann video_highlights ohne overview oder direkt Shorts bauen (Guide § Video).'
@@ -783,7 +783,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const x = r.value, src = assetUrl(x.file)
         const chapters = x.chapters.slice(0, 30).map((c) => `${hms(c.start)} ${c.title}`)
         if (x.chapters.length > 30) chapters.push(`… und ${x.chapters.length - 30} weitere`)
-        const next = x.duration > LONG ? `video_highlights mit diesem Video (über 10 min: erst die stärksten Fenster finden, dann nur diese transkribieren)` : 'transcribe_video mit diesem Video'
+        const next = x.duration > LONG_VIDEO ? `video_highlights mit diesem Video (über 10 min: erst die stärksten Fenster finden, dann nur diese transkribieren)` : 'transcribe_video mit diesem Video'
         return { text: [`Video: ${src}`, `Titel: ${x.title}`, `Dauer: ${hms(x.duration)}`, `Chat: ${x.chat ? 'ja (fließt in video_highlights ein)' : 'nein'}`,
           ...(chapters.length ? [`Kapitel (${x.chapters.length}):`, ...chapters] : ['Kapitel: keine']), '', `Weiter: ${next}. Link als Quelle in die Notes.`].join('\n') }
       },
@@ -820,21 +820,22 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'transcribe_video',
       readOnly: true,
-      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Ohne from/to bei Videos über 10 min nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze und Abschweifungen über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
+      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze und Abschweifungen über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
       inputSchema: z.object({
         video: videoInput,
         from: z.number().min(0).optional().describe('Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)'),
         to: z.number().min(0).optional().describe('Bereich bis zu dieser Sekunde'),
         lang: z.string().regex(/^[a-z]{2}$/).optional().describe('Sprache als ISO-639-1-Code (de, en, ja …). Weglassen = Parakeet, der nur die 25 europäischen Sprachen kennt; bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) lang setzen – dann Whisper'),
         speakers: z.boolean().optional().describe('true = Sprecher unterscheiden (S1, S2 … je Zeile), für Podcasts, Interviews und Gespräche'),
-        all: z.boolean().optional().describe('true = ganzes Video auch über 10 min (nur für den Fulltime-Schnitt)'),
+        all: z.boolean().optional().describe('true = auch über 10 min, z. B. das ganze Video (nur für den Fulltime-Schnitt)'),
       }),
       async run(i) {
         const { file, v } = videoFile(ctx, i.video)
         if (i.from !== undefined && i.to !== undefined && i.to <= i.from) throw new Error('to muss nach from liegen.')
-        if (i.from === undefined && i.to === undefined && !i.all) {
-          const { duration } = await v.probe(file)
-          if (duration > LONG) return { text: `Video ist ${mmss(duration)} lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; das ganze Video nur für einen Fulltime-Schnitt mit all: true.` }
+        if (!i.all) { // auch ein Bereich über 10 min (fehlendes to = Videoende) nur mit all
+          const { duration } = await v.probe(file), whole = i.from === undefined && i.to === undefined
+          const end = Math.min(i.to ?? duration, duration), span = end - (i.from ?? 0)
+          if (span > LONG_VIDEO) return { text: `${whole ? 'Video' : `Bereich ${mmss(i.from ?? 0)}–${mmss(end)}`} ist ${mmss(span)} lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; das ganze Video nur für einen Fulltime-Schnitt mit all: true.` }
         }
         // Bereich und Optionen im Schlüssel: ein anderes Fenster ist eine andere Arbeit
         const r = await job(`transcribe:${file}:${JSON.stringify([i.from, i.to, i.lang, !!i.speakers])}`, async (onProgress) => {
@@ -897,16 +898,18 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'check_clip',
-      description: 'Clip-Folie vor dem Export prüfen: volle Clip-Prüfung und Kontaktabzug (9 Bilder, zugeschnitten wie im Export). Nur für die besten Clips, höchstens 2 Runden.',
+      description: 'Clip-Folie vor dem Export prüfen: volle Clip-Prüfung (auch Musik im Hintergrund) und Kontaktabzug (9 Bilder, zugeschnitten wie im Export). Nur für die besten Clips, höchstens 2 Runden.',
       inputSchema: z.object({ slide: z.string().describe('ID der clip-Folie') }),
       async run(i) {
         const deck = needDeck(ctx)
         const idx = indexOf(deck, i.slide), s = deck.slides[idx]
         if (s.layout !== 'clip') throw new Error(`Folie ${i.slide} ist keine clip-Folie (${s.layout}).`)
         if (!ctx.engine.video) throw new Error('Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server.')
-        const c = s.content as ClipContent, { issues, summary } = (await clipChecks(ctx, deck, [idx])).get(idx)!
-        const head = `Folie ${idx + 1} (${s.id}, clip)${hid(s)}: ${summary}${issues.length ? `\n${fmtIssues(issues)}` : ' · Prüfung ohne Befund'}`
-        const file = clipFile(c.video)
+        const c = s.content as ClipContent, file = clipFile(c.video)
+        // Musik nur hier frisch taggen (Sekunden der parts), synchron und deshalb nur bis 10 min; länger → Cache aus video_highlights. report() liest nur den Cache
+        const fresh = file && partsLength(c.parts) <= LONG_VIDEO ? await ctx.engine.video.musicIn?.(file, c.parts).catch(() => []) : undefined
+        const { issues, summary, music } = (await clipChecks(ctx, deck, [idx], fresh?.length ? fresh : undefined)).get(idx)!
+        const head = `Folie ${idx + 1} (${s.id}, clip)${hid(s)}: ${summary}${issues.length ? `\n${fmtIssues(issues)}` : ' · Prüfung ohne Befund'}${music ? '' : '\nMusik nicht geprüft'}`
         if (!file || !statSync(file, { throwIfNoEntry: false })?.isFile())
           return { text: `${head}\nKein Kontaktabzug: ${file ? `Video nicht gefunden (${file})` : 'kein Video gesetzt'} – video mit update_slide setzen (asset://-Pfad aus dem Anhang).` }
         const { jpg, times } = await contactSheet(file, c.parts, { size: sizeOf(deck), fit: c.fit })
