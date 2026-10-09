@@ -35,6 +35,7 @@ interface Props {
   onPrint: () => void
   onPresent: () => void
   onRestore: (file: string) => void // Version aus dem Versionsverlauf über den Öffnen-Weg wiederherstellen
+  onVideo?: () => void // Video-Deck: zurück in die Video-Ansicht (Deckvid)
 }
 
 export function TopBar(p: Props) {
@@ -86,6 +87,7 @@ export function TopBar(p: Props) {
             <button className={`plain ${p.panel === 'format' ? 'on' : ''}`} aria-pressed={p.panel === 'format'} disabled={!p.hasDeck} onClick={() => toggle('format')}><SlidersHorizontal size={17} />Anpassen</button>
           </>
         )}
+        {p.onVideo && <button className="plain" onClick={p.onVideo}>Video-Ansicht</button>}
         <CloudButton />
         <button className="plain" title="Tastenkürzel (?)" aria-label="Tastenkürzel (?)" onClick={() => setKeys(true)}><Keyboard size={17} /></button>
         <button className="plain" title="Einstellungen" aria-label="Einstellungen" onClick={() => openSettings()}><Settings size={17} /></button>

@@ -11,6 +11,7 @@ import { AUTO, pickAvailable, type ChatModels } from '../shared/models'
 import type { Target } from './ui/AskBar'
 import { BuildView, type StoryItem } from './ui/BuildView'
 import { ChatChoices, type Msg } from './ui/Chat'
+import { Deckvid } from './ui/Deckvid'
 import { EditorScreen } from './ui/EditorScreen'
 import { FindBar } from './ui/FindBar'
 import { KeyDialog } from './ui/KeyDialog'
@@ -60,6 +61,8 @@ export default function App() {
   const [target, setTarget] = useState<Target | null>(null) // gewähltes Element als Bezug für die KI-Leiste
   const [story, setStory] = useState<StoryItem[] | null>(null) // geplante Storyline der KI (plan_storyline)
   const videoBusy = useRef(false) // läuft ein Video-Export? Zweiten gar nicht erst starten
+  const [videoMode, setVideoMode] = useState(false) // über den Video-Modus des Starts begonnen: Deckvid schon vor der ersten Clip-Folie
+  const [slidesView, setSlidesView] = useState(false) // Ausweg „Folien-Ansicht“: dieses Deck im normalen Editor
   const turnStart = useRef<Deck | null>(null)
   // automatisch sichern wie in Apple-Apps: jede Änderung nach kurzer Pause nach ~/Deckwerk/<titel>/deck.json
   const [saved, setSaved] = useState(true)
@@ -82,6 +85,10 @@ export default function App() {
   useEffect(() => { if (choices && pickAvailable(model, choices) !== model) pickModel(pickAvailable(model, choices)) }, [choices])
   const deck = doc.deck
   const index = deck ? Math.max(0, Math.min(sel, deck.slides.length - 1)) : 0
+  const hasClip = !!deck?.slides.some((s) => s.layout === 'clip')
+  const deckvid = (hasClip || videoMode) && !slidesView // Video-Decks: eigene, KI-zentrierte Ansicht
+  // einmal Video-Deck, immer Deckvid: Entfernen des letzten Clips springt nicht in den Editor
+  useEffect(() => { if (hasClip && !videoMode) setVideoMode(true) }, [hasClip, videoMode])
 
   useEffect(() => {
     api.state().then((s) => {
@@ -227,6 +234,8 @@ export default function App() {
     setSel(0)
     setStory(null)
     setTarget(null)
+    setVideoMode(false)
+    setSlidesView(false)
     turnStart.current = null
   }
   useEffect(() => api.onDeckOpened((s) => load(s.deck, s.path)), []) // Doppelklick auf eine deck.json bei laufender App
@@ -287,6 +296,7 @@ export default function App() {
   }, [busy, hasKey, model, deck, index])
   const abort = useCallback(() => void api.abort(), [])
   const undoTurn = useCallback(() => { const d = turnStart.current; if (d) commit(() => d) }, [commit])
+  const canUndoTurn = !busy && !!turnStart.current && turnStart.current !== deck
   // mit zweitem Bildschirm: Publikum dort im Vollbild, hier die Referentenansicht
   const present = (i: number) => {
     if (!deck) return
@@ -317,8 +327,8 @@ export default function App() {
       else if (mod && k === 'z' && !typing && !busy) e.shiftKey ? redo() : undo()
       else if (mod && k === 'y' && !typing && !busy) redo()
       else if ((e.key === 'F5' || (e.metaKey && e.altKey && e.code === 'KeyP')) && deck?.slides.length) present(e.shiftKey ? index : 0) // ⌥⌘P: Mac-Tastaturen brauchen für F5 fn
-      else if (!typing && !mod && deck?.slides.length && ['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) setSel(Math.max(0, index - 1))
-      else if (!typing && !mod && deck?.slides.length && ['ArrowRight', 'ArrowDown', 'PageDown'].includes(e.key)) setSel(Math.min(deck.slides.length - 1, index + 1))
+      else if (!typing && !mod && !deckvid && deck?.slides.length && ['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) setSel(Math.max(0, index - 1)) // Deckvid regelt Pfeile und Leertaste selbst
+      else if (!typing && !mod && !deckvid && deck?.slides.length && ['ArrowRight', 'ArrowDown', 'PageDown'].includes(e.key)) setSel(Math.min(deck.slides.length - 1, index + 1))
       else return
       e.preventDefault()
     }
@@ -336,7 +346,7 @@ export default function App() {
 
   const home = !deck && !msgs.length
   // Entstehen: solange die KI nach ihrer Storyline baut; danach übernimmt der Editor
-  const building = busy && !!story?.length && (deck?.slides.length ?? 0) < story.length
+  const building = !deckvid && busy && !!story?.length && (deck?.slides.length ?? 0) < story.length
 
   return (
     <ChatChoices.Provider value={choices}>
@@ -344,7 +354,7 @@ export default function App() {
     <div className="app">
       {home ? (
         <Start
-          onSubmit={send} model={model} onModel={pickModel}
+          onSubmit={send} onVideo={() => setVideoMode(true)} model={model} onModel={pickModel}
           onOpen={actions.onOpen} onOpenPath={actions.onOpenPath} onKey={() => openSettings()}
           onBlank={(size) => {
             // leer beginnen wie in Canva: eine leere Folie, alles Weitere von Hand oder per KI
@@ -361,6 +371,12 @@ export default function App() {
           </header>
           <BuildView deck={deck} story={story!} msgs={msgs} onAbort={abort} />
         </>
+      ) : deckvid ? (
+        <Deckvid
+          deck={deck} index={index} msgs={msgs} busy={busy} status={status} saved={saved} path={path} model={model} onModel={pickModel}
+          onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport} onSlides={() => setSlidesView(true)}
+          patchSlide={patchSlide} delSlide={delSlide} canUndo={canUndoTurn} onUndo={undoTurn}
+        />
       ) : (
         <>
           <TopBar
@@ -380,11 +396,12 @@ export default function App() {
             onLook={openLook}
             onExport={actions.onExport}
             onFormats={() => { setPicked([]); setFormats(true) }}
-            hasClip={!!deck?.slides.some((s) => s.layout === 'clip')}
+            hasClip={hasClip}
             canPrint={!!deck && profileOf(deck) === 'doc'}
             onPrint={() => setPrinting(true)}
             onPresent={() => present(0)}
             onRestore={actions.onOpenPath}
+            onVideo={videoMode ? () => setSlidesView(false) : undefined}
           />
           {deck && view === 'grid' ? (
             <Overview
@@ -420,7 +437,7 @@ export default function App() {
             onPanel={setPanel}
             target={target}
             onTarget={setTarget}
-            canUndoTurn={!busy && !!turnStart.current && turnStart.current !== deck}
+            canUndoTurn={canUndoTurn}
             onUndoTurn={undoTurn}
           />}
         </>
