@@ -141,8 +141,11 @@ export function followParts(parts: Part[], turns: Turn[], speakerX: Map<number, 
 
 const even = (n: number) => Math.max(2, Math.round(n / 2) * 2)
 
-/** Ausgabegröße eines Decks im MP4: 1,5-fach (9:16 → 1080×1920), gerade Maße für yuv420p. */
-export const outSize = (size: { w: number; h: number }) => ({ w: even(size.w * 1.5), h: even(size.h * 1.5) })
+/** Ausgabegröße eines Decks im MP4: 1,5-fach (9:16 → 1080×1920), längere Seite höchstens 3840 px (fremde deck.json), gerade Maße für yuv420p. */
+export const outSize = (size: { w: number; h: number }) => {
+  const k = Math.min(1.5, 3840 / Math.max(size.w, size.h))
+  return { w: even(size.w * k), h: even(size.h * k) }
+}
 
 /** Ausschnitt der Quelle (px), der das Zielformat füllt: horizontal um focus, vertikal mittig. */
 export function cropRect(src: { w: number; h: number }, out: { w: number; h: number }, focus = 0.5) {

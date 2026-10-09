@@ -108,7 +108,10 @@ export async function probe(file: string): Promise<VideoInfo & { audio: boolean 
   // ponytail: SAR ≠ 1 (anamorph, DV/DVD) bleibt gestaucht; Upgrade: Breite × SAR hier und scale=iw*sar:ih vor dem crop
   const rot = Math.round(Number(/rotation of (-?[\d.]+)/i.exec(video)?.[1] ?? /rotate\s*:\s*(-?\d+)/.exec(video)?.[1] ?? 0))
   const [w, h] = Math.abs(rot) % 180 === 90 ? [+size[2], +size[1]] : [+size[1], +size[2]]
-  return { duration: +d[1] * 3600 + +d[2] * 60 + +d[3], w, h, audio: streams.some((s) => / Audio: /.test(s.split('\n')[0])) }
+  // Dauer steht im Container der fremden Datei: riesige Werte sprengten die Arrays in loudness und der Chunk-Planung
+  const duration = +d[1] * 3600 + +d[2] * 60 + +d[3]
+  if (duration > 48 * 3600) throw new Error(`Video ist länger als 48 Stunden (${basename(file)}). So lange Videos kann Deckwerk nicht verarbeiten.`)
+  return { duration, w, h, audio: streams.some((s) => / Audio: /.test(s.split('\n')[0])) }
 }
 
 /** Je Zeitpunkt (s) ein JPEG in width px Breite (Höhe proportional, gerade); -ss vor -i springt direkt hin. */
