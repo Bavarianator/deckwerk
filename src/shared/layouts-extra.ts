@@ -235,6 +235,25 @@ const applicationCover = z.object({
   contents: z.array(z.string().min(1).max(40)).max(6).optional().describe('Inhalt der Mappe in Reihenfolge, z. B. „Anschreiben“, „Lebenslauf“, „Zeugnisse“; nur bei mehr als zwei Anlagen'),
 })
 
+// Brief (A4 hoch, DIN 5008 Form B): Anschriftfeld an fester Stelle für den Fensterumschlag, Text auf einer Seite.
+const letter = z.object({
+  sender: z.string().min(2).max(60).describe('Absender im Briefkopf: Name der Organisation oder Person, z. B. „Praxis am Markt“'),
+  senderLine: z.string().max(50).optional().describe('Rücksendeangabe über der Anschrift, eine Zeile, z. B. „Praxis am Markt, Marktplatz 3, 12345 Musterstadt“'),
+  to: z.string().min(3).max(180).regex(/^[^\n]*(?:\n[^\n]*){0,5}$/, 'höchstens 6 Zeilen')
+    .describe('Anschrift, Zeilenumbruch (\\n) je Zeile: Firma oder Name, ggf. Abteilung oder Person, Straße und Hausnummer, PLZ Ort; höchstens 6 Zeilen'),
+  info: z.array(z.object({
+    label: z.string().min(1).max(20).describe('z. B. „Datum“, „Ihr Zeichen“, „Ansprechpartnerin“'),
+    value: z.string().min(1).max(40),
+  })).max(4).optional().describe('Informationsblock rechts neben der Anschrift, 1–4 Zeilen; das Datum gehört hierher'),
+  subject: z.string().min(3).max(90).describe('Betreff als Aussage, wird fett gesetzt; ohne das Wort „Betreff“'),
+  salutation: z.string().max(60).optional().describe('Anrede mit Komma, z. B. „Sehr geehrte Damen und Herren,“'),
+  body: z.string().min(1).max(1100).describe('Brieftext in kurzen Absätzen, eine Seite; Zeilenumbruch (\\n) beginnt einen neuen Absatz (mit Leerzeile davor), **fett** hebt hervor'),
+  closing: z.string().max(40).optional().describe('Grußformel, z. B. „Mit freundlichen Grüßen“'),
+  signature: z.string().max(80).optional().describe('Name und Funktion unter dem Platz für die Unterschrift, Zeilenumbruch (\\n) erlaubt'),
+  enclosures: z.array(z.string().min(1).max(40)).max(6).optional().describe('Anlagen, je eine Zeile, z. B. „Lebenslauf“, „Arbeitszeugnisse“; stehen unter „Anlagen“ nach der Unterschrift'),
+  footer: z.array(z.string().max(100)).max(4).optional().describe('Fußzeile in Spalten, z. B. Anschrift, Kontakt, Bankverbindung, Register; je Spalte ein Eintrag, Zeilen mit \\n'),
+})
+
 // Urkunde (A4 quer): Art und Titel oben, Empfänger groß, Ort/Datum und Unterschriftsfelder unten.
 const certificate = z.object({
   eyebrow: z.string().max(40).optional().describe('Art des Dokuments, z. B. „Teilnahmebescheinigung“, „Zertifikat“, „Auszeichnung“'),
@@ -618,6 +637,29 @@ export const EXTRA_LAYOUTS = {
         rsvp: 'Bitte sagt bis 20. Juni zu, gern über den QR-Code.', host: 'Das Team der Praxis am Markt', qr: 'https://example.com/zusage',
       },
       max: { eyebrow: words(40), title: words(60), text: words(240), facts: rep(4, (i) => ({ label: words(14, i), value: words(60, i) })), rsvp: words(100), host: words(60), image: { src: '' }, qr: 'https://example.com/zusage' },
+    },
+  }),
+  letter: L({
+    id: 'letter', name: 'Brief (A4, DIN 5008)', sizes: ['a4'],
+    when: 'Nur A4 hoch: Geschäftsbrief nach DIN 5008 (Fensterumschlag DL bzw. C6/5); Anschriftfeld, Falz- und Lochmarken liegen fest. Anschrift (to) in der Reihenfolge Firma oder Name, ggf. Person, Straße und Hausnummer, PLZ Ort; Datum, Zeichen und Ansprechpartner in den Informationsblock (info); Betreff als Aussage; Text in kurzen Absätzen, eine Seite; Anlagen in enclosures. Das Logo kommt aus dem Brand-Kit. Bewerbungsanschreiben = letter: Absender ist die Bewerberin oder der Bewerber, Name im Briefkopf (sender), Kontakt in senderLine und info, footer kann leer bleiben; Betreff „Bewerbung als …“ mit Kennziffer, Anlagen wie Lebenslauf und Zeugnisse in enclosures, höchstens eine Seite. Absenderdaten (Anschrift, Kontakt, Bank) nie erfinden: fehlen sie, Platzhalter in eckigen Klammern wie „[Straße Nr.]“ setzen und den Nutzer fragen. Will der Nutzer weiterschreiben, als Word (docx) exportieren.',
+    schema: letter, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { sender: 'Praxis am Markt', to: 'Muster GmbH\nMusterweg 1\n12345 Musterstadt', subject: 'Ihr Termin am 4. November steht', body: 'Wir bestätigen den Impftermin für Ihr Team am 4. November um 9 Uhr.' },
+      typ: {
+        sender: 'Praxis am Markt', senderLine: 'Praxis am Markt, Marktplatz 3, 12345 Musterstadt',
+        to: 'Muster GmbH\nPersonalabteilung\nMusterweg 1\n12345 Musterstadt',
+        info: [{ label: 'Ihr Zeichen', value: 'PA-2026-17' }, { label: 'Ansprechpartnerin', value: 'Sabine, Praxisleitung' }, { label: 'Telefon', value: '0123 456789' }, { label: 'Datum', value: '8. Oktober 2026' }],
+        subject: 'Grippeschutzimpfung für Ihr Team am 4. November',
+        salutation: 'Sehr geehrte Damen und Herren,',
+        body: 'vielen Dank für Ihre Anfrage. Gern impfen wir Ihre Mitarbeitenden in Ihren Räumen gegen Grippe. Wir kommen am 4. November um 9 Uhr mit zwei Fachkräften und bringen den Impfstoff mit.\nBitte stellen Sie einen ruhigen Raum mit Tisch und zwei Stühlen bereit. Pro Person rechnen wir mit zehn Minuten, bei 40 Anmeldungen sind wir gegen 12 Uhr fertig.\nDie Kosten übernimmt in der Regel die Krankenkasse. Den Aufklärungsbogen legen wir bei; er sollte ausgefüllt mitgebracht werden.',
+        closing: 'Mit freundlichen Grüßen', signature: 'Sabine\nPraxisleitung', enclosures: ['Aufklärungsbogen'],
+        footer: ['Praxis am Markt\nMarktplatz 3\n12345 Musterstadt', 'Telefon 0123 456789\nexample.com', 'Sparkasse Musterstadt\nIBAN DE12 3456 7890 1234 5678 90', 'Sprechzeiten\nMo–Fr 8–18 Uhr'],
+      },
+      max: {
+        sender: words(60), senderLine: words(50), to: rep(6, (i) => words(29, i)).join('\n'),
+        info: rep(4, (i) => ({ label: words(20, i), value: words(40, i) })), subject: words(90), salutation: words(60),
+        body: rep(4, (i) => words(274, i)).join('\n'), closing: words(40), signature: `${words(39)}\n${words(40, 2)}`, enclosures: rep(6, (i) => words(40, i)), footer: rep(4, (i) => words(100, i)),
+      },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>

@@ -361,3 +361,27 @@
 .inv-qr { flex: none; display: block; width: 120px; height: 120px; overflow: hidden; }
 .t.inv-rsvp { flex: 1; color: var(--accent); font-size: calc(var(--fs-h2) * 1.5); line-height: 1.18; }
 .inv-logo { flex: none; margin-left: auto; height: 40px; width: 150px; background-repeat: no-repeat; background-position: right center; }
+
+/* ---------- Brief (A4 hoch, DIN 5008 Form B): Felder in mm an fester Stelle, nur die Schrift passt sich an ---------- */
+.safe.bf-safe { inset: 0; } /* Koordinaten = Seitenkoordinaten */
+/* Falzmarken bei 105 und 210 mm, Lochmarke bei 148,5 mm (etwas länger) */
+.bf-marks { position: absolute; left: 0; top: 0; bottom: 0; width: 6mm; pointer-events: none;
+  background: linear-gradient(var(--muted), var(--muted)) 0 105mm / 4mm 1px no-repeat, linear-gradient(var(--muted), var(--muted)) 0 148.5mm / 6mm 1px no-repeat, linear-gradient(var(--muted), var(--muted)) 0 210mm / 4mm 1px no-repeat; }
+.bf-head { position: absolute; left: 25mm; right: 20mm; top: 14mm; display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; }
+.t.bf-sender { color: var(--accent); } /* die einzige Akzentfarbe des Briefs */
+.bf-logo { flex: none; width: 50mm; height: 14mm; background-repeat: no-repeat; background-position: right top; }
+/* Anschriftfeld 85 × 45 mm ab 20 mm links und 45 mm oben; Text bündig zum linken Rand bei 25 mm */
+.bf-window { position: absolute; left: 20mm; top: 45mm; width: 85mm; height: 45mm; padding-left: 5mm; display: flex; flex-direction: column; }
+.bf-note { flex: none; height: 17.7mm; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 1.5mm; } /* Zusatz- und Vermerkzone, Rücksendeangabe unten */
+.bf-to { flex: none; height: 27.3mm; overflow: hidden; } /* Anschriftzone: 6 Zeilen */
+.t.bf-addr { font-size: min(var(--fs-body), 15px); line-height: 1.12; }
+.bf-info { position: absolute; left: 125mm; top: 50mm; width: 75mm; height: 40mm; overflow: hidden; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; align-content: start; }
+.bf-row { display: contents; }
+/* Betreff 2 Leerzeilen unter dem Anschriftfeld (98,46 mm), Rand links 25 mm, rechts 20 mm; Leerzeilen in em, damit sie mit dem Autofit schrumpfen */
+.bf-text { position: absolute; left: 25mm; right: 20mm; top: 98.46mm; bottom: 10mm; display: flex; flex-direction: column; gap: 6mm; }
+.bf-main { flex: 1; min-height: 0; overflow: hidden; }
+.t.bf-bold { font-weight: 700; } /* Betreff und „Anlagen“ */
+.t.bf-gap { margin-top: 1.38em; }
+.t.bf-sign { margin-top: 4.1em; } /* drei Leerzeilen Platz für die Unterschrift */
+.bf-foot { flex: none; position: relative; padding-top: 3mm; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
+.bf-foot::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }

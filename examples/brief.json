@@ -1,0 +1,31 @@
+{
+ "title": "Brief",
+ "size": { "w": 794, "h": 1123 },
+ "theme": { "id": "schweiz" },
+ "slides": [
+  { "id": "brief", "layout": "letter",
+   "content": {
+    "sender": "Praxis am Markt",
+    "senderLine": "Praxis am Markt, Marktplatz 3, 12345 Musterstadt",
+    "to": "Muster GmbH\nPersonalabteilung\nMusterweg 1\n12345 Musterstadt",
+    "info": [
+     { "label": "Ihr Zeichen", "value": "PA-2026-17" },
+     { "label": "Ansprechpartnerin", "value": "Sabine, Praxisleitung" },
+     { "label": "Telefon", "value": "0123 456789" },
+     { "label": "Datum", "value": "8. Oktober 2026" }
+    ],
+    "subject": "Grippeschutzimpfung für Ihr Team am 4. November",
+    "salutation": "Sehr geehrte Damen und Herren,",
+    "body": "vielen Dank für Ihre Anfrage. Gern impfen wir Ihre Mitarbeitenden in Ihren Räumen gegen Grippe. Wir kommen am 4. November um 9 Uhr mit zwei Fachkräften und bringen den Impfstoff mit.\nBitte stellen Sie einen ruhigen Raum mit Tisch und zwei Stühlen bereit. Pro Person rechnen wir mit zehn Minuten, bei 40 Anmeldungen sind wir gegen 12 Uhr fertig.\nDie Kosten übernimmt in der Regel die Krankenkasse. Den Aufklärungsbogen legen wir bei; bitte geben Sie ihn an alle Angemeldeten weiter, damit sie ihn ausgefüllt mitbringen.\nFür Rückfragen erreichen Sie uns montags bis freitags zwischen 8 und 18 Uhr. Wir freuen uns auf den Termin bei Ihnen.",
+    "closing": "Mit freundlichen Grüßen",
+    "signature": "Sabine\nPraxisleitung",
+    "enclosures": ["Aufklärungsbogen"],
+    "footer": [
+     "Praxis am Markt\nMarktplatz 3\n12345 Musterstadt",
+     "Telefon 0123 456789\nexample.com",
+     "Sparkasse Musterstadt\nIBAN DE12 3456 7890 1234 5678 90",
+     "Sprechzeiten\nMo–Fr 8–18 Uhr"
+    ]
+   } }
+ ]
+}
