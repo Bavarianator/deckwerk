@@ -612,9 +612,47 @@ function Certificate({ c }: Props<'certificate'>) {
   )
 }
 
+// Einladung: zwei Pole wie der Flyer – Anlass, Titel, Text und Absender oben, Eckdaten und Antwort unten; mit Foto steht es oben.
+function Invitation({ c }: Props<'invitation'>) {
+  const { theme } = useSlide()
+  const img = photoOf(c.image)
+  const n = c.facts.length
+  return (
+    <Frame media={img && (
+      <div className="inv-media">{img.src ? <Img {...img} slot="image" /> : <div className="placeholder" />}</div>
+    )} safeClass={`inv-safe ${img ? 'inv-below' : ''}`}>
+      <div className={`inv ${img ? '' : 'inv-type'}`}>
+        <div className="inv-head">
+          {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="inv-eyebrow">{c.eyebrow}</T>}
+          <T role="display" slot="title" maxLines={img ? 3 : 4} className="inv-title">{c.title}</T>
+          {c.text && <T role="body" slot="text" className="inv-text">{c.text}</T>}
+          {c.host && <T role="body" slot="host" className="inv-host">{c.host}</T>}
+        </div>
+        <div className="inv-end">
+          <div className="inv-facts">
+            {c.facts.map((f, i) => (
+              <div className="inv-fact" key={i}>
+                <T role="label" slot={`facts.${i}.label`} build={i} className="inv-label">{f.label}</T>
+                <T role="h3" slot={`facts.${i}.value`} build={i} className="inv-value">{f.value}</T>
+              </div>
+            ))}
+          </div>
+          {(c.rsvp || c.qr || theme.logo) && (
+            <div className="inv-foot">
+              {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="inv-qr" build={n} />}
+              {c.rsvp && <T role="h2" slot="rsvp" maxLines={3} className="inv-rsvp" build={n}>{c.rsvp}</T>}
+              {theme.logo && <Img src={theme.logo} slot="_logo" className="inv-logo" contain />}
+            </div>
+          )}
+        </div>
+      </div>
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
-  'application-cover': ApplicationCover, certificate: Certificate,
+  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation,
 }

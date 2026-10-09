@@ -248,6 +248,21 @@ const certificate = z.object({
   })).max(2).optional().describe('0–2 Unterschriftsfelder: Linie zum Unterschreiben, darunter Name und Funktion'),
 })
 
+// Einladung (A4 hoch, oft als A5 oder A6 gedruckt): wer lädt wen wozu ein, wann und wo, Bitte um Antwort. Wenig Text, große Schrift.
+const invitation = z.object({
+  eyebrow: z.string().max(40).optional().describe('Anlass, z. B. „Einladung“ oder „Save the Date“'),
+  title: z.string().min(3).max(60).describe('Anlass persönlich als Satz, z. B. „Wir feiern 25 Jahre Praxis am Markt“'),
+  text: z.string().max(240).optional().describe('Einladungstext in zwei bis drei ganzen, persönlichen Sätzen'),
+  facts: z.array(z.object({
+    label: z.string().min(1).max(14).describe('z. B. Wann, Wo, Dresscode'),
+    value: z.string().min(1).max(60).describe('z. B. „Samstag, 4. Juli, ab 18 Uhr“ oder die Adresse'),
+  })).min(1).max(4).describe('Eckdaten: mindestens Wann (Wochentag, Datum, Uhrzeit) und Wo'),
+  rsvp: z.string().max(100).optional().describe('Bitte um Antwort mit Frist und Weg, z. B. „Bitte sagt bis 1. Juli zu“'),
+  host: z.string().max(60).optional().describe('wer einlädt, z. B. „Das Team der Praxis am Markt“'),
+  image: photo.optional().describe('Foto oben (Ort, Menschen, Anlass); weglassen = typografische Karte'),
+  qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code (Zusage, Anfahrt); je kürzer, desto sicherer der Scan im Druck'),
+})
+
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const EXTRA_LAYOUTS = {
@@ -588,6 +603,21 @@ export const EXTRA_LAYOUTS = {
         signers: [{ name: 'Jonas', role: 'Kursleitung' }, { role: 'Geschäftsführung' }],
       },
       max: { eyebrow: words(40), title: words(50), recipient: words(50), text: words(260), date: words(50), signers: rep(2, (i) => ({ name: words(40, i), role: words(40, i + 1) })) },
+    },
+  }),
+  invitation: L({
+    id: 'invitation', name: 'Einladung (A4)', sizes: ['a4'],
+    when: 'Nur A4 hoch: Einladung, Save the Date, Karte zu Feier, Jubiläum, Hochzeit, Sommerfest, Tag der offenen Tür. Titel nennt den Anlass persönlich („Wir feiern …“), facts mit Wann (Wochentag, Datum, Uhrzeit) und Wo, rsvp mit Frist und Weg (Nachricht, Telefon, QR-Code), host sagt, wer einlädt. Wenig Text: Einladungen werden oft als A5 oder A6 gedruckt (export print mit size a5/a6). Mit Foto steht es oben, ohne ist die Karte typografisch; mit tone accent oder invert wird sie farbig. Werbung mit Gründen und Handlungsaufforderung → lieber flyer.',
+    schema: invitation, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Sommerfest im Hof', facts: [{ label: 'Wann', value: 'Freitag, 3. Juli, 17 Uhr' }] },
+      typ: {
+        eyebrow: 'Einladung', title: 'Wir feiern 25 Jahre Praxis am Markt',
+        text: 'Seit 25 Jahren sind wir für euch da. Das möchten wir mit allen feiern, die uns auf diesem Weg begleitet haben – mit Musik, Essen und guten Gesprächen.',
+        facts: [{ label: 'Wann', value: 'Samstag, 4. Juli, ab 18 Uhr' }, { label: 'Wo', value: 'Praxis am Markt, Musterweg 1, 12345 Musterstadt' }, { label: 'Dresscode', value: 'Sommerlich' }],
+        rsvp: 'Bitte sagt bis 20. Juni zu, gern über den QR-Code.', host: 'Das Team der Praxis am Markt', qr: 'https://example.com/zusage',
+      },
+      max: { eyebrow: words(40), title: words(60), text: words(240), facts: rep(4, (i) => ({ label: words(14, i), value: words(60, i) })), rsvp: words(100), host: words(60), image: { src: '' }, qr: 'https://example.com/zusage' },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>
