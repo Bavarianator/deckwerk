@@ -8,6 +8,8 @@ export type ClipIssue = Omit<Issue, 'slide' | 'slideId' | 'severity'> & { severi
 
 const TOL = 0.05 // s: Kante gilt erst so weit im Wort als Schnitt im Wort
 export const SNAP = 0.4 // s: so weit rastet der Export (snapParts) Kanten selbst auf die Wortgrenze
+// Musik-Wahrscheinlichkeit (CED) ab der eine Sekunde als Musik zählt. Gemessen (check-sherpa): Sprache allein ≤ 0,05, Musik −12 dB unter Sprache 0,09–0,3, Musik pur 0,35–0,77
+export const MUSIC = 0.15
 const SENTENCE_END = /[.!?…]["'»«“”‘’)\]]*$/
 // Bindewörter verweisen immer auf Vorheriges; Artikel/Pronomen nur mitten im Satz, am Satzanfang sind sie ein normaler Einstieg
 const CONJ = new Set(['und', 'aber', 'also', 'dann', 'deshalb', 'weil', 'außerdem', 'denn', 'oder', 'sondern', 'and', 'but', 'because', 'then'])
@@ -153,7 +155,7 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
   if (info.music) {
     const secs = new Set<number>()
     let first = Infinity // Schleife statt Math.min(...secs): Spread sprengt bei sehr vielen Sekunden den Stack
-    for (const { p } of use) for (let s = Math.ceil(p.start); s < Math.min(Math.floor(p.end), info.music.length); s++) if (info.music[s] >= 0.5) { secs.add(s); first = Math.min(first, s) }
+    for (const { p } of use) for (let s = Math.ceil(p.start); s < Math.min(Math.floor(p.end), info.music.length); s++) if (info.music[s] >= MUSIC) { secs.add(s); first = Math.min(first, s) }
     if (secs.size >= 5) add('warn', 'clip-musik', `Musik im Hintergrund (${secs.size} s, u. a. bei ${mmss(first)}) – bei fremder Musik droht ein Copyright-Strike; Stelle meiden oder Musik prüfen`)
   }
 
@@ -222,8 +224,8 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   eq(lintClip(ok, tall, { transcript: clean }, others, 3).map((x) => x.message), ['überschneidet sich 20 s mit Clip 1 (gleiches Video) – andere Stelle wählen'], 'andere Clips, self')
   eq(msgs(lintClip(ok, tall, { transcript: clean }, others), 'clip-overlap').length, 2, 'andere Clips ohne self')
 
-  // Musik: Sekunden der Ausschnitte mit Musik ≥ 0,5, überlappende Ausschnitte zählen einmal, ab 5 s
-  const music = Array.from({ length: 100 }, (_, k) => (k >= 62 && k < 74 ? 0.8 : k >= 40 && k < 45 ? 0.5 : 0.3))
+  // Musik: Sekunden der Ausschnitte mit Musik ≥ MUSIC, überlappende Ausschnitte zählen einmal, ab 5 s
+  const music = Array.from({ length: 100 }, (_, k) => (k >= 62 && k < 74 ? 0.8 : k >= 40 && k < 45 ? MUSIC : 0.05))
   const strike = (s: number, at: string) => [`Musik im Hintergrund (${s} s, u. a. bei ${at}) – bei fremder Musik droht ein Copyright-Strike; Stelle meiden oder Musik prüfen`]
   eq(msgs(lintClip({ ...ok, parts: [{ start: 60, end: 70.5 }, { start: 65, end: 80 }] }, wide, { transcript: clean, music }), 'clip-musik'), strike(12, '1:02'), 'Musik überlappend')
   eq(msgs(lintClip({ ...ok, parts: [{ start: 30, end: 58 }] }, tall, { transcript: clean, music }), 'clip-musik'), strike(5, '0:40'), 'Musik 5 s')
