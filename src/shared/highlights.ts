@@ -50,7 +50,7 @@ const de = (n: number) => n.toFixed(1).replace('.', ',')
 
 /** Die n stärksten Momente: Fenster von len s um die Spitze (60 % davor, 40 % danach), mindestens gap s auseinander, zeitlich sortiert. */
 export function highlights(s: Signals, o: { len?: number; n?: number; gap?: number } = {}): Highlight[] {
-  const { len = 60, n = 8, gap = 30 } = o
+  const { len = 90, n = 8, gap = 30 } = o // len: Fenster für ein Reel von gut einer Minute samt Anlauf
   const dur = s.loud.length
   const fill = (x: number[]) => Array.from({ length: dur }, (_, i) => (Number.isFinite(x[i]) ? x[i] : 0)) // NaN vergiftete sonst alle Präfixsummen
   const clamp = (z: number) => Math.min(Z_MAX, Math.max(0, z))

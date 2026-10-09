@@ -87,8 +87,8 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
 
   const len = partsLength(use.map((u) => u.p))
   const lenTxt = c.pauses === 'kurz' ? `Quellmaterial ${de(len)} s, ohne Pausen kürzer` : `Länge ${de(len)} s`
-  if (short && (len < 15 || len > 60)) add('warn', 'clip-laenge', `${lenTxt} – für einen Short 15–60 s; ${len > 60 ? 'kürzen' : 'verlängern'}`)
-  else if (short && (len < 25 || len > 50)) add('info', 'clip-laenge', `${lenTxt} – ideal für einen Short 25–50 s`)
+  if (short && (len < 20 || len > 90)) add('warn', 'clip-laenge', `${lenTxt} – für einen Short 20–90 s; ${len > 90 ? 'kürzen' : 'verlängern'}`)
+  else if (short && (len < 55 || len > 75)) add('info', 'clip-laenge', `${lenTxt} – ideal für einen Short 55–75 s`)
 
   // Ohne Transkript: nur bis zum Videoende, Lücken unter 0,5 s zählen nicht
   const missing = (p: Part) => gaps(t, p.start, dur > 0 ? Math.min(p.end, dur) : p.end).filter(([a, b]) => b - a >= 0.5)
@@ -174,19 +174,19 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   // sauberes Transkript: je Sekunde ein Wort (k+0,1 bis k+0,5), Sätze „Wir sind gut.“
   const clean: Transcript = { duration: 100, lang: 'de', segments: [{ start: 0, end: 100, text: '',
     words: Array.from({ length: 100 }, (_, k) => ({ w: ['Wir', 'sind', 'gut.'][k % 3], start: k + 0.1, end: k + 0.5 })) }] }
-  const ok: ClipContent = { video: 'asset://a.mp4', hook: 'Drei Wörter hier', parts: [{ start: 0, end: 30 }] }
+  const ok: ClipContent = { video: 'asset://a.mp4', hook: 'Drei Wörter hier', parts: [{ start: 0, end: 60 }] }
   eq(lintClip(ok, tall, { duration: 100, transcript: clean }), [], 'sauberer Clip')
 
   // Video, ungültige Zeiten, Ende, Länge, Hook
   eq(rules(lintClip({ ...ok, video: ' ' }, tall, { transcript: clean })), ['error:clip-video'], 'video leer')
-  const inv = lintClip({ ...ok, parts: [{ start: 0, end: 30 }, { start: 5, end: 5 }, { start: NaN, end: 3 }, { start: -1, end: 4 }] }, tall, { duration: 100, transcript: null })
+  const inv = lintClip({ ...ok, parts: [{ start: 0, end: 60 }, { start: 5, end: 5 }, { start: NaN, end: 3 }, { start: -1, end: 4 }] }, tall, { duration: 100, transcript: null })
   eq([rules(inv), msgs(inv, 'clip-zeit'), inv.some((x) => x.message.includes('NaN'))], [['warn:clip-transkript', 'warn:clip-zeit'],
     ['Ausschnitte 2, 3, 4 ohne gültige Zeiten (start ≥ 0, end nach start) – Zeiten aus dem Transkript nehmen'], false], 'ungültige parts')
   eq(rules(lintClip({ ...ok, parts: [{ start: 0, end: 30 }, { start: 110, end: 115 }] }, tall, { duration: 100, transcript: clean })).filter((r) => r.includes('ende')), ['error:clip-ende'], 'start hinter Ende')
   eq(rules(lintClip({ ...ok, parts: [{ start: 69, end: 105 }] }, tall, { duration: 100, transcript: clean })).filter((r) => r.includes('ende')), ['warn:clip-ende'], 'end hinter Ende')
   const len = (end: number, size = tall) => rules(lintClip({ ...ok, parts: [{ start: 0, end }] }, size, { transcript: clean })).filter((r) => r.includes('laenge'))
-  eq([len(12)[0], len(66)[0], len(21)[0], len(54)[0], len(66, wide)[0]], ['warn:clip-laenge', 'warn:clip-laenge', 'info:clip-laenge', 'info:clip-laenge', undefined], 'Länge')
-  eq(msgs(lintClip({ ...ok, pauses: 'kurz', parts: [{ start: 0, end: 66 }] }, tall, { transcript: clean }), 'clip-laenge'), ['Quellmaterial 66 s, ohne Pausen kürzer – für einen Short 15–60 s; kürzen'], 'Länge pauses kurz')
+  eq([len(12)[0], len(95)[0], len(21)[0], len(54)[0], len(95, wide)[0]], ['warn:clip-laenge', 'warn:clip-laenge', 'info:clip-laenge', 'info:clip-laenge', undefined], 'Länge')
+  eq(msgs(lintClip({ ...ok, pauses: 'kurz', parts: [{ start: 0, end: 96 }] }, tall, { transcript: clean }), 'clip-laenge'), ['Quellmaterial 96 s, ohne Pausen kürzer – für einen Short 20–90 s; kürzen'], 'Länge pauses kurz')
   eq(rules(lintClip({ ...ok, hook: undefined }, tall, { transcript: clean })), ['info:clip-hook'], 'Hook fehlt')
   eq(rules(lintClip({ ...ok, hook: undefined }, wide, { transcript: clean })).includes('info:clip-hook'), false, 'Hook quer')
   eq(rules(lintClip({ ...ok, hook: 'eins zwei drei vier fünf sechs sieben acht neun zehn' }, tall, { transcript: clean })), ['info:clip-hook'], 'Hook lang')
@@ -217,10 +217,10 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   eq(rules(lintClip({ ...ok, parts: [part], captions: 'aus' }, wide, { transcript: null })), [], 'captions aus')
 
   // Überschneidungen
-  eq(rules(lintClip({ ...ok, parts: [{ start: 0, end: 15 }, { start: 12, end: 27 }] }, tall, { transcript: clean })), ['warn:clip-overlap'], 'parts überlappen')
+  eq(rules(lintClip({ ...ok, parts: [{ start: 0, end: 39 }, { start: 36, end: 63 }] }, tall, { transcript: clean })), ['warn:clip-overlap'], 'parts überlappen')
   eq(msgs(lintClip({ ...ok, parts: [{ start: 0, end: 15 }, { start: 12, end: 27 }, { start: 20, end: 30 }] }, tall, { transcript: clean }), 'clip-overlap'),
     ['2 Paare von Ausschnitten überschneiden sich: 1/2 (3 s), 2/3 (7 s) – Bereiche trennen, sonst laufen Stellen doppelt'], 'Überlappung gebündelt')
-  const others = [{ video: 'asset://a.mp4', parts: [{ start: 10, end: 40 }] }, { video: 'asset://b.mp4', parts: [{ start: 0, end: 30 }] }, { video: 'asset://a.mp4', parts: [{ start: 27, end: 33 }] }, { video: ok.video, parts: [{ start: 0, end: 30 }] }]
+  const others = [{ video: 'asset://a.mp4', parts: [{ start: 40, end: 100 }] }, { video: 'asset://b.mp4', parts: [{ start: 0, end: 30 }] }, { video: 'asset://a.mp4', parts: [{ start: 57, end: 63 }] }, { video: ok.video, parts: [{ start: 0, end: 60 }] }]
   eq(lintClip(ok, tall, { transcript: clean }, others, 3).map((x) => x.message), ['überschneidet sich 20 s mit Clip 1 (gleiches Video) – andere Stelle wählen'], 'andere Clips, self')
   eq(msgs(lintClip(ok, tall, { transcript: clean }, others), 'clip-overlap').length, 2, 'andere Clips ohne self')
 

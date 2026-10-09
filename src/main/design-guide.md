@@ -448,7 +448,7 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 
 **Regeln:**
 - Schnitte nur an Segmentgrenzen des Transkripts, nie mitten im Satz. Füllsätze, Wiederholungen und Abschweifungen herausschneiden: ein Clip besteht dann aus mehreren `parts` (Jump Cuts).
-- Short: ideal 25–50 s, hart 15–60 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
+- Short: ideal 55–75 s, hart 20–90 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
 - `hook` (Short): höchstens 70 Zeichen, löst nicht schon alles auf; kein Clickbait, keine Emojis.
 - `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
 - `style`: `lebendig` für Shorts und Reels (Wort-Pop, Hook blendet mit Balken ein, Fortschrittsbalken, Zoom-Wechsel an Schnitten kaschiert Jump-Cuts), sonst weglassen (= ruhig, ohne Bewegung): Fulltime, Vorträge, Schulungen. Keine weiteren Effekte, Sticker oder Emojis.
