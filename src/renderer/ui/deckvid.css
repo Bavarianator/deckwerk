@@ -17,6 +17,10 @@
 .dv-sep { display: block; padding: 8px 6px; color: var(--muted); font-size: 12px; }
 .dv-more { align-self: flex-start; margin: 8px 0 0 6px; }
 
+.dv-flag { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--muted); }
+.dv-flag i { width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.dv-flag.err i { background: var(--danger); }
+
 /* Vorschau */
 .dv-main { grid-area: main; display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; min-height: 0; padding: 12px 20px; }
 .dv-stage { flex: 1; width: 100%; min-height: 0; display: grid; place-items: center; container-type: size; }
@@ -37,6 +41,17 @@
 .dv-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; max-width: 440px; color: var(--muted); font-size: 14px; text-align: center; }
 .dv-empty p { display: flex; align-items: center; gap: 8px; margin: 0; }
 .dv-empty div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+.dv-hints { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 640px; font-size: 12.5px; line-height: 1.4; }
+.dv-hints ul { margin: 0; padding: 0; list-style: none; }
+.dv-hints li { position: relative; padding-left: 14px; color: var(--muted); }
+.dv-hints li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.dv-hints li.error::before { background: var(--danger); }
+.dv-hints li.info { color: var(--faint); }
+.dv-hints li.info::before { background: var(--faint); }
+.dv-hints > div { display: flex; align-items: center; gap: 10px; }
+
+.dv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Quell-Zeitleiste */
 .dv-line { grid-area: line; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px 20px 14px; border-top: 1px solid var(--border); }
