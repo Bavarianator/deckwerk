@@ -395,8 +395,8 @@
 .t.vk-role { color: var(--accent); font-weight: 700; }
 .vk-contact { display: flex; flex-direction: column; }
 .t.vk-org { font-weight: 700; margin-bottom: 2px; }
-.vk-logo { flex: none; width: 72px; height: 22px; background-position: right top; }
-.vk-mark { flex: none; width: 160px; height: 44px; background-position: left top; }
+.vk-logo { flex: none; width: 72px; height: 22px; } /* rechts oben bündig: focus am Img, wirkt auch in der PPTX */
+.vk-mark { flex: none; width: 160px; height: 44px; } /* links oben bündig mit claim und Rand: focus am Img */
 .vk-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
 .t.vk-claim { max-width: 200px; text-wrap: pretty; }
 .vk-qr { flex: none; display: block; width: 80px; height: 80px; overflow: hidden; } /* ≈ 21 mm samt Ruhezone: Muster ab ~15 mm scannt sicher */

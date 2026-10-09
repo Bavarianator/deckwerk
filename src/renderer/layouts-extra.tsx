@@ -665,10 +665,10 @@ function Letter({ c }: Props<'letter'>) {
       </div>
       <div className="bf-window">
         <div className="bf-note">{c.senderLine && <T role="small" slot="senderLine" maxLines={1}>{c.senderLine}</T>}</div>
-        <div className="bf-to" data-fit data-slot="to"><T role="body" slot="to" className="bf-addr">{c.to}</T></div>
+        <div className="bf-to" data-fit data-slot="_to"><T role="body" slot="to" className="bf-addr">{c.to}</T></div>
       </div>
       {!!c.info?.length && (
-        <div className="bf-info" data-fit data-slot="info">
+        <div className="bf-info" data-fit data-slot="_info">
           {c.info.map((r, i) => (
             <div className="bf-row" key={i}>
               <T role="label" slot={`info.${i}.label`} className="muted">{r.label}</T>
@@ -678,7 +678,7 @@ function Letter({ c }: Props<'letter'>) {
         </div>
       )}
       <div className="bf-text">
-        <div className="bf-main" data-fit data-slot="body">
+        <div className="bf-main" data-fit data-slot="_body">
           <T role="body" slot="subject" className="bf-bold">{c.subject}</T>
           {c.salutation && <T role="body" slot="salutation" className="bf-gap">{c.salutation}</T>}
           <T role="body" slot="body" className="bf-gap">{body}</T>
@@ -700,7 +700,7 @@ function BusinessCard({ c, v }: Props<'business-card'>) {
   if (v === 'back') return (
     <Frame safeClass="vk-safe">
       <div className="vk">
-        {theme.logo ? <Img src={theme.logo} slot="_logo" className="vk-mark" contain />
+        {theme.logo ? <Img src={theme.logo} slot="_logo" className="vk-mark" contain focus={{ x: 0, y: 0 }} />
           : <T role="display" slot={c.org ? 'org' : 'name'} maxLines={2} className="vk-name">{c.org ?? c.name}</T>}
         {(c.claim || c.qr) && (
           <div className="vk-foot">
@@ -719,7 +719,7 @@ function BusinessCard({ c, v }: Props<'business-card'>) {
             <T role="display" slot="name" maxLines={2} className="vk-name">{c.name}</T>
             {c.role && <T role="label" slot="role" className="vk-role">{c.role}</T>}
           </div>
-          {theme.logo && <Img src={theme.logo} slot="_logo" className="vk-logo" contain />}
+          {theme.logo && <Img src={theme.logo} slot="_logo" className="vk-logo" contain focus={{ x: 1, y: 0 }} />}
         </div>
         {(c.org || !!c.lines?.length) && (
           <div className="vk-contact">
