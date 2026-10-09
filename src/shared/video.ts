@@ -2,13 +2,15 @@
 // Highlight-Kriterien, Transkriptformat und ASS-Untertitel sind angelehnt an BridgeClip (MIT, © 2026 BridgeMind).
 
 export interface Word { w: string; start: number; end: number }
-export interface Segment { start: number; end: number; text: string; words?: Word[] } // words fehlen = aus text geschätzt
-export interface Transcript { duration: number; lang: string; segments: Segment[] }
+export interface Segment { start: number; end: number; text: string; words?: Word[]; speaker?: number } // words fehlen = aus text geschätzt; speaker aus der Sprechertrennung, 0-basiert
+export interface Transcript { duration: number; lang: string; segments: Segment[]; covered?: [number, number][] } // covered: transkribierte Bereiche (s), sortiert; fehlt = ganzes Video
 export interface VideoInfo { duration: number; w: number; h: number } // w/h so, wie das Video angezeigt wird (Drehung berücksichtigt)
 export interface Part { start: number; end: number; focus?: number } // focus: horizontaler Bildmittelpunkt 0..1
 export type Captions = 'wort' | 'satz' | 'aus'
 export type Pauses = 'kurz' | 'lassen'
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses }
+export type Fit = 'crop' | 'blur' // blur: ganzes Bild mittig auf unscharfem, abgedunkeltem Vollbild-Grund (Querformat in 9:16)
+// follow: Zuschnitt folgt dem aktiven Sprecher (Podcast), die Engine teilt parts an Sprecherwechseln
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher' }
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
@@ -16,6 +18,9 @@ export const CAPTIONS: Captions[] = ['wort', 'satz', 'aus']
 export const PAD = 0.15 // Puffer an jedem Schnitt, damit kein Wort angeschnitten wird
 export const STILL = 3 // Sekunden je Folie ohne Video im MP4
 export const MIN_PAUSE = 0.6 // pauses 'kurz': Stillen ab dieser Länge fallen weg, padParts lässt je Seite PAD stehen
+export const MAX_PARTS = 100 // Ausschnitte je Clip-Folie (ganzes Video kürzen braucht viele)
+// Füllwort, geprüft gegen ein einzelnes Wort (Word.w): ganzes Wort, Satzzeichen und Groß/klein egal
+export const FILLERS = /^[\p{P}\s]*(?:äh|ähm|öh|öhm|hm|hmm|mhm|uh|um|uhm|erm)[\p{P}\s]*$/iu
 
 export const partsLength = (parts: Part[]) => parts.reduce((s, p) => s + Math.max(0, p.end - p.start), 0)
 
@@ -37,6 +42,15 @@ export const tighten = (parts: Part[], quiet: Quiet[]): Part[] => parts.flatMap(
   const s = speech(p.start, p.end, quiet)
   return s.length ? s.map(([start, end]) => ({ ...p, start, end })) : [p]
 })
+
+/** Füllwörter in from–to als Stillen für tighten(). Nur Segmente mit echten Wortzeiten, geschätzte träfen Nachbarwörter.
+ *  Je Seite PAD breiter: padParts gibt an jedem Schnitt PAD zurück, sonst bliebe ein kurzes „äh“ ganz stehen. */
+export function fillerQuiet(t: Transcript, from: number, to: number): Quiet[] {
+  const de = t.lang.startsWith('de') // „um“ ist im Deutschen meist Präposition
+  return t.segments.flatMap((s) => s.words ?? [])
+    .filter((w) => w.end > from && w.start < to && FILLERS.test(w.w) && !(de && /^um$/i.test(w.w.replace(/[\p{P}\s]/gu, ''))))
+    .map((w): Quiet => [Math.max(from, w.start - PAD), Math.min(to, w.end + PAD)])
+}
 
 /** Wortzeiten eines Segments nach Zeichenanteil, verteilt über die Sprechzeit ohne die Stillen in quiet. Ein Wort liegt ganz im Sprechstück seiner Mitte, sonst fiele es mit einer gekürzten Pause weg. ponytail: geschätzt (±0,3 s); echte Zeiten per DTW über Cross-Attention, falls die Wort-Hervorhebung sichtbar daneben liegt. */
 export function estimateWords(seg: Segment, quiet: Quiet[] = []): Word[] {
@@ -110,3 +124,17 @@ export function cropRect(src: { w: number; h: number }, out: { w: number; h: num
 export const transcriptLines = (t: Transcript) => t.segments.map((s, i) => `[s${i}] ${s.start.toFixed(1)}–${s.end.toFixed(1)} ${s.text.trim()}`)
 
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+
+// Selbstprüfung: npx esbuild src/shared/video.ts --bundle --platform=node | DW_VIDEO_SELFTEST=1 node
+if (typeof process !== 'undefined' && process.env.DW_VIDEO_SELFTEST) {
+  const w = (x: string, start: number): Word => ({ w: x, start, end: start + 0.3 })
+  const t: Transcript = { duration: 10, lang: 'de', segments: [
+    { start: 0, end: 3, text: '', words: [w(' Also', 0), w(' Äh,', 1), w(' um', 1.5), w(' hmm…', 2)] },
+    { start: 3, end: 5, text: 'ähm geschätzt' }, // ohne words: nie schneiden
+  ] }
+  const q = fillerQuiet(t, 0, 10)
+  if (q.length !== 2 || q[0][0] !== 1 - PAD || q[1][1] !== 2.3 + PAD) throw new Error('fillerQuiet ' + JSON.stringify(q))
+  if (fillerQuiet({ ...t, lang: 'en' }, 0, 10).length !== 3 || fillerQuiet(t, 1.6, 10).length !== 1) throw new Error('fillerQuiet en/Bereich')
+  if (FILLERS.test('ähnlich') || FILLERS.test('Hummel') || !FILLERS.test('Ähm...')) throw new Error('FILLERS')
+  console.log('video ok')
+}
