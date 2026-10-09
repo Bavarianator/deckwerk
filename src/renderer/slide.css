@@ -55,12 +55,19 @@
 .slide { --hs: calc(1 + (var(--head-scale, 1) - 1) * var(--head-fit, 1)); }
 .r-display { font-size: calc(var(--fs-display) * var(--hs)); line-height: 1.06; }
 .r-statement { font-size: calc(var(--fs-statement) * var(--hs)); line-height: 1.16; }
+/* große Titel enger setzen als Inhaltstitel (Satzregel: je größer, desto knapper), Plakat-Größen noch etwas mehr */
+.r-display, .r-statement { letter-spacing: calc(var(--head-tracking) - 0.005em - (var(--hs) - 1) * 0.04em); }
 .sub-body .r-h2, .sub-body .r-h3 { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.01em; }
 .r-h1 { font-size: calc(var(--fs-h1) * min(var(--hs), 1.25)); line-height: 1.14; } /* Inhaltstitel wachsen höchstens wie large: huge gilt für Cover, Kapitel, Statement */
 .r-kpi { font-size: var(--fs-kpi); line-height: 1.05; letter-spacing: -0.03em; white-space: nowrap; }
 .r-h2 { font-size: var(--fs-h2); line-height: 1.22; letter-spacing: calc(var(--head-tracking) / 2); }
 .r-h3 { font-size: var(--fs-h3); line-height: 1.24; letter-spacing: calc(var(--head-tracking) / 2); }
 .r-body { font-size: var(--fs-body); line-height: 1.38; }
+.r-body, .r-label, .r-small { text-wrap: pretty; } /* keine einzelnen Wörter in der letzten Zeile */
+/* hängende Anführungszeichen: „ steht im Rand, die Buchstaben fluchten mit der Satzkante (hanging-punctuation kann Chromium nicht) */
+.t.hang { text-indent: max(-0.4em, -44px); } /* höchstens so weit, wie der Clip-Rand unten reicht (Plakat-Größen) */
+.center .t.hang, .fr-center .t.hang { text-indent: 0; } /* zentrierter Satz hängt nicht */
+.safe:has(.t.hang) { overflow: clip; overflow-clip-margin: 48px; } /* sonst schneidet der Satzspiegel das Zeichen ab */
 .r-label { font-size: var(--fs-label); line-height: 1.32; }
 .r-small { font-size: var(--fs-small); line-height: 1.42; color: var(--muted); }
 .r-eyebrow { font-family: var(--font-label, var(--font-body)); font-size: var(--fs-eyebrow); line-height: 1.2; font-weight: 700; letter-spacing: 0.01em; color: var(--muted); }
