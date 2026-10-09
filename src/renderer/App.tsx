@@ -141,7 +141,7 @@ export default function App() {
   }, [doc.deck])
 
   useEffect(() => {
-    if (!status || status.error) return
+    if (!status || status.error || videoBusy.current) return // Video-Export: Deckvid zeigt den Fortschritt aus dem Status
     const t = setTimeout(() => setStatus(null), 4000)
     return () => clearTimeout(t)
   }, [status])
@@ -374,6 +374,7 @@ export default function App() {
       ) : deckvid ? (
         <Deckvid
           deck={deck} index={index} msgs={msgs} busy={busy} status={status} saved={saved} path={path} model={model} onModel={pickModel}
+          exporting={videoBusy.current} // Ref genügt: Start, Fortschritt und Ende setzen den Status und rendern damit neu
           onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport} onSlides={() => setSlidesView(true)}
           patchSlide={patchSlide} delSlide={delSlide} canUndo={canUndoTurn} onUndo={undoTurn}
         />

@@ -1,17 +1,16 @@
 // Deckvid: Arbeitsansicht für Video-Decks (Folien im Layout clip). Fast alles läuft über die KI (Chat und Ein-Klick-Aufträge);
 // von Hand gibt es nur, was einfacher ist als ein Satz: abspielen, Feinschnitt, Entfernen, Export.
 import { Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowUp, ChevronLeft, Image as ImageIcon, LoaderCircle, Paperclip, Pause, Play, Settings, Share, Square, Undo2, X } from 'lucide-react'
+import { ArrowUp, ChevronLeft, LoaderCircle, Paperclip, Pause, Play, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { STILL, clipWords, fillerQuiet, mmss, partsLength, type ClipContent } from '../../shared/video'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
 import { ClipCutter } from './ClipCutter'
-import { ClipVideo, Strip, captionAt, useClipPlayer } from './clipPlayer'
-import { assetOf } from './itemOps'
+import { ClipVideo, Strip, captionAt, clipUrl, useClipPlayer } from './clipPlayer'
 import { confirmDialog } from './kit'
-import { VIDEO_EXAMPLES, isImage, sourceContext, useSource } from './Start'
+import { SourceChips, VIDEO_EXAMPLES, sourceContext, useSource } from './Start'
 import { OpenSettings } from './settings/parts'
 import type { Status } from './TopBar'
 import './deckvid.css'
@@ -20,7 +19,6 @@ type Cached = NonNullable<Awaited<ReturnType<Window['api']['videoCached']>>>
 type ClipSlide = Omit<Slide, 'content'> & { content: ClipContent } // Slide.content ist any
 
 const isClip = (s: Slide | undefined): s is ClipSlide => s?.layout === 'clip' && !!s.content?.video && !!s.content.parts?.length
-const urlOf = (video: string) => (video.startsWith('/') ? assetOf(video) : video) // assetOf kodiert auch # und ?
 // Andere Folien: section ist ein Zwischentitel, sonst Titel oder Layoutname
 const labelOf = (s: Slide) => {
   const t = typeof s.content?.title === 'string' ? s.content.title.trim() : ''
@@ -29,13 +27,18 @@ const labelOf = (s: Slide) => {
 const where = (s: ClipSlide, n: number) =>
   `Clip ${n} (Folie ${s.id}), Quelle ${s.content.video}, parts ${s.content.parts.map((p) => `${p.start}–${p.end}`).join(', ')}`
 
-// Ein-Klick-Aufträge für den gewählten Clip: der Satz steht im Chat, der Bezug geht nur an die KI
+// Ein-Klick-Aufträge für einen Short (hoch, quadratisch): der Satz steht im Chat, der Bezug geht nur an die KI
 const TASKS: [label: string, ask: string][] = [
   ['Kürzer', 'Mach diesen Clip kürzer: nur der stärkste Teil, ohne Anlauf.'],
   ['Stärkerer Einstieg', 'Lass diesen Clip direkt mit dem stärksten Satz beginnen.'],
   ['Neuer Hook', 'Schreib einen neuen, stärkeren Hook für diesen Clip.'],
   ['Ruhigere Untertitel', 'Mach die Untertitel dieses Clips ruhiger: ganze Sätze statt Wort für Wort.'],
   ['Andere Stelle', 'Nimm für diesen Clip eine andere starke Stelle aus demselben Video, die noch kein Clip nutzt.'],
+]
+// Ganzes Video (quer); Untertitel an/aus schaltet die Ansicht selbst
+const WIDE_TASKS: [label: string, ask: string][] = [
+  ['Straffer schneiden', 'Schneide dieses Video straffer: Füllsätze und Wiederholungen raus, der Inhalt bleibt.'],
+  ['Kapitel als Zwischentitel', 'Füge vor jedem Themenwechsel einen kurzen Zwischentitel ein (Layout section) und teile den Clip dafür an diesen Stellen.'],
 ]
 
 // Lautheit (dBFS je Sekunde) → 0..1, auf höchstens 600 Werte verdichtet (Maximum je Abschnitt): ein 8-h-Stream hätte sonst 28 800 Pfadpunkte
@@ -76,6 +79,7 @@ interface Props {
   onSelect: (i: number) => void
   onHome: () => void
   onExport: (format: 'mp4' | 'clips') => void
+  exporting: boolean // Video-Export läuft
   onSlides: () => void // Ausweg in den normalen Folien-Editor
   patchSlide: (i: number, p: Partial<Slide>) => void
   delSlide: (i: number) => void
@@ -88,6 +92,7 @@ export function Deckvid(p: Props) {
   const { deck, index, busy, onSend } = p
   const openSettings = useContext(OpenSettings)
   const size = sizeOf(deck)
+  const wide = size.w > size.h // Querformat: ganzes Video statt Shorts
   const slides = deck?.slides ?? []
   const slide = slides[index]
   const clip = isClip(slide) ? slide : null
@@ -108,6 +113,18 @@ export function Deckvid(p: Props) {
   }, [menu])
   useEffect(() => { if (!clip) setCutting(false) }, [!clip])
   useEffect(() => { list.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' }) }, [index])
+
+  // Cache je Quelle (Lautheit, Highlights, Transkript): beim ersten Zeigen geholt, nach jedem KI-Zug und Export neu; gerechnet wird dabei nie
+  const [cache, setCache] = useState<Record<string, Cached | null>>({})
+  const asked = useRef(new Set<string>()) // seit dem letzten KI-Zug oder Export schon angefragt
+  const idle = !busy && !p.exporting
+  const video = clip?.content.video
+  useEffect(() => {
+    if (!idle) return void asked.current.clear()
+    if (!video || asked.current.has(video)) return
+    asked.current.add(video)
+    window.api.videoCached(video).then((d) => setCache((m) => ({ ...m, [video]: d })), () => asked.current.delete(video))
+  }, [video, idle])
 
   useKey((e) => {
     if (!keysFree(e) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !slides.length) return
@@ -142,7 +159,7 @@ export function Deckvid(p: Props) {
           <button className="plain" disabled={!deck} title="Alle Folien mit allen Werkzeugen bearbeiten" onClick={p.onSlides}>Folien-Ansicht</button>
           <button className="plain" title="Einstellungen" aria-label="Einstellungen" onClick={() => openSettings()}><Settings size={17} /></button>
           <div className="top-export" ref={box}>
-            <button className="pill tint" disabled={!clips.length} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Share size={14} />Exportieren</button>
+            <button className="pill tint" disabled={!clips.length || !idle} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Share size={14} />Exportieren</button>
             {menu && (
               <div className="menu material" role="menu">
                 <button role="menuitem" onClick={() => { setMenu(false); p.onExport('clips') }}>Shorts einzeln (MP4)</button>
@@ -158,21 +175,22 @@ export function Deckvid(p: Props) {
         <nav className="dv-list" aria-label="Clips" ref={list}>
           {slides.map((s, i) => isClip(s) ? (
             <button key={s.id} className="dv-item" aria-current={i === index} onClick={() => p.onSelect(i)}>
-              <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${urlOf(s.content.video)}?frame=${s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
+              <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${clipUrl(s.content.video)}?frame=${s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
               <span><b>{s.content.hook || `Clip ${no(s)}`}</b><small>{mmss(partsLength(s.content.parts))}</small></span>
             </button>
           ) : (
             <button key={s.id} className="dv-item dv-sep" aria-current={i === index} onClick={() => p.onSelect(i)}>{labelOf(s)}</button>
           ))}
-          {clips.length > 0 && (
+          {clips.length > 0 && !wide && (
             <button className="pill dv-more" disabled={busy} onClick={() => onSend('Mach weitere Shorts aus demselben Video: starke Stellen, die noch kein Clip nutzt.', `Vorhandene Clips: ${clips.map((s) => where(s, no(s))).join(' · ')}`)}>Weitere Shorts</button>
           )}
         </nav>
 
         {clip ? (
           <ClipStage key={clip.id} clip={clip} n={no(clip)} here={here!} size={size} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
-            parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)}
-            busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()} />
+            parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)} cached={cache[clip.content.video] ?? null}
+            busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()}
+            onCaptions={() => p.patchSlide(index, { content: { ...clip.content, captions: clip.content.captions === 'aus' ? 'satz' : 'aus' } })} />
         ) : (
           <section className="dv-main" aria-label="Vorschau">
             <div className="dv-empty">
@@ -198,22 +216,12 @@ export function Deckvid(p: Props) {
         <aside className="dv-chat" aria-label="KI">
           <ChatLog className="dv-log" msgs={p.msgs} busy={busy} onSend={onSend} />
           {!p.msgs.length && clips.length > 0 && (
-            <p className="dv-hint">Die KI kennt dein Video. Sag zum Beispiel: „Mach den zweiten Clip spannender“ oder „Noch zwei Shorts mit den lustigsten Stellen“.</p>
+            <p className="dv-hint">{wide ? 'Die KI kennt dein Video. Sag zum Beispiel: „Schneid die Begrüßung raus“ oder „Kürz das Video auf zehn Minuten“.' : 'Die KI kennt dein Video. Sag zum Beispiel: „Mach den zweiten Clip spannender“ oder „Noch zwei Shorts mit den lustigsten Stellen“.'}</p>
           )}
           <form className="dv-ask" onSubmit={(e) => { e.preventDefault(); submit() }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
-            {(srcs.length > 0 || err) && (
-              <div className="dv-files">
-                {srcs.map((s) => (
-                  <span key={s.name} className="cap-token file" title={s.name}>
-                    {isImage(s.name) ? <ImageIcon size={11} /> : <Paperclip size={11} />}<span>{s.name}</span>
-                    <button type="button" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={11} strokeWidth={2.6} /></button>
-                  </span>
-                ))}
-                {err && <span className="cap-token error" role="alert" title={err}>{err}</span>}
-              </div>
-            )}
+            {(srcs.length > 0 || err) && <div className="dv-files"><SourceChips srcs={srcs} remove={remove} err={err} /></div>}
             <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={busy ? 'Die KI arbeitet …' : 'Sag der KI, was sie ändern soll …'} aria-label="Wunsch an die KI" />
             <div className="dv-ask-bar">
               <button type="button" className="plain" aria-label="Video anhängen" title="Video anhängen (oder hierher ziehen)" disabled={busy} onClick={() => attach()}><Paperclip size={16} /></button>
@@ -236,24 +244,15 @@ export function Deckvid(p: Props) {
 interface StageProps {
   clip: ClipSlide; n: number; here: string; size: Size; accent: string
   parts: ClipContent['parts'] // alle Ausschnitte aus derselben Quelle, für die Zeitleiste
-  busy: boolean; onSend: (text: string, context?: string) => boolean; undo: ReactNode; onCut: () => void; onRemove: () => void
+  cached: Cached | null
+  busy: boolean; onSend: (text: string, context?: string) => boolean; undo: ReactNode; onCut: () => void; onRemove: () => void; onCaptions: () => void
 }
 
 // Vorschau, Aufträge und Quell-Zeitleiste des gewählten Clips (Bereiche main und line im Grid). key = Folien-ID: ein anderer Clip startet frisch.
-function ClipStage({ clip, n, here, size, accent, parts, busy, onSend, undo, onCut, onRemove }: StageProps) {
+function ClipStage({ clip, n, here, size, accent, parts, cached, busy, onSend, undo, onCut, onRemove, onCaptions }: StageProps) {
   const c = clip.content
-  // Cache der Quelle (Lautheit, Highlights, Transkript): beim Betreten und nach jedem KI-Zug neu, gerechnet wird dabei nie
-  const [cached, setCached] = useState<Cached | null>(null)
-  useEffect(() => {
-    if (busy) return
-    let live = true
-    window.api.videoCached(c.video).then((data) => live && setCached(data), () => {})
-    return () => { live = false }
-  }, [c.video, busy])
-
   const videoRef = useRef<HTMLVideoElement>(null)
   const player = useClipPlayer(videoRef, c.parts)
-  const [srcDur, setSrcDur] = useState(0) // Länge der Quelle aus dem Video, falls der Cache keine kennt
   const [bad, setBad] = useState(false) // Chromium spielt die Quelle nicht (HEVC, ProRes …)
   useKey((e) => { if (e.key === ' ' && !e.repeat && keysFree(e) && !(e.target as Element).closest('button')) { e.preventDefault(); player.toggle() } })
 
@@ -278,7 +277,7 @@ function ClipStage({ clip, n, here, size, accent, parts, busy, onSend, undo, onC
     '--dv-accent': accent,
   } as CSSProperties
   const focus = c.parts.find((x) => player.src >= x.start && player.src < x.end)?.focus ?? c.parts[0].focus
-  const to = cached?.duration || srcDur || Math.max(...parts.map((x) => x.end))
+  const to = cached?.duration || Math.max(...parts.map((x) => x.end))
 
   return (
     <>
@@ -286,9 +285,9 @@ function ClipStage({ clip, n, here, size, accent, parts, busy, onSend, undo, onC
         <div className="dv-stage">
           <div className="dv-screen" style={screen}>
             <ClipVideo video={c.video} aspect={size.w / size.h} focus={focus} fit={c.fit} still={c.parts[0].start} videoRef={videoRef}
-              onClick={player.toggle} onMeta={(v) => setSrcDur(Number.isFinite(v.duration) ? v.duration : 0)} onBad={() => setBad(true)}>
+              onClick={player.toggle} onBad={() => setBad(true)}>
               {c.hook && player.t < 4 && <p className="dv-hook">{c.hook}</p>}
-              {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active ? <em>{w}</em> : w}</Fragment>)}</p>}
+              {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em>{w}</em> : w}</Fragment>)}</p>}
               {bad && <p className="dv-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Exportieren geht trotzdem.</p>}
             </ClipVideo>
           </div>
@@ -301,9 +300,10 @@ function ClipStage({ clip, n, here, size, accent, parts, busy, onSend, undo, onC
           {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
         </div>
         <div className="dv-acts" role="group" aria-label={`Clip ${n} ändern`}>
-          {TASKS.map(([label, text]) => <button key={label} className="pill" disabled={busy} onClick={() => onSend(text, here)}>{label}</button>)}
+          {(wide ? WIDE_TASKS : TASKS).map(([label, text]) => <button key={label} className="pill" disabled={busy} onClick={() => onSend(text, here)}>{label}</button>)}
           <i aria-hidden />
-          <button className="pill" disabled={busy} title="Anfang und Ende von Hand nachschneiden" onClick={onCut}>Feinschnitt</button>
+          {wide && <button className="pill" disabled={busy} onClick={onCaptions}>{mode === 'aus' ? 'Untertitel an' : 'Untertitel aus'}</button>}
+          <button className="pill" disabled={busy} title="Anfang und Ende von Hand nachschneiden" onClick={() => { player.pause(); onCut() }}>Feinschnitt</button>
           <button className="pill" disabled={busy} onClick={onRemove}>Entfernen</button>
           {!busy && undo}
         </div>
