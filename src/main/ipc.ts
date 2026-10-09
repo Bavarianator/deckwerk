@@ -6,13 +6,13 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
+import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
-import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, type Orientation } from './tools'
+import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, type Orientation } from './tools'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
@@ -334,6 +334,15 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     await writeFile(out, png)
     return assetUrl(out)
   })
+  // Nur Cache-Daten eines Videos (Signale, Highlights, Transkript, Dauer), rechnet nie; null = kein Video / nicht erlaubt
+  ipcMain.handle('video:cached', async (_, src: string) => {
+    if (typeof src !== 'string') return null
+    try {
+      const file = src.startsWith('asset://') ? localAsset(decodeURIComponent(new URL(src).pathname)) : isAbsolute(src) ? resolve(src) : null
+      return file && VIDEO_FILE.test(file) ? ((await engine.video?.cached?.(file)) ?? null) : null
+    } catch { return null }
+  })
+  ipcMain.handle('jobs:list', () => jobList())
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {
     const extensions = kind === 'video' ? VIDEO_EXT : AUDIO_EXT
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: kind === 'video' ? 'Videos' : 'Audio', extensions }] })

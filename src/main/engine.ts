@@ -337,6 +337,15 @@ export function createEngine(): Engine {
         }
         return highlights(s)
       },
+      async cached(file) {
+        const none = { signals: null, highlights: [], transcript: null, duration: null }
+        try {
+          const [base, info] = await Promise.all([baseOf(file), probe(file).catch(() => null)])
+          const signals = await readJson<Signals>(`${base}.signals.json`)
+          const t = await transcript(file, [], {}).catch(() => null) // ranges [] → missing [], rechnet nichts
+          return { signals, highlights: signals ? highlights(signals) : [], transcript: t && t.covered?.length === 0 ? null : t, duration: info?.duration ?? null }
+        } catch { return none }
+      },
       async importUrl(url, onProgress) {
         const r = await (await import('./ytdlp')).importUrl(url, join(home, 'assets', '.video', 'import'), { models, ffmpeg: await ffmpegBin(), onProgress })
         await save(`${r.file}.meta.json`, { title: r.title, duration: r.duration, chapters: r.chapters, heat: r.heat, chat: r.chat }) // für highlights

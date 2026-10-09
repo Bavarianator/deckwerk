@@ -315,13 +315,18 @@ function tool<S extends z.ZodType>(t: ToolDef<S>): ToolDef<S> { return t }
 // hängt sich an den laufenden Job oder holt sein Ergebnis ab; danach ist der Job vergessen.
 export const JOB_WAIT = { ms: 240_000 } // Tests setzen ihn kürzer
 // ponytail: nie abgeholte Ergebnisse bleiben bis Prozessende in der Map (klein: Pfadlisten, Transkripte); Ablaufzeit, falls das stört
-const jobs = new Map<string, { promise: Promise<unknown>; pct: number }>()
+const jobs = new Map<string, { promise: Promise<unknown>; pct: number; done: boolean }>()
+/** Laufende und fertige, nicht abgeholte Jobs für die Fortschrittsanzeige der UI; name = Teil des Schlüssels vor „:“ */
+export const jobList = () => [...jobs].map(([key, j]) => ({ key, name: key.split(':')[0], pct: Math.round(j.pct), done: j.done }))
 async function job<T>(key: string, start: (onProgress: (pct: number) => void) => Promise<T>): Promise<{ value: T } | { pct: number }> {
   let j = jobs.get(key)
   if (!j) {
-    const nj = { promise: Promise.resolve() as Promise<unknown>, pct: 0 }
+    const nj = { promise: Promise.resolve() as Promise<unknown>, pct: 0, done: false }
     nj.promise = start((pct) => { nj.pct = pct })
-    nj.promise.catch(() => {}) // den Fehler holt der nächste Aufruf ab; unbeobachtet würde Node den Prozess beenden
+    nj.promise.catch(() => {}).finally(() => { // den Fehler holt der nächste Aufruf ab; unbeobachtet würde Node den Prozess beenden
+      nj.done = true
+      setTimeout(() => { if (jobs.get(key) === nj) jobs.delete(key) }, 600_000).unref?.() // nicht abgeholt: nach 10 min vergessen (früher holt die KI ein fertiges Ergebnis sonst nicht mehr ab und rechnet neu)
+    })
     jobs.set(key, (j = nj))
   }
   const cur = j
