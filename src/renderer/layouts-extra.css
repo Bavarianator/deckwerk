@@ -315,3 +315,21 @@
 .bw-toc-row::before, .bw-toc-row:last-child::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }
 .bw-toc-row:last-child::after { top: auto; bottom: 0; }
 .bw-toc-row .t { text-wrap: pretty; }
+
+/* ---------- Urkunde (A4 quer): breiter Rand, Empfänger groß, Ort/Datum und Unterschriftsfelder unten in drei Spalten ---------- */
+.safe.ur-safe { --ur-gap: 48px; left: 104px; right: 104px; top: 88px; bottom: 80px; }
+.ur-logo { flex: none; height: 40px; width: 200px; margin-bottom: 36px; background-repeat: no-repeat; background-position: left center; }
+.ur-head { flex: none; display: flex; flex-direction: column; gap: 12px; }
+.t.ur-eyebrow { color: var(--accent); font-size: calc(var(--fs-eyebrow) * 1.25); letter-spacing: 0.06em; }
+.t.ur-title { font-size: calc(var(--fs-h1) * min(var(--hs), 1.25) * 1.15); }
+.ur-main { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 24px; padding: 36px 0; }
+/* Übergröße schrumpft mit dem Autofit (--head-fit 1 → 0) wie der Flyer-Titel */
+.t.ur-name { font-size: calc(var(--fs-display) * var(--hs) * (1.2 + 0.4 * var(--head-fit, 1))); line-height: 1.04; }
+/* so breit wie zwei Spalten des Unterschriftsrasters */
+.t.ur-text { max-width: calc((100% - 2 * var(--ur-gap)) * 2 / 3 + var(--ur-gap)); font-size: calc(var(--fs-body) * 1.2); line-height: 1.45; text-wrap: pretty; }
+/* Platz zum Unterschreiben über den Linien; Datum und Namen stehen auf einer Grundlinie */
+.ur-foot { flex: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--ur-gap); align-items: start; padding-top: 48px; }
+.t.ur-date { margin-top: 12px; }
+.ur-sign { position: relative; display: flex; flex-direction: column; gap: 2px; padding-top: 12px; }
+.ur-sign::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--text); }
+.t.ur-signer { font-weight: 700; }

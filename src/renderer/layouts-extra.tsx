@@ -581,8 +581,40 @@ function ApplicationCover({ c }: Props<'application-cover'>) {
   )
 }
 
+// Urkunde (A4 quer): Art und Titel oben, Empfänger als Held darunter, Ort/Datum und Unterschriftsfelder unten in einem Spaltenraster.
+// Würde über Satzspiegel, Größe und Weißraum statt Zierrahmen oder Siegel; die einzigen Linien sind die zum Unterschreiben.
+function Certificate({ c }: Props<'certificate'>) {
+  const { theme } = useSlide()
+  const signers = c.signers ?? []
+  return (
+    <Frame safeClass="ur-safe">
+      {theme.logo && <Img src={theme.logo} slot="_logo" className="ur-logo" contain />}
+      <div className="ur-head">
+        {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="ur-eyebrow">{c.eyebrow}</T>}
+        <T role="h1" slot="title" maxLines={2} className="ur-title">{c.title}</T>
+      </div>
+      <div className="ur-main">
+        <T role="display" slot="recipient" maxLines={2} className="ur-name" build={0}>{c.recipient}</T>
+        {c.text && <T role="body" slot="text" className="ur-text" build={0}>{c.text}</T>}
+      </div>
+      {(c.date || signers.length > 0) && (
+        <div className="ur-foot">
+          {c.date && <T role="body" slot="date" className="ur-date" build={1}>{c.date}</T>}
+          {signers.map((s, i) => (
+            <div className="ur-sign" key={i}>
+              {s.name && <T role="body" slot={`signers.${i}.name`} className="ur-signer" build={1}>{s.name}</T>}
+              <T role="body" slot={`signers.${i}.role`} className="muted" build={1}>{s.role}</T>
+            </div>
+          ))}
+        </div>
+      )}
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
-  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos, 'application-cover': ApplicationCover,
+  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
+  'application-cover': ApplicationCover, certificate: Certificate,
 }
