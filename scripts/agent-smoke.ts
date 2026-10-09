@@ -253,6 +253,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
       return { duration: 75, lang: 'de', segments: o?.speakers ? segs.map((s, k) => ({ ...s, speaker: k })) : segs }
     },
     highlights: async () => hl,
+    musicIn: async () => Array.from({ length: 75 }, (_, k) => (k < 10 ? 0.9 : 0)), // Musik in den ersten 10 s
     cached: async () => ({ signals: { loud: new Array(75).fill(-30) }, highlights: hl, transcript: { duration: 75, lang: 'de', segments: segs }, duration: 75 }),
     importUrl: async (_url, onProgress) => {
       onProgress?.(12)
@@ -298,6 +299,10 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   const T9 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, probe: async () => ({ duration: 1290, w: 1920, h: 1080 }) } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
   assert.equal((await T9.transcribe_video.run({ video: file })).text, 'Video ist 21:30 lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; das ganze Video nur für einen Fulltime-Schnitt mit all: true.')
   assert.match((await T9.transcribe_video.run({ video: file, all: true })).text, /· 21:30 · 1920×1080 · Sprache de · 2 Segmente/)
+  // Bereich über 10 min ebenso gesperrt, fehlendes to = Videoende
+  assert.match((await T9.transcribe_video.run({ video: file, from: 600 })).text, /^Bereich 10:00–21:30 ist 11:30 lang – erst video_highlights/)
+  assert.match((await T9.transcribe_video.run({ video: file, from: 0, to: 700 })).text, /^Bereich 0:00–11:40 ist 11:40 lang/)
+  assert.match((await T9.transcribe_video.run({ video: file, from: 700 })).text, /· 21:30 · 1920×1080 · Sprache de/)
   await fails(go('transcribe_video', { video: join(dir, 'fehlt.mp4') }), /Video nicht gefunden/)
   await fails(go('transcribe_video', { video: 'talk.mp4' }), /absoluten Dateipfad/)
   await fails(go('video_frames', { video: join(dir, 'notiz.txt'), times: [1] }), /kein unterstütztes Video/)
@@ -342,7 +347,12 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   const blank = await go('add_slides', { slides: [{ layout: 'clip', content: { video: '', parts: [{ start: 0, end: 30 }] } }] })
   assert.match(blank.text, /: 1 FEHLER · Länge 30 s · 1 Ausschnitt · Transkript fehlt[\s\S]*\[error\] clip-video[\s\S]*\[hinweis\] clip-hook/)
   const chk = await go('check_clip', { slide: vd!.slides.at(-1)!.id })
-  assert.match(chk.text, /clip-video[\s\S]*\nKein Kontaktabzug: kein Video gesetzt/); assert.equal(chk.images, undefined)
+  assert.match(chk.text, /clip-video[\s\S]*\nMusik nicht geprüft\nKein Kontaktabzug: kein Video gesetzt/); assert.equal(chk.images, undefined)
+  // Musik: check_clip taggt die Sekunden der parts frisch (musicIn), auch ohne Signale im Cache
+  const s1 = vd!.slides[0]
+  vd!.slides.push({ ...s1, id: 'mu1', content: { ...s1.content, video: assetUrl(join(dir, 'weg.mp4')), parts: [{ start: 0, end: 30 }] } })
+  const mu = await go('check_clip', { slide: 'mu1' })
+  assert.match(mu.text, /\[warn\] clip-musik: Musik im Hintergrund \(10 s, u\. a\. bei 0:00\)[\s\S]*\nKein Kontaktabzug: Video nicht gefunden/); assert.doesNotMatch(mu.text, /Musik nicht geprüft/)
   await fails(go('check_clip', { slide: 'nope' }), /gibt es nicht/)
   assert.match((await go('lint_deck', {})).text, /^\d+ Fehler, \d+ Warnungen, \d+ Hinweise:[\s\S]*\[warn\] clip-laenge[\s\S]*\[hinweis\] clip-hook/)
 }

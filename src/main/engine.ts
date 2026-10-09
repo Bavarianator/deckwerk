@@ -345,6 +345,25 @@ export function createEngine(): Engine {
         }
         return highlights(s)
       },
+      // check_clip: Musik nur in den Sekunden der parts taggen, ohne die ganze Highlight-Suche; Stücke höchstens CHUNK lang (RAM)
+      async musicIn(file, parts) {
+        try {
+          const { duration } = await probe(file), music = new Array<number>(Math.ceil(duration)).fill(0)
+          for (const p of parts) {
+            if (!(p.end > p.start)) continue // auch NaN
+            // ab voller Sekunde: Wert j des Taggers gilt dann genau für Quellsekunde a + j
+            for (let a = Math.max(0, Math.floor(p.start)), end = Math.min(Math.ceil(p.end), duration); a < end; a += CHUNK) {
+              const len = Math.min(CHUNK, end - a)
+              const t = await step(`music:${file}:${a}:${len}`, async () => tag(await pcm16k(file, a, len), { models }))
+              t.music.forEach((v, j) => { if (a + j < music.length) music[a + j] = v })
+            }
+          }
+          return music
+        } catch (e) {
+          console.warn('[video] Musikprüfung fehlgeschlagen:', (e as Error).message)
+          return []
+        }
+      },
       async cached(file) {
         const none = { signals: null, highlights: [], transcript: null, duration: null }
         try {

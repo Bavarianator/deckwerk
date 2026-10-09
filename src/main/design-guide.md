@@ -444,7 +444,7 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 
 **Grob → fein:** bei langen Videos erst `video_highlights` mit `overview: true` (eine Zeile je 90 s), dann die besten Fenster transkribieren; Stellen findet `search_transcript` (Thema oder wörtliches Zitat → Zeiten).
 
-**Selbstkontrolle:** nach `add_slides` die Clip-Prüfung der Antwort beheben (Länge, Schnitt mitten im Wort oder Satz, fehlendes Transkript, Überlappung). Vor dem Export `check_clip` für die besten Clips und den Kontaktabzug ansehen (Gesicht im Bild, Hook passt, keine schwarzen oder eingefrorenen Bilder); höchstens 2 Runden.
+**Selbstkontrolle:** nach `add_slides` die Clip-Prüfung der Antwort beheben (Länge, Schnitt mitten im Wort oder Satz, fehlendes Transkript, Überlappung). Vor dem Export `check_clip` für die besten Clips (prüft auch Musik im Hintergrund) und den Kontaktabzug ansehen (Gesicht im Bild, Hook passt, keine schwarzen oder eingefrorenen Bilder); höchstens 2 Runden.
 
 **Regeln:**
 - Schnitte nur an Segmentgrenzen des Transkripts, nie mitten im Satz. Füllsätze, Wiederholungen und Abschweifungen herausschneiden: ein Clip besteht dann aus mehreren `parts` (Jump Cuts).
