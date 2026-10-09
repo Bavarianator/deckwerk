@@ -8,7 +8,8 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript } from '../shared/video'
+import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, zoomOf, cutIndex } from '../shared/video'
+import { HOOK_FADE, POP, cropFilter, hookBox, progressBar } from './video-fx'
 import { probe, runFfmpeg, silences } from './ffmpeg'
 import { localAsset } from './sync'
 
@@ -51,29 +52,33 @@ function assColor(hex: string) {
 }
 
 /** Untertitel-Datei: Hook oben linksbündig, Untertitel unten mittig, Lage nach Format. Hochformat (9:16): bei 33 % der Höhe, über der Plattform-Leiste
- *  (Reels/TikTok verdecken unten ~35 %); 4:5 und 1:1: 12 %; Querformat: kleiner, 7 %. Weiß mit dünner Kontur und Schatten, keine Kästen, kein Pop. */
-export function assSubs(o: { size: Size; font: string; bold: boolean; accent: string; hook?: string; hookDur: number; cues: Cue[]; mode: Captions }): string {
-  const { w, h } = o.size, m = Math.min(w, h), line = Math.max(1, Math.round(m * 0.002)), wide = w > h, wort = o.mode === 'wort'
+ *  (Reels/TikTok verdecken unten ~35 %); 4:5 und 1:1: 12 %; Querformat: kleiner, 7 %. Weiß mit dünner Kontur und Schatten, keine Kästen, kein Pop.
+ *  style 'lebendig': Wort-Pop, Hook mit Einblendung auf dunklem Balken, Fortschrittsbalken (bar: Lage der Gruppe in der Szene, s). */
+export function assSubs(o: { size: Size; font: string; bold: boolean; accent: string; hook?: string; hookDur: number; cues: Cue[]; mode: Captions; style?: ClipStyle; bar?: { off: number; dur: number; total: number } }): string {
+  const { w, h } = o.size, m = Math.min(w, h), line = Math.max(1, Math.round(m * 0.002)), wide = w > h, wort = o.mode === 'wort', live = o.style === 'lebendig'
   const style = (name: string, size: number, align: number, marginV: number) =>
     `Style: ${name},${o.font},${Math.round(size)},&H00FFFFFF,&H00FFFFFF,&H40000000,&H80000000,${o.bold ? -1 : 0},0,0,0,100,100,0,0,1,${line},${line},${align},${Math.round(w * 0.08)},${Math.round(w * 0.08)},${Math.round(marginV)},1`
   const dlg = (start: number, end: number, st: string, text: string) => `Dialogue: 0,${at(start)},${at(end)},${st},,0,0,0,,${text}`
-  const events: string[] = []
-  if (o.hook?.trim()) events.push(dlg(0, o.hookDur, 'Hook', esc(o.hook.trim())))
+  const events: string[] = [], bar = live && o.bar ? progressBar(o.size, assColor(o.accent), o.bar, at) : null
+  if (bar) events.push(bar.event) // zuerst: liegt unter den Untertiteln
+  if (o.hook?.trim()) events.push(live ? dlg(0, o.hookDur, 'HookBox', HOOK_FADE + esc(o.hook.trim())) : dlg(0, o.hookDur, 'Hook', esc(o.hook.trim())))
   if (o.mode === 'satz') for (const c of o.cues) events.push(dlg(c.start, c.end, 'Cap', c.words.map((x) => esc(x.w)).join(' ')))
   if (wort) {
     const accent = assColor(o.accent)
     // Ein Dialogue je Wortzustand: das gesprochene Wort in Akzentfarbe, der Rest des Häppchens weiß
     for (const c of o.cues) c.words.forEach((x, k) => {
-      const text = c.words.map((y, j) => (j === k ? `{\\c${accent}}${esc(y.w)}{\\r}` : esc(y.w))).join(' ')
+      const text = c.words.map((y, j) => (j === k ? `{\\c${accent}${live ? POP : ''}}${esc(y.w)}{\\r}` : esc(y.w))).join(' ')
       events.push(dlg(k ? x.start : c.start, k < c.words.length - 1 ? c.words[k + 1].start : c.end, 'Cap', text))
     })
   }
+  const hookStyle = style('Hook', m * (wide ? 0.045 : 0.06), 7, h * (wide ? 0.07 : 0.12))
   return [
     '[Script Info]', 'ScriptType: v4.00+', `PlayResX: ${w}`, `PlayResY: ${h}`, 'WrapStyle: 0', 'ScaledBorderAndShadow: yes', '',
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
-    style('Hook', m * (wide ? 0.045 : 0.06), 7, h * (wide ? 0.07 : 0.12)),
+    live ? hookBox(hookStyle, Math.round(m * 0.012)) : hookStyle,
     style('Cap', m * (wort ? (wide ? 0.065 : 0.075) : 0.055), 2, h * (wide ? 0.07 : h / w >= 1.6 ? 0.33 : 0.12)),
+    ...(bar ? [bar.style] : []),
     '', '[Events]', 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text', ...events, '',
   ].join('\n')
 }
@@ -111,7 +116,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit }
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle }
 interface SegOpts { preset: string; fadeIn?: boolean; fadeOut?: boolean } // fadeIn/fadeOut: Übergang aus/in Schwarz am Anfang/Ende der Szene
 
 /** Eine Clip-Szene als Zwischenstände, je GROUP Teilstücke ein mkv: Zuschnitt (crop um focus oder blur), Hook nur in der ersten Gruppe, Untertitel je Gruppe ab 0. Fortschritt über alle Gruppen. */
@@ -132,7 +137,8 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
   const blur = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // gleiches Seitenverhältnis: blur = crop
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2)) // Grund klein weichzeichnen, dann hochskalieren: billig und weich
   const captions = job.transcript && job.captions !== 'aus' ? job.captions : null
-  if (job.hook?.trim() || captions) {
+  const live = job.style === 'lebendig'
+  if (job.hook?.trim() || captions || live) {
     // Eigener Unterordner: libass lädt alles in fontsdir, auch fertige Szenen. Relativ zu cwd = dir: kein Pfad-Escaping im Filter.
     await mkdir(join(dir, 'fonts'), { recursive: true })
     await Promise.all(job.font.files.map((b, i) => writeFile(join(dir, 'fonts', `font-${i}.ttf`), b)))
@@ -143,14 +149,14 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const ps = parts.slice(k0, k0 + GROUP), dur = partsLength(ps), first = !k0, last = k0 + GROUP >= parts.length
     const id = `${name}-${n2(segs.length + 1)}`, hook = first ? job.hook?.trim() : undefined
     const words = captions ? clipWords(job.transcript!, ps, quiet) : []
-    const subs = !!hook || words.length > 0
-    if (subs) await writeFile(join(dir, `${id}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: Math.min(4, dur), cues: captions && words.length ? cues(words, captions) : [], mode: job.captions }))
+    const subs = !!hook || words.length > 0 || live
+    if (subs) await writeFile(join(dir, `${id}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: Math.min(4, dur), cues: captions && words.length ? cues(words, captions) : [], mode: job.captions, style: job.style, bar: { off: done, dur, total } }))
     const graph = ps.map((p, i) => {
       const c = cropRect(info, size, p.focus), len = p.end - p.start, k = k0 + i
       const fit = blur
         ? `split[b${i}][f${i}];[b${i}]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g${i}];` +
           `[f${i}]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h${i}];[g${i}][h${i}]overlay=(W-w)/2:(H-h)/2`
-        : `crop=${c.w}:${c.h}:${c.x}:${c.y},scale=${size.w}:${size.h}`
+        : cropFilter(c, size, zoomOf(job.fit === 'blur' ? undefined : job.style, cutIndex(parts, k))) // k über alle Gruppen; Zoom wechselt nur an echten Schnitten, nie bei blur
       const a = info.audio ? `[${i}:a]` : `anullsrc=r=48000:cl=stereo,atrim=duration=${sec(len)},`
       const fade = `${joined[k] ? '' : ',afade=t=in:d=0.02'}${joined[k + 1] ? '' : `,afade=t=out:st=${sec(Math.max(0, len - 0.02))}:d=0.02`}`
       // Video nie länger als der Ton (ganze Frames ≤ len): sonst füllt concat die Differenz mit Stille, hörbar als Loch am Schnitt
@@ -277,7 +283,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         const file = videoPath(clip.video, i + 1), captions = clip.captions ?? 'wort'
         const transcript = captions === 'aus' && clip.pauses !== 'kurz' ? null : await transcriptOf(file) // pauses kurz: Füllwörter aus dem Transkript
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
-        segs = await clipSegs({ file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit }, name, dir, so, step(weights[k]))
+        segs = await clipSegs({ file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style }, name, dir, so, step(weights[k]))
       } else {
         const [{ renderSlide }, { nativeImage }] = await Promise.all([import('./render'), import('electron')])
         const png = join(dir, `folie-${n2(k + 1)}.png`)

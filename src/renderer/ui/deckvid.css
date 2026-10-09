@@ -34,6 +34,15 @@
 .dv-hook { top: var(--dv-hook-y); font-size: var(--dv-hook); text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
 .dv-sub { bottom: var(--dv-sub-y); font-size: var(--dv-sub); text-align: center; text-shadow: 0 0 2px #000, 0 2px 3px rgb(0 0 0 / 0.6); }
 .dv-sub em { font-style: normal; color: var(--dv-accent); }
+
+/* Stil „lebendig“: Werte kommen als Variablen aus FX (video.ts), damit Vorschau und MP4 gleich aussehen */
+.dv-screen.live .clip-video video { transform: scale(var(--dv-zoom)); } /* harter Wechsel an der Naht, keine Transition */
+.dv-screen.live .dv-sub em { display: inline-block; animation: dv-pop var(--dv-pop-ms) ease-out; }
+.dv-screen.live .dv-hook { right: auto; max-width: 84%; left: calc(8% - 0.4em); padding: 0.15em 0.4em; background: rgb(0 0 0 / 0.65); border-radius: 2px; opacity: var(--dv-hook-o, 1); animation: dv-fade var(--dv-fade) linear; } /* Ausblenden: --dv-hook-o aus der Zeit */
+.dv-bar { position: absolute; left: 0; bottom: 0; z-index: 1; height: max(3px, calc(100cqw / var(--dv-ratio) * var(--dv-bar))); background: var(--dv-accent); pointer-events: none; }
+@keyframes dv-pop { from { transform: scale(var(--dv-pop)); } }
+@keyframes dv-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dv-screen.live .dv-sub em, .dv-screen.live .dv-hook { animation: none; opacity: 1; } }
 .dv-transport { display: flex; align-items: center; gap: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .dv-note { font-size: 12px; color: var(--faint); }
 .dv-acts { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
