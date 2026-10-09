@@ -450,7 +450,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Kopie als eigenes Deck unter ~/Deckwerk/<titel>/deck.json speichern (Formate: Quadrat, Story …); das offene Deck bleibt
   // Vorlagen-Galerie (Canva „Vorlagen“): kuratierte Decks aus examples/, Bildpfade aufgelöst; geöffnet wird immer eine Kopie
   ipcMain.handle('templates:list', () =>
-    ['foto', 'canva-look', 'quartal', 'strategie', 'flyer'].flatMap((name) => {
+    ['foto', 'canva-look', 'quartal', 'strategie', 'flyer', 'bewerbung', 'einladung', 'urkunde', 'speisekarte', 'visitenkarte'].flatMap((name) => {
       const file = join(app.getAppPath(), 'examples', `${name}.json`)
       try { return [readDeck(file)] } catch { return [] }
     }))
