@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:f
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { assSubs, encodeClip, padParts, seamless } from '../src/main/export-video'
-import { ffmpegBin, frames, pcm16k, probe, runFfmpeg, silences } from '../src/main/ffmpeg'
+import { ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, runFfmpeg, silences } from '../src/main/ffmpeg'
 import { MIN_PAUSE, PAD, clipWords, cropRect, cues, estimateWords, partsLength, tighten, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
@@ -44,6 +44,24 @@ async function main() {
     assert.equal(jpgWidth(jpgs[0]), 640)
     assert.equal(jpgWidth((await frames(src, [1], 1280))[0]), 1280)
     near((await pcm16k(src)).length, 12 * 16000, 1600, 'PCM-Länge')
+    near((await pcm16k(src, 1, 1)).length, 16000, 160, 'PCM-Bereich (ss/t, vorab angelegter Puffer)')
+
+    // rohe BGR-Bilder für den Gesichtsdetektor: 1280×720 → 640×360 oben links, darunter schwarz
+    const [raw] = await rawFrames(src, [2], 640)
+    assert.equal(raw.length, 640 * 640 * 3)
+    assert.ok(raw.subarray(0, 640 * 360 * 3).some((b) => b > 40), 'Bild oben vorhanden')
+    assert.ok(raw.subarray(640 * 360 * 3).every((b) => b <= 1), 'untere Zeilen ab y=360 schwarz')
+    assert.equal((await rawFrames(src, [1, 3], 320)).length, 2)
+
+    // Pegel je Sekunde: Sinus (Standardamplitude 0,125) ≈ −21 dBFS, Stille −100, ohne Ton −100 in Videolänge
+    const lvl = (n: string, a: string[], d: number) => runFfmpeg(['-f', 'lavfi', '-i', `testsrc2=size=160x90:rate=10:duration=${d}`, ...a, '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', ...(a.length ? ['-c:a', 'aac'] : []), join(dir, n)]).then(() => join(dir, n))
+    const lauter = await loudness(await lvl('sinus.mp4', ['-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=3'], 3))
+    assert.equal(lauter.length, 3, JSON.stringify(lauter)); lauter.forEach((v, i) => near(v, -21, 1, `Sinus-Pegel ${i}`))
+    let pct = -1
+    const leise = await loudness(await lvl('leise.mp4', ['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=mono:d=2'], 2), (p) => { assert.ok(p > pct && p <= 100); pct = p })
+    assert.deepEqual(leise, [-100, -100]); assert.ok(pct >= 0, 'Fortschritt gemeldet')
+    const ohne = await loudness(await lvl('ohne-ton.mp4', [], 3))
+    assert.deepEqual(ohne, [-100, -100, -100])
 
     // video.ts: Zuschnitt 16:9 → 9:16
     const out = { w: 1080, h: 1920 }

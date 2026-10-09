@@ -18,14 +18,25 @@ const BUILDS: Record<string, { url: string; sha256: string }> = {
 
 const home = () => process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
 
-// Ein Aufruf ohne Shell; stdout gesammelt (oder an onOut), von stderr nur das Ende
-function run(bin: string, args: string[], cwd?: string, onOut?: (s: string) => void) {
+export type RunOpts = {
+  cwd?: string
+  env?: NodeJS.ProcessEnv
+  /** stdout als Text; ersetzt das Sammeln in out */
+  onOut?: (s: string) => void
+  /** stdout roh (Binärdaten); ersetzt das Sammeln in out. Nur für große Ströme, das Dekodieren zu Text entfällt. */
+  onBin?: (c: Buffer) => void
+  /** stderr-Chunks, zusätzlich zum gemerkten Ende in err */
+  onErr?: (s: string) => void
+}
+
+/** Ein Aufruf ohne Shell; stdout gesammelt (oder an onOut/onBin), von stderr nur das Ende */
+export function run(bin: string, args: string[], o: RunOpts = {}) {
   return new Promise<{ code: number | null; out: Buffer; err: string }>((resolve, reject) => {
-    const p = spawn(bin, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] })
+    const p = spawn(bin, args, { cwd: o.cwd, env: o.env, stdio: ['ignore', 'pipe', 'pipe'] })
     const out: Buffer[] = []
     let err = ''
-    p.stdout.on('data', (c: Buffer) => (onOut ? onOut(c.toString()) : out.push(c)))
-    p.stderr.on('data', (c: Buffer) => { err = (err + c).slice(-65536) })
+    p.stdout.on('data', (c: Buffer) => (o.onBin ? o.onBin(c) : o.onOut ? o.onOut(c.toString()) : out.push(c)))
+    p.stderr.on('data', (c: Buffer) => { err = (err + c).slice(-65536); o.onErr?.(c.toString()) })
     p.on('error', reject)
     p.on('close', (code) => resolve({ code, out: Buffer.concat(out), err }))
   })
@@ -66,8 +77,8 @@ let bin: Promise<string> | undefined
 /** Pfad zu einem ffmpeg mit libass und libx264: aus dem PATH, sonst einmalig geladen. Ergebnis gemerkt, Fehler nicht. */
 export const ffmpegBin = () => (bin ??= locate().catch((e) => { bin = undefined; throw e }))
 
-async function ff(args: string[], cwd?: string, onOut?: (s: string) => void) {
-  const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-y', ...args], cwd, onOut)
+async function ff(args: string[], o: RunOpts = {}) {
+  const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-y', ...args], o)
   if (r.code !== 0) throw new Error(`ffmpeg fehlgeschlagen (Code ${r.code}):\n${r.err.trim().split('\n').slice(-15).join('\n')}`)
   return r.out
 }
@@ -75,14 +86,14 @@ async function ff(args: string[], cwd?: string, onOut?: (s: string) => void) {
 /** ffmpeg-Aufruf; mit duration (s) und onProgress meldet er 0–100 über -progress. */
 export async function runFfmpeg(args: string[], o: { cwd?: string; duration?: number; onProgress?: (pct: number) => void } = {}): Promise<void> {
   const { duration, onProgress } = o
-  if (!duration || !onProgress) return void (await ff(['-nostats', ...args], o.cwd))
+  if (!duration || !onProgress) return void (await ff(['-nostats', ...args], { cwd: o.cwd }))
   let last = -1 // nur steigend melden: mit loudnorm (Vorlauf) springt out_time zurück
-  await ff(['-nostats', '-progress', 'pipe:1', ...args], o.cwd, (s) => {
+  await ff(['-nostats', '-progress', 'pipe:1', ...args], { cwd: o.cwd, onOut: (s) => {
     for (const m of s.matchAll(/out_time_us=(\d+)\n/g)) {
       const pct = Math.min(100, Math.floor(Number(m[1]) / 1e4 / duration))
       if (pct > last) onProgress((last = pct))
     }
-  })
+  } })
 }
 
 /** Dauer und Maße, wie das Video angezeigt wird (Drehung 90/270 tauscht w und h), dazu ob es Ton hat. Aus der stderr von `ffmpeg -i`, weil ffmpeg-static kein ffprobe mitbringt. */
@@ -125,11 +136,57 @@ export async function silences(file: string, from: number, to: number, min: numb
   return out
 }
 
-/** Ton als Float32 mono 16 kHz, so wie Whisper ihn erwartet. */
-export async function pcm16k(file: string): Promise<Float32Array> {
-  const b = await ff(['-i', file, '-vn', '-ac', '1', '-ar', '16000', '-f', 'f32le', 'pipe:1']).catch((e: Error) => {
+/** Ton als Float32 mono 16 kHz, so wie Whisper ihn erwartet; mit from/dur (s) nur dieser Bereich. Mit dur wird der Zielpuffer vorab angelegt (8 h = 1,8 GB, ein Buffer.concat verdoppelte die Spitze). */
+export async function pcm16k(file: string, from?: number, dur?: number): Promise<Float32Array> {
+  const args = [...(from ? ['-ss', from.toFixed(3)] : []), ...(dur ? ['-t', dur.toFixed(3)] : []), '-i', file, '-vn', '-ac', '1', '-ar', '16000', '-f', 'f32le', 'pipe:1']
+  let pre: Float32Array | undefined, n = 0 // Bytes in pre
+  const o: RunOpts = {}
+  if (dur) {
+    const f = pre = new Float32Array(Math.ceil(dur * 16000) + 16000) // +1 s Reserve, falls ffmpeg etwas mehr liefert
+    const view = Buffer.from(f.buffer) // Float32Array ist ausgerichtet, ein Buffer-Pool wäre es nicht
+    o.onBin = (c) => { n += c.copy(view, n, 0, Math.min(c.length, view.length - n)) }
+  }
+  const b = await ff(args, o).catch((e: Error) => {
     throw /does not contain any stream|matches no streams/i.test(e.message) ? new Error(`${basename(file)} hat keine Tonspur, es gibt nichts zu transkribieren.`) : e
   })
-  const n = b.length >> 2
-  return b.byteOffset % 4 ? new Float32Array(b.buffer.slice(b.byteOffset, b.byteOffset + n * 4)) : new Float32Array(b.buffer, b.byteOffset, n)
+  if (pre) return pre.subarray(0, n >> 2)
+  const k = b.length >> 2
+  return b.byteOffset % 4 ? new Float32Array(b.buffer.slice(b.byteOffset, b.byteOffset + k * 4)) : new Float32Array(b.buffer, b.byteOffset, k)
+}
+
+/** RMS-Pegel in dBFS je Sekunde über die ganze Tonspur (Stille → −100), Länge = Videodauer gerundet; ohne Tonspur −100. Braucht eine Videospur (probe). Dekodiert nur den Ton, die Werte kommen über stdout (ametadata) statt aus einer stderr-Flut. */
+export async function loudness(file: string, onProgress?: (pct: number) => void): Promise<number[]> {
+  const info = await probe(file)
+  const n = Math.max(1, Math.round(info.duration)) // Resttrümmer < 0,5 s (Encoder-Padding, aac liefert gern etwas mehr) fallen weg
+  if (!info.audio) return new Array(n).fill(-100)
+  const db: number[] = []
+  let rest = '', t = 0, last = -1
+  const line = (l: string) => {
+    const m = /pts_time:([\d.]+)/.exec(l)
+    if (m) return void (t = Math.floor(+m[1]))
+    const v = /RMS_level=(\S+)/.exec(l)
+    if (!v) return
+    const x = parseFloat(v[1])
+    while (db.length < t) db.push(-100) // Lücken (fehlende Fenster) als Stille
+    db[t] = Number.isFinite(x) ? Math.max(-100, x) : -100 // -inf bei digitaler Stille
+    const pct = Math.min(100, Math.floor((t * 100) / info.duration))
+    if (onProgress && pct > last) onProgress((last = pct))
+  }
+  await ff(['-nostats', '-i', file, '-map', '0:a:0', '-vn', '-af', 'aresample=16000,asetnsamples=n=16000:p=0,astats=metadata=1:reset=1:measure_perchannel=none:measure_overall=RMS_level,ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file=-', '-f', 'null', '-'], {
+    onOut: (s) => { const ls = (rest + s).split('\n'); rest = ls.pop()!; ls.forEach(line) },
+  })
+  line(rest)
+  return Array.from({ length: n }, (_, i) => db[i] ?? -100)
+}
+
+/** Je Zeitpunkt (s) ein rohes bgr24-Bild, side×side: Video seitenverhältnistreu so skaliert, dass die längere Seite = side ist, oben links eingepasst, Rest schwarz (Eingang für YuNet, 640×640 BGR).
+ *  Zurückrechnen auf Videopixel: scale = side / max(w, h) (w/h aus probe, also schon gedreht); x_video = x_bild / scale, y_video = y_bild / scale. */
+export async function rawFrames(file: string, times: number[], side = 640): Promise<Buffer[]> {
+  const out: Buffer[] = []
+  for (const t of times) {
+    const raw = await ff(['-ss', String(Math.max(0, t)), '-i', file, '-frames:v', '1', '-vf', `scale=${side}:${side}:force_original_aspect_ratio=decrease,format=bgr24,pad=${side}:${side}:0:0:black`, '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'])
+    if (raw.length !== side * side * 3) throw new Error(`Kein Bild bei ${t} s in ${basename(file)} (Video zu kurz?)`)
+    out.push(raw)
+  }
+  return out
 }
