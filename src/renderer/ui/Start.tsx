@@ -1,6 +1,7 @@
-// Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“, die zuletzt bearbeiteten Decks (auch per MCP gebaute) und Vorlagen.
-import { useEffect, useRef, useState } from 'react'
-import { ArrowUp, Image as ImageIcon, Paperclip, Settings, X } from 'lucide-react'
+// Startbildschirm: eine Frage, ein Feld. Darunter ähnliche vorhandene Decks, die Formate als Papier (auch Video), Beispiele, „Leer beginnen“,
+// dann Suche und Filter über die zuletzt bearbeiteten Decks (auch per MCP gebaute) und die Vorlagen.
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowUp, Image as ImageIcon, Paperclip, Search, Settings, X } from 'lucide-react'
 import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
@@ -90,6 +91,35 @@ const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatI
   { id: 'story', name: 'Story', hint: 'Hochkant 9:16', format: '9:16', ask: 'Format: Story 9:16 (create_deck format 9:16).' },
 ]
 
+// Format-Regal unter dem Feld: die häufigsten Formate als Papier in ihrer Form (Maße in px), der Rest bleibt im Format-Menü.
+// id = FORMAT_CHOICES-id; „video“ schaltet in den Video-Modus
+const PAPERS: { id: string; name: string; w: number; h: number; mark?: 'img' | 'lines' | 'win' | 'play' }[] = [
+  { id: 'praesentation', name: 'Präsentation', w: 50, h: 28 },
+  { id: 'dokument', name: 'Dokument', w: 28, h: 40, mark: 'lines' },
+  { id: 'brief', name: 'Brief', w: 28, h: 40, mark: 'win' },
+  { id: 'flyer', name: 'Flyer', w: 28, h: 40, mark: 'img' },
+  { id: 'urkunde', name: 'Urkunde', w: 40, h: 28, mark: 'lines' },
+  { id: 'social', name: 'Social-Post', w: 32, h: 40, mark: 'img' },
+  { id: 'story', name: 'Story', w: 23, h: 40, mark: 'img' },
+  { id: 'visitenkarte', name: 'Visitenkarte', w: 22, h: 14 },
+  { id: 'video', name: 'Video', w: 50, h: 28, mark: 'play' },
+]
+const VIDEO_HINT = 'Shorts, gekürzte Fassung, Stream-Highlights oder Zusammenschnitt'
+
+// Filter über Decks und Vorlagen; Video = Deck mit Videoclip (wie hasClip in App.tsx)
+const KINDS = [['alle', 'Alle'], ['folien', 'Folien'], ['druck', 'Drucksachen'], ['social', 'Social'], ['video', 'Videos']] as const
+type Kind = (typeof KINDS)[number][0]
+const kindOf = (d: Deck): Kind => d.slides.some((s) => s.layout === 'clip') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
+
+// „Gibt es schon ähnlich“: grober Abgleich gleicher Wortanfänge (6 Zeichen) zwischen Wunsch und Titel/Folientiteln
+const STOP = new Set(['erstelle', 'gestalte', 'mache', 'bitte', 'einen', 'eine', 'einem', 'einer', 'unser', 'unsere', 'unseren', 'unserem', 'über',
+  'präsentation', 'folie', 'folien', 'seite', 'seiten', 'deck', 'etwa', 'zielgruppe', 'fokus', 'beim', 'drei', 'vier', 'fünf', 'zehn'])
+const words = (t: string) => (t.toLowerCase().match(/[\p{L}\d]+/gu) ?? []).filter((w) => w.length >= 4 && !/^\d+$/.test(w) && !STOP.has(w))
+const titlesOf = (d: Deck) => [d.title, ...d.slides.map((s) => s.content?.title)].filter((x): x is string => typeof x === 'string').join(' ')
+const hit = (w: string, hay: string[]) => hay.some((k) => k.startsWith(w.slice(0, 6)) || w.startsWith(k.slice(0, 6)))
+// Treffer im Decktitel zählen doppelt; ab 2 Punkten gilt ein Deck als ähnlich (ein einzelnes Wort auf irgendeiner Folie reicht nicht)
+const score = (wish: string[], x: { title: string[]; words: string[] }) => wish.reduce((n, w) => n + (hit(w, x.title) ? 2 : 0) + (hit(w, x.words) ? 1 : 0), 0)
+
 // A4 (Flyer, Fließtext) zählt Seiten, alles andere Folien
 const pages = (d: Deck) => {
   const n = d.slides.length
@@ -137,6 +167,30 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   const hasVideo = srcs.some((s) => VIDEO_FILE.test(s.name)) || linksOf(text).some(isVideoLink)
   useEffect(() => { if (hasVideo) { setVideo(true); setFmt('auto') } }, [hasVideo])
   const mode = (v: boolean) => { setVideo(v); setVask(undefined); if (v) setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
+  // Papier anklicken wählt das Format, nochmal klicken nimmt die Wahl zurück; Video schaltet den Modus
+  const pick = (id: string) => {
+    if (id === 'video') return mode(!video)
+    mode(false)
+    setFmt(fmt === id && !video ? 'auto' : id)
+  }
+  const [query, setQuery] = useState('')
+  const [kind, setKind] = useState<Kind>('alle')
+  // Suchtext und Wörter je Deck einmal pro Liste statt bei jedem Tastendruck
+  const index = useMemo(() => {
+    const of = (d: Deck) => { const t = titlesOf(d); return { text: t.toLowerCase(), title: words(d.title), words: words(t), kind: kindOf(d) } }
+    return { recent: recent.map((r) => ({ r, ...of(r.deck) })), templates: templates.map((d) => ({ d, ...of(d) })) }
+  }, [recent, templates])
+  const wish = video ? [] : words(text)
+  // die drei ähnlichsten; bei Gleichstand bleibt die Reihenfolge (zuletzt bearbeitete Decks vor Vorlagen)
+  const like = !wish.length ? [] : [
+    ...index.recent.map((x) => ({ n: score(wish, x), key: x.r.path, deck: x.r.deck, what: 'Deck', open: () => onOpenPath(x.r.path) })),
+    ...index.templates.map((x) => ({ n: score(wish, x), key: x.d.title, deck: x.d, what: 'Vorlage', open: () => window.api.saveCopy(x.d).then(onOpenPath) })),
+  ].filter((m) => m.n >= 2).sort((a, b) => b.n - a.n).slice(0, 3)
+  const q = query.trim().toLowerCase()
+  const filtering = !!q || kind !== 'alle'
+  const fits = (x: { text: string; kind: Kind }) => (kind === 'alle' || x.kind === kind) && (!q || x.text.includes(q))
+  const shownRecent = index.recent.filter(fits).map((x) => x.r)
+  const shownTemplates = video ? [] : index.templates.filter(fits).map((x) => x.d)
   const submit = () => {
     const onlyVideos = video && srcs.length > 0 && srcs.every((s) => VIDEO_FILE.test(s.name))
     const ask = text.trim() || (onlyVideos ? `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.` : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
@@ -161,10 +215,6 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
       </header>
 
       <main className="home-main">
-        <div className="seg home-mode" role="group" aria-label="Modus">
-          <button type="button" aria-pressed={!video} onClick={() => mode(false)}>Präsentation</button>
-          <button type="button" aria-pressed={video} onClick={() => mode(true)}>Video</button>
-        </div>
         <h1>{video ? 'Was soll aus deinem Video werden?' : 'Was möchtest du zeigen?'}</h1>
         <p className="home-sub">{video ? 'Deckwerk hört das Video ab, wählt die Momente, schneidet, untertitelt und exportiert.' : 'Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.'}</p>
         <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
@@ -195,19 +245,61 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             <button type="submit" className="round" aria-label={video ? 'Video-Auftrag senden' : 'Deck erstellen'} disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
           </div>
         </form>
+        {like.length > 0 && (
+          <div className="home-like">
+            Gibt es schon ähnlich:
+            {like.map((m) => (
+              <button key={m.key} type="button" className="pill" title={m.what === 'Deck' ? 'Deck öffnen' : 'Öffnet eine Kopie, die Vorlage bleibt unverändert'} onClick={m.open}>
+                <span className="home-like-thumb"><SlideView deck={m.deck} index={0} width={24} /></span>{m.deck.title}<small>{m.what}</small>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="home-papers" role="group" aria-label="Format">
+          {PAPERS.map((p) => {
+            const on = p.id === 'video' ? video : !video && fmt === p.id
+            return (
+              <button key={p.id} type="button" className="home-paper" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}>
+                <span><i className="home-sheet" data-mark={p.mark} style={{ width: p.w, height: p.h }} /></span>
+                <b>{p.name}</b>
+              </button>
+            )
+          })}
+        </div>
         <div className="home-chips">
           {video
             ? VIDEO_EXAMPLES.map(([label, full, ask]) => <button key={label} className="pill" onClick={() => { setText(full); setVask(ask); ref.current?.focus() }}>{label}</button>)
             : EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
         </div>
-        <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>Leer beginnen und frei gestalten</button>
+        <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>
+          {fmt === 'auto' ? 'Leer beginnen und frei gestalten' : `Leer beginnen: ${choice.name}`}
+        </button>
       </main>
 
-      {recent.length > 0 && (
+      {recent.length + templates.length > 0 && (
+        <div className="home-find">
+          <label>
+            <Search size={16} />
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Decks und Vorlagen durchsuchen" aria-label="Decks und Vorlagen durchsuchen" />
+          </label>
+          <div className="seg" role="group" aria-label="Art">
+            {KINDS.map(([id, name]) => <button key={id} type="button" aria-pressed={kind === id} onClick={() => setKind(id)}>{name}</button>)}
+          </div>
+        </div>
+      )}
+
+      {filtering && !shownRecent.length && !shownTemplates.length && (
+        <div className="home-none">
+          Nichts gefunden.
+          {q && <button type="button" className="pill tint" onClick={() => { setText(query.trim()); setQuery(''); ref.current?.focus() }}>Als Wunsch übernehmen</button>}
+        </div>
+      )}
+
+      {shownRecent.length > 0 && (
         <section className="home-recent" aria-label="Zuletzt">
-          <h2>Zuletzt</h2>
+          <h2>{filtering ? `Deine Decks · ${shownRecent.length}` : 'Zuletzt'}</h2>
           <div className="home-shelf">
-            {(all ? recent : recent.slice(0, 8)).map((r) => (
+            {(all || filtering ? shownRecent : shownRecent.slice(0, 8)).map((r) => (
               <button key={r.path} className="home-deck" onClick={() => onOpenPath(r.path)}>
                 <div className="home-deck-cover"><SlideView deck={r.deck} index={0} width={232} /></div>
                 <b>{r.title}</b>
@@ -215,15 +307,15 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
               </button>
             ))}
           </div>
-          {recent.length > 8 && <button className="plain tint home-more" onClick={() => setAll(!all)}>{all ? 'Weniger anzeigen' : `Alle anzeigen (${recent.length})`}</button>}
+          {!filtering && recent.length > 8 && <button className="plain tint home-more" onClick={() => setAll(!all)}>{all ? 'Weniger anzeigen' : `Alle anzeigen (${recent.length})`}</button>}
         </section>
       )}
 
-      {!video && templates.length > 0 && (
+      {shownTemplates.length > 0 && (
         <section className="home-recent" aria-label="Vorlagen">
-          <h2>Mit einer Vorlage beginnen</h2>
+          <h2>{filtering ? `Vorlagen · ${shownTemplates.length}` : 'Mit einer Vorlage beginnen'}</h2>
           <div className="home-shelf">
-            {templates.map((d) => (
+            {shownTemplates.map((d) => (
               <button key={d.title} className="home-deck" title="Öffnet eine Kopie, die Vorlage bleibt unverändert" onClick={() => window.api.saveCopy(d).then(onOpenPath)}>
                 <div className="home-deck-cover"><SlideView deck={d} index={0} width={232} /></div>
                 <b>{d.title}</b>
