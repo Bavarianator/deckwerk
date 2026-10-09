@@ -7,7 +7,7 @@ import { homedir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
-import type { Quiet, VideoInfo } from '../shared/video'
+import { cropRect, partsLength, type Fit, type Part, type Quiet, type VideoInfo } from '../shared/video'
 import { download } from './download'
 
 // Statische Builds mit libass und libx264 (ffmpeg-static, GPL); darwin-arm64 für den Mac-Fork
@@ -192,4 +192,38 @@ export async function rawFrames(file: string, times: number[], side = 640): Prom
     out.push(raw)
   }
   return out
+}
+
+/** Kontaktabzug: n Standbilder (3 Spalten) gleichmäßig über die Clip-Zeitachse aller parts, je Kachel so zugeschnitten wie im Export, unten links die Clipzeit.
+ *  Ein ffmpeg-Aufruf mit n Eingängen und xstack. times = Quellzeiten der Kachelmitten. ponytail: blur zeigt nur contain mit dunklem Rand (kein Weichzeichner); Upgrade: Filterkette aus export-video übernehmen. */
+export async function contactSheet(file: string, parts: Part[], o: { size: { w: number; h: number }; fit?: Fit; n?: number; width?: number }): Promise<{ jpg: Buffer; times: number[] }> {
+  const n = Math.max(2, o.n ?? 9), tw = Math.max(2, Math.round((o.width ?? 240) / 2) * 2), th = Math.max(2, Math.round((tw * o.size.h) / o.size.w / 2) * 2) // xstack braucht mindestens 2 Eingänge
+  const total = partsLength(parts)
+  if (!parts.length || total <= 0) throw new Error('Kontaktabzug: keine Ausschnitte')
+  const info = await probe(file)
+  const at: number[] = [], times: number[] = [], ps: Part[] = []
+  for (let i = 0; i < n; i++) {
+    let c = ((i + 0.5) * total) / n // Clipzeit der Kachelmitte
+    at.push(c)
+    const p = parts.find((q) => (c -= q.end - q.start) < 0) ?? parts[parts.length - 1]
+    ps.push(p)
+    times.push(Math.min(Math.max(0, p.start + c + (p.end - p.start)), Math.max(0, info.duration - 0.1)))
+  }
+  const blur = o.fit === 'blur' && Math.abs(info.w / info.h - o.size.w / o.size.h) > 0.01
+  const build = (label: boolean) => {
+    const g = times.map((_, i) => {
+      const c = cropRect(info, o.size, ps[i].focus)
+      const fit = blur ? `scale=${tw}:${th}:force_original_aspect_ratio=decrease,pad=${tw}:${th}:(ow-iw)/2:(oh-ih)/2:0x101010` : `crop=${c.w}:${c.h}:${c.x}:${c.y},scale=${tw}:${th}`
+      const txt = label ? `,drawtext=text='${at[i].toFixed(1)} s':fontsize=${Math.max(10, Math.round(tw / 16))}:fontcolor=white:box=1:boxcolor=black@0.55:boxborderw=3:x=4:y=h-th-4` : ''
+      return `[${i}:v]${fit},setsar=1${txt}[t${i}]`
+    })
+    const layout = times.map((_, i) => `${(i % 3) * tw}_${Math.floor(i / 3) * th}`).join('|')
+    g.push(`${times.map((_, i) => `[t${i}]`).join('')}xstack=inputs=${n}:layout=${layout}:fill=0x101010[v]`)
+    return ['-filter_complex', g.join(';')]
+  }
+  const args = (label: boolean) => [...times.flatMap((t) => ['-threads', '1', '-ss', t.toFixed(3), '-i', file]), ...build(label), '-map', '[v]', '-frames:v', '1', '-q:v', '5', '-f', 'image2pipe', '-c:v', 'mjpeg', 'pipe:1']
+  // drawtext braucht eine Schrift (fontconfig); fehlt sie oder der Filter, ohne Beschriftung
+  const jpg = await ff(args(true)).catch(() => ff(args(false)))
+  if (!jpg.length) throw new Error(`Kein Kontaktabzug aus ${basename(file)}`)
+  return { jpg, times }
 }
