@@ -39,4 +39,5 @@ if (!soffice) { console.log('LibreOffice fehlt, keine Render-Prüfung. PPTX in P
 execFileSync(soffice[0], [...soffice.slice(1), '--headless', '--convert-to', 'pdf', '--outdir', 'out', 'out/spike-fonts.pptx'], { stdio: 'pipe' })
 const fonts = execFileSync('pdffonts', ['out/spike-fonts.pdf']).toString()
 console.log(fonts)
-console.log(fonts.includes(family.replace(/ /g, '')) || fonts.includes(family) ? `✓ LibreOffice hat "${family}" aus der PPTX benutzt` : `✗ LibreOffice hat "${family}" ersetzt (eingebettete Schrift ignoriert oder Familie nicht gefunden)`)
+const norm = (t: string) => t.replace(/[\s-]/g, '') // PDF nennt den PostScript-Namen: „Inter-SemiBold“
+console.log(norm(fonts).includes(norm(family)) ? `✓ LibreOffice hat "${family}" aus der PPTX benutzt` : `✗ LibreOffice hat "${family}" ersetzt (eingebettete Schrift ignoriert oder Familie nicht gefunden)`)
