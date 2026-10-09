@@ -80,7 +80,7 @@ app.whenReady().then(async () => {
     if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
     // ?frame=<s> auf einer Videodatei: Standbild als JPEG (ffmpeg, gecacht). Die Clip-Folie braucht kein <video>, das im Offscreen-Fenster nach dem Spulen hängt.
     const frame = new URL(req.url).searchParams.get('frame')
-    if (frame !== null && /\.(mp4|webm|mov|m4v|mkv|ogv)$/i.test(file)) {
+    if (frame !== null && /\.(mp4|webm|mov|m4v|mkv|flv|ogv)$/i.test(file)) {
       try {
         const t = Math.round(Math.max(0, Number(frame) || 0) * 10) / 10
         const st = await stat(file)
