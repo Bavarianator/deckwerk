@@ -44,7 +44,7 @@ const EXAMPLES: [string, string, string?][] = [
 ]
 
 // Video-Chips: Label, Wunsch im Feld, ask geht unsichtbar an die KI (Abläufe: Design-Guide §11)
-const VIDEO_EXAMPLES: [string, string, string][] = [
+export const VIDEO_EXAMPLES: [string, string, string][] = [
   ['5 Shorts', 'Mach aus meinem Video 5 Shorts mit Hook und Untertiteln.',
     'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (20–60 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips.'],
   ['Ganzes Video kürzen', 'Kürze mein ganzes Video: Füllsätze, Versprecher und Abschweifungen raus.',

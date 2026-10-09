@@ -105,7 +105,7 @@ export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, vid
 
 interface StripProps {
   from: number; to: number; parts: Part[]; label?: string; head?: number; onSeek?(s: number): void
-  marks?: { start: number; end: number; label: string }[]; curve?: number[] // curve: je Sekunde ab from, 0..1
+  marks?: { start: number; end: number; label: string }[]; curve?: number[] // curve: gleichmäßig über from..to verteilt, 0..1
   handles?: { sel: number; onSel(i: number): void; onEdge?(edge: 'start' | 'end', s: number): void; onDragEnd?(): void }
 }
 
@@ -135,7 +135,7 @@ export function Strip({ from, to, parts, label, head, onSeek, marks, curve, hand
         if (onSeek) drag(onSeek)(e)
       }}>
         {curve && curve.length > 0 && (
-          <svg className="cut-curve" viewBox={`0 0 ${span} 1`} preserveAspectRatio="none" aria-hidden>
+          <svg className="cut-curve" viewBox={`0 0 ${curve.length} 1`} preserveAspectRatio="none" aria-hidden>
             <path d={`M0 1${curve.map((v, i) => `V${(1 - (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0)).toFixed(3)}H${i + 1}`).join('')}V1Z`} />
           </svg>
         )}
