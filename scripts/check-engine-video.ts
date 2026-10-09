@@ -1,7 +1,7 @@
 // Engine.video ohne Electron (Chunk-Planung, Naht ohne Doppelung, Entdopplung, covered, Sprecher, Chat): npx esbuild scripts/check-engine-video.ts --bundle --platform=node --format=esm --outfile=${TMPDIR:-/tmp}/check-engine-video.mjs && node ${TMPDIR:-/tmp}/check-engine-video.mjs
 import { deepStrictEqual as eq, ok } from 'node:assert'
 import type { Segment } from '../src/shared/video'
-import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, inChunk, loudRanges, mergeSegments, withSpeakers } from '../src/main/video-cache'
+import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers } from '../src/main/video-cache'
 
 // Chunk-Planung: ganzes Video, Bereich mitten im Chunk, Bereich kurz nach einer Grenze (Segment davor ragt hinein), Ende geklemmt
 eq(chunksIn([[0, 1000]], 1000), [0, 1, 2, 3])
@@ -60,6 +60,11 @@ loud[20] = loud[24] = -20
 loud[50] = -10
 eq(loudRanges(loud), [[15, 30], [45, 56]])
 eq(loudRanges(new Array(10).fill(-100)), [])
+
+// Erkennung nach Sprache: Parakeet-Sprache → Parakeet, fremde → Whisper, ohne Sprache jede; sherpa unbrauchbar → gecachtes Whisper passt
+const pl = ['de', 'en']
+eq([engineFor(undefined, pl, false), engineFor('de-DE', pl, false), engineFor('ja', pl, false)], [undefined, 'parakeet', 'whisper'])
+eq([engineFor('de', pl, true), engineFor('ja', pl, true), engineFor(undefined, pl, true)], [undefined, 'whisper', undefined])
 
 ok(CHUNK === 300)
 console.log('engine-video ok')

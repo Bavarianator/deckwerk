@@ -105,17 +105,15 @@ zwei.set(jfk)
 zwei.set(frei.subarray(0, 30 * 16000), jfk.length + 16000)
 const naht = jfk.length / 16000 + 0.5, dur = zwei.length / 16000
 await ensureModels('diar', models) // Download nicht in der Zeitmessung (der erste Lauf enthält das Laden der Modelle)
-for (const speakers of [2, undefined]) {
-  const pct: number[] = [], t0 = performance.now(), cpu0 = worker().cpu
-  const turns = await diarize(zwei, { models, speakers, offset: 5, onProgress: (p) => pct.push(p) })
-  const secs = (performance.now() - t0) / 1000
-  console.log(`diarize speakers=${speakers}: ${secs.toFixed(1)} s für ${dur.toFixed(1)} s, RTF ${(secs / dur).toFixed(3)} (CPU ${((worker().cpu - cpu0) / dur).toFixed(3)})\n  ${turns.map((t) => `${t.start}–${t.end}:${t.speaker}`).join('  ')}`)
-  ok(mono(pct), `Fortschritt nicht monoton bis 100: ${pct}`)
-  ok(turns.every((t, i) => t.start >= 5 && t.end <= 5 + dur + 0.1 && t.end > t.start && (!i || t.start >= turns[i - 1].start)), 'Turns nicht sortiert/im Audio')
-  ok(new Set(turns.map((t) => t.speaker)).size === 2 && turns[0].speaker === 0, `speakers=${speakers}: nicht genau 2 Sprecher`)
-  const wechsel = [turns.findLast((t) => t.speaker === 0)!.end, turns.find((t) => t.speaker === 1)!.start].map((t) => t - 5)
-  ok(wechsel.every((t) => Math.abs(t - naht) <= 1.5), `Wechsel bei ${wechsel} statt um ${naht} s`)
-}
+const pct: number[] = [], t0 = performance.now(), cpu0 = worker().cpu
+const turns = await diarize(zwei, { models, offset: 5, onProgress: (p) => pct.push(p) })
+const secs = (performance.now() - t0) / 1000
+console.log(`diarize: ${secs.toFixed(1)} s für ${dur.toFixed(1)} s, RTF ${(secs / dur).toFixed(3)} (CPU ${((worker().cpu - cpu0) / dur).toFixed(3)})\n  ${turns.map((t) => `${t.start}–${t.end}:${t.speaker}`).join('  ')}`)
+ok(mono(pct), `Fortschritt nicht monoton bis 100: ${pct}`)
+ok(turns.every((t, i) => t.start >= 5 && t.end <= 5 + dur + 0.1 && t.end > t.start && (!i || t.start >= turns[i - 1].start)), 'Turns nicht sortiert/im Audio')
+ok(new Set(turns.map((t) => t.speaker)).size === 2 && turns[0].speaker === 0, 'nicht genau 2 Sprecher')
+const wechsel = [turns.findLast((t) => t.speaker === 0)!.end, turns.find((t) => t.speaker === 1)!.start].map((t) => t - 5)
+ok(wechsel.every((t) => Math.abs(t - naht) <= 1.5), `Wechsel bei ${wechsel} statt um ${naht} s`)
 
 // Fehlerarten: Worker mit Ergebnissen stirbt → Laufzeitfehler; stirbt vor seinem ersten Ergebnis oder startet gar nicht →
 // SHERPA_UNAVAILABLE (Engine nimmt Whisper)

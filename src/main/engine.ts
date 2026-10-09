@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, isAbsolute, join } from 'node:path'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 import JSZip from 'jszip'
 import { MEDIA_EXT, formatSuffix, sizeOf, visibleSlides, type Deck, type Measured } from '../shared/deck'
 import { handout } from '../shared/handout'
@@ -18,7 +18,7 @@ import { ffmpegBin, frames, loudness, pcm16k, probe } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
 import { localAsset } from './sync'
-import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
+import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
 
 // asset://local/<pfad> oder absoluter Pfad → lokale Datei, wie videoPath in export-video.ts; null = keine Mediendatei
 function mediaFile(src: unknown): string | null {
@@ -81,11 +81,10 @@ export function createEngine(): Engine {
     return v
   })
 
+  class TagFailed extends Error { constructor(cause: unknown) { super('tag', { cause }) } } // Ereigniserkennung gescheitert, nicht der Rest
   type Chunk = { engine: 'parakeet' | 'whisper'; segments: Segment[] }
   let whisperOnly = false // sherpa grundsätzlich nicht nutzbar: Rest der Sitzung mit Whisper
-  // Erkennung, die lang verlangt; undefined = jede
-  const engineFor = (lang?: string): Chunk['engine'] | undefined =>
-    !lang ? undefined : !PARAKEET_LANGS.includes(lang.toLowerCase().split(/[-_]/)[0]) ? 'whisper' : whisperOnly ? undefined : 'parakeet'
+  const wantFor = (lang?: string) => engineFor(lang, PARAKEET_LANGS, whisperOnly)
 
   // Ein Chunk: Parakeet (sherpa); Whisper nur für Sprachen außerhalb von Parakeet oder wenn sherpa nicht nutzbar ist
   async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
@@ -113,7 +112,8 @@ export function createEngine(): Engine {
     const legacy = await readJson<Transcript>(`${base}.transcript.json`) // alter Ganzdatei-Cache (Whisper) deckt alles ab
     const all = chunksIn([[0, duration]], duration) // 0 … n−1, Index = k
     const have = legacy ? [] : await Promise.all(all.map((k) => readJson<Chunk>(`${base}.t${k}.json`)))
-    const want = engineFor(lang), valid = (c: Chunk | null) => !!c && Array.isArray(c.segments), fits = (c: Chunk | null) => valid(c) && (!want || c!.engine === want)
+    // fits fragt whisperOnly bei jedem Aufruf neu: fällt sherpa mitten im Lauf aus, passen schon gecachte Whisper-Chunks
+    const want = wantFor(lang), valid = (c: Chunk | null) => !!c && Array.isArray(c.segments), fits = (c: Chunk | null) => valid(c) && (!wantFor(lang) || c!.engine === wantFor(lang))
     const missing = legacy ? [] : chunksIn(ranges ?? [[0, duration]], duration).filter((k) => !fits(have[k]))
     return { duration, base, legacy, all, have, want, valid, fits, missing }
   }
@@ -300,6 +300,7 @@ export function createEngine(): Engine {
           const { duration } = await probe(file)
           const loud = await loudness(file, (p) => onProgress(Math.floor(p * 0.15)))
           // Ereignisse (Lachen, Jubel, Applaus, Schreien) nur an lauten Stellen; Chunks ohne solche bleiben 0 und werden nicht dekodiert
+          let tagFailed = false
           const events = new Array<number>(loud.length).fill(0), hot = loudRanges(loud), work: { a: number; len: number; only: [number, number][] }[] = []
           for (let a = 0; a < duration; a += CHUNK) {
             const len = Math.min(CHUNK, duration - a)
@@ -307,20 +308,32 @@ export function createEngine(): Engine {
             if (only.length) work.push({ a, len, only })
           }
           for (const [i, { a, len, only }] of work.entries()) { // je Chunk gespeichert: 8-h-Streams machen nach einem Abbruch weiter
-            const r = await cached(`${base}.e${a}.json`, async () => {
-              // tag kennt kein only: nur die lauten Abschnitte einzeln taggen (slice: ein subarray schickte den ganzen Puffer an den Worker)
-              const pcm = await pcm16k(file, a, len), out = new Array<number>(Math.ceil(len)).fill(0)
-              for (const [x, y] of only) (await tag(pcm.slice(x * 16000, y * 16000), { models })).forEach((v, j) => { if (x + j < out.length) out[x + j] = v })
-              onProgress(15 + Math.floor(((i + 1) / work.length) * 85))
-              return out
-            }, Array.isArray)
+            let r: number[]
+            try {
+              r = await cached(`${base}.e${a}.json`, async () => {
+                // tag kennt kein only: nur die lauten Abschnitte einzeln taggen (slice: ein subarray schickte den ganzen Puffer an den Worker)
+                const pcm = await pcm16k(file, a, len), out = new Array<number>(Math.ceil(len)).fill(0)
+                for (const [x, y] of only) {
+                  try { (await tag(pcm.slice(x * 16000, y * 16000), { models })).forEach((v, j) => { if (x + j < out.length) out[x + j] = v }) }
+                  catch (e) { throw new TagFailed(e) }
+                }
+                return out
+              }, Array.isArray)
+            } catch (e) { // Lautheit, Chat und Heatmap reichen für Highlights: dieser Chunk bleibt 0 und wird nicht gecacht, auch signals.json nicht (später nachholen)
+              if (!(e instanceof TagFailed)) throw e
+              if (!tagFailed) console.warn('[video] Ereigniserkennung fehlgeschlagen, Highlights ohne Ereignisse:', (e.cause as Error)?.message ?? e.cause)
+              tagFailed = true
+              r = []
+            }
+            onProgress(15 + Math.floor(((i + 1) / work.length) * 85))
             r.forEach((v, j) => { if (a + j < events.length) events[a + j] = v })
           }
           // Chat und Heatmap legt importUrl neben das Video
           const meta = await readJson<{ chat?: unknown; heat?: unknown }>(`${file}.meta.json`)
-          const chat = typeof meta?.chat === 'string' ? await readJson<unknown>(meta.chat) : null
+          // meta.chat nur aus dem Ordner des Videos lesen (die Datei kommt von der Platte, kein beliebiger Pfad)
+          const chat = typeof meta?.chat === 'string' && dirname(resolve(meta.chat)) === dirname(resolve(file)) ? await readJson<unknown>(meta.chat) : null
           s = { loud, events, ...(Array.isArray(chat) && { chat: chatPerSecond(chat, loud.length) }), ...(Array.isArray(meta?.heat) && { heat: meta.heat as number[] }) }
-          await save(`${base}.signals.json`, s)
+          if (!tagFailed) await save(`${base}.signals.json`, s)
         }
         return highlights(s)
       },
