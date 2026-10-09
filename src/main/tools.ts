@@ -3,19 +3,21 @@
 import { execFile } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdir, readdir, rename, rm } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, extname, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, PRINT_SIZES, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef } from '../shared/deck'
+import { BUILDS, DECORS, FORMATS, FRAMES, MOTIONS, PRINT_SIZES, sizeOf, TONES, TRANSITIONS, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type PrintOptions, type Slide, type ThemeRef } from '../shared/deck'
 import { GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, THEMES, resolveTheme, type FontName } from '../shared/themes'
 import type { Issue } from '../shared/lint'
 import { typeset } from '../shared/typo'
-import type { Engine } from './agent'
+import type { Engine, ExportFormat } from './agent'
+import { fillDeck, placeholders } from '../shared/merge'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 
 export interface ToolContext {
@@ -626,16 +628,18 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen) oder print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten). Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen) oder print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten). Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>.',
       inputSchema: z.object({
         format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks'),
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
+        rows: z.array(z.record(z.string(), z.string())).min(1).max(500).optional().describe('Serienbrief: je Zeile eine Datei, {{Spalte}} im Deck wird ersetzt'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
-        const paths = await ctx.engine.exportDeck(deck, i.format, ctx.outDir, { size: i.size, bleed: i.bleed })
+        const print = { size: i.size, bleed: i.bleed }
+        const paths = i.rows ? await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print) : await ctx.engine.exportDeck(deck, i.format, ctx.outDir, print)
         return { text: `Exportiert (${i.format}):\n${paths.join('\n')}` }
       },
     }),
@@ -717,6 +721,34 @@ async function download(url: string, maxMB = 15): Promise<{ buf: Buffer; ext: st
 }
 
 // WebP-Maße aus dem Dateikopf (erweitert, verlustfrei, verlustbehaftet); null = kein WebP
+// Serienbrief: je Zeile ein gefülltes Deck, seriell (ein Render-Fenster, wenig RAM) nach <outDir>/serie-<format>/NN-<erster Wert>
+export async function exportSeries(engine: Engine, deck: Deck, rows: Record<string, string>[], format: ExportFormat, outDir: string, print?: PrintOptions): Promise<string[]> {
+  const missing = placeholders(deck).filter((k) => rows.some((r) => !Object.hasOwn(r, k)))
+  if (missing.length) throw new Error(`Spalten fehlen für Platzhalter: ${missing.map((k) => `{{${k}}}`).join(', ')}. Vorhanden: ${Object.keys(rows[0]).join(', ') || '–'}`)
+  const dir = join(outDir, `serie-${format}`)
+  await mkdir(dir, { recursive: true })
+  // nur eigene Altlasten früherer Läufe entfernen, sonst mischen sich alte und neue Serie; fremde Dateien bleiben
+  for (const e of await readdir(dir)) if (/^(\d{3}-|\d{3}$|\.tmp-)/.test(e)) await rm(join(dir, e), { recursive: true, force: true })
+  const out: string[] = []
+  for (const [n, row] of rows.entries()) {
+    // Engine benennt nach dem Deck-Titel; daher in einen Zwischenordner exportieren und umbenennen
+    const tmp = join(dir, `.tmp-${n}`)
+    try {
+      await mkdir(tmp, { recursive: true })
+      await engine.exportDeck(fillDeck(deck, row), format, tmp, print)
+      const name = [String(n + 1).padStart(3, '0'), Object.values(row)[0]?.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 40)].filter(Boolean).join('-')
+      for (const e of await readdir(tmp)) {
+        const to = join(dir, name + extname(e))
+        await rename(join(tmp, e), to)
+        out.push(to)
+      }
+    } finally {
+      await rm(tmp, { recursive: true, force: true })
+    }
+  }
+  return out
+}
+
 export function webpSize(b: Buffer): { width: number; height: number } | null {
   if (b.length < 30 || b.toString('latin1', 0, 4) !== 'RIFF' || b.toString('latin1', 8, 12) !== 'WEBP') return null
   const chunk = b.toString('latin1', 12, 16)

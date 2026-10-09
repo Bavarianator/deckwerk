@@ -91,6 +91,8 @@ const api = {
   save: (): Promise<string> => invoke('deck:save'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
   exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions): Promise<string> => invoke('deck:export', format, print),
+  /** Serienbrief: CSV per Dialog wählen, je Zeile eine Datei; null = abgebrochen */
+  exportSeries: (format: 'pptx' | 'docx' | 'pdf' | 'png'): Promise<{ dir: string; count: number } | null> => invoke('deck:exportSeries', format),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),
