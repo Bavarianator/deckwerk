@@ -317,6 +317,7 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
             </div>
             <BgRemove it={it} set={set} />
             <button type="button" className="btn wide" onClick={async () => { const src = await pickImage(); if (src) set({ src, crop: undefined }) }}>Bild ersetzen …</button>
+            <Field label="Alternativtext"><textarea rows={2} maxLength={250} value={it.alt ?? ''} placeholder="Was zeigt das Bild?" onChange={(e) => set({ alt: e.target.value || undefined }, `alt-${it.id}`)} /></Field>
           </>
         )}
 

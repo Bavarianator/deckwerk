@@ -570,7 +570,7 @@ function FreeItem({ it }: { it: Item }) {
     }
     case 'image':
       return <Img src={it.src ?? ''} slot={slot} look={it.look} round={it.round} mask={it.mask} adjust={it.adjust} crop={it.crop} alpha={alpha < 1 ? alpha : undefined} className="free-img"
-        attrs={{ ...attrs, 'data-flip': it.flipX ? '' : undefined }}
+        attrs={{ ...attrs, 'data-flip': it.flipX ? '' : undefined, 'data-alt': it.alt }}
         style={{ ...pos, borderRadius: it.round ? undefined : it.radius, transform: [pos.transform, it.flipX && 'scaleX(-1)'].filter(Boolean).join(' ') || undefined }} />
     case 'video':
       return (
