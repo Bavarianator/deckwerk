@@ -89,10 +89,11 @@ interface VideoProps {
  *  still: Sekunde, die vor dem ersten Abspielen steht; bei blur stabil halten, jeder neue Wert lässt den Main per ffmpeg ein Standbild ziehen. onBad: Chromium spielt den Codec nicht (HEVC, ProRes …) oder es gibt keine Videospur. */
 export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, videoRef, children, onBad, onMeta, onClick }: VideoProps) {
   const url = clipUrl(video)
+  const [first] = useState(still) // Standbild nur vom ersten Wert: der Cutter reicht still live durch, jeder neue Wert startete ffmpeg
   return (
     <div className={`clip-video${fit === 'blur' ? ' blur' : ''}`} style={{ aspectRatio: aspect }} onClick={onClick}>
-      {fit === 'blur' && <div className="clip-video-bg" style={{ backgroundImage: `url("${url}?frame=${still ?? 0}")` }} />}
-      <video ref={videoRef} src={url} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
+      {fit === 'blur' && <div className="clip-video-bg" style={{ backgroundImage: `url("${url}?frame=${first ?? 0}")` }} />}
+      <video ref={videoRef} src={url} poster={first != null ? `${url}?frame=${first}` : undefined} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
         onLoadedMetadata={(e) => {
           const v = e.currentTarget
           if (!v.videoWidth) onBad?.() // nur Ton oder Videospur unbekannt
