@@ -6,7 +6,7 @@ import { mkdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { InferenceSession } from 'onnxruntime-node'
-import type { Part, VideoInfo } from '../shared/video'
+import { cropRect, type Part, type VideoInfo } from '../shared/video'
 import { download } from './download'
 import { rawFrames } from './ffmpeg'
 
@@ -18,6 +18,11 @@ const MODEL_SHA256 = '8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2
 const S = 640
 const MIN_SCORE = 0.6, NMS_IOU = 0.3 // Vorgaben aus opencv_zoo/yunet.py
 const GAP = 0.12 // Anteil der Bildbreite, ab dem zwei Gesichtspositionen zu verschiedenen Personen gehören
+// Kamerafahrt (cameraPath): erst ab LONG s lohnt sie; ein Bild je STEP s, höchstens MAX_SAMPLES je part (je Bild ein Seek + ~50 ms Erkennung)
+const LONG = 4, STEP = 1, MAX_SAMPLES = 60
+const DEAD = 0.5 // Totzone: Kamera steht, solange das Gesicht in der mittleren Hälfte des Zuschnitts bleibt
+export const MAX_SPEED = 0.25 // Zuschnittbreiten je Sekunde: schneller wirkt die Fahrt hektisch
+const TOL = 0.01, MAX_KEYS = 20 // Stützpunkt fällt weg, solange die Fahrt um ≤ 1 % der Bildbreite abweicht; mehr als 20 → gröber
 
 /** px im Video; mouth = Mundwinkel im Bild links und rechts (x1, y1, x2, y2) */
 export interface Face { x: number; y: number; w: number; h: number; score: number; mouth: [number, number, number, number] }
@@ -81,16 +86,69 @@ export async function faceX(frames: Buffer[], src: { w: number; h: number }): Pr
   return out
 }
 
-/** Setzt focus nur bei parts ohne focus: Median über Bilder bei 25/50/75 % des parts. Kein Gesicht → focus bleibt leer (Mitte). */
-export async function autoFocus(file: string, parts: Part[], info: VideoInfo): Promise<Part[]> {
+// Stützpunkte nur, wo sich das Tempo ändert: weglassen, solange die Gerade vom letzten behaltenen Punkt alle Zwischenpunkte auf tol trifft
+function simplify(pts: [number, number][], tol: number) {
+  const out = pts.slice(0, 1)
+  for (let j = 2, a = 0; j < pts.length; j++) {
+    const [ta, fa] = pts[a], [tj, fj] = pts[j]
+    if (pts.slice(a + 1, j).some(([t, f]) => Math.abs(fa + ((fj - fa) * (t - ta)) / (tj - ta) - f) > tol)) out.push(pts[(a = j - 1)])
+  }
+  return pts.length > 1 ? [...out, pts[pts.length - 1]] : out
+}
+
+/** Kamerafahrt aus Gesichtspositionen (nach t sortiert; t = Quellsekunde, x = 0..1, null = kein Gesicht) → Stützpunkte [t, focus].
+ *  cropW = Zuschnittbreite als Anteil der Quellbreite. Je Abschnitt zwischen cuts: Median über 3 gegen Ausreißer, Lücken halten
+ *  die letzte Position; die Kamera steht, solange das Gesicht in der Totzone bleibt, sonst schiebt es sie mit ≤ MAX_SPEED.
+ *  Am cut springt sie (End- und Startpunkt zur selben Zeit). Steht sie durchgehend: ein Stützpunkt.
+ *  ponytail: lineare Fahrt ohne Anfahr-/Bremsrampe, Person bleibt nach dem Gehen am Rand der Totzone stehen.
+ *  Upgrade: Pfad-Glättung mit Rampen (z. B. L1-Optimierung wie AutoFlip) und langsames Nachzentrieren, falls es ruckig wirkt. */
+export function cameraPath(samples: { t: number; x: number | null }[], cuts: number[], cropW: number): [number, number][] {
+  const D = (DEAD * cropW) / 2, at = (v: number) => Math.min(1 - cropW / 2, Math.max(cropW / 2, v)) // nur erreichbare Mitten
+  const cs = [...cuts].sort((a, b) => a - b), seg = (t: number) => cs.filter((c) => c <= t).length
+  const paths: [number, number][][] = []
+  let carry = samples.find((s) => s.x !== null)?.x ?? 0.5
+  // je Abschnitt mit Bildern; gesprungen wird am letzten cut vor dem ersten Bild des nächsten Abschnitts
+  for (let i = 0; i < samples.length; ) {
+    const k = seg(samples[i].t), g: typeof samples = []
+    while (i < samples.length && seg(samples[i].t) === k) g.push(samples[i++])
+    let last = g.find((s) => s.x !== null)?.x ?? carry // Lücke am Abschnittsanfang: erstes Gesicht im Abschnitt
+    const xs = g.map((s) => (last = s.x ?? last))
+    carry = last
+    const sm = xs.map((_, j) => median(xs.slice(Math.max(0, j - 1), j + 2)))
+    let cam = at(sm[0])
+    const pts = g.map((s, j): [number, number] => {
+      if (j) {
+        const v = MAX_SPEED * cropW * (s.t - g[j - 1].t), want = Math.min(sm[j] + D, Math.max(sm[j] - D, cam))
+        cam = at(cam + Math.min(v, Math.max(-v, want - cam)))
+      }
+      return [s.t, cam]
+    })
+    if (k && cs[k - 1] < g[0].t) pts.unshift([cs[k - 1], pts[0][1]])
+    if (i < samples.length) pts.push([cs[seg(samples[i].t) - 1], cam])
+    paths.push(pts)
+  }
+  let keys: [number, number][] = []
+  for (let tol = TOL; tol < 0.1 && (!keys.length || keys.length > MAX_KEYS); tol *= 2) keys = paths.flatMap((p) => simplify(p, tol))
+  keys = keys.map(([t, f]): [number, number] => [round(t), round(f)])
+  return keys.every(([, f]) => f === keys[0][1]) ? keys.slice(0, 1) : keys
+}
+
+/** Setzt focus nur bei parts ohne focus: Median über Bilder bei 25/50/75 % des parts. Kein Gesicht → focus bleibt leer (Mitte).
+ *  Ab LONG s und mit size (Zuschnitt schmaler als die Quelle): ein Bild je STEP s, focus = Median, track = cameraPath, falls die
+ *  Kamera fährt. cuts = harte Bildwechsel (Quellsekunden): dort springt der Zuschnitt. */
+export async function autoFocus(file: string, parts: Part[], info: VideoInfo, o: { cuts?: number[]; size?: { w: number; h: number } } = {}): Promise<Part[]> {
+  const cropW = o.size ? cropRect(info, o.size).w / info.w : 1
   const out: Part[] = []
   for (const p of parts) {
     if (p.focus !== undefined) { out.push(p); continue }
-    const times = [0.25, 0.5, 0.75].map((q) => Math.min(p.start + q * (p.end - p.start), info.duration - 0.1))
+    const len = p.end - p.start, n = len >= LONG && cropW < 1 ? Math.min(MAX_SAMPLES, Math.round(len / STEP)) : 0
+    const times = (n ? Array.from({ length: n }, (_, i) => (i + 0.5) / n) : [0.25, 0.5, 0.75]).map((q) => Math.min(p.start + q * len, info.duration - 0.1))
     // kein Bild (Videospur kürzer als der Container): focus bleibt leer statt alle parts zu verwerfen
     const fr = await rawFrames(file, times).catch(() => null)
-    const xs = fr ? (await faceX(fr, info)).filter((x): x is number => x !== null) : []
-    out.push(xs.length ? { ...p, focus: round(median(xs)) } : p)
+    const all = fr ? await faceX(fr, info) : [], xs = all.filter((x): x is number => x !== null)
+    if (!xs.length) { out.push(p); continue }
+    const track = n ? cameraPath(times.map((t, i) => ({ t, x: all[i] })), (o.cuts ?? []).filter((c) => c > p.start && c < p.end), cropW) : []
+    out.push({ ...p, focus: round(median(xs)), ...(track.length > 1 && { track }) })
   }
   return out
 }

@@ -9,12 +9,12 @@ import { MEDIA_EXT, formatSuffix, sizeOf, visibleSlides, type Deck, type Measure
 import { handout } from '../shared/handout'
 import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
-import { MAX_PARTS, followParts, type ClipContent, type Segment, type Transcript } from '../shared/video'
+import { MAX_PARTS, followParts, snapToScenes, type ClipContent, type Segment, type Transcript } from '../shared/video'
 import type { Engine } from './agent'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
-import { ffmpegBin, frames, loudness, pcm16k, probe } from './ffmpeg'
+import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
 import { localAsset } from './sync'
@@ -150,8 +150,8 @@ export function createEngine(): Engine {
     return t
   }
 
-  // Zuschnitt vor dem Video-Export, auf einer Kopie: follow 'sprecher' → parts je Sprecher, übrige parts ohne focus aufs Gesicht.
-  // Fehler kosten nur den Zuschnitt (Bildmitte).
+  // Zuschnitt vor dem Video-Export, auf einer Kopie: Kanten knapp an harten Bildwechseln auf den Wechsel (cuts), follow 'sprecher' → parts je Sprecher,
+  // übrige parts ohne focus aufs Gesicht. Fehler kosten nur den Zuschnitt (Bildmitte) bzw. die Bildwechsel.
   async function prepareClips(deck: Deck, onProgress: (pct: number) => void): Promise<Deck> {
     const size = sizeOf(deck), slides = [...deck.slides], clips = slides.flatMap((s, i) => (s.layout === 'clip' ? [i] : []))
     for (const [n, i] of clips.entries()) {
@@ -159,15 +159,34 @@ export function createEngine(): Engine {
       const warn = (e: unknown) => console.warn(`[video] Folie ${i + 1}: Gesichts- oder Sprechererkennung fehlgeschlagen:`, (e as Error).message)
       try {
         const info = await probe(file)
-        if (c.fit === 'blur' || Math.abs(info.w / info.h - size.w / size.h) <= 0.01) continue // ganzes Bild sichtbar, nichts zuzuschneiden
-        let parts = c.parts
+        let parts = c.parts, cuts: number[] | undefined
+        const crop = c.fit !== 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // sonst ganzes Bild sichtbar, nichts zuzuschneiden
+        // Blitzbilder gibt es auch bei blur und gleichem Seitenverhältnis: vor dem continue. Wortschutz nur mit gecachtem Transkript, nie neu transkribieren.
+        // Mit Zuschnitt die ganzen parts (die Kamerafahrt springt an Wechseln), sonst nur Fenster um die Kanten: Fulltime dekodiert nicht die ganze Stunde
+        try {
+          const spans: [number, number][] = []
+          const around = crop ? parts.map((p): [number, number] => [p.start, p.end]) : parts.flatMap((p): [number, number][] => [[p.start, p.start], [p.end, p.end]])
+          for (const [s0, e0] of around.sort((x, y) => x[0] - y[0])) {
+            const a = Math.max(0, s0 - 0.5), b = Math.min(info.duration, e0 + 0.5), l = spans[spans.length - 1]
+            if (l && a <= l[1]) l[1] = Math.max(l[1], b)
+            else spans.push([a, b])
+          }
+          const found: number[] = []
+          for (const [a, b] of spans) found.push(...(await scenes(file, a, b)))
+          const tr = await chunkPlan(file, spans).then((pl) => (pl.missing.length ? null : transcript(file, spans, {}))).catch(() => null)
+          const r = snapToScenes(parts, found, tr)
+          if (r.moved) console.info(`[video] Folie ${i + 1}: ${r.moved} Schnittkante(n) auf einen Bildwechsel gelegt`)
+          parts = r.parts, cuts = found
+        } catch (e) { console.warn(`[video] Folie ${i + 1}: Bildwechsel nicht erkannt:`, (e as Error).message) }
+        slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
+        if (!crop) continue
         if (c.follow === 'sprecher') try {
           const from = Math.min(...parts.map((p) => p.start)), to = Math.max(...parts.map((p) => p.end))
           const turns = (await speakersOf(file, info.duration, parts.map((p): [number, number] => [p.start, p.end]))).filter((t) => t.end > from && t.start < to)
           parts = followParts(parts, turns, await speakerFaces(file, turns, info))
         } catch (e) { warn(e) }
-        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info) // auch, wenn follow keine Sprecher-Gesichter fand
-        slides[i] = { ...slides[i], content: { ...c, parts } }
+        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info, { cuts, size }) // auch, wenn follow keine Sprecher-Gesichter fand
+        slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
       } catch (e) { warn(e) } finally { onProgress(Math.floor(((n + 1) / clips.length) * 100)) }
     }
     return { ...deck, slides }

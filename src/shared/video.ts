@@ -5,14 +5,15 @@ export interface Word { w: string; start: number; end: number }
 export interface Segment { start: number; end: number; text: string; words?: Word[]; speaker?: number } // words fehlen = aus text geschätzt; speaker aus der Sprechertrennung, 0-basiert
 export interface Transcript { duration: number; lang: string; segments: Segment[]; covered?: [number, number][] } // covered: transkribierte Bereiche (s), sortiert; fehlt = ganzes Video
 export interface VideoInfo { duration: number; w: number; h: number } // w/h so, wie das Video angezeigt wird (Drehung berücksichtigt)
-export interface Part { start: number; end: number; focus?: number } // focus: horizontaler Bildmittelpunkt 0..1
+export interface Part { start: number; end: number; focus?: number; track?: [t: number, focus: number][] } // focus: horizontaler Bildmittelpunkt 0..1; track: Kamerafahrt als Stützpunkte (Quellsekunde, focus), setzt nur der Export (autoFocus), nie die KI
 export type Captions = 'wort' | 'satz' | 'aus'
 export type Pauses = 'kurz' | 'lassen'
 export type Fit = 'crop' | 'blur' // blur: ganzes Bild mittig auf unscharfem, abgedunkeltem Vollbild-Grund (Querformat in 9:16)
 // follow: Zuschnitt folgt dem aktiven Sprecher (Podcast), die Engine teilt parts an Sprecherwechseln
 // style: ruhig (Standard) = ohne Animation; lebendig = Wort-Pop, Hook mit Einblendung und Balken, Fortschrittsbalken, Zoom-Wechsel an Schnitten
 export type ClipStyle = 'ruhig' | 'lebendig'
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle }
+// cuts: harte Bildwechsel der Quelle (s); setzt nur der Export (prepareClips), nie die KI, nicht im Schema
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[] }
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
@@ -65,6 +66,27 @@ export function fillerQuiet(t: Transcript, from: number, to: number): Quiet[] {
   return t.segments.flatMap((s) => s.words ?? [])
     .filter((w) => w.end > from && w.start < to && FILLERS.test(w.w) && (en || !/^um$/i.test(w.w.replace(/[\p{P}\s]/gu, ''))))
     .map((w): Quiet => [Math.max(from, w.start - PAD), Math.min(to, w.end + PAD)])
+}
+
+/** Kanten bis max s vor (Start) bzw. nach (Ende) einem harten Bildwechsel auf den Wechsel legen, sonst blitzen Frames der Nachbarszene auf.
+ *  Bleibt, wenn dabei ein echtes Wort (nur echte Wortzeiten, Toleranz 0,05 s wie im Clip-Lint) angeschnitten würde oder wegfiele, an nahtlosen Übergängen und wenn der Teil unter 0,5 s fiele. */
+export function snapToScenes(parts: Part[], cuts: number[], t?: Transcript | null, max = 0.3): { parts: Part[]; moved: number } {
+  const ws = t?.segments.flatMap((s) => s.words ?? []) ?? []
+  const joined = (j: number) => j > 0 && j < parts.length && Math.abs(parts[j - 1].end - parts[j].start) < 1e-3
+  let moved = 0
+  const out = parts.map((p, i) => {
+    const q = { ...p }
+    const start = Math.max(...cuts.filter((c) => c > p.start && c - p.start <= max)), end = Math.min(...cuts.filter((c) => c < p.end && p.end - c <= max))
+    for (const [edge, to] of [['start', start], ['end', end]] as const) {
+      if (!Number.isFinite(to) || joined(edge === 'start' ? i : i + 1)) continue
+      const [a, b] = edge === 'start' ? [p.start, to] : [to, p.end] // was wegfällt
+      if (ws.some((w) => w.end - 0.05 > a && w.start + 0.05 < b) || (edge === 'start' ? q.end - to : to - q.start) < 0.5) continue
+      q[edge] = to
+      moved++
+    }
+    return q
+  })
+  return { parts: out, moved }
 }
 
 /** Wortzeiten eines Segments nach Zeichenanteil, verteilt über die Sprechzeit ohne die Stillen in quiet. Ein Wort liegt ganz im Sprechstück seiner Mitte, sonst fiele es mit einer gekürzten Pause weg. ponytail: geschätzt (±0,3 s); echte Zeiten per DTW über Cross-Attention, falls die Wort-Hervorhebung sichtbar daneben liegt. */

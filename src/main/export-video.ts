@@ -8,7 +8,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, zoomOf, cutIndex } from '../shared/video'
+import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex } from '../shared/video'
 import { HOOK_FADE, POP, cropFilter, hookBox, progressBar } from './video-fx'
 import { probe, runFfmpeg, silences } from './ffmpeg'
 import { localAsset } from './sync'
@@ -83,14 +83,19 @@ export function assSubs(o: { size: Size; font: string; bold: boolean; accent: st
   ].join('\n')
 }
 
-/** parts um PAD verlängern, aber nur bis zur Mitte der Lücke zum nächsten part im Quellvideo (keine Doppelung) und nicht über das Video hinaus. */
-export function padParts(parts: Part[], duration: number): Part[] {
+/** parts um PAD verlängern, aber nur bis zur Mitte der Lücke zum nächsten part im Quellvideo (keine Doppelung), nicht über das Video hinaus
+ *  und nicht über einen harten Bildwechsel (cuts), sonst holte das Polster das Blitzbild der Nachbarszene zurück. */
+export function padParts(parts: Part[], duration: number, cuts: number[] = []): Part[] {
   return parts.map((p) => {
     let start = Math.max(0, p.start - PAD), end = Math.min(duration, p.end + PAD)
     for (const q of parts) {
       if (q === p) continue
       if (q.end <= p.start) start = Math.max(start, (q.end + p.start) / 2)
       if (q.start >= p.end) end = Math.min(end, (p.end + q.start) / 2)
+    }
+    for (const c of cuts) {
+      if (c > start && c <= p.start) start = c
+      if (c >= p.end && c < end) end = c
     }
     return { ...p, start, end }
   })
@@ -116,7 +121,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle }
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[] }
 interface SegOpts { preset: string; fadeIn?: boolean; fadeOut?: boolean } // fadeIn/fadeOut: Übergang aus/in Schwarz am Anfang/Ende der Szene
 
 /** Eine Clip-Szene als Zwischenstände, je GROUP Teilstücke ein mkv: Zuschnitt (crop um focus oder blur), Hook nur in der ersten Gruppe, Untertitel je Gruppe ab 0. Fortschritt über alle Gruppen. */
@@ -126,14 +131,16 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
   const late = job.parts.findIndex((p) => p.start >= info.duration - 0.2)
   if (late >= 0) throw new Error(`Ausschnitt ${late + 1} beginnt bei ${job.parts[late].start} s, das Video ist nur ${info.duration.toFixed(1)} s lang.`)
   // Pausen und Füllwörter kürzen vor padParts: an jedem Schnitt bleibt je Seite PAD stehen, ohne dass sich etwas doppelt. fillerQuiet nimmt nur echte Wortzeiten.
-  const snapped = snapParts(job.parts, job.transcript)
+  const words = snapParts(job.parts, job.transcript)
+  // Wortgrenzen können eine Kante wieder vor einen Bildwechsel ziehen (Transkript beim Einrasten in prepareClips noch nicht im Cache): erneut einrasten, jetzt mit Wortschutz
+  const snapped = job.cuts?.length ? { ...words, parts: snapToScenes(words.parts, job.cuts, job.transcript).parts } : words
   if (snapped.moved) console.info(`[video] ${basename(job.file)}: ${snapped.moved} Schnittkante(n) an die Wortgrenze gelegt`)
   const quiet: Quiet[] = []
   if (job.pauses === 'kurz' && info.audio) for (const p of snapped.parts) {
     quiet.push(...(await silences(job.file, p.start, p.end, MIN_PAUSE)))
     if (job.transcript) quiet.push(...fillerQuiet(job.transcript, p.start, p.end))
   }
-  const parts = padParts(tighten(snapped.parts, quiet), info.duration), joined = seamless(parts), total = partsLength(parts), { size } = job
+  const parts = padParts(tighten(snapped.parts, quiet), info.duration, job.cuts), joined = seamless(parts), total = partsLength(parts), { size } = job
   const blur = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // gleiches Seitenverhältnis: blur = crop
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2)) // Grund klein weichzeichnen, dann hochskalieren: billig und weich
   const captions = job.transcript && job.captions !== 'aus' ? job.captions : null
@@ -156,7 +163,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
       const fit = blur
         ? `split[b${i}][f${i}];[b${i}]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g${i}];` +
           `[f${i}]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h${i}];[g${i}][h${i}]overlay=(W-w)/2:(H-h)/2`
-        : cropFilter(c, size, zoomOf(job.fit === 'blur' ? undefined : job.style, cutIndex(parts, k))) // k über alle Gruppen; Zoom wechselt nur an echten Schnitten, nie bei blur
+        : cropFilter(c, size, zoomOf(job.fit === 'blur' ? undefined : job.style, cutIndex(parts, k)), p.track ? { src: info, keys: p.track, start: p.start } : undefined) // k über alle Gruppen; Zoom wechselt nur an echten Schnitten, nie bei blur
       const a = info.audio ? `[${i}:a]` : `anullsrc=r=48000:cl=stereo,atrim=duration=${sec(len)},`
       const fade = `${joined[k] ? '' : ',afade=t=in:d=0.02'}${joined[k + 1] ? '' : `,afade=t=out:st=${sec(Math.max(0, len - 0.02))}:d=0.02`}`
       // Video nie länger als der Ton (ganze Frames ≤ len): sonst füllt concat die Differenz mit Stille, hörbar als Loch am Schnitt
@@ -283,7 +290,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         const file = videoPath(clip.video, i + 1), captions = clip.captions ?? 'wort'
         const transcript = captions === 'aus' && clip.pauses !== 'kurz' ? null : await transcriptOf(file) // pauses kurz: Füllwörter aus dem Transkript
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
-        segs = await clipSegs({ file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style }, name, dir, so, step(weights[k]))
+        segs = await clipSegs({ file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts }, name, dir, so, step(weights[k]))
       } else {
         const [{ renderSlide }, { nativeImage }] = await Promise.all([import('./render'), import('electron')])
         const png = join(dir, `folie-${n2(k + 1)}.png`)
