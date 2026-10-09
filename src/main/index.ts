@@ -1,7 +1,8 @@
 import { app, BrowserWindow, net, protocol } from 'electron'
 import { spawn } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
-import { readFile, stat, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -77,6 +78,25 @@ app.whenReady().then(async () => {
   protocol.handle('asset', async (req) => {
     const file = localAsset(decodeURIComponent(new URL(req.url).pathname))
     if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
+    // ?frame=<s> auf einer Videodatei: Standbild als JPEG (ffmpeg, gecacht). Die Clip-Folie braucht kein <video>, das im Offscreen-Fenster nach dem Spulen hängt.
+    const frame = new URL(req.url).searchParams.get('frame')
+    if (frame !== null && /\.(mp4|webm|mov|m4v|mkv|ogv)$/i.test(file)) {
+      try {
+        const t = Math.round(Math.max(0, Number(frame) || 0) * 10) / 10
+        const st = await stat(file)
+        const dir = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'assets', '.video')
+        const jpg = join(dir, `${createHash('sha1').update(`${file}|${st.size}|${st.mtimeMs}`).digest('hex')}-${t}.jpg`)
+        let buf: Uint8Array | undefined = await readFile(jpg).catch(() => undefined)
+        if (!buf) {
+          buf = (await (await import('./ffmpeg')).frames(file, [t], 1280))[0]
+          await mkdir(dir, { recursive: true })
+          await writeFile(jpg, buf)
+        }
+        return new Response(buf as BodyInit, { headers: { 'Content-Type': 'image/jpeg', 'Access-Control-Allow-Origin': '*' } })
+      } catch {
+        return new Response(null, { status: 404 })
+      }
+    }
     // net.fetch schneidet bei Range zwar die Bytes zu, antwortet aber mit 200 ohne Content-Range: dann hält Chromium Videos für nicht spulbar.
     // Darum Range selbst auflösen (auch bytes=100- und bytes=-500) und als 206 beantworten.
     const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range') ?? '')
