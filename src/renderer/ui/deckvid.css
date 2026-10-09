@@ -30,7 +30,7 @@
 }
 .dv-screen .clip-video { width: 100%; height: 100%; cursor: pointer; }
 .dv-bad { position: absolute; inset: auto 8% 8%; z-index: 1; margin: 0; color: #fff; font-size: 13px; text-align: center; }
-.dv-hook, .dv-sub { position: absolute; left: 8%; right: 8%; z-index: 1; margin: 0; color: #fff; font-weight: 700; line-height: 1.15; pointer-events: none; }
+.dv-hook, .dv-sub { position: absolute; left: 8%; right: 8%; z-index: 1; margin: 0; color: #fff; font-family: var(--dv-font); font-weight: var(--dv-weight); line-height: var(--dv-lh); text-wrap: balance; pointer-events: none; } /* balance: libass bricht mit WrapStyle 0 ebenso auf gleich lange Zeilen */
 .dv-hook { top: var(--dv-hook-y); font-size: var(--dv-hook); text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
 .dv-sub { bottom: var(--dv-sub-y); font-size: var(--dv-sub); text-align: center; text-shadow: 0 0 2px #000, 0 2px 3px rgb(0 0 0 / 0.6); }
 .dv-sub em { font-style: normal; color: var(--dv-accent); }
@@ -38,7 +38,8 @@
 /* Stil „lebendig“: Werte kommen als Variablen aus FX (video.ts), damit Vorschau und MP4 gleich aussehen */
 .dv-screen.live .clip-video video { transform: scale(var(--dv-zoom)); } /* harter Wechsel an der Naht, keine Transition */
 .dv-screen.live .dv-sub em { display: inline-block; animation: dv-pop var(--dv-pop-ms) ease-out; }
-.dv-screen.live .dv-hook { right: auto; max-width: 84%; left: calc(8% - 0.4em); padding: 0.15em 0.4em; background: rgb(0 0 0 / 0.65); border-radius: 2px; opacity: var(--dv-hook-o, 1); animation: dv-fade var(--dv-fade) linear; } /* Ausblenden: --dv-hook-o aus der Zeit */
+.dv-screen.live .dv-hook { right: auto; left: calc(8% - var(--dv-pad)); max-width: calc(84% + 2 * var(--dv-pad)); opacity: var(--dv-hook-o, 1); animation: dv-fade var(--dv-fade) linear; } /* Ausblenden: --dv-hook-o aus der Zeit; Textbreite 84 % wie MarginL/R im ASS */
+.dv-screen.live .dv-hook span { padding: var(--dv-pad-y) var(--dv-pad); background: rgb(0 0 0 / 0.65); box-decoration-break: clone; -webkit-box-decoration-break: clone; } /* je Zeile eine Fläche wie BorderStyle 3 */
 .dv-bar { position: absolute; left: 0; bottom: 0; z-index: 1; height: max(3px, calc(100cqw / var(--dv-ratio) * var(--dv-bar))); background: var(--dv-accent); pointer-events: none; }
 @keyframes dv-pop { from { transform: scale(var(--dv-pop)); } }
 @keyframes dv-fade { from { opacity: 0; } }

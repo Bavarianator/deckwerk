@@ -7,6 +7,8 @@ import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type ClipStyle } from '../../shared/video'
+import { loadCustomFont } from '../slide'
+import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
 import { ClipCutter } from './ClipCutter'
 import { ClipVideo, Strip, captionAt, clipUrl, useClipPlayer } from './clipPlayer'
@@ -206,7 +208,7 @@ export function Deckvid(p: Props) {
         </nav>
 
         {clip ? (
-          <ClipStage key={clip.id} clip={clip} n={no(clip)} here={here!} size={size} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
+          <ClipStage key={clip.id} clip={clip} n={no(clip)} here={here!} size={size} deck={deck} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
             parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)} cached={cache[clip.content.video] ?? null} issues={issues[clip.id] ?? []} fresh={!!fresh[clip.content.video]}
             busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()}
             onCaptions={() => p.patchSlide(index, { content: { ...clip.content, captions: clip.content.captions === 'aus' ? 'satz' : 'aus' } })}
@@ -285,8 +287,34 @@ function Hints({ xs, busy, onFix }: { xs: ClipIssue[]; busy: boolean; // busy: K
   )
 }
 
+// Schrift, die der MP4-Export brennt (subFont in export-video.ts): Head-Schrift des Themes, wenn einbettbar, sonst Archivo Bold.
+// win = Zeilenhöhe in em wie in libass, hhea = Inhaltshöhe der Zeile in Chromium (für die Fläche hinter dem Hook).
+function useSubFace(deck: Deck | null) {
+  const head = deck ? resolveTheme(deck.theme).head : null
+  const own = head && (head.embed || head.files) ? head : null
+  const css = own?.css ?? 'Archivo', bold = !own || (own.files ? !!own.files.bold : !own.single), file = own?.files ? own.files.bold ?? own.files.regular : null
+  const [m, setM] = useState<{ key: string; win?: number; hhea: number }>()
+  const key = `${css}|${bold}|${file}`
+  useEffect(() => {
+    let off = false
+    void (async () => {
+      if (deck) await loadCustomFont(deck)
+      const font = `${bold ? 700 : 400} 100px "${css}"`
+      await document.fonts.load(font)
+      const g = document.createElement('canvas').getContext('2d')!
+      g.font = font
+      const t = g.measureText('H')
+      const win = file ? await fetch(file).then((r) => r.ok ? r.arrayBuffer() : undefined).then((b) => b && winOfTtf(b)).catch(() => undefined) : undefined
+      if (!off) setM({ key, win, hhea: (t.fontBoundingBoxAscent + t.fontBoundingBoxDescent) / 100 })
+    })().catch((e) => console.warn('[deckvid] Schriftmaße', e))
+    return () => { off = true }
+  }, [key])
+  const ok = m?.key === key ? m : undefined, hhea = ok?.hhea ?? 1.2 // bis die Schrift geladen ist: Näherung
+  return { css, weight: bold ? 700 : 400, win: ok?.win ?? (own ? (own.embed ? WIN[own.embed] : undefined) : WIN.Archivo) ?? hhea, hhea }
+}
+
 interface StageProps {
-  clip: ClipSlide; n: number; here: string; size: Size; accent: string
+  clip: ClipSlide; n: number; here: string; size: Size; accent: string; deck: Deck | null
   parts: ClipContent['parts'] // alle Ausschnitte aus derselben Quelle, für die Zeitleiste
   cached: Cached | null
   issues: ClipIssue[]; fresh: boolean
@@ -294,7 +322,7 @@ interface StageProps {
 }
 
 // Vorschau, Aufträge und Quell-Zeitleiste des gewählten Clips (Bereiche main und line im Grid). key = Folien-ID: ein anderer Clip startet frisch.
-function ClipStage({ clip, n, here, size, accent, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onCaptions, onStyle }: StageProps) {
+function ClipStage({ clip, n, here, size, accent, deck, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onCaptions, onStyle }: StageProps) {
   const c = clip.content
   const videoRef = useRef<HTMLVideoElement>(null)
   const player = useClipPlayer(videoRef, c.parts)
@@ -313,12 +341,20 @@ function ClipStage({ clip, n, here, size, accent, parts, cached, issues, fresh, 
 
   const wide = size.w > size.h, m = Math.min(size.w, size.h)
   const live = c.style === 'lebendig' // ruhig/fehlend: keine Klasse, Darstellung wie bisher
-  // Hook und Untertitel in Größe und Lage wie im MP4 (assSubs in export-video.ts), in cqw des Players
+  // Hook und Untertitel in Größe und Lage wie im MP4 (assSubs in export-video.ts), in cqw des Players.
+  // ASS-Größe = Zeilenhöhe (win·em): CSS-Größe = Größe / win, Zeilenabstand win. Hook-Fläche (hookBox in video-fx.ts): Rand m·0,012 rundum, je Zeile eigene Breite.
+  const face = useSubFace(deck), cq = (px: number) => (px / size.w) * 100
+  const hookPx = m * (wide ? 0.045 : 0.06), pad = cq(m * 0.012)
   const screen = {
     '--dv-ratio': size.w / size.h,
-    '--dv-hook': `${((m * (wide ? 0.045 : 0.06)) / size.w) * 100}cqw`,
+    '--dv-font': `"${face.css}", "Archivo", sans-serif`,
+    '--dv-weight': face.weight,
+    '--dv-lh': face.win,
+    '--dv-hook': `${cq(hookPx / face.win)}cqw`,
+    '--dv-pad': `${pad}cqw`,
+    '--dv-pad-y': `${pad + cq(hookPx / face.win) * ((face.win - face.hhea) / 2)}cqw`, // Inline-Fläche reicht nur über die Inhaltshöhe (hhea): auf Zeilenhöhe auffüllen
     '--dv-hook-y': wide ? '7%' : '12%',
-    '--dv-sub': `${((m * (mode === 'satz' ? 0.055 : wide ? 0.065 : 0.075)) / size.w) * 100}cqw`,
+    '--dv-sub': `${cq((m * (mode === 'satz' ? 0.055 : wide ? 0.065 : 0.075)) / face.win)}cqw`,
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
     ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar, '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) }),
@@ -333,7 +369,7 @@ function ClipStage({ clip, n, here, size, accent, parts, cached, issues, fresh, 
           <div className={`dv-screen${live ? ' live' : ''}`} style={screen}>
             <ClipVideo video={c.video} aspect={size.w / size.h} focus={focus} fit={c.fit} still={c.parts[0].start} videoRef={videoRef}
               onClick={player.toggle} onBad={() => setBad(true)}>
-              {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}>{c.hook}</p>}
+              {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
               {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
               {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
               {bad && <p className="dv-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Exportieren geht trotzdem.</p>}
