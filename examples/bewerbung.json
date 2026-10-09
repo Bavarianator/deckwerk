@@ -1,0 +1,142 @@
+{
+ "title": "Bewerbung",
+ "size": {
+  "w": 794,
+  "h": 1123
+ },
+ "theme": {
+  "id": "redaktion"
+ },
+ "slides": [
+  {
+   "id": "deckblatt",
+   "layout": "application-cover",
+   "content": {
+    "eyebrow": "Bewerbung",
+    "title": "als Pflegefachkraft in der ambulanten Pflege",
+    "org": "bei der Sozialstation Musterstadt",
+    "name": "Mara",
+    "contact": [
+     "Musterweg 1",
+     "12345 Musterstadt",
+     "Telefon 0123 456789"
+    ],
+    "contents": [
+     "Anschreiben",
+     "Lebenslauf",
+     "Examenszeugnis",
+     "Arbeitszeugnisse"
+    ]
+   }
+  },
+  {
+   "id": "anschreiben",
+   "layout": "letter",
+   "content": {
+    "sender": "Mara",
+    "senderLine": "Mara, Musterweg 1, 12345 Musterstadt",
+    "to": "Sozialstation Musterstadt\nPflegedienstleitung\nMarktplatz 3\n12345 Musterstadt",
+    "info": [
+     {
+      "label": "Telefon",
+      "value": "0123 456789"
+     },
+     {
+      "label": "Web",
+      "value": "example.com/mara"
+     },
+     {
+      "label": "Datum",
+      "value": "8. Oktober 2026"
+     }
+    ],
+    "subject": "Bewerbung als Pflegefachkraft in der ambulanten Pflege (Kennziffer PF-26-14)",
+    "salutation": "Sehr geehrte Damen und Herren,",
+    "body": "seit sechs Jahren pflege ich Menschen im Krankenhaus, die letzten zwei davon auf einer geriatrischen Station. Dort habe ich gelernt, wie viel es ausmacht, wenn jemand nach der Entlassung zu Hause gut weiterversorgt wird. Genau das möchte ich bei Ihnen in der ambulanten Pflege tun.\nIch bringe Erfahrung in Wundversorgung, Medikamentenmanagement und der Anleitung von Angehörigen mit. Seit 2024 bin ich Praxisanleiterin und begleite Auszubildende im ersten Einsatz. Einen Führerschein der Klasse B habe ich, die Touren im Landkreis sind für mich also kein Hindernis.\nIch kann zum 1. Januar 2027 beginnen und freue mich auf ein persönliches Gespräch.",
+    "closing": "Mit freundlichen Grüßen",
+    "signature": "Mara",
+    "enclosures": [
+     "Lebenslauf",
+     "Examenszeugnis",
+     "Arbeitszeugnisse"
+    ]
+   }
+  },
+  {
+   "id": "lebenslauf",
+   "layout": "cv",
+   "variant": "side",
+   "content": {
+    "name": "Mara",
+    "role": "Pflegefachfrau und Praxisanleiterin",
+    "profile": "Sechs Jahre Erfahrung in der Akut- und Altenpflege, zuletzt auf einer geriatrischen Station. Ich arbeite ruhig, genau und gern mit Angehörigen zusammen.",
+    "contact": [
+     "Musterweg 1",
+     "12345 Musterstadt",
+     "0123 456789",
+     "example.com/mara"
+    ],
+    "sections": [
+     {
+      "heading": "Berufserfahrung",
+      "entries": [
+       {
+        "period": "2024 – heute",
+        "title": "Pflegefachfrau, Geriatrie",
+        "place": "Klinikum Musterstadt",
+        "text": "Praxisanleiterin für vier Auszubildende pro Jahr."
+       },
+       {
+        "period": "2020 – 2024",
+        "title": "Pflegefachfrau, Innere Medizin",
+        "place": "Klinikum Musterstadt",
+        "text": "Pflege von bis zu zwölf Patientinnen und Patienten pro Schicht, Mitarbeit im Entlassmanagement."
+       }
+      ]
+     },
+     {
+      "heading": "Ausbildung",
+      "entries": [
+       {
+        "period": "2017 – 2020",
+        "title": "Ausbildung zur Pflegefachfrau",
+        "place": "Pflegeschule Musterstadt",
+        "text": "Examen mit der Note 1,7."
+       },
+       {
+        "period": "2017",
+        "title": "Allgemeine Hochschulreife",
+        "place": "Gymnasium Musterstadt"
+       }
+      ]
+     },
+     {
+      "heading": "Weiterbildung",
+      "entries": [
+       {
+        "period": "2024",
+        "title": "Praxisanleitung (300 Stunden)",
+        "place": "Bildungszentrum Musterstadt"
+       }
+      ]
+     }
+    ],
+    "skills": [
+     {
+      "label": "Fachlich",
+      "text": "Wundversorgung, Medikamentenmanagement, Palliativpflege"
+     },
+     {
+      "label": "Sprachen",
+      "text": "Deutsch (Muttersprache), Englisch (B2)"
+     },
+     {
+      "label": "Sonstiges",
+      "text": "Führerschein Klasse B"
+     }
+    ],
+    "signed": "Musterstadt, 8. Oktober 2026"
+   }
+  }
+ ]
+}

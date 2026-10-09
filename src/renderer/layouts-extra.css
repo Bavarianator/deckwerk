@@ -294,3 +294,167 @@
 .flb-facts + .fly-foot { margin-top: 0; } /* Eckdaten und Handlung bilden einen Block am Fuß */
 .flb-fact { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .t.flb-legal { flex: none; margin-top: -8px; color: var(--muted); }
+
+/* ---------- Bewerbung – Deckblatt (A4 hoch): Stelle oben, Foto, Name und Kontakt unten, Inhalt der Mappe daneben ---------- */
+.safe.bw-safe { left: 94px; right: 76px; top: 100px; bottom: 90px; } /* Ränder wie DIN 5008 (links 25 mm, rechts 20 mm): dieselbe Satzkante wie das Anschreiben */
+.bw { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.bw-head { flex: none; display: flex; flex-direction: column; gap: 14px; }
+.t.bw-eyebrow { color: var(--accent); font-size: calc(var(--fs-eyebrow) * 1.25); } /* einziger Akzent der Seite */
+.t.bw-title { line-height: 1.04; }
+.t.bw-org { font-size: calc(var(--fs-body) * 1.25); line-height: 1.3; }
+.bw-foot { flex: none; margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px; align-items: end; }
+.bw-foot.with-toc { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.bw-person { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bw-photo { position: relative; width: 168px; aspect-ratio: 35 / 45; margin-bottom: 24px; } /* Passbild-Format 35 × 45 mm */
+.bw-photo .img { position: absolute; inset: 0; }
+.t.bw-name { margin-bottom: 12px; font-size: calc(var(--fs-h1) * min(var(--hs), 1.25) * 1.2); line-height: 1.08; }
+.t.bw-contact { font-size: calc(var(--fs-label) * 1.15); line-height: 1.45; }
+.bw-toc { display: flex; flex-direction: column; min-width: 0; }
+.t.bw-toc-label { margin-bottom: 10px; }
+.bw-toc-row { position: relative; padding: 9px 0; }
+.bw-toc-row::before, .bw-toc-row:last-child::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }
+.bw-toc-row:last-child::after { top: auto; bottom: 0; }
+.bw-toc-row .t { text-wrap: pretty; }
+
+/* ---------- Urkunde (A4 quer): breiter Rand, Empfänger groß, Ort/Datum und Unterschriftsfelder unten in drei Spalten ---------- */
+.safe.ur-safe { --ur-gap: 48px; left: 104px; right: 104px; top: 88px; bottom: 80px; }
+.ur-logo { flex: none; height: 40px; width: 200px; margin-bottom: 36px; background-repeat: no-repeat; background-position: left center; }
+.ur-head { flex: none; display: flex; flex-direction: column; gap: 12px; }
+.t.ur-eyebrow { color: var(--accent); font-size: calc(var(--fs-eyebrow) * 1.25); letter-spacing: 0.06em; }
+.t.ur-title { font-size: calc(var(--fs-h1) * min(var(--hs), 1.25) * 1.15); }
+.ur-main { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: center; gap: 24px; padding: 36px 0; }
+/* Übergröße schrumpft mit dem Autofit (--head-fit 1 → 0) wie der Flyer-Titel */
+.t.ur-name { font-size: calc(var(--fs-display) * var(--hs) * (1.2 + 0.4 * var(--head-fit, 1))); line-height: 1.04; }
+/* so breit wie zwei Spalten des Unterschriftsrasters */
+.t.ur-text { max-width: calc((100% - 2 * var(--ur-gap)) * 2 / 3 + var(--ur-gap)); font-size: calc(var(--fs-body) * 1.2); line-height: 1.45; text-wrap: pretty; }
+/* Platz zum Unterschreiben über den Linien; Datum und Namen stehen auf einer Grundlinie */
+.ur-foot { flex: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--ur-gap); align-items: start; padding-top: 48px; }
+.t.ur-date { margin-top: 12px; }
+.ur-sign { position: relative; display: flex; flex-direction: column; gap: 2px; padding-top: 12px; }
+.ur-sign::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--text); }
+.t.ur-signer { font-weight: 700; }
+
+/* ---------- Einladung (A4 hoch, druckbar als A5/A6): zwei Pole, Eckdaten als Liste mit Haarlinien ---------- */
+/* Faktoren auf die A4-Schrift (0,65 × Folie, nie unter 12 px): kleinste Schrift ~20 px, auf A6 (50 %) noch ~10 px */
+.safe.inv-safe { left: 64px; right: 64px; top: 64px; bottom: 60px; }
+/* Foto 32 % hoch; bei viel Text gibt es wie der Titel mit dem Autofit nach (--head-fit 1 → 0: bis 24 %) */
+.safe.inv-safe.inv-below { top: calc(24% + 8% * var(--head-fit, 1) + 44px); }
+.inv-media { position: absolute; left: 0; right: 0; top: 0; height: calc(24% + 8% * var(--head-fit, 1)); overflow: hidden; }
+.inv-media .img { position: absolute; inset: 0; background-position: center; }
+/* Abstände schrumpfen mit dem Autofit (Vielfache von --fs-body) */
+.inv { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: calc(var(--fs-body) * 2); }
+.inv-head { flex: 1 0 auto; display: flex; flex-direction: column; gap: calc(var(--fs-body) * 1.25); }
+.t.inv-eyebrow { color: var(--text); font-size: calc(var(--fs-eyebrow) * 1.75); }
+/* Übergröße schrumpft mit dem Autofit (--head-fit 1 → 0) wie .fly-title */
+.t.inv-title { font-size: calc(var(--fs-display) * var(--hs) * (1 + 0.3 * var(--head-fit, 1))); line-height: 1.04; letter-spacing: -0.015em; }
+.inv-type .t.inv-title { font-size: calc(var(--fs-display) * var(--hs) * (1.2 + 0.55 * var(--head-fit, 1))); line-height: 1; } /* ohne Foto trägt der Titel die Seite */
+.t.inv-text { font-size: calc(var(--fs-body) * 1.5); line-height: 1.38; text-wrap: pretty; }
+.t.inv-host { font-size: calc(var(--fs-body) * 1.5); color: var(--muted); }
+.inv-end { flex: none; display: flex; flex-direction: column; }
+.inv-fact { position: relative; display: grid; grid-template-columns: 26% minmax(0, 1fr); gap: 24px; align-items: baseline; padding: calc(var(--fs-body) * 0.9) 0; }
+.inv-fact::before, .inv-fact:last-child::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }
+.inv-fact:last-child::after { top: auto; bottom: 0; }
+.t.inv-label { font-size: calc(var(--fs-label) * 1.7); color: var(--muted); }
+.t.inv-value { font-size: calc(var(--fs-h3) * 1.7); text-wrap: pretty; }
+/* Antwort: QR-Code, daneben die Bitte groß in Akzentfarbe (die einzige Farbe auf der Karte), Logo rechts */
+.inv-foot { display: flex; align-items: center; gap: 28px; padding-top: calc(var(--fs-body) * 1.6); }
+.inv-qr { flex: none; display: block; width: 120px; height: 120px; overflow: hidden; }
+.t.inv-rsvp { flex: 1; color: var(--accent); font-size: calc(var(--fs-h2) * 1.5); line-height: 1.18; }
+.inv-logo { flex: none; margin-left: auto; height: 40px; width: 150px; background-repeat: no-repeat; background-position: right center; }
+
+/* ---------- Brief (A4 hoch, DIN 5008 Form B): Felder in mm an fester Stelle, nur die Schrift passt sich an ---------- */
+.safe.bf-safe { inset: 0; } /* Koordinaten = Seitenkoordinaten */
+/* Falzmarken bei 105 und 210 mm, Lochmarke bei 148,5 mm (etwas länger) */
+.bf-marks { position: absolute; left: 0; top: 0; bottom: 0; width: 6mm; pointer-events: none;
+  background: linear-gradient(var(--muted), var(--muted)) 0 105mm / 4mm 1px no-repeat, linear-gradient(var(--muted), var(--muted)) 0 148.5mm / 6mm 1px no-repeat, linear-gradient(var(--muted), var(--muted)) 0 210mm / 4mm 1px no-repeat; }
+.bf-head { position: absolute; left: 25mm; right: 20mm; top: 14mm; display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; }
+.t.bf-sender { color: var(--accent); } /* die einzige Akzentfarbe des Briefs */
+.bf-logo { flex: none; width: 50mm; height: 14mm; background-repeat: no-repeat; background-position: right top; }
+/* Anschriftfeld 85 × 45 mm ab 20 mm links und 45 mm oben; Text bündig zum linken Rand bei 25 mm */
+.bf-window { position: absolute; left: 20mm; top: 45mm; width: 85mm; height: 45mm; padding-left: 5mm; display: flex; flex-direction: column; }
+.bf-note { flex: none; height: 17.7mm; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 1.5mm; } /* Zusatz- und Vermerkzone, Rücksendeangabe unten */
+.bf-to { flex: none; height: 27.3mm; overflow: hidden; } /* Anschriftzone: 6 Zeilen */
+.t.bf-addr { font-size: min(var(--fs-body), 15px); line-height: 1.12; }
+.bf-info { position: absolute; left: 125mm; top: 50mm; width: 75mm; height: 40mm; overflow: hidden; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; align-content: start; }
+.bf-row { display: contents; }
+/* Betreff 2 Leerzeilen unter dem Anschriftfeld (98,46 mm), Rand links 25 mm, rechts 20 mm; Leerzeilen in em, damit sie mit dem Autofit schrumpfen */
+.bf-text { position: absolute; left: 25mm; right: 20mm; top: 98.46mm; bottom: 10mm; display: flex; flex-direction: column; gap: 6mm; }
+.bf-main { flex: 1; min-height: 0; overflow: hidden; }
+.t.bf-bold { font-weight: 700; } /* Betreff und „Anlagen“ */
+.t.bf-gap { margin-top: 1.38em; }
+.t.bf-sign { margin-top: 4.1em; } /* drei Leerzeilen Platz für die Unterschrift */
+.bf-foot { flex: none; position: relative; padding-top: 3mm; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
+.bf-foot::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }
+
+/* ---------- Visitenkarte (85 × 55 mm): zwei Pole, nur Typografie; Rand 24 px ≈ 6 mm (Lint-Grenze für Text) ---------- */
+.safe.vk-safe { left: 24px; right: 24px; top: 24px; bottom: 24px; }
+.vk { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+.vk-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.vk-who { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.t.vk-name { font-size: var(--fs-display); line-height: 1.08; } /* ohne Plakat-Faktor: ~15 pt reichen, zwei Wörter bleiben in einer Zeile */
+.t.vk-role { color: var(--accent); font-weight: 700; }
+.vk-contact { display: flex; flex-direction: column; }
+.t.vk-org { font-weight: 700; margin-bottom: 2px; }
+.vk-logo { flex: none; width: 72px; height: 22px; } /* rechts oben bündig: focus am Img, wirkt auch in der PPTX */
+.vk-mark { flex: none; width: 160px; height: 44px; } /* links oben bündig mit claim und Rand: focus am Img */
+.vk-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+.t.vk-claim { max-width: 200px; text-wrap: pretty; }
+.vk-qr { flex: none; display: block; width: 80px; height: 80px; overflow: hidden; } /* ≈ 21 mm samt Ruhezone: Muster ab ~15 mm scannt sicher */
+
+/* ---------- Lebenslauf (A4 hoch): Seitenspalte oder tabellarisch; nur Typografie und Haarlinien, keine Balken für Kenntnisse ---------- */
+.safe.cv-safe { left: 56px; right: 56px; top: 60px; bottom: 52px; }
+.cv { flex: 1; min-height: 0; }
+.cv-sidebar { display: grid; grid-template-columns: 180px minmax(0, 1fr); column-gap: 44px; }
+.cv-sidebar.cv-solo { grid-template-columns: minmax(0, 1fr); }
+.cv-aside, .cv-main, .cv-table { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 20px; }
+.cv-aside > *, .cv-main > *, .cv-table > * { flex: none; } /* nichts schrumpft: Überlauf soll der Autofit sehen */
+.cv-photo { position: relative; width: 100%; aspect-ratio: 7 / 9; overflow: hidden; }
+.cv-photo .img { position: absolute; inset: 0; background-position: 50% 30%; } /* Porträt: Gesicht im oberen Drittel */
+.cv-head { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.t.cv-name { font-size: calc(var(--fs-h1) * 1.25); line-height: 1.08; }
+.t.cv-role { color: var(--accent); }
+.t.cv-profile { font-size: max(12px, calc(var(--fs-body) * 0.875)); } /* Einleitung, aber kein Folientext: eine Stufe über den Stationen */
+.cv-contact { display: flex; flex-direction: column; gap: 3px; }
+.cv-sec { position: relative; padding-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.cv-sec::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--border); }
+.t.cv-heading { color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+.cv-entry { display: grid; align-items: baseline; }
+.cv-entry .t { text-wrap: pretty; }
+.cv-what { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.t.cv-key { color: var(--muted); font-variant-numeric: tabular-nums; }
+/* side: Zeitraum rechts in der Titelzeile, Ort und Satz darunter über die ganze Breite */
+.cv-main .cv-entry { grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; row-gap: 1px; }
+.cv-main .cv-what { display: contents; }
+.cv-main .cv-what > .t { grid-column: 1 / -1; }
+.cv-main .cv-what > .cv-title { grid-column: 1; grid-row: 1; }
+.cv-main .t.cv-key { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; }
+/* Kenntnisse in der Seitenspalte: Bezeichnung über dem Text */
+.cv-aside .cv-entry { gap: 1px; }
+.cv-aside .t.cv-key { color: var(--text); font-weight: 700; }
+/* plain: Kopf mit Foto rechts, darunter eine Tabelle mit Zeitraum in der schmalen Spalte links */
+.cv-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; }
+.cv-top .cv-head { flex: 1; }
+.cv-table { gap: 14px; } /* einspaltig steht alles untereinander: engerer Takt, Abschnitte trennt die Haarlinie */
+.cv-table .cv-sec { gap: 8px; }
+.cv-table .cv-photo { flex: none; width: 108px; }
+.cv-table .cv-contact { flex-direction: row; flex-wrap: wrap; gap: 2px 20px; margin-top: 6px; }
+.cv-table .cv-entry { grid-template-columns: 140px minmax(0, 1fr); column-gap: 24px; }
+.t.cv-signed { margin-top: auto; } /* Ort und Datum am Seitenende wie unter einem Brief */
+
+/* ---------- Speisekarte (A4 hoch): Präfix sk-, weil .menu ein UI-Klassenname ist. Keine Punktreihen: der Weißraum führt das Auge zum Preis ---------- */
+.sk-head { flex: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: calc(var(--fs-body) * 2); }
+.t.sk-eyebrow { color: var(--text); font-size: calc(var(--fs-eyebrow) * 1.2); }
+.t.sk-title { font-size: calc(var(--fs-h1) * min(var(--hs), 1.25) * (1.3 + 0.5 * var(--head-fit, 1))); line-height: 1.04; } /* Übergröße schrumpft mit dem Autofit wie .flb-title */
+.t.sk-intro { max-width: 540px; text-wrap: pretty; }
+.sk { flex: 1; min-height: 0; overflow: hidden; }
+.sk-cols.two { column-count: 2; column-gap: 40px; }
+.sk-sec { position: relative; padding-top: calc(var(--fs-body) * 0.8); }
+.sk-sec + .sk-sec { margin-top: calc(var(--fs-body) * 1.4); }
+.sk-sec::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.25; }
+.t.sk-sec-head { color: var(--accent); font-size: calc(var(--fs-h2) * 1.15); margin-bottom: calc(var(--fs-body) * 0.3); break-after: avoid; } /* Abschnitte brechen über die Spalte (sonst gleichen drei gleich lange nicht aus), die Überschrift bleibt am ersten Gericht */
+.sk-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; row-gap: 2px; align-items: baseline; padding: calc(var(--fs-body) * 0.4) 0; break-inside: avoid; }
+.sk-name { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; min-width: 0; }
+.sk-item .r-h3 { font-size: calc(var(--fs-h3) * 1.15); }
+.t.sk-price { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.t.sk-text { grid-column: 1 / -1; font-size: calc(var(--fs-small) * 1.08); text-wrap: pretty; } /* volle Breite: in zwei Spalten bliebe neben dem Preis zu wenig Platz */
+.t.sk-note { flex: none; margin-top: 20px; }

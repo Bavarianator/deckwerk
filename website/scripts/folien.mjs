@@ -38,10 +38,12 @@ const JOBS = [
   ...THEMES.map((t) => ({ name: `look-${t}`, deck: example('strategie'), slides: [1, 5, 4], theme: { id: t } })),
   { name: 'format-16-9', deck: example('foto'), slides: [2] },
   ...Object.entries(SIZES).map(([f, size]) => ({ name: `format-${f.replace(':', '-')}`, deck: example('foto'), slides: [2], size })),
+  // Drucksachen (Beispiele, Abschnitt „Auch auf Papier“): die Bewerbung ganz, Visitenkarte vorn und hinten, sonst die erste Seite
+  ...['bewerbung', 'urkunde', 'einladung', 'speisekarte', 'visitenkarte'].map((name) => ({ name: `druck-${name}`, deck: example(name), slides: { bewerbung: [1, 2, 3], visitenkarte: [1, 2] }[name] ?? [1] })),
   { name: 'pruefung', deck: example('quartal'), slides: [1, 2, 6, 2, 8], images: false }, // nur der Lint-Auszug: drei Listen hintereinander
 ]
 
-const titleOf = (c = {}) => String(c.title ?? c.label ?? c.text ?? '').replace(/\*\*/g, '')
+const titleOf = (c = {}) => String(c.title ?? c.subject ?? c.name ?? c.label ?? c.text ?? '').replace(/\*\*/g, '') // subject: Brief, name: Lebenslauf, Visitenkarte
 const manifest = { decks: {}, folien: {}, lint: [] }
 
 for (const job of JOBS) {

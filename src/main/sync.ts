@@ -20,7 +20,8 @@ const SKIP = new Set(['versions', 'out', 'models', 'fonts', '.import', 'exports'
 // Systemdateien von Windows, macOS und Cloud-Apps (Ordnersymbol, Vorschaubilder) gehören zu keinem Deck: auf beiden Seiten
 // übergehen, sonst landen sie in ~/Deckwerk bzw. würden lokal gelöscht, wenn nur eine Seite sie zeigt
 const JUNK = new Set(['desktop.ini', 'thumbs.db', 'icon\r'])
-const skip = (name: string) => name.startsWith('.') || SKIP.has(name) || JUNK.has(name.toLowerCase())
+// `\` trennt unter Windows Ordner: ein href wie x%5C..%5C..%5CAppData/… schriebe sonst außerhalb von ~/Deckwerk (auch hier beidseitig)
+const skip = (name: string) => name.startsWith('.') || name.includes('\\') || SKIP.has(name) || JUNK.has(name.toLowerCase())
 
 /** Ordner-Zugang (file:-Adresse, Groß- und Kleinschreibung egal) statt WebDAV-Server */
 export const isFolder = (url: string) => { try { return new URL(url.trim()).protocol === 'file:' } catch { return false } }

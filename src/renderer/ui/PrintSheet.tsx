@@ -1,11 +1,11 @@
-// PDF für die Druckerei: Endformat (A4, A5, A3) und Beschnitt je Druckerei wählen, dann exportieren.
+// PDF für die Druckerei: Endformat (A2 bis A6, nur bei A4-Decks; die Visitenkarte druckt in ihrer Größe) und Beschnitt je Druckerei wählen, dann exportieren.
 // Seite = Endformat + Beschnitt ringsum; die Auswahl wird für das nächste Mal gemerkt.
 import { useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
-import { PRINT_SIZES, sizeOf, type Deck, type PrintOptions } from '../../shared/deck'
+import { isA4, PRINT_SIZES, sizeOf, type Deck, type PrintOptions } from '../../shared/deck'
 
 type Size = keyof typeof PRINT_SIZES
-const SIZES: Size[] = ['a4', 'a5', 'a3']
+const SIZES: Size[] = ['a4', 'a5', 'a6', 'a3', 'a2']
 const SHOPS: { bleed: number; name: string; hint: string }[] = [
   { bleed: 3, name: 'WIRmachenDRUCK oder andere', hint: '3 mm Beschnitt' },
   { bleed: 2, name: 'Saxoprint, Onlineprinters', hint: '2 mm Beschnitt' },
@@ -28,11 +28,11 @@ export function PrintSheet({ deck, onExport, onClose }: Props) {
   const box = useRef<HTMLDivElement>(null)
   useEffect(() => box.current?.focus(), [])
   const { w, h } = sizeOf(deck)
-  const quer = w > h
+  const quer = w > h, a4 = isA4({ w, h })
   const n = deck.slides.length
   const go = () => {
     try { localStorage.setItem(KEY, JSON.stringify({ size, bleed })) } catch { /* Wahl gilt nur diesmal */ }
-    onExport({ size, bleed })
+    onExport({ size: a4 ? size : undefined, bleed })
     onClose()
   }
 
@@ -49,7 +49,7 @@ export function PrintSheet({ deck, onExport, onClose }: Props) {
           <h1>Druckfertig, mit Beschnitt.</h1>
           <p>Seite = Endformat + Beschnitt ringsum, ohne Schnittmarken. Randabfallende Fotos laufen in den Beschnitt. Farben bleiben RGB: Flyeralarm, Saxoprint, WIRmachenDRUCK und Onlineprinters wandeln selbst nach CMYK, leuchtende Akzente werden dabei etwas matter. print24 verlangt CMYK-Daten. Vor einer großen Auflage einen Probedruck bestellen.</p>
           {n > 2 && <p>Das Deck hat {n} Seiten. Ein Flyer hat 1 Seite, beidseitig 2 (Vorder- und Rückseite). Nicht gewählte Entwürfe vorher löschen.</p>}
-          <div className="fmt-list" role="radiogroup" aria-label="Endformat">
+          {a4 && <div className="fmt-list" role="radiogroup" aria-label="Endformat">
             {SIZES.map((id) => {
               const [mw, mh] = PRINT_SIZES[id]
               const k = 26 / Math.max(mw, mh)
@@ -61,7 +61,7 @@ export function PrintSheet({ deck, onExport, onClose }: Props) {
                 </button>
               )
             })}
-          </div>
+          </div>}
           <div className="fmt-list" role="radiogroup" aria-label="Druckerei und Beschnitt">
             {SHOPS.map((s) => (
               <button key={s.bleed} role="radio" aria-checked={bleed === s.bleed} className={bleed === s.bleed ? 'on' : ''} onClick={() => setBleed(s.bleed)}>
