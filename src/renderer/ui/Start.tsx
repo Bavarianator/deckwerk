@@ -58,7 +58,7 @@ const EXAMPLES: [string, string, string?][] = [
 // Video-Chips: Label, Wunsch im Feld, ask geht unsichtbar an die KI (Abläufe: Design-Guide §11)
 export const VIDEO_EXAMPLES: [string, string, string][] = [
   ['5 Shorts', 'Mach aus meinem Video 5 Shorts mit Hook und Untertiteln.',
-    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (ideal 25–50 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, style lebendig, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (ideal 55–75 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, style lebendig, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
   ['Ganzes Video kürzen', 'Kürze mein ganzes Video: Füllsätze, Versprecher und Abschweifungen raus.',
     'Ablauf Fulltime (Guide §11, Ablauf 2): create_deck format 16:9, transition none. transcribe_video mit all: true über alles, Gestrichenes kurz nennen. Eine einzige clip-Folie mit allen behaltenen Ausschnitten als parts, pauses kurz, captions satz, kein Hook. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
   ['Highlights aus dem Stream', 'Finde die besten Momente in meinem Stream und mach daraus Shorts.',
