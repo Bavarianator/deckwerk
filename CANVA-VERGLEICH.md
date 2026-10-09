@@ -90,7 +90,7 @@ Canva bietet außer Präsentationen und Flyern vor allem Lebenslauf, Bewerbung, 
 | Visitenkarte | `business-card` (Vorder- und Rückseite) | 85 × 55 mm |
 | Poster | `flyer`, Druck als A3/A2 | A4 |
 
-Bewusst weggelassen: Infografik (eigenes Langformat), weitere Social-Größen (Pinterest, LinkedIn-Banner; 1:1, 4:5, 9:16 und 1200×630 decken das Meiste ab), Video, Whiteboard, Website. Offen: Stresstest der neuen Layouts über alle Themes.
+Bewusst weggelassen: Infografik (eigenes Langformat), weitere Social-Größen (Pinterest, LinkedIn-Banner; 1:1, 4:5, 9:16 und 1200×630 decken das Meiste ab), Video, Whiteboard, Website. Stresstest 09.10.: 1200/1200 Kombinationen über alle Themes sauber; nur die max-Fälle von Brief und einspaltiger Speisekarte brauchen die kleinste Textstufe.
 
 ## 1. Kurzfazit
 
