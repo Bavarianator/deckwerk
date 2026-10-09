@@ -18,6 +18,8 @@ export const TOOL: Record<string, string> = {
   find_images: 'Bilder suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
   cli_run: 'Denkt nach', // Vibe/Codex laufen (claude-agent.ts)
   auto_model: 'Modell gewählt', // Auto: welches Modell Deckwerk für diesen Auftrag nimmt
+  router: 'Auftrag eingeordnet', // Gesprächsstart: Haiku wählt die Teile des Leitfadens
+  read_guide: 'Leitfaden lesen',
 }
 
 // Was das Modell-Dropdown anbietet (App lädt es aus Main); null = noch nicht geladen, dann nur Claude

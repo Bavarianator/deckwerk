@@ -8,7 +8,7 @@ import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } f
 import type { Issue } from '../shared/lint'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
-import { corePrompt, modulesText, type Route } from './guide-modules'
+import { corePrompt, leitfaden, type Route } from './guide-modules'
 import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
@@ -69,9 +69,9 @@ export async function catalogThumbnails(engine: Engine, modules: string[]): Prom
 // Erste Nachricht: die vom Router gewählten Module und Vorschaubilder ihrer Layouts vor dem Nutzertext. Der ganze erste Turn
 // bleibt danach unverändert (append-only) → zweiter Cache-Breakpoint an seinem Ende. Ohne Route: Index im Kernprompt + read_guide.
 export function firstTurn(text: string, route: Route | undefined, thumbs: BetaContentBlockParam[]): BetaMessageParam {
-  const mods = route ? modulesText(route.modules) : ''
+  const lead = leitfaden(route)
   const blocks = [
-    ...(mods ? [{ type: 'text', text: `<leitfaden>\nFür diesen Auftrag ausgewählt (Router): ${route?.modules.join(', ')}. Weitere Module mit read_guide.\n\n${mods}\n</leitfaden>` }] : []),
+    ...(lead ? [{ type: 'text', text: lead }] : []),
     ...(thumbs.length ? [...thumbs, { type: 'text', text: 'Vorschau der gewählten Layouts (typische Füllung, Theme beratung). Zeigt nur die Anordnung; Farbe, Schrift und Struktur kommen aus deinem eigenen Design. Nicht kommentieren.' }] : []),
   ] as BetaContentBlockParam[]
   if (!blocks.length) return { role: 'user', content: text }
