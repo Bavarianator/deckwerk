@@ -276,7 +276,7 @@ const invitation = z.object({
     label: z.string().min(1).max(14).describe('z. B. Wann, Wo, Dresscode'),
     value: z.string().min(1).max(60).describe('z. B. „Samstag, 4. Juli, ab 18 Uhr“ oder die Adresse'),
   })).min(1).max(4).describe('Eckdaten: mindestens Wann (Wochentag, Datum, Uhrzeit) und Wo'),
-  rsvp: z.string().max(100).optional().describe('Bitte um Antwort mit Frist und Weg, z. B. „Bitte sagt bis 1. Juli zu“'),
+  rsvp: z.string().max(80).optional().describe('Bitte um Antwort mit Frist und Weg, z. B. „Bitte sagt bis 1. Juli zu“'),
   host: z.string().max(60).optional().describe('wer einlädt, z. B. „Das Team der Praxis am Markt“'),
   image: photo.optional().describe('Foto oben (Ort, Menschen, Anlass); weglassen = typografische Karte'),
   qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code (Zusage, Anfahrt); je kürzer, desto sicherer der Scan im Druck'),
@@ -284,7 +284,7 @@ const invitation = z.object({
 
 // Visitenkarte (85 × 55 mm): Vorder- und Rückseite zeigen denselben Inhalt. Auf der Karte ist nur der Name größer als 12 px.
 const businessCard = z.object({
-  name: z.string().min(1).max(32).describe('Vor- und Nachname, z. B. „Mara Beispiel“; unbekannt = Platzhalter „[Vorname Nachname]“'),
+  name: z.string().min(1).max(32).describe('Vor- und Nachname; unbekannt = Platzhalter „[Vorname Nachname]“'),
   role: z.string().max(40).optional().describe('Funktion oder Beruf, z. B. „Projektleitung“'),
   org: z.string().max(40).optional().describe('Organisation oder Firma; auf der Rückseite groß, solange das Brand-Kit kein Logo hat'),
   lines: z.array(z.string().min(1).max(36)).max(4).optional().describe('0–4 Kontaktzeilen, eine Angabe pro Zeile ohne Icons oder Kürzel davor: Telefon, E-Mail, Web, Adresse. Nie erfinden'),
@@ -440,7 +440,7 @@ export const EXTRA_LAYOUTS = {
   }),
   flyer: L({
     id: 'flyer', name: 'Flyer (A4)', variants: ['top', 'full'], sizes: ['a4'],
-    when: 'Nur A4 hoch: Flyer, Handzettel, Plakat, Einladung. Eine Seite, eine Botschaft: Schlagzeile mit Nutzen, ein Satz Unterzeile, 2–4 kurze Gründe, klare Handlungsaufforderung (cta), Kontakt und QR-Code zur Webseite oder Anmeldung. Variante top = Foto in der oberen Hälfte (Standard), full = Foto über die ganze Seite, Text unten auf dem Foto (nur mit ruhiger unterer Bildhälfte wie Himmel, Wand oder Tisch, sonst top). Ohne Foto typografisch: Schlagzeile übergroß; mit tone accent oder invert wird daraus ein farbiger Flyer.',
+    when: 'Nur A4 hoch: Flyer, Handzettel, Plakat (persönliche Einladung → invitation). Eine Seite, eine Botschaft: Schlagzeile mit Nutzen, ein Satz Unterzeile, 2–4 kurze Gründe, klare Handlungsaufforderung (cta), Kontakt und QR-Code zur Webseite oder Anmeldung. Variante top = Foto in der oberen Hälfte (Standard), full = Foto über die ganze Seite, Text unten auf dem Foto (nur mit ruhiger unterer Bildhälfte wie Himmel, Wand oder Tisch, sonst top). Ohne Foto typografisch: Schlagzeile übergroß; mit tone accent oder invert wird daraus ein farbiger Flyer.',
     schema: flyer, defaultBuild: 'fade', footer: false,
     samples: {
       min: { title: 'Sommerfest am Freitag', cta: 'Alle sind eingeladen' },
@@ -646,7 +646,7 @@ export const EXTRA_LAYOUTS = {
         facts: [{ label: 'Wann', value: 'Samstag, 4. Juli, ab 18 Uhr' }, { label: 'Wo', value: 'Praxis am Markt, Musterweg 1, 12345 Musterstadt' }, { label: 'Dresscode', value: 'Sommerlich' }],
         rsvp: 'Bitte sagt bis 20. Juni zu, gern über den QR-Code.', host: 'Das Team der Praxis am Markt', qr: 'https://example.com/zusage',
       },
-      max: { eyebrow: words(40), title: words(60), text: words(240), facts: rep(4, (i) => ({ label: words(14, i), value: words(60, i) })), rsvp: words(100), host: words(60), image: { src: '' }, qr: 'https://example.com/zusage' },
+      max: { eyebrow: words(40), title: words(60), text: words(240), facts: rep(4, (i) => ({ label: words(14, i), value: words(60, i) })), rsvp: words(80), host: words(60), image: { src: '' }, qr: 'https://example.com/zusage' },
     },
   }),
   letter: L({
