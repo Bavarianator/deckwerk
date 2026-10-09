@@ -46,9 +46,9 @@ export const tighten = (parts: Part[], quiet: Quiet[]): Part[] => parts.flatMap(
 /** Füllwörter in from–to als Stillen für tighten(). Nur Segmente mit echten Wortzeiten, geschätzte träfen Nachbarwörter.
  *  Je Seite PAD breiter: padParts gibt an jedem Schnitt PAD zurück, sonst bliebe ein kurzes „äh“ ganz stehen. */
 export function fillerQuiet(t: Transcript, from: number, to: number): Quiet[] {
-  const de = t.lang.startsWith('de') // „um“ ist im Deutschen meist Präposition
+  const en = t.lang.startsWith('en') // „um“ ist nur im Englischen ein Füllwort, im Deutschen (und bei lang 'auto') meist Präposition
   return t.segments.flatMap((s) => s.words ?? [])
-    .filter((w) => w.end > from && w.start < to && FILLERS.test(w.w) && !(de && /^um$/i.test(w.w.replace(/[\p{P}\s]/gu, ''))))
+    .filter((w) => w.end > from && w.start < to && FILLERS.test(w.w) && (en || !/^um$/i.test(w.w.replace(/[\p{P}\s]/gu, ''))))
     .map((w): Quiet => [Math.max(from, w.start - PAD), Math.min(to, w.end + PAD)])
 }
 
@@ -170,6 +170,7 @@ if (typeof process !== 'undefined' && process.env.DW_VIDEO_SELFTEST) {
   const q = fillerQuiet(t, 0, 10)
   if (q.length !== 2 || q[0][0] !== 1 - PAD || q[1][1] !== 2.3 + PAD) throw new Error('fillerQuiet ' + JSON.stringify(q))
   if (fillerQuiet({ ...t, lang: 'en' }, 0, 10).length !== 3 || fillerQuiet(t, 1.6, 10).length !== 1) throw new Error('fillerQuiet en/Bereich')
+  if (fillerQuiet({ ...t, lang: 'auto' }, 0, 10).length !== 2) throw new Error('fillerQuiet: „um“ bei unbekannter Sprache geschnitten')
   if (FILLERS.test('ähnlich') || FILLERS.test('Hummel') || !FILLERS.test('Ähm...')) throw new Error('FILLERS')
   console.log('video ok')
 }
