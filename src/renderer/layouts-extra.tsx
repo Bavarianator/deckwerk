@@ -556,7 +556,9 @@ function Logos({ c }: Props<'logos'>) {
 // Standbild per asset://…?frame=<s> (ffmpeg, index.ts) als CSS-Hintergrund, kein <video>: im Offscreen-Fenster hängt das Spulen. Ohne data-pptx landet es im Hintergrund-PNG statt als Video im PPTX.
 function Clip({ c }: Props<'clip'>) {
   const { theme } = useSlide()
-  const d = withTone(theme, 'accent').c.bg // Akzentton wie bei leerem Foto: Hook-Farbe und Lint-Kontrast stimmen mit Scrim und Platzhalter überein
+  // Dunkler Grund wie im MP4 (Video unverfärbt, Hook hell): auf hellen Themes invertiert, damit Scrim, Hook-Farbe und Lint-Kontrast zusammenpassen
+  const tone = theme.dark ? undefined : 'invert'
+  const d = withTone(theme, tone).c.bg
   const url = c.video.startsWith('/') ? assetOf(c.video) : c.video
   const p0 = c.parts[0]
   const media = (
@@ -566,7 +568,7 @@ function Clip({ c }: Props<'clip'>) {
     </div>
   )
   return (
-    <Frame tone="accent" media={media}>
+    <Frame tone={tone} media={media}>
       <div className="clip">
         {c.hook && <T role="h1" slot="hook" maxLines={4} className="clip-hook">{c.hook}</T>}
       </div>
