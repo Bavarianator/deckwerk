@@ -6,6 +6,11 @@ import { rename, rm } from 'node:fs/promises'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 
+// Im Electron-Hauptprozess über Chromiums Netz (net.fetch): Nodes fetch stürzte dort bei Downloads sporadisch mit SIGTRAP ab
+// (Electron 44, etwa jeder sechste 6-MB-Download). Unter Node (Selbsttests, Worker) bleibt es beim globalen fetch.
+export const httpFetch = async (url: string | URL, init?: RequestInit): Promise<Response> =>
+  process.type === 'browser' ? (await import('electron')).net.fetch(String(url), init as never) : fetch(url, init)
+
 export async function download(url: string, sha256: string, file: string, onProgress: (pct: number) => void = () => {}) {
   // Abbruch erst, wenn 60 s keine Daten kommen: ein fester Gesamt-Timeout brach große Modelle (650 MB) bei langsamer Leitung ab
   const ac = new AbortController()
@@ -13,7 +18,7 @@ export async function download(url: string, sha256: string, file: string, onProg
   const arm = () => { clearTimeout(stall); stall = setTimeout(() => ac.abort(new Error('Download hängt (60 s ohne Daten). Bitte noch einmal versuchen.')), 60_000) }
   arm()
   try {
-    await save(await fetch(url, { signal: ac.signal }), sha256, file, onProgress, arm)
+    await save(await httpFetch(url, { signal: ac.signal }), sha256, file, onProgress, arm)
   } finally {
     clearTimeout(stall)
   }

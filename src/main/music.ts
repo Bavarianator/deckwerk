@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { MEDIA_EXT } from '../shared/deck'
+import { httpFetch } from './download'
 
 export interface Track { id: string; title: string; artist: string; duration: number /* s, 0 = unbekannt */; license: 'cc0' | 'pdm' | 'by'; tags: string[]; url: string /* Openverse-Seite */ }
 
@@ -40,7 +41,7 @@ const track = (h: Hit): Track => ({
 })
 
 async function api<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20_000) })
+  const res = await httpFetch(url, { headers: UA, signal: AbortSignal.timeout(20_000) })
   if (res.status === 429) throw new Error('Openverse-Limit erreicht (anonym 20 Anfragen pro Minute, 200 pro Tag). Kurz warten und es später erneut versuchen.')
   if (!res.ok) throw new Error(`Openverse antwortet ${res.status}: ${(await res.text()).slice(0, 200)}`)
   return (await res.json()) as T
@@ -57,7 +58,7 @@ async function get(url: string): Promise<ReadableStream<Uint8Array>> {
     const u = new URL(url)
     if (u.protocol !== 'https:') throw new Error('Nur https-Downloads.')
     if (/^(localhost|127\.|10\.|0\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[)/i.test(u.hostname)) throw new Error('Adressen im eigenen Netz sind gesperrt.')
-    const res = await fetch(u, { headers: UA, redirect: 'manual', signal: AbortSignal.timeout(120_000) })
+    const res = await httpFetch(u, { headers: UA, redirect: 'manual', signal: AbortSignal.timeout(120_000) })
     const next = res.headers.get('location')
     if (res.status >= 300 && res.status < 400 && next) { url = new URL(next, u).href; continue }
     if (!res.ok || !res.body) throw new Error(`${u.hostname} antwortet ${res.status}.`)
