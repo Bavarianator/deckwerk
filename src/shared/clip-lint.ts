@@ -1,8 +1,8 @@
-// Clip-Lint (Layout clip): prüft Länge, Schnitte, Transkript und Überschneidungen, damit sich die KI beim Schneiden selbst korrigiert. Ohne Electron/Node, läuft in Main und Renderer.
+// Clip-Lint (Layout clip): prüft Länge, Schnitte, Transkript, Überschneidungen und Musik, damit sich die KI beim Schneiden selbst korrigiert. Ohne Electron/Node, läuft in Main und Renderer.
 import type { Issue } from './lint'
-import { PAD, estimateWords, partsLength, type ClipContent, type Part, type Transcript, type Word } from './video'
+import { PAD, estimateWords, mmss, partsLength, type ClipContent, type Part, type Transcript, type Word } from './video'
 
-export interface ClipInfo { duration?: number | null; transcript?: Transcript | null }
+export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[] } // music: je Quellsekunde 0..1 (Signals.music)
 // lintClip kennt die Folie nicht (slide/slideId setzt der Aufrufer); 'info' gibt es nur hier
 export type ClipIssue = Omit<Issue, 'slide' | 'slideId' | 'severity'> & { severity: Issue['severity'] | 'info' }
 
@@ -145,6 +145,14 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
     if (o > 5) add('warn', 'clip-overlap', `überschneidet sich ${de(o, 0)} s mit Clip ${k + 1} (gleiches Video) – andere Stelle wählen`)
   })
 
+  // Fremde Hintergrundmusik bringt Copyright-Strikes; volle Quellsekunden zählen je einmal, auch in überlappenden Ausschnitten
+  if (info.music) {
+    const secs = new Set<number>()
+    let first = Infinity // Schleife statt Math.min(...secs): Spread sprengt bei sehr vielen Sekunden den Stack
+    for (const { p } of use) for (let s = Math.ceil(p.start); s < Math.min(Math.floor(p.end), info.music.length); s++) if (info.music[s] >= 0.5) { secs.add(s); first = Math.min(first, s) }
+    if (secs.size >= 5) add('warn', 'clip-musik', `Musik im Hintergrund (${secs.size} s, u. a. bei ${mmss(first)}) – bei fremder Musik droht ein Copyright-Strike; Stelle meiden oder Musik prüfen`)
+  }
+
   const hookWords = c.hook?.trim().split(/\s+/).filter(Boolean).length ?? 0
   if (short && !hookWords) add('info', 'clip-hook', 'Kein Hook – für Shorts eine Einstiegszeile setzen (3–9 Wörter)')
   if (hookWords > 9) add('info', 'clip-hook', `Hook hat ${hookWords} Wörter – kürzer (3–9 Wörter)`)
@@ -208,6 +216,15 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   const others = [{ video: 'asset://a.mp4', parts: [{ start: 10, end: 40 }] }, { video: 'asset://b.mp4', parts: [{ start: 0, end: 30 }] }, { video: 'asset://a.mp4', parts: [{ start: 27, end: 33 }] }, { video: ok.video, parts: [{ start: 0, end: 30 }] }]
   eq(lintClip(ok, tall, { transcript: clean }, others, 3).map((x) => x.message), ['überschneidet sich 20 s mit Clip 1 (gleiches Video) – andere Stelle wählen'], 'andere Clips, self')
   eq(msgs(lintClip(ok, tall, { transcript: clean }, others), 'clip-overlap').length, 2, 'andere Clips ohne self')
+
+  // Musik: Sekunden der Ausschnitte mit Musik ≥ 0,5, überlappende Ausschnitte zählen einmal, ab 5 s
+  const music = Array.from({ length: 100 }, (_, k) => (k >= 62 && k < 74 ? 0.8 : k >= 40 && k < 45 ? 0.5 : 0.3))
+  const strike = (s: number, at: string) => [`Musik im Hintergrund (${s} s, u. a. bei ${at}) – bei fremder Musik droht ein Copyright-Strike; Stelle meiden oder Musik prüfen`]
+  eq(msgs(lintClip({ ...ok, parts: [{ start: 60, end: 70.5 }, { start: 65, end: 80 }] }, wide, { transcript: clean, music }), 'clip-musik'), strike(12, '1:02'), 'Musik überlappend')
+  eq(msgs(lintClip({ ...ok, parts: [{ start: 30, end: 58 }] }, tall, { transcript: clean, music }), 'clip-musik'), strike(5, '0:40'), 'Musik 5 s')
+  eq(msgs(lintClip({ ...ok, parts: [{ start: 30, end: 44 }] }, tall, { transcript: clean, music }), 'clip-musik'), [], 'Musik 4 s')
+  eq(msgs(lintClip({ ...ok, parts: [{ start: 40.5, end: 50 }] }, tall, { transcript: clean, music }), 'clip-musik'), [], 'Musik nach innen gerundet')
+  eq(msgs(lintClip({ ...ok, parts: [{ start: 95, end: 1e9 }] }, wide, { transcript: clean, music: music.map(() => 0.9).slice(0, 98) }), 'clip-musik'), [], 'Musik nur bis Signalende')
 
   // snapToWords
   const s = snapToWords([{ start: 1.6, end: 4.2, focus: 0.3 }], talk)
