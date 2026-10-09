@@ -41,6 +41,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "sherpa-onnx-node": "^1.13.8",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -74,10 +75,16 @@
       "package.json",
       "!node_modules/**",
       "node_modules/{ajv,ajv-formats,fast-deep-equal,fast-uri,json-schema-traverse,require-from-string,onnxruntime-common}/**",
-      "node_modules/onnxruntime-node/{package.json,dist/**,bin/*/linux/x64/libonnxruntime.so.1,bin/*/linux/x64/onnxruntime_binding.node}"
+      "node_modules/onnxruntime-node/{package.json,dist/**,bin/*/linux/x64/libonnxruntime.so.1,bin/*/linux/x64/onnxruntime_binding.node}",
+      "node_modules/sherpa-onnx-node/**",
+      "node_modules/sherpa-onnx-linux-x64/**",
+      "node_modules/sherpa-onnx-darwin-arm64/**"
     ],
     "asarUnpack": [
       "node_modules/onnxruntime-node/**",
+      "node_modules/sherpa-onnx-node/**",
+      "node_modules/sherpa-onnx-linux-x64/**",
+      "node_modules/sherpa-onnx-darwin-arm64/**",
       "skills/**"
     ],
     "npmRebuild": false,
