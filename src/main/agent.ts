@@ -8,7 +8,7 @@ import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } f
 import type { Issue } from '../shared/lint'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
-import { corePrompt, fullPrompt, modulesText, type Route } from './guide-modules'
+import { corePrompt, modulesText, type Route } from './guide-modules'
 import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
@@ -44,17 +44,13 @@ export interface DeckAgentOptions {
   unsplashKey?: string // default UNSPLASH_ACCESS_KEY
 }
 
-// Bis zum Umbau auf Kernprompt + Module (Router) bekommt der CLI-Weg (claude-agent.ts) weiter den vollen Guide
-export function buildSystemPrompt(): string {
-  return fullPrompt()
-}
 export { corePrompt } from './guide-modules'
 
 const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { type: 'base64', media_type: mimeOf(buf), data: buf.toString('base64') } })
 
 // Beispiel-Deck (typ-Sample) der Layouts unter den Modulen (layout:<id>) rendern → Bilder für den ersten User-Turn
 export async function catalogThumbnails(engine: Engine, modules: string[]): Promise<BetaContentBlockParam[]> {
-  const want = modules.filter((m) => m.startsWith('layout:') && m.slice(7) in LAYOUTS).map((m) => m.slice(7) as LayoutId)
+  const want = modules.filter((m) => m.startsWith('layout:') && Object.hasOwn(LAYOUTS, m.slice(7))).map((m) => m.slice(7) as LayoutId)
   // Layouts mit sizes (A4-Dokumente, Flyer) im eigenen Format zeigen, sonst sieht die KI sie in 16:9; ein Deck je Format
   const fmt = (id: LayoutId): FormatId => (LAYOUTS[id] as { sizes?: FormatId[] }).sizes?.[0] ?? '16:9'
   const pngs = new Map<LayoutId, Buffer>()
