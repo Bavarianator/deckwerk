@@ -1,0 +1,45 @@
+{
+ "title": "Einladung",
+ "size": { "w": 794, "h": 1123 },
+ "theme": { "id": "editorial" },
+ "slides": [
+  { "id": "jubilaeum", "layout": "invitation",
+   "content": {
+    "eyebrow": "Einladung",
+    "title": "Wir feiern 25 Jahre Praxis am Markt",
+    "text": "Seit 25 Jahren sind wir für euch da. Das möchten wir mit allen feiern, die uns auf diesem Weg begleitet haben – mit Musik, Essen und guten Gesprächen.",
+    "host": "Das Team der Praxis am Markt",
+    "facts": [
+     { "label": "Wann", "value": "Samstag, 4. Juli, ab 18 Uhr" },
+     { "label": "Wo", "value": "Praxis am Markt, Musterweg 1, 12345 Musterstadt" },
+     { "label": "Dresscode", "value": "Sommerlich" }
+    ],
+    "rsvp": "Bitte sagt bis 20. Juni zu, gern über den QR-Code.",
+    "qr": "https://example.com/zusage"
+   } },
+  { "id": "eroeffnung", "layout": "invitation",
+   "content": {
+    "eyebrow": "Tag der offenen Tür",
+    "title": "Ihr seid unsere ersten Gäste",
+    "text": "Nach einem halben Jahr Umbau öffnet unser Café am Markt. Am Eröffnungstag gibt es Kaffee und Kuchen für alle, die vorbeischauen.",
+    "host": "Lena und Jonas",
+    "image": { "src": "assets/cafe-tisch.jpg", "focus": "bottom" },
+    "facts": [
+     { "label": "Wann", "value": "Sonntag, 6. September, 10 bis 16 Uhr" },
+     { "label": "Wo", "value": "Café am Markt, Musterweg 1, 12345 Musterstadt" }
+    ],
+    "rsvp": "Keine Anmeldung nötig, kommt einfach vorbei."
+   } },
+  { "id": "save-the-date", "layout": "invitation", "tone": "accent",
+   "content": {
+    "eyebrow": "Save the Date",
+    "title": "Wir heiraten",
+    "text": "Haltet euch den Tag frei. Die Einladung mit allen Einzelheiten folgt im Frühjahr.",
+    "host": "Mia und Ben",
+    "facts": [
+     { "label": "Wann", "value": "Samstag, 12. Juni 2027" },
+     { "label": "Wo", "value": "Musterstadt" }
+    ]
+   } }
+ ]
+}
