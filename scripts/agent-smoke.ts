@@ -30,7 +30,7 @@ const fails = async (p: Promise<unknown>, re: RegExp) => { try { await p } catch
 const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 
-assert.equal(tools.length, 18)
+assert.equal(tools.length, 21)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
 {
   const log: string[] = [], lock = { tail: Promise.resolve() as Promise<unknown> }
@@ -218,19 +218,34 @@ assert.match((await run('export_deck', { format: 'pptx' })).text, /deck\.pptx/)
 assert.match((await run('export_deck', { format: 'zip' })).text, /deck\.zip/)
 assert.match((await run('export_deck', { format: 'docx' })).text, /deck\.docx/)
 assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/)
-// Video: ohne engine.video eine klare Meldung; mit Mock-Video läuft das Transkript als Hintergrund-Job („läuft noch“, dann abholen)
+// Video: ohne engine.video eine klare Meldung; mit Mock-Video laufen Transkript, Download und Highlights als Hintergrund-Job („läuft noch“, dann abholen)
 {
   const dir = mkdtempSync(join(tmpdir(), 'dw-video-')), file = join(dir, 'talk.mp4')
   writeFileSync(file, '')
   await fails(run('transcribe_video', { video: file }), /^Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server/)
-  let finish = () => {}
+  await fails(run('import_video', { url: 'https://example.com/v' }), /nur in der Deckwerk-App/)
+  await fails(run('find_music', {}), /query \(suchen\) oder id/)
+  await fails(run('find_music', { id: '../x' }), /Ungültige Openverse-ID/) // vor jedem Netzzugriff
+  let finish = () => {}, loaded = () => {}
+  const spoken = new Promise<void>((ok) => { finish = ok }), imported = new Promise<void>((ok) => { loaded = ok })
+  const seen: unknown[] = []
+  const segs = [{ start: 0, end: 4.2, text: ' Hallo zusammen.' }, { start: 61.2, end: 66.8, text: 'Der Kern.' }]
+  let hl = [{ start: 2832, end: 2892, score: 6.24, why: 'Chat ×4,2 · laut +9 dB' }, { start: 3723, end: 3783, score: 3, why: 'oft gesehen' }]
   const video: VideoTools = {
     probe: async () => ({ duration: 75, w: 1920, h: 1080 }),
     frames: async (_f, times) => times.map(() => PNG),
-    transcribe: (_f, onProgress) => new Promise((ok) => {
+    transcribe: async (_f, onProgress, o) => {
+      seen.push(o)
       onProgress?.(43)
-      finish = () => ok({ duration: 75, lang: 'de', segments: [{ start: 0, end: 4.2, text: ' Hallo zusammen.' }, { start: 61.2, end: 66.8, text: 'Der Kern.' }] })
-    }),
+      await spoken
+      return { duration: 75, lang: 'de', segments: o?.speakers ? segs.map((s, k) => ({ ...s, speaker: k })) : segs }
+    },
+    highlights: async () => hl,
+    importUrl: async (_url, onProgress) => {
+      onProgress?.(12)
+      await imported
+      return { file, title: 'Stream vom Freitag', duration: 3 * 3600 + 5, chat: true, chapters: Array.from({ length: 32 }, (_, k) => ({ start: k * 300, title: `Teil ${k + 1}` })) }
+    },
   }
   let vd: Deck | null = null
   const T6 = Object.fromEntries(buildTools({ engine: { ...engine, video }, getDeck: () => vd, setDeck: (x) => { vd = x }, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
@@ -238,9 +253,29 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   JOB_WAIT.ms = 20
   assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\)/)
   finish()
-  const tr = await go('transcribe_video', { video: file, from: 60 }) // anderer Weg zur selben Datei: derselbe Job
-  assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
+  const tr = await go('transcribe_video', { video: file }) // anderer Weg zur selben Datei: derselbe Job
+  assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente\n\[s0\] 0\.0–4\.2 Hallo zusammen\.\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
+  assert.deepEqual(seen, [{ range: undefined, lang: undefined, speakers: undefined }])
+  // from/to bestimmen, was transkribiert wird (to höchstens bis zum Ende); Sprecher als S1, S2 …
+  const win = await go('transcribe_video', { video: file, from: 60, to: 999, lang: 'de', speakers: true })
+  assert.deepEqual(seen[1], { range: { from: 60, to: 75 }, lang: 'de', speakers: true })
+  assert.match(win.text, /· 2 Segmente\n\[s1\] S2 61\.2–66\.8 Der Kern\.\n\n/)
+  await fails(go('transcribe_video', { video: file, from: 10, to: 5 }), /to muss nach from/)
+  await fails(go('transcribe_video', { video: file, from: 80 }), /hinter dem Ende/)
+  // Download per Link: läuft noch, dann Pfad, Dauer, Chat, Kapitel (höchstens 30) und nächster Schritt nach Länge
+  assert.match((await go('import_video', { url: 'https://www.twitch.tv/videos/123' })).text, /^Download läuft noch \(12 %\)/)
+  loaded()
+  const im = await go('import_video', { url: 'https://www.twitch.tv/videos/123' })
+  assert.match(im.text, /^Video: asset:\/\/local\/.*\/talk\.mp4\nTitel: Stream vom Freitag\nDauer: 3:00:05\nChat: ja/)
+  assert.match(im.text, /Kapitel \(32\):\n0:00:00 Teil 1\n0:05:00 Teil 2\n[\s\S]*\n2:25:00 Teil 30\n… und 2 weitere\n\nWeiter: video_highlights/)
   JOB_WAIT.ms = 240_000
+  const hi = await go('video_highlights', { video: file })
+  assert.match(hi.text, /^2 Kandidaten in asset:.*\n1\. 0:47:12–0:48:12 · Score 6,2 · Chat ×4,2 · laut \+9 dB · from=2832 to=2892\n2\. 1:02:03–1:03:03 · Score 3,0 · oft gesehen/)
+  assert.match(hi.text, /transcribe_video mit from\/to[\s\S]*video_frames/)
+  hl = []
+  assert.match((await go('video_highlights', { video: file })).text, /keine deutlichen Spitzen/)
+  const T7 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, highlights: undefined } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  await fails(T7.video_highlights.run({ video: file }), /Highlight-Suche fehlt/)
   await fails(go('transcribe_video', { video: join(dir, 'fehlt.mp4') }), /Video nicht gefunden/)
   await fails(go('transcribe_video', { video: 'talk.mp4' }), /absoluten Dateipfad/)
   await fails(go('video_frames', { video: join(dir, 'notiz.txt'), times: [1] }), /kein unterstütztes Video/)
@@ -250,6 +285,18 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   await go('create_deck', { title: 'Shorts', format: '9:16', brand: null })
   await go('add_slides', { slides: [{ layout: 'clip', content: { video: file, hook: 'Der Kern in 5 Sekunden', parts: [{ start: 61.2, end: 66.8 }] } }] })
   assert.equal(vd!.slides[0].content.video, assetUrl(file))
+  // Hintergrundmusik: absoluter Pfad wird asset://, nur Audiodateien, null entfernt
+  const mp3 = join(dir, 'music', 'ruhig.mp3')
+  await fails(go('update_deck', { music: { src: mp3 } }), /Musik nicht gefunden/)
+  mkdirSync(join(dir, 'music')); writeFileSync(mp3, '')
+  assert.match((await go('update_deck', { music: { src: mp3, credit: '„Ruhig“ von X, CC BY 4.0' } })).text, /"music":\{"src":"asset:\/\/local\/.*ruhig\.mp3"/)
+  assert.deepEqual(vd!.music, { src: assetUrl(mp3), credit: '„Ruhig“ von X, CC BY 4.0' })
+  await fails(go('update_deck', { music: { src: join(dir, 'notiz.txt') } }), /keine Audiodatei/)
+  await fails(go('update_deck', { music: { src: 'ruhig.mp3' } }), /absoluten Dateipfad/)
+  await go('update_deck', { music: { src: `asset:${mp3}` } }) // Kurzform ohne local wird zur Form, die die Engine kennt
+  assert.equal(vd!.music!.src, assetUrl(mp3))
+  await go('update_deck', { music: null })
+  assert.equal(vd!.music, undefined)
 }
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)

@@ -1,6 +1,6 @@
 ---
 name: deckwerk
-description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote und Flyer – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Shorts (Reels, TikTok, YouTube Shorts) aus langen Videos schneiden und als MP4 exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus einem Video Clips, Shorts oder Reels machen will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
+description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote und Flyer – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
 ---
 
 # Deckwerk: Präsentationen, die man dem Chef zeigen kann
@@ -96,14 +96,14 @@ Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien al
 - Flyer für die Druckerei: `export_deck` mit `format: "print"` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm; `size` a3/a5). Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB; bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
 - Kurzer Bericht: Folienzahl, Storyline in einem Satz, getroffene Annahmen und was der Nutzer ersetzen muss (Zahlen, Zitate, Fotos).
 
-## 9. Video: Shorts aus langen Videos
+## 9. Video schneiden
 
-Will der Nutzer Clips aus einem Video, gilt Guide §11 „Video“:
-1. `transcribe_video` mit dem Video (asset://-Pfad aus dem Anhang oder absoluter Pfad). Meldet es „läuft noch“, gleich noch einmal aufrufen; beim ersten Mal lädt Deckwerk das Sprachmodell.
-2. 3–5 stärkste Momente wählen, je 0–10 bewertet: Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen von Setup zu Payoff, zitierfähig, Ende mit abgeschlossenem Gedanken. Je Short 20–60 s, Schnitte nur an Segmentgrenzen, Füllsätze über mehrere `parts` herausschneiden, höchstens 5 s Überlappung.
-3. `video_frames` an den Startzeiten, daraus `focus` je part (Mitte des Sprechers).
-4. `create_deck` mit `format: "9:16"`, je Short eine Folie im Layout `clip` (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`; `pauses` `kurz` bei Denkpausen im Gesprochenen).
-5. `render_slides`, dann `export_deck` mit `clips` (je Short eine MP4; „läuft noch“ → noch einmal aufrufen). Pfade nennen.
+Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights oder einen Zusammenschnitt, gilt Guide §11 „Video“. Eine Folie im Layout `clip` ist ein Video aus Ausschnitten. Meldet ein Video-Tool „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen.
+- **Material:** asset://-Pfad aus dem Anhang, absoluter Pfad oder per Link `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; laufende Livestreams erst nach dem Ende.
+- **Short/Reel (9:16):** `transcribe_video` → 3–5 stärkste Momente (Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen bis zum Payoff, zitierfähig, abgeschlossenes Ende), je 20–60 s, Schnitte nur an Segmentgrenzen → `video_frames` als Kontaktabzug → `create_deck` `format: "9:16"`, `transition: "none"`, je Short eine `clip`-Folie (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`, `fit` `crop` mit Auto-Zuschnitt aufs Gesicht oder `blur` bei Folien und Gesten am Rand, `follow` `sprecher` bei mehreren Personen) → `export_deck` `clips`.
+- **Ganzes Video kürzen (16:9):** eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), `pauses` `kurz`, `captions` `satz` oder `aus` → `export_deck` `mp4`.
+- **Stream (2–8 h) und Videos über 30 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
+- **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` nur dort; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
 
 ## Häufige Fehler
 

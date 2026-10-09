@@ -18,6 +18,7 @@ import { typeset } from '../shared/typo'
 import { mmss, transcriptLines } from '../shared/video'
 import type { Engine, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
+import { fetchMusic, findMusic } from './music'
 
 export interface ToolContext {
   engine: Engine
@@ -66,7 +67,7 @@ const format = z.enum(Object.keys(FORMATS) as [FormatId, ...FormatId[]]).describ
 const THEME_IDS = THEMES.map((t) => t.id) as [string, ...string[]]
 const layoutId = z.enum(LAYOUT_IDS as [LayoutId, ...LayoutId[]])
 const build = z.enum(BUILDS).describe('Animations-Preset; weglassen = Default des Layouts')
-const slideTransition = z.enum(TRANSITIONS).describe('Übergang zu dieser Folie; weglassen = Deck-Übergang. Praktisch nur für morph: wörtlich gleicher Text, dasselbe Foto oder derselbe Platz im Layout wandert von der vorigen Folie herüber (Design-Guide §8)')
+const slideTransition = z.enum(TRANSITIONS).describe('Übergang zu dieser Folie; weglassen = Deck-Übergang. Praktisch nur für morph: wörtlich gleicher Text, dasselbe Foto oder derselbe Platz im Layout wandert von der vorigen Folie herüber (Design-Guide §8). In Video-Decks: fade = Abblende über Schwarz im MP4, gezielt an Zwischentiteln (Guide §11)')
 const brand = z.object({
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Markenfarbe #RRGGBB'),
   secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
@@ -346,13 +347,25 @@ function videoFile(ctx: ToolContext, video: string): { file: string; v: VideoToo
   const path = video.startsWith('asset:') ? decodeURIComponent(new URL(video).pathname) : video
   if (!isAbsolute(path)) throw new Error(`video "${video}": asset://-Pfad aus dem Anhang („Video: asset://…“) oder absoluten Dateipfad angeben.`)
   const file = resolve(path)
-  if (!/\.(mp4|webm|mov|m4v|ogv|mkv)$/i.test(file)) throw new Error(`${file} ist kein unterstütztes Video (mp4, webm, mov, m4v, mkv, ogv).`)
+  if (!/\.(mp4|webm|mov|m4v|ogv|mkv|flv)$/i.test(file)) throw new Error(`${file} ist kein unterstütztes Video (mp4, webm, mov, m4v, mkv, ogv, flv).`)
   if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Video nicht gefunden: ${file}`)
   return { file, v }
 }
-const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“) oder absoluter Dateipfad')
+// Hintergrundmusik (deck.music): asset://-URL oder absoluter Pfad einer Audiodatei → asset://-URL wie clip.video
+function audioSrc(src: string): string {
+  const path = src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
+  if (!isAbsolute(path)) throw new Error(`music.src "${src}": asset://-Pfad aus find_music oder absoluten Dateipfad angeben.`)
+  const file = resolve(path)
+  if (!/\.(mp3|wav|m4a|ogg|oga|aac|opus|flac)$/i.test(file)) throw new Error(`music.src: ${file} ist keine Audiodatei (mp3, wav, m4a, ogg, oga, aac, opus, flac).`)
+  if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Musik nicht gefunden: ${file}`)
+  return assetUrl(file) // immer asset://local/…: die Engine erkennt nur diese Form
+}
+const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad')
 const TRANSCRIPT_MAX = 30_000 // Zeichen je Antwort; der Rest seitenweise über from
-const VIDEO_NEXT = 'Weiter (Guide § Video): 3–5 stärkste Momente wählen, je 20–60 s, Schnitte nur an Segmentgrenzen; video_frames an den Startzeiten für focus; create_deck format 9:16, je Short eine Folie im Layout clip; render_slides; export_deck clips.'
+const LONG = 1800 // ab 30 min: erst video_highlights, dann nur Fenster transkribieren
+const hms = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+const VIDEO_NEXT = 'Weiter (Guide § Video), je nach Auftrag: Short 9:16 = 3–5 stärkste Momente, je 20–60 s, hook, captions wort. Ganzes Video kürzen (Fulltime) 16:9 = eine clip-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge, pauses kurz. Stream = nur die Highlight-Fenster, daraus Shorts, optional ein 16:9-Zusammenschnitt. Kompilation = je Quelle eine clip-Folie, Zwischentitel als section oder statement. Schnitte nur an Segmentgrenzen. Dann video_frames als Kontaktabzug, create_deck im Format (transition none), add_slides, render_slides, export_deck clips (je Short eine MP4) oder mp4 (alles in einem Video).'
+const HIGHLIGHT_NEXT = 'Weiter (Guide § Video, Stream): 1. Für die besten 3–5 Fenster transcribe_video mit from/to; nur diese Bereiche werden transkribiert, gern 30 s Anlauf davor. 2. video_frames als Kontaktabzug, 4–8 Zeitpunkte je Kandidat über das Fenster verteilt. 3. Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil. 4. Shorts bauen (create_deck format 9:16, je Moment eine clip-Folie, 20–60 s), auf Wunsch zusätzlich ein Zusammenschnitt 16:9 (je Moment eine clip-Folie, export_deck mp4).'
 
 export function buildTools(ctx: ToolContext): ToolDef[] {
   return [
@@ -380,7 +393,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'update_deck',
-      description: 'Titel, Theme, Brand-Kit, Übergang, Modus oder Briefing des Decks ändern.',
+      description: 'Titel, Theme, Brand-Kit, Übergang, Modus, Briefing oder Hintergrundmusik (Video) des Decks ändern.',
       inputSchema: z.object({
         title: z.string().max(80).optional(),
         brief: z.object({ audience: z.string().optional(), goal: z.string().optional(), tone: z.string().optional() }).optional(),
@@ -394,9 +407,16 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         shuffle: z.number().int().min(0).max(5).optional().describe('Farbvariante des Themes wie Canva „Stile mischen“: 0 = Original, 1 = Akzente getauscht, 2 = Hell/Dunkel getauscht, 3 = beides, 4/5 = getönter Grund'),
         fonts: z.tuple([z.enum(FONT_NAMES as [FontName, ...FontName[]]), z.enum(FONT_NAMES as [FontName, ...FontName[]])]).nullable().optional().describe('Schriftpaar [Titel, Text] über das Theme legen; null = Theme-Schriften'),
         format: format.optional().describe('Magic Resize: Deck in ein anderes Format bringen; freie Elemente werden mitskaliert, Layouts ordnen sich neu an. Danach render_overview prüfen.'),
+        music: z.object({
+          src: z.string().min(1).describe('asset://-Pfad aus find_music oder absoluter Pfad einer Audiodatei'),
+          volume: z.number().min(0).max(1).optional().describe('0–1, Standard 0,25; dezent bleiben'),
+          credit: z.string().max(300).optional().describe('Nachweis aus find_music (bei CC BY Pflicht), zusätzlich in die Notes der letzten Folie'),
+        }).nullable().optional().describe('Hintergrundmusik im Video-Export (mp4, clips), leise unter allem, weicht der Sprache automatisch; nur auf Wunsch oder bei Kompilationen. null = entfernen'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
+        if (i.music === null) delete deck.music
+        else if (i.music) deck.music = { ...i.music, src: audioSrc(i.music.src) }
         if (i.title) deck.title = typeset(i.title)
         if (i.brief) deck.brief = { ...deck.brief, ...i.brief }
         if (i.theme) { deck.theme.id = i.theme; delete deck.theme.custom }
@@ -421,7 +441,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         ctx.setDeck(deck)
         const look = i.theme || i.customTheme || i.brand !== undefined || i.shuffle !== undefined || i.fonts !== undefined // Theme geändert → neue Vorschau
         return {
-          text: `${i.customTheme ? aiTells(deck.theme.custom ?? {}) : ''}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
+          text: `${i.customTheme ? aiTells(deck.theme.custom ?? {}) : ''}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: deck.theme, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt', music: deck.music })}${look ? `\n${PREVIEW_HINT}` : ''}`,
           images: look ? await themePreview(ctx, deck) : undefined,
         }
       },
@@ -677,7 +697,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für das Video aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, andere Folien als Standbild). Video-Exporte laufen im Hintergrund: meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien mit transition außer none und morph blenden über Schwarz ab und auf, deshalb Video-Decks mit transition none anlegen und fade nur gezielt setzen). fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund: meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
       inputSchema: z.object({
         format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print: A4-Seiten verlustfrei auf A3 oder A5 skalieren; weglassen = Format des Decks'),
@@ -694,24 +714,69 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       },
     }),
     tool({
+      name: 'import_video',
+      readOnly: true,
+      description: 'Video per Link laden (YouTube, Twitch, Kick und andere Seiten, die yt-dlp kennt), bis 1080p, dazu Kapitel und bei ehemaligen Livestreams auf YouTube und Twitch der Chat (Signal für video_highlights). Nur Material, an dem der Nutzer die Rechte hat (eigener Kanal, eigener Stream, Erlaubnis) oder das frei lizenziert ist; im Zweifel nachfragen statt laden. Laufende Livestreams gehen erst nach dem Ende als Aufzeichnung. Lange Downloads laufen im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit derselben url auf. Rückgabe: asset://-Pfad für die Video-Tools und clip.video.',
+      inputSchema: z.object({ url: z.string().url().max(2000).describe('Link zum Video oder zur Aufzeichnung (VOD)') }),
+      async run(i) {
+        const v = ctx.engine.video
+        if (!v?.importUrl) throw new Error('Videos per Link laden gibt es nur in der Deckwerk-App und im MCP-Server.')
+        const r = await job(`import:${i.url}`, (onProgress) => v.importUrl!(i.url, onProgress))
+        if (!('value' in r)) return { text: stillRunning('Download', r.pct) }
+        const x = r.value, src = assetUrl(x.file)
+        const chapters = x.chapters.slice(0, 30).map((c) => `${hms(c.start)} ${c.title}`)
+        if (x.chapters.length > 30) chapters.push(`… und ${x.chapters.length - 30} weitere`)
+        const next = x.duration > LONG ? `video_highlights mit diesem Video (über 30 min: erst die stärksten Fenster finden, dann nur diese transkribieren)` : 'transcribe_video mit diesem Video'
+        return { text: [`Video: ${src}`, `Titel: ${x.title}`, `Dauer: ${hms(x.duration)}`, `Chat: ${x.chat ? 'ja (fließt in video_highlights ein)' : 'nein'}`,
+          ...(chapters.length ? [`Kapitel (${x.chapters.length}):`, ...chapters] : ['Kapitel: keine']), '', `Weiter: ${next}. Link als Quelle in die Notes.`].join('\n') }
+      },
+    }),
+    tool({
+      name: 'video_highlights',
+      readOnly: true,
+      description: 'Für lange Videos und Streams (ab ~30 min): findet die stärksten Momente aus Lautheit, Chat-Ausbrüchen (Chat aus import_video), Lachen und Jubel sowie der YouTube-Heatmap, ohne das ganze Video zu transkribieren. Liefert je Kandidat ein Zeitfenster mit Score und Grund. Läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit demselben video auf. Danach nur die besten Fenster mit transcribe_video (from/to) transkribieren, video_frames als Kontaktabzug, dann Shorts oder Zusammenschnitt bauen (read_guide § Video).',
+      inputSchema: z.object({ video: videoInput }),
+      async run(i) {
+        const { file, v } = videoFile(ctx, i.video)
+        if (!v.highlights) throw new Error('Die Highlight-Suche fehlt in dieser Deckwerk-Version. Stattdessen transcribe_video in Abschnitten (from/to) lesen.')
+        const r = await job(`highlights:${file}`, (onProgress) => v.highlights!(file, onProgress))
+        if (!('value' in r)) return { text: stillRunning('Highlight-Suche', r.pct) }
+        if (!r.value.length) return { text: `In ${assetUrl(file)} gibt es keine deutlichen Spitzen (Lautheit, Chat, Reaktionen). Stattdessen transcribe_video in Abschnitten (from/to) lesen und Momente nach Inhalt wählen.` }
+        const de = (n: number) => n.toFixed(1).replace('.', ',')
+        // from/to in Sekunden dahinter: die KI soll sie nicht aus h:mm:ss zurückrechnen
+        const lines = r.value.map((h, k) => `${k + 1}. ${hms(h.start)}–${hms(h.end)} · Score ${de(h.score)} · ${h.why} · from=${Math.floor(h.start)} to=${Math.ceil(h.end)}`)
+        return { text: [`${lines.length} Kandidaten in ${assetUrl(file)}, zeitlich sortiert:`, ...lines, '', HIGHLIGHT_NEXT].join('\n') }
+      },
+    }),
+    tool({
       name: 'transcribe_video',
       readOnly: true,
-      description: 'Erster Schritt für Shorts aus einem langen Video: transkribiert lokal (Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video). Beim ersten Mal lädt Deckwerk das Sprachmodell (~510 MB); die Erkennung dauert grob ein Viertel der Videolänge und läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit demselben video auf. Danach 3–5 stärkste Momente wählen, je 0–10 bewertet: Hook (die ersten 3 s packen), ohne Vorwissen verständlich, Bogen von Setup zu Payoff, zitierfähig, Ende mit abgeschlossenem Gedanken; nur die stärksten nehmen. Je Short 20–60 s, Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze und Abschweifungen über mehrere parts herausschneiden, Clips überlappen höchstens 5 s. Dann video_frames für focus, create_deck format 9:16, je Short eine Folie im Layout clip (hook ≤ 70 Zeichen ohne Clickbait und Emojis, captions wort, pauses kurz bei Denkpausen), export_deck clips. Ablauf: read_guide § Video.',
+      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen, sonst Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf langsamen Rechnern etwa ½–¾ der Länge des Bereichs und läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Lange Videos und Streams (über 30 min): erst video_highlights, dann nur die Fenster transkribieren. Momente je 0–10 bewerten: Hook (die ersten 3 s packen), ohne Vorwissen verständlich, Bogen von Setup zu Payoff, zitierfähig, Ende mit abgeschlossenem Gedanken; nur die stärksten nehmen. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze und Abschweifungen über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide § Video.',
       inputSchema: z.object({
         video: videoInput,
-        from: z.number().min(0).optional().describe('nur Segmente ab dieser Sekunde (lange Videos seitenweise lesen)'),
-        to: z.number().min(0).optional().describe('nur Segmente bis zu dieser Sekunde'),
+        from: z.number().min(0).optional().describe('Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)'),
+        to: z.number().min(0).optional().describe('Bereich bis zu dieser Sekunde'),
+        lang: z.string().regex(/^[a-z]{2}$/).optional().describe('Sprache als ISO-639-1-Code (de, en, fr …); weglassen = automatisch erkennen'),
+        speakers: z.boolean().optional().describe('true = Sprecher unterscheiden (S1, S2 … je Zeile), für Podcasts, Interviews und Gespräche'),
       }),
       async run(i) {
         const { file, v } = videoFile(ctx, i.video)
-        const r = await job(`transcribe:${file}`, (onProgress) => Promise.all([v.probe(file), v.transcribe(file, onProgress)]))
+        if (i.from !== undefined && i.to !== undefined && i.to <= i.from) throw new Error('to muss nach from liegen.')
+        // Bereich und Optionen im Schlüssel: ein anderes Fenster ist eine andere Arbeit
+        const r = await job(`transcribe:${file}:${JSON.stringify([i.from, i.to, i.lang, !!i.speakers])}`, async (onProgress) => {
+          const info = await v.probe(file)
+          const range = i.from === undefined && i.to === undefined ? undefined : { from: i.from ?? 0, to: Math.min(i.to ?? info.duration, info.duration) }
+          if (range && range.from >= range.to) throw new Error(`from liegt hinter dem Ende des Videos (${mmss(info.duration)}).`)
+          return [info, await v.transcribe(file, onProgress, { range, lang: i.lang, speakers: i.speakers })] as const
+        })
         if (!('value' in r)) return { text: stillRunning('Transkription', r.pct) }
         const [info, t] = r.value
-        const from = i.from ?? 0, to = i.to ?? Infinity, all = transcriptLines(t), lines: string[] = []
+        const from = i.from ?? 0, to = i.to ?? Infinity, lines: string[] = []
+        const all = transcriptLines(t).map((l, k) => { const sp = t.segments[k].speaker; return sp === undefined ? l : l.replace(/^\[s\d+\] /, (m) => `${m}S${sp + 1} `) })
         let size = 0, more = ''
         for (const [k, s] of t.segments.entries()) {
           if (s.end <= from || s.start >= to) continue
-          if ((size += all[k].length + 1) > TRANSCRIPT_MAX) { more = `… weiter mit from=${s.start.toFixed(1)}`; break }
+          if ((size += all[k].length + 1) > TRANSCRIPT_MAX) { more = `… weiter mit from=${s.start.toFixed(1)}${i.to === undefined ? '' : ` und to=${i.to}`}`; break }
           lines.push(all[k])
         }
         const head = `Video: ${assetUrl(file)} · ${mmss(info.duration)} · ${info.w}×${info.h} · Sprache ${t.lang} · ${t.segments.length} Segmente`
@@ -721,7 +786,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'video_frames',
       readOnly: true,
-      description: 'Standbilder eines Videos (JPEG, 640 px breit) zu 1–12 Zeitpunkten, z. B. an den Startzeiten der gewählten parts. Zweck: den Sprecher finden und focus je part setzen (horizontale Bildmitte, 0 = links, 1 = rechts), Szenenwechsel und schwache Bilder erkennen. Zeiten hinter dem Ende gelten als Ende.',
+      description: 'Standbilder eines Videos (JPEG, 640 px breit) zu 1–12 Zeitpunkten. Zweck: Kontaktabzug der Kandidaten (4–8 Zeitpunkte je Moment): Szenenwechsel, schwache Bilder, Personen im Bild, Folien oder Gesten am Rand (dann fit blur). Ohne focus setzt der Export den Zuschnitt aufs Gesicht; focus je part (horizontale Bildmitte, 0 = links, 1 = rechts) nur setzen, wenn etwas anderes ins Bild muss. Zeiten hinter dem Ende gelten als Ende.',
       inputSchema: z.object({ video: videoInput, times: z.array(z.number().min(0)).min(1).max(12).describe('Sekunden im Video') }),
       async run(i) {
         const { file, v } = videoFile(ctx, i.video)
@@ -733,6 +798,26 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           text: `${images.length} Standbilder aus ${assetUrl(file)} (${info.w}×${info.h}, ${mmss(info.duration)}), Reihenfolge wie die Bilder:\n${times.map((t, k) => `${k + 1}. ${t.toFixed(1)} s (${mmss(t)})`).join('\n')}\nEin 9:16-Short zeigt ${share} % der Bildbreite um focus: Gesicht und Gestik müssen drin bleiben. Wechselt die Szene innerhalb eines parts, den part dort teilen.`,
           images,
         }
+      },
+    }),
+    tool({
+      name: 'find_music',
+      readOnly: true,
+      description: 'Freie Hintergrundmusik für Video-Exporte suchen und laden (Openverse: nur CC0, Public Domain und CC BY). Nur auf Wunsch des Nutzers oder bei Kompilationen; dezent und instrumental, nie laut unter Sprache (das Ducking unter Sprache macht der Export). query = suchen, id = Titel aus der Trefferliste laden. Danach update_deck mit music: { src, credit }; den Nachweis zusätzlich in die Notes der letzten Folie.',
+      inputSchema: z.object({
+        query: z.string().min(2).max(80).optional().describe('englische Suchbegriffe: Stimmung, Genre, Instrument, z. B. "calm piano instrumental"'),
+        id: z.string().max(64).optional().describe('Openverse-ID aus der Trefferliste: lädt diesen Titel'),
+      }),
+      async run(i) {
+        if (i.id) {
+          const { file, credit } = await fetchMusic(i.id, join(ctx.assetDir, 'music'))
+          return { text: `Musik geladen. Weiter: update_deck mit music: ${JSON.stringify({ src: assetUrl(file), credit })} (volume weglassen = 0,25); den Nachweis zusätzlich in die Notes der letzten Folie.` }
+        }
+        if (!i.query) throw new Error('query (suchen) oder id (Titel aus der Trefferliste laden) angeben.')
+        const hits = await findMusic(i.query)
+        if (!hits.length) return { text: `Keine freie Musik zu "${i.query}". Andere englische Begriffe versuchen (Stimmung, Genre, "instrumental").` }
+        const line = (t: (typeof hits)[number]) => [t.id, `„${t.title}“ – ${t.artist}`, t.duration ? mmss(t.duration) : 'Länge unbekannt', LICENSE[t.license], t.tags.join(', ')].filter(Boolean).join(' · ')
+        return { text: `${hits.length} freie Titel (Openverse), zum Laden find_music mit id:\n${hits.map(line).join('\n')}` }
       },
     }),
     tool({
