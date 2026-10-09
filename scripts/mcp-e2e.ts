@@ -31,7 +31,7 @@ const call = async (name: string, args: Record<string, unknown> = {}) => {
 const t0 = Date.now()
 const lap = (what: string) => console.log(`${String(Date.now() - t0).padStart(6)} ms  ${what}`)
 
-assert.equal((await client.listTools()).tools.length, 25)
+assert.equal((await client.listTools()).tools.length, 27)
 await call('create_deck', { title: 'E2E Test', theme: 'corporate', brand: { primary: '#0A7C66' } })
 let r = await call('add_slides', { slides: [
   { layout: 'cover', content: { eyebrow: 'E2E', title: 'Der MCP-Server rendert echte Folien', subtitle: 'Offscreen-Chromium im Electron-Main-Prozess' }, notes: 'Testfolie' },
@@ -91,6 +91,10 @@ for (let n = 0; ; n++) { // 10 s gleichmäßiger Ton: keine Spitzen zu erwarten,
 }
 lap('video_highlights')
 assert.match(r.content[0].text!, /\n1\. \d|keine deutlichen Spitzen/)
+r = await call('check_clip', { slide: clip.id })
+lap('check_clip')
+assert.match(r.content[0].text!, /Länge 4 s · 2 Ausschnitte[\s\S]*Kontaktabzug 3×3/)
+assert.ok(r.content.some((c) => c.type === 'image'), 'Kontaktabzug kommt als Bild')
 r = await call('render_slides', { ids: [clip.id], width: 360 })
 assert.ok(r.content.some((c) => c.type === 'image'))
 for (let n = 0; ; n++) {

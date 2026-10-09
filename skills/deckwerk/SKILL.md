@@ -13,7 +13,7 @@ Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__�
 
 ## 1. Zuerst den Guide lesen
 
-Rufe `read_guide` mit `part` 1, 2, … auf, bis die Antwort „Teil n von n“ meldet. Er enthält den Design-Guide und den Layout-Katalog mit allen Feldnamen. Ohne ihn rätst du Felder (Schemafehler) und Gestaltung. Einmal pro Sitzung genügt.
+Rufe `read_guide` mit `part` 1, 2, … auf, bis die Antwort „Teil n von n“ meldet. Er enthält den Design-Guide und den Layout-Katalog mit allen Feldnamen. Ohne ihn rätst du Felder (Schemafehler) und Gestaltung. Einmal pro Sitzung genügt. Für reine Video-Aufträge genügt `read_guide` mit `topic: "video"`.
 
 ## 2. Briefing und Material
 
@@ -101,9 +101,12 @@ Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien al
 Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights oder einen Zusammenschnitt, gilt Guide §11 „Video“. Eine Folie im Layout `clip` ist ein Video aus Ausschnitten. Meldet ein Video-Tool „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen.
 - **Material:** asset://-Pfad aus dem Anhang, absoluter Pfad oder per Link `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; laufende Livestreams erst nach dem Ende.
 - **Sprache:** Ohne `lang` transkribiert Parakeet, das nur 25 europäische Sprachen kennt. Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper.
-- **Short/Reel (9:16):** `transcribe_video` → 3–5 stärkste Momente (Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen bis zum Payoff, zitierfähig, abgeschlossenes Ende), je 20–60 s, Schnitte nur an Segmentgrenzen → `video_frames` als Kontaktabzug → `create_deck` `format: "9:16"`, `transition: "none"`, je Short eine `clip`-Folie (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`, `fit` `crop` mit Auto-Zuschnitt aufs Gesicht oder `blur` bei Folien und Gesten am Rand, `follow` `sprecher` bei mehreren Personen) → `export_deck` `clips`.
-- **Ganzes Video kürzen (16:9):** eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), `pauses` `kurz`, `captions` `satz` oder `aus` → `export_deck` `mp4`.
-- **Stream (2–8 h) und Videos über 30 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
+- **Short/Reel (9:16):** `transcribe_video` → 3–5 stärkste Momente (Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen bis zum Payoff, zitierfähig, abgeschlossenes Ende), je ideal 25–50 s (hart 15–60), Schnitte nur an Segmentgrenzen → `video_frames` als Kontaktabzug → `create_deck` `format: "9:16"`, `transition: "none"`, je Short eine `clip`-Folie (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`, `fit` `crop` mit Auto-Zuschnitt aufs Gesicht oder `blur` bei Folien und Gesten am Rand, `follow` `sprecher` bei mehreren Personen) → `export_deck` `clips`.
+- **Auswahl:** Kandidaten 4 × 0–25 bewerten (Hook, Bogen, Wert, Teilbarkeit), nur ≥ 70 nehmen; Shorts ideal 25–50 s (hart 15–60), steht für sich allein, keine doppelten Aussagen, lieber 4–8 gute als 2. Details Guide §11.
+- **Grob → fein:** `video_highlights` mit `overview: true`, dann nur die besten Fenster transkribieren; Stellen per `search_transcript` (Thema oder Zitat).
+- **Selbstkontrolle:** Clip-Prüfung in der `add_slides`-Antwort beheben; vor dem Export `check_clip` für die besten Clips, Kontaktabzug ansehen, höchstens 2 Runden.
+- **Ganzes Video kürzen (16:9):** `transcribe_video` mit `all: true` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), `pauses` `kurz`, `captions` `satz` oder `aus` → `export_deck` `mp4`.
+- **Stream (2–8 h) und Videos über 10 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
 - **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` nur dort; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
 
 ## Häufige Fehler

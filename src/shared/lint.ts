@@ -24,6 +24,8 @@ const PROFILE = {
 const SPARSE = 0.67 // Füllgrad des Satzspiegels, darunter wirkt eine Inhaltsfolie leer (kalibriert an echten KI-Decks: Prozess 65 %, Zeitstrahl 58 % leer; Tabelle 72 %, Pro/Contra 77 % gut)
 const overlapArea = (a: Box, b: Box) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+// Video-Deck: Clips folgen aufeinander, ohne Titel- und Schlussfolie, fade gezielt an Zwischentiteln – Folien-Regeln dazu passen nicht
+const isVideo = (deck: Deck) => deck.slides.some((s) => s.layout === 'clip')
 const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).filter(Boolean)
 
 // ---------- KI-Merkmale im Text ----------
@@ -176,10 +178,11 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   if (!PROFILE[profileOf(deck)].deckRules) return [...out, ...lintMotion(deck, measured)]
   const s = deck.slides
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: s[i].id, severity: 'warn', rule, message })
-  if (s.length && s[0].layout !== 'cover') warn(0, 'structure', 'Das Deck beginnt nicht mit einer Titelfolie (cover).')
-  if (s.length > 3 && s[s.length - 1].layout !== 'closing') warn(s.length - 1, 'structure', 'Das Deck endet nicht mit einer Abschlussfolie (closing).')
+  const video = isVideo(deck)
+  if (!video && s.length && s[0].layout !== 'cover') warn(0, 'structure', 'Das Deck beginnt nicht mit einer Titelfolie (cover).')
+  if (!video && s.length > 3 && s[s.length - 1].layout !== 'closing') warn(s.length - 1, 'structure', 'Das Deck endet nicht mit einer Abschlussfolie (closing).')
   for (let i = 2; i < s.length; i++)
-    if (s[i].layout === s[i - 1].layout && s[i].layout === s[i - 2].layout)
+    if (!video && s[i].layout === s[i - 1].layout && s[i].layout === s[i - 2].layout)
       warn(i, 'rhythm', `Drittes "${s[i].layout}" in Folge – Layout abwechseln, damit das Deck lebendig bleibt.`)
   // Canva-Wirkung: drei gleich aufgebaute Folien ohne Bild hintereinander wirken wie eine Vorlage
   const look = (x: (typeof s)[number]) => !(LAYOUTS[x.layout as keyof typeof LAYOUTS] as { frames?: unknown })?.frames ? `-${x.id}` : `${x.frame ?? 'top'}|${x.tone ?? ''}|${JSON.stringify(x.content ?? {}).includes('"src":"asset') || !!x.bg?.image}`
@@ -241,6 +244,7 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
 export function lintMotion(deck: Deck, measured: Measured[]): Issue[] {
   const out: Issue[] = []
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: deck.slides[i].id, severity: 'warn', rule, message })
+  const video = isVideo(deck)
   const own = (k: number) => measured[k].els.map((e) => ({ slot: e.slot, key: morphKey(e) }))
   deck.slides.forEach((s, i) => {
     const t = transitionOf(deck, i)
@@ -251,7 +255,7 @@ export function lintMotion(deck: Deck, measured: Measured[]): Issue[] {
       if (!morphNames(prev, own(i)).some((n) => before.has(n) && n !== 'title' && !n.startsWith('_')))
         warn(i, 'morph', 'Morph ohne gemeinsames Element mit der vorigen Folie (außer dem Titel) – wirkt nur wie Überblenden. Morph braucht wörtlich denselben Text (Agenda-Punkt = Kapiteltitel, Kennzahl = große Zahl), dasselbe Foto oder dasselbe Layout mit anderem focus/highlight; sonst transition weglassen.')
     }
-    if (s.transition && !['morph', 'none', deck.transition].includes(s.transition))
+    if (s.transition && !video && !['morph', 'none', deck.transition].includes(s.transition))
       warn(i, 'transition', `Übergang ${s.transition} weicht vom Deck-Übergang ${deck.transition} ab. Ein Übergangstyp pro Deck; pro Folie nur morph.`)
     const m = measured[i]
     if (deck.mode !== 'click' || !m) return

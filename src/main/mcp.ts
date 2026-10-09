@@ -28,6 +28,17 @@ export function guideParts(max = 20000): string[] {
   return parts
 }
 
+// Reine Video-Aufträge: nur Guide §11 und der Katalog-Eintrag clip statt aller Teile
+export function videoGuide(): string {
+  const p = buildSystemPrompt()
+  const block = (head: string, ends: string[]) => {
+    const a = p.indexOf(`\n${head}`)
+    if (a < 0) return ''
+    return p.slice(a + 1, Math.min(...ends.map((e) => p.indexOf(e, a + 1)).filter((x) => x > 0), p.length)).trim()
+  }
+  return `${block('## 11. ', ['\n## '])}\n\n${block('### clip ', ['\n### ', '\n## '])}`
+}
+
 // Claude Code kürzt Server-Anweisungen auf rund 2.000 Zeichen: das Wesentliche zuerst, der volle Guide per read_guide
 const INTRO = `# Deckwerk: Präsentationen aus einem Layout-Katalog
 Du wählst Layouts und füllst ihre Felder; Positionen, Schriftgrößen und Farben setzt die Engine. Setze nie Koordinaten.
@@ -65,9 +76,13 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
     ),
     {
       name: 'read_guide',
-      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen.',
-      inputSchema: z.object({ part: z.number().int().min(1).default(1).describe('Teil 1, 2, … – die Antwort nennt die Anzahl') }),
-      async run(i: { part: number }) {
+      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen. Für reine Video-Aufträge genügt topic video.',
+      inputSchema: z.object({
+        part: z.number().int().min(1).default(1).describe('Teil 1, 2, … – die Antwort nennt die Anzahl'),
+        topic: z.enum(['video']).optional().describe('video = nur Guide §11 (Video-Schnitt) und das Layout clip, in einem Teil'),
+      }),
+      async run(i: { part: number; topic?: 'video' }) {
+        if (i.topic === 'video') return { text: videoGuide() }
         const parts = guideParts()
         const k = Math.min(i.part, parts.length)
         return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }

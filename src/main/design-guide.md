@@ -424,25 +424,32 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 
 **Material:** Video aus dem Anhang („Video: asset://…“) oder per Link mit `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; im Zweifel nachfragen. Laufende Livestreams gehen erst nach dem Ende. Den Link als Quelle in die Notes.
 
-**Transkript:** `transcribe_video` erkennt lokal (beim ersten Mal ~670 MB Download). Ohne `lang` nimmt es Parakeet, das nur 25 europäische Sprachen kennt: Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren: über 30 min erst `video_highlights`, dann nur die Fenster mit `from`/`to`. `speakers: true` für Podcasts und Gespräche.
+**Transkript:** `transcribe_video` erkennt lokal (beim ersten Mal ~670 MB Download). Ohne `lang` nimmt es Parakeet, das nur 25 europäische Sprachen kennt: Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren: über 10 min erst `video_highlights` (`overview: true`), dann nur die Fenster mit `from`/`to`; das ganze Video nur mit `all: true` für den Fulltime-Schnitt. `speakers: true` für Podcasts und Gespräche.
 
 **Vier Abläufe:**
-1. **Short/Reel (9:16)** aus Vortrag, Interview oder Podcast: `transcribe_video` → 3–5 Momente wählen (Kriterien unten) und dem Nutzer mit Zeiten und Begründung nennen → `video_frames` als Kontaktabzug → `create_deck` mit `format: "9:16"` und `transition: "none"` → je Short eine `clip`-Folie → `render_slides` → `export_deck` mit `clips`.
-2. **Ganzes Video kürzen (Fulltime, 16:9):** `transcribe_video` über alles → Füllsätze, Versprecher, Wiederholungen und Abschweifungen streichen → `create_deck` 16:9 mit `transition: "none"` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100 `parts`), `pauses: "kurz"`, `captions` `satz` oder `aus` → `export_deck` mit `mp4`. Dem Nutzer sagen, wie lang das Ergebnis ist und was wegfiel.
+1. **Short/Reel (9:16)** aus Vortrag, Interview oder Podcast: `transcribe_video` → 3–5 Momente wählen (Bewertung unten) und dem Nutzer mit Zeiten und Begründung nennen → `video_frames` als Kontaktabzug → `create_deck` mit `format: "9:16"` und `transition: "none"` → je Short eine `clip`-Folie → `render_slides` → `export_deck` mit `clips`.
+2. **Ganzes Video kürzen (Fulltime, 16:9):** `transcribe_video` mit `all: true` über alles → Füllsätze, Versprecher, Wiederholungen und Abschweifungen streichen → `create_deck` 16:9 mit `transition: "none"` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100 `parts`), `pauses: "kurz"`, `captions` `satz` oder `aus` → `export_deck` mit `mp4`. Dem Nutzer sagen, wie lang das Ergebnis ist und was wegfiel.
 3. **Stream-Highlights (2–8 h):** `import_video` (Aufzeichnungen von YouTube und Twitch bringen den Chat mit) → `video_highlights` → für die besten 3–5 Fenster `transcribe_video` mit `from`/`to` → `video_frames` als Kontaktabzug, 4–8 Zeitpunkte je Kandidat → Shorts wie in 1, auf Wunsch zusätzlich ein 16:9-Zusammenschnitt mit einer `clip`-Folie je Moment (`mp4`). Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil.
 4. **Kompilation aus mehreren Quellen (16:9):** je Quelle `transcribe_video` → `create_deck` mit `transition: "none"` → je Quelle eine `clip`-Folie, dazwischen Zwischentitel als ruhige Folien (`section` oder `statement`, ein kurzer Satz) → Musik nur dezent (`find_music`, dann `update_deck` mit `music`) → `export_deck` mit `mp4`.
 
-**Kriterien** (je 0–10, nur die stärksten nehmen; lieber drei sehr gute als fünf mittlere):
-- **Hook:** Die ersten 3 Sekunden packen (Behauptung, Frage, Überraschung), kein „Also, ähm“.
-- **Eigenständig:** ohne Vorwissen verständlich, kein „wie ich vorhin sagte“.
-- **Bogen:** von Setup zu Payoff, nicht nur Anlauf.
-- **Zitierfähig:** ein Satz, den man weitererzählen würde.
-- **Ende:** ein abgeschlossener Gedanke, kein Abbruch mitten in der Erklärung.
+**Bewertung** je Kandidat 4 × 0–25, ganze Skala nutzen, nur ≥ 70 nehmen, Füllstücke < 30:
+- **Hook:** die ersten 2 s halten einen Fremden.
+- **Bogen:** Aufbau → Behauptung → konkretes Detail → Payoff.
+- **Wert:** man lernt oder fühlt etwas.
+- **Teilbarkeit:** „das schicke ich jemandem“.
+
+**Steht für sich allein:** kein Einstieg auf Pronomen oder „und/aber/also“ (Start früher legen, nie das Ende abschneiden); Ende auf einem abgeschlossenen Satz. Keine zwei Shorts mit derselben Aussage; lieber 4–8 gute als 2.
+
+**Hook-Muster:** offene Frage, steile These, überraschende Zahl, Geschichte anreißen, Perspektive („Wenn du … bist“). Er handelt von diesem Moment, nicht vom ganzen Video, verspricht nur, was der Clip hält, und hat 3–9 Wörter.
+
+**Grob → fein:** bei langen Videos erst `video_highlights` mit `overview: true` (eine Zeile je 90 s), dann die besten Fenster transkribieren; Stellen findet `search_transcript` (Thema oder wörtliches Zitat → Zeiten).
+
+**Selbstkontrolle:** nach `add_slides` die Clip-Prüfung der Antwort beheben (Länge, Schnitt mitten im Wort oder Satz, fehlendes Transkript, Überlappung). Vor dem Export `check_clip` für die besten Clips und den Kontaktabzug ansehen (Gesicht im Bild, Hook passt, keine schwarzen oder eingefrorenen Bilder); höchstens 2 Runden.
 
 **Regeln:**
 - Schnitte nur an Segmentgrenzen des Transkripts, nie mitten im Satz. Füllsätze, Wiederholungen und Abschweifungen herausschneiden: ein Clip besteht dann aus mehreren `parts` (Jump Cuts).
-- Short: 20–60 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
-- `hook` (Short): höchstens 70 Zeichen, macht neugierig, löst nicht schon alles auf; kein Clickbait, keine Emojis.
+- Short: ideal 25–50 s, hart 15–60 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
+- `hook` (Short): höchstens 70 Zeichen, löst nicht schon alles auf; kein Clickbait, keine Emojis.
 - `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
 - `pauses`: `kurz` für Talking Heads mit Denkpausen oder stockendem Sprechen (Pausen ab 0,6 s schrumpfen auf 0,3 s), `lassen` bei Musik, Vorführungen oder bewusst gesetzten Pausen.
 - `fit`: `crop` (Standard) füllt das Format; ohne `focus` sucht der Export das Gesicht. `blur` zeigt das ganze Bild auf unscharfem Grund, wenn Folien, Bildschirm oder Gesten am Rand wichtig sind. Ein 9:16-Ausschnitt zeigt aus einem Querformat nur etwa ein Drittel der Breite.
