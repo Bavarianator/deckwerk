@@ -1,14 +1,14 @@
 /// <reference types="vite/client" />
-// KI-Agent: Tool-Runner-Loop (claude-opus-5, adaptive thinking, Streaming), Systemprompt aus
-// design-guide.md + Layout-Katalog (+ Thumbnails), Events an die UI. Läuft im Main-Prozess, der Key bleibt dort.
+// KI-Agent: Tool-Runner-Loop (claude-opus-5, adaptive thinking, Streaming), Systemprompt = Kernprompt (guide-modules.ts),
+// Module des Routers und Vorschaubilder ihrer Layouts in der ersten Nachricht, Events an die UI. Läuft im Main-Prozess, der Key bleibt dort.
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod'
 import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
 import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } from '../shared/deck'
 import type { Issue } from '../shared/lint'
-import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
+import { LAYOUTS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
-import { fullPrompt } from './guide-modules'
+import { corePrompt, fullPrompt, modulesText, type Route } from './guide-modules'
 import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
@@ -39,12 +39,12 @@ export interface DeckAgentOptions {
   deck?: Deck
   assetDir?: string
   outDir?: string
-  thumbnails?: boolean // Katalog-Vorschaubilder in den ersten Turn (default true)
+  thumbnails?: boolean // Vorschaubilder der vom Router gewählten Layouts in den ersten Turn (default true)
   model?: string
   unsplashKey?: string // default UNSPLASH_ACCESS_KEY
 }
 
-// Bis zum Umbau auf Kernprompt + Module (Router) bekommen die Agenten weiter den vollen Guide
+// Bis zum Umbau auf Kernprompt + Module (Router) bekommt der CLI-Weg (claude-agent.ts) weiter den vollen Guide
 export function buildSystemPrompt(): string {
   return fullPrompt()
 }
@@ -52,13 +52,14 @@ export { corePrompt } from './guide-modules'
 
 const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { type: 'base64', media_type: mimeOf(buf), data: buf.toString('base64') } })
 
-// Ein Beispiel-Deck (typ-Sample pro Layout) rendern → Bilder für den ersten User-Turn. Stabil → cachebar.
-async function catalogThumbnails(engine: Engine): Promise<BetaContentBlockParam[]> {
+// Beispiel-Deck (typ-Sample) der Layouts unter den Modulen (layout:<id>) rendern → Bilder für den ersten User-Turn
+export async function catalogThumbnails(engine: Engine, modules: string[]): Promise<BetaContentBlockParam[]> {
+  const want = modules.filter((m) => m.startsWith('layout:') && m.slice(7) in LAYOUTS).map((m) => m.slice(7) as LayoutId)
   // Layouts mit sizes (A4-Dokumente, Flyer) im eigenen Format zeigen, sonst sieht die KI sie in 16:9; ein Deck je Format
   const fmt = (id: LayoutId): FormatId => (LAYOUTS[id] as { sizes?: FormatId[] }).sizes?.[0] ?? '16:9'
   const pngs = new Map<LayoutId, Buffer>()
-  for (const f of new Set(LAYOUT_IDS.map(fmt))) {
-    const ids = LAYOUT_IDS.filter((id) => fmt(id) === f)
+  for (const f of new Set(want.map(fmt))) {
+    const ids = want.filter((id) => fmt(id) === f)
     const deck: Deck = {
       title: 'Katalog', theme: { id: 'beratung' }, transition: 'none', mode: 'click', size: { w: FORMATS[f].w, h: FORMATS[f].h },
       slides: ids.map((id) => ({ id: `cat-${id}`, layout: id, content: LAYOUTS[id].samples.typ })),
@@ -66,7 +67,19 @@ async function catalogThumbnails(engine: Engine): Promise<BetaContentBlockParam[
     const out = await engine.renderPng(deck, ids.map((_, i) => i), 512)
     ids.forEach((id, i) => pngs.set(id, out[i]))
   }
-  return LAYOUT_IDS.flatMap((id) => [{ type: 'text', text: `Layout ${id}:` } as BetaContentBlockParam, img(pngs.get(id)!)])
+  return want.flatMap((id) => [{ type: 'text', text: `Layout ${id}:` } as BetaContentBlockParam, img(pngs.get(id)!)])
+}
+
+// Erste Nachricht: die vom Router gewählten Module und Vorschaubilder ihrer Layouts vor dem Nutzertext. Der ganze erste Turn
+// bleibt danach unverändert (append-only) → zweiter Cache-Breakpoint an seinem Ende. Ohne Route: Index im Kernprompt + read_guide.
+export function firstTurn(text: string, route: Route | undefined, thumbs: BetaContentBlockParam[]): BetaMessageParam {
+  const mods = route ? modulesText(route.modules) : ''
+  const blocks = [
+    ...(mods ? [{ type: 'text', text: `<leitfaden>\nFür diesen Auftrag ausgewählt (Router): ${route?.modules.join(', ')}. Weitere Module mit read_guide.\n\n${mods}\n</leitfaden>` }] : []),
+    ...(thumbs.length ? [...thumbs, { type: 'text', text: 'Vorschau der gewählten Layouts (typische Füllung, Theme beratung). Zeigt nur die Anordnung; Farbe, Schrift und Struktur kommen aus deinem eigenen Design. Nicht kommentieren.' }] : []),
+  ] as BetaContentBlockParam[]
+  if (!blocks.length) return { role: 'user', content: text }
+  return { role: 'user', content: [...blocks, { type: 'text', text, cache_control: { type: 'ephemeral' } }] }
 }
 
 // Tool-Status-Chips für die UI (auch für den Chat über Claude Code, claude-agent.ts)
@@ -112,9 +125,8 @@ export class DeckAgent {
   private history: BetaMessageParam[] = []
   private client: Anthropic
   private tools
-  private system = buildSystemPrompt()
+  readonly system = corePrompt() // pro Instanz fest → Prompt-Caching
   private ctl: AbortController | null = null
-  private thumbs: Promise<BetaContentBlockParam[]> | null = null
   private lock = { tail: Promise.resolve() as Promise<unknown> } // Deck-Tools nacheinander (toRunnable)
 
   constructor(private opts: DeckAgentOptions) {
@@ -134,11 +146,19 @@ export class DeckAgent {
     }).map((t) => toRunnable(t, opts.onEvent, this.lock))
   }
 
-  // Tool-Loop bis end_turn; History bleibt im Speicher.
-  async send(userText: string): Promise<void> {
+  // Noch keine Nachricht gesendet: dann soll der Aufrufer den Router fragen
+  get fresh(): boolean { return !this.history.length }
+
+  // Tool-Loop bis end_turn; History bleibt im Speicher. route zählt nur in der ersten Nachricht, danach lädt die KI per read_guide nach.
+  async send(userText: string, route?: Route): Promise<void> {
     const emit = this.opts.onEvent
-    if (!this.history.length) this.history.push(...(await this.firstTurnPrefix()))
-    this.history.push({ role: 'user', content: userText })
+    if (!this.fresh) this.history.push({ role: 'user', content: userText })
+    else {
+      const thumbs = route && this.opts.thumbnails !== false
+        ? await catalogThumbnails(this.opts.engine, route.modules).catch((e) => { console.warn('[agent] Vorschaubilder übersprungen:', (e as Error).message); return [] })
+        : []
+      this.history.push(firstTurn(userText, route, thumbs))
+    }
     this.ctl = new AbortController()
 
     const m = modelOf(this.model)
@@ -202,13 +222,4 @@ export class DeckAgent {
 
   // Deck aus der UI übernehmen (Text direkt bearbeitet, Undo) – die KI arbeitet danach mit diesem Stand.
   setDeck(deck: Deck): void { this.deck = deck }
-
-  private async firstTurnPrefix(): Promise<BetaMessageParam[]> {
-    if (this.opts.thumbnails === false) return []
-    this.thumbs ??= catalogThumbnails(this.opts.engine).catch((e) => { console.warn('[agent] Thumbnails übersprungen:', (e as Error).message); return [] })
-    const blocks = await this.thumbs
-    if (!blocks.length) return []
-    const tail = { type: 'text', text: 'Vorschau der Layouts (typische Füllung, Theme beratung). Zeigt nur die Anordnung; Farbe, Schrift und Struktur kommen aus deinem eigenen Design. Nicht kommentieren.', cache_control: { type: 'ephemeral' } } as BetaContentBlockParam
-    return [{ role: 'user', content: [...blocks, tail] }]
-  }
 }
