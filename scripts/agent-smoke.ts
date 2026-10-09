@@ -8,6 +8,7 @@ import { DeckAgent, buildSystemPrompt, toRunnable, type Engine, type VideoTools 
 import { z } from 'zod'
 import { assetUrl, buildTools, imageSettings, JOB_WAIT, jobList, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
+import { lintDeck } from '../src/shared/lint'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
 import { typeset } from '../src/shared/typo'
@@ -30,7 +31,7 @@ const fails = async (p: Promise<unknown>, re: RegExp) => { try { await p } catch
 const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 
-assert.equal(tools.length, 21)
+assert.equal(tools.length, 23)
 // laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
 for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -85,6 +86,15 @@ await fails(run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel
 const looks = await run('propose_looks', { looks: [look('Hell', '#F6F1E7'), look('Dunkel', '#12261E', { headFont: 'Inter', titleSize: 'large', rule: 'over' })] }) as { text: string; images: Buffer[] }
 assert.equal(looks.images.length, 2); assert.match(looks.text, /Hell[\s\S]*Dunkel/)
 await fails(run('add_slides', { slides: [{ layout: 'cover', content: { title: 'x' } }] }), /create_deck/)
+// Video-Decks: Clips folgen aufeinander ohne Titel- und Schlussfolie, fade nur an Zwischentiteln – keine Folien-Regeln dafür
+{
+  const m0 = { els: [], fit: { ok: true, head: 0, body: 1, overflow: [] } }
+  const st = (id: string, transition?: 'fade') => ({ id, layout: 'statement', content: { text: 'Ein ruhiger Zwischentitel' }, transition })
+  const cl = (id: string) => ({ id, layout: 'clip', content: { video: '', parts: [{ start: 0, end: 20 }] } })
+  const rules = (slides: Deck['slides']) => lintDeck({ title: 'V', theme: { id: 'midnight' }, transition: 'none', mode: 'auto', slides }, slides.map(() => m0)).map((x) => x.rule).filter((x) => ['structure', 'rhythm', 'transition'].includes(x)).sort()
+  assert.deepEqual(rules([st('a'), st('b'), st('c', 'fade'), st('d')]), ['rhythm', 'rhythm', 'structure', 'structure', 'transition'])
+  assert.deepEqual(rules([cl('a'), cl('b'), cl('c'), st('d', 'fade'), cl('e')]), [])
+}
 // KI-Klischees in create_deck/update_deck: Hinweis statt Ablehnung (der Nutzer darf sie wünschen)
 assert.match((await run('create_deck', { title: 'Test', customTheme: look('Tech', '#0E0E0E', { headFont: 'Space Grotesk', accent: '#C6F432' }) })).text, /^Hinweis: Space Grotesk[\s\S]*Hinweis: Säuregrün/)
 assert.match((await run('update_deck', { customTheme: { accent: '#7C3AED', headFont: 'Fraunces' } })).text, /^Hinweis: Akzent #7C3AED/)
@@ -243,6 +253,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
       return { duration: 75, lang: 'de', segments: o?.speakers ? segs.map((s, k) => ({ ...s, speaker: k })) : segs }
     },
     highlights: async () => hl,
+    cached: async () => ({ signals: { loud: new Array(75).fill(-30) }, highlights: hl, transcript: { duration: 75, lang: 'de', segments: segs }, duration: 75 }),
     importUrl: async (_url, onProgress) => {
       onProgress?.(12)
       await imported
@@ -282,6 +293,11 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.match((await go('video_highlights', { video: file })).text, /keine deutlichen Spitzen/)
   const T7 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, highlights: undefined } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
   await fails(T7.video_highlights.run({ video: file }), /Highlight-Suche fehlt/)
+  assert.match((await T7.video_highlights.run({ video: file, overview: true })).text, /^Überblick über/, 'Signale im Cache: Überblick ohne Highlight-Suche')
+  // über 10 min ohne from/to: Verweis auf Überblick und Fenster statt alles zu transkribieren; all erzwingt das ganze Video
+  const T9 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, probe: async () => ({ duration: 1290, w: 1920, h: 1080 }) } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  assert.equal((await T9.transcribe_video.run({ video: file })).text, 'Video ist 21:30 lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; das ganze Video nur für einen Fulltime-Schnitt mit all: true.')
+  assert.match((await T9.transcribe_video.run({ video: file, all: true })).text, /· 21:30 · 1920×1080 · Sprache de · 2 Segmente/)
   await fails(go('transcribe_video', { video: join(dir, 'fehlt.mp4') }), /Video nicht gefunden/)
   await fails(go('transcribe_video', { video: 'talk.mp4' }), /absoluten Dateipfad/)
   await fails(go('video_frames', { video: join(dir, 'notiz.txt'), times: [1] }), /kein unterstütztes Video/)
@@ -289,8 +305,11 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.equal(fr.images!.length, 2); assert.match(fr.text, /2\. 74\.9 s \(1:14\)[\s\S]*32 % der Bildbreite/)
   // absoluter Pfad in clip.video wird zur asset://-URL, damit der Renderer das Video laden kann
   await go('create_deck', { title: 'Shorts', format: '9:16', brand: null })
-  await go('add_slides', { slides: [{ layout: 'clip', content: { video: file, hook: 'Der Kern in 5 Sekunden', parts: [{ start: 61.2, end: 66.8 }] } }] })
+  const added = await go('add_slides', { slides: [{ layout: 'clip', content: { video: file, hook: 'Der Kern in 5 Sekunden', parts: [{ start: 61.2, end: 66.8 }] } }] })
   assert.equal(vd!.slides[0].content.video, assetUrl(file))
+  // Clip-Prüfung in der Antwort: Länge statt Autofit, Meldung aus lintClip
+  assert.match(added.text, /^Folie 1 \(s[0-9a-f]{4}, clip\): OK · Länge 5,6 s · 1 Ausschnitt · Transkript ok · Übergang/)
+  assert.match(added.text, /\n  - \[warn\] clip-laenge: Länge 5,6 s – für einen Short 15–60 s; verlängern/)
   // Hintergrundmusik: absoluter Pfad wird asset://, nur Audiodateien, null entfernt
   const mp3 = join(dir, 'music', 'ruhig.mp3')
   await fails(go('update_deck', { music: { src: mp3 } }), /Musik nicht gefunden/)
@@ -311,6 +330,21 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.match((await go('export_deck', { format: 'clips' })).text, /deck\.clips\nMusik nicht gefunden – ohne Musik exportiert/)
   vd!.music = { src: assetUrl(mp3) }
   assert.doesNotMatch((await go('export_deck', { format: 'mp4' })).text, /Musik nicht gefunden/)
+  // Transkript-Suche: Zitat → Zeiten; ohne Transkript klarer nächster Schritt
+  const found = await go('search_transcript', { video: file, query: 'der Kern' })
+  assert.match(found.text, /^1 Stelle zu „der Kern“ in asset:.*\n1:01–1:06 · „Der Kern\.“ · from=61\.2 to=66\.8$/)
+  assert.match((await go('search_transcript', { video: file, query: 'Quantenphysik' })).text, /^Keine Stelle/)
+  const T8 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, cached: async () => ({ signals: null, highlights: [], transcript: null, duration: null }) } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  assert.match((await T8.search_transcript.run({ video: file, query: 'Kern' })).text, /^Noch kein Transkript – erst transcribe_video/)
+  // Überblick: eine Zeile je 90 s mit dem Anfang des Gesagten
+  assert.match((await go('video_highlights', { video: file, overview: true })).text, /^Überblick über asset:.*\n0:00–1:15 · „Hallo zusammen\. Der Kern\.“\n/)
+  // check_clip: ohne Video die Prüfung und eine verständliche Meldung statt eines ffmpeg-Fehlers; lint_deck mischt die Clip-Prüfung ein
+  const blank = await go('add_slides', { slides: [{ layout: 'clip', content: { video: '', parts: [{ start: 0, end: 30 }] } }] })
+  assert.match(blank.text, /: 1 FEHLER · Länge 30 s · 1 Ausschnitt · Transkript fehlt[\s\S]*\[error\] clip-video[\s\S]*\[hinweis\] clip-hook/)
+  const chk = await go('check_clip', { slide: vd!.slides.at(-1)!.id })
+  assert.match(chk.text, /clip-video[\s\S]*\nKein Kontaktabzug: kein Video gesetzt/); assert.equal(chk.images, undefined)
+  await fails(go('check_clip', { slide: 'nope' }), /gibt es nicht/)
+  assert.match((await go('lint_deck', {})).text, /^\d+ Fehler, \d+ Warnungen, \d+ Hinweise:[\s\S]*\[warn\] clip-laenge[\s\S]*\[hinweis\] clip-hook/)
 }
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
