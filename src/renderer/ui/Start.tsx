@@ -1,7 +1,7 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“, die zuletzt bearbeiteten Decks (auch per MCP gebaute) und Vorlagen.
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp, Image as ImageIcon, Paperclip, Settings, X } from 'lucide-react'
-import { FORMATS, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
+import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Select } from './kit'
@@ -43,6 +43,19 @@ const EXAMPLES: [string, string, string?][] = [
   ['Flyer für ein Sommerfest', 'Gestalte einen Flyer (A4) für unser Sommerfest am 12. Juli ab 15 Uhr im Innenhof: Musik, Grill, Kinderprogramm – Anmeldung über unsere Webseite', 'flyer'],
 ]
 
+// Video-Chips: Label, Wunsch im Feld, ask geht unsichtbar an die KI (Abläufe: Design-Guide §11)
+const VIDEO_EXAMPLES: [string, string, string][] = [
+  ['5 Shorts', 'Mach aus meinem Video 5 Shorts mit Hook und Untertiteln.',
+    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (20–60 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips.'],
+  ['Ganzes Video kürzen', 'Kürze mein ganzes Video: Füllsätze, Versprecher und Abschweifungen raus.',
+    'Ablauf Fulltime (Guide §11, Ablauf 2): create_deck format 16:9, transition none. transcribe_video über alles, Gestrichenes kurz nennen. Eine einzige clip-Folie mit allen behaltenen Ausschnitten als parts, pauses kurz, captions satz, kein Hook. Am Ende export_deck mit mp4.'],
+  ['Highlights aus dem Stream', 'Finde die besten Momente in meinem Stream und mach daraus Shorts.',
+    'Ablauf Stream-Highlights (Guide §11, Ablauf 3): import_video bei Link, dann zuerst video_highlights. Nur die besten Fenster mit from/to transkribieren, nie den ganzen Stream. 5 Shorts im Format 9:16 wie im Ablauf Shorts; zusätzlich optional ein 16:9-Zusammenschnitt der Highlights. Am Ende export_deck mit clips (Zusammenschnitt: mp4).'],
+  ['Zusammenschnitt', 'Schneide meine Videos zu einem Zusammenschnitt zusammen.',
+    'Ablauf Kompilation (Guide §11, Ablauf 4): create_deck format 16:9, transition none. Je Quelle transcribe_video und eine clip-Folie, dazwischen kurze Zwischentitel (Layout section), transition fade nur sparsam an Zwischentiteln. Musik über find_music nur auf Wunsch, dezent. Am Ende export_deck mit mp4.'],
+]
+const LINK = /https?:\/\/[^\s<>"']+/g
+
 // Formatwahl neben dem Modell: ask geht unsichtbar an die KI, format gilt für „Leer beginnen“ (ohne = 16:9)
 const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatId; ask?: string }[] = [
   { id: 'auto', name: 'Automatisch', hint: 'Deckwerk wählt passend zu deinem Wunsch' },
@@ -73,10 +86,13 @@ interface Props {
   onOpen: () => void
   onOpenPath: (path: string) => void
   onKey: () => void
+  onVideo?: () => void // Video-Modus: nach erfolgreichem Absenden, damit die App die Video-Ansicht zeigt
 }
 
-export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey }: Props) {
+export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey, onVideo }: Props) {
   const [text, setText] = useState('')
+  const [video, setVideo] = useState(false)
+  const [vask, setVask] = useState<string>() // ask des gewählten Video-Chips
   const [fmt, setFmt] = useState('auto')
   const choice = FORMAT_CHOICES.find((f) => f.id === fmt)!
   const [recent, setRecent] = useState<Recent[]>([])
@@ -93,12 +109,19 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
     return () => window.removeEventListener('focus', load)
   }, [])
   const { srcs, attach, remove, clear, err } = useSource()
+  // Video oder Link im Feld: automatisch in den Video-Modus (danach frei umschaltbar)
+  const hasVideo = srcs.some((s) => VIDEO_FILE.test(s.name)) || /https?:\/\//.test(text)
+  useEffect(() => { if (hasVideo) { setVideo(true); setFmt('auto') } }, [hasVideo])
+  const mode = (v: boolean) => { setVideo(v); setVask(undefined); if (v) setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
   const submit = () => {
-    const ask = text.trim() || (!srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
+    const onlyVideos = video && srcs.length > 0 && srcs.every((s) => VIDEO_FILE.test(s.name))
+    const ask = text.trim() || (onlyVideos ? `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.` : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
       ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
       : 'Mach aus diesen Dateien eine Präsentation.')
-    const context = [choice.ask, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
-    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { setText(''); clear() }
+    const links = video ? [...new Set((text.match(LINK) ?? []).map((u) => u.replace(/[.,;:!?)\]]+$/, '')))].map((u) => `Link: ${u} – zuerst import_video`) : []
+    const context = [video ? vask : choice.ask, ...links, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
+    // onSubmit liefert false bei busy oder fehlendem Key: dann nicht in die Video-Ansicht wechseln
+    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { if (video) onVideo?.(); setText(''); setVask(undefined); clear() }
   }
 
   return (
@@ -114,8 +137,12 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
       </header>
 
       <main className="home-main">
-        <h1>Was möchtest du zeigen?</h1>
-        <p className="home-sub">Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.</p>
+        <div className="seg home-mode" role="group" aria-label="Modus">
+          <button type="button" aria-pressed={!video} onClick={() => mode(false)}>Präsentation</button>
+          <button type="button" aria-pressed={video} onClick={() => mode(true)}>Video</button>
+        </div>
+        <h1>{video ? 'Was soll aus deinem Video werden?' : 'Was möchtest du zeigen?'}</h1>
+        <p className="home-sub">{video ? 'Deckwerk hört das Video ab, wählt die Momente, schneidet, untertitelt und exportiert.' : 'Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.'}</p>
         <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
@@ -124,28 +151,30 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             autoFocus
             rows={2}
             value={text}
-            aria-label="Worum geht es in deiner Präsentation?"
-            placeholder="Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum"
-            onChange={(e) => setText(e.target.value)}
+            aria-label={video ? 'Was soll aus deinem Video werden?' : 'Worum geht es in deiner Präsentation?'}
+            placeholder={video ? 'Video hierher ziehen oder Link einfügen – und sag kurz, was du brauchst' : 'Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum'}
+            onChange={(e) => { const v = e.target.value; setText(v); if (vask && v !== VIDEO_EXAMPLES.find((x) => x[2] === vask)?.[1]) setVask(undefined) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
           />
           <div className="home-field-bar">
             <div className="home-field-l">
               <ModelSelect value={model} onChange={onModel} />
-              <Select className="model-select ghost format-select" value={fmt} onChange={(e) => setFmt(e.target.value)} aria-label="Format" title="Format">
+              {!video && <Select className="model-select ghost format-select" value={fmt} onChange={(e) => setFmt(e.target.value)} aria-label="Format" title="Format">
                 {FORMAT_CHOICES.map((f) => <option key={f.id} value={f.id} data-hint={f.hint}>{f.name}</option>)}
-              </Select>
+              </Select>}
               {srcs.map((s) => (
                 <span key={s.name} className="pill" title={s.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>{isImage(s.name) ? <ImageIcon size={13} /> : <Paperclip size={13} />}{s.name}<button type="button" className="plain" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={13} /></button></span>
               ))}
-              <button type="button" className="plain" title="Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)" onClick={() => attach()}><Paperclip size={16} />Datei</button>
+              <button type="button" className="plain" title={video ? 'Video anhängen (oder hierher ziehen)' : 'Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)'} onClick={() => attach()}><Paperclip size={16} />Datei</button>
               {err && <span className="home-err error" role="alert">{err}</span>}
             </div>
-            <button type="submit" className="round" aria-label="Deck erstellen" disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            <button type="submit" className="round" aria-label={video ? 'Video-Auftrag senden' : 'Deck erstellen'} disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
           </div>
         </form>
         <div className="home-chips">
-          {EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
+          {video
+            ? VIDEO_EXAMPLES.map(([label, full, ask]) => <button key={label} className="pill" onClick={() => { setText(full); setVask(ask); ref.current?.focus() }}>{label}</button>)
+            : EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
         </div>
         <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>Leer beginnen und frei gestalten</button>
       </main>
@@ -166,7 +195,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         </section>
       )}
 
-      {templates.length > 0 && (
+      {!video && templates.length > 0 && (
         <section className="home-recent" aria-label="Vorlagen">
           <h2>Mit einer Vorlage beginnen</h2>
           <div className="home-shelf">
