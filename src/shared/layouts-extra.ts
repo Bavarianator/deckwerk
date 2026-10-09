@@ -316,6 +316,26 @@ const cv = z.object({
   signed: z.string().max(50).optional().describe('Ort und Datum am Seitenende, z. B. „Musterstadt, 8. Oktober 2026“'),
 }).refine((c) => c.sections.reduce((n, s) => n + s.entries.length, 0) <= CV_ENTRIES, `Höchstens ${CV_ENTRIES} Stationen pro Seite – weitere auf eine zweite cv-Seite (ohne Foto)`)
 
+// Speisekarte (A4 hoch): Abschnitte mit Gerichten, Preis rechts auf der Zeile des Namens.
+// Grenzen für den ungünstigsten Fall (alle Felder voll, 12 px): rund 12 Gerichte mit je einer Zeile Beschreibung; das max-Sample
+// verteilt sie auf drei gleich lange Abschnitte (4+4+4), damit der Stresstest den Spaltenumbruch mitten im Abschnitt prüft.
+const MENU_MAX = 12
+const menu = z.object({
+  eyebrow: z.string().max(40).optional().describe('Ort, Saison oder Anlass, z. B. „Mittagstisch · KW 41“'),
+  title: z.string().min(3).max(40).describe('z. B. „Speisekarte“, „Herbstkarte“, „Getränke“'),
+  intro: z.string().max(160).optional().describe('ein bis zwei Sätze zur Küche, z. B. Herkunft der Zutaten'),
+  sections: z.array(z.object({
+    heading: z.string().min(1).max(30).describe('z. B. „Vorspeisen“, „Hauptgerichte“, „Getränke“'),
+    items: z.array(z.object({
+      name: z.string().min(1).max(40).describe('Gericht kurz und konkret, z. B. „Kürbissuppe“'),
+      text: z.string().max(80).optional().describe('Zutaten und Zubereitung statt Werbesprache, z. B. „Hokkaido, Ingwer, geröstete Kerne“'),
+      price: z.string().min(1).max(10).describe('Preis, z. B. „12,50“ oder „12,50 €“; nie erfinden, fehlt er: „–,–“'),
+      tag: z.string().max(20).optional().describe('dezenter Zusatz, z. B. „vegan“ oder Allergen-Kürzel „A, G“'),
+    })).min(1).max(6),
+  })).min(1).max(4),
+  note: z.string().max(220).optional().describe('Hinweise klein unten: Allergene und Zusatzstoffe erklären, „Alle Preise in Euro inkl. MwSt.“'),
+}).refine((c) => c.sections.reduce((n, s) => n + s.items.length, 0) <= MENU_MAX, `Höchstens ${MENU_MAX} Gerichte pro Seite; weitere auf eine zweite menu-Seite`)
+
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const EXTRA_LAYOUTS = {
@@ -741,6 +761,38 @@ export const EXTRA_LAYOUTS = {
         // Stationen an der Gesamtgrenze, verteilt auf die Höchstzahl der Abschnitte
         sections: [2, 1, 1, 1].map((n, i) => ({ heading: words(30, i), entries: rep(n, (j) => ({ period: words(24, i + j), title: words(60, i + j), place: words(60, j + 1), text: words(140, i + j) })) })),
         skills: rep(4, (i) => ({ label: words(24, i), text: words(80, i) })), signed: words(50),
+      },
+    },
+  }),
+  menu: L({
+    id: 'menu', name: 'Speisekarte (A4)', variants: ['one', 'two'], sizes: ['a4'],
+    when: `Nur A4 hoch: Speisekarte, Getränkekarte, Mittagstisch, Preisliste. Abschnitte (Vorspeisen, Hauptgerichte …) mit Gerichten: Name kurz und konkret, text = Zutaten statt Werbesprache, Preis rechts. Preise nie erfinden: fehlen sie, Platzhalter „–,–“ setzen und am Ende nachfragen. tag für „vegan“ oder Allergen-Kürzel, die Kürzel in note erklären (Allergene, Zusatzstoffe, Preise inkl. MwSt.). Variante one = eine Spalte (Standard), two = zwei Spalten ab ca. 8 Gerichten oder bei kurzen Einträgen wie Getränken. Höchstens ${MENU_MAX} Gerichte pro Seite; mehr = weitere menu-Seite (z. B. Getränke).`,
+    schema: menu, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Speisekarte', sections: [{ heading: 'Heute', items: [{ name: 'Linsensuppe', price: '6,50' }] }] },
+      typ: {
+        eyebrow: 'Herbst · ab 1. Oktober', title: 'Herbstkarte',
+        intro: 'Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen.',
+        sections: [
+          { heading: 'Vorspeisen', items: [
+            { name: 'Kürbissuppe', text: 'Hokkaido, Ingwer, geröstete Kerne', price: '7,50', tag: 'vegan' },
+            { name: 'Feldsalat', text: 'Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing', price: '9,80', tag: 'G, H' },
+          ] },
+          { heading: 'Hauptgerichte', items: [
+            { name: 'Rinderroulade', text: 'Rotkohl, Kartoffelklöße, Schmorsauce', price: '21,50', tag: 'A, I' },
+            { name: 'Kürbisrisotto', text: 'Salbeibutter, Bergkäse', price: '16,90', tag: 'G' },
+            { name: 'Saibling', text: 'Aus dem Fichtelgebirge, mit Petersilienkartoffeln und Rahmspinat', price: '23,00', tag: 'D, G' },
+          ] },
+          { heading: 'Nachspeisen', items: [
+            { name: 'Zwetschgendatschi', text: 'Mit geschlagener Sahne', price: '5,50', tag: 'A, C, G' },
+          ] },
+        ],
+        note: 'Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt.',
+      },
+      max: {
+        eyebrow: words(40), title: words(40), intro: words(160),
+        sections: rep(3, (i) => ({ heading: words(30, i), items: rep(4, (j) => ({ name: words(40, i + j), text: words(80, j), price: '1.234,50 €', tag: words(20, j) })) })),
+        note: words(220),
       },
     },
   }),

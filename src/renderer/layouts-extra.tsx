@@ -810,9 +810,43 @@ function Cv({ c, v }: Props<'cv'>) {
   )
 }
 
+// Speisekarte: Name und Preis auf einer Zeile, Zutaten darunter, Abschnitte mit Haarlinie. two = CSS-Spalten, die Abschnitte fließen
+// in Lesereihenfolge; die Spalten wachsen mit dem Inhalt (ausgeglichen statt fester Höhe), damit der Autofit den Überlauf sieht.
+function Menu({ c, v }: Props<'menu'>) {
+  return (
+    <Frame>
+      <div className="sk-head">
+        {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="sk-eyebrow">{c.eyebrow}</T>}
+        <T role="h1" slot="title" maxLines={2} className="sk-title">{c.title}</T>
+        {c.intro && <T role="body" slot="intro" className="sk-intro">{c.intro}</T>}
+      </div>
+      <div className="sk" data-fit data-slot="sections">
+        <div className={`sk-cols ${v === 'two' ? 'two' : ''}`}>
+          {c.sections.map((s, i) => (
+            <div className="sk-sec" key={i}>
+              <T role="h2" slot={`sections.${i}.heading`} build={i} className="sk-sec-head">{s.heading}</T>
+              {s.items.map((it, j) => (
+                <div className="sk-item" key={j}>
+                  <div className="sk-name">
+                    <T role="h3" slot={`sections.${i}.items.${j}.name`} build={i}>{it.name}</T>
+                    {it.tag && <T role="small" slot={`sections.${i}.items.${j}.tag`} build={i} className="sk-tag">{it.tag}</T>}
+                  </div>
+                  <T role="h3" slot={`sections.${i}.items.${j}.price`} build={i} className="sk-price">{it.price}</T>
+                  {it.text && <T role="small" slot={`sections.${i}.items.${j}.text`} build={i} className="sk-text">{it.text}</T>}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      {c.note && <T role="small" slot="note" className="sk-note">{c.note}</T>}
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
-  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, cv: Cv,
+  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, cv: Cv, menu: Menu,
 }
