@@ -31,7 +31,7 @@ const call = async (name: string, args: Record<string, unknown> = {}) => {
 const t0 = Date.now()
 const lap = (what: string) => console.log(`${String(Date.now() - t0).padStart(6)} ms  ${what}`)
 
-assert.equal((await client.listTools()).tools.length, 22)
+assert.equal((await client.listTools()).tools.length, 25)
 await call('create_deck', { title: 'E2E Test', theme: 'corporate', brand: { primary: '#0A7C66' } })
 let r = await call('add_slides', { slides: [
   { layout: 'cover', content: { eyebrow: 'E2E', title: 'Der MCP-Server rendert echte Folien', subtitle: 'Offscreen-Chromium im Electron-Main-Prozess' }, notes: 'Testfolie' },
@@ -84,6 +84,13 @@ assert.match(clip.content.video, /^asset:\/\/local\//, 'absoluter Pfad wird zur 
 r = await call('video_frames', { video, times: [1, 5] })
 lap('video_frames')
 assert.equal(r.content.filter((c) => c.type === 'image').length, 2)
+for (let n = 0; ; n++) { // 10 s gleichmäßiger Ton: keine Spitzen zu erwarten, aber der Weg über Lautheit und Job muss tragen
+  r = await call('video_highlights', { video })
+  if (!/läuft noch/.test(r.content[0].text!)) break
+  assert.ok(n < 5, `Highlight-Suche hängt: ${r.content[0].text}`)
+}
+lap('video_highlights')
+assert.match(r.content[0].text!, /\n1\. \d|keine deutlichen Spitzen/)
 r = await call('render_slides', { ids: [clip.id], width: 360 })
 assert.ok(r.content.some((c) => c.type === 'image'))
 for (let n = 0; ; n++) {
