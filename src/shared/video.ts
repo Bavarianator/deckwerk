@@ -10,11 +10,25 @@ export type Captions = 'wort' | 'satz' | 'aus'
 export type Pauses = 'kurz' | 'lassen'
 export type Fit = 'crop' | 'blur' // blur: ganzes Bild mittig auf unscharfem, abgedunkeltem Vollbild-Grund (Querformat in 9:16)
 // follow: Zuschnitt folgt dem aktiven Sprecher (Podcast), die Engine teilt parts an Sprecherwechseln
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher' }
+// style: ruhig (Standard) = ohne Animation; lebendig = Wort-Pop, Hook mit Einblendung und Balken, Fortschrittsbalken, Zoom-Wechsel an Schnitten
+export type ClipStyle = 'ruhig' | 'lebendig'
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle }
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
 export const CAPTIONS: Captions[] = ['wort', 'satz', 'aus']
+export const CLIP_STYLES: ClipStyle[] = ['ruhig', 'lebendig']
+// Werte für style 'lebendig', gemeinsam für Export (ASS/ffmpeg) und Vorschau (CSS), damit beide gleich aussehen
+export const FX = {
+  pop: 1.08, popMs: 120, // gesprochenes Wort wächst kurz und geht zurück
+  hookFadeMs: 200, // Hook blendet ein und aus
+  zoom: 1.08, // jeder zweite Ausschnitt (ungerader Index) enger: kaschiert Jump-Cuts
+  bar: 0.006, // Fortschrittsbalken: Höhe als Anteil der Bildhöhe, Akzentfarbe, unten
+}
+// Zahl der echten Schnitte bis Ausschnitt i: nahtlose Übergänge (Quelle läuft weiter) zählen nicht
+export const cutIndex = (parts: Part[], i: number) => parts.slice(1, i + 1).filter((p, j) => Math.abs(parts[j].end - p.start) >= 1e-3).length
+// Zoom nach dem part-ten Schnitt (cutIndex): nur lebendig und nur jeder zweite
+export const zoomOf = (style: ClipStyle | undefined, part: number) => (style === 'lebendig' && part % 2 === 1 ? FX.zoom : 1)
 export const PAD = 0.15 // Puffer an jedem Schnitt, damit kein Wort angeschnitten wird
 export const STILL = 3 // Sekunden je Folie ohne Video im MP4
 export const MIN_PAUSE = 0.6 // pauses 'kurz': Stillen ab dieser Länge fallen weg, padParts lässt je Seite PAD stehen

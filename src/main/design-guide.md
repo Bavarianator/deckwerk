@@ -451,6 +451,7 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - Short: ideal 25–50 s, hart 15–60 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
 - `hook` (Short): höchstens 70 Zeichen, löst nicht schon alles auf; kein Clickbait, keine Emojis.
 - `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
+- `style`: `lebendig` für Shorts und Reels (Wort-Pop, Hook blendet mit Balken ein, Fortschrittsbalken, Zoom-Wechsel an Schnitten kaschiert Jump-Cuts), sonst weglassen (= ruhig, ohne Bewegung): Fulltime, Vorträge, Schulungen. Keine weiteren Effekte, Sticker oder Emojis.
 - `pauses`: `kurz` für Talking Heads mit Denkpausen oder stockendem Sprechen (Pausen ab 0,6 s schrumpfen auf 0,3 s), `lassen` bei Musik, Vorführungen oder bewusst gesetzten Pausen.
 - `fit`: `crop` (Standard) füllt das Format; ohne `focus` sucht der Export das Gesicht. `blur` zeigt das ganze Bild auf unscharfem Grund, wenn Folien, Bildschirm oder Gesten am Rand wichtig sind. Ein 9:16-Ausschnitt zeigt aus einem Querformat nur etwa ein Drittel der Breite.
 - `follow: "sprecher"` bei mehreren Personen im Bild (Podcast, Gespräch): Der Zuschnitt folgt dem, der gerade spricht.

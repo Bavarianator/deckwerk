@@ -1,13 +1,15 @@
 // Video-Schnitt unter Node (ffmpeg, Zuschnitt, Untertitel, Clip-Szene): npx esbuild scripts/check-video.ts --bundle --platform=node --format=esm --external:./render --external:./export-pptx --external:electron --outfile=${TMPDIR:-/tmp}/check-video.mjs && DECKWERK_HOME=${TMPDIR:-/tmp}/check-video-home node ${TMPDIR:-/tmp}/check-video.mjs
 // Die externen Pfade sind die Electron-Teile, die export-video.ts erst in exportVideo lädt. Ohne ffmpeg im PATH wird ffmpeg-static geladen (~30 MB).
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless, snapParts } from '../src/main/export-video'
+import { cropFilter, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
-import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, tighten, type Transcript } from '../src/shared/video'
+import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, tighten, zoomOf, cutIndex, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -43,6 +45,42 @@ async function main() {
     assert.deepEqual(snapParts([{ start: 1.5, end: 4.3 }], null), { parts: [{ start: 1.5, end: 4.3 }], moved: 0 })
     assert.equal(snapParts([{ start: 1.5, end: 4.3 }], { duration: 12, lang: 'de', segments: [{ start: 1, end: 5, text: 'eins zwei drei' }] }).moved, 0, 'ohne words geschätzt: unverändert')
     if (process.env.DW_ONLY_SNAP) return
+
+    // Clip-Stil: ruhig (ohne style) Byte für Byte wie vor 'lebendig', lebendig mit Pop, Hook-Einblendung, Balken je Gruppe, Zoom an jedem zweiten Schnitt
+    {
+      const ws = clipWords({ duration: 12, lang: 'de', segments: [{ start: 1, end: 4, text: 'eins zwei drei' }, { start: 6, end: 8, text: 'vier fünf' }] }, [{ start: 1, end: 4 }, { start: 6, end: 8 }])
+      const sub = (mode: 'wort' | 'satz', x: object = {}) => assSubs({ size: { w: 1080, h: 1920 }, font: 'Archivo', bold: true, accent: '#FF8800', hook: 'Warum das klappt', hookDur: 4, cues: cues(ws, mode), mode, ...x })
+      const sha = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 16)
+      assert.equal(sha(sub('wort')), '43d26050f6b4cc6c', 'ruhig/wort unverändert')
+      assert.equal(sha(sub('satz')), '3265eea221f79b63', 'ruhig/satz unverändert')
+      assert.equal(sub('wort', { style: 'ruhig', bar: { off: 0, dur: 5, total: 5 } }), sub('wort'), 'style ruhig = ohne style')
+      const live = sub('wort', { style: 'lebendig', bar: { off: 5, dur: 5, total: 20 } })
+      assert.ok(live.includes('{\\c&H0088FF&\\fscx108\\fscy108\\t(0,120,\\fscx100\\fscy100)}zwei{\\r}'), live)
+      assert.equal(live.match(/\\t\(0,120,/g)?.length, 5, 'Pop je Wortzustand')
+      assert.ok(live.includes(',HookBox,,0,0,0,,{\\fad(200,200)}Warum das klappt'), live)
+      assert.ok(/^Style: HookBox,Archivo,\d+,&H00FFFFFF,&H00FFFFFF,&H59000000,&H80000000,-1,0,0,0,100,100,0,0,3,13,0,/m.test(live), live)
+      const bars = live.match(/^Dialogue: .*,Bar,.*$/gm) ?? []
+      assert.equal(bars.length, 1, 'ein Balken je Gruppe')
+      assert.ok(bars[0].includes('0:00:00.00,0:00:05.00') && bars[0].includes('\\pos(0,1908)\\clip(0,0,270,1920)\\t(\\clip(0,0,540,1920))\\p1}m 0 0 l 1080 0 1080 12 0 12'), bars[0])
+      assert.ok(!sub('satz', { style: 'lebendig' }).includes('\\fscx108'), 'satz ohne Pop')
+      // Zuschnitt: part 0 wie bisher, part 1 um 1,08 enger um denselben Mittelpunkt
+      const c = cropRect({ w: 1280, h: 720 }, { w: 1080, h: 1920 }, 0.5)
+      assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf('lebendig', 0)), 'crop=406:720:437:0,scale=1080:1920')
+      assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf(undefined, 1)), 'crop=406:720:437:0,scale=1080:1920')
+      const z = zoomCrop(c, zoomOf('lebendig', 1))
+      // Zoom wechselt nur an echten Schnitten: nahtlos anschließende parts (follow) behalten den Zoom
+      assert.deepEqual([0, 1, 2, 3].map((i) => cutIndex([{ start: 0, end: 2 }, { start: 2, end: 4 }, { start: 6, end: 8 }, { start: 9, end: 10 }], i)), [0, 0, 1, 2])
+      assert.ok(z.w < c.w && z.h < c.h && Math.abs(z.x + z.w / 2 - (c.x + c.w / 2)) <= 1 && Math.abs(z.y + z.h / 2 - (c.y + c.h / 2)) <= 1, JSON.stringify(z))
+      // ffmpeg nimmt Filtergraph und ASS an: 4-s-Quelle, zwei parts, Hook, Balken
+      const fxSrc = join(dir, 'fx.mp4')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=4', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', fxSrc])
+      const fxFont = { name: 'Archivo', files: [readFileSync(resolve('assets/fonts/Archivo-Bold.ttf'))], bold: true }
+      const fxSegs = await clipSegs({ file: fxSrc, parts: [{ start: 0.3, end: 1.5 }, { start: 2, end: 3.5 }], hook: 'Hook', captions: 'aus', transcript: null, size: { w: 180, h: 320 }, font: fxFont, accent: '#FF8800', style: 'lebendig' }, 'fx', dir, { preset: 'ultrafast' })
+      near((await probe(fxSegs[0].file)).duration, fxSegs[0].dur, 0.1, 'lebendig: Länge')
+      assert.ok(readFileSync(join(dir, 'fx-01.ass'), 'utf8').includes(',Bar,'), 'Balken auch ohne Untertitel')
+      console.log('  Clip-Stil ok')
+    }
+    if (process.env.DW_ONLY_FX) return
 
     // Kontaktabzug: 9:16 aus 16:9, zwei parts, 3×3 Kacheln
     const sheetSrc = join(dir, 'abzug.mp4')
