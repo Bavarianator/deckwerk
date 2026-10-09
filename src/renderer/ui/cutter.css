@@ -1,0 +1,39 @@
+/* Schneiden (ClipCutter): Player im Format des Decks, darunter Zeitleisten und die Ausschnitte */
+.cut-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; width: min(960px, 100%); margin: 0 auto; padding: 8px 32px 24px; }
+.cut-player { position: relative; align-self: center; height: 44vh; max-width: 100%; border-radius: 10px; overflow: hidden; background: #000; }
+.cut-player .clip-video { height: 100%; cursor: pointer; }
+.cut-bad { position: absolute; inset: auto 16px 16px; margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--material); color: var(--text); font-size: 13px; line-height: 1.45; }
+.cut-transport { display: flex; align-items: center; gap: 8px; }
+.cut-transport .btn, .cut-edit .btn { display: inline-flex; align-items: center; gap: 6px; }
+.cut-time { font-variant-numeric: tabular-nums; font-weight: 600; margin-left: 6px; }
+.cut-sum { margin-left: auto; color: var(--muted); font-size: 13px; }
+.cut-strip-wrap { display: grid; gap: 4px; }
+.cut-strip-wrap > span { font-size: 12px; color: var(--muted); }
+.cut-strip { position: relative; height: 34px; border-radius: 6px; background: rgb(22 22 26 / 0.08); cursor: pointer; touch-action: none; user-select: none; }
+.cut-part { position: absolute; top: 0; bottom: 0; min-width: 2px; border-radius: 4px; background: rgb(22 22 26 / 0.22); }
+.cut-part > span { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 600; color: #fff; pointer-events: none; }
+.cut-part.on { background: var(--accent); }
+.cut-grip { position: absolute; top: -3px; bottom: -3px; width: 12px; border-radius: 4px; background: var(--accent-hover); cursor: ew-resize; }
+.cut-grip::after { content: ''; position: absolute; left: 5px; top: 30%; bottom: 30%; width: 2px; border-radius: 1px; background: #fff; }
+.cut-grip.l { left: -6px; }
+.cut-grip.r { right: -6px; }
+.cut-head { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--danger); pointer-events: none; }
+.cut-parts { display: flex; flex-wrap: wrap; gap: 6px; }
+.cut-parts button { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--panel); color: var(--text); font-variant-numeric: tabular-nums; font-size: 13px; cursor: pointer; }
+.cut-parts button span { color: var(--muted); }
+.cut-parts button.on { border-color: var(--accent); background: var(--accent-soft); }
+.cut-parts button.on b { color: var(--accent); }
+.cut-edit { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.cut-edit .field { margin: 0; }
+.cut-edit .num { width: 90px; }
+.cut-gap { flex: 1; }
+.cut-focus { margin: 0; max-width: 320px; }
+/* Abspielfläche (clipPlayer.tsx): crop füllt das Format, blur zeigt das ganze Bild auf unscharfem, abgedunkeltem Grund wie im MP4 */
+.clip-video { position: relative; overflow: hidden; background: #000; }
+.clip-video video { position: relative; width: 100%; height: 100%; object-fit: cover; display: block; }
+.clip-video.blur video { object-fit: contain; }
+.clip-video-bg { position: absolute; inset: 0; background: center / cover no-repeat; filter: blur(12px) brightness(0.55); transform: scale(1.1); }
+/* Lautheit und Highlights hinter den Ausschnitten: flach und leise */
+.cut-curve { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--faint); opacity: 0.18; pointer-events: none; }
+.cut-mark { position: absolute; top: 0; bottom: 0; border-left: 1px solid var(--faint); background: var(--hover); }
+.cut-mark > span { position: absolute; left: 4px; top: 3px; font-size: 10px; line-height: 1; color: var(--faint); pointer-events: none; }

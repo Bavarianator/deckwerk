@@ -458,3 +458,11 @@
 .t.sk-price { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .t.sk-text { grid-column: 1 / -1; font-size: calc(var(--fs-small) * 1.08); text-wrap: pretty; } /* volle Breite: in zwei Spalten bliebe neben dem Preis zu wenig Platz */
 .t.sk-note { flex: none; margin-top: 20px; }
+
+/* ---------- Videoclip: Standbild randabfallend, Hook oben im sicheren Bereich ---------- */
+.clip-media { position: absolute; inset: 0; overflow: hidden; }
+.clip-still, .clip-ph, .clip-scrim { position: absolute; inset: 0; width: 100%; height: 100%; }
+.clip-still { background-size: cover; background-repeat: no-repeat; background-color: #000; }
+.clip-scrim { bottom: auto; height: 45%; }
+.clip { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 48px; } /* Abstand zur Plattform-Leiste oben */
+.t.clip-hook { max-width: 900px; line-height: 1.12; }

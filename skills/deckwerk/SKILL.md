@@ -1,6 +1,6 @@
 ---
 name: deckwerk
-description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
+description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
 ---
 
 # Deckwerk: Präsentationen, die man dem Chef zeigen kann
@@ -95,6 +95,16 @@ Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien al
 - Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `docx` (Word: Text bearbeitbar, Gestaltung als Hintergrundbild), `pdf`, `png`, `zip` (alle Bilder plus PDF in einer Datei, für Karussells) oder `md` (Handout). Pfade nennen; bei Nicht-16:9 tragen die Dateien das Format im Namen (`-4x5`, `-a4`).
 - Drucksachen für die Druckerei: `export_deck` mit `format: "print"` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm). A4-Decks skaliert `size` verlustfrei: a2/a3 = Plakat, a5 = Flyer, a6 = Postkarte oder Einladung; die Visitenkarte druckt in ihrer eigenen Größe. Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB; bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
 - Kurzer Bericht: Folienzahl, Storyline in einem Satz, getroffene Annahmen und was der Nutzer ersetzen muss (Zahlen, Zitate, Fotos).
+
+## 9. Video schneiden
+
+Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights oder einen Zusammenschnitt, gilt Guide §11 „Video“. Eine Folie im Layout `clip` ist ein Video aus Ausschnitten. Meldet ein Video-Tool „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen.
+- **Material:** asset://-Pfad aus dem Anhang, absoluter Pfad oder per Link `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; laufende Livestreams erst nach dem Ende.
+- **Sprache:** Ohne `lang` transkribiert Parakeet, das nur 25 europäische Sprachen kennt. Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper.
+- **Short/Reel (9:16):** `transcribe_video` → 3–5 stärkste Momente (Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen bis zum Payoff, zitierfähig, abgeschlossenes Ende), je 20–60 s, Schnitte nur an Segmentgrenzen → `video_frames` als Kontaktabzug → `create_deck` `format: "9:16"`, `transition: "none"`, je Short eine `clip`-Folie (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`, `fit` `crop` mit Auto-Zuschnitt aufs Gesicht oder `blur` bei Folien und Gesten am Rand, `follow` `sprecher` bei mehreren Personen) → `export_deck` `clips`.
+- **Ganzes Video kürzen (16:9):** eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), `pauses` `kurz`, `captions` `satz` oder `aus` → `export_deck` `mp4`.
+- **Stream (2–8 h) und Videos über 30 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
+- **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` nur dort; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
 
 ## Häufige Fehler
 

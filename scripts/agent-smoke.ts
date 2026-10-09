@@ -4,9 +4,9 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DeckAgent, buildSystemPrompt, toRunnable, type Engine } from '../src/main/agent'
+import { DeckAgent, buildSystemPrompt, toRunnable, type Engine, type VideoTools } from '../src/main/agent'
 import { z } from 'zod'
-import { assetUrl, buildTools, imageSettings, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
+import { assetUrl, buildTools, imageSettings, JOB_WAIT, jobList, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick } from '../src/shared/models'
@@ -30,7 +30,9 @@ const fails = async (p: Promise<unknown>, re: RegExp) => { try { await p } catch
 const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 
-assert.equal(tools.length, 16)
+assert.equal(tools.length, 21)
+// laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
+for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
 {
   const log: string[] = [], lock = { tail: Promise.resolve() as Promise<unknown> }
@@ -217,6 +219,99 @@ assert.match((await run('find_images', {})).text, /Keine .*Bilder|nicht konfigur
 assert.match((await run('export_deck', { format: 'pptx' })).text, /deck\.pptx/)
 assert.match((await run('export_deck', { format: 'zip' })).text, /deck\.zip/)
 assert.match((await run('export_deck', { format: 'docx' })).text, /deck\.docx/)
+assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/)
+// Video: ohne engine.video eine klare Meldung; mit Mock-Video laufen Transkript, Download und Highlights als Hintergrund-Job („läuft noch“, dann abholen)
+{
+  const dir = mkdtempSync(join(tmpdir(), 'dw-video-')), file = join(dir, 'talk.mp4')
+  writeFileSync(file, '')
+  await fails(run('transcribe_video', { video: file }), /^Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server/)
+  await fails(run('import_video', { url: 'https://example.com/v' }), /nur in der Deckwerk-App/)
+  await fails(run('find_music', {}), /query \(suchen\) oder id/)
+  await fails(run('find_music', { id: '../x' }), /Ungültige Openverse-ID/) // vor jedem Netzzugriff
+  let finish = () => {}, loaded = () => {}
+  const spoken = new Promise<void>((ok) => { finish = ok }), imported = new Promise<void>((ok) => { loaded = ok })
+  const seen: unknown[] = []
+  const segs = [{ start: 0, end: 4.2, text: ' Hallo zusammen.' }, { start: 61.2, end: 66.8, text: 'Der Kern.' }]
+  let hl = [{ start: 2832, end: 2892, score: 6.24, why: 'Chat ×4,2 · laut +9 dB' }, { start: 3723, end: 3783, score: 3, why: 'oft gesehen' }]
+  const video: VideoTools = {
+    probe: async () => ({ duration: 75, w: 1920, h: 1080 }),
+    frames: async (_f, times) => times.map(() => PNG),
+    transcribe: async (_f, onProgress, o) => {
+      seen.push(o)
+      onProgress?.(43)
+      await spoken
+      return { duration: 75, lang: 'de', segments: o?.speakers ? segs.map((s, k) => ({ ...s, speaker: k })) : segs }
+    },
+    highlights: async () => hl,
+    importUrl: async (_url, onProgress) => {
+      onProgress?.(12)
+      await imported
+      return { file, title: 'Stream vom Freitag', duration: 3 * 3600 + 5, chat: true, chapters: Array.from({ length: 32 }, (_, k) => ({ start: k * 300, title: `Teil ${k + 1}` })) }
+    },
+  }
+  let vd: Deck | null = null
+  const T6 = Object.fromEntries(buildTools({ engine: { ...engine, video }, getDeck: () => vd, setDeck: (x) => { vd = x }, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  const go = (name: string, input: unknown) => T6[name].run(T6[name].inputSchema.parse(input))
+  JOB_WAIT.ms = 20
+  assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\)/)
+  assert.deepEqual(jobList().map(({ name, pct, done }) => ({ name, pct, done })), [{ name: 'transcribe', pct: 43, done: false }])
+  finish()
+  await new Promise((r) => setTimeout(r, 5))
+  assert.equal(jobList()[0].done, true)
+  const tr = await go('transcribe_video', { video: file }) // anderer Weg zur selben Datei: derselbe Job
+  assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente\n\[s0\] 0\.0–4\.2 Hallo zusammen\.\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
+  assert.deepEqual(seen, [{ range: undefined, lang: undefined, speakers: undefined }])
+  assert.deepEqual(jobList(), []) // abgeholt = vergessen
+  // from/to bestimmen, was transkribiert wird (to höchstens bis zum Ende); Sprecher als S1, S2 …
+  const win = await go('transcribe_video', { video: file, from: 60, to: 999, lang: 'de', speakers: true })
+  assert.deepEqual(seen[1], { range: { from: 60, to: 75 }, lang: 'de', speakers: true })
+  assert.match(win.text, /· 2 Segmente\n\[s1\] S2 61\.2–66\.8 Der Kern\.\n\n/)
+  await fails(go('transcribe_video', { video: file, from: 10, to: 5 }), /to muss nach from/)
+  await fails(go('transcribe_video', { video: file, from: 80 }), /hinter dem Ende/)
+  // Download per Link: läuft noch, dann Pfad, Dauer, Chat, Kapitel (höchstens 30) und nächster Schritt nach Länge
+  assert.match((await go('import_video', { url: 'https://www.twitch.tv/videos/123' })).text, /^Download läuft noch \(12 %\)/)
+  loaded()
+  const im = await go('import_video', { url: 'https://www.twitch.tv/videos/123' })
+  assert.match(im.text, /^Video: asset:\/\/local\/.*\/talk\.mp4\nTitel: Stream vom Freitag\nDauer: 3:00:05\nChat: ja/)
+  assert.match(im.text, /Kapitel \(32\):\n0:00:00 Teil 1\n0:05:00 Teil 2\n[\s\S]*\n2:25:00 Teil 30\n… und 2 weitere\n\nWeiter: video_highlights/)
+  JOB_WAIT.ms = 240_000
+  const hi = await go('video_highlights', { video: file })
+  assert.match(hi.text, /^2 Kandidaten in asset:.*\n1\. 0:47:12–0:48:12 · Score 6,2 · Chat ×4,2 · laut \+9 dB · from=2832 to=2892\n2\. 1:02:03–1:03:03 · Score 3,0 · oft gesehen/)
+  assert.match(hi.text, /transcribe_video mit from\/to[\s\S]*video_frames/)
+  hl = []
+  assert.match((await go('video_highlights', { video: file })).text, /keine deutlichen Spitzen/)
+  const T7 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, highlights: undefined } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  await fails(T7.video_highlights.run({ video: file }), /Highlight-Suche fehlt/)
+  await fails(go('transcribe_video', { video: join(dir, 'fehlt.mp4') }), /Video nicht gefunden/)
+  await fails(go('transcribe_video', { video: 'talk.mp4' }), /absoluten Dateipfad/)
+  await fails(go('video_frames', { video: join(dir, 'notiz.txt'), times: [1] }), /kein unterstütztes Video/)
+  const fr = await go('video_frames', { video: file, times: [1, 500] })
+  assert.equal(fr.images!.length, 2); assert.match(fr.text, /2\. 74\.9 s \(1:14\)[\s\S]*32 % der Bildbreite/)
+  // absoluter Pfad in clip.video wird zur asset://-URL, damit der Renderer das Video laden kann
+  await go('create_deck', { title: 'Shorts', format: '9:16', brand: null })
+  await go('add_slides', { slides: [{ layout: 'clip', content: { video: file, hook: 'Der Kern in 5 Sekunden', parts: [{ start: 61.2, end: 66.8 }] } }] })
+  assert.equal(vd!.slides[0].content.video, assetUrl(file))
+  // Hintergrundmusik: absoluter Pfad wird asset://, nur Audiodateien, null entfernt
+  const mp3 = join(dir, 'music', 'ruhig.mp3')
+  await fails(go('update_deck', { music: { src: mp3 } }), /Musik nicht gefunden/)
+  mkdirSync(join(dir, 'music')); writeFileSync(mp3, '')
+  assert.match((await go('update_deck', { music: { src: mp3, credit: '„Ruhig“ von X, CC BY 4.0' } })).text, /"music":\{"src":"asset:\/\/local\/.*ruhig\.mp3"/)
+  assert.deepEqual(vd!.music, { src: assetUrl(mp3), credit: '„Ruhig“ von X, CC BY 4.0' })
+  await fails(go('update_deck', { music: { src: join(dir, 'notiz.txt') } }), /keine Audiodatei/)
+  await fails(go('update_deck', { music: { src: 'ruhig.mp3' } }), /absoluten Dateipfad/)
+  await go('update_deck', { music: { src: `asset:${mp3}` } }) // Kurzform ohne local wird zur Form, die die Engine kennt
+  assert.equal(vd!.music!.src, assetUrl(mp3))
+  await go('update_deck', { music: null })
+  assert.equal(vd!.music, undefined)
+  // mp4: Übergänge mit Abblende zählen (ausgeblendete Folien und morph nicht), fehlende Musik melden
+  const s0 = vd!.slides[0]
+  vd!.slides.push({ ...s0, id: 'f1', transition: 'fade' }, { ...s0, id: 'm1', transition: 'morph' }, { ...s0, id: 'h1', transition: 'fade', hidden: true }, { ...s0, id: 'n1', transition: 'none' })
+  assert.match((await go('export_deck', { format: 'mp4' })).text, /\n1 Übergang mit Abblende \(Folien-transition; none = harter Schnitt\)$/)
+  vd!.music = { src: assetUrl(join(dir, 'music', 'weg.mp3')) }
+  assert.match((await go('export_deck', { format: 'clips' })).text, /deck\.clips\nMusik nicht gefunden – ohne Musik exportiert/)
+  vd!.music = { src: assetUrl(mp3) }
+  assert.doesNotMatch((await go('export_deck', { format: 'mp4' })).text, /Musik nicht gefunden/)
+}
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)
 assert.equal(events, 13, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem Stil-Test + 3 aus dem Klischee-Test + 1 Feinsatz-Test

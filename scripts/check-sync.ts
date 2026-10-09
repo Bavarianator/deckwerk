@@ -106,8 +106,11 @@ eq(hoch[0].length + hoch[1].length, 6)
 // Zwischenstand alle 20 Übertragungen: bricht die App mitten im Lauf ab, ist Erledigtes schon gemerkt
 for (let i = 0; i < 25; i++) put(D, `drei/bild${i}.png`, `D${i}`)
 let gemerkt = -1, puts = 0
+const drei = () => Object.keys(JSON.parse(readFileSync(join(D, '.sync-state.json'), 'utf8')).files).filter((k) => k.startsWith('drei/')).length
 const schaut: typeof fetch = async (u, i) => {
-  if (i?.method === 'PUT' && ++puts === 25) gemerkt = Object.keys(JSON.parse(readFileSync(join(D, '.sync-state.json'), 'utf8')).files).filter((k) => k.startsWith('drei/')).length
+  // der Zwischenstand wird nebenher geschrieben (auf langsamer Platte erst nach dem 25. PUT): bis zu 2 s warten; solange
+  // dieser letzte Upload aussteht, kann der Lauf nicht enden, gemessen wird also nie der Endstand
+  if (i?.method === 'PUT' && ++puts === 25) for (let t = 0; t < 200 && (gemerkt = drei()) < 20; t++) await new Promise((r) => setTimeout(r, 10))
   return fetch(u, i)
 }
 eq((await sync(D, s, schaut)).up, 25)
