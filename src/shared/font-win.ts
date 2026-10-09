@@ -22,7 +22,7 @@ export function winOfTtf(buf: ArrayBuffer): number | undefined {
 
 if (typeof process !== 'undefined' && process.env.DW_FONT_WIN_SELFTEST) {
   void (async () => {
-    const assert = process.getBuiltinModule('node:assert/strict')
+    const assert: typeof import('node:assert/strict') = process.getBuiltinModule('node:assert/strict') // Typ explizit: tsc verlangt ihn für assert-Aufrufe
     const fs = process.getBuiltinModule('node:fs') // getBuiltinModule statt import: das Renderer-Bündel zieht kein node:* mit
     const dir = `${process.cwd()}/assets/fonts/` // vom Projektstamm aus aufrufen
     const stems = new Set<string>()
