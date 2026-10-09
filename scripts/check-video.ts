@@ -4,9 +4,10 @@ import assert from 'node:assert/strict'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { assSubs, encodeClip, padParts, seamless } from '../src/main/export-video'
-import { ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, runFfmpeg, silences } from '../src/main/ffmpeg'
-import { MIN_PAUSE, PAD, clipWords, cropRect, cues, estimateWords, partsLength, tighten, type Transcript } from '../src/shared/video'
+import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless } from '../src/main/export-video'
+import type { Deck } from '../src/shared/deck'
+import { ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
+import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, partsLength, tighten, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -16,6 +17,14 @@ function dip(pcm: Float32Array, t: number, ref: number) {
   for (let s = Math.round((t - 0.05) * 16000); s < (t + 0.05) * 16000; s += 40) min = Math.min(min, rms(s))
   return min / rms(Math.round(ref * 16000))
 }
+// Mittlere Helligkeit (0–255) eines Ausschnitts aus rawFrames (BGR, side×side)
+function luma(raw: Buffer, side: number, x0: number, y0: number, x1: number, y1: number) {
+  let sum = 0
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) sum += raw[(y * side + x) * 3] + raw[(y * side + x) * 3 + 1] + raw[(y * side + x) * 3 + 2]
+  return sum / 3 / ((x1 - x0) * (y1 - y0))
+}
+// RMS-Pegel in dB zwischen a und b (s) eines 16-kHz-PCM
+const dbOf = (pcm: Float32Array, a: number, b: number) => { const x = pcm.subarray(a * 16000, b * 16000); return 10 * Math.log10(x.reduce((q, v) => q + v * v, 0) / x.length) }
 
 async function main() {
   const base = process.env.TMPDIR ?? tmpdir()
@@ -108,6 +117,25 @@ async function main() {
     assert.ok(/^Style: Hook,Archivo,\d+,&H00FFFFFF/m.test(ass))
     const satz = assSubs({ size: out, font: 'Archivo', bold: true, accent: '#0B5563', hookDur: 4, cues: cues(words, 'satz'), mode: 'satz' })
     assert.equal(satz.match(/^Dialogue:/gm)?.length, 1, 'ohne Hook nur der Satz')
+    // Lage nach Format: Querformat kleiner und tief (7 %), 9:16 über der Plattform-Leiste (33 %), 4:5 bei 12 %. Felder: [2] Größe, [21] MarginV
+    const styles = (size: { w: number; h: number }) => {
+      const a = assSubs({ size, font: 'Archivo', bold: true, accent: '#FF8800', hook: 'Hook', hookDur: 4, cues: [], mode: 'wort' }).split('\n')
+      return ['Hook', 'Cap'].map((n) => a.find((l) => l.startsWith(`Style: ${n},`))!.split(',').map(Number))
+    }
+    const [[hookQuer, quer], [hookHoch, hoch], [, vier]] = [{ w: 1920, h: 1080 }, out, { w: 1080, h: 1350 }].map(styles)
+    assert.ok(quer[2] < hoch[2] && hookQuer[2] < hookHoch[2], `Querformat kleiner: ${quer[2]}/${hoch[2]}, Hook ${hookQuer[2]}/${hookHoch[2]}`)
+    near(quer[21], 76, 1, 'MarginV quer'); near(hoch[21], 634, 1, 'MarginV 9:16'); near(vier[21], 162, 1, 'MarginV 4:5')
+    near(hoch[19], 0.08 * 1080, 0.5, 'seitlich 8 % Rand')
+
+    // Zuschnitt folgt dem Sprecher: Wechsel bei 5 s, der kurze Turn 5–5,8 gehört zum selben Sprecher wie 5,8–12; part mit focus bleibt
+    const X = new Map([[0, 0.25], [1, 0.75]])
+    assert.deepEqual(followParts([{ start: 0, end: 12 }, { start: 20, end: 25, focus: 0.5 }], [{ start: 0, end: 5, speaker: 0 }, { start: 5, end: 5.8, speaker: 1 }, { start: 5.8, end: 12, speaker: 1 }], X),
+      [{ start: 0, end: 5, focus: 0.25 }, { start: 5, end: 12, focus: 0.75 }, { start: 20, end: 25, focus: 0.5 }])
+    // kurzer Einwurf zählt zum Vorgänger, kurzes Stück am part-Anfang zum Nachfolger, unbekannter Sprecher zum Nachbarn, ohne Turns unverändert
+    assert.deepEqual(followParts([{ start: 0, end: 12 }], [{ start: 0, end: 5, speaker: 0 }, { start: 5, end: 5.8, speaker: 1 }, { start: 5.8, end: 12, speaker: 0 }], X), [{ start: 0, end: 12, focus: 0.25 }])
+    assert.deepEqual(followParts([{ start: 4.5, end: 12 }], [{ start: 0, end: 5, speaker: 0 }, { start: 5, end: 12, speaker: 1 }], X), [{ start: 4.5, end: 12, focus: 0.75 }])
+    assert.deepEqual(followParts([{ start: 0, end: 12 }], [{ start: 0, end: 6, speaker: 2 }, { start: 6, end: 12, speaker: 1 }], X), [{ start: 0, end: 12, focus: 0.75 }])
+    assert.deepEqual(followParts([{ start: 0, end: 4 }], [], X), [{ start: 0, end: 4 }])
 
     // Clip-Szene: 2 parts, Fake-Transkript, 9:16
     const clip = join(dir, 'clip.mp4')
@@ -143,6 +171,72 @@ async function main() {
     assert.deepEqual(await silences(pauseClip, 0, 7 + 4 * PAD, 0.5), [], 'keine lange Pause mehr im Clip')
     near(await encodeClip({ file: pause, parts: [{ start: 1, end: 10 }], captions: 'aus', transcript: null, size: out, font, accent: '#FF8800', pauses: 'lassen' }, pauseClip, dir), 9 + 2 * PAD, 0.01, 'lassen kürzt nichts')
 
+    // Viele Schnitte: 45 parts am Stück, 1 s Stille alle 4 s → rund 70 Teilstücke in mehreren Gruppen; Nähte ohne Lücke, Bild und Ton gleich lang
+    const lang = join(dir, 'lang.mkv'), langClip = join(dir, 'lang.mp4')
+    await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=120', '-f', 'lavfi', '-i', "aevalsrc='if(gte(mod(t,4),3),0,0.5*sin(2*PI*440*t))':s=48000:d=120", '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-shortest', lang])
+    const many = Array.from({ length: 45 }, (_, k) => ({ start: 2.5 * k, end: 2.5 * (k + 1) }))
+    // erwartet: je part die Stillen ab MIN_PAUSE innerhalb des parts (silencedetect sieht nur den part)
+    const ideal = many.flatMap((p) => Array.from({ length: 30 }, (_, j): [number, number] => [Math.max(p.start, 4 * j + 3), Math.min(p.end, 4 * j + 4)]).filter(([a, b]) => b - a >= MIN_PAUSE))
+    const t0 = Date.now()
+    const lenLang = await encodeClip({ file: lang, parts: many, captions: 'aus', transcript: null, size: { w: 640, h: 360 }, font, accent: '#FF8800', pauses: 'kurz' }, langClip, dir)
+    console.log(`  45 parts: ${lenLang.toFixed(1)} s in ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+    near(lenLang, partsLength(padParts(tighten(many, ideal), 120)), 0.1, 'Länge bei 45 parts')
+    assert.ok(existsSync(join(dir, 'lang-03.mkv')), 'mindestens drei Gruppen')
+    near((await probe(langClip)).duration, lenLang, 0.1, 'Ausgabe-Dauer')
+    const streamDur = async (sel: string) => Number((await run('ffprobe', ['-v', 'error', '-select_streams', sel, '-show_entries', 'stream=duration', '-of', 'csv=p=0', langClip])).out.toString())
+    await Promise.all([streamDur('v:0'), streamDur('a:0')]).then(
+      ([v, a]) => { near(v, lenLang, 0.1, 'Videospur'); assert.ok(Math.abs(v - a) < 0.05, `Bild ${v} s, Ton ${a} s`) },
+      () => console.log('  (Spurlängen übersprungen: kein ffprobe)'),
+    )
+    // Stille Stellen (10-ms-Fenster): nur die gekürzten Pausen (≥ 2·PAD), keine kurzen Löcher an Nähten
+    const lp = await pcm16k(langClip), holes: number[] = []
+    let quietRuns = 0, from = -1
+    for (let s = 800; s + 160 < lp.length - 800; s += 160) {
+      const silent = Math.sqrt(lp.subarray(s, s + 160).reduce((q, x) => q + x * x, 0) / 160) < 0.02
+      if (silent && from < 0) from = s
+      if (!silent && from >= 0) { quietRuns++; if (s - from < 0.2 * 16000) holes.push(+(from / 16000).toFixed(2)); from = -1 }
+    }
+    assert.ok(quietRuns >= 20, `nur ${quietRuns} Restpausen`)
+    assert.deepEqual(holes, [], 'Lücken im Ton bei (s)')
+
+    // fit blur: 16:9 in 9:16 ganz sichtbar, Grund oben und unten unscharf, abgedunkelt, aber nicht schwarz
+    const blurClip = join(dir, 'blur.mp4')
+    await encodeClip({ file: src, parts: [{ start: 1, end: 2 }], captions: 'aus', transcript: null, size: out, font, accent: '#FF8800', fit: 'blur' }, blurClip, dir)
+    const bl = await probe(blurClip)
+    assert.deepEqual([bl.w, bl.h], [1080, 1920])
+    const [bimg] = await rawFrames(blurClip, [0.5], 640) // 360×640 links, Bild 360×203 bei y≈219
+    for (const [what, y0, y1] of [['oben', 20, 180], ['Mitte', 290, 350], ['unten', 460, 620]] as const) {
+      const v = luma(bimg, 640, 10, y0, 350, y1)
+      assert.ok(v > 15, `blur ${what} schwarz (${v.toFixed(1)})`)
+    }
+
+    // Übergang: Standbild blendet ab, der Clip danach blendet aus Schwarz ein; beide lassen sich ohne Neukodieren verbinden
+    const grau = join(dir, 'grau.png'), blende = join(dir, 'blende.mp4'), small = { w: 640, h: 360 }
+    await runFfmpeg(['-f', 'lavfi', '-i', 'color=c=gray:s=640x360', '-frames:v', '1', grau])
+    const standbild = await encodeStill(grau, join(dir, 'still.mkv'), dir, { preset: 'veryfast', fadeOut: true })
+    const zwei = await clipSegs({ file: src, parts: [{ start: 2, end: 5 }], captions: 'aus', transcript: null, size: small, font, accent: '#FF8800' }, 'blende', dir, { preset: 'veryfast', fadeIn: true })
+    await finish([standbild, ...zwei], blende, dir, { loudnorm: true })
+    near((await probe(blende)).duration, STILL + 3 + PAD * 2, 0.1, 'Länge mit Übergang')
+    await runFfmpeg(['-v', 'error', '-xerror', '-i', blende, '-f', 'null', '-']) // dekodiert ohne Fehler über die Naht
+    const hell = async (t: number) => luma((await rawFrames(blende, [t], 320))[0], 320, 0, 0, 320, 180)
+    const [vorher, ab, ein, danach] = [await hell(1), await hell(STILL - 0.05), await hell(STILL + 0.02), await hell(STILL + 0.5)]
+    assert.ok(ab < vorher * 0.5, `Abblende fehlt (${ab.toFixed(1)} von ${vorher.toFixed(1)})`)
+    assert.ok(ein < danach * 0.5, `Einblende fehlt (${ein.toFixed(1)} statt deutlich unter ${danach.toFixed(1)})`)
+
+    // Musik weicht der Sprache: leise Sprache wie vom Handy (440 Hz, −31 dBFS RMS) 0–3 und 7–10 s, Musik 2000 Hz aus 5 s in Schleife; Pegel der Musik per Bandpass.
+    // Pausenfenster bis 12 s: dort muss die Musik noch laufen (sidechaincompress verwarf sonst je nach Scheduling das Ende)
+    const rede = join(dir, 'rede.mkv'), musik = join(dir, 'musik.wav'), mix = join(dir, 'musik.mp4'), band = join(dir, 'band.wav')
+    await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=14', '-f', 'lavfi', '-i', "aevalsrc='if(lt(mod(t,7),3),0.04*sin(2*PI*440*t),0)':s=48000:d=14", '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-shortest', rede])
+    await runFfmpeg(['-f', 'lavfi', '-i', 'sine=frequency=2000:sample_rate=48000:duration=5', musik])
+    const redeSegs = await clipSegs({ file: rede, parts: [{ start: 0, end: 14 }], captions: 'aus', transcript: null, size: { w: 320, h: 180 }, font, accent: '#FF8800' }, 'rede', dir, { preset: 'veryfast' })
+    await finish(redeSegs, mix, dir, { music: { file: musik, volume: 0.5 } }) // ohne loudnorm: nur das Ducking zählt
+    near((await probe(mix)).duration, 14, 0.1, 'Länge mit Musik')
+    await runFfmpeg(['-i', mix, '-af', 'bandpass=f=2000:width_type=q:w=5,bandpass=f=2000:width_type=q:w=5', band])
+    const bp = await pcm16k(band)
+    const unter = Math.max(dbOf(bp, 1.5, 2.5), dbOf(bp, 8.5, 9.5)), frei = Math.min(dbOf(bp, 4.5, 6.5), dbOf(bp, 11.5, 12))
+    console.log(`  Musik: ${frei.toFixed(1)} dB in Pausen, ${unter.toFixed(1)} dB unter Sprache`)
+    assert.ok(frei - unter >= 8, `Musik nur ${(frei - unter).toFixed(1)} dB leiser unter der Sprache`)
+
     // ohne Ton und ohne Untertitel: anullsrc, kein ass-Filter
     const stumm = join(dir, 'stumm.mp4'), stummClip = join(dir, 'stumm-clip.mp4')
     await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=30:duration=4', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', stumm])
@@ -151,6 +245,10 @@ async function main() {
     const s = await probe(stummClip)
     assert.deepEqual([s.w, s.h, s.audio], [1080, 1080, true])
     await assert.rejects(encodeClip({ file: stumm, parts: [{ start: 5, end: 6 }], captions: 'aus', transcript: null, size: out, font, accent: '#000000' }, stummClip, dir), /nur 4\.0 s lang/)
+    // Musik ohne Tonspur oder fehlend: deutsche Meldung vor dem Encoden (scheitert vor allen Electron-Teilen)
+    const deck = { title: 'Musik', theme: { id: 'beratung' }, transition: 'none', mode: 'click', slides: [{ layout: 'clip', content: { video: src, parts: [{ start: 1, end: 2 }] } }] } as unknown as Deck
+    await assert.rejects(exportVideo(deck, join(dir, 'x'), 'mp4', async () => null, undefined, { music: { file: stumm } }), /Die Musikdatei .*stumm\.mp4 hat keine Tonspur\./)
+    await assert.rejects(exportVideo(deck, join(dir, 'x'), 'clips', async () => null, undefined, { music: { file: join(dir, 'fehlt.mp3') } }), /Die Musikdatei .*fehlt\.mp3 fehlt\./)
 
     console.log('check-video: alles grün')
   } finally {

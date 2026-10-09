@@ -104,6 +104,41 @@ export function cues(words: Word[], mode: Exclude<Captions, 'aus'>): Cue[] {
   return out
 }
 
+type Turn = { start: number; end: number; speaker: number }
+
+// Nachbarn desselben Sprechers verbinden, Stücke kürzer als min dem Vorgänger (am Anfang dem Nachfolger) zuschlagen
+function settle(ts: Turn[], min: number): Turn[] {
+  const merge = (xs: Turn[]) => xs.reduce<Turn[]>((o, t) => {
+    const l = o[o.length - 1]
+    if (l?.speaker === t.speaker) l.end = Math.max(l.end, t.end)
+    else o.push({ ...t })
+    return o
+  }, [])
+  let out = merge(ts), k: number
+  while (out.length > 1 && (k = out.findIndex((t) => t.end - t.start < min)) >= 0) {
+    if (k) out[k - 1].end = out[k].end
+    else out[1].start = out[0].start
+    out.splice(k, 1)
+    out = merge(out)
+  }
+  return out
+}
+
+/** Zuschnitt folgt dem Sprecher: parts an Sprecherwechseln teilen, focus je Stück = speakerX des Sprechers. Ein Sprecher bleibt im Bild bis zum Einsatz des nächsten;
+ *  Einwürfe kürzer als min (s) zählen zum Nachbarn, sonst zappelt das Bild. Sprecher ohne Eintrag in speakerX übernimmt der Nachbar. parts mit eigenem focus bleiben. */
+export function followParts(parts: Part[], turns: Turn[], speakerX: Map<number, number>, min = 2): Part[] {
+  const known = turns.filter((t) => speakerX.has(t.speaker)).sort((a, b) => a.start - b.start)
+  if (!known.length) return parts
+  const shots = settle(known.map((t, k) => ({ ...t, end: known[k + 1]?.start ?? t.end })), min)
+  const at = (t: number) => shots.findLast((s) => s.start <= t) ?? shots[0]
+  return parts.flatMap((p) => {
+    if (p.focus !== undefined) return [p]
+    const cuts = [p.start, ...shots.map((s) => s.start).filter((t) => t > p.start && t < p.end)]
+    const pieces = cuts.map((start, k) => ({ start, end: cuts[k + 1] ?? p.end, speaker: at(start).speaker }))
+    return settle(pieces, min).map((s) => ({ ...p, start: s.start, end: s.end, focus: speakerX.get(s.speaker) }))
+  })
+}
+
 const even = (n: number) => Math.max(2, Math.round(n / 2) * 2)
 
 /** Ausgabegröße eines Decks im MP4: 1,5-fach (9:16 → 1080×1920), gerade Maße für yuv420p. */
