@@ -8,8 +8,8 @@ import { join, resolve } from 'node:path'
 import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless, snapParts } from '../src/main/export-video'
 import { cropFilter, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
-import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
-import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, tighten, zoomOf, cutIndex, type Transcript } from '../src/shared/video'
+import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
+import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -34,6 +34,57 @@ async function main() {
   const dir = mkdtempSync(join(base, 'check-video-'))
   try {
     console.log('ffmpeg:', await ffmpegBin())
+
+    // Szenengrenzen: harte Bildwechsel finden (scdet), Kanten knapp davor/dahinter darauflegen, Polster nie darüber – sonst blitzt die Nachbarszene auf
+    {
+      const lavfi = async (out: string, ins: string[], graph?: string) => runFfmpeg([...ins.flatMap((i) => ['-f', 'lavfi', '-i', i]), ...(graph ? ['-filter_complex', graph] : []), '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', out])
+      const hart = join(dir, 'hart.mp4'), hart2 = join(dir, 'hart2.mp4'), ruhig = join(dir, 'ruhig.mp4'), wackel = join(dir, 'wackel.mp4')
+      await lavfi(hart, ['color=red:size=320x180:rate=30:duration=2', 'testsrc2=size=320x180:rate=30:duration=2', 'color=blue:size=320x180:rate=30:duration=2'], '[0:v][1:v][2:v]concat=n=3:v=1:a=0')
+      // Schnitt zwischen ähnlichen Bildern (zwei Ausschnitte desselben Musters), schwächster gemessener Fall
+      await lavfi(hart2, ['testsrc2=size=1280x720:rate=30:duration=2,crop=640:360:300:200', 'testsrc2=size=1280x720:rate=30:duration=2,crop=640:360:380:240'], '[0:v][1:v]concat=n=2:v=1:a=0')
+      await lavfi(ruhig, ['testsrc=size=320x180:rate=30:duration=6'])
+      await lavfi(wackel, ["testsrc2=size=1280x720:rate=30:duration=4,crop=640:360:x='300+80*sin(t*25)':y='200+50*cos(t*19)'"]) // heftige Handkamera
+      const cuts = await scenes(hart, 0.5, 5.5)
+      assert.equal(cuts.length, 2, `Bildwechsel ${cuts}`)
+      near(cuts[0], 2, 1 / 30, 'Wechsel rot → Testbild')
+      near(cuts[1], 4, 1 / 30, 'Wechsel Testbild → blau')
+      const sim = await scenes(hart2, 0, 4)
+      assert.equal(sim.length, 1, `ähnliche Bilder ${sim}`)
+      near(sim[0], 2, 1 / 30, 'Wechsel zwischen ähnlichen Bildern')
+      assert.deepEqual(await scenes(ruhig, 0, 6), [], 'ruhiges Video')
+      assert.deepEqual(await scenes(wackel, 0, 4), [], 'Wackeln ist kein Bildwechsel')
+
+      // snapToScenes: Start bis 0,3 s vor, Ende bis 0,3 s nach dem Wechsel; focus bleibt
+      assert.deepEqual(snapToScenes([{ start: 1.8, end: 3, focus: 0.3 }, { start: 3.5, end: 4.2 }], [2, 4]), { parts: [{ start: 2, end: 3, focus: 0.3 }, { start: 3.5, end: 4 }], moved: 2 })
+      assert.equal(snapToScenes([{ start: 1.6, end: 3 }], [2]).moved, 0, 'weiter als 0,3 s: bleibt')
+      const word = (start: number, end: number): Transcript => ({ duration: 6, lang: 'de', segments: [{ start, end, text: 'x', words: [{ w: ' x', start, end }] }] })
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], word(1.85, 2.3)).moved, 0, 'Wechsel mitten im Wort')
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], word(1.82, 1.95)).moved, 0, 'Wort fiele weg')
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], word(2.5, 2.9)).moved, 1, 'Wort hinter dem Wechsel stört nicht')
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], { duration: 6, lang: 'de', segments: [{ start: 1.8, end: 2.5, text: 'geschätzt' }] }).moved, 1, 'ohne echte Wortzeiten verschieben')
+      assert.equal(snapToScenes([{ start: 0, end: 2.1 }, { start: 2.1, end: 5 }], [1.9, 2.2]).moved, 0, 'nahtlos: nie anfassen')
+      assert.equal(snapToScenes([{ start: 1.8, end: 2.3 }], [2]).moved, 0, 'Teil fiele unter 0,5 s')
+
+      // padParts: Polster endet am Wechsel
+      assert.deepEqual(padParts([{ start: 2, end: 4 }], 12, [2, 4.1]).map((p) => [p.start, p.end]), [[2, 4.1]])
+      assert.deepEqual(padParts([{ start: 2, end: 4 }], 12, [1.9, 4.2]).map((p) => [p.start, p.end]), [[1.9, 4 + PAD]])
+
+      // Ganze Kette im Export: ohne cuts blitzen rot und blau auf, mit cuts kein einziges einfarbiges Bild
+      const flat = async (file: string) => {
+        const { out } = await run(await ffmpegBin(), ['-i', file, '-vf', 'scale=8:8', '-pix_fmt', 'rgb24', '-f', 'rawvideo', 'pipe:1'])
+        let n = 0
+        for (let f = 0; f + 192 <= out.length; f += 192) if (out.subarray(f, f + 192).every((v, k) => Math.abs(v - out[f + (k % 3)]) < 12)) n++
+        return n
+      }
+      const job = { file: hart, hook: undefined, captions: 'aus' as const, transcript: null, size: { w: 320, h: 180 }, font: { name: 'Archivo', files: [], bold: true }, accent: '#FF8800' }
+      const raw = [{ start: 1.8, end: 4.2 }], snapped = snapToScenes(raw, cuts)
+      assert.ok((await flat((await clipSegs({ ...job, parts: raw }, 'blitz', dir, { preset: 'ultrafast' }))[0].file)) > 0, 'Gegenprobe: ohne cuts blitzt es')
+      const clean = await clipSegs({ ...job, parts: snapped.parts, cuts }, 'sauber', dir, { preset: 'ultrafast' })
+      assert.equal(await flat(clean[0].file), 0, 'Blitzbild im Export')
+      near(clean[0].dur, 2, 0.05, 'Länge zwischen den Wechseln')
+      console.log(`  Szenengrenzen ok (Wechsel ${cuts.map((c) => c.toFixed(3))}, ähnlich ${sim.map((c) => c.toFixed(3))})`)
+    }
+    if (process.env.DW_ONLY_SCENES) return
 
     // Schnitte nie mitten im Wort: Start vor das Wort, Ende hinter das Wort (höchstens 0,4 s); ohne echte Wortzeiten unverändert
     const sw = (w: string, start: number, end: number) => ({ w, start, end })

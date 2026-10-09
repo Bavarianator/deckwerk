@@ -139,6 +139,16 @@ export async function silences(file: string, from: number, to: number, min: numb
   return out
 }
 
+/** Harte Bildwechsel (scdet) zwischen from und to, in Sekunden des Quellvideos: je Wechsel die Zeit seines ersten Frames, 5 ms früher (sec() rundet auf ms:
+ *  ein Teil ab dieser Zeit beginnt sicher mit dem neuen Bild, einer bis dahin endet sicher davor, bis 200 fps). Auf 320 px verkleinert: schneller, die Wertung bleibt.
+ *  Schwelle 12, gemessen (check-video): harte Schnitte 14–44 (14 zwischen ähnlichen Bildausschnitten), heftiges Wackeln bis 11, Rauschen bis 6.
+ *  ponytail: feste Schwelle; ein Fotoblitz zählt als Wechsel, eine Überblendung nicht (blitzt auch nicht). */
+export async function scenes(file: string, from: number, to: number): Promise<number[]> {
+  const ss = from.toFixed(3)
+  const out = await ff(['-nostats', '-ss', ss, '-t', (to - from).toFixed(3), '-i', file, '-an', '-sn', '-vf', 'scale=320:-2,scdet=threshold=12,metadata=mode=print:key=lavfi.scd.time:file=-', '-f', 'null', '-'])
+  return [...out.toString().matchAll(/lavfi\.scd\.time=([\d.]+)/g)].map((m) => +ss + Number(m[1]) - 0.005) // Zeiten ab 0 = from
+}
+
 /** Ton als Float32 mono 16 kHz, so wie Whisper ihn erwartet; mit from/dur (s) nur dieser Bereich. Mit dur wird der Zielpuffer vorab angelegt (8 h = 1,8 GB, ein Buffer.concat verdoppelte die Spitze). */
 export async function pcm16k(file: string, from?: number, dur?: number): Promise<Float32Array> {
   const args = [...(from ? ['-ss', from.toFixed(3)] : []), ...(dur ? ['-t', dur.toFixed(3)] : []), '-i', file, '-vn', '-ac', '1', '-ar', '16000', '-f', 'f32le', 'pipe:1']

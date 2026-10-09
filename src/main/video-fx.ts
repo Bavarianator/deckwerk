@@ -33,8 +33,25 @@ export function zoomCrop(c: { x: number; y: number; w: number; h: number }, zoom
   return { x: Math.round(c.x + (c.w - w) / 2), y: Math.round(c.y + (c.h - h) / 2), w, h }
 }
 
-/** ffmpeg-Filter für fit 'crop': Ausschnitt (ggf. gezoomt), dann auf die Zielgröße. */
-export function cropFilter(c: { x: number; y: number; w: number; h: number }, size: { w: number; h: number }, zoom = 1) {
+const num = (v: number) => String(Math.round(v * 1000) / 1000)
+
+// x der Kamerafahrt als ffmpeg-Ausdruck in t: je Abschnitt ein if, von hinten verschachtelt; gleiche Zeit = Sprung (Abschnitt fällt weg),
+// max(0, …) hält vor dem ersten Stützpunkt. In '…', damit der Filtergraph die Kommas nicht als Filtertrenner liest.
+function trackX(w: number, { src, keys, start }: { src: { w: number }; keys: [number, number][]; start: number }) {
+  const pt = keys.map(([t, f]) => [t - start, f * src.w - w / 2])
+  let e = num(pt[pt.length - 1][1])
+  for (let k = pt.length - 2; k >= 0; k--) {
+    const [ta, xa] = pt[k], [tb, xb] = pt[k + 1]
+    if (tb > ta) e = `if(lt(t,${num(tb)}),${num(xa)}+(${num((xb - xa) / (tb - ta))})*max(0,t-${num(ta)}),${e})`
+  }
+  return `'clip(${e},0,${src.w - w})'`
+}
+
+/** ffmpeg-Filter für fit 'crop': Ausschnitt (ggf. gezoomt), dann auf die Zielgröße. Mit track fährt x: focus linear zwischen den
+ *  Stützpunkten (Quellsekunden; t = 0 im Filter bei Quellsekunde start), davor und danach konstant; y wie ohne track. */
+export function cropFilter(c: { x: number; y: number; w: number; h: number }, size: { w: number; h: number }, zoom = 1,
+  track?: { src: { w: number; h: number }; keys: [t: number, focus: number][]; start: number }) {
   const z = zoomCrop(c, zoom)
-  return `crop=${z.w}:${z.h}:${z.x}:${z.y},scale=${size.w}:${size.h}`
+  // Fahrt mit exact=1: sonst rundet crop x bei yuv420p auf gerade px, langsame Fahrten ruckeln in 2-px-Stufen
+  return `crop=${z.w}:${z.h}:${track?.keys.length ? `${trackX(z.w, track)}:${z.y}:exact=1` : `${z.x}:${z.y}`},scale=${size.w}:${size.h}`
 }
