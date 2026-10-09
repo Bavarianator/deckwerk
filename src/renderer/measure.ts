@@ -223,6 +223,7 @@ export function extract(root: HTMLElement): El[] {
           mask: el.dataset.mask as ImgEl['mask'],
           adjust: el.dataset.adjust ? JSON.parse(el.dataset.adjust) : undefined,
           flip: el.dataset.flip !== undefined || undefined,
+          alt: el.dataset.alt || undefined,
           crop: el.dataset.crop ? JSON.parse(el.dataset.crop) : undefined,
         })
         break

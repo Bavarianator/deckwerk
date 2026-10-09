@@ -130,6 +130,8 @@ export interface Item {
   round?: boolean
   flipX?: boolean
   crop?: Crop // sichtbarer Ausschnitt des Bildes (Anteile 0..1); ohne = füllend (cover, mittig)
+  alt?: string // Bildbeschreibung für Screenreader (PPTX: Alternativtext)
+  link?: string // Klickziel: https://…, mailto: oder #N = Sprung zu Folie N (1-basiert)
   // video/audio: src; poster = Vorschaubild des Videos (asset://), wird beim Einfügen erzeugt
   poster?: string
   autoplay?: boolean; loop?: boolean; muted?: boolean
@@ -270,6 +272,7 @@ export interface ImgEl extends Base {
   under?: boolean // Foto liegt unter Text (Vollbild): Überlappung erlaubt, Kontrast wird gegen das Overlay geprüft
   nat?: { w: number; h: number } // Pixelgröße der Bilddatei (vom Render-Host), für die Druckauflösung im Lint
   look?: 'duotone' | 'mono'
+  alt?: string // Alternativtext freier Bilder
   mask?: MaskId
   adjust?: Adjust
   alpha?: number

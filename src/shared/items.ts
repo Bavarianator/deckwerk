@@ -34,6 +34,8 @@ export const itemSchema = z.object({
   look: z.enum(['natural', 'duotone', 'mono']).optional(), mask: z.enum(MASKS).optional().describe('Bildrahmen (Form)'),
   adjust: z.object({ bright: z.number().min(-100).max(100).optional(), contrast: z.number().min(-100).max(100).optional(), sat: z.number().min(-100).max(100).optional(), blur: z.number().min(0).max(100).optional() }).optional().describe('Bildanpassung in Prozent'), round: z.boolean().optional(), flipX: z.boolean().optional(),
   crop: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().min(0.01).max(1), h: z.number().min(0.01).max(1) }).optional().describe('Bildausschnitt in Anteilen; w/h des Elements sollte zum Ausschnitt passen'),
+  alt: z.string().max(250).optional().describe('Alternativtext: was das Bild zeigt (Screenreader, PPTX)'),
+  link: z.string().max(500).regex(/^(https?:\/\/|mailto:|#\d+$)/, 'Link: https://…, mailto: oder #N').optional().describe('Klickziel: https://… oder #N = Sprung zu Folie N'),
   poster: z.string().optional(), autoplay: z.boolean().optional(), loop: z.boolean().optional(), muted: z.boolean().optional(),
   icon: z.string().max(40).optional().describe('lucide-Name in kebab-case'),
   graphic: z.string().max(20).optional().describe('Deko-Grafik: squiggle, swoosh, scribble, arrow, burst, waves, sparkle, blob (siehe GRAPHICS)'),
