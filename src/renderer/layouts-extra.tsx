@@ -693,9 +693,48 @@ function Letter({ c }: Props<'letter'>) {
   )
 }
 
+// Visitenkarte: front = Name und Funktion oben, Organisation und Kontakt unten; back = Logo, sonst Organisation (oder Name) groß, unten claim und QR-Code.
+// Auf der Karte stehen alle Rollen außer display bei 12 px: Hierarchie über Rolle, Gewicht und Farbe.
+function BusinessCard({ c, v }: Props<'business-card'>) {
+  const { theme } = useSlide()
+  if (v === 'back') return (
+    <Frame safeClass="vk-safe">
+      <div className="vk">
+        {theme.logo ? <Img src={theme.logo} slot="_logo" className="vk-mark" contain />
+          : <T role="display" slot={c.org ? 'org' : 'name'} maxLines={2} className="vk-name">{c.org ?? c.name}</T>}
+        {(c.claim || c.qr) && (
+          <div className="vk-foot">
+            {c.claim ? <T role="body" slot="claim" className="vk-claim">{c.claim}</T> : <div />}
+            {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="vk-qr" />}
+          </div>
+        )}
+      </div>
+    </Frame>
+  )
+  return (
+    <Frame safeClass="vk-safe">
+      <div className="vk">
+        <div className="vk-top">
+          <div className="vk-who">
+            <T role="display" slot="name" maxLines={2} className="vk-name">{c.name}</T>
+            {c.role && <T role="label" slot="role" className="vk-role">{c.role}</T>}
+          </div>
+          {theme.logo && <Img src={theme.logo} slot="_logo" className="vk-logo" contain />}
+        </div>
+        {(c.org || !!c.lines?.length) && (
+          <div className="vk-contact">
+            {c.org && <T role="label" slot="org" className="vk-org">{c.org}</T>}
+            {c.lines?.map((x, i) => <T key={i} role="label" slot={`lines.${i}`}>{x}</T>)}
+          </div>
+        )}
+      </div>
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
-  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter,
+  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard,
 }

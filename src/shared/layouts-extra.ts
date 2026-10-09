@@ -282,6 +282,16 @@ const invitation = z.object({
   qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code (Zusage, Anfahrt); je kürzer, desto sicherer der Scan im Druck'),
 })
 
+// Visitenkarte (85 × 55 mm): Vorder- und Rückseite zeigen denselben Inhalt. Auf der Karte ist nur der Name größer als 12 px.
+const businessCard = z.object({
+  name: z.string().min(1).max(32).describe('Vor- und Nachname, z. B. „Mara Beispiel“; unbekannt = Platzhalter „[Vorname Nachname]“'),
+  role: z.string().max(40).optional().describe('Funktion oder Beruf, z. B. „Projektleitung“'),
+  org: z.string().max(40).optional().describe('Organisation oder Firma; auf der Rückseite groß, solange das Brand-Kit kein Logo hat'),
+  lines: z.array(z.string().min(1).max(36)).max(4).optional().describe('0–4 Kontaktzeilen, eine Angabe pro Zeile ohne Icons oder Kürzel davor: Telefon, E-Mail, Web, Adresse. Nie erfinden'),
+  claim: z.string().max(60).optional().describe('ein Satz zur Leistung, steht nur auf der Rückseite'),
+  qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code auf der Rückseite (Webseite, Kontaktseite); je kürzer, desto gröber das Muster und desto sicherer der Scan'),
+})
+
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const EXTRA_LAYOUTS = {
@@ -660,6 +670,20 @@ export const EXTRA_LAYOUTS = {
         info: rep(4, (i) => ({ label: words(20, i), value: words(40, i) })), subject: words(90), salutation: words(60),
         body: rep(4, (i) => words(274, i)).join('\n'), closing: words(40), signature: `${words(39)}\n${words(40, 2)}`, enclosures: rep(6, (i) => words(40, i)), footer: rep(4, (i) => words(100, i)),
       },
+    },
+  }),
+  'business-card': L({
+    id: 'business-card', name: 'Visitenkarte (85×55 mm)', variants: ['front', 'back'], sizes: ['visitenkarte'],
+    when: 'Nur Format visitenkarte (85 × 55 mm): Visitenkarte, Vorder- und Rückseite. Zwei Seiten mit demselben content anlegen: Seite 1 variant front (Name und Funktion oben, Organisation und Kontaktzeilen unten), Seite 2 variant back (Logo aus dem Brand-Kit, sonst Organisation groß, dazu claim und optional QR-Code); die Rückseite gern mit tone accent. Höchstens 4 Kontaktzeilen, eine Angabe pro Zeile. Kontaktdaten nie erfinden: fehlen sie, Platzhalter in eckigen Klammern wie „[Telefon]“ setzen und nachfragen. Für die Druckerei mit export_deck format print exportieren (PDF mit Beschnitt).',
+    schema: businessCard, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { name: 'Mara' },
+      typ: {
+        name: 'Vorname Nachname', role: 'Landschaftsarchitektin', org: 'Grünwerk Gartenplanung',
+        lines: ['Telefon 0123 456789', 'example.com', 'Musterweg 1, 12345 Musterstadt'],
+        claim: 'Gärten, die mit wenig Pflege durchs ganze Jahr tragen.', qr: 'https://example.com',
+      },
+      max: { name: words(32), role: words(40, 1), org: words(40, 2), lines: rep(4, (i) => words(36, i + 3)), claim: words(60, 4), qr: 'https://example.com/kontakt' },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>
