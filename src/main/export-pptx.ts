@@ -135,15 +135,16 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
     case 'img': {
       const path = assetPath(el.src)
       if (!path && !el.src.startsWith('data:')) break
+      // altText nie leer: PptxGenJS schriebe sonst den lokalen Pfad (Login-Name, Ordner, Dateiname) als Alternativtext in die Datei
       if (el.fit === 'contain' && path) {
         const r = containRect(el, path)
-        slide.addImage({ path, x: IN(r.x), y: IN(r.y), w: IN(r.w), h: IN(r.h), objectName: name, rotate: el.rot, flipH: el.flip })
+        slide.addImage({ path, x: IN(r.x), y: IN(r.y), w: IN(r.w), h: IN(r.h), objectName: name, rotate: el.rot, flipH: el.flip, altText: ' ' })
       } else {
         // Cover: auf volle Bildgröße skalieren und per srcRect nach focus zuschneiden (nicht strecken). Ersetzbar über „Bild ändern“.
         const { width: iw, height: ih } = path ? imageSize(path) : { width: 0, height: 0 }
         const k = iw && ih ? Math.max(b.w / iw, b.h / ih) : 0
         const src = path ? { path } : { data: el.src.slice(5) }
-        const extra = { rotate: el.rot, flipH: el.flip, rounding: el.round, transparency: el.alpha !== undefined ? Math.round((1 - el.alpha) * 100) : undefined, objectName: name }
+        const extra = { rotate: el.rot, flipH: el.flip, rounding: el.round, transparency: el.alpha !== undefined ? Math.round((1 - el.alpha) * 100) : undefined, objectName: name, altText: ' ' }
         if (el.crop && iw) { // freier Zuschnitt: volles Bild so groß, dass der Ausschnitt die Box füllt
           const W = b.w / el.crop.w, H = b.h / el.crop.h
           slide.addImage({ ...src, ...extra, x: IN(b.x), y: IN(b.y), w: IN(W), h: IN(H), sizing: { type: 'crop', x: IN(el.crop.x * W), y: IN(el.crop.y * H), w: IN(b.w), h: IN(b.h) } })
