@@ -541,8 +541,8 @@ function AudioItem({ it, attrs, pos, slot, live, color }: { it: Item; attrs: Rec
 function FreeItem({ it }: { it: Item }) {
   const { theme, editable, editing, onEdit, live } = useSlide()
   const slot = `items.${it.id}`
-  const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined, 'data-anim-dir': it.animDir, 'data-anim-speed': it.animSpeed }
-  const pos: CSSProperties = { position: 'absolute', left: it.x, top: it.y, width: it.w, height: it.h, transform: it.rot ? `rotate(${it.rot}deg)` : undefined }
+  const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined, 'data-anim-dir': it.animDir, 'data-anim-speed': it.animSpeed, 'data-link': it.link }
+  const pos: CSSProperties = { position: 'absolute', left: it.x, top: it.y, width: it.w, height: it.h, transform: it.rot ? `rotate(${it.rot}deg)` : undefined, cursor: live && it.link ? 'pointer' : undefined }
   const alpha = it.opacity ?? 1
   switch (it.kind) {
     case 'text': {

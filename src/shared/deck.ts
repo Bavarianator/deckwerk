@@ -238,7 +238,7 @@ export interface Box { x: number; y: number; w: number; h: number }
 
 export interface Run { text: string; bold: boolean; italic: boolean; underline?: boolean; color: string; breakAfter?: boolean; link?: string; sizePx?: number; trackingPx?: number } // sizePx/trackingPx nur, wenn die Schrift vom Element abweicht (Einheit einer Kennzahl)
 
-interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim; animDir?: AnimDir; animSpeed?: AnimSpeed }
+interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim; animDir?: AnimDir; animSpeed?: AnimSpeed; link?: string /* Klickziel freier Elemente (Item.link) */ }
 export interface TextEl extends Base {
   kind: 'text'
   font: 'head' | 'body'
