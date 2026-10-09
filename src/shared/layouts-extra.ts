@@ -292,6 +292,30 @@ const businessCard = z.object({
   qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code auf der Rückseite (Webseite, Kontaktseite); je kürzer, desto gröber das Muster und desto sicherer der Scan'),
 })
 
+// Lebenslauf (A4 hoch): Stationen und Kenntnisse nur als Text. Die Gesamtzahl der Stationen begrenzt, was auf eine Seite passt.
+const CV_ENTRIES = 5
+const cv = z.object({
+  name: z.string().min(2).max(40).describe('Vor- und Nachname'),
+  role: z.string().max(60).optional().describe('Berufsbezeichnung oder Ziel, z. B. „Produktdesignerin“'),
+  image: photo.optional().describe('Bewerbungsfoto (Porträt, focus top); weglassen = ohne Foto, auf Folgeseiten immer weglassen'),
+  profile: z.string().max(300).optional().describe('Kurzprofil in 1–3 Sätzen: Erfahrung, Stärke, Ziel'),
+  contact: z.array(z.string().max(40)).max(5).optional().describe('Anschrift, Telefon, E-Mail, Web; je eine Angabe'),
+  sections: z.array(z.object({
+    heading: z.string().min(1).max(30).describe('z. B. „Berufserfahrung“, „Ausbildung“, „Weiterbildung“'),
+    entries: z.array(z.object({
+      period: z.string().min(1).max(24).describe('Zeitraum knapp, z. B. „2021 – heute“ oder „09/2018 – 06/2021“'),
+      title: z.string().min(1).max(60).describe('Funktion oder Abschluss'),
+      place: z.string().max(60).optional().describe('Arbeitgeber oder Hochschule mit Ort'),
+      text: z.string().max(140).optional().describe('höchstens ein Satz, am besten mit Ergebnis'),
+    })).min(1).max(CV_ENTRIES).describe('antichronologisch: neueste Station zuerst'),
+  })).min(1).max(4).describe(`insgesamt höchstens ${CV_ENTRIES} Stationen pro Seite, weitere auf eine zweite cv-Seite`),
+  skills: z.array(z.object({
+    label: z.string().min(1).max(24).describe('z. B. „Sprachen“, „Software“'),
+    text: z.string().min(1).max(80).describe('z. B. „Deutsch (Muttersprache), Englisch (C1)“'),
+  })).max(4).optional().describe('Kenntnisse als Text; keine Balken, Sterne oder Prozentangaben'),
+  signed: z.string().max(50).optional().describe('Ort und Datum am Seitenende, z. B. „Musterstadt, 8. Oktober 2026“'),
+}).refine((c) => c.sections.reduce((n, s) => n + s.entries.length, 0) <= CV_ENTRIES, `Höchstens ${CV_ENTRIES} Stationen pro Seite – weitere auf eine zweite cv-Seite (ohne Foto)`)
+
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const EXTRA_LAYOUTS = {
@@ -684,6 +708,40 @@ export const EXTRA_LAYOUTS = {
         claim: 'Gärten, die mit wenig Pflege durchs ganze Jahr tragen.', qr: 'https://example.com',
       },
       max: { name: words(32), role: words(40, 1), org: words(40, 2), lines: rep(4, (i) => words(36, i + 3)), claim: words(60, 4), qr: 'https://example.com/kontakt' },
+    },
+  }),
+  cv: L({
+    id: 'cv', name: 'Lebenslauf (A4)', variants: ['side', 'plain'], sizes: ['a4'],
+    when: 'Nur A4 hoch: Lebenslauf (CV, Bewerbung). Name, Berufsbezeichnung, Kurzprofil, Kontakt, Stationen in Abschnitten (Berufserfahrung, Ausbildung …) und Kenntnisse als Text. Stationen antichronologisch, Zeitraum knapp („2021 – heute“), title = Funktion oder Abschluss, place = Arbeitgeber oder Hochschule mit Ort, text höchstens ein Satz mit Ergebnis. Variante side (Standard) = schmale Seitenspalte mit Foto, Kontakt und Kenntnissen; plain = tabellarisch wie in Deutschland üblich, Zeitraum links, Foto rechts neben dem Namen. Foto optional (in Deutschland üblich, nicht Pflicht). Passt es nicht auf eine Seite: zweite cv-Seite ohne Foto, Profil und Kontakt. In einer Bewerbung folgt der Lebenslauf auf das Anschreiben (letter), Name wie auf Deckblatt und Anschreiben; signed = Ort und Datum klein am Seitenende (optional, nur auf der letzten cv-Seite).',
+    schema: cv, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { name: 'Vorname Nachname', sections: [{ heading: 'Berufserfahrung', entries: [{ period: '2021 – heute', title: 'Projektleitung' }] }] },
+      typ: {
+        name: 'Mara', role: 'Produktdesignerin mit Schwerpunkt Barrierefreiheit',
+        profile: 'Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche eine Rolle mit Verantwortung für ein Designteam.',
+        contact: ['Musterweg 1, 12345 Musterstadt', '0123 456789', 'example.com/mara'],
+        sections: [
+          { heading: 'Berufserfahrung', entries: [
+            { period: '2021 – heute', title: 'Senior Produktdesignerin', place: 'Muster GmbH, Musterstadt', text: 'Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %.' },
+            { period: '2018 – 2021', title: 'Produktdesignerin', place: 'Beispiel AG, Musterstadt', text: 'Aufbau eines Designsystems für zwölf Fachanwendungen.' },
+            { period: '2016 – 2018', title: 'Junior UX-Designerin', place: 'Agentur Nord, Musterstadt' },
+          ] },
+          { heading: 'Ausbildung', entries: [
+            { period: '2013 – 2016', title: 'B. A. Kommunikationsdesign', place: 'Hochschule Musterstadt', text: 'Abschlussarbeit über barrierefreie Formulare, Note 1,3.' },
+          ] },
+        ],
+        skills: [
+          { label: 'Sprachen', text: 'Deutsch (Muttersprache), Englisch (C1), Spanisch (B1)' },
+          { label: 'Werkzeuge', text: 'Figma, HTML und CSS, Nutzertests, WCAG 2.2' },
+        ],
+        signed: 'Musterstadt, 8. Oktober 2026',
+      },
+      max: {
+        name: words(40), role: words(60), image: { src: '' }, profile: words(300), contact: rep(5, (i) => words(40, i)),
+        // Stationen an der Gesamtgrenze, verteilt auf die Höchstzahl der Abschnitte
+        sections: [2, 1, 1, 1].map((n, i) => ({ heading: words(30, i), entries: rep(n, (j) => ({ period: words(24, i + j), title: words(60, i + j), place: words(60, j + 1), text: words(140, i + j) })) })),
+        skills: rep(4, (i) => ({ label: words(24, i), text: words(80, i) })), signed: words(50),
+      },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>

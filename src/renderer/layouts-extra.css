@@ -400,3 +400,43 @@
 .vk-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
 .t.vk-claim { max-width: 200px; text-wrap: pretty; }
 .vk-qr { flex: none; display: block; width: 80px; height: 80px; overflow: hidden; } /* ≈ 21 mm samt Ruhezone: Muster ab ~15 mm scannt sicher */
+
+/* ---------- Lebenslauf (A4 hoch): Seitenspalte oder tabellarisch; nur Typografie und Haarlinien, keine Balken für Kenntnisse ---------- */
+.safe.cv-safe { left: 56px; right: 56px; top: 60px; bottom: 52px; }
+.cv { flex: 1; min-height: 0; }
+.cv-sidebar { display: grid; grid-template-columns: 180px minmax(0, 1fr); column-gap: 44px; }
+.cv-sidebar.cv-solo { grid-template-columns: minmax(0, 1fr); }
+.cv-aside, .cv-main, .cv-table { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 20px; }
+.cv-aside > *, .cv-main > *, .cv-table > * { flex: none; } /* nichts schrumpft: Überlauf soll der Autofit sehen */
+.cv-photo { position: relative; width: 100%; aspect-ratio: 7 / 9; overflow: hidden; }
+.cv-photo .img { position: absolute; inset: 0; background-position: 50% 30%; } /* Porträt: Gesicht im oberen Drittel */
+.cv-head { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.t.cv-name { font-size: calc(var(--fs-h1) * 1.25); line-height: 1.08; }
+.t.cv-role { color: var(--accent); }
+.t.cv-profile { font-size: max(12px, calc(var(--fs-body) * 0.875)); } /* Einleitung, aber kein Folientext: eine Stufe über den Stationen */
+.cv-contact { display: flex; flex-direction: column; gap: 3px; }
+.cv-sec { position: relative; padding-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.cv-sec::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--border); }
+.t.cv-heading { color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+.cv-entry { display: grid; align-items: baseline; }
+.cv-entry .t { text-wrap: pretty; }
+.cv-what { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.t.cv-key { color: var(--muted); font-variant-numeric: tabular-nums; }
+/* side: Zeitraum rechts in der Titelzeile, Ort und Satz darunter über die ganze Breite */
+.cv-main .cv-entry { grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; row-gap: 1px; }
+.cv-main .cv-what { display: contents; }
+.cv-main .cv-what > .t { grid-column: 1 / -1; }
+.cv-main .cv-what > .cv-title { grid-column: 1; grid-row: 1; }
+.cv-main .t.cv-key { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; }
+/* Kenntnisse in der Seitenspalte: Bezeichnung über dem Text */
+.cv-aside .cv-entry { gap: 1px; }
+.cv-aside .t.cv-key { color: var(--text); font-weight: 700; }
+/* plain: Kopf mit Foto rechts, darunter eine Tabelle mit Zeitraum in der schmalen Spalte links */
+.cv-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; }
+.cv-top .cv-head { flex: 1; }
+.cv-table { gap: 14px; } /* einspaltig steht alles untereinander: engerer Takt, Abschnitte trennt die Haarlinie */
+.cv-table .cv-sec { gap: 8px; }
+.cv-table .cv-photo { flex: none; width: 108px; }
+.cv-table .cv-contact { flex-direction: row; flex-wrap: wrap; gap: 2px 20px; margin-top: 6px; }
+.cv-table .cv-entry { grid-template-columns: 140px minmax(0, 1fr); column-gap: 24px; }
+.t.cv-signed { margin-top: auto; } /* Ort und Datum am Seitenende wie unter einem Brief */
