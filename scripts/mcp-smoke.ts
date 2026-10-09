@@ -6,8 +6,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
-import { buildSystemPrompt, type Engine } from '../src/main/agent'
-import { createMcpServer, guideParts } from '../src/main/mcp'
+import type { Engine } from '../src/main/agent'
+import { fullPrompt, guideParts } from '../src/main/guide-modules'
+import { createMcpServer } from '../src/main/mcp'
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 const engine: Engine = {
@@ -25,7 +26,8 @@ await createMcpServer(engine, { home }).connect(a)
 const client = new Client({ name: 'smoke', version: '0' })
 await client.connect(b)
 
-assert.match(client.getInstructions() ?? '', /### kpi-grid/)
+assert.match(client.getInstructions() ?? '', /layout:kpi-grid/, 'Kernprompt mit Index')
+assert.doesNotMatch(client.getInstructions() ?? '', /"maxLength"/, 'Schemas nur per read_guide')
 assert.match((client.getInstructions() ?? '').slice(0, 2000), /read_guide/, 'Claude Code kürzt auf ~2.000 Zeichen: Hinweis auf read_guide muss vorn stehen')
 const listed = (await client.listTools()).tools
 const names = listed.map((t) => t.name).sort()
@@ -37,10 +39,17 @@ assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 // read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
 const parts = guideParts()
 assert.ok(parts.length > 1 && parts.every((p) => p.length <= 20000), `Teile: ${parts.map((p) => p.length)}`)
-assert.equal(parts.join('\n'), buildSystemPrompt())
+assert.equal(parts.join('\n'), fullPrompt())
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }
 const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<Res>
+
+// read_guide: Module, Index, Teile
+assert.equal(listed.find((t) => t.name === 'read_guide')?.annotations?.readOnlyHint, true)
+const g = (await call('read_guide', { module: ['layout:kpi-grid', 'gibts-nicht'] })).content[0].text!
+assert.match(g, /^### kpi-grid – /); assert.match(g, /"maxLength"/); assert.match(g, /Unbekannte Module: gibts-nicht/)
+assert.match((await call('read_guide')).content[0].text!, /^## Index[\s\S]*- layout:kpi-grid – /)
+assert.match((await call('read_guide', { part: 2 })).content[0].text!, new RegExp(`^Teil 2 von ${parts.length}`))
 
 let r = await call('add_slides', { slides: [{ layout: 'cover', content: { title: 'Okay' } }] })
 assert.equal(r.isError, true); assert.match(r.content[0].text!, /create_deck/)

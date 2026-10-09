@@ -13,7 +13,7 @@ Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__�
 
 ## 1. Zuerst den Guide lesen
 
-Rufe `read_guide` mit `part` 1, 2, … auf, bis die Antwort „Teil n von n“ meldet. Er enthält den Design-Guide und den Layout-Katalog mit allen Feldnamen. Ohne ihn rätst du Felder (Schemafehler) und Gestaltung. Einmal pro Sitzung genügt.
+Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler).
 
 ## 2. Briefing und Material
 

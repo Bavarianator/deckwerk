@@ -8,8 +8,8 @@ import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } f
 import type { Issue } from '../shared/lint'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
-import guide from './design-guide.md?raw'
-import { buildCatalog, buildTools, houseStyle, mimeOf, recentLooks, type ToolDef, type ToolOutput } from './tools'
+import { fullPrompt } from './guide-modules'
+import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
 export type ExportFormat = 'pptx' | 'docx' | 'pdf' | 'png' | 'md' | 'zip' | 'print' // docx = Word, Text bearbeitbar auf Hintergrundbild; zip = PNG je Folie + PDF in einer Datei (Social-Karussell); print = PDF für die Druckerei (PrintOptions in deck.ts)
@@ -44,19 +44,11 @@ export interface DeckAgentOptions {
   unsplashKey?: string // default UNSPLASH_ACCESS_KEY
 }
 
-const WORKFLOW = `## Arbeitsablauf
-1. Höchstens 2–3 Rückfragen (mit ask_user, falls vorhanden), sonst sinnvolle Defaults annehmen.
-2. Erst die Leitidee in einem Satz (Guide §2 „Die Idee“: Bild für das Ganze, Haken, ein mutiger Höhepunkt), dann die Storyline als Liste der Titel (Datenfolien als Aussage-Satz, Bühnenfolien kurz) (mit plan_storyline, falls vorhanden, sonst im Chat), dann create_deck und add_slides in Batches.
-3. QA-Schleife (max. 3 Runden): Fehler aus den Tool-Rückmeldungen und lint_deck beheben → render_overview kritisch prüfen (Rhythmus, Dichte, Konsistenz) → nachbessern.
-4. Animationen prüfen (ein Übergangstyp, maximal ein Build pro Folie, keine Animation auf Titeln), Speaker Notes ergänzen.
-5. Kurze Zusammenfassung; exportieren nur, wenn der Nutzer es wünscht.
-Antworte auf Deutsch, knapp.`
-
+// Bis zum Umbau auf Kernprompt + Module (Router) bekommen die Agenten weiter den vollen Guide
 export function buildSystemPrompt(): string {
-  const style = houseStyle(), recent = recentLooks()
-  return [guide.trim(), buildCatalog(), WORKFLOW, ...(style ? [`## Hausstil des Nutzers (gilt für jedes Deck, hat Vorrang vor dem Design-Guide)\n${style}`] : []),
-    ...(recent.length ? [`## Zuletzt gebaute Decks (nur für neue Decks: im Typ nicht wiederholen, Design-Guide §6 „Abwechslung“; bestehende Decks behalten ihr Design)\n${recent.map(({ title, typ: t }) => `- „${title}“: ${t.hell}, ${t.schrift}-Titel ${t.gewicht} (${t.font}), Grund ${t.grund}, Bauteile ${t.bauteile}, Akzent ${t.akzent}`).join('\n')}`] : [])].join('\n\n')
+  return fullPrompt()
 }
+export { corePrompt } from './guide-modules'
 
 const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { type: 'base64', media_type: mimeOf(buf), data: buf.toString('base64') } })
 

@@ -1,4 +1,4 @@
-// MCP-Server für Claude Code / Claude Desktop: dieselben Tools wie der DeckAgent (tools.ts) plus
+// MCP-Server für Claude Code / Claude Desktop: dieselben Tools wie der DeckAgent (tools.ts, mit read_guide) plus
 // get/save/open_deck. Läuft im Electron-Main-Prozess (`electron . --mcp`), weil die Engine Chromium braucht.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
@@ -9,7 +9,8 @@ import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
 import type { Deck } from '../shared/deck'
-import { buildSystemPrompt, type Engine } from './agent'
+import type { Engine } from './agent'
+import { corePrompt } from './guide-modules'
 import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
 import { deckJson, withDeckFonts } from './webfonts'
 
@@ -19,21 +20,11 @@ export interface McpOptions {
   onDeck?: (deck: Deck) => void // z. B. Live-Vorschau im App-Fenster
 }
 
-// Claude Code nimmt Tool-Ergebnisse nur bis zu einer Token-Grenze an (61.000 Zeichen am Stück waren zu viel): Teile an Abschnittsgrenzen
-export function guideParts(max = 20000): string[] {
-  const parts = ['']
-  for (const block of buildSystemPrompt().split(/\n(?=##+ )/)) {
-    if (parts.at(-1) && parts.at(-1)!.length + block.length > max) parts.push('')
-    parts[parts.length - 1] += (parts.at(-1) ? '\n' : '') + block
-  }
-  return parts
-}
-
-// Claude Code kürzt Server-Anweisungen auf rund 2.000 Zeichen: das Wesentliche zuerst, der volle Guide per read_guide
+// Claude Code kürzt Server-Anweisungen auf rund 2.000 Zeichen: das Wesentliche zuerst, Module des Guides per read_guide
 const INTRO = `# Deckwerk: Präsentationen aus einem Layout-Katalog
 Du wählst Layouts und füllst ihre Felder; Positionen, Schriftgrößen und Farben setzt die Engine. Setze nie Koordinaten.
 
-**Kommen diese Anweisungen bei dir gekürzt an, lies zuerst \`read_guide\` (alle Teile: part 1, 2, …).** Er enthält den Design-Guide und den Layout-Katalog mit allen Feldnamen; ohne ihn rätst du Felder und Gestaltung.
+**Lade vor der Arbeit mit \`read_guide\` die Module, die der Auftrag braucht.** Der Index steht unten (kommt er gekürzt an: \`read_guide\` ohne Eingabe). Neues Deck zum Beispiel: \`read_guide({ module: ["storyline", "geruest-praesentation", "inhalt-layout", "gestaltung", "stil", "abwechslung", "text", "katalog-themes", "layout:cover", "layout:kpi-grid"] })\`. Für andere Formate das passende Gerüst (geruest-social, geruest-a4, geruest-visitenkarte), dazu jedes Layout, das du nutzt, als \`layout:<id>\`; bei Änderungen nur die betroffenen Module. Ohne das Schema eines Layouts rätst du Felder.
 
 Ablauf: Briefing klären → Storyline als Liste der Titel → \`propose_looks\` oder direkt \`create_deck\` mit eigenem Design → \`add_slides\` in Batches von 4–6 Folien, Rückmeldungen (Autofit, Lint) sofort beheben → \`render_overview\` und \`lint_deck\`, schwächste Folien verbessern → \`save_deck\`.
 
@@ -42,7 +33,7 @@ Kernregeln:
 - Zurückhaltung statt Deko: keine Karten-Raster, keine Icons als Schmuck, keine Verläufe oder Sticker. Hierarchie über Größe und Weißraum, eine Akzentfarbe.
 - Auf 4 Inhaltsfolien mindestens eine luftige Folie (statement, big-number, photo).
 - Höchstens ~40 Wörter pro Folie, Details in die Speaker Notes.
-- Stil (\`style\` in create_deck) nach Anlass wählen: mutig für Vortrag, Schule, Event, Kampagne; sachlich für Chef-Update, Antrag, Bericht. Neue Decks im Designtyp nicht wie die letzten (Guide §6 „Abwechslung“).`
+- Stil (\`style\` in create_deck) nach Anlass wählen: mutig für Vortrag, Schule, Event, Kampagne; sachlich für Chef-Update, Antrag, Bericht. Neue Decks im Designtyp nicht wie die letzten (Modul abwechslung).`
 
 export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServer {
   const home = opts.home ?? join(homedir(), 'Deckwerk')
@@ -50,7 +41,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
   const outDir = () => (path ? dirname(path) : join(home, 'out'))
 
-  const server = new McpServer({ name: 'deckwerk', version: '0.1.0' }, { instructions: `${INTRO}\n\n${buildSystemPrompt()}` })
+  const server = new McpServer({ name: 'deckwerk', version: '0.1.0' }, { instructions: `${INTRO}\n\n${corePrompt()}` })
 
   const tools: ToolDef[] = [
     ...buildTools({
@@ -64,16 +55,6 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       // Neues Deck = neuer Ordner: sonst überschreibt save_deck das zuvor gespeicherte Deck
       t.name === 'create_deck' ? { ...t, run: async (i: unknown) => { const out = await t.run(i); path = null; return out } } : t,
     ),
-    {
-      name: 'read_guide',
-      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen.',
-      inputSchema: z.object({ part: z.number().int().min(1).default(1).describe('Teil 1, 2, … – die Antwort nennt die Anzahl') }),
-      async run(i: { part: number }) {
-        const parts = guideParts()
-        const k = Math.min(i.part, parts.length)
-        return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }
-      },
-    },
     {
       name: 'get_deck',
       description: 'Aktuelles Deck als JSON (IDs, Layouts, Inhalte) – zum Nachsehen, was gerade drin ist.',
