@@ -90,7 +90,14 @@ const api = {
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
-  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions): Promise<string> => invoke('deck:export', format, print),
+  /** alle erzeugten Dateien (bei 'clips' mehrere) */
+  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
+  /** Fortschritt eines Video-Exports in % */
+  onExportProgress(cb: (pct: number) => void): () => void {
+    const h = (_: unknown, pct: number) => cb(pct)
+    ipcRenderer.on('export:progress', h)
+    return () => void ipcRenderer.off('export:progress', h)
+  },
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),

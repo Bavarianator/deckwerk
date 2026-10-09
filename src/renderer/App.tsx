@@ -59,6 +59,7 @@ export default function App() {
   const [view, setView] = useState<View>('slide') // einzelne Folie oder Übersicht aller Folien
   const [target, setTarget] = useState<Target | null>(null) // gewähltes Element als Bezug für die KI-Leiste
   const [story, setStory] = useState<StoryItem[] | null>(null) // geplante Storyline der KI (plan_storyline)
+  const videoBusy = useRef(false) // läuft ein Video-Export? Zweiten gar nicht erst starten
   const turnStart = useRef<Deck | null>(null)
   // automatisch sichern wie in Apple-Apps: jede Änderung nach kurzer Pause nach ~/Deckwerk/<titel>/deck.json
   const [saved, setSaved] = useState(true)
@@ -254,9 +255,17 @@ export default function App() {
       setSaved(true)
       setStatus({ text: `Gespeichert: ${p}` })
     }),
-    onExport: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions) => guard(async () => {
-      setStatus({ text: `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
-      setStatus({ text: `Exportiert: ${await api.exportDeck(format, print)}` })
+    onExport: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions) => guard(async () => {
+      const video = format === 'mp4' || format === 'clips'
+      if (video && videoBusy.current) throw new Error('Es läuft schon ein Video-Export. Warte, bis er fertig ist.')
+      setStatus({ text: video ? 'Video wird gerendert …' : `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
+      const off = video ? api.onExportProgress((pct) => setStatus({ text: `Video wird gerendert … ${pct} %` })) : undefined
+      videoBusy.current = video
+      try {
+        const files = await api.exportDeck(format, print)
+        const first = files[0] ?? ''
+        setStatus({ text: format === 'clips' && files.length > 1 ? `${files.length} Clips exportiert: ${first.replace(/\/[^/]*$/, '')}` : `Exportiert: ${first}` })
+      } finally { off?.(); if (video) videoBusy.current = false }
     }),
   }
 
@@ -371,6 +380,7 @@ export default function App() {
             onLook={openLook}
             onExport={actions.onExport}
             onFormats={() => { setPicked([]); setFormats(true) }}
+            hasClip={!!deck?.slides.some((s) => s.layout === 'clip')}
             canPrint={!!deck && profileOf(deck) === 'doc'}
             onPrint={() => setPrinting(true)}
             onPresent={() => present(0)}
