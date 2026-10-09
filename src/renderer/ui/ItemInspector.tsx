@@ -7,7 +7,7 @@ import {
   ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
 import { ANIM_DIRS, DASHES, ITEM_ANIMS, type AnimDir, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
-import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
+import { GRAPHICS, csvToSpec, itemSchema, specToCsv } from '../../shared/items'
 import { FONT_NAMES, resolveTheme } from '../../shared/themes'
 import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
 import { Select } from './kit'
@@ -40,6 +40,17 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => <
 const Btn = ({ icon: I, label, on, ...rest }: { icon: LucideIcon; label: string; on?: boolean; onClick: () => void; disabled?: boolean }) => (
   <button type="button" className={`icon-btn ${on ? 'on' : ''}`} title={label} aria-label={label} aria-pressed={on} {...rest}><I size={15} /></button>
 )
+// Halbfertige Eingaben (z. B. „http“) bleiben lokal und rot markiert; gespeichert wird nur, was das Item-Schema annimmt
+function LinkField({ value, onChange }: { value?: string; onChange: (v: string | undefined) => void }) {
+  const [v, setV] = useState(value ?? '')
+  const ok = (s: string) => !s || itemSchema.shape.link.safeParse(s).success
+  return (
+    <Field label="Link">
+      <input type="text" value={v} placeholder="https://… oder #3 für Folie 3" aria-invalid={!ok(v.trim())}
+        onChange={(e) => { setV(e.target.value); const s = e.target.value.trim(); if (ok(s)) onChange(s || undefined) }} />
+    </Field>
+  )
+}
 function Num({ value, onChange, min, max, step = 1, suffix }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string }) {
   return (
     <span className="num">
@@ -214,6 +225,7 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
             </div>
           </div>
         )}
+        {it && <LinkField key={it.id} value={it.link} onChange={(link) => set({ link }, `link-${it.id}`)} />}
 
         {it?.kind === 'text' && (
           <>

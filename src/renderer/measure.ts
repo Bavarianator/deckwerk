@@ -160,6 +160,7 @@ export function extract(root: HTMLElement): El[] {
       anim: (el.dataset.anim as ItemAnim | undefined) || undefined,
       animDir: (el.dataset.animDir as AnimDir | undefined) || undefined,
       animSpeed: (el.dataset.animSpeed as AnimSpeed | undefined) || undefined,
+      link: el.dataset.link || undefined,
     }
     switch (el.dataset.pptx) {
       case 'text': {
