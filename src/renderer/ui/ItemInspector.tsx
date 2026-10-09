@@ -4,12 +4,12 @@ import { useEffect, useState, type ReactNode } from 'react'
 import {
   AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight,
   AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
-  ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
+  ClipboardPaste, Crop, Eraser, Group, Italic, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Spline, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
 import { ANIM_DIRS, DASHES, ITEM_ANIMS, type AnimDir, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
-import { GRAPHICS, csvToSpec, itemSchema, specToCsv } from '../../shared/items'
+import { GRAPHICS, csvToSpec, itemSchema, newConnector, specToCsv } from '../../shared/items'
 import { FONT_NAMES, resolveTheme } from '../../shared/themes'
-import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
+import { align, clip, cloneItems, geoOf, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
 import { Select } from './kit'
 import { animateItem } from './PresentScreen'
 import { removeBackground } from './media'
@@ -161,6 +161,9 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
         <span className="h3-acts">
           {chosen.length > 1 && !isGroup(items, picked) && <Btn icon={Group} label="Gruppieren (Strg+G)" onClick={() => onItems((l) => groupItems(l, picked))} />}
           {chosen.some((x) => x.group) && <Btn icon={Ungroup} label="Gruppierung aufheben (Strg+Umschalt+G)" onClick={() => onItems((l) => ungroupItems(l, picked))} />}
+          {chosen.length === 2 && chosen.every((x) => x.shape !== 'line') && <Btn icon={Spline} label="Mit Linie verbinden (folgt beim Verschieben)" onClick={() => onItems((l) => [
+            ...l.map((x) => (x.kind === 'text' && picked.includes(x.id) ? { ...x, h: geoOf(x).h } : x)), // Texthöhe ergibt sich aus dem Inhalt: für connect() echte Höhe merken
+            newConnector(chosen[0].id, chosen[1].id, t.c.text)])} />}
           <Btn icon={locked ? Lock : LockOpen} label={locked ? 'Entsperren' : 'Sperren'} on={locked} onClick={() => set({ locked: !locked || undefined })} />
           <Btn icon={Copy} label="Duplizieren" onClick={() => onItems((l) => [...l, ...cloneItems(chosen)])} />
           <Btn icon={Trash2} label="Löschen" onClick={() => onItems((l) => removeItems(l, picked))} />

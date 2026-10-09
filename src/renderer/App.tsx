@@ -4,7 +4,7 @@ import '@fontsource-variable/inter'
 import './ui/app.css'
 import './ui/shell.css'
 import { FORMATS, profileOf, sizeOf, type Deck, type Size, type PrintOptions, type FormatId, type Item, type Slide } from '../shared/deck'
-import { newId, resizeDeck } from '../shared/items'
+import { connect, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
 import { placeholders } from '../shared/merge'
 import { THEMES } from '../shared/themes'
@@ -160,7 +160,7 @@ export default function App() {
     commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, ...p } : s)) }), tag), [commit])
   // freie Elemente der angezeigten Folie
   const onItems = useCallback((fn: (items: Item[]) => Item[], tag?: string) =>
-    commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === index ? { ...s, items: fn(s.items ?? []) } : s)) }), tag), [commit, index])
+    commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === index ? { ...s, items: connect(fn(s.items ?? [])) } : s)) }), tag), [commit, index])
   const onEdit = useCallback((slot: string, text: string) => {
     if (slot.startsWith('items.')) {
       const id = slot.slice(6)

@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { icons } from 'lucide-react'
 import QRCode from 'qrcode'
-import { GRAPHICS } from '../shared/items'
+import { GRAPHICS, connect } from '../shared/items'
 import { Chart, registerables, type ChartConfiguration, type Plugin } from 'chart.js'
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
 import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
@@ -401,7 +401,7 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
             </div>
           </div>
         )}
-        {s.items?.map((it) => <FreeItem key={it.id} it={it} />)}
+        {s.items && connect(s.items).map((it) => <FreeItem key={it.id} it={it} />)}
       </div>
     </SlideCtx.Provider>
   )

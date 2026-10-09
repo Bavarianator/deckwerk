@@ -117,6 +117,7 @@ export interface Item {
   // shape (fill auch Texthintergrund)
   shape?: ShapeId
   lineStart?: LineEnd; lineEnd?: LineEnd // Linienenden (Form line)
+  from?: string; to?: string // Konnektor (Form line): IDs der verbundenen Elemente, Lage berechnet connect()
   dash?: Dash // Strichart für Linie und Umriss
   fill?: string; fill2?: string // fill2 = Verlauf (nur Rechteck/Ellipse)
   stroke?: string; strokeW?: number
