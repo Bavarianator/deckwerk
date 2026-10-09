@@ -107,6 +107,12 @@ export function modulesText(ids: string[]): string {
   return guideModules().filter((m) => want.has(m.id)).map((m) => m.text).join('\n\n')
 }
 
+// Block der Router-Module für die erste Nachricht (API- und CLI-Weg gleich); leer ohne bekannte Module
+export function leitfaden(route: Route | undefined): string {
+  const mods = route ? modulesText(route.modules) : ''
+  return mods && `<leitfaden>\nFür diesen Auftrag ausgewählt (Router): ${route!.modules.join(', ')}. Weitere Module mit read_guide.\n\n${mods}\n</leitfaden>`
+}
+
 // Voller Guide und voller Katalog (bisheriger Systemprompt): für read_guide in Teilen und als Rückfall
 export function fullPrompt(): string {
   return [guide.trim(), buildCatalog(), ...extras().map((m) => m.text)].join('\n\n')

@@ -15,7 +15,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import type { Deck } from '../shared/deck'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
 import { withEvents, type DeckAgentOptions } from './agent'
-import { corePrompt, modulesText, type Route } from './guide-modules'
+import { corePrompt, leitfaden, type Route } from './guide-modules'
 import { serveTools } from './mcp'
 import { buildTools, type ToolDef } from './tools'
 
@@ -78,8 +78,8 @@ const hasFlag = async (bin: string, flag: string) => {
 // Erste Nachricht eines Gesprächs: die vom Router gewählten Module vor dem Nutzertext, gleiche Form wie im API-Weg.
 // Danach nie wieder; Fehlendes lädt die KI selbst mit read_guide.
 export function firstMessage(text: string, route?: Route): string {
-  if (!route?.modules.length) return text
-  return `<leitfaden>\n${modulesText(route.modules)}\n\nFür diesen Auftrag ausgewählt (Router): ${route.modules.join(', ')}. Weitere Module mit read_guide.\n</leitfaden>\n\n${text}`
+  const lead = leitfaden(route)
+  return lead ? `${lead}\n\n${text}` : text
 }
 
 // Aufruf je CLI. Alles, was die Werkzeuge einschränkt, steht hier; bei einer neuen CLI-Version zuerst das prüfen.
