@@ -126,6 +126,8 @@ async function asr({ pcm, models, offset, threads }: AsrArgs, progress: (pct: nu
 // Belly laugh 20, „Chuckle, chortle“ 21, Cheering 66, Applause 67, Crowd 69. Snicker zusätzlich: Lachen von Publikum und
 // Einzelnen ordnet CED-mini meist dort ein (gemessen 0,4–0,7, Laughter selbst nur 0,1–0,4).
 const EVENTS = new Set([8, 11, 14, 16, 18, 19, 20, 21, 66, 67, 69])
+// Musik (Copyright-Strikes in Clips): Singing 27, Music 137, Musical instrument 138, Background music 267, Video game music 272
+const MUSIC = new Set([27, 137, 138, 267, 272])
 // CED ist auf 10-s-Clips trainiert, erkennt Lachen und Applaus aber auch in 2-s-Fenstern; die Rechenzeit hängt kaum an der
 // Fensterlänge, nur an der Überlappung (4 s mit Schritt 2 s kostet das Doppelte, ohne bessere Werte). Gemessen 09.10. auf
 // AMD A4-9125: 1 Thread 0,022 s CPU je Audiosekunde, RTF 0,023 ohne Last (8 h Stream ≈ 11 min) bzw. 0,087 bei Last 8–9
@@ -133,22 +135,23 @@ const EVENTS = new Set([8, 11, 14, 16, 18, 19, 20, 21, 66, 67, 69])
 const TAG_WIN = 2 * SR
 
 let ced: { key: string; t: Tagger } | null = null
-async function tag({ pcm, models }: { pcm: Float32Array; models: string }, progress: (pct: number) => void): Promise<number[]> {
+async function tag({ pcm, models }: { pcm: Float32Array; models: string }, progress: (pct: number) => void): Promise<{ events: number[]; music: number[] }> {
   const dir = join(models, 'ced-mini')
   if (ced?.key !== models) ced = { key: models, t: new (sherpa().AudioTagging)({ model: { ced: join(dir, 'model.int8.onnx'), numThreads: 1, debug: 0 }, labels: join(dir, 'class_labels_indices.csv'), topK: 527 }) }
-  const out: number[] = []
+  const events: number[] = [], music: number[] = []
   for (let a = 0; a < pcm.length; a += TAG_WIN) {
     const w = new Float32Array(TAG_WIN) // letztes Stück mit Stille auf 2 s auffüllen: unter ~0,2 s bricht CED den Prozess ab
     w.set(pcm.subarray(a, a + TAG_WIN))
     const s = ced.t.createStream()
     s.acceptWaveform({ samples: w, sampleRate: SR })
-    const p = at(Math.max(0, ...ced.t.compute(s).filter((e) => EVENTS.has(e.index)).map((e) => e.prob)))
-    for (let i = a; i < Math.min(pcm.length, a + TAG_WIN); i += SR) out.push(p) // je angefangene Sekunde ein Wert
+    const r = ced.t.compute(s), max = (c: Set<number>) => at(Math.max(0, ...r.filter((e) => c.has(e.index)).map((e) => e.prob)))
+    const e = max(EVENTS), m = max(MUSIC)
+    for (let i = a; i < Math.min(pcm.length, a + TAG_WIN); i += SR) { events.push(e); music.push(m) } // je angefangene Sekunde ein Wert
     progress(Math.floor((a / pcm.length) * 99))
     if (a % (200 * TAG_WIN) === 199 * TAG_WIN) await new Promise(setImmediate) // Streams haben kein free(): Finalizer brauchen die Ereignisschleife
   }
   progress(100)
-  return out
+  return { events, music }
 }
 
 // Sprechertrennung: pyannote-segmentation-3.0 (10-s-Fenster) findet Turns, 3D-Speaker CAM++ (zh/en) bettet sie ein.

@@ -46,7 +46,7 @@ export function createEngine(): Engine {
   }
 
   // Video-Caches je Datei (Pfad, Größe, Änderungszeit) im Punktordner, der nicht gesynct wird: <key>.t<k>.json je Transkript-Chunk,
-  // .d<k>.json je Sprecher-Stück, .e<s>.json je Ereignis-Chunk, .signals.json; <key>.transcript.json ist der alte Ganzdatei-Cache (Whisper)
+  // .d<k>.json je Sprecher-Stück, .em<s>.json je Ereignis-/Musik-Chunk, .signals.json; <key>.transcript.json ist der alte Ganzdatei-Cache (Whisper)
   const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), models = join(home, 'models')
   const baseOf = async (file: string) => {
     const s = await stat(file)
@@ -292,47 +292,55 @@ export function createEngine(): Engine {
       probe,
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
-      // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse den Rest
+      // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)
         let s = await readJson<Signals>(`${base}.signals.json`)
-        if (!s) {
+        if (!Array.isArray(s?.music)) { // signals.json von vor der Musikerkennung: neu rechnen, Lautheit bleibt
           const { duration } = await probe(file)
-          const loud = await loudness(file, (p) => onProgress(Math.floor(p * 0.15)))
-          // Ereignisse (Lachen, Jubel, Applaus, Schreien) nur an lauten Stellen; Chunks ohne solche bleiben 0 und werden nicht dekodiert
+          const loud = s?.loud ?? await loudness(file, (p) => onProgress(Math.floor(p * 0.15)))
+          // Ein Tagger-Durchlauf über alle Sekunden mit Ton (über −50 dBFS): Musik liegt oft leise unter der Sprache, und CED liefert
+          // je Fenster alle Klassen, ein zweiter Durchlauf nur für Ereignisse an lauten Stellen rechnete dieselben Fenster doppelt.
+          // Ereignisse zählen weiter nur an lauten Stellen (hot), damit die Highlights gleich gewichten. Stille bleibt 0, Chunks ohne Ton werden nicht dekodiert.
           let tagFailed = false
-          const events = new Array<number>(loud.length).fill(0), hot = loudRanges(loud), work: { a: number; len: number; only: [number, number][] }[] = []
+          const events = new Array<number>(loud.length).fill(0), music = events.slice(), hot = new Uint8Array(loud.length), sound: [number, number][] = []
+          for (const [x, y] of loudRanges(loud)) hot.fill(1, x, y)
+          loud.forEach((v, i) => { if (v > -50) { const l = sound.at(-1); if (l?.[1] === i) l[1] = i + 1; else sound.push([i, i + 1]) } })
+          const work: { a: number; len: number; only: [number, number][] }[] = []
           for (let a = 0; a < duration; a += CHUNK) {
             const len = Math.min(CHUNK, duration - a)
-            const only = hot.filter(([x, y]) => y > a && x < a + len).map(([x, y]): [number, number] => [Math.max(0, x - a), Math.min(len, y - a)])
+            const only = sound.filter(([x, y]) => y > a && x < a + len).map(([x, y]): [number, number] => [Math.max(0, x - a), Math.min(len, y - a)])
             if (only.length) work.push({ a, len, only })
           }
+          type Tags = { events: number[]; music: number[] }
           for (const [i, { a, len, only }] of work.entries()) { // je Chunk gespeichert: 8-h-Streams machen nach einem Abbruch weiter
-            let r: number[]
+            let r: Tags
             try {
-              r = await cached(`${base}.e${a}.json`, async () => {
-                // tag kennt kein only: nur die lauten Abschnitte einzeln taggen (slice: ein subarray schickte den ganzen Puffer an den Worker)
-                const pcm = await pcm16k(file, a, len), out = new Array<number>(Math.ceil(len)).fill(0)
+              r = await cached<Tags>(`${base}.em${a}.json`, async () => {
+                // tag kennt kein only: nur die Abschnitte mit Ton einzeln taggen (slice: ein subarray schickte den ganzen Puffer an den Worker)
+                const pcm = await pcm16k(file, a, len), n = Math.ceil(len), out: Tags = { events: new Array<number>(n).fill(0), music: new Array<number>(n).fill(0) }
                 for (const [x, y] of only) {
-                  try { (await tag(pcm.slice(x * 16000, y * 16000), { models })).forEach((v, j) => { if (x + j < out.length) out[x + j] = v }) }
-                  catch (e) { throw new TagFailed(e) }
+                  let t: Tags
+                  try { t = await tag(pcm.slice(x * 16000, y * 16000), { models }) } catch (e) { throw new TagFailed(e) }
+                  t.events.forEach((v, j) => { if (x + j < n) { out.events[x + j] = v; out.music[x + j] = t.music[j] } })
                 }
                 return out
-              }, Array.isArray)
+              }, (c) => Array.isArray(c.events) && Array.isArray(c.music))
             } catch (e) { // Lautheit, Chat und Heatmap reichen für Highlights: dieser Chunk bleibt 0 und wird nicht gecacht, auch signals.json nicht (später nachholen)
               if (!(e instanceof TagFailed)) throw e
-              if (!tagFailed) console.warn('[video] Ereigniserkennung fehlgeschlagen, Highlights ohne Ereignisse:', (e.cause as Error)?.message ?? e.cause)
+              if (!tagFailed) console.warn('[video] Ereignis- und Musikerkennung fehlgeschlagen, Highlights ohne Ereignisse:', (e.cause as Error)?.message ?? e.cause)
               tagFailed = true
-              r = []
+              r = { events: [], music: [] }
             }
             onProgress(15 + Math.floor(((i + 1) / work.length) * 85))
-            r.forEach((v, j) => { if (a + j < events.length) events[a + j] = v })
+            r.events.forEach((v, j) => { if (a + j < events.length) { events[a + j] = hot[a + j] ? v : 0; music[a + j] = r.music[j] ?? 0 } })
           }
+          if (tagFailed && s) return highlights(s) // alte signals.json hat vollständige Ereignisse, nur keine Musik
           // Chat und Heatmap legt importUrl neben das Video
           const meta = await readJson<{ chat?: unknown; heat?: unknown }>(`${file}.meta.json`)
           // meta.chat nur aus dem Ordner des Videos lesen (die Datei kommt von der Platte, kein beliebiger Pfad)
           const chat = typeof meta?.chat === 'string' && dirname(resolve(meta.chat)) === dirname(resolve(file)) ? await readJson<unknown>(meta.chat) : null
-          s = { loud, events, ...(Array.isArray(chat) && { chat: chatPerSecond(chat, loud.length) }), ...(Array.isArray(meta?.heat) && { heat: meta.heat as number[] }) }
+          s = { loud, events, music, ...(Array.isArray(chat) && { chat: chatPerSecond(chat, loud.length) }), ...(Array.isArray(meta?.heat) && { heat: meta.heat as number[] }) }
           if (!tagFailed) await save(`${base}.signals.json`, s)
         }
         return highlights(s)

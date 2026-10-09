@@ -2,7 +2,7 @@
 // Verfahren angelehnt an HotClip und die Literatur zu Twitch-Highlights (Chat-Ausbrüche, verzögerte Reaktion):
 // robuster z-Wert je Signal gegen gleitenden Median/MAD, gewichtete Summe, Spitzen → Fenster → Top-n ohne Überlappung.
 
-export interface Signals { loud: number[]; chat?: number[]; events?: number[]; heat?: number[] } // je Sekunde: RMS dBFS (−100 = still), Chat-Gewicht (Nachrichten, Emotes zählen doppelt), Ereignis-Wahrscheinlichkeit 0..1 (Lachen/Jubel/Schreien/Applaus), YouTube-Heatmap 0..1
+export interface Signals { loud: number[]; chat?: number[]; events?: number[]; heat?: number[]; music?: number[] } // je Sekunde: RMS dBFS (−100 = still), Chat-Gewicht (Nachrichten, Emotes zählen doppelt), Ereignis-Wahrscheinlichkeit 0..1 (Lachen/Jubel/Schreien/Applaus), YouTube-Heatmap 0..1, Musik-Wahrscheinlichkeit 0..1 (für den Clip-Lint, nicht für Highlights)
 export interface Highlight { start: number; end: number; score: number; why: string } // why kurz deutsch, z. B. „Chat ×4,2 · Lachen/Jubel · laut +9 dB · oft gesehen“
 
 const BLOCK = 60, BLOCKS = 10 // Median je 60-s-Block, gleitend über 10 Blöcke = 10 min

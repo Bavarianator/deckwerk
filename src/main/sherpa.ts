@@ -6,7 +6,7 @@
 // (Freisteller, YuNet) im selben Prozess kollidieren kann, und das Modell (~1,3 GB RAM) blockiert so nie den Main-Prozess.
 // Ohne Electron, damit der Selbsttest unter Node läuft (scripts/check-sherpa.ts).
 import { fork, type ChildProcess } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
@@ -70,8 +70,19 @@ const THREADS = 2
 const IDLE = 60_000 // danach endet der Worker und gibt das Modell (~1,3 GB) frei
 const STALL = 10 * 60_000 // so lange keine Nachricht bei offenem Auftrag: Worker hängt und blockierte sonst alle folgenden
 
+// Schutz vor dem OOM-Killer (wie transcribe.ts), bevor ein Modell in den Worker kommt: asr ~1,3 GB Spitze, tag/diar je < 0,1 GB.
+// MemAvailable statt os.freemem(): zählt den freigebbaren Datei-Cache mit. macOS lagert aus statt zu beenden, dort nicht sperren.
+const NEED_GB: Record<string, number> = { asr: 1.5, tag: 0.6, diar: 0.6 }
+function memCheck(op: string) {
+  if (process.platform !== 'linux') return
+  let gb: number
+  try { gb = Number(/MemAvailable:\s+(\d+)/.exec(readFileSync('/proc/meminfo', 'utf8'))?.[1]) / 1024 ** 2 } catch { return }
+  if (gb < NEED_GB[op]) throw new Error(`Zu wenig freier Arbeitsspeicher für die Audio-Analyse (${gb.toFixed(1)} GB frei, nötig ca. ${NEED_GB[op].toLocaleString('de')} GB). Andere Programme schließen und erneut versuchen.`)
+}
+
 type Reply = { id: number; progress?: number; result?: unknown; error?: string }
 let child: ChildProcess | null = null, seq = 0, idle: NodeJS.Timeout | undefined, stall: NodeJS.Timeout | undefined
+let loaded = new Set<string>() // Ops, deren Modell der laufende Worker schon geladen hat: dafür keine erneute Speicherprüfung
 const calls = new Map<number, { c: ChildProcess; resolve: (v: unknown) => void; reject: (e: Error) => void; onProgress?: (pct: number) => void; pct: number }>()
 
 function fail(c: ChildProcess, why: string, code?: string) {
@@ -105,6 +116,9 @@ function worker(): ChildProcess {
   // stdout auf stderr: im MCP-Modus ist stdout der Protokollkanal
   const c = fork(process.env.DECKWERK_SHERPA_WORKER ?? join(__dirname, 'sherpa-worker.js'), [], { serialization: 'advanced', stdio: ['ignore', 2, 2, 'ipc'] })
   if (c.pid) try { setPriority(c.pid, 10) } catch {} // UI hat auf 2 Kernen Vorrang
+  // Bei Speichernot soll der Kernel den Worker beenden, nicht App oder MCP-Server (Abbruch meldet fail(), Engine macht weiter)
+  if (c.pid && process.platform === 'linux') try { writeFileSync(`/proc/${c.pid}/oom_score_adj`, '800') } catch {}
+  loaded = new Set()
   let worked = false // erstes Ergebnis geliefert
   c.on('message', ({ id, progress, result, error }: Reply) => {
     if (c === child) watch()
@@ -129,7 +143,9 @@ function worker(): ChildProcess {
 }
 
 function call<T>(op: string, args: unknown, onProgress?: (pct: number) => void): Promise<T> {
+  if (!child || !loaded.has(op)) memCheck(op)
   const id = ++seq, c = worker()
+  loaded.add(op)
   return new Promise<T>((resolve, reject) => {
     calls.set(id, { c, resolve: resolve as (v: unknown) => void, reject, onProgress, pct: -1 })
     watch()
@@ -153,11 +169,12 @@ export async function asr(pcm: Float32Array, o: { models: string; offset?: numbe
   return call<Segment[]>('asr', { pcm, models: o.models, offset: o.offset ?? 0, threads }, o.onProgress)
 }
 
-/** Audio-Ereignisse für Stream-Highlights aus 16 kHz mono f32: je Sekunde (Länge ceil(pcm.length / 16000)) die höchste
- *  Wahrscheinlichkeit 0–1 für Lachen, Jubel, Applaus, Schreien, Rufen oder Menge (CED-mini, Fensterung im Worker). */
-export async function tag(pcm: Float32Array, o: { models: string; onProgress?: (pct: number) => void }): Promise<number[]> {
+/** Audio-Ereignisse für Stream-Highlights und Musik für den Clip-Lint aus 16 kHz mono f32: je Sekunde (Länge ceil(pcm.length / 16000))
+ *  die höchste Wahrscheinlichkeit 0–1, events für Lachen, Jubel, Applaus, Schreien, Rufen oder Menge, music für Musik,
+ *  Hintergrundmusik, Videospielmusik, Gesang oder Instrument (CED-mini, ein Durchlauf, Fensterung im Worker). */
+export async function tag(pcm: Float32Array, o: { models: string; onProgress?: (pct: number) => void }): Promise<{ events: number[]; music: number[] }> {
   await ensureModels('tag', o.models)
-  return call<number[]>('tag', { pcm, models: o.models }, o.onProgress)
+  return call('tag', { pcm, models: o.models }, o.onProgress)
 }
 
 /** Sprechertrennung aus 16 kHz mono f32: Turns in s (+ offset), Sprecher 0-basiert in der Reihenfolge ihres ersten Auftretens.
