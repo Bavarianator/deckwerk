@@ -6,6 +6,7 @@ import './ui/shell.css'
 import { FORMATS, profileOf, sizeOf, type Deck, type Size, type PrintOptions, type FormatId, type Item, type Slide } from '../shared/deck'
 import { newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
+import { placeholders } from '../shared/merge'
 import { THEMES } from '../shared/themes'
 import { AUTO, pickAvailable, type ChatModels } from '../shared/models'
 import type { Target } from './ui/AskBar'
@@ -258,6 +259,11 @@ export default function App() {
       setStatus({ text: `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
       setStatus({ text: `Exportiert: ${await api.exportDeck(format, print)}` })
     }),
+    onSeries: () => guard(async () => {
+      setStatus({ text: 'Serienbrief: CSV wählen …' })
+      const r = await api.exportSeries('pdf')
+      setStatus(r ? { text: `Serienbrief: ${r.count} PDF in ${r.dir}` } : null)
+    }),
   }
 
   const send = useCallback((raw: string, context?: string) => {
@@ -373,6 +379,8 @@ export default function App() {
             onFormats={() => { setPicked([]); setFormats(true) }}
             canPrint={!!deck && profileOf(deck) === 'doc'}
             onPrint={() => setPrinting(true)}
+            canSeries={!!deck && placeholders(deck).length > 0}
+            onSeries={actions.onSeries}
             onPresent={() => present(0)}
             onRestore={actions.onOpenPath}
           />
