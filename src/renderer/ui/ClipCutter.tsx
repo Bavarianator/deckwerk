@@ -1,13 +1,12 @@
 // Schneiden: Feinschliff an den Ausschnitten einer Clip-Folie, nachdem die KI sie gesetzt hat.
 // Bewusst schlicht: Anfang/Ende ziehen oder an der Abspielposition setzen, teilen, löschen, Bildausschnitt. Hook und Untertitel gibt es nur im MP4.
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Pause, Play, Plus, Scissors, Trash2 } from 'lucide-react'
 import type { Size } from '../../shared/deck'
 import { MAX_PARTS, partsLength, type ClipContent, type Part } from '../../shared/video'
-import { assetOf } from './itemOps'
+import { ClipVideo, Strip, useClipPlayer } from './clipPlayer'
 import { confirmDialog } from './kit'
-import './cutter.css'
 
 const MIN = 0.3 // kürzester Ausschnitt; das Schema verlangt end > start + 0.2
 const MAX = MAX_PARTS // Schema: höchstens so viele Ausschnitte je Clip-Folie
@@ -21,14 +20,14 @@ interface Props { content: ClipContent; size: Size; disabled: boolean; onApply: 
 export function ClipCutter({ content, size, disabled, onApply, onClose }: Props) {
   const [parts, setParts] = useState<Part[]>(content.parts)
   const [sel, setSel] = useState(0)
-  const [t, setT] = useState(content.parts[0]?.start ?? 0)
   const [dur, setDur] = useState(0) // 0 = Metadaten noch nicht da
-  const [play, setPlay] = useState<null | 'free' | 'clip'>(null) // free = Quelle durchlaufen, clip = Schnittfassung mit Sprüngen
+  const [mode, setMode] = useState<'free' | 'clip'>('free') // free = Quelle durchlaufen, clip = Schnittfassung mit Sprüngen
   const [bad, setBad] = useState(false) // Chromium spielt den Codec nicht (HEVC, ProRes …)
   const [wide, setWide] = useState(false) // Quelle breiter als das Format → Bildausschnitt wählbar
   const video = useRef<HTMLVideoElement>(null)
   const box = useRef<HTMLDivElement>(null)
-  const src = content.video.startsWith('/') ? assetOf(content.video) : content.video // assetOf kodiert auch # und ?
+  const pl = useClipPlayer(video, parts)
+  const t = pl.src, play = pl.playing ? mode : null
   const top = useRef(Math.max(0, ...content.parts.map((x) => x.end))) // ohne Metadaten gilt das größte ursprüngliche Ende als Grenze, sie wächst nicht mit
   const end = dur || top.current
   const p = parts[Math.min(sel, parts.length - 1)]
@@ -36,12 +35,8 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
 
   useLayoutEffect(() => box.current?.focus(), [])
 
-  const seek = (s: number) => {
-    const x = Math.max(0, Math.min(end, s))
-    setT(x)
-    if (video.current) video.current.currentTime = x
-  }
-  const stop = () => { video.current?.pause(); setPlay(null) }
+  const seek = (s: number) => pl.seekSource(Math.max(0, Math.min(end, s)))
+  const stop = pl.pause
   const patch = (i: number, q: Partial<Part>) => setParts((l) => l.map((x, j) => (j === i ? { ...x, ...q } : x)))
   // Anfang/Ende mit Mindestlänge und in den Grenzen der Quelle
   const setEdge = (i: number, edge: 'start' | 'end', s: number) => {
@@ -69,39 +64,23 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
     setSel(sel + 1)
   }
   const toggle = () => {
-    const v = video.current
-    if (!v || bad) return
+    if (!video.current || bad) return
     if (play) return stop()
-    v.play().catch(() => setPlay(null))
-    setPlay('free')
+    setMode('free')
+    pl.playSource()
   }
   // Schnittfassung ab dem gewählten Ausschnitt; davor die letzten 2 s des vorigen, damit man den Schnitt hört
   const playClip = () => {
-    const v = video.current
-    if (!v || bad) return
+    if (!video.current || bad) return
     if (play) stop()
     const i = Math.max(0, sel - 1)
-    seek(sel > 0 ? Math.max(parts[i].start, parts[i].end - 2) : p.start)
+    pl.seekClip(Math.max(partsLength(parts.slice(0, i)), partsLength(parts.slice(0, sel)) - 2)) // im vorigen Ausschnitt max(Anfang, Ende − 2 s)
     setSel(i)
-    v.play().catch(() => setPlay(null))
-    setPlay('clip')
+    setMode('clip')
+    pl.play()
   }
-
-  // Abspielposition per rAF (timeupdate kommt nur ~4×/s); im Clip-Modus am Ende eines Ausschnitts zum nächsten springen
-  useEffect(() => {
-    if (!play) return
-    let raf = 0
-    const tick = () => {
-      const v = video.current!
-      setT(v.currentTime)
-      if (play === 'clip' && v.currentTime >= (parts[sel]?.end ?? 0)) {
-        if (sel + 1 < parts.length) { v.currentTime = parts[sel + 1].start; setSel(sel + 1) } else return stop()
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [play, parts, sel])
+  // In der Schnittfassung folgt die Auswahl dem laufenden Ausschnitt
+  useEffect(() => { if (play === 'clip' && pl.part >= 0) setSel(pl.part) }, [play, pl.part])
 
   const close = async () => {
     if (!changed || await confirmDialog({ title: 'Schnitt verwerfen?', text: 'Deine Änderungen an den Ausschnitten gehen verloren.', ok: 'Verwerfen', danger: true })) onClose()
@@ -150,15 +129,11 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
       </header>
       <div className="cut-body">
         <div className="cut-player" style={{ aspectRatio: `${size.w} / ${size.h}` }}>
-          <video ref={video} src={src} preload="auto" playsInline style={{ objectPosition: `${(p.focus ?? 0.5) * 100}% 50%` }}
-            onLoadedMetadata={(e) => {
-              const v = e.currentTarget
+          <ClipVideo video={content.video} aspect={size.w / size.h} focus={p.focus} still={t} videoRef={video} onBad={() => setBad(true)} onClick={toggle}
+            onMeta={(v) => {
               if (Number.isFinite(v.duration)) setDur(v.duration)
-              if (!v.videoWidth) setBad(true) // nur Ton oder Videospur unbekannt
               setWide(v.videoWidth / v.videoHeight > size.w / size.h + 0.01)
-              v.currentTime = t
-            }}
-            onError={() => setBad(true)} onPause={(e) => e.currentTarget.paused && setPlay(null)} onClick={toggle} /> {/* paused prüfen: playClip pausiert und startet sofort neu, das pause-Ereignis kommt danach */}
+            }} />
           {bad && <p className="cut-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Die Zeiten lassen sich trotzdem als Zahlen anpassen.</p>}
         </div>
 
@@ -169,10 +144,12 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
           <span className="cut-sum">Clip {secs(partsLength(parts))} · {parts.length} {parts.length === 1 ? 'Ausschnitt' : 'Ausschnitte'}</span>
         </div>
 
-        <Strip label="Ganzes Video" from={0} to={end} parts={parts} sel={sel} t={t} onSeek={seek} onSel={setSel} />
-        <Strip label={`Ausschnitt ${sel + 1}`} from={win.from} to={win.to} parts={parts} sel={sel} t={t} onSeek={seek} onSel={setSel}
-          onEdge={(edge, s) => { dragging.current = true; setEdge(sel, edge, s); seek(s) }}
-          onDragEnd={() => { dragging.current = false; setSettled((n) => n + 1) }} />
+        <Strip label="Ganzes Video" from={0} to={end} parts={parts} head={t} onSeek={seek} handles={{ sel, onSel: setSel }} />
+        <Strip label={`Ausschnitt ${sel + 1}`} from={win.from} to={win.to} parts={parts} head={t} onSeek={seek} handles={{
+          sel, onSel: setSel,
+          onEdge: (edge, s) => { dragging.current = true; setEdge(sel, edge, s); seek(s) },
+          onDragEnd: () => { dragging.current = false; setSettled((n) => n + 1) },
+        }} />
 
         <div className="cut-parts" role="group" aria-label="Ausschnitte in Abspielreihenfolge">
           {parts.map((x, i) => (
@@ -207,48 +184,5 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
       </div>
     </div>,
     document.body,
-  )
-}
-
-interface StripProps {
-  label: string; from: number; to: number; parts: Part[]; sel: number; t: number
-  onSeek: (s: number) => void; onSel: (i: number) => void
-  onEdge?: (edge: 'start' | 'end', s: number) => void; onDragEnd?: () => void
-}
-
-// Zeitleiste von from bis to: Klicken/Ziehen setzt die Abspielposition, Griffe (nur mit onEdge) verschieben Anfang und Ende des gewählten Ausschnitts
-function Strip({ label, from, to, parts, sel, t, onSeek, onSel, onEdge, onDragEnd }: StripProps) {
-  const ref = useRef<HTMLDivElement>(null)
-  const span = Math.max(0.001, to - from)
-  const pct = (s: number) => `${((Math.max(from, Math.min(to, s)) - from) / span) * 100}%`
-  const at = (e: { clientX: number }) => { const r = ref.current!.getBoundingClientRect(); return from + ((e.clientX - r.left) / r.width) * span }
-  const drag = (move: (s: number) => void, jump = true) => (e: RPointerEvent) => {
-    e.stopPropagation()
-    const el = e.currentTarget as HTMLElement
-    el.setPointerCapture(e.pointerId)
-    if (jump) move(at(e))
-    el.onpointermove = (ev) => move(at(ev))
-    el.onpointerup = el.onpointercancel = () => { el.onpointermove = el.onpointerup = el.onpointercancel = null; onDragEnd?.() }
-  }
-  return (
-    <div className="cut-strip-wrap">
-      <span>{label}</span>
-      <div className="cut-strip" ref={ref} onPointerDown={(e) => {
-        const s = at(e), inside = (x: Part) => s >= x.start && s < x.end
-        if (!inside(parts[sel])) { const hit = parts.findIndex(inside); if (hit >= 0) onSel(hit) }
-        drag(onSeek)(e)
-      }}>
-        {parts.map((x, i) => x.end > from && x.start < to && (
-          <div key={i} className={`cut-part${i === sel ? ' on' : ''}`} style={{ left: pct(x.start), width: `calc(${pct(x.end)} - ${pct(x.start)})` }}>
-            <span>{i + 1}</span>
-            {onEdge && i === sel && <>
-              <i className="cut-grip l" aria-hidden onPointerDown={drag((s) => onEdge('start', s), false)} />
-              <i className="cut-grip r" aria-hidden onPointerDown={drag((s) => onEdge('end', s), false)} />
-            </>}
-          </div>
-        ))}
-        <div className="cut-head" style={{ left: pct(t) }} />
-      </div>
-    </div>
   )
 }
