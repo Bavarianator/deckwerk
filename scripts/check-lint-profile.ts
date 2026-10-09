@@ -1,6 +1,6 @@
 // Lint-Profile je Format (Folien, Social, A4): npx esbuild scripts/check-lint-profile.ts --bundle --platform=node --format=esm --outfile=out/check-lint-profile.mjs && node out/check-lint-profile.mjs
 import { deepStrictEqual as eq } from 'node:assert'
-import { FORMATS, profileOf, type Deck, type ImgEl, type Measured, type TextEl } from '../src/shared/deck'
+import { FORMATS, formatSuffix, profileOf, type Deck, type ImgEl, type Measured, type Size, type TextEl } from '../src/shared/deck'
 import { isA4 } from '../src/shared/deck'
 import { lintDeck, lintSlide } from '../src/shared/lint'
 
@@ -56,4 +56,9 @@ eq(quer[0].message.includes('146 ppi'), true)
 eq(res(deck('a4'), photo({ w: 2560, h: 3840 })).length, 0)
 eq(res(deck('a4'), photo()).length, 0)
 eq(res(deck(), photo({ w: 2560, h: 1707 })).length, 0)
+
+// Formatkürzel im Exportnamen: präparierte Größe aus fremder deck.json darf keinen Pfad in den Namen bringen
+eq(formatSuffix(FORMATS['4:5']), '-4x5')
+eq(formatSuffix({ w: 800, h: 600 }), '-800x600')
+eq(formatSuffix({ w: '/../../../.claude/', h: '/../CLAUDE' } as unknown as Size), '')
 console.log('check-lint-profile: ok')

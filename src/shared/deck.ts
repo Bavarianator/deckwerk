@@ -157,7 +157,8 @@ export type FormatId = keyof typeof FORMATS
 export interface Size { w: number; h: number }
 // Kürzel für Dateinamen (4x5, a4 …); Sondergrößen als 800x600. 16:9 bleibt leer, damit die Namen wie bisher heißen.
 export const formatSuffix = (size: Size | undefined): string => {
-  if (!size || (size.w === 1280 && size.h === 720)) return ''
+  // size kommt ungeprüft aus der deck.json (auch fremden): nur Zahlen in den Namen, sonst schriebe "w": "/../../.." den Export irgendwohin
+  if (!size || !Number.isFinite(size.w) || !Number.isFinite(size.h) || (size.w === 1280 && size.h === 720)) return ''
   const id = (Object.keys(FORMATS) as FormatId[]).find((k) => FORMATS[k].w === size.w && FORMATS[k].h === size.h)
   return `-${(id ?? `${size.w}x${size.h}`).replace(':', 'x')}`
 }
