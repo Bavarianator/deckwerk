@@ -732,9 +732,87 @@ function BusinessCard({ c, v }: Props<'business-card'>) {
   )
 }
 
+// Lebenslauf (A4 hoch): side = schmale Seitenspalte (Foto, Kontakt, Kenntnisse) neben Name und Stationen,
+// plain = tabellarisch (Zeitraum in schmaler Spalte links, Foto rechts neben dem Namen). Kenntnisse nur als Text, Abschnitte über Haarlinien.
+function Cv({ c, v }: Props<'cv'>) {
+  const table = v === 'plain'
+  const img = photoOf(c.image)
+  const skills = c.skills ?? []
+  const pic = img && <div className="cv-photo">{img.src ? <Img {...img} slot="image" /> : <div className="placeholder" />}</div>
+  const contact = !!c.contact?.length && <div className="cv-contact">{c.contact.map((x, i) => <T key={i} role="label" slot={`contact.${i}`}>{x}</T>)}</div>
+  // Zeile mit Schlüsselspalte (Zeitraum bzw. Bezeichnung der Kenntnis); die Spalten setzt das CSS je Variante
+  const skillRows = skills.map((k, i) => (
+    <div className="cv-entry" key={i}>
+      <T role="label" slot={`skills.${i}.label`} build={c.sections.length} className="cv-key">{k.label}</T>
+      <T role="label" slot={`skills.${i}.text`} build={c.sections.length}>{k.text}</T>
+    </div>
+  ))
+  const head = (
+    <div className="cv-head">
+      <T role="h1" slot="name" maxLines={2} className="cv-name">{c.name}</T>
+      {c.role && <T role="body" slot="role" className="cv-role">{c.role}</T>}
+      {table && contact}
+    </div>
+  )
+  const body = (
+    <>
+      {c.profile && <T role="body" slot="profile" className="cv-profile">{c.profile}</T>}
+      {c.sections.map((s, i) => (
+        <div className="cv-sec" key={i}>
+          <T role="eyebrow" slot={`sections.${i}.heading`} build={i} className="cv-heading">{s.heading}</T>
+          {s.entries.map((e, j) => {
+            const p = `sections.${i}.entries.${j}`
+            return (
+              <div className="cv-entry" key={j}>
+                <T role="label" slot={`${p}.period`} build={i} className="cv-key">{e.period}</T>
+                <div className="cv-what">
+                  <T role="h3" slot={`${p}.title`} build={i} className="cv-title">{e.title}</T>
+                  {e.place && <T role="label" slot={`${p}.place`} build={i} className="muted">{e.place}</T>}
+                  {e.text && <T role="label" slot={`${p}.text`} build={i}>{e.text}</T>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </>
+  )
+  const signed = c.signed && <T role="label" slot="signed" build={c.sections.length} className="muted cv-signed">{c.signed}</T>
+  if (table) return (
+    <Frame safeClass="cv-safe">
+      <div className="cv cv-table" data-fit data-slot="sections">
+        <div className="cv-top">{head}{pic}</div>
+        {body}
+        {skills.length > 0 && (
+          <div className="cv-sec">
+            <T role="eyebrow" slot="_skills" build={c.sections.length} className="cv-heading">Kenntnisse</T>
+            {skillRows}
+          </div>
+        )}
+        {signed}
+      </div>
+    </Frame>
+  )
+  const aside = (pic || contact || skills.length > 0) && (
+    <div className="cv-aside" data-fit data-slot="_aside">
+      {pic}
+      {contact}
+      {skillRows}
+    </div>
+  )
+  return (
+    <Frame safeClass="cv-safe">
+      <div className={`cv cv-sidebar ${aside ? '' : 'cv-solo'}`}>
+        {aside}
+        <div className="cv-main" data-fit data-slot="sections">{head}{body}{signed}</div>
+      </div>
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
-  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard,
+  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, cv: Cv,
 }
