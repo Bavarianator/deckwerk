@@ -161,8 +161,8 @@ export async function tag(pcm: Float32Array, o: { models: string; onProgress?: (
 }
 
 /** Sprechertrennung aus 16 kHz mono f32: Turns in s (+ offset), Sprecher 0-basiert in der Reihenfolge ihres ersten Auftretens.
- *  speakers = feste Anzahl, sonst entscheidet eine Ähnlichkeitsschwelle. Turns unter 0,5 s hängen am Nachbarn. */
-export async function diarize(pcm: Float32Array, o: { models: string; speakers?: number; offset?: number; onProgress?: (pct: number) => void }): Promise<{ start: number; end: number; speaker: number }[]> {
+ *  Die Sprecherzahl entscheidet eine Ähnlichkeitsschwelle. Turns unter 0,5 s hängen am Nachbarn. */
+export async function diarize(pcm: Float32Array, o: { models: string; offset?: number; onProgress?: (pct: number) => void }): Promise<{ start: number; end: number; speaker: number }[]> {
   await ensureModels('diar', o.models)
-  return call('diar', { pcm, models: o.models, speakers: o.speakers ?? 0, offset: o.offset ?? 0 }, o.onProgress)
+  return call('diar', { pcm, models: o.models, offset: o.offset ?? 0 }, o.onProgress)
 }

@@ -159,8 +159,8 @@ async function tag({ pcm, models }: { pcm: Float32Array; models: string }, progr
 // 2 Threads verdoppeln die CPU-Zeit ohne schneller zu sein.
 const DIAR_SHIFT = 0.5, DIAR_THRESHOLD = 0.75, MIN_TURN = 0.5
 let diarizer: { key: string; d: Diarizer } | null = null
-interface DiarArgs { pcm: Float32Array; models: string; speakers: number; offset: number }
-async function diar({ pcm, models, speakers, offset }: DiarArgs, progress: (pct: number) => void): Promise<Turn[]> {
+interface DiarArgs { pcm: Float32Array; models: string; offset: number }
+async function diar({ pcm, models, offset }: DiarArgs, progress: (pct: number) => void): Promise<Turn[]> {
   const dir = join(models, 'diarization')
   if (diarizer?.key !== models) diarizer = {
     key: models,
@@ -170,7 +170,6 @@ async function diar({ pcm, models, speakers, offset }: DiarArgs, progress: (pct:
       clustering: { numClusters: -1, threshold: DIAR_THRESHOLD },
     }),
   }
-  diarizer.d.setConfig({ clustering: { numClusters: speakers || -1, threshold: DIAR_THRESHOLD } })
   // processAsync statt process: rechnet im Thread-Pool und meldet je Sprecher-Einbettung Fortschritt (Lebenszeichen)
   const addon: { offlineSpeakerDiarizationProcessAsync(h: unknown, pcm: Float32Array, cb: (done: number, total: number) => void): Promise<Turn[]> } = require('sherpa-onnx-node/addon.js')
   const raw = await addon.offlineSpeakerDiarizationProcessAsync(diarizer.d.handle, pcm, (done, total) => progress(Math.floor((done / total) * 99)))

@@ -6,6 +6,13 @@ export type Turn = { start: number; end: number; speaker: number }
 export const CHUNK = 300 // Transkript-Raster; je Chunk eine Cache-Datei
 const LEAD = 2, SEG_MAX = 30 // Vorlauf vor dem Chunk; ein Sprachstück (und damit ein Segment) ist höchstens 30 s lang
 
+/** Erkennung, die lang verlangt (undefined = jede): fremde Sprachen Whisper; ist sherpa nicht nutzbar (whisperOnly), genügt auch
+ *  gecachtes Whisper, sonst rechnete jeder Aufruf es neu. */
+export function engineFor(lang: string | undefined, parakeetLangs: readonly string[], whisperOnly: boolean): 'parakeet' | 'whisper' | undefined {
+  if (!lang) return undefined
+  return !parakeetLangs.includes(lang.toLowerCase().split(/[-_]/)[0]) ? 'whisper' : whisperOnly ? undefined : 'parakeet'
+}
+
 /** Gelesener Tonbereich für Chunk k: 2 s Vorlauf, 30 s Überhang (ein Segment, das kurz vor dem Ende beginnt, wird ganz erkannt), an die Videolänge geklemmt. */
 export const chunkWindow = (k: number, duration: number) => {
   const from = Math.max(0, k * CHUNK - LEAD)
