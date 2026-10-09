@@ -1,0 +1,25 @@
+{
+ "title": "Visitenkarte",
+ "size": { "w": 321, "h": 208 },
+ "theme": { "id": "redaktion" },
+ "slides": [
+  { "id": "vorne", "layout": "business-card", "variant": "front",
+   "content": {
+    "name": "Mara",
+    "role": "Landschaftsarchitektin",
+    "org": "Grünwerk Gartenplanung",
+    "lines": ["Telefon 0123 456789", "example.com", "Musterweg 1, 12345 Musterstadt"],
+    "claim": "Gärten, die mit wenig Pflege durchs ganze Jahr tragen.",
+    "qr": "https://example.com"
+   } },
+  { "id": "hinten", "layout": "business-card", "variant": "back", "tone": "accent",
+   "content": {
+    "name": "Mara",
+    "role": "Landschaftsarchitektin",
+    "org": "Grünwerk Gartenplanung",
+    "lines": ["Telefon 0123 456789", "example.com", "Musterweg 1, 12345 Musterstadt"],
+    "claim": "Gärten, die mit wenig Pflege durchs ganze Jahr tragen.",
+    "qr": "https://example.com"
+   } }
+ ]
+}

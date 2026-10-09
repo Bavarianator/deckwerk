@@ -385,3 +385,18 @@
 .t.bf-sign { margin-top: 4.1em; } /* drei Leerzeilen Platz für die Unterschrift */
 .bf-foot { flex: none; position: relative; padding-top: 3mm; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 12px; }
 .bf-foot::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.18; }
+
+/* ---------- Visitenkarte (85 × 55 mm): zwei Pole, nur Typografie; Rand 24 px ≈ 6 mm (Lint-Grenze für Text) ---------- */
+.safe.vk-safe { left: 24px; right: 24px; top: 24px; bottom: 24px; }
+.vk { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; }
+.vk-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.vk-who { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.t.vk-name { font-size: var(--fs-display); line-height: 1.08; } /* ohne Plakat-Faktor: ~15 pt reichen, zwei Wörter bleiben in einer Zeile */
+.t.vk-role { color: var(--accent); font-weight: 700; }
+.vk-contact { display: flex; flex-direction: column; }
+.t.vk-org { font-weight: 700; margin-bottom: 2px; }
+.vk-logo { flex: none; width: 72px; height: 22px; background-position: right top; }
+.vk-mark { flex: none; width: 160px; height: 44px; background-position: left top; }
+.vk-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+.t.vk-claim { max-width: 200px; text-wrap: pretty; }
+.vk-qr { flex: none; display: block; width: 80px; height: 80px; overflow: hidden; } /* ≈ 21 mm samt Ruhezone: Muster ab ~15 mm scannt sicher */
