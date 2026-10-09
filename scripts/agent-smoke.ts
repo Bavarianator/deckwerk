@@ -31,6 +31,8 @@ const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 
 assert.equal(tools.length, 21)
+// laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
+for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
 {
   const log: string[] = [], lock = { tail: Promise.resolve() as Promise<unknown> }
@@ -297,6 +299,14 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.equal(vd!.music!.src, assetUrl(mp3))
   await go('update_deck', { music: null })
   assert.equal(vd!.music, undefined)
+  // mp4: Übergänge mit Abblende zählen (ausgeblendete Folien und morph nicht), fehlende Musik melden
+  const s0 = vd!.slides[0]
+  vd!.slides.push({ ...s0, id: 'f1', transition: 'fade' }, { ...s0, id: 'm1', transition: 'morph' }, { ...s0, id: 'h1', transition: 'fade', hidden: true }, { ...s0, id: 'n1', transition: 'none' })
+  assert.match((await go('export_deck', { format: 'mp4' })).text, /\n1 Übergang mit Abblende \(Folien-transition; none = harter Schnitt\)$/)
+  vd!.music = { src: assetUrl(join(dir, 'music', 'weg.mp3')) }
+  assert.match((await go('export_deck', { format: 'clips' })).text, /deck\.clips\nMusik nicht gefunden – ohne Musik exportiert/)
+  vd!.music = { src: assetUrl(mp3) }
+  assert.doesNotMatch((await go('export_deck', { format: 'mp4' })).text, /Musik nicht gefunden/)
 }
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)

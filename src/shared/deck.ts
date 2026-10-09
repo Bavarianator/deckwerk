@@ -344,4 +344,9 @@ export interface Measured {
 // Dateien, die ein Deck über asset:// bzw. file:// einbinden darf (Protokoll-Handler und PPTX-Export). Alles andere
 // wird verweigert, damit eine fremde deck.json keine beliebigen Dateien (Schlüssel, Zugangsdaten) in eine PPTX zieht.
 // flv = OBS-/Stream-Aufnahmen; .ts (MPEG-TS) bewusst nicht, das gäbe TypeScript-Quellen frei.
-export const MEDIA_EXT = /\.(png|jpe?g|gif|webp|svg|avif|bmp|mp4|webm|mov|m4v|mkv|ogv|flv|mp3|wav|m4a|ogg|oga|aac|opus|flac|ttf|otf|woff2?)$/i
+export const VIDEO_EXT = ['mp4', 'webm', 'mov', 'm4v', 'mkv', 'ogv', 'flv']
+export const AUDIO_EXT = ['mp3', 'wav', 'm4a', 'ogg', 'oga', 'aac', 'opus', 'flac']
+const extRe = (exts: string[]) => new RegExp(`\\.(${exts.join('|')})$`, 'i')
+export const VIDEO_FILE = extRe(VIDEO_EXT)
+export const AUDIO_FILE = extRe(AUDIO_EXT)
+export const MEDIA_EXT = extRe(['png', 'jpe?g', 'gif', 'webp', 'svg', 'avif', 'bmp', ...VIDEO_EXT, ...AUDIO_EXT, 'ttf', 'otf', 'woff2?'])

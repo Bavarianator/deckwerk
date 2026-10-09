@@ -87,7 +87,7 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 
 ### Video-Schnitt
 
-Häng ein Video an (MP4, MOV, M4V, WebM, MKV oder FLV) oder nenn einen Link, und schreib, was du brauchst. Den Schnitt bedient nur die KI, im Chat der App und über MCP in Claude Code, Codex und Vibe. Eine Folie im Layout „Videoclip“ ist ein Video aus Ausschnitten einer Quelle. Vier Abläufe:
+Häng ein Video an (MP4, MOV, M4V, WebM, MKV, OGV oder FLV) oder nenn einen Link, und schreib, was du brauchst. Den Schnitt bedient nur die KI, im Chat der App und über MCP in Claude Code, Codex und Vibe. Eine Folie im Layout „Videoclip“ ist ein Video aus Ausschnitten einer Quelle. Vier Abläufe:
 
 - **Shorts und Reels (9:16)**, etwa „Mach drei Shorts daraus“: Die KI transkribiert das Video und wählt die 3–5 stärksten Momente (packender Einstieg, ohne Vorwissen verständlich, ein Bogen bis zur Pointe, ein abgeschlossener Gedanke am Ende). Sie sieht sich Standbilder an und baut je Short eine Folie mit Hook und Untertiteln. Der Zuschnitt sucht das Gesicht, bei mehreren Personen folgt er dem, der spricht; Folien und Gesten am Rand zeigt sie ganz auf unscharfem Grund. Füllsätze schneidet sie heraus (Jump Cuts). Export: je Short eine MP4.
 - **Ganzes Video kürzen (16:9)**, etwa „Kürz den Vortrag auf das Wesentliche“: eine Folie mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), Versprecher und Abschweifungen fallen weg, Sprechpausen werden kürzer. Export als eine MP4.
@@ -98,7 +98,7 @@ Häng ein Video an (MP4, MOV, M4V, WebM, MKV oder FLV) oder nenn einen Link, und
 
 **Musik:** Die KI sucht freie Musik auf [Openverse](https://openverse.org), nur CC0, Public Domain und CC BY. Die Musik läuft leise unter dem ganzen Video und wird unter Sprache automatisch leiser. Den Nachweis schreibt die KI in die Notizen der letzten Folie; bei CC BY gehört er auch in die Beschreibung des fertigen Videos.
 
-**Lokal:** Das Video wird nicht kopiert, Deckwerk verweist nur auf die Datei (Downloads per Link landen in `~/Deckwerk/assets`). Die Spracherkennung läuft lokal: Parakeet-TDT-0.6B-v3 über sherpa-onnx für 25 europäische Sprachen, für andere Sprachen Whisper. Beim ersten Mal lädt Deckwerk das Modell (rund 670 MB) nach `~/Deckwerk/models`. Die Erkennung dauert auf langsamen Rechnern etwa die Hälfte bis drei Viertel der Videolänge; bei langen Videos transkribiert die KI deshalb nur die Stellen, die sie braucht. ffmpeg nimmt Deckwerk aus dem System, sonst lädt es ein statisches ffmpeg bei Bedarf nach.
+**Lokal:** Das Video wird nicht kopiert, Deckwerk verweist nur auf die Datei (Downloads per Link landen in `~/Deckwerk/assets`). Die Spracherkennung läuft lokal: Parakeet-TDT-0.6B-v3 über sherpa-onnx für 25 europäische Sprachen, für andere Sprachen Whisper (die KI gibt dafür die Sprache an, etwa bei Japanisch, Türkisch oder Arabisch). Beim ersten Mal lädt Deckwerk das Modell (rund 670 MB) nach `~/Deckwerk/models`. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video; bei langen Videos transkribiert die KI deshalb nur die Stellen, die sie braucht. Der Export in 1080p läuft auf langsamen Rechnern mit rund 10 Bildern pro Sekunde, ein einstündiges Video braucht dort 2–3 Stunden. ffmpeg nimmt Deckwerk aus dem System, sonst lädt es ein statisches ffmpeg bei Bedarf nach.
 
 Die Kriterien für gute Momente und die Idee dahinter stammen von [BridgeClip](https://github.com/bridge-mind/bridgeclip) (MIT, © 2026 BridgeMind).
 

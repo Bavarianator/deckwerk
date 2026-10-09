@@ -6,7 +6,7 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { PRINT_SIZES, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
+import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
@@ -335,7 +335,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return assetUrl(out)
   })
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {
-    const extensions = kind === 'video' ? ['mp4', 'webm', 'mov', 'm4v', 'mkv', 'flv'] : ['mp3', 'wav', 'm4a', 'ogg', 'aac']
+    const extensions = kind === 'video' ? VIDEO_EXT : AUDIO_EXT
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: kind === 'video' ? 'Videos' : 'Audio', extensions }] })
     const file = r.filePaths[0]
     return r.canceled || !file ? null : assetUrl(file)

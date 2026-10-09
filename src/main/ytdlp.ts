@@ -110,12 +110,18 @@ export function heatPerSecond(heatmap: { start_time: number; end_time: number; v
   return out
 }
 
-// Vertrauensgrenze: der Link kommt von der KI oder dem Nutzer und landet als Argument bei yt-dlp
-function checkUrl(url: string): URL {
+// Vertrauensgrenze: der Link kommt von der KI oder dem Nutzer und landet als Argument bei yt-dlp.
+// Lokale Ziele wie music.ts get(): Loopback, private Netze, Link-local, *.local und alle IPv6-Literale (deckt [::1], fc00::/7,
+// fe80::/10 und [::ffff:127.0.0.1] ab; Video-Links nennen keine IPv6-Adressen).
+// ponytail: prüft nur den Link selbst; ein Name, der aufs eigene Netz auflöst (DNS-Rebinding), oder eine Weiterleitung dorthin
+// kommt durch – dafür müsste yt-dlp über einen prüfenden Proxy laufen.
+const LOCAL_HOST = /^(127\.|10\.|0\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[)|(^|\.)(localhost|local)\.?$/i
+export function checkUrl(url: string): URL {
   if (url.length > 2000 || /[\x00-\x1f\x7f]/.test(url)) throw new Error('Ungültiger Link (zu lang oder mit Steuerzeichen).')
   let u: URL
   try { u = new URL(url) } catch { throw new Error(`Kein gültiger Link: ${url.slice(0, 100)}`) }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('Nur Links mit http:// oder https:// lassen sich laden.')
+  if (LOCAL_HOST.test(u.hostname)) throw new Error('Links auf Adressen im eigenen Netz sind gesperrt.')
   return u
 }
 
@@ -123,9 +129,19 @@ function checkUrl(url: string): URL {
 export const leftover = (id: string, f: string) =>
   f.startsWith(`${id}.`) && /^(info\.json|live_chat\.json|twitch-chat\.json|temp\.\w+|f[\w-]+\.\w+|(f[\w-]+\.|live_chat\.)?\w+\.(part(-Frag\d+)?|ytdl))$/.test(f.slice(id.length + 1))
 
-/** Video per Link nach dir laden (Dateiname <id>.<ext>), dazu Titel, Dauer, Kapitel, Heatmap und Chat (YouTube-Replay oder Twitch-VOD). */
-export async function importUrl(url: string, dir: string, o: { models: string; ffmpeg: string; onProgress?: (pct: number) => void }): Promise<Imported> {
+type ImportOpts = { models: string; ffmpeg: string; onProgress?: (pct: number) => void }
+// ponytail: Sperre je Prozess (App und MCP-Server laden je einen); ein zweiter Import wartet, das Tool meldet so lange „läuft noch“
+let queue: Promise<unknown> = Promise.resolve()
+
+/** Video per Link nach dir laden (Dateiname <id>.<ext>), dazu Titel, Dauer, Kapitel, Heatmap und Chat (YouTube-Replay oder Twitch-VOD). Nur ein Import gleichzeitig. */
+export async function importUrl(url: string, dir: string, o: ImportOpts): Promise<Imported> {
   const u = checkUrl(url)
+  const r = queue.then(() => load(u, dir, o))
+  queue = r.catch(() => {})
+  return r
+}
+
+async function load(u: URL, dir: string, o: ImportOpts): Promise<Imported> {
   await mkdir(dir, { recursive: true })
   const fs = await statfs(dir)
   const free = fs.bavail * fs.bsize
@@ -140,7 +156,8 @@ export async function importUrl(url: string, dir: string, o: { models: string; f
   let id = '', file = '', last = -1
   try {
     const r = await runTool(bin, [
-      ...common, '--match-filters', '!is_live', '-S', 'res:1080,vcodec:h264,acodec:m4a', '--merge-output-format', 'mp4', '--write-info-json',
+      // Grenzen: höchstens 20 GB und 12 h (unbekannte Dauer geht durch, „<?“)
+      ...common, '--match-filters', '!is_live & duration <? 43200', '--max-filesize', '20G', '-S', 'res:1080,vcodec:h264,acodec:m4a', '--merge-output-format', 'mp4', '--write-info-json',
       // ein nacktes „ffmpeg“ (aus dem PATH) hielte yt-dlp für einen fehlenden Pfad; ohne Angabe sucht es selbst im PATH
       ...(isAbsolute(o.ffmpeg) ? ['--ffmpeg-location', o.ffmpeg] : []),
       // --print macht yt-dlp still, --progress holt den Fortschritt zurück (auf stdout); DWID kommt vor allen Dateien (fürs Aufräumen)
@@ -155,8 +172,8 @@ export async function importUrl(url: string, dir: string, o: { models: string; f
     })
     if (r.stalled) throw new Error('yt-dlp hängt: seit 5 Minuten kein Fortschritt, Download abgebrochen.')
     if (r.code !== 0) throw new Error(`Download fehlgeschlagen (yt-dlp, Code ${r.code}):\n${errorLines(r.err)}${yt ? '\nYouTube-Fehler kommen oft von einem veralteten yt-dlp: yt-dlp aktualisieren.' : ''}`)
-    // !is_live filtert still (Code 0, keine Datei)
-    if (!file) throw new Error('Live-Stream läuft noch oder unter dem Link liegt kein Video. Streams nach dem Ende als Aufzeichnung laden.')
+    // Filter und Größengrenze greifen still (Code 0, keine Datei)
+    if (!file) throw new Error('Kein Video geladen: Der Live-Stream läuft noch, das Video ist länger als 12 Stunden oder größer als 20 GB, oder unter dem Link liegt kein Video. Streams nach dem Ende als Aufzeichnung laden.')
     file = resolve(file)
     if (!file.startsWith(resolve(dir) + sep) || !existsSync(file)) throw new Error(`yt-dlp meldet eine unerwartete Datei: ${file}`)
     id = basename(file).replace(/\.[^.]+$/, '')

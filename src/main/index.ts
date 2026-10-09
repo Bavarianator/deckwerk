@@ -6,7 +6,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { MEDIA_EXT, profileOf } from '../shared/deck'
+import { MEDIA_EXT, profileOf, VIDEO_FILE } from '../shared/deck'
 import type { createEngine } from './engine'
 import { setupSpellcheck } from './spellcheck'
 import { localAsset } from './sync'
@@ -39,6 +39,15 @@ app.on('web-contents-created', (_, wc) => {
 })
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'asset', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }])
+
+// Höchstens 2 ffmpeg-Standbilder gleichzeitig: eine fremde deck.json mit vielen Clip-Folien löste sonst eine Prozessflut aus
+let frameFree = 2
+const frameQueue: (() => void)[] = []
+async function frameSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (frameFree > 0) frameFree--
+  else await new Promise<void>((go) => frameQueue.push(go))
+  try { return await fn() } finally { const next = frameQueue.shift(); if (next) next(); else frameFree++ }
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -80,15 +89,15 @@ app.whenReady().then(async () => {
     if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
     // ?frame=<s> auf einer Videodatei: Standbild als JPEG (ffmpeg, gecacht). Die Clip-Folie braucht kein <video>, das im Offscreen-Fenster nach dem Spulen hängt.
     const frame = new URL(req.url).searchParams.get('frame')
-    if (frame !== null && /\.(mp4|webm|mov|m4v|mkv|flv|ogv)$/i.test(file)) {
+    if (frame !== null && VIDEO_FILE.test(file)) {
       try {
-        const t = Math.round(Math.max(0, Number(frame) || 0) * 10) / 10
+        const t = Math.round(Math.min(48 * 3600, Math.max(0, Number(frame) || 0)) * 10) / 10 // fremde deck.json: keine Fantasiezeiten im Cache-Namen
         const st = await stat(file)
         const dir = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'assets', '.video')
         const jpg = join(dir, `${createHash('sha1').update(`${file}|${st.size}|${st.mtimeMs}`).digest('hex')}-${t}.jpg`)
         let buf: Uint8Array | undefined = await readFile(jpg).catch(() => undefined)
         if (!buf) {
-          buf = (await (await import('./ffmpeg')).frames(file, [t], 1280))[0]
+          buf = await frameSlot(async () => (await (await import('./ffmpeg')).frames(file, [t], 1280))[0])
           await mkdir(dir, { recursive: true })
           await writeFile(jpg, buf)
         }

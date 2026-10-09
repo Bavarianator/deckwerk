@@ -4,7 +4,7 @@ import { rename, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { MEDIA_EXT } from '../shared/deck'
+import { AUDIO_EXT } from '../shared/deck'
 import { httpFetch } from './download'
 
 export interface Track { id: string; title: string; artist: string; duration: number /* s, 0 = unbekannt */; license: 'cc0' | 'pdm' | 'by'; tags: string[]; url: string /* Openverse-Seite */ }
@@ -22,11 +22,10 @@ export interface Hit {
 }
 
 // Openverse nennt Jamendo-MP3s "mp32"; die URLs haben oft keine Endung. Strikte Audio-Liste: die Endung landet im Dateinamen.
-const AUDIO_EXT = /^(mp3|wav|m4a|ogg|oga|aac|opus|flac)$/
 export function extOf(h: Pick<Hit, 'url' | 'filetype'>): string | null {
   let e = (h.filetype ?? '').toLowerCase().replace(/^mp3\d$/, 'mp3')
   if (!e) try { e = new URL(h.url ?? '').pathname.match(/\.(\w{2,5})$/)?.[1].toLowerCase() ?? '' } catch { return null }
-  return AUDIO_EXT.test(e) && MEDIA_EXT.test(`x.${e}`) ? e : null
+  return AUDIO_EXT.includes(e) ? e : null
 }
 
 // Reine Filterfunktion (auch für fetchMusic mit den Detaildaten)
