@@ -7,6 +7,7 @@ import { mkdir, readFile, readdir, rename, rm, stat, statfs, writeFile } from 'n
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
+import { snapToWords } from '../shared/clip-lint'
 import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript } from '../shared/video'
 import { probe, runFfmpeg, silences } from './ffmpeg'
 import { localAsset } from './sync'
@@ -90,6 +91,13 @@ export function padParts(parts: Part[], duration: number): Part[] {
   })
 }
 
+/** Kanten, die mitten in einem Wort liegen, auf die Wortgrenze legen (höchstens 0,4 s); nur der Export, das Deck bleibt. Ohne Transkript oder echte Wortzeiten unverändert. */
+export function snapParts(parts: Part[], t: Transcript | null): { parts: Part[]; moved: number } {
+  if (!t) return { parts, moved: 0 }
+  const r = snapToWords(parts, t, 0.4)
+  return { parts: r.parts, moved: r.moved.length }
+}
+
 /** Schnitte, an denen das Quellvideo nahtlos weiterläuft (part i beginnt, wo part i−1 endet): dort kein Fade, sonst sinkt der Pegel mitten im Satz. */
 export const seamless = (parts: Part[]) => parts.map((p, i) => i > 0 && Math.abs(parts[i - 1].end - p.start) < 1e-3)
 
@@ -113,12 +121,14 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
   const late = job.parts.findIndex((p) => p.start >= info.duration - 0.2)
   if (late >= 0) throw new Error(`Ausschnitt ${late + 1} beginnt bei ${job.parts[late].start} s, das Video ist nur ${info.duration.toFixed(1)} s lang.`)
   // Pausen und Füllwörter kürzen vor padParts: an jedem Schnitt bleibt je Seite PAD stehen, ohne dass sich etwas doppelt. fillerQuiet nimmt nur echte Wortzeiten.
+  const snapped = snapParts(job.parts, job.transcript)
+  if (snapped.moved) console.info(`[video] ${basename(job.file)}: ${snapped.moved} Schnittkante(n) an die Wortgrenze gelegt`)
   const quiet: Quiet[] = []
-  if (job.pauses === 'kurz' && info.audio) for (const p of job.parts) {
+  if (job.pauses === 'kurz' && info.audio) for (const p of snapped.parts) {
     quiet.push(...(await silences(job.file, p.start, p.end, MIN_PAUSE)))
     if (job.transcript) quiet.push(...fillerQuiet(job.transcript, p.start, p.end))
   }
-  const parts = padParts(tighten(job.parts, quiet), info.duration), joined = seamless(parts), total = partsLength(parts), { size } = job
+  const parts = padParts(tighten(snapped.parts, quiet), info.duration), joined = seamless(parts), total = partsLength(parts), { size } = job
   const blur = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // gleiches Seitenverhältnis: blur = crop
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2)) // Grund klein weichzeichnen, dann hochskalieren: billig und weich
   const captions = job.transcript && job.captions !== 'aus' ? job.captions : null

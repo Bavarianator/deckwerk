@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless } from '../src/main/export-video'
+import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless, snapParts } from '../src/main/export-video'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
 import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, tighten, type Transcript } from '../src/shared/video'
@@ -32,6 +32,17 @@ async function main() {
   const dir = mkdtempSync(join(base, 'check-video-'))
   try {
     console.log('ffmpeg:', await ffmpegBin())
+
+    // Schnitte nie mitten im Wort: Start vor das Wort, Ende hinter das Wort (höchstens 0,4 s); ohne echte Wortzeiten unverändert
+    const sw = (w: string, start: number, end: number) => ({ w, start, end })
+    const snapTr: Transcript = { duration: 12, lang: 'de', segments: [{ start: 1, end: 5, text: 'a b c', words: [sw(' eins', 1, 1.8), sw(' zwei', 1.9, 2.6), sw(' drei', 4, 4.6)] }] }
+    const sn = snapParts([{ start: 1.3, end: 4.3, focus: 0.3 }, { start: 8, end: 9 }], snapTr)
+    assert.equal(sn.moved, 2)
+    assert.deepEqual(sn.parts, [{ start: 1, end: 4.6, focus: 0.3 }, { start: 8, end: 9 }])
+    assert.equal(snapParts([{ start: 2.3, end: 4.3 }], snapTr).parts[0].start, 1.9)
+    assert.deepEqual(snapParts([{ start: 1.5, end: 4.3 }], null), { parts: [{ start: 1.5, end: 4.3 }], moved: 0 })
+    assert.equal(snapParts([{ start: 1.5, end: 4.3 }], { duration: 12, lang: 'de', segments: [{ start: 1, end: 5, text: 'eins zwei drei' }] }).moved, 0, 'ohne words geschätzt: unverändert')
+    if (process.env.DW_ONLY_SNAP) return
 
     // Kontaktabzug: 9:16 aus 16:9, zwei parts, 3×3 Kacheln
     const sheetSrc = join(dir, 'abzug.mp4')
