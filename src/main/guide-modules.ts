@@ -61,7 +61,7 @@ function split(text: string): GuideModule[] {
     }
     const def = HEADINGS.find(([, h]) => head.startsWith(h))
     if (!def) throw new Error(`Überschrift ohne Modul-ID: „${head}“ (HEADINGS in guide-modules.ts ergänzen)`)
-    return { id: def[0], title: head.replace(/^#+\s*(\d+\.\s*)?/, ''), kurz: def[2], text: body, ...(def[3] && { always: true as const }) }
+    return { id: def[0], title: head.replace(/^#+\s*/, ''), kurz: def[2], text: body, ...(def[3] && { always: true as const }) }
   })
 }
 
@@ -89,7 +89,7 @@ export function guideIndex(mods = guideModules()): string {
   const rest = mods.filter((m) => !m.always), isLayout = (m: GuideModule) => m.id.startsWith('layout:')
   return [
     '## Index: Module nach Bedarf',
-    'Zum Start eines Gesprächs bekommst du die für den Auftrag gewählten Module mit (fehlen sie, lade sie selbst). Brauchst du später weitere (andere Layouts, Animation, Gestaltung …), lade sie mit `read_guide({ module: [...] })`, bevor du sie nutzt, z. B. `read_guide({ module: ["animation", "layout:kpi-grid"] })`; `layout:<id>` liefert Felder und JSON-Schema eines Layouts. Felder nie raten.',
+    'Im App-Chat bekommst du zum Start eines Gesprächs die für den Auftrag gewählten Module mit; fehlen sie (z. B. über MCP), lade sie selbst. Brauchst du später weitere (andere Layouts, Animation, Gestaltung …), lade sie mit `read_guide({ module: [...] })`, bevor du sie nutzt, z. B. `read_guide({ module: ["animation", "layout:kpi-grid"] })`; `layout:<id>` liefert Felder und JSON-Schema eines Layouts. Felder nie raten.',
     `Abschnitte:\n${rest.filter((m) => !isLayout(m)).map((m) => `- ${m.id} – ${m.title}: ${m.kurz}`).join('\n')}`,
     `Layouts:\n${rest.filter(isLayout).map((m) => `- ${m.id} – ${m.title} – ${m.kurz}`).join('\n')}`,
   ].join('\n\n')
@@ -164,6 +164,7 @@ export function ruleRoute(input: RouteInput): Route {
   if (!input.hasDeck) {
     mods.push('gestaltung', 'abwechslung', 'stil', 'katalog-themes', 'katalog-ton')
     if (kinds.size > 1 || !kinds.has('karte')) mods.push('storyline', 'rhythmus', 'fotos', 'ki-bilder') // eine Visitenkarte braucht keine Storyline
+    else mods.push('fotos') // aber die Brand-Kit-Regeln (Logo)
     if (kinds.has('slides')) mods.push('animation', 'katalog-animationen')
   }
   const hits = KEYWORDS.filter(([, re]) => re.test(t))
