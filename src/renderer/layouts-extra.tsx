@@ -650,9 +650,52 @@ function Invitation({ c }: Props<'invitation'>) {
   )
 }
 
+// Brief nach DIN 5008 Form B: alle Felder in mm an fester Stelle (Anschriftfeld im Umschlagfenster), das Autofit verkleinert nur die Schrift.
+// Falz- und Lochmarken landen im Hintergrundbild.
+function Letter({ c }: Props<'letter'>) {
+  const { theme } = useSlide()
+  // Absätze mit Leerzeile; das geschützte Leerzeichen hält sie auch in PPTX und Word (leere Zeilen fallen beim Messen weg)
+  const body = c.body.split('\n').map((s) => s.trim()).filter(Boolean).join('\n\u00A0\n')
+  return (
+    <Frame safeClass="bf-safe">
+      <div className="bf-marks" />
+      <div className="bf-head">
+        <T role="h1" slot="sender" maxLines={2} className="bf-sender">{c.sender}</T>
+        {theme.logo && <Img src={theme.logo} slot="_logo" className="bf-logo" contain />}
+      </div>
+      <div className="bf-window">
+        <div className="bf-note">{c.senderLine && <T role="small" slot="senderLine" maxLines={1}>{c.senderLine}</T>}</div>
+        <div className="bf-to" data-fit data-slot="to"><T role="body" slot="to" className="bf-addr">{c.to}</T></div>
+      </div>
+      {!!c.info?.length && (
+        <div className="bf-info" data-fit data-slot="info">
+          {c.info.map((r, i) => (
+            <div className="bf-row" key={i}>
+              <T role="label" slot={`info.${i}.label`} className="muted">{r.label}</T>
+              <T role="label" slot={`info.${i}.value`}>{r.value}</T>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="bf-text">
+        <div className="bf-main" data-fit data-slot="body">
+          <T role="body" slot="subject" className="bf-bold">{c.subject}</T>
+          {c.salutation && <T role="body" slot="salutation" className="bf-gap">{c.salutation}</T>}
+          <T role="body" slot="body" className="bf-gap">{body}</T>
+          {c.closing && <T role="body" slot="closing" className="bf-gap">{c.closing}</T>}
+          {c.signature && <T role="body" slot="signature" className="bf-sign">{c.signature}</T>}
+          {!!c.enclosures?.length && <T role="body" slot="_enc" className="bf-gap bf-bold">Anlagen</T>}
+          {c.enclosures?.map((x, i) => <T key={i} role="body" slot={`enclosures.${i}`}>{x}</T>)}
+        </div>
+        {!!c.footer?.length && <div className="bf-foot">{c.footer.map((f, i) => <T key={i} role="small" slot={`footer.${i}`}>{f}</T>)}</div>}
+      </div>
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
-  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation,
+  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter,
 }
