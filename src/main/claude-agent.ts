@@ -14,7 +14,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { Deck } from '../shared/deck'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
-import { buildSystemPrompt, withEvents, type DeckAgentOptions } from './agent'
+import { withEvents, type DeckAgentOptions } from './agent'
+import { corePrompt, modulesText, type Route } from './guide-modules'
 import { serveTools } from './mcp'
 import { buildTools, type ToolDef } from './tools'
 
@@ -74,25 +75,34 @@ const hasFlag = async (bin: string, flag: string) => {
   return (await flags.get(bin)!).includes(flag)
 }
 
+// Erste Nachricht eines Gesprächs: die vom Router gewählten Module vor dem Nutzertext, gleiche Form wie im API-Weg.
+// Danach nie wieder; Fehlendes lädt die KI selbst mit read_guide.
+export function firstMessage(text: string, route?: Route): string {
+  if (!route?.modules.length) return text
+  return `<leitfaden>\n${modulesText(route.modules)}\n\nFür diesen Auftrag ausgewählt (Router): ${route.modules.join(', ')}. Weitere Module mit read_guide.\n</leitfaden>\n\n${text}`
+}
+
 // Aufruf je CLI. Alles, was die Werkzeuge einschränkt, steht hier; bei einer neuen CLI-Version zuerst das prüfen.
-// model: Claude-Modell-ID bzw. Modell von Codex/Vibe (leer = deren Voreinstellung)
-function invocation(cli: Cli, m: Mcp, session: string | null, model: string, text: string, legacy: boolean, effort: Effort): { args: string[]; env: NodeJS.ProcessEnv; stdin: string } {
+// model: Claude-Modell-ID bzw. Modell von Codex/Vibe (leer = deren Voreinstellung). Systemprompt ist der Kernprompt:
+// Der volle Prompt (~129k Zeichen) stieß an Linux' Grenze von 128 KiB pro Argument.
+export function invocation(cli: Cli, m: Mcp, session: string | null, model: string, text: string, legacy: boolean, effort: Effort, route?: Route): { args: string[]; env: NodeJS.ProcessEnv; stdin: string } {
+  const msg = session ? text : firstMessage(text, route)
   if (cli === 'claude')
     // --setting-sources "": keine Hooks/Plugins aus den Settings des Nutzers, Login bleibt (--safe-mode würde auch unseren
     // MCP-Server abschalten, --bare den Abo-Login). --tools: nur Deck-Tools plus Web-Recherche.
-    return { env: {}, stdin: text, args: ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--setting-sources', '', '--disable-slash-commands',
+    return { env: {}, stdin: msg, args: ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--setting-sources', '', '--disable-slash-commands',
       '--mcp-config', m.file, '--strict-mcp-config', '--tools', 'WebSearch,WebFetch', '--allowedTools', 'mcp__deckwerk,WebSearch,WebFetch',
-      '--system-prompt', buildSystemPrompt(), '--model', model, ...(session ? ['--resume', session] : []),
+      '--system-prompt', corePrompt(), '--model', model, ...(session ? ['--resume', session] : []),
       // ohne --effort nimmt Claude Code seine Voreinstellung (xhigh): für Decks unnötig langsam; Haiku kennt kein effort
       ...('legacyThinking' in modelOf(model) ? [] : ['--effort', effort])] }
   if (cli === 'codex')
     // --ignore-user-config: weder MCP-Server noch Profile des Nutzers, nur unser Server (der Login bleibt). Shell- und
     // Exec-Werkzeuge aus, Sandbox nur lesen, nie nachfragen. `exec resume` kennt --sandbox nicht, daher sandbox_mode per -c.
-    return { env: { [TOKEN_ENV]: m.token }, stdin: text, args: ['exec', ...(session ? ['resume', session] : []), '--json', '--skip-git-repo-check',
+    return { env: { [TOKEN_ENV]: m.token }, stdin: msg, args: ['exec', ...(session ? ['resume', session] : []), '--json', '--skip-git-repo-check',
       '--ignore-user-config', '--ignore-rules', '--disable', 'shell_tool', '--disable', 'unified_exec', '--disable', 'hooks',
       '-c', 'sandbox_mode="read-only"', '-c', 'approval_policy="never"', ...(model ? ['-c', `model=${JSON.stringify(model)}`] : []),
       '-c', `mcp_servers={deckwerk={url=${JSON.stringify(m.url)},bearer_token_env_var="${TOKEN_ENV}",tool_timeout_sec=300}}`,
-      '-c', `developer_instructions=${JSON.stringify(buildSystemPrompt())}`, '-'] }
+      '-c', `developer_instructions=${JSON.stringify(corePrompt())}`, '-'] }
   // Vibe: VIBE_MCP_SERVERS ersetzt die MCP-Server des Nutzers durch unseren. --enabled-tools sperrt im -p-Modus alle anderen
   // Werkzeuge (Shell, Dateien); --auto-approve gilt nur für die freigegebenen. VIBE_* überschreibt Felder der Konfiguration,
   // hier das Modell. Einen eigenen Systemprompt nimmt Vibe nur aus VIBE_HOME (nicht aus dem Arbeitsordner), daher steht er
@@ -101,7 +111,7 @@ function invocation(cli: Cli, m: Mcp, session: string | null, model: string, tex
   return {
     env: { [TOKEN_ENV]: m.token, VIBE_ENABLE_CONNECTORS: 'false', ...(model && { VIBE_ACTIVE_MODEL: model }),
       VIBE_MCP_SERVERS: JSON.stringify([{ name: 'deckwerk', transport: 'streamable-http', url: m.url, api_key_env: TOKEN_ENV, tool_timeout_sec: 300 }]) },
-    stdin: session ? text : `${buildSystemPrompt()}\n\n---\n\nAnfrage:\n${text}`,
+    stdin: session ? msg : `${corePrompt()}\n\n---\n\nAnfrage:\n${msg}`,
     args: ['-p', ...(legacy ? ['--legacy-harness'] : []), '--output', 'streaming', '--enabled-tools', 'deckwerk_*', '--enabled-tools', 'web_search', '--enabled-tools', 'web_fetch',
       '--auto-approve', '--trust', ...(session ? ['--resume', session] : [])],
   }
@@ -133,7 +143,11 @@ export class CliAgent {
     }).map((t) => withEvents(t, opts.onEvent))
   }
 
-  async send(userText: string): Promise<void> {
+  // Noch keine Sitzung beim CLI: Die nächste Nachricht ist die erste des Gesprächs (dann läuft der Router)
+  get fresh(): boolean { return !this.session }
+
+  // route: vom Router gewählte Module, nur in der ersten Nachricht mitgeschickt
+  async send(userText: string, route?: Route): Promise<void> {
     const emit = this.opts.onEvent
     this.aborted = false
     try {
@@ -141,7 +155,7 @@ export class CliAgent {
       current = this.tools
       const cwd = join(homedir(), 'Deckwerk') // Sitzungen tauchen im jeweiligen CLI unter ~/Deckwerk auf
       mkdirSync(cwd, { recursive: true })
-      const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')), this.effort)
+      const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')), this.effort, route)
       const child = (this.child = spawn(this.bin, run.args, { cwd, env: { ...process.env, ...run.env }, stdio: ['pipe', 'pipe', 'pipe'] }))
       // Vibe und Codex denken oft minutenlang, bevor das erste Werkzeug läuft: Status zeigen, solange das CLI arbeitet
       if (this.cli !== 'claude') emit({ type: 'tool', name: 'cli_run', status: 'start', summary: `${CLI_NAME[this.cli]} braucht oft ein paar Minuten` })
