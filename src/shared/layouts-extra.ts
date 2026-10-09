@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import type { LayoutDef } from './layouts'
 import { MASKS } from './deck'
+import { MAX_PARTS } from './video'
 
 // Foto: dasselbe Objekt in allen Layouts. Ein einfacher String wird als { src } akzeptiert (ältere Decks).
 export const FOCI = ['center', 'top', 'bottom', 'left', 'right'] as const
@@ -231,10 +232,12 @@ const clip = z.object({
     start: z.number().min(0).describe('Sekunden im Quellvideo (aus transcribe_video)'),
     end: z.number().min(0),
     focus: z.number().min(0).max(1).optional().describe('horizontaler Bildmittelpunkt für den Zuschnitt, 0 = links, 1 = rechts (aus video_frames); Standard 0.5'),
-  }).refine((p) => p.end > p.start + 0.2, 'end muss nach start liegen')).min(1).max(20).describe('Ausschnitte, nacheinander abgespielt (Jump Cuts): ganze Sätze, zusammen meist 20–60 s'),
+  }).refine((p) => p.end > p.start + 0.2, 'end muss nach start liegen')).min(1).max(MAX_PARTS).describe(`Ausschnitte, nacheinander abgespielt (Jump Cuts), Schnitte an Satzgrenzen. Short: zusammen 20–60 s; ganzes Video kürzen: alles Behaltene, bis ${MAX_PARTS} Ausschnitte; Highlight: der Moment mit Anlauf und Auflösung`),
   hook: z.string().max(70).optional().describe('Einstiegszeile oben in den ersten Sekunden: macht neugierig, ohne Clickbait'),
   captions: z.enum(['wort', 'satz', 'aus']).optional().describe('Untertitel aus dem Transkript (nur im MP4): wort = wenige Wörter, aktuelles Wort in Akzentfarbe (Standard); satz = ganze Zeilen; aus'),
   pauses: z.enum(['kurz', 'lassen']).optional().describe('Sprechpausen (nur im MP4): kurz = Pausen ab 0,6 s auf 0,3 s kürzen, der Clip wirkt zügiger; lassen = unverändert (Standard)'),
+  fit: z.enum(['crop', 'blur']).optional().describe('Bild im Format: crop = Bild füllt das Format, Zuschnitt um focus (Standard); blur = ganzes Bild mittig auf unscharfem Grund, wenn Gesten oder Folien am Rand wichtig sind'),
+  follow: z.enum(['sprecher']).optional().describe('sprecher = Zuschnitt folgt dem, der gerade spricht (Podcast, Gespräch); nur bei mehreren Personen im Bild'),
 })
 
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
@@ -551,12 +554,12 @@ export const EXTRA_LAYOUTS = {
   }),
   clip: L({
     id: 'clip', name: 'Videoclip',
-    when: 'Short aus einem langen Video (Reel, TikTok, YouTube Shorts): eine Folie = ein Clip aus Ausschnitten mit Hook und Untertiteln. Nur mit Video aus dem Anhang und Zeiten aus transcribe_video; Export als MP4 über export_deck (clips). Ablauf: read_guide § Video.',
+    when: 'Video aus Ausschnitten einer Quelle, eine Folie = ein Video. Short/Reel (9:16, 20–60 s, Hook, Untertitel); ganzes Video kürzen (16:9, Füllsätze und Pausen raus); Stream-Highlights (je Moment eine Folie); Zusammenschnitt mehrerer Quellen (je Quelle eine clip-Folie, dazwischen Titel). Nur mit Video aus dem Anhang und Zeiten aus dem Transkript; Export über export_deck (mp4 = alles in einem Video, clips = je Folie eine MP4). Ablauf: read_guide § Video.',
     sizes: ['9:16', '4:5', '1:1', '16:9'], schema: clip, defaultBuild: 'none', footer: false,
     samples: {
       min: { video: '', parts: [{ start: 0, end: 4 }] },
       typ: { video: '', hook: 'Warum neun von zehn Pitches scheitern', parts: [{ start: 12.4, end: 21.8, focus: 0.5 }, { start: 40.1, end: 52 }, { start: 63, end: 70.5 }], captions: 'wort' },
-      max: { video: '', hook: words(70), parts: rep(20, (i) => ({ start: i * 10, end: i * 10 + 8, focus: 1 })), captions: 'satz' },
+      max: { video: '', hook: words(70), parts: rep(MAX_PARTS, (i) => ({ start: i * 10, end: i * 10 + 8, focus: 1 })), captions: 'satz', fit: 'blur', follow: 'sprecher' },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>

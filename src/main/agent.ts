@@ -7,6 +7,7 @@ import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBloc
 import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } from '../shared/deck'
 import type { Issue } from '../shared/lint'
 import type { Transcript, VideoInfo } from '../shared/video'
+import type { Highlight } from '../shared/highlights'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
 import guide from './design-guide.md?raw'
@@ -27,7 +28,9 @@ export interface Engine {
 export interface VideoTools {
   probe(file: string): Promise<VideoInfo>
   frames(file: string, times: number[]): Promise<Buffer[]> // JPEG je Zeitpunkt (s), 640 px breit
-  transcribe(file: string, onProgress?: (pct: number) => void): Promise<Transcript> // lokales Whisper, gecacht je Datei
+  transcribe(file: string, onProgress?: (pct: number) => void, o?: { range?: { from: number; to: number }; lang?: string; speakers?: boolean }): Promise<Transcript> // lokales Whisper, gecacht je Datei; range = nur diesen Bereich (s), speakers = Sprechertrennung
+  highlights?(file: string, onProgress?: (pct: number) => void): Promise<Highlight[]> // Streams/lange Videos: stärkste Momente aus Lautheit, Chat, Ereignissen, Heatmap
+  importUrl?(url: string, onProgress?: (pct: number) => void): Promise<{ file: string; title: string; duration: number; chat: boolean; chapters: { start: number; title: string }[] }> // Video per Link laden (yt-dlp); chat = Chat-Aufzeichnung liegt bei
 }
 
 export type AgentEvent =
