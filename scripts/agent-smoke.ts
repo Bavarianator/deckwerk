@@ -4,7 +4,8 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DeckAgent, buildSystemPrompt, toRunnable, type Engine } from '../src/main/agent'
+import { DeckAgent, catalogThumbnails, corePrompt, firstTurn, toRunnable, type Engine } from '../src/main/agent'
+import { modulesText, type Route } from '../src/main/guide-modules'
 import { z } from 'zod'
 import { assetUrl, buildTools, imageSettings, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
@@ -293,10 +294,28 @@ assert.equal(events, 14, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   await T4.update_deck.run(T4.update_deck.inputSchema.parse({ style: 'mutig' })); assert.equal(d!.style, 'mutig')
 }
 
-const sys = buildSystemPrompt()
-assert.ok(sys.includes('# Design-Guide') && sys.includes('### kpi-grid') && sys.includes('"maxLength"'))
+// API-Weg: Kernprompt mit Index als Systemprompt, Layout-Schemas erst über den Router (erste Nachricht) oder read_guide
+const agent = new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} })
+const sys = agent.system
+assert.equal(sys, corePrompt(), 'DeckAgent nutzt den Kernprompt'); assert.ok(agent.fresh)
+assert.equal(sys, new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} }).system, 'Systemprompt stabil (Caching)')
+assert.ok(sys.includes('# Design-Guide') && sys.includes('layout:kpi-grid'), 'Index im Kernprompt')
+assert.ok(!sys.includes('### kpi-grid') && !sys.includes('"maxLength"'), 'volles Layout-Schema nicht im Kernprompt')
 assert.match(sys, /## Zuletzt gebaute Decks \(nur für neue Decks[^\n]*\n(- .*\n)*- „Alt \d“: hell, Serif-Titel regular \(Fraunces\), Grund neutral, Bauteile line, Akzent #/)
-assert.equal(sys, buildSystemPrompt(), 'Systemprompt stabil (Caching)')
+// Erste Nachricht: Module des Routers vor dem Nutzertext, Vorschaubilder nur der gewählten Layouts; ohne Route nichts davon
+{
+  const route: Route = { modules: ['animation', 'layout:kpi-grid'], source: 'regel' }
+  const shots: string[] = []
+  const spy: Engine = { ...engine, renderPng: async (d, idx) => { shots.push(...d.slides.map((s) => s.layout)); return idx.map(() => PNG) } }
+  const thumbs = await catalogThumbnails(spy, [...route.modules, 'layout:gibts-nicht'])
+  assert.deepEqual(shots, ['kpi-grid'], 'Vorschaubilder nur der gewählten Layouts'); assert.equal(thumbs.length, 2)
+  const blocks = firstTurn('Baue ein Deck', route, thumbs).content as { type: string; text?: string; cache_control?: object }[]
+  assert.match(blocks[0].text!, /^<leitfaden>\nFür diesen Auftrag ausgewählt \(Router\): animation, layout:kpi-grid\. Weitere Module mit read_guide\.\n/)
+  assert.ok(modulesText(route.modules).includes('### kpi-grid') && blocks[0].text!.includes(modulesText(route.modules)))
+  assert.equal(blocks.filter((b) => b.type === 'image').length, 1)
+  assert.deepEqual(blocks.at(-1), { type: 'text', text: 'Baue ein Deck', cache_control: { type: 'ephemeral' } }, 'Breakpoint hinter dem ersten Turn')
+  assert.deepEqual(firstTurn('Baue ein Deck', undefined, []), { role: 'user', content: 'Baue ein Deck' }, 'ohne Route kein Leitfaden')
+}
 if (realHome === undefined) delete process.env.DECKWERK_HOME
 else process.env.DECKWERK_HOME = realHome
 console.log(`Tools OK · Systemprompt ${sys.length} Zeichen`)
