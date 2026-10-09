@@ -246,15 +246,16 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     agentKind = kind
     const isAuto = !r && model === AUTO
     // Gesprächsstart: Haiku 5.5 wählt die Module (und bei „Auto“ das Modell) über denselben Zugang wie der Chat – API-Key im
-    // API-Weg, sonst der Login von Claude Code (Plan); ohne beides nach Regeln. Danach übernimmt das Modell (read_guide).
+    // API-Weg, sonst der Login von Claude Code (Plan). Vibe/Codex: nach Regeln, der Auftrag geht nicht an einen zweiten Anbieter.
+    // Danach übernimmt das Modell (read_guide).
     let route: Route | undefined
     if (agent.fresh) {
       const stop = stops
-      const via: RouterVia = kind === 'api' && key ? { kind: 'api', apiKey: key } : clis.claude ? { kind: 'claude', bin: clis.claude } : { kind: 'none' }
+      const via: RouterVia = kind === 'api' && key ? { kind: 'api', apiKey: key } : kind === 'claude' && clis.claude ? { kind: 'claude', bin: clis.claude } : { kind: 'none' }
       emit({ type: 'tool', name: 'router', status: 'start' })
       route = await routeTask({ text, profile: profileOf(deck), layoutsInDeck: deck?.slides.map((s) => s.layout) ?? [], hasDeck: !!deck?.slides.length }, via, { auto: isAuto })
       const n = route.modules.length
-      emit({ type: 'tool', name: 'router', status: 'done', summary: `${route.source === 'haiku' ? 'Haiku' : 'Regeln'}: ${n} ${n === 1 ? 'Modul' : 'Module'}` })
+      emit({ type: 'tool', name: 'router', status: 'done', summary: `${route.source === 'haiku' ? 'Haiku' : 'Regeln'}: ${n} ${n === 1 ? 'Modul' : 'Module'}${route.reason?.startsWith('Fallback') ? ' (Haiku nicht erreichbar)' : ''}` })
       if (stop !== stops) return
     }
     if (r) agent.model = r.model
