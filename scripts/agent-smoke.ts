@@ -63,7 +63,7 @@ assert.equal(webp('ffd8ffe000104a46494600010100000100010000ffdb00430003020203020
   const eq = (a: string, b: string) => { assert.equal(typeset(a), b); assert.equal(typeset(b), b, 'idempotent') }
   eq('Umsatz +8% seit "Q1"', `Umsatz +8${NB}% seit „Q1“`)
   eq("Wie geht's", 'Wie geht’s')
-  eq('Alpha - Beta', 'Alpha – Beta')
+  eq('Alpha - Beta', `Alpha${NB}– Beta`)
   eq('E-Mail und Video-Sprechstunde', 'E-Mail und Video-Sprechstunde'); eq('2024-05-01', '2024-05-01')
   eq('5 Mio. € und 3 km, 7 h', `5${NB}Mio.${NB}€ und 3${NB}km, 7${NB}h`)
   eq('z. B. Nr. 5', `z.${NB}B. Nr.${NB}5`)
@@ -74,7 +74,7 @@ assert.equal(webp('ffd8ffe000104a46494600010100000100010000ffdb00430003020203020
     eq(x, x)
   eq('von 8-10 Mio. € in 2-3 Jahren, 1,5-2 %', `von 8–10${NB}Mio.${NB}€ in 2–3 Jahren, 1,5–2${NB}%`)
   eq('Wachstum 2024-2026', 'Wachstum 2024–2026')
-  eq('Ergebnis (ok) - gut und "Ja" - nein', 'Ergebnis (ok) – gut und „Ja“ – nein')
+  eq('Ergebnis (ok) - gut und "Ja" - nein', `Ergebnis (ok)${NB}– gut und „Ja“${NB}– nein`)
   eq('Er sagte "Hallo" (und "tschüss") bei 12" Zoll', 'Er sagte „Hallo“ (und „tschüss“) bei 12" Zoll')
 }
 // Auto-Modellwahl: neues Deck und Umbauten gründlich, gezielte Änderungen schnell

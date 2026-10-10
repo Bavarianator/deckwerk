@@ -101,6 +101,13 @@ const lineOf = (el: BoxEl): PptxGenJS.ShapeLineProps =>
     ? { color: hex(el.border.color), width: PT(el.border.width), dashType: el.dash ? DASH[el.dash] : undefined, beginArrowType: el.lineStart ? ARROW[el.lineStart] : undefined, endArrowType: el.lineEnd ? ARROW[el.lineEnd] : undefined }
     : { type: 'none' }
 
+// Item.link → PptxGenJS-Hyperlink; #N nur, wenn die Folie existiert (sonst zeigt PowerPoint einen toten Link)
+function linkOf(link: string | undefined, count: number): PptxGenJS.HyperlinkProps | undefined {
+  const n = link?.match(/^#(\d+)$/)
+  if (n) return +n[1] >= 1 && +n[1] <= count ? { slide: +n[1] } : undefined
+  return link && /^(https?:\/\/|mailto:)/.test(link) ? { url: link } : undefined
+}
+
 // Aufzählung: Marker je Lauf, weil PptxGenJS die Absatz-Eigenschaften je Lauf schreibt; leere Absätze ohne Marker
 export function listBullets(runs: Run[], list: NonNullable<TextEl['list']>): PptxGenJS.TextPropsOptions['bullet'][] {
   const paras: Run[][] = [[]]
@@ -122,15 +129,19 @@ export const listXml = (sp: string) => {
   })
 }
 
-function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: string) {
+function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: string, count: number) {
   const b = el.box
+  // PptxGenJS: Formen und Bilder tragen den Link am Objekt; bei addText nur an den Runs (Objekt-Link ohne Rel wäre kaputt)
+  const hyperlink = linkOf(el.link, count)
+  // addImage schreibt die URL ungeescapt in die Rels (PptxGenJS 4.0.1), Formen und Text escapen selbst
+  const imgLink = hyperlink?.url ? { url: hyperlink.url.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') } : hyperlink
   switch (el.kind) {
     case 'text': {
       const extra = b.w * WRAP_SLACK
       const x = el.align === 'center' ? b.x - extra / 2 : el.align === 'right' ? b.x - extra : b.x
       const bullets = el.list ? listBullets(el.runs, el.list) : []
       slide.addText(
-        el.runs.map((r, i) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined, bullet: bullets[i],
+        el.runs.map((r, i) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : hyperlink, bullet: bullets[i],
           // eigene Größe (Einheit); Laufweite 0 als 0.001, weil PptxGenJS falsy Werte vom Feld erbt (dessen Laufweite ist negativ)
           ...(r.sizePx && { fontSize: PT(r.sizePx), charSpacing: PT(r.trackingPx ?? 0) || 0.001 }) } })),
         {
@@ -144,13 +155,13 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
     }
     case 'box':
       if (el.shape === 'line') {
-        slide.addShape(pptx.ShapeType.line, { x: IN(b.x), y: IN(b.y + b.h / 2), w: IN(b.w), h: 0, objectName: name, rotate: el.rot, line: lineOf(el) })
+        slide.addShape(pptx.ShapeType.line, { x: IN(b.x), y: IN(b.y + b.h / 2), w: IN(b.w), h: 0, objectName: name, rotate: el.rot, line: lineOf(el), hyperlink })
         break
       }
       slide.addShape(el.shape ? pptx.ShapeType[SHAPE_TYPE[el.shape]] : el.ellipse ? pptx.ShapeType.ellipse : el.radius > 0.5 ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {
         x: IN(b.x), y: IN(b.y), w: IN(b.w), h: IN(b.h), objectName: name, rotate: el.rot,
         fill: el.fill ? { color: hex(el.fill.color), transparency: Math.round((1 - el.fill.alpha) * 100) } : { type: 'none' },
-        line: lineOf(el),
+        line: lineOf(el), hyperlink,
         rectRadius: IN(Math.min(el.radius, b.w / 2, b.h / 2)),
         shadow: el.shadow ? { type: 'outer', color: hex(el.shadow.color), opacity: el.shadow.alpha, blur: PT(el.shadow.blur), offset: PT(el.shadow.offsetY), angle: 90 } : undefined,
       })
@@ -161,13 +172,13 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
       // altText nie leer: PptxGenJS schriebe sonst den lokalen Pfad (Login-Name, Ordner, Dateiname) als Alternativtext in die Datei
       if (el.fit === 'contain' && path) {
         const r = containRect(el, path)
-        slide.addImage({ path, x: IN(r.x), y: IN(r.y), w: IN(r.w), h: IN(r.h), objectName: name, rotate: el.rot, flipH: el.flip, altText: ' ' })
+        slide.addImage({ path, x: IN(r.x), y: IN(r.y), w: IN(r.w), h: IN(r.h), objectName: name, rotate: el.rot, flipH: el.flip, altText: el.alt?.trim() || ' ', hyperlink: imgLink })
       } else {
         // Cover: auf volle Bildgröße skalieren und per srcRect nach focus zuschneiden (nicht strecken). Ersetzbar über „Bild ändern“.
         const { width: iw, height: ih } = path ? imageSize(path) : { width: 0, height: 0 }
         const k = iw && ih ? Math.max(b.w / iw, b.h / ih) : 0
         const src = path ? { path } : { data: el.src.slice(5) }
-        const extra = { rotate: el.rot, flipH: el.flip, rounding: el.round, transparency: el.alpha !== undefined ? Math.round((1 - el.alpha) * 100) : undefined, objectName: name, altText: ' ' }
+        const extra = { rotate: el.rot, flipH: el.flip, rounding: el.round, transparency: el.alpha !== undefined ? Math.round((1 - el.alpha) * 100) : undefined, objectName: name, altText: el.alt?.trim() || ' ', hyperlink: imgLink }
         if (el.crop && iw) { // freier Zuschnitt: volles Bild so groß, dass der Ausschnitt die Box füllt
           const W = b.w / el.crop.w, H = b.h / el.crop.h
           slide.addImage({ ...src, ...extra, x: IN(b.x), y: IN(b.y), w: IN(W), h: IN(H), sizing: { type: 'crop', x: IN(el.crop.x * W), y: IN(el.crop.y * H), w: IN(b.w), h: IN(b.h) } })
@@ -187,7 +198,7 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
       break
     }
     case 'icon':
-      if (el.png) slide.addImage({ data: el.png.slice(5), x: IN(b.x), y: IN(b.y), w: IN(b.w), h: IN(b.h), objectName: name, rotate: el.rot })
+      if (el.png) slide.addImage({ data: el.png.slice(5), x: IN(b.x), y: IN(b.y), w: IN(b.w), h: IN(b.h), objectName: name, rotate: el.rot, hyperlink: imgLink })
       break
     case 'chart':
       addChart(pptx, slide, el, t, name)
@@ -271,7 +282,7 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
       let name = `${pre}${morphed[k]}`.replace(/[&<>"']/g, '')
       for (let n = 2; used.has(name); n++) name = `${pre}${morphed[k]}#${n}`
       used.add(name)
-      addEl(pptx, slide, el, ts, name)
+      addEl(pptx, slide, el, ts, name, deck.slides.length)
       if (el.kind === 'box' && el.gradient) patches.push({ slide: i + 1, name, fn: gradFill(el.gradient) })
       if (el.kind === 'text' && el.effect) patches.push({ slide: i + 1, name, fn: textEffect(el.effect, el.sizePx) })
       if (el.kind === 'text' && el.list) patches.push({ slide: i + 1, name, fn: listXml })

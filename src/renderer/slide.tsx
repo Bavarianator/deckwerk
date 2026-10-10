@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { icons } from 'lucide-react'
 import QRCode from 'qrcode'
-import { GRAPHICS } from '../shared/items'
+import { GRAPHICS, connect } from '../shared/items'
 import { Chart, registerables, type ChartConfiguration, type Plugin } from 'chart.js'
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
 import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
@@ -62,7 +62,7 @@ export function T(p: { role: keyof typeof SCALE; slot: string; children: string;
   return (
     <div
       key={p.unit ? p.children : undefined} // Bearbeiten ersetzt die Spans durch Klartext: neuer Wert → neu aufbauen
-      className={`t r-${p.role} ${p.className ?? ''}`}
+      className={`t r-${p.role}${head && /^[„“‚»«"]\S/.test(p.children) ? ' hang' : ''} ${p.className ?? ''}`}
       style={p.style}
       data-pptx="text"
       data-slot={p.slot}
@@ -442,7 +442,7 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
             </div>
           </div>
         )}
-        {s.items?.map((it) => <FreeItem key={it.id} it={it} />)}
+        {s.items && connect(s.items).map((it) => <FreeItem key={it.id} it={it} />)}
       </div>
     </SlideCtx.Provider>
   )
@@ -582,8 +582,8 @@ function AudioItem({ it, attrs, pos, slot, live, color }: { it: Item; attrs: Rec
 function FreeItem({ it }: { it: Item }) {
   const { theme, editable, editing, onEdit, live } = useSlide()
   const slot = `items.${it.id}`
-  const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined, 'data-anim-dir': it.animDir, 'data-anim-speed': it.animSpeed }
-  const pos: CSSProperties = { position: 'absolute', left: it.x, top: it.y, width: it.w, height: it.h, transform: it.rot ? `rotate(${it.rot}deg)` : undefined }
+  const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined, 'data-anim-dir': it.animDir, 'data-anim-speed': it.animSpeed, 'data-link': it.link }
+  const pos: CSSProperties = { position: 'absolute', left: it.x, top: it.y, width: it.w, height: it.h, transform: it.rot ? `rotate(${it.rot}deg)` : undefined, cursor: live && it.link ? 'pointer' : undefined }
   const alpha = it.opacity ?? 1
   switch (it.kind) {
     case 'text': {
@@ -620,7 +620,7 @@ function FreeItem({ it }: { it: Item }) {
     }
     case 'image':
       return <Img src={it.src ?? ''} slot={slot} look={it.look} round={it.round} mask={it.mask} adjust={it.adjust} crop={it.crop} alpha={alpha < 1 ? alpha : undefined} className="free-img"
-        attrs={{ ...attrs, 'data-flip': it.flipX ? '' : undefined }}
+        attrs={{ ...attrs, 'data-flip': it.flipX ? '' : undefined, 'data-alt': it.alt }}
         style={{ ...pos, borderRadius: it.round ? undefined : it.radius, transform: [pos.transform, it.flipX && 'scaleX(-1)'].filter(Boolean).join(' ') || undefined }} />
     case 'video':
       return (

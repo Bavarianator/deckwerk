@@ -366,8 +366,21 @@ export function PresentScreen({ deck: all, start: at, onExit, mode = 'solo' }: {
     }
   }, [])
 
+  // Verlinktes freies Element: #N springt zur Folie, Webadressen öffnet der Main-Prozess im Browser (setWindowOpenHandler)
+  const follow = (e: React.MouseEvent) => {
+    const el = mode !== 'audience' ? (e.target as HTMLElement).closest<HTMLElement>('[data-link]') : null
+    const link = el?.dataset.link
+    // noch nicht aufgetretenes Element (Animation wartet auf den Klick): Klick blättert normal weiter
+    if (!el || !link || getComputedStyle(el).opacity === '0') return
+    const n = link.match(/^#(\d+)$/)
+    if (n && (+n[1] < 1 || +n[1] > all.slides.length)) return
+    e.stopPropagation() // kein zusätzliches Weiterblättern
+    if (n) go(showOf(all, +n[1] - 1).start) // #N zählt wie PPTX und Lint alle Folien, hier fehlen die ausgeblendeten
+    else if (/^(https?:\/\/|mailto:)/.test(link)) window.open(link)
+  }
+
   const stage = (
-    <div className="present-stage" style={{ width: w, height: w / ratio, filter: paused && !pv ? 'blur(24px) brightness(.55)' : 'none', transition: still() ? 'none' : 'filter .5s ease' }}>
+    <div className="present-stage" onClick={follow} style={{ width: w, height: w / ratio, filter: paused && !pv ? 'blur(24px) brightness(.55)' : 'none', transition: still() ? 'none' : 'filter .5s ease' }}>
       {view.from !== null && (
         <div ref={outRef} className="present-layer"><SlideView deck={deck} index={view.from} width={w} live /></div>
       )}

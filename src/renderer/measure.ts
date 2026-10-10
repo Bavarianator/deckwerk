@@ -171,6 +171,7 @@ export function extract(root: HTMLElement): El[] {
       anim: (el.dataset.anim as ItemAnim | undefined) || undefined,
       animDir: (el.dataset.animDir as AnimDir | undefined) || undefined,
       animSpeed: (el.dataset.animSpeed as AnimSpeed | undefined) || undefined,
+      link: el.dataset.link || undefined,
     }
     switch (el.dataset.pptx) {
       case 'text': {
@@ -236,6 +237,7 @@ export function extract(root: HTMLElement): El[] {
           mask: el.dataset.mask as ImgEl['mask'],
           adjust: el.dataset.adjust ? JSON.parse(el.dataset.adjust) : undefined,
           flip: el.dataset.flip !== undefined || undefined,
+          alt: el.dataset.alt || undefined,
           crop: el.dataset.crop ? JSON.parse(el.dataset.crop) : undefined,
         })
         break
