@@ -10,7 +10,7 @@ import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
 import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex } from '../shared/video'
 import { HOOK_FADE, POP, cropFilter, hookBox, progressBar } from './video-fx'
-import { probe, runFfmpeg, silences } from './ffmpeg'
+import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
@@ -26,9 +26,15 @@ const video = (preset: string) => ['-c:v', 'libx264', '-preset', preset, '-profi
 const PCM = ['-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2'] // AAC in Zwischenständen verschöbe den Ton an jeder concat-Naht (Priming: Lücke oder Versatz)
 const AUDIO = ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000']
 const FAST = ['-movflags', '+faststart']
-// ponytail: loudnorm in einem Durchgang (dynamisch, kann leicht pumpen); exakt −14 LUFS per Messlauf + linear=true
+// Lautheit in zwei Durchgängen: messen, dann mit den Messwerten linear anwenden (exakt −14 LUFS, kein Pumpen); ohne Messung dynamisch in einem Durchgang.
 // Zeitstempel danach aus der Sample-Zahl: loudnorm (intern 192 kHz) verschiebt sie am Ende, die Tonspur wirkte bis 0,07 s länger als das Bild
-const LOUD = 'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000,asetpts=N/SR/TB'
+const NORM = 'loudnorm=I=-14:TP=-1.5:LRA=11'
+const LOUD = `${NORM},aresample=48000,asetpts=N/SR/TB`
+// ton 'klar': Brummen/Trittschall unter 80 Hz weg; afftdn moderat (12 dB, folgt dem Rauschen), kräftiger klingt Sprache blechern; arnndn bräuchte eine Modelldatei.
+// Kompressor 3:1 ab −26 dBFS mit 15 ms Attack: gleicht leise und laute Sätze an, Silbenanfänge bleiben; ohne Makeup, die Lautheit setzt loudnorm. Dann Zischlaute dämpfen.
+// ponytail: feste Schwelle; Upgrade: relativ zum gemessenen Sprachpegel
+// afftdn verzögert um 1200 Samples (25 ms bei 48 kHz): hinten Stille anhängen, damit das Ende durchkommt, vorn die Verzögerung abschneiden – sonst läge der Ton je Gruppe hinter dem Bild
+const SPEECH = 'apad=pad_len=1200,highpass=f=80,afftdn=nr=12:nf=-40:tn=1,acompressor=threshold=0.05:ratio=3:attack=15:release=150,deesser,atrim=start_sample=1200,asetpts=N/SR/TB'
 
 /** x264-Preset für einen ganzen Export (Gesamtlänge in s): 1080p mit veryfast läuft auf schwachen Rechnern mit ~10 fps, darum über 10 min superfast. */
 export const presetFor = (seconds: number) => (seconds > 600 ? 'superfast' : 'veryfast')
@@ -121,7 +127,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[] }
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton'] }
 interface SegOpts { preset: string; fadeIn?: boolean; fadeOut?: boolean } // fadeIn/fadeOut: Übergang aus/in Schwarz am Anfang/Ende der Szene
 
 /** Eine Clip-Szene als Zwischenstände, je GROUP Teilstücke ein mkv: Zuschnitt (crop um focus oder blur), Hook nur in der ersten Gruppe, Untertitel je Gruppe ab 0. Fortschritt über alle Gruppen. */
@@ -171,7 +177,8 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
         `${a}aformat=sample_rates=48000:channel_layouts=stereo${fade}[a${i}]`
     })
     const vf = [subs && `ass=${id}.ass:fontsdir=fonts`, o.fadeIn && first && `fade=t=in:d=${FADE}`, o.fadeOut && last && `fade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
-    const af = [o.fadeIn && first && `afade=t=in:d=${FADE}`, o.fadeOut && last && `afade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
+    // Sprachkette nach dem concat: Entrauschen lernt über die ganze Gruppe; vor den Szenen-Blenden, sonst höbe der Kompressor sie an
+    const af = [job.ton === 'klar' && info.audio && SPEECH, o.fadeIn && first && `afade=t=in:d=${FADE}`, o.fadeOut && last && `afade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
     graph.push(`${ps.map((_, i) => `[v${i}][a${i}]`).join('')}concat=n=${ps.length}:v=1:a=1[cv][ca]`,
       `[cv]${vf.filter(Boolean).join(',') || 'null'}[v]`, `[ca]${af.filter(Boolean).join(',') || 'anull'}[a]`)
     const inputs = ps.flatMap((p) => ['-ss', sec(p.start), '-t', sec(p.end - p.start), '-i', job.file])
@@ -217,16 +224,27 @@ export async function encodeStill(png: string, out: string, dir: string, o: SegO
 /** Endschritt je Ausgabedatei: Zwischenstände (alle in dir) per concat-Demuxer verbinden, Video kopiert, Ton einmal AAC.
  *  Musik läuft in Schleife über die ganze Länge (1 s Ein-, 2 s Ausblende) und weicht der Sprache (Sidechain-Kompressor), danach loudnorm. */
 export async function finish(segs: Seg[], out: string, dir: string, o: { loudnorm?: boolean; music?: Music; onProgress?: (pct: number) => void } = {}) {
-  const dur = segs.reduce((s, x) => s + x.dur, 0), list = `${basename(out)}.txt`, loud = o.loudnorm ? `,${LOUD}` : ''
+  const dur = segs.reduce((s, x) => s + x.dur, 0), list = `${basename(out)}.txt`
   await writeFile(join(dir, list), segs.map((s) => `file '${basename(s.file)}'`).join('\n'))
   // sidechaincompress endet mit dem ersten Eingang, der endet, und verwirft, was der andere noch hat: Musik darum endlos hinein, Länge gibt die Sprache vor.
   // Schwelle 0,006 statt 0,03: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik sonst kaum (gemessen 11 dB statt 1 dB). ponytail: feste Schwelle; Upgrade: relativ zum gemessenen Sprachpegel
-  const graph = o.music
+  const graph = (loud: string) => o.music
     ? `[0:a]asplit[s][k];[1:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${Math.min(1, Math.max(0, o.music.volume ?? 0.25))},afade=t=in:d=1[m];` +
       `[m][k]sidechaincompress=threshold=0.006:ratio=8:attack=20:release=300,afade=t=out:st=${sec(Math.max(0, dur - 2))}:d=2[d];[s][d]amix=inputs=2:normalize=0:duration=first${loud}[a]`
     : `[0:a]anull${loud}[a]`
   const music = o.music ? ['-stream_loop', '-1', '-i', resolve(o.music.file)] : []
-  await runFfmpeg(['-f', 'concat', '-safe', '0', '-i', list, ...music, '-filter_complex', graph, '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress })
+  const input = ['-f', 'concat', '-safe', '0', '-i', list, ...music]
+  let loud = ''
+  if (o.loudnorm) {
+    // Messlauf nur über den Ton (schnell); fällt er aus oder ist alles still (-inf), bleibt es beim dynamischen Durchgang
+    const err = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', ...input, '-filter_complex', graph(`,${NORM}:print_format=json`), '-map', '[a]', '-f', 'null', '-'], { cwd: dir })
+      .then((r) => (r.code === 0 ? r.err : ''), () => '')
+    const v = ['input_i', 'input_tp', 'input_lra', 'input_thresh', 'target_offset'].map((k) => Number(new RegExp(`"${k}" : "([^"]+)"`).exec(err)?.[1])) // "-inf" → NaN
+    loud = v.every(Number.isFinite)
+      ? `,${NORM}:measured_I=${v[0]}:measured_TP=${v[1]}:measured_LRA=${v[2]}:measured_thresh=${v[3]}:offset=${v[4]}:linear=true,aresample=48000,asetpts=N/SR/TB`
+      : `,${LOUD}`
+  }
+  await runFfmpeg([...input, '-filter_complex', graph(loud), '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress })
 }
 
 /** Eine Clip-Szene fertig als MP4 (Zwischenstände + Endschritt). Gibt die Länge (s) zurück. */
@@ -320,7 +338,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         const file = videoPath(clip.video, i + 1), captions = clip.captions ?? 'wort'
         const transcript = captions === 'aus' && clip.pauses !== 'kurz' ? null : await transcriptOf(file) // pauses kurz: Füllwörter aus dem Transkript
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
-        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts }
+        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton }
         segs = await clipSegs(job, name, dir, so, step(weights[k]))
         if (!first.cover && clip.cover !== undefined) first.cover = { job, t: clip.cover }
         first.post ??= clip.post?.trim() ? clip.post : undefined
