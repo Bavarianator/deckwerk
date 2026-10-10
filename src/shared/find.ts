@@ -9,7 +9,7 @@ export interface Hit { slide: number; where: string; n: number; label: string; t
 
 // Kein sichtbarer Text (Schemas in layouts*.ts): Bild-, Link-, QR- und Icon-Felder sowie Auswahlwerte. highlight verweist auf
 // eine Kategorie bzw. ein Label und wandert beim Ersetzen mit (refs).
-const SKIP = new Set(['image', 'src', 'icon', 'qr', 'type', 'look', 'focus', 'mask', 'sentiment', 'annotate', 'highlight'])
+const SKIP = new Set(['image', 'src', 'icon', 'qr', 'video', 'captions', 'pauses', 'type', 'look', 'focus', 'mask', 'sentiment', 'annotate', 'highlight'])
 const LABEL: Record<string, string> = { title: 'Titel', subtitle: 'Untertitel', eyebrow: 'Überzeile', source: 'Quelle', chart: 'Diagramm', items: 'Liste', points: 'Liste' }
 const labelOf = (where: string) =>
   where === 'title' ? 'Deck-Titel' : where === 'notes' ? 'Notizen' : where.startsWith('items.') ? 'Textfeld' : LABEL[where.split('.')[1]] ?? 'Text'

@@ -130,6 +130,7 @@ Wähle das Layout nach der Form der Aussage, nicht nach Abwechslung um jeden Pre
 | Termine, Phasen, Roadmap | `timeline` |
 | Ablauf in 3–5 Schritten | `process` |
 | Nächste Schritte, Ask, Kontakt | `closing` |
+| Video schneiden: Short/Reel, ganzes Video kürzen, Stream-Highlights, Zusammenschnitt | `clip` (Abschnitt 11) |
 
 - Eine einzelne große Zahl: `big-number` (mit Foto für Emotion). Bei 2–4 Zahlen `kpi-grid` mit `focus`.
 - Behauptet der Titel eine Zahl oder einen Anteil („bindet die Hälfte des Budgets“), muss diese Zahl auf der Folie dominieren: `chart` mit `highlight`, `kpi-grid` oder `statement`, nicht als Nebensatz in Prozess-Karten.
@@ -440,3 +441,50 @@ Jedes Layout hat einen sinnvollen Default. Weiche nur mit Grund davon ab. `pan`,
 - Lint `titel-formel`: fast alle Titel sind gleich gebaute Satz-Zweizeiler. Abhilfe: Bühnenfolien auf ein Wort oder einen kurzen Satz kürzen, eine Behauptung (≤ 5 Wörter) oder eine Frage einstreuen.
 - Lint `echo`: der Schluss zeigt dasselbe Foto wie das Cover. Abhilfe: anderes Motiv oder Schluss ohne Foto; den Bogen über Sprache oder Motiv schlagen.
 - Lint `ornament`: Eyebrow auf mehr als einem Drittel der Folien. Abhilfe: `eyebrow` nur auf Cover und wo es Orientierung gibt (Kapitel, Stand) lassen, sonst weglassen.
+
+## 11. Video
+
+Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Engine schneidet, setzt den Zuschnitt, brennt Hook und Untertitel ein und legt Musik darunter. `export_deck` mit `clips` macht je Clip-Folie eine MP4, mit `mp4` wird das ganze Deck ein Video (andere Folien als Standbild von 3 s). Download, Transkript, Highlight-Suche und Export laufen im Hintergrund: Meldet ein Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Der Export in 1080p läuft auf langsamen Rechnern mit ~10 fps (1 h Video ≈ 2–3 h); das dem Nutzer bei langen Videos vorher sagen.
+
+**Material:** Video aus dem Anhang („Video: asset://…“) oder per Link mit `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; im Zweifel nachfragen. Laufende Livestreams gehen erst nach dem Ende. Den Link als Quelle in die Notes.
+
+**Transkript:** `transcribe_video` erkennt lokal (beim ersten Mal ~670 MB Download). Ohne `lang` nimmt es Parakeet, das nur 25 europäische Sprachen kennt: Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren: über 10 min erst `video_highlights` (`overview: true`), dann nur die Fenster mit `from`/`to`; das ganze Video nur mit `all: true` für den Fulltime-Schnitt. `speakers: true` für Podcasts und Gespräche.
+
+**Vier Abläufe:**
+1. **Short/Reel (9:16)** aus Vortrag, Interview oder Podcast: `transcribe_video` → 3–5 Momente wählen (Bewertung unten) und dem Nutzer mit Zeiten und Begründung nennen → `video_frames` als Kontaktabzug → `create_deck` mit `format: "9:16"` und `transition: "none"` → je Short eine `clip`-Folie → `render_slides` → `export_deck` mit `clips`.
+2. **Ganzes Video kürzen (Fulltime, 16:9):** `transcribe_video` mit `all: true` über alles → Füllsätze, Versprecher, Wiederholungen und Abschweifungen streichen → `create_deck` 16:9 mit `transition: "none"` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100 `parts`), `pauses: "kurz"`, `captions` `satz` oder `aus` → `export_deck` mit `mp4`. Dem Nutzer sagen, wie lang das Ergebnis ist und was wegfiel.
+3. **Stream-Highlights (2–8 h):** `import_video` (Aufzeichnungen von YouTube und Twitch bringen den Chat mit) → `video_highlights` → für die besten 3–5 Fenster `transcribe_video` mit `from`/`to` → `video_frames` als Kontaktabzug, 4–8 Zeitpunkte je Kandidat → Shorts wie in 1, auf Wunsch zusätzlich ein 16:9-Zusammenschnitt mit einer `clip`-Folie je Moment (`mp4`). Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil.
+4. **Kompilation aus mehreren Quellen (16:9):** je Quelle `transcribe_video` → `create_deck` mit `transition: "none"` → je Quelle eine `clip`-Folie, dazwischen Zwischentitel als ruhige Folien (`section` oder `statement`, ein kurzer Satz) → Musik nur dezent (`find_music`, dann `update_deck` mit `music`) → `export_deck` mit `mp4`.
+
+**Bewertung** je Kandidat 4 × 0–25, ganze Skala nutzen, nur ≥ 70 nehmen, Füllstücke < 30:
+- **Hook:** die ersten 2 s halten einen Fremden.
+- **Bogen:** Aufbau → Behauptung → konkretes Detail → Payoff.
+- **Wert:** man lernt oder fühlt etwas.
+- **Teilbarkeit:** „das schicke ich jemandem“.
+
+**Steht für sich allein:** kein Einstieg auf Pronomen oder „und/aber/also“ (Start früher legen, nie das Ende abschneiden); Ende auf einem abgeschlossenen Satz. Keine zwei Shorts mit derselben Aussage; lieber 4–8 gute als 2.
+
+**Hook-Muster:** offene Frage, steile These, überraschende Zahl, Geschichte anreißen, Perspektive („Wenn du … bist“). Er handelt von diesem Moment, nicht vom ganzen Video, verspricht nur, was der Clip hält, und hat 3–9 Wörter.
+
+**Grob → fein:** bei langen Videos erst `video_highlights` mit `overview: true` (eine Zeile je 90 s), dann die besten Fenster transkribieren; Stellen findet `search_transcript` (Thema oder wörtliches Zitat → Zeiten).
+
+**Selbstkontrolle:** nach `add_slides` die Clip-Prüfung der Antwort beheben (Länge, Schnitt mitten im Wort oder Satz, fehlendes Transkript, Überlappung). Vor dem Export `check_clip` für die besten Clips (prüft auch Musik im Hintergrund) und den Kontaktabzug ansehen (Gesicht im Bild, Hook passt, keine schwarzen oder eingefrorenen Bilder); höchstens 2 Runden.
+
+**Regeln:**
+- Schnitte nur an Segmentgrenzen des Transkripts, nie mitten im Satz. Füllsätze, Wiederholungen und Abschweifungen herausschneiden: ein Clip besteht dann aus mehreren `parts` (Jump Cuts).
+- Short: ideal 55–75 s, hart 20–90 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
+- `hook` (Short): höchstens 70 Zeichen, löst nicht schon alles auf; kein Clickbait, keine Emojis.
+- `cover` (Short): Quellsekunde fürs Titelbild aus dem Kontaktabzug – Gesicht mit Ausdruck oder der Moment des Payoffs; nicht der erste Frame, kein Schwarz- oder Übergangsbild.
+- `post` (Short): Zeile 1 Titel wie bei YouTube (≤ 100 Zeichen), dann 1–2 Sätze, dann 3–5 passende Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten. Bei fremdem Material Link oder Quelle nennen. Export `clips` legt je Short Cover (.jpg) und Post-Text (.txt) neben das MP4; `mp4` nimmt Cover und Post der ersten Clip-Folie, die sie hat.
+- `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
+- `style`: `lebendig` für Shorts und Reels (Wort-Pop, Hook blendet mit Balken ein, Fortschrittsbalken, Zoom-Wechsel an Schnitten kaschiert Jump-Cuts), sonst weglassen (= ruhig, ohne Bewegung): Fulltime, Vorträge, Schulungen. Keine weiteren Effekte, Sticker oder Emojis.
+- Neuansätze: verworfene Anläufe immer herausschneiden (`transcribe_video` listet sie unter dem Transkript), nur den letzten sauberen Anlauf behalten.
+- `ton`: `klar` für Sprache aus Handy, Webcam oder Raum (Talking Head, Podcast, Vortrag), `original` bei Musik, Gesang oder Geräuschen.
+- Short-Spannung: nach ~8 s ohne Schnitt auflockern (Füllsatz raus oder `style` `lebendig`). Open Loop: eine im Hook aufgeworfene Frage erst gegen Ende auflösen, aber sicher auflösen. Loop-Ende: der letzte Satz darf in den Anfang zurückführen.
+- `pauses`: `kurz` für Talking Heads mit Denkpausen oder stockendem Sprechen (Pausen ab 0,6 s schrumpfen auf 0,3 s), `lassen` bei Musik, Vorführungen oder bewusst gesetzten Pausen.
+- `fit`: `crop` (Standard) füllt das Format; ohne `focus` sucht der Export das Gesicht. `blur` zeigt das ganze Bild auf unscharfem Grund, wenn Folien, Bildschirm oder Gesten am Rand wichtig sind. Ein 9:16-Ausschnitt zeigt aus einem Querformat nur etwa ein Drittel der Breite.
+- `follow: "sprecher"` bei mehreren Personen im Bild (Podcast, Gespräch): Der Zuschnitt folgt dem, der gerade spricht.
+- `focus` je part nur setzen, wenn die Standbilder etwas anderes als das Gesicht verlangen (Produkt, Tafel): horizontale Mitte, 0 = links, 1 = rechts.
+- Übergänge: Im `mp4` blendet jede Folie mit Übergang über Schwarz ab und auf, `none` und `morph` bleiben harte Schnitte. Video-Decks deshalb mit `transition: "none"` anlegen und `transition: "fade"` nur gezielt an Zwischentiteln setzen.
+- Musik nur auf Wunsch oder bei Kompilationen, dezent und instrumental. Unter Sprache macht der Export sie automatisch leiser. Den Nachweis (CC BY) aus `find_music` in `music.credit` und in die Notes der letzten Folie.
+- Zurückhaltend wie die Folien: keine Emojis, Sticker oder Effektschriften, Zwischentitel kurz und sachlich.

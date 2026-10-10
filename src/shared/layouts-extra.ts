@@ -4,6 +4,7 @@
 import { z } from 'zod'
 import type { LayoutDef } from './layouts'
 import { MASKS } from './deck'
+import { MAX_PARTS } from './video'
 
 // Foto: dasselbe Objekt in allen Layouts. Ein einfacher String wird als { src } akzeptiert (ältere Decks).
 export const FOCI = ['center', 'top', 'bottom', 'left', 'right'] as const
@@ -222,6 +223,25 @@ const logos = z.object({
   title: title(),
   logos: z.array(z.object({ name: z.string().max(22), src: z.string().optional().describe('Logo-Datei (asset://); ohne = Name als Schriftzug') })).min(3).max(12),
   mono: z.boolean().optional().describe('Logos einheitlich einfärben (ruhiger)'),
+})
+
+// Videoclip (src/shared/video.ts): Ausschnitte eines Quellvideos, nacheinander abgespielt; Export als MP4 (export-video.ts)
+const clip = z.object({
+  video: z.string().describe('Quellvideo: asset://-Pfad aus dem Anhang oder absoluter Dateipfad; "" = Platzhalter'),
+  parts: z.array(z.object({
+    start: z.number().min(0).describe('Sekunden im Quellvideo (aus transcribe_video)'),
+    end: z.number().min(0),
+    focus: z.number().min(0).max(1).optional().describe('horizontaler Bildmittelpunkt für den Zuschnitt, 0 = links, 1 = rechts (aus video_frames); Standard 0.5'),
+  }).refine((p) => p.end > p.start + 0.2, 'end muss nach start liegen')).min(1).max(MAX_PARTS).describe(`Ausschnitte, nacheinander abgespielt (Jump Cuts), Schnitte an Satzgrenzen. Short: zusammen ideal 55–75 s; ganzes Video kürzen: alles Behaltene, bis ${MAX_PARTS} Ausschnitte; Highlight: der Moment mit Anlauf und Auflösung`),
+  hook: z.string().max(70).optional().describe('Einstiegszeile oben in den ersten Sekunden: macht neugierig, ohne Clickbait'),
+  captions: z.enum(['wort', 'satz', 'aus']).optional().describe('Untertitel aus dem Transkript (nur im MP4): wort = wenige Wörter, aktuelles Wort in Akzentfarbe (Standard); satz = ganze Zeilen; aus'),
+  pauses: z.enum(['kurz', 'lassen']).optional().describe('Sprechpausen (nur im MP4): kurz = Pausen ab 0,6 s auf 0,3 s kürzen, der Clip wirkt zügiger; lassen = unverändert (Standard)'),
+  fit: z.enum(['crop', 'blur']).optional().describe('Bild im Format: crop = Bild füllt das Format, Zuschnitt um focus (Standard); blur = ganzes Bild mittig auf unscharfem Grund, wenn Gesten oder Folien am Rand wichtig sind'),
+  follow: z.enum(['sprecher']).optional().describe('sprecher = Zuschnitt folgt dem, der gerade spricht (Podcast, Gespräch); nur bei mehreren Personen im Bild'),
+  style: z.enum(['ruhig', 'lebendig']).optional().describe('Animation im Export: ruhig (Standard, ohne Bewegung) oder lebendig (Wort-Pop, Hook mit Einblendung, Fortschrittsbalken, Zoom-Wechsel an Schnitten) – lebendig für Shorts/Reels, ruhig für Vorträge und Fulltime'),
+  ton: z.enum(['klar', 'original']).optional().describe('Ton im Export: klar = Sprache aufbereiten (Hochpass, Entrauschen, Kompressor, De-Esser) für Talking Head, Podcast, Vortrag, Aufnahmen mit Rauschen oder Hall vom Handy/Webcam; original = unverändert (Standard). Nie klar bei Musik, Gesang oder Vorführungen, deren Geräusche zählen'),
+  cover: z.number().min(0).optional().describe('Quellsekunde fürs Titelbild (Export: .jpg neben dem MP4): ausdrucksstarkes Gesicht oder der Kernmoment, aus dem Kontaktabzug; muss im Video liegen, nicht der erste Frame, kein Schwarzbild'),
+  post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
 })
 
 // Bewerbung – Deckblatt (A4 hoch): oben Stelle und Unternehmen, unten Foto, Name und Kontakt, daneben der Inhalt der Mappe.
@@ -794,6 +814,16 @@ export const EXTRA_LAYOUTS = {
         sections: rep(3, (i) => ({ heading: words(30, i), items: rep(4, (j) => ({ name: words(40, i + j), text: words(80, j), price: '1.234,50 €', tag: words(20, j) })) })),
         note: words(220),
       },
+    },
+  }),
+  clip: L({
+    id: 'clip', name: 'Videoclip',
+    when: 'Video aus Ausschnitten einer Quelle, eine Folie = ein Video. Short/Reel (9:16, ideal 55–75 s, Hook, Untertitel); ganzes Video kürzen (16:9, Füllsätze und Pausen raus); Stream-Highlights (je Moment eine Folie); Zusammenschnitt mehrerer Quellen (je Quelle eine clip-Folie, dazwischen Titel). Nur mit Video aus dem Anhang und Zeiten aus dem Transkript; Export über export_deck (mp4 = alles in einem Video, clips = je Folie eine MP4). Ablauf: read_guide § Video.',
+    sizes: ['9:16', '4:5', '1:1', '16:9'], schema: clip, defaultBuild: 'none', footer: false,
+    samples: {
+      min: { video: '', parts: [{ start: 0, end: 4 }] },
+      typ: { video: '', hook: 'Warum neun von zehn Pitches scheitern', parts: [{ start: 12.4, end: 21.8, focus: 0.5 }, { start: 40.1, end: 52 }, { start: 63, end: 70.5 }], captions: 'wort', cover: 45.2, post: 'Warum neun von zehn Pitches scheitern\nDer häufigste Fehler steckt in der ersten Minute. So vermeidest du ihn.\n#pitch #startup #gründen' },
+      max: { video: '', hook: words(70), parts: rep(MAX_PARTS, (i) => ({ start: i * 10, end: i * 10 + 8, focus: 1 })), captions: 'satz', fit: 'blur', follow: 'sprecher', style: 'lebendig', ton: 'klar', cover: 5, post: words(2200) },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>

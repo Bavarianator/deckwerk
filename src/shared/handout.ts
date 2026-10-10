@@ -1,7 +1,7 @@
 import type { Deck } from './deck'
 
 // Handout (Canva „Deck → Doc“): Titel als Überschrift, übrige Texte als Liste, Notizen als Zitat
-const SKIP = /^(image|src|icon|logo|url|href|qr|photo|focus|look|color)$/i
+const SKIP = /^(image|src|icon|logo|url|href|qr|photo|focus|look|color|video|captions|pauses)$/i
 export function handout(deck: Deck): string {
   const texts = (v: unknown, k = ''): string[] =>
     typeof v === 'string' ? (SKIP.test(k) || /^(asset|https?):/.test(v) || !v.trim() ? [] : [v.trim()])

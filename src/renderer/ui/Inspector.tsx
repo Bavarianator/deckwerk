@@ -1,8 +1,9 @@
 // Anpassen-Panel: gewählte freie Elemente und die Einstellungen der Folie (inkl. Hintergrund).
 // Deck-weite Einstellungen (Theme, Übergang, Ablauf, Marke) stehen im Look, die Notizen unter der Folie.
-import type { ReactNode } from 'react'
-import { ImagePlus, X } from 'lucide-react'
-import { BUILDS, DECORS, TONES, TRANSITIONS, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
+import { useEffect, useState, type ReactNode } from 'react'
+import { ImagePlus, Scissors, X } from 'lucide-react'
+import { BUILDS, DECORS, TONES, TRANSITIONS, sizeOf, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
+import { ClipCutter } from './ClipCutter'
 import { GradAngle, ItemInspector } from './ItemInspector'
 import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
@@ -41,6 +42,9 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
   const colors = colorsOf(items)
   const texts = items.filter((it) => it.kind === 'text')
   const base = deck.theme.custom ? themeFromSpec(deck.theme.custom) : THEMES.find((t) => t.id === deck.theme.id) ?? THEMES[0]
+  const [cutting, setCutting] = useState(false)
+  const clip = slide?.layout === 'clip' && slide.content?.video && slide.content.parts?.length ? slide : null // Schneiden nur mit Quellvideo und Ausschnitten
+  useEffect(() => { if (!clip) setCutting(false) }, [!clip]) // KI hat Layout oder Video geändert: nicht beim nächsten Clip von selbst öffnen
 
   return (
     <aside className="inspector">
@@ -50,6 +54,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
         {slide && (
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
+            {clip && <button type="button" className="btn wide" title="Ausschnitte von Hand nachschneiden" onClick={() => setCutting(true)}><Scissors size={14} /> Schneiden</button>}
             {(def?.variants || def?.frames) && <SlideLooks deck={deck} index={index} patchSlide={patchSlide} />}
             {slide.layout !== 'blank' && (
               <button type="button" className="btn wide" title="Alle Texte, Formen, Bilder und Icons der Folie werden frei verschiebbar wie in Canva. Rückgängig mit Strg+Z."
@@ -150,6 +155,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
           </section>
         )}
       </fieldset>
+      {cutting && clip && <ClipCutter key={clip.id} content={clip.content} size={sizeOf(deck)} disabled={disabled} onApply={(parts) => patchSlide(index, { content: { ...clip.content, parts } })} onClose={() => setCutting(false)} />}
     </aside>
   )
 }
