@@ -20,6 +20,7 @@ const MIN_SCORE = 0.6, NMS_IOU = 0.3 // Vorgaben aus opencv_zoo/yunet.py
 const GAP = 0.12 // Anteil der Bildbreite, ab dem zwei Gesichtspositionen zu verschiedenen Personen gehören
 // Kamerafahrt (cameraPath): erst ab LONG s lohnt sie; ein Bild je STEP s, höchstens MAX_SAMPLES je part (je Bild ein Seek + ~50 ms Erkennung)
 const LONG = 4, STEP = 1, MAX_SAMPLES = 60
+const MIN_HIT = 0.4 // Gesicht in weniger Bildern: kein Motiv (Maske, Randanschnitt, Fehltreffer) → Bildmitte statt Zuschnitt auf den Rand
 const DEAD = 0.5 // Totzone: Kamera steht, solange das Gesicht in der mittleren Hälfte des Zuschnitts bleibt
 export const MAX_SPEED = 0.25 // Zuschnittbreiten je Sekunde: schneller wirkt die Fahrt hektisch
 const TOL = 0.01, MAX_KEYS = 20 // Stützpunkt fällt weg, solange die Fahrt um ≤ 1 % der Bildbreite abweicht; mehr als 20 → gröber
@@ -146,7 +147,7 @@ export async function autoFocus(file: string, parts: Part[], info: VideoInfo, o:
     // kein Bild (Videospur kürzer als der Container): focus bleibt leer statt alle parts zu verwerfen
     const fr = await rawFrames(file, times).catch(() => null)
     const all = fr ? await faceX(fr, info) : [], xs = all.filter((x): x is number => x !== null)
-    if (!xs.length) { out.push(p); continue }
+    if (!xs.length || xs.length < MIN_HIT * all.length) { out.push(p); continue }
     const track = n ? cameraPath(times.map((t, i) => ({ t, x: all[i] })), (o.cuts ?? []).filter((c) => c > p.start && c < p.end), cropW) : []
     out.push({ ...p, focus: round(median(xs)), ...(track.length > 1 && { track }) })
   }
