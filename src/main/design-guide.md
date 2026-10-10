@@ -131,6 +131,7 @@ Wähle das Layout nach der Form der Aussage, nicht nach Abwechslung um jeden Pre
 | Termine, Phasen, Roadmap | `timeline` |
 | Ablauf in 3–5 Schritten | `process` |
 | Nächste Schritte, Ask, Kontakt | `closing` |
+| Video schneiden: Short/Reel, ganzes Video kürzen, Stream-Highlights, Zusammenschnitt | `clip` (Abschnitt 11) |
 
 - Eine einzelne große Zahl: `big-number` (mit Foto für Emotion). Bei 2–4 Zahlen `kpi-grid` mit `focus`.
 - Behauptet der Titel eine Zahl oder einen Anteil („bindet die Hälfte des Budgets“), muss diese Zahl auf der Folie dominieren: `chart` mit `highlight`, `kpi-grid` oder `statement`, nicht als Nebensatz in Prozess-Karten.
@@ -157,14 +158,15 @@ Gute Decks (Apple-Keynotes, McKinsey, Presentation Zen, Swiss Style) wirken durc
 1. **Charakter in drei Wörtern** aus Thema, Publikum und Anlass, z. B. „handwerklich, warm, ehrlich“ (Brauerei) oder „präzise, ruhig, vertrauenswürdig“ (Klinik).
 2. **Eine unerwartete Entscheidung**, die sich aus dem Thema begründen lässt, macht das Design unverwechselbar. Beispiele: eine Serif für ein Tech-Thema, Tannengrün statt Blau für Finanzen, Mono-Labels für ein Handwerk mit Präzision, ein warmes Papier-Weiß für eine Klinik. Nenne sie dem Nutzer in einem Halbsatz.
 3. **Farbe aus dem Gegenstand**, nicht aus der Mode: Flaschengrün, Kupfer oder Malz für eine Brauerei, Petrol für eine Klinik, Ziegelrot für den Bau, Tannengrün für Forst, Marineblau für eine Reederei. **Eine** Akzentfarbe; `accent2` weglassen (wird neutral grau). Gibt es eine Markenfarbe, ist sie der Akzent.
-4. **Grund** aus dem Gegenstand: fast Weiß, getöntes Papier oder ein tiefer Dunkelton.
+4. **Grund** aus dem Gegenstand: fast neutrales Weiß, Papier mit einem Hauch Tönung oder ein tiefer Dunkelton.
    - fast Weiß: `#FAFAF8`, `#F7F8FA`
-   - getöntes Papier wirkt wie bedrucktes Papier statt Bildschirm: Salbei `#ECF0E8` (Natur, Gesundheit), Sand `#F2ECE0` (Handwerk, Reise), Eisblau `#E8EEF3` (Technik, Klinik), Rosé `#F5EAE6` (Kultur, Soziales)
-   - dunkel: Nachtblau `#14213A` (Finanzen, Nacht), Tannengrün `#13251C` (Forst, Nachhaltigkeit), Aubergine `#231628` oder Ochsenblut `#2A1416` (Kultur, Wein), Graphit `#16181B` (Tech)
-   - Die Engine dämpft Gründe, die mittelhell oder bunter als diese Beispiele sind. Kräftiger nur mit `vivid` im Stil mutig.
+   - Papier mit Hauch wirkt wie bedrucktes Papier statt Bildschirm: warm `#F5F3EE` (Handwerk, Reise), Salbei `#EFF2EE` (Natur, Gesundheit), Eisblau `#EEF2F5` (Technik, Klinik), Rosé `#F6F2F1` (Kultur, Soziales)
+   - dunkel: Nachtblau `#121D33` (Finanzen, Nacht), Tannengrün `#13251C` (Forst, Nachhaltigkeit), Aubergine `#231628` oder Ochsenblut `#2A1416` (Kultur, Wein), Graphit `#16181B` (Tech)
+   - Stärker getönte Gründe (Creme, Pastell) und Mitteltöne lehnt der Theme-Lint ab. Kräftiger nur mit `vivid` im Stil mutig.
 5. **Schriftpaar** (höchstens zwei Familien), Text immer gut lesbar:
    - Grotesk pur: `IBM Plex Sans`, `Inter`, `Archivo`, `Manrope`, `Plus Jakarta Sans`, `DM Sans` jeweils für Titel und Text
    - Serif-Titel + Grotesk-Text: `Source Serif 4` + `Source Sans 3`, `IBM Plex Serif` + `IBM Plex Sans`, `Lora` + `Source Sans 3`, `Lora` + `Inter`, `Fraunces` + `DM Sans` (Handwerk, Kultur), `Fraunces` + `Manrope`, `DM Serif Display` + `Inter` (Display-Serif, nur Titel ab `large`), `Playfair Display` + `Source Sans 3` (Mode, festliche Anlässe), `Playfair Display` + `Inter`
+   - Weitere Familien aus dem Schriftkatalog (Liste unter „Themes“) gehen ebenso; die Engine lädt sie bei Bedarf.
    - Serif-Titel in `regular` ist eine Richtung von vielen. Grotesk-Titel in `bold` ist genauso gut und bei Technik, Handel, Sport und Verwaltung oft passender.
 6. **Struktur – das macht das Design eigen:**
    - `titleSize`: `large` = Plakat-Titel für Vortrag, Strategie, wenig Text; `normal` für Datenfolien und Chef-Updates.
@@ -177,7 +179,17 @@ Gute Decks (Apple-Keynotes, McKinsey, Presentation Zen, Swiss Style) wirken durc
      - `plain` = frei: nur Typografie und Weißraum, keine Linien, keine Flächen, große leichte Nummern in Grau (Keynote, Zen, Tech, Vortrag).
      - `solid` = Fläche: Kästen und Akzentflächen für Hervorhebungen, nur im Stil mutig (Plakat, Pastell).
      - Wähle `line` oder `plain` passend zum Charakter, `solid` nur im Stil mutig. Die Bauteile prägen jede Inhaltsfolie und unterscheiden Decks stärker als die Farbe.
-7. `radius` 0–4, `decor: "none"`, keine `texture`.
+7. **Feinschliff (optional):** Wähle ein bis drei Tokens, die die Leitidee tragen, nicht alle gleichzeitig.
+   - `signature`: genau **ein** wiederkehrendes Element statt Deko. `rule` = Haarlinie über dem Titel (`length` short oder full), `edge` = Farbkante am Rand (`side` left oder top, `size` in px), `passepartout` = Rahmenlinie mit Abstand. Nicht zusätzlich `rule: "over"`.
+   - `margin`: `generous` = mehr Luft (Zen, Premium), `asymmetric` = breiter Bundsteg links (Bericht, Magazin; zentrierte Varianten stehen dann rund 40 px rechts der Mitte, für zentrierte Kompositionen `standard` oder `generous`). `measure`: `narrow` ≈ 760 px Satzbreite für ruhige Lesefolien (nie mit `titleSize: "huge"`), `wide` = volle Breite für Daten.
+   - `leading`: `tight` für große Titel, `open` für Lesetext. `labels: "caps"` setzt Eyebrow und Fußzeile in Versalien (Leitsystem, Magazin).
+   - `headWeight` (300–900; gebündelte Schriften nur 400/700) und `headTracking` (em; −0.02 bis −0.04 für große Grotesk-Titel).
+   - `field`: Farbe großer Flächen (Kapitel, `split`, `band`) als zweite Stimme neben dem Akzent, z. B. Signalgelb zu schwarzem Akzent; sonst weglassen. `heroTone`: Titel- und Schlussfolie als `field`-Fläche oder `invert`.
+   - `chart`: `focus` = Akzent + Grau (Standard), `tonal` = Akzent in Helligkeitsstufen (Anteile, Reihen), `duo` = zwei Akzente mit `accent2`. `images`: ein Bildstil fürs ganze Deck (`natural`, `mono`; `duotone` im Stil mutig).
+   - **Katalog-Themes** stellst du mit `tune` fein (`create_deck`/`update_deck`, dieselben Felder), z. B. `"tune": { "margin": "generous", "signature": { "kind": "rule" } }`. `null` entfernt einen Wert; ein Theme-Wechsel behält `tune`. `tune` schlägt auch die Werte eines neuen `customTheme`; das Ergebnis nennt solche Felder.
+8. `radius` 0–4, `decor: "none"`, keine `texture`.
+
+**Theme-Lint.** `create_deck`, `update_deck` und `propose_looks` prüfen eigene Designs: Mittelton- und Creme/Pastell-Gründe, Neon-Akzente, Klischee-Paletten, Standardschriften generierter Designs, unleserliche Paarungen, `titleSize: "huge"` mit `measure: "narrow"`. Fehler lehnen das Design mit konkreter Korrektur ab: korrigieren und erneut aufrufen. Warnungen und Hinweise stehen als „Theme-Hinweise“ im Ergebnis. `override` mit Begründung nur, wenn der Nutzer es ausdrücklich so will (z. B. Markenfarbe).
 
 **Erprobte Richtungen** (die Katalog-Themes setzen sie um; nimm sie als Ausgangspunkt und passe Farbe und Schrift ans Thema an):
 
@@ -190,11 +202,11 @@ Gute Decks (Apple-Keynotes, McKinsey, Presentation Zen, Swiss Style) wirken durc
 | Zen (`zen`) | fotolastiger Vortrag, Kultur | dunkelgrau | Serif + Grotesk | large / regular | none | normal | plain |
 
 Drei Beispiele für verschiedene Richtungen (nicht kopieren):
-- Brauerei, Investorenabend: `{ "name": "Sudhaus", "bg": "#F2ECE0", "accent": "#1E5B3A", "headFont": "Fraunces", "bodyFont": "DM Sans", "radius": 0, "decor": "none", "titleSize": "large", "titleWeight": "regular", "rule": "over", "sectionTone": "invert", "elements": "line" }`
-- Klinik, Chef-Update: `{ "name": "Visite", "bg": "#E8EEF3", "accent": "#0B5563", "headFont": "Inter", "bodyFont": "Inter", "radius": 2, "decor": "none", "titleSize": "normal", "titleWeight": "bold", "rule": "under", "sectionTone": "accent", "elements": "line" }`
-- Forstbetrieb, Vortrag: `{ "name": "Hochwald", "bg": "#13251C", "accent": "#D9A441", "headFont": "Archivo", "bodyFont": "Archivo", "radius": 0, "decor": "none", "titleSize": "large", "titleWeight": "bold", "rule": "none", "sectionTone": "normal", "elements": "plain" }`
+- Brauerei, Investorenabend: `{ "name": "Sudhaus", "bg": "#F5F3EE", "accent": "#1E5B3A", "headFont": "Fraunces", "bodyFont": "DM Sans", "radius": 0, "decor": "none", "titleSize": "large", "titleWeight": "regular", "rule": "over", "sectionTone": "invert", "elements": "line", "margin": "asymmetric" }`
+- Klinik, Chef-Update: `{ "name": "Visite", "bg": "#EEF2F5", "accent": "#0B5563", "headFont": "Inter", "bodyFont": "Inter", "radius": 2, "decor": "none", "titleSize": "normal", "titleWeight": "bold", "rule": "under", "sectionTone": "accent", "elements": "line", "chart": "tonal" }`
+- Forstbetrieb, Vortrag: `{ "name": "Hochwald", "bg": "#13251C", "accent": "#D9A441", "headFont": "Archivo", "bodyFont": "Archivo", "radius": 0, "decor": "none", "titleSize": "large", "titleWeight": "bold", "rule": "none", "sectionTone": "normal", "elements": "plain", "signature": { "kind": "edge", "side": "left", "size": 8 } }`
 
-**Auswahl statt Einzelergebnis.** Bei einem neuen Deck rufst du vor `create_deck` einmal `propose_looks` mit zwei bis drei eigenen Entwürfen auf: einer hell und sachlich, auf fast weißem oder getöntem Grund (zum Lesen und Entscheiden), einer dunkel oder plakativ (für den Vortrag). Sie unterscheiden sich in mindestens drei Punkten aus hell/dunkel, Serif/Sans, `titleSize`, `rule`, `sectionTone` und `elements`, nicht nur in der Farbe. Auch die Bauteile dürfen sich unterscheiden (`propose_looks` zählt sie mit). Der dritte Look ist ein Überraschungsentwurf: eine unerwartete, aber begründbare Richtung (anderes Farbklima, Serif statt Sans, kräftiger Grund im Stil mutig), damit der Nutzer etwas sieht, das er selbst nicht bestellt hätte. Ein Katalog-Theme ist die sichere Alternative. Hat der Nutzer Marke, Farben oder Stil vorgegeben oder will er es schnell, entwirfst du direkt ein Design und rufst `create_deck` auf.
+**Auswahl statt Einzelergebnis.** Bei einem neuen Deck rufst du vor `create_deck` einmal `propose_looks` mit zwei bis drei eigenen Entwürfen auf: einer hell und sachlich, auf fast weißem oder getöntem Grund (zum Lesen und Entscheiden), einer dunkel oder plakativ (für den Vortrag). Sie unterscheiden sich in mindestens vier Merkmalen aus hell/dunkel, Serif/Sans, `titleSize`, `titleWeight`, `rule`, `sectionTone`, `vivid`, `elements`, `field`, `signature`, `margin`/`measure` und `heroTone`, nicht nur in der Farbe (`propose_looks` zählt nach). Der dritte Look ist ein Überraschungsentwurf: eine unerwartete, aber begründbare Richtung (anderes Farbklima, Serif statt Sans, kräftiger Grund im Stil mutig), damit der Nutzer etwas sieht, das er selbst nicht bestellt hätte. Ein Katalog-Theme ist die sichere Alternative. Hat der Nutzer Marke, Farben oder Stil vorgegeben oder will er es schnell, entwirfst du direkt ein Design und rufst `create_deck` auf.
 
 **Abwechslung.** Unter „Zuletzt gebaute Decks“ im Systemprompt stehen die Designtypen der letzten Decks. Ein neues Deck unterscheidet sich davon in mindestens einem Merkmal:
 - Grund: neutral, getönt, dunkel oder (im Stil mutig) kräftig
@@ -233,7 +245,7 @@ Im Stil **mutig** gestaltest du wie ein Plakat- oder Magazindesigner, nicht wie 
   - Morph-Brücken zwischen Folien.
 - **Bilder:**
   - Ein markanter, durchgehender Bildstil, auch als KI-Illustration (z. B. Risographie, Scherenschnitt, flache Farbflächen in den Theme-Farben).
-  - Fotos gern als `look: "duotone"` (nur im Stil mutig ohne Nachfrage).
+  - Fotos gern als `look: "duotone"` oder fürs ganze Deck `images: "duotone"` (nur im Stil mutig ohne Nachfrage).
 - **Bauteile:** `elements: "solid"` erlaubt Akzentflächen für Hervorhebungen. `line` und `plain` gehen auch im Stil mutig.
 - **Akzente:**
   - Höchstens ein Akzent pro luftiger Folie (`decorate_slide`).
@@ -254,7 +266,7 @@ Auch im Stil mutig gilt: eine Botschaft pro Folie, gut lesbar, Daten- und Tabell
 - Gleich große Karten im Raster, besonders mit Icon oben, Schatten oder farbigem Balken. Lieber Liste, Zahlenzeile oder ein dominantes Element. Die Engine zeichnet Kästen nur bei `elements: "solid"`; Kartenvarianten (`bullets` cards, `kpi-grid` cards, `two-column` equal) sind in `line` und `plain` offene Spalten.
 - Icons als Schmuck in jedem Punkt. Icons nur, wenn das Symbol selbst Information trägt.
 - Unscharfe Farbkreise (`blobs`, `glow`), Verläufe, Glas-Effekte, Sticker, Sparkles, handgezeichnete Kringel, Texteffekte (neon, hollow).
-- Lila-Blau, Creme + Terrakotta, Schwarz + Säuregrün, Space Grotesk, Instrument Serif. Das sind die Standards generierter Designs.
+- Lila-Blau, Creme + Terrakotta, Schwarz + Säuregrün, Space Grotesk, Instrument Serif. Das sind die Standards generierter Designs; der Theme-Lint lehnt sie ab.
 - Zierziffern „01 / 02“ auf Kapiteltrennern (`section.number` weglassen, außer der Nutzer will Nummern).
 - Eyebrow (kleines Label über dem Titel) auf jeder Folie. Nur auf Cover und wo es Orientierung gibt (Kapitel, Stand; Lint `ornament` meldet mehr als ein Drittel der Folien).
 - Genre-Pastiche: Executive Summary, Harvey-Ball-Vergleich und KPI-Reihe nur, wenn der Inhalt sie verlangt, nicht als Pflichtteile jedes Decks. Ein Deck, das alle Berater-Bausteine zeigt, wirkt nachgebaut.
@@ -432,3 +444,50 @@ Jedes Layout hat einen sinnvollen Default. Weiche nur mit Grund davon ab. `pan`,
 - Lint `titel-formel`: fast alle Titel sind gleich gebaute Satz-Zweizeiler. Abhilfe: Bühnenfolien auf ein Wort oder einen kurzen Satz kürzen, eine Behauptung (≤ 5 Wörter) oder eine Frage einstreuen.
 - Lint `echo`: der Schluss zeigt dasselbe Foto wie das Cover. Abhilfe: anderes Motiv oder Schluss ohne Foto; den Bogen über Sprache oder Motiv schlagen.
 - Lint `ornament`: Eyebrow auf mehr als einem Drittel der Folien. Abhilfe: `eyebrow` nur auf Cover und wo es Orientierung gibt (Kapitel, Stand) lassen, sonst weglassen.
+
+## 11. Video
+
+Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Engine schneidet, setzt den Zuschnitt, brennt Hook und Untertitel ein und legt Musik darunter. `export_deck` mit `clips` macht je Clip-Folie eine MP4, mit `mp4` wird das ganze Deck ein Video (andere Folien als Standbild von 3 s). Download, Transkript, Highlight-Suche und Export laufen im Hintergrund: Meldet ein Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Der Export in 1080p läuft auf langsamen Rechnern mit ~10 fps (1 h Video ≈ 2–3 h); das dem Nutzer bei langen Videos vorher sagen.
+
+**Material:** Video aus dem Anhang („Video: asset://…“) oder per Link mit `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; im Zweifel nachfragen. Laufende Livestreams gehen erst nach dem Ende. Den Link als Quelle in die Notes.
+
+**Transkript:** `transcribe_video` erkennt lokal (beim ersten Mal ~670 MB Download). Ohne `lang` nimmt es Parakeet, das nur 25 europäische Sprachen kennt: Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren: über 10 min erst `video_highlights` (`overview: true`), dann nur die Fenster mit `from`/`to`; das ganze Video nur mit `all: true` für den Fulltime-Schnitt. `speakers: true` für Podcasts und Gespräche.
+
+**Vier Abläufe:**
+1. **Short/Reel (9:16)** aus Vortrag, Interview oder Podcast: `transcribe_video` → 3–5 Momente wählen (Bewertung unten) und dem Nutzer mit Zeiten und Begründung nennen → `video_frames` als Kontaktabzug → `create_deck` mit `format: "9:16"` und `transition: "none"` → je Short eine `clip`-Folie → `render_slides` → `export_deck` mit `clips`.
+2. **Ganzes Video kürzen (Fulltime, 16:9):** `transcribe_video` mit `all: true` über alles → Füllsätze, Versprecher, Wiederholungen und Abschweifungen streichen → `create_deck` 16:9 mit `transition: "none"` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100 `parts`), `pauses: "kurz"`, `captions` `satz` oder `aus` → `export_deck` mit `mp4`. Dem Nutzer sagen, wie lang das Ergebnis ist und was wegfiel.
+3. **Stream-Highlights (2–8 h):** `import_video` (Aufzeichnungen von YouTube und Twitch bringen den Chat mit) → `video_highlights` → für die besten 3–5 Fenster `transcribe_video` mit `from`/`to` → `video_frames` als Kontaktabzug, 4–8 Zeitpunkte je Kandidat → Shorts wie in 1, auf Wunsch zusätzlich ein 16:9-Zusammenschnitt mit einer `clip`-Folie je Moment (`mp4`). Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil.
+4. **Kompilation aus mehreren Quellen (16:9):** je Quelle `transcribe_video` → `create_deck` mit `transition: "none"` → je Quelle eine `clip`-Folie, dazwischen Zwischentitel als ruhige Folien (`section` oder `statement`, ein kurzer Satz) → Musik nur dezent (`find_music`, dann `update_deck` mit `music`) → `export_deck` mit `mp4`.
+
+**Bewertung** je Kandidat 4 × 0–25, ganze Skala nutzen, nur ≥ 70 nehmen, Füllstücke < 30:
+- **Hook:** die ersten 2 s halten einen Fremden.
+- **Bogen:** Aufbau → Behauptung → konkretes Detail → Payoff.
+- **Wert:** man lernt oder fühlt etwas.
+- **Teilbarkeit:** „das schicke ich jemandem“.
+
+**Steht für sich allein:** kein Einstieg auf Pronomen oder „und/aber/also“ (Start früher legen, nie das Ende abschneiden); Ende auf einem abgeschlossenen Satz. Keine zwei Shorts mit derselben Aussage; lieber 4–8 gute als 2.
+
+**Hook-Muster:** offene Frage, steile These, überraschende Zahl, Geschichte anreißen, Perspektive („Wenn du … bist“). Er handelt von diesem Moment, nicht vom ganzen Video, verspricht nur, was der Clip hält, und hat 3–9 Wörter.
+
+**Grob → fein:** bei langen Videos erst `video_highlights` mit `overview: true` (eine Zeile je 90 s), dann die besten Fenster transkribieren; Stellen findet `search_transcript` (Thema oder wörtliches Zitat → Zeiten).
+
+**Selbstkontrolle:** nach `add_slides` die Clip-Prüfung der Antwort beheben (Länge, Schnitt mitten im Wort oder Satz, fehlendes Transkript, Überlappung). Vor dem Export `check_clip` für die besten Clips (prüft auch Musik im Hintergrund) und den Kontaktabzug ansehen (Gesicht im Bild, Hook passt, keine schwarzen oder eingefrorenen Bilder); höchstens 2 Runden.
+
+**Regeln:**
+- Schnitte nur an Segmentgrenzen des Transkripts, nie mitten im Satz. Füllsätze, Wiederholungen und Abschweifungen herausschneiden: ein Clip besteht dann aus mehreren `parts` (Jump Cuts).
+- Short: ideal 55–75 s, hart 20–90 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
+- `hook` (Short): höchstens 70 Zeichen, löst nicht schon alles auf; kein Clickbait, keine Emojis.
+- `cover` (Short): Quellsekunde fürs Titelbild aus dem Kontaktabzug – Gesicht mit Ausdruck oder der Moment des Payoffs; nicht der erste Frame, kein Schwarz- oder Übergangsbild.
+- `post` (Short): Zeile 1 Titel wie bei YouTube (≤ 100 Zeichen), dann 1–2 Sätze, dann 3–5 passende Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten. Bei fremdem Material Link oder Quelle nennen. Export `clips` legt je Short Cover (.jpg) und Post-Text (.txt) neben das MP4; `mp4` nimmt Cover und Post der ersten Clip-Folie, die sie hat.
+- `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
+- `style`: `lebendig` für Shorts und Reels (Wort-Pop, Hook blendet mit Balken ein, Fortschrittsbalken, Zoom-Wechsel an Schnitten kaschiert Jump-Cuts), sonst weglassen (= ruhig, ohne Bewegung): Fulltime, Vorträge, Schulungen. Keine weiteren Effekte, Sticker oder Emojis.
+- Neuansätze: verworfene Anläufe immer herausschneiden (`transcribe_video` listet sie unter dem Transkript), nur den letzten sauberen Anlauf behalten.
+- `ton`: `klar` für Sprache aus Handy, Webcam oder Raum (Talking Head, Podcast, Vortrag), `original` bei Musik, Gesang oder Geräuschen.
+- Short-Spannung: nach ~8 s ohne Schnitt auflockern (Füllsatz raus oder `style` `lebendig`). Open Loop: eine im Hook aufgeworfene Frage erst gegen Ende auflösen, aber sicher auflösen. Loop-Ende: der letzte Satz darf in den Anfang zurückführen.
+- `pauses`: `kurz` für Talking Heads mit Denkpausen oder stockendem Sprechen (Pausen ab 0,6 s schrumpfen auf 0,3 s), `lassen` bei Musik, Vorführungen oder bewusst gesetzten Pausen.
+- `fit`: `crop` (Standard) füllt das Format; ohne `focus` sucht der Export das Gesicht. `blur` zeigt das ganze Bild auf unscharfem Grund, wenn Folien, Bildschirm oder Gesten am Rand wichtig sind. Ein 9:16-Ausschnitt zeigt aus einem Querformat nur etwa ein Drittel der Breite.
+- `follow: "sprecher"` bei mehreren Personen im Bild (Podcast, Gespräch): Der Zuschnitt folgt dem, der gerade spricht.
+- `focus` je part nur setzen, wenn die Standbilder etwas anderes als das Gesicht verlangen (Produkt, Tafel): horizontale Mitte, 0 = links, 1 = rechts.
+- Übergänge: Im `mp4` blendet jede Folie mit Übergang über Schwarz ab und auf, `none` und `morph` bleiben harte Schnitte. Video-Decks deshalb mit `transition: "none"` anlegen und `transition: "fade"` nur gezielt an Zwischentiteln setzen.
+- Musik nur auf Wunsch oder bei Kompilationen, dezent und instrumental. Unter Sprache macht der Export sie automatisch leiser. Den Nachweis (CC BY) aus `find_music` in `music.credit` und in die Notes der letzten Folie.
+- Zurückhaltend wie die Folien: keine Emojis, Sticker oder Effektschriften, Zwischentitel kurz und sachlich.

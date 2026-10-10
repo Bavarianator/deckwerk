@@ -1,11 +1,11 @@
 // KI-Leiste: eine Kapsel für Wünsche an die KI (mit Bezug auf das gewählte Element), darüber eine kurze Blase mit
 // Status, Antwort oder Rückfrage und auf Wunsch der ganze Verlauf. Ersetzt die Chat-Spalte.
 import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
-import { ArrowUp, Check, CircleAlert, History, Image as ImageIcon, LoaderCircle, Paperclip, Sparkles, Square, Undo2, X } from 'lucide-react'
+import { ArrowUp, Check, CircleAlert, History, LoaderCircle, Paperclip, Sparkles, Square, Undo2, X } from 'lucide-react'
 import { Select } from './kit'
 import { ChatLog, ChoiceCards, ModelSelect, TOOL, type Msg } from './Chat'
 import { GUARD, REWRITE } from './ObjectBar'
-import { isImage, sourceContext, useSource } from './Start'
+import { SourceChips, sourceContext, useSource } from './Start'
 
 // label steht in der Kapsel, context geht nur an die KI; slot und rect (Fensterkoordinaten) für Werkzeuge am Objekt
 export interface Target { label: string; context: string; slot?: string; rect?: { left: number; top: number; width: number; height: number } }
@@ -176,13 +176,7 @@ export function AskBar(p: Props) {
             <button type="button" aria-label="Bezug entfernen" onClick={() => p.onTarget(null)}><X size={11} strokeWidth={2.6} /></button>
           </span>
         )}
-        {srcs.map((s) => (
-          <span key={s.name} className="cap-token file" title={s.cut ? `${s.name} (zu lang, die KI bekommt den Anfang)` : s.name}>
-            {isImage(s.name) ? <ImageIcon size={11} /> : <Paperclip size={11} />}<span>{s.name}</span>
-            <button type="button" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={11} strokeWidth={2.6} /></button>
-          </span>
-        ))}
-        {err && <span className="cap-token error" role="alert" title={err}>{err}</span>}
+        <SourceChips srcs={srcs} remove={remove} err={err} />
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

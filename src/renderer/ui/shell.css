@@ -100,6 +100,7 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 .home-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
 .home-chips .pill { height: 34px; padding: 0 16px; font-weight: 400; font-size: 13.5px; }
 .home-blank { margin-top: 14px; }
+.home-mode { margin-bottom: 28px; }
 .home-recent { padding: 32px max(24px, calc((100% - 1024px) / 2)) 40px; background: var(--bg); }
 .home-recent h2 { margin: 0 0 18px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .home-shelf { display: grid; grid-template-columns: repeat(auto-fill, 232px); gap: 32px; }
@@ -475,3 +476,26 @@ button.setup-opt { cursor: pointer; }
 .find-count { min-width: 76px; padding: 0 4px; font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .find-where { padding: 0 8px 2px 30px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--faint); }
 .find-skip { color: var(--danger); }
+
+/* Look: Gestaltung (ThemeRef.tune), erste Inhaltsfolie neben der Titelfolie, Schriftwahl mit Vorschau */
+.look-pair { flex: none; display: flex; align-items: flex-end; gap: 16px; }
+/* Die Bühne behält eine Mindesthöhe, das Panel scrollt (aufgeklappte Gestaltung, kleine Fenster) */
+.look-stage { min-height: 30vh; }
+.look > * { flex-shrink: 0; }
+.look > .look-panel { flex-shrink: 1; min-height: 0; overflow-y: auto; }
+.look-tune { border-top: 1px solid var(--border); }
+.look-tune + .look-row { border-top: 1px solid var(--border); }
+.look-tune > summary { display: flex; align-items: center; gap: 8px; padding: 16px 0; cursor: pointer; }
+.look-tune > summary b { font-size: 13.5px; font-weight: 600; }
+.look-tune > summary span { margin-left: 6px; font-size: 12.5px; color: var(--muted); }
+.look-tune-chev { flex: none; margin-left: -4px; color: var(--muted); transition: transform 0.15s; }
+.look-tune[open] .look-tune-chev { transform: rotate(90deg); }
+.look-tune .look-row { padding: 4px 0 14px; gap: 14px 32px; }
+.look-tune .look-row + .look-row { border-top: 0; }
+.look-tune-note { display: flex; align-items: center; gap: 8px; min-height: 32px; margin: 0 0 12px; font-size: 12.5px; color: var(--muted); }
+.font-pick { display: inline-block; width: 176px; }
+.font-pick-btn .kit-select-label { font-size: 14px; }
+.font-pick-btn .font-pick-probe { display: none; }
+.font-pick-opt { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; font-size: 15px; }
+.font-pick-probe { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.kit-opt.on .font-pick-probe { color: rgb(255 255 255 / 0.8); }

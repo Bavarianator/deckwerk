@@ -19,6 +19,7 @@ const engine: Engine = {
 }
 
 const home = mkdtempSync(join(tmpdir(), 'deckwerk-mcp-'))
+process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts)
 const [a, b] = InMemoryTransport.createLinkedPair()
 await createMcpServer(engine, { home }).connect(a)
 const client = new Client({ name: 'smoke', version: '0' })
@@ -31,12 +32,15 @@ const names = listed.map((t) => t.name).sort()
 // ohne readOnlyHint führt Claude Code Aufrufe nacheinander aus (4 KI-Bilder dauerten so über 6 min)
 assert.equal(listed.find((t) => t.name === 'generate_image')?.annotations?.readOnlyHint, true)
 assert.equal(listed.find((t) => t.name === 'add_slides')?.annotations?.readOnlyHint, undefined, 'Deck-Änderungen bleiben seriell')
-assert.equal(names.length, 20)
+assert.equal(names.length, 27)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 // read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
 const parts = guideParts()
 assert.ok(parts.length > 1 && parts.every((p) => p.length <= 20000), `Teile: ${parts.map((p) => p.length)}`)
 assert.equal(parts.join('\n'), buildSystemPrompt())
+// reine Video-Aufträge: nur §11 und der Katalog-Eintrag clip
+const vg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'video' } })) as { content: { text: string }[] }).content[0].text
+assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 20000, vg.slice(0, 200))
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }
 const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<Res>
@@ -61,5 +65,7 @@ r = await call('save_deck'); assert.match(r.content[0].text!, /\/leer\/deck\.jso
 assert.equal(JSON.parse(readFileSync(join(home, 'mcp-test/deck.json'), 'utf8')).slides.length, 2)
 r = await call('open_deck', { path: 'mcp-test/deck.json' }); assert.match(r.content[0].text!, /2 Folien/)
 assert.match((await call('export_deck', { format: 'pdf' })).content[0].text!, /deck\.pdf/)
+r = await call('transcribe_video', { video: '/x/talk.mp4' }) // Mock-Engine ohne video
+assert.equal(r.isError, true); assert.match(r.content[0].text!, /nur in der Deckwerk-App und im MCP-Server/)
 await client.close()
 console.log(`MCP OK · ${names.length} Tools · ${home}`)

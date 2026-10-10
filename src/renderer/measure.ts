@@ -1,5 +1,5 @@
 import { FONTS, HEAD_ROLES, SCALE, type FontName } from '../shared/themes'
-import { type BoxEl, type El, type Gradient, type ImgEl, type ItemAnim, type AnimDir, type AnimSpeed, type Measured, type Overflow, type Run } from '../shared/deck'
+import { type BoxEl, type El, type Gradient, type ImgEl, type ItemAnim, type AnimDir, type AnimSpeed, type Measured, type Overflow, type Run, type TextEl } from '../shared/deck'
 
 // ---------- autofit: walk the type scale down until nothing overflows ----------
 
@@ -67,7 +67,7 @@ function parseColor(s: string): { color: string; alpha: number } | undefined {
 }
 
 // linear-gradient aus dem berechneten Stil (Chromium normalisiert Farben zu rgb/rgba). Nur lineare Verläufe mit 2+ Stops.
-function parseGradient(s: string): Gradient | undefined {
+export function parseGradient(s: string): Gradient | undefined {
   const m = s.match(/^linear-gradient\((.*)\)$/)
   if (!m) return undefined
   const parts = m[1].split(/,(?![^(]*\))/).map((x) => x.trim())
@@ -133,6 +133,17 @@ function runsOf(el: HTMLElement, hardwrap: boolean, k: number): Run[] {
   return runs.filter((r) => r.text || r.breakAfter)
 }
 
+// Aufzählung (freier Text): jede Zeile (.dw-li) ein Absatz, leere Zeilen als leerer Absatz in Textfarbe (Kontrast-Lint)
+function listRuns(el: HTMLElement, k: number): Run[] {
+  const runs = [...el.children].flatMap((li) => {
+    const r = runsOf(li as HTMLElement, false, k)
+    const last = r.pop() ?? { text: '', bold: false, italic: false, color: parseColor(getComputedStyle(li).color)?.color ?? '#000000' }
+    return [...r, { ...last, breakAfter: true }]
+  })
+  if (runs.length) delete runs[runs.length - 1].breakAfter
+  return runs
+}
+
 function svgOf(el: HTMLElement): string {
   const svg = el.querySelector('svg')
   if (!svg) return ''
@@ -165,6 +176,7 @@ export function extract(root: HTMLElement): El[] {
     switch (el.dataset.pptx) {
       case 'text': {
         const hardwrap = el.dataset.hardwrap !== undefined
+        const list = el.dataset.list as NonNullable<TextEl['list']>['type'] | undefined
         els.push({
           ...base, kind: 'text',
           font: el.dataset.font === 'head' ? 'head' : 'body',
@@ -176,7 +188,8 @@ export function extract(root: HTMLElement): El[] {
           trackingPx: parseFloat(cs.letterSpacing) || 0,
           align: cs.textAlign === 'center' ? 'center' : cs.textAlign === 'right' || cs.textAlign === 'end' ? 'right' : 'left',
           upper: cs.textTransform === 'uppercase',
-          runs: runsOf(el, hardwrap, k),
+          runs: list ? listRuns(el, k) : runsOf(el, hardwrap, k),
+          list: list && { type: list, indentPx: parseFloat(getComputedStyle(el.firstElementChild ?? el).paddingLeft) || 0 },
           lines: lineTops(el).length,
           bg: effectiveBg(el, root),
         })
