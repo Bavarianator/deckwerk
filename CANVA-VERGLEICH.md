@@ -75,6 +75,23 @@ Abgleich gegen den Code und gegen Canva (Stand Oktober 2026: Canva AI 2.0, Visua
 
 Weiterhin bewusst draußen (§7): Kommentare, Teilen-Links, Zusammenarbeit, Canva Live, Whiteboard, Stock-Bibliothek, Magic Eraser/Grab/Expand, Bogentext und Deko als Standard.
 
+### Nachtrag 09.10.2026: Drucksachen außer Folien und Flyern
+
+Canva bietet außer Präsentationen und Flyern vor allem Lebenslauf, Bewerbung, Visitenkarte, Urkunde, Einladung, Speisekarte, Brief und Plakat (Maße laut [Canva-Entwicklerreferenz](https://canva.dev/docs/button/reference/design-types)). Neu in Deckwerk, alle mit Startauswahl unter „Format“, Beispiel und Vorlage in der Galerie:
+
+| Canva-Typ | Deckwerk | Format |
+|---|---|---|
+| Lebenslauf | `cv` (Seitenspalte oder tabellarisch) | A4 |
+| Bewerbung | `application-cover` + `letter` + `cv` in einem Deck | A4 |
+| Brief/Briefkopf | `letter` nach DIN 5008 (Fensterumschlag, Anlagen) | A4 |
+| Urkunde/Zertifikat | `certificate` | A4 quer |
+| Einladung, Postkarte | `invitation`, Druck als A5/A6 | A4 |
+| Speisekarte | `menu` (eine oder zwei Spalten) | A4 |
+| Visitenkarte | `business-card` (Vorder- und Rückseite) | 85 × 55 mm |
+| Poster | `flyer`, Druck als A3/A2 | A4 |
+
+Bewusst weggelassen: Infografik (eigenes Langformat), weitere Social-Größen (Pinterest, LinkedIn-Banner; 1:1, 4:5, 9:16 und 1200×630 decken das Meiste ab), Video, Whiteboard, Website. Stresstest 09.10.: 1200/1200 Kombinationen über alle Themes sauber; nur die max-Fälle von Brief und einspaltiger Speisekarte brauchen die kleinste Textstufe.
+
 ## 1. Kurzfazit
 
 Deckwerk ist technisch weiter als Canva, sieht aber noch nicht so aus.

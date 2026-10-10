@@ -23,7 +23,11 @@ export interface ThemeRef {
   // Schriften aus dem Katalog (src/shared/font-catalog.ts), in ~/Deckwerk/fonts geladen: Familie → Schnitte als asset://-URL.
   // Zwischengewichte sind eigene Familien („Inter SemiBold“, nur regular). Fehlt ein Eintrag, greift der gebündelte Ersatz.
   fontFiles?: Record<string, FontFiles>
+  tune?: ThemeTune // Feinschliff über dem Theme (Katalog oder eigen): gesetzte Tokens schlagen die des Themes
 }
+// Struktur-Tokens, die Nutzer (Look → Gestaltung) und KI (update_deck) auf jedes Theme legen können; Farben und Schriften bleiben im Theme
+export const TUNE_KEYS = ['titleSize', 'headWeight', 'headTracking', 'leading', 'labels', 'labelFont', 'margin', 'measure', 'rule', 'elements', 'signature', 'heroTone', 'field', 'chart', 'images'] as const
+export type ThemeTune = Partial<Pick<ThemeSpec, (typeof TUNE_KEYS)[number]>>
 export interface FontFiles { regular: string; bold?: string; italic?: string; boldItalic?: string }
 // Eigene Schrift (TTF, vom Nutzer gewählt): im Renderer per FontFace, in der PPTX eingebettet. Pfade als asset://-URL.
 export interface CustomFont { family: string; regular: string; bold?: string }
@@ -58,7 +62,7 @@ export interface ThemeSpec {
   vivid?: boolean // kräftiger Farbgrund (Stil mutig); sonst dämpft themeFromSpec den Grund auf Papier- bzw. Dunkeltöne
   labelFont?: 'body' | 'mono' // mono = Eyebrow und Fußzeile in IBM Plex Mono
   elements?: 'line' | 'plain' | 'solid' // Bauteile: line = offen mit Kopflinien, keine Flächen (Standard); plain = nur Typografie und Weißraum, keine Linien und Flächen; solid = Farbflächen (Stil mutig)
-  // Themes-Fundament (theme-lint.ts, theme-refs.ts): noch nicht in themeFromSpec, tools.ts und Guide verdrahtet
+  // Themes-Fundament (theme-lint.ts, theme-refs.ts); auch als ThemeRef.tune über jedem Theme
   field?: string // Farbe großer Flächen (Kapitel, split/band, hervorgehobene Karten); Standard = accent
   headWeight?: HeadWeight
   headTracking?: number // em, −0.05 … +0.02
@@ -105,6 +109,7 @@ export interface Slide {
   content: any // validated by the layout's zod schema (src/shared/layouts.ts)
   build?: BuildPreset // default comes from the layout
   transition?: Transition // Übergang zu dieser Folie (meist morph); ohne = Deck-Übergang
+  transitionSpeed?: AnimSpeed // Tempo des Übergangs zu dieser Folie; ohne = Deck-Tempo
   tone?: Tone // default comes from the layout (section: accent)
   decor?: DecorId // default comes from the theme
   frame?: FrameId // Komposition; default top
@@ -137,6 +142,8 @@ export type ItemAnim = (typeof ITEM_ANIMS)[number]
 export const ANIM_DIRS = ['right', 'left', 'up', 'down'] as const
 export type AnimDir = (typeof ANIM_DIRS)[number]
 export type AnimSpeed = 'slow' | 'fast' // ohne = normal
+// Start wie in PowerPoint: bei Klick, mit vorherigem (gleichzeitig), nach vorherigem (wenn er fertig ist)
+export type AnimStart = 'click' | 'with' | 'after'
 export interface Item {
   id: string
   kind: 'text' | 'shape' | 'image' | 'icon' | 'chart' | 'video' | 'audio' | 'qr' | 'graphic' // qr: text = Inhalt; graphic: Name aus GRAPHICS
@@ -147,6 +154,7 @@ export interface Item {
   locked?: boolean
   anim?: ItemAnim // Auftritt beim Präsentieren (nacheinander per Klick)
   animDir?: AnimDir; animSpeed?: AnimSpeed
+  animStart?: AnimStart; animDelay?: number // ohne Start: Klick-Modus je ein Klick, Selbstlauf nacheinander; Verzögerung in s (0–10)
   // text
   text?: string
   font?: 'head' | 'body' | string // head/body = Theme-Schrift, sonst FontName
@@ -157,12 +165,14 @@ export interface Item {
   lineHeight?: number // Faktor
   spacing?: number // Laufweite in em
   upper?: boolean
+  list?: 'bullet' | 'number' // Aufzählung: jede Zeile ein Punkt (PPTX: native Aufzählungszeichen bzw. Nummern)
   effect?: TextEffect; effectColor?: string // Texteffekt; Farbe für Neon/Kontur, sonst Textfarbe
   // shape (fill auch Texthintergrund)
   shape?: ShapeId
   lineStart?: LineEnd; lineEnd?: LineEnd // Linienenden (Form line)
   dash?: Dash // Strichart für Linie und Umriss
   fill?: string; fill2?: string // fill2 = Verlauf (nur Rechteck/Ellipse)
+  gradAngle?: number // Winkel des Verlaufs in Grad (CSS-Sinn, Standard 135)
   stroke?: string; strokeW?: number
   radius?: number
   shadow?: boolean
@@ -195,12 +205,14 @@ export const FORMATS = {
   'a4': { name: 'A4 Hochformat', w: 794, h: 1123 },
   'a4-quer': { name: 'A4 Querformat', w: 1123, h: 794 },
   'og': { name: 'Link-Vorschau 1200×630', w: 1200, h: 630 },
+  'visitenkarte': { name: 'Visitenkarte 85×55 mm', w: 321, h: 208 }, // Druck: Endformat = Größe bei 96 dpi
 } as const
 export type FormatId = keyof typeof FORMATS
 export interface Size { w: number; h: number }
 // Kürzel für Dateinamen (4x5, a4 …); Sondergrößen als 800x600. 16:9 bleibt leer, damit die Namen wie bisher heißen.
 export const formatSuffix = (size: Size | undefined): string => {
-  if (!size || (size.w === 1280 && size.h === 720)) return ''
+  // size kommt ungeprüft aus der deck.json (auch fremden): nur Zahlen in den Namen, sonst schriebe "w": "/../../.." den Export irgendwohin
+  if (!size || !Number.isFinite(size.w) || !Number.isFinite(size.h) || (size.w === 1280 && size.h === 720)) return ''
   const id = (Object.keys(FORMATS) as FormatId[]).find((k) => FORMATS[k].w === size.w && FORMATS[k].h === size.h)
   return `-${(id ?? `${size.w}x${size.h}`).replace(':', 'x')}`
 }
@@ -209,17 +221,19 @@ export const sizeOf = (deck: Pick<Deck, 'size'> | null | undefined): Size => dec
 // Druck-PDF (Export „print“): Seite = Endformat + Beschnitt ringsum, TrimBox/BleedBox gesetzt, keine Schnittmarken.
 // Beschnitt je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm (Stand 10/2026).
 // Farben bleiben RGB (Chromium kann kein CMYK); diese Druckereien wandeln selbst, print24 verlangt CMYK.
-// size skaliert A4-Seiten (hoch oder quer, Verhältnis 1:√2) verlustfrei auf ein anderes A-Format; weglassen = Foliengröße.
-export const PRINT_SIZES = { a3: [297, 420], a4: [210, 297], a5: [148, 210] } as const // mm, hochkant
+// size skaliert A4-Seiten (hoch oder quer, Verhältnis 1:√2) verlustfrei auf ein anderes A-Format (A2 = Plakat, A6 = Postkarte); weglassen = Foliengröße.
+export const PRINT_SIZES = { a2: [420, 594], a3: [297, 420], a4: [210, 297], a5: [148, 210], a6: [105, 148] } as const // mm, hochkant
 export interface PrintOptions { size?: keyof typeof PRINT_SIZES; bleed?: number } // bleed in mm (0–5), Standard 3
 
-// Profil aus der Größe: bestimmt Lint-Grenzen und Guide-Regeln. A4 = Dokument, Quadrat/Hochformat = Social, sonst Folien.
+const is = (s: Size, f: Size) => s.w === f.w && s.h === f.h
+export const isA4 = (s: Size) => is(s, FORMATS.a4) || is(s, FORMATS['a4-quer'])
+
+// Profil aus der Größe: bestimmt Lint-Grenzen und Guide-Regeln. Druck (A4, Visitenkarte) = Dokument, Quadrat/Hochformat = Social, sonst Folien.
 export type Profile = 'slides' | 'social' | 'doc'
 export function profileOf(deck: Pick<Deck, 'size'> | null | undefined): Profile {
-  const { w, h } = sizeOf(deck)
-  const a4 = (f: { w: number; h: number }) => w === f.w && h === f.h
-  if (a4(FORMATS.a4) || a4(FORMATS['a4-quer'])) return 'doc'
-  return w / h <= 1.2 ? 'social' : 'slides'
+  const s = sizeOf(deck)
+  if (isA4(s) || is(s, FORMATS.visitenkarte)) return 'doc'
+  return s.w / s.h <= 1.2 ? 'social' : 'slides'
 }
 
 export interface Deck {
@@ -229,6 +243,7 @@ export interface Deck {
   // custom hat Vorrang vor id; shuffle = Farbvariante (Canva „Stile mischen“), fonts = Schriftpaar [Titel, Text]
   theme: ThemeRef
   transition: Transition
+  transitionSpeed?: AnimSpeed // Tempo der Übergänge; ohne = normal
   motion?: Motion // Bewegungsstil des Decks (Canva „Magic Animate“); einzelne Folien-builds haben Vorrang
   style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
@@ -246,6 +261,29 @@ export function showOf(deck: Deck, start: number): { deck: Deck; start: number }
 }
 // Übergang an der Grenze zu Folie i (die erste Folie hat keinen)
 export const transitionOf = (deck: Deck, i: number): Transition => (i <= 0 ? 'none' : deck.slides[i]?.transition ?? deck.transition)
+export const transitionSpeedOf = (deck: Deck, i: number): AnimSpeed | undefined => deck.slides[i]?.transitionSpeed ?? deck.transitionSpeed
+
+// Start eines Element-Auftritts; im Selbstlauf gibt es keine Klicks, dort läuft alles nacheinander
+export const animStartOf = (start: AnimStart | undefined, mode: Deck['mode']): AnimStart => (mode === 'auto' ? (start === 'with' ? 'with' : 'after') : start ?? 'click')
+// Klicks der freien Elemente im Klick-Modus: „mit/nach vorherigem“ und Atmen brauchen keinen
+export const itemClicks = (s: Slide) => (s.items ?? []).filter((it) => it.anim && it.anim !== 'none' && it.anim !== 'breathe' && animStartOf(it.animStart, 'click') === 'click').length
+// Ablauf der Element-Auftritte wie in PowerPoint (animations.ts): click = neuer Schritt, with = zugleich mit dem vorigen
+// (gleicher Kettenbeginn), after = wenn alles Bisherige im Schritt fertig ist; delay (s) kommt jeweils dazu, ms = Dauer.
+// Liefert je Schritt die Elemente (k = Index) mit Startzeit in ms ab Schrittbeginn. Schritt 0 läuft ohne Klick und hängt
+// am vorigen Schritt (Layout-Aufbau), der nach `end` ms fertig ist und dessen letzte Kette bei `chain` ms beginnt;
+// jeder weitere Schritt startet per Klick.
+export function itemSteps(items: { start?: AnimStart; delay?: number; ms: number }[], mode: Deck['mode'], end = 0, chain = 0): { k: number; at: number }[][] {
+  const steps: { k: number; at: number }[][] = [[]]
+  items.forEach((it, k) => {
+    const start = animStartOf(it.start, mode)
+    if (start === 'click') { steps.push([]); chain = end = 0 }
+    else if (start === 'after') chain = end
+    const at = chain + (it.delay ?? 0) * 1000
+    steps.at(-1)!.push({ k, at })
+    end = Math.max(end, at + it.ms)
+  })
+  return steps
+}
 
 // Morph-Zuordnung, gleich in App (PresentScreen), PPTX und Lint. key = Text bzw. Bildquelle: Gleicher Inhalt wandert zuerst
 // (Agenda-Punkt → Kapiteltitel, Kennzahl → große Zahl, Galeriebild → Vollbild), danach gleicher Slot. Liefert für jedes
@@ -290,6 +328,7 @@ export interface TextEl extends Base {
   align: 'left' | 'center' | 'right'
   upper: boolean
   runs: Run[]
+  list?: { type: NonNullable<Item['list']>; indentPx: number } // Aufzählung (freier Text): jeder Absatz ein Punkt, hängender Einzug
   lines: number
   bg: string // effective background colour behind the text (for contrast lint)
 }

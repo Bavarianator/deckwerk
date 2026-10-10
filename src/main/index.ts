@@ -73,6 +73,9 @@ function createWindow() {
 async function renderCli(engine: ReturnType<typeof createEngine>, file: string, outDir: string) {
   const { localizeDeck } = await import('./tools')
   const deck = localizeDeck(JSON.parse(await readFile(resolve(file), 'utf8')), dirname(resolve(file)))
+  const fonts = await (await import('./webfonts')).withDeckFonts(deck) // Katalogschriften laden bzw. Ersatz, verwaiste Einträge weg
+  deck.theme = fonts.theme
+  for (const n of fonts.notes) console.log(`Schriften: ${n}`)
   const issues = await engine.lint(deck)
   for (const i of issues) console.log(`${i.severity === 'error' ? '✗' : '!'} Folie ${i.slide + 1} [${i.rule}] ${i.message}`)
   console.log(`${issues.filter((i) => i.severity === 'error').length} Fehler, ${issues.filter((i) => i.severity === 'warn').length} Warnungen`)

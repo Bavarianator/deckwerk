@@ -244,6 +244,118 @@ const clip = z.object({
   post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
 })
 
+// Bewerbung – Deckblatt (A4 hoch): oben Stelle und Unternehmen, unten Foto, Name und Kontakt, daneben der Inhalt der Mappe.
+const applicationCover = z.object({
+  eyebrow: z.string().max(30).optional().describe('kleine Überzeile, z. B. „Bewerbung“ oder „Bewerbung · Kennziffer 2026-14“'),
+  title: z.string().min(3).max(70).describe('die Stelle, z. B. „als Pflegefachkraft“ (mit eyebrow „Bewerbung“) oder „Bewerbung als Pflegefachkraft“'),
+  org: z.string().max(60).optional().describe('Unternehmen oder Einrichtung, z. B. „bei der Muster GmbH“'),
+  name: z.string().min(2).max(40).describe('Vor- und Nachname der Bewerberin oder des Bewerbers; fehlt er, „[Vorname Nachname]“'),
+  photo: photo.optional().describe('Bewerbungsfoto (Hochformat), nur ein eigenes Foto des Nutzers, nie ein Stockfoto; weglassen = ohne Foto'),
+  contact: z.array(z.string().min(1).max(50)).max(4).optional().describe('Anschrift, Telefon, E-Mail; je eine Zeile, nie erfinden'),
+  contents: z.array(z.string().min(1).max(40)).max(6).optional().describe('Inhalt der Mappe in Reihenfolge, z. B. „Anschreiben“, „Lebenslauf“, „Zeugnisse“; nur bei mehr als zwei Anlagen'),
+})
+
+// Brief (A4 hoch, DIN 5008 Form B): Anschriftfeld an fester Stelle für den Fensterumschlag, Text auf einer Seite.
+const letter = z.object({
+  sender: z.string().min(2).max(60).describe('Absender im Briefkopf: Name der Organisation oder Person, z. B. „Praxis am Markt“'),
+  senderLine: z.string().max(50).optional().describe('Rücksendeangabe über der Anschrift, eine Zeile, z. B. „Praxis am Markt, Marktplatz 3, 12345 Musterstadt“'),
+  to: z.string().min(3).max(180).regex(/^[^\n]*(?:\n[^\n]*){0,5}$/, 'höchstens 6 Zeilen')
+    .describe('Anschrift, Zeilenumbruch (\\n) je Zeile: Firma oder Name, ggf. Abteilung oder Person, Straße und Hausnummer, PLZ Ort; höchstens 6 Zeilen'),
+  info: z.array(z.object({
+    label: z.string().min(1).max(20).describe('z. B. „Datum“, „Ihr Zeichen“, „Ansprechpartnerin“'),
+    value: z.string().min(1).max(40),
+  })).max(4).optional().describe('Informationsblock rechts neben der Anschrift, 1–4 Zeilen; das Datum gehört hierher'),
+  subject: z.string().min(3).max(90).describe('Betreff als Aussage, wird fett gesetzt; ohne das Wort „Betreff“'),
+  salutation: z.string().max(60).optional().describe('Anrede mit Komma, z. B. „Sehr geehrte Damen und Herren,“'),
+  body: z.string().min(1).max(1100).describe('Brieftext in kurzen Absätzen, eine Seite; Zeilenumbruch (\\n) beginnt einen neuen Absatz (mit Leerzeile davor), **fett** hebt hervor'),
+  closing: z.string().max(40).optional().describe('Grußformel, z. B. „Mit freundlichen Grüßen“'),
+  signature: z.string().max(80).optional().describe('Name und Funktion unter dem Platz für die Unterschrift, Zeilenumbruch (\\n) erlaubt'),
+  enclosures: z.array(z.string().min(1).max(40)).max(6).optional().describe('Anlagen, je eine Zeile, z. B. „Lebenslauf“, „Arbeitszeugnisse“; stehen unter „Anlagen“ nach der Unterschrift'),
+  footer: z.array(z.string().max(100)).max(4).optional().describe('Fußzeile in Spalten, z. B. Anschrift, Kontakt, Bankverbindung, Register; je Spalte ein Eintrag, Zeilen mit \\n'),
+})
+
+// Urkunde (A4 quer): Art und Titel oben, Empfänger groß, Ort/Datum und Unterschriftsfelder unten.
+const certificate = z.object({
+  eyebrow: z.string().max(40).optional().describe('Art des Dokuments, z. B. „Teilnahmebescheinigung“, „Zertifikat“, „Auszeichnung“'),
+  title: z.string().min(3).max(50).describe('„Urkunde“ oder die Leistung, z. B. „Erste-Hilfe-Kurs bestanden“'),
+  recipient: z.string().min(2).max(50).describe('Name der Person oder des Teams ohne Anrede; steht am größten'),
+  text: z.string().max(260).optional().describe('wofür, in ganzen Sätzen: Kurs oder Leistung, Umfang in Stunden, Zeitraum, Inhalte'),
+  date: z.string().max(50).optional().describe('Ort und Datum, z. B. „Musterstadt, 8. Oktober 2026“'),
+  signers: z.array(z.object({
+    name: z.string().max(40).optional().describe('Name der unterzeichnenden Person; nur echte Namen, nie erfunden'),
+    role: z.string().min(1).max(40).describe('Funktion, z. B. „Kursleitung“, „Schulleitung“'),
+  })).max(2).optional().describe('0–2 Unterschriftsfelder: Linie zum Unterschreiben, darunter Name und Funktion'),
+})
+
+// Einladung (A4 hoch, oft als A5 oder A6 gedruckt): wer lädt wen wozu ein, wann und wo, Bitte um Antwort. Wenig Text, große Schrift.
+const invitation = z.object({
+  eyebrow: z.string().max(40).optional().describe('Anlass, z. B. „Einladung“ oder „Save the Date“'),
+  title: z.string().min(3).max(60).describe('Anlass persönlich als Satz, z. B. „Wir feiern 25 Jahre Praxis am Markt“'),
+  text: z.string().max(240).optional().describe('Einladungstext in zwei bis drei ganzen, persönlichen Sätzen'),
+  facts: z.array(z.object({
+    label: z.string().min(1).max(14).describe('z. B. Wann, Wo, Dresscode'),
+    value: z.string().min(1).max(60).describe('z. B. „Samstag, 4. Juli, ab 18 Uhr“ oder die Adresse'),
+  })).min(1).max(4).describe('Eckdaten: mindestens Wann (Wochentag, Datum, Uhrzeit) und Wo'),
+  rsvp: z.string().max(80).optional().describe('Bitte um Antwort mit Frist und Weg, z. B. „Bitte sagt bis 1. Juli zu“'),
+  host: z.string().max(60).optional().describe('wer einlädt, z. B. „Das Team der Praxis am Markt“'),
+  image: photo.optional().describe('Foto oben (Ort, Menschen, Anlass); weglassen = typografische Karte'),
+  qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code (Zusage, Anfahrt); je kürzer, desto sicherer der Scan im Druck'),
+})
+
+// Visitenkarte (85 × 55 mm): Vorder- und Rückseite zeigen denselben Inhalt. Auf der Karte ist nur der Name größer als 12 px.
+const businessCard = z.object({
+  name: z.string().min(1).max(32).describe('Vor- und Nachname; unbekannt = Platzhalter „[Vorname Nachname]“'),
+  role: z.string().max(40).optional().describe('Funktion oder Beruf, z. B. „Projektleitung“'),
+  org: z.string().max(40).optional().describe('Organisation oder Firma; auf der Rückseite groß, solange das Brand-Kit kein Logo hat'),
+  lines: z.array(z.string().min(1).max(36)).max(4).optional().describe('0–4 Kontaktzeilen, eine Angabe pro Zeile ohne Icons oder Kürzel davor: Telefon, E-Mail, Web, Adresse. Nie erfinden'),
+  claim: z.string().max(60).optional().describe('ein Satz zur Leistung, steht nur auf der Rückseite'),
+  qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code auf der Rückseite (Webseite, Kontaktseite); je kürzer, desto gröber das Muster und desto sicherer der Scan'),
+})
+
+// Lebenslauf (A4 hoch): Stationen und Kenntnisse nur als Text. Die Gesamtzahl der Stationen begrenzt, was auf eine Seite passt.
+const CV_ENTRIES = 5
+const cv = z.object({
+  name: z.string().min(2).max(40).describe('Vor- und Nachname'),
+  role: z.string().max(60).optional().describe('Berufsbezeichnung oder Ziel, z. B. „Produktdesignerin“'),
+  image: photo.optional().describe('Bewerbungsfoto (Porträt, focus top); weglassen = ohne Foto, auf Folgeseiten immer weglassen'),
+  profile: z.string().max(300).optional().describe('Kurzprofil in 1–3 Sätzen: Erfahrung, Stärke, Ziel'),
+  contact: z.array(z.string().max(40)).max(5).optional().describe('Anschrift, Telefon, E-Mail, Web; je eine Angabe'),
+  sections: z.array(z.object({
+    heading: z.string().min(1).max(30).describe('z. B. „Berufserfahrung“, „Ausbildung“, „Weiterbildung“'),
+    entries: z.array(z.object({
+      period: z.string().min(1).max(24).describe('Zeitraum knapp, z. B. „2021 – heute“ oder „09/2018 – 06/2021“'),
+      title: z.string().min(1).max(60).describe('Funktion oder Abschluss'),
+      place: z.string().max(60).optional().describe('Arbeitgeber oder Hochschule mit Ort'),
+      text: z.string().max(140).optional().describe('höchstens ein Satz, am besten mit Ergebnis'),
+    })).min(1).max(CV_ENTRIES).describe('antichronologisch: neueste Station zuerst'),
+  })).min(1).max(4).describe(`insgesamt höchstens ${CV_ENTRIES} Stationen pro Seite, weitere auf eine zweite cv-Seite`),
+  skills: z.array(z.object({
+    label: z.string().min(1).max(24).describe('z. B. „Sprachen“, „Software“'),
+    text: z.string().min(1).max(80).describe('z. B. „Deutsch (Muttersprache), Englisch (C1)“'),
+  })).max(4).optional().describe('Kenntnisse als Text; keine Balken, Sterne oder Prozentangaben'),
+  signed: z.string().max(50).optional().describe('Ort und Datum am Seitenende, z. B. „Musterstadt, 8. Oktober 2026“'),
+}).refine((c) => c.sections.reduce((n, s) => n + s.entries.length, 0) <= CV_ENTRIES, `Höchstens ${CV_ENTRIES} Stationen pro Seite – weitere auf eine zweite cv-Seite (ohne Foto)`)
+
+// Speisekarte (A4 hoch): Abschnitte mit Gerichten, Preis rechts auf der Zeile des Namens.
+// Grenzen für den ungünstigsten Fall (alle Felder voll, 12 px): rund 12 Gerichte mit je einer Zeile Beschreibung; das max-Sample
+// verteilt sie auf drei gleich lange Abschnitte (4+4+4), damit der Stresstest den Spaltenumbruch mitten im Abschnitt prüft.
+const MENU_MAX = 12
+const menu = z.object({
+  eyebrow: z.string().max(40).optional().describe('Ort, Saison oder Anlass, z. B. „Mittagstisch · KW 41“'),
+  title: z.string().min(3).max(40).describe('z. B. „Speisekarte“, „Herbstkarte“, „Getränke“'),
+  intro: z.string().max(160).optional().describe('ein bis zwei Sätze zur Küche, z. B. Herkunft der Zutaten'),
+  sections: z.array(z.object({
+    heading: z.string().min(1).max(30).describe('z. B. „Vorspeisen“, „Hauptgerichte“, „Getränke“'),
+    items: z.array(z.object({
+      name: z.string().min(1).max(40).describe('Gericht kurz und konkret, z. B. „Kürbissuppe“'),
+      text: z.string().max(80).optional().describe('Zutaten und Zubereitung statt Werbesprache, z. B. „Hokkaido, Ingwer, geröstete Kerne“'),
+      price: z.string().min(1).max(10).describe('Preis, z. B. „12,50“ oder „12,50 €“; nie erfinden, fehlt er: „–,–“'),
+      tag: z.string().max(20).optional().describe('dezenter Zusatz, z. B. „vegan“ oder Allergen-Kürzel „A, G“'),
+    })).min(1).max(6),
+  })).min(1).max(4),
+  note: z.string().max(220).optional().describe('Hinweise klein unten: Allergene und Zusatzstoffe erklären, „Alle Preise in Euro inkl. MwSt.“'),
+}).refine((c) => c.sections.reduce((n, s) => n + s.items.length, 0) <= MENU_MAX, `Höchstens ${MENU_MAX} Gerichte pro Seite; weitere auf eine zweite menu-Seite`)
+
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
 
 export const EXTRA_LAYOUTS = {
@@ -392,7 +504,7 @@ export const EXTRA_LAYOUTS = {
   }),
   flyer: L({
     id: 'flyer', name: 'Flyer (A4)', variants: ['top', 'full'], sizes: ['a4'],
-    when: 'Nur A4 hoch: Flyer, Handzettel, Plakat, Einladung. Eine Seite, eine Botschaft: Schlagzeile mit Nutzen, ein Satz Unterzeile, 2–4 kurze Gründe, klare Handlungsaufforderung (cta), Kontakt und QR-Code zur Webseite oder Anmeldung. Variante top = Foto in der oberen Hälfte (Standard), full = Foto über die ganze Seite, Text unten auf dem Foto (nur mit ruhiger unterer Bildhälfte wie Himmel, Wand oder Tisch, sonst top). Ohne Foto typografisch: Schlagzeile übergroß; mit tone accent oder invert wird daraus ein farbiger Flyer.',
+    when: 'Nur A4 hoch: Flyer, Handzettel, Plakat (persönliche Einladung → invitation). Eine Seite, eine Botschaft: Schlagzeile mit Nutzen, ein Satz Unterzeile, 2–4 kurze Gründe, klare Handlungsaufforderung (cta), Kontakt und QR-Code zur Webseite oder Anmeldung. Variante top = Foto in der oberen Hälfte (Standard), full = Foto über die ganze Seite, Text unten auf dem Foto (nur mit ruhiger unterer Bildhälfte wie Himmel, Wand oder Tisch, sonst top). Ohne Foto typografisch: Schlagzeile übergroß; mit tone accent oder invert wird daraus ein farbiger Flyer.',
     schema: flyer, defaultBuild: 'fade', footer: false,
     samples: {
       min: { title: 'Sommerfest am Freitag', cta: 'Alle sind eingeladen' },
@@ -554,6 +666,154 @@ export const EXTRA_LAYOUTS = {
       min: { title: 'Drei Partner', logos: [{ name: 'Stadt Nord' }, { name: 'Bildungswerk' }, { name: 'Lernfabrik' }] },
       typ: { eyebrow: 'Partner', title: 'Über 40 Schulen und drei Träger arbeiten bereits mit uns', logos: ['Stadt Nord', 'Bildungswerk Süd', 'Lernfabrik', 'Kreis Mitte', 'Grundschule am Park', 'Schulverbund West'].map((name) => ({ name })) },
       max: { eyebrow: words(28), title: words(90), logos: rep(12, (i) => ({ name: words(22, i) })), mono: true },
+    },
+  }),
+  'application-cover': L({
+    id: 'application-cover', name: 'Bewerbung – Deckblatt (A4)', sizes: ['a4'],
+    when: 'Nur A4 hoch: Deckblatt einer Bewerbungsmappe (optional, vor Anschreiben und Lebenslauf). Oben die Stelle (title, z. B. „als Pflegefachkraft“ mit eyebrow „Bewerbung“; Kennziffer gern dazu) und das Unternehmen (org), unten Name, Bewerbungsfoto und Kontakt. Reihenfolge der Bewerbung, alles in einem Deck und Theme: application-cover, dann letter (Anschreiben), dann cv (Lebenslauf). Kontaktdaten und Foto nie erfinden: fehlen sie, Platzhalter in eckigen Klammern setzen (z. B. „[Telefon]“, Foto mit src "") und nachfragen; als Foto nur ein eigenes Bild des Nutzers, nie ein Stockfoto. contents nur, wenn mehr als zwei Anlagen folgen. Für Online-Bewerbungen ist das Deckblatt verzichtbar.',
+    schema: applicationCover, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Bewerbung als Erzieherin', name: 'Mara' },
+      typ: {
+        eyebrow: 'Bewerbung', title: 'als Pflegefachkraft in der ambulanten Pflege', org: 'bei der Sozialstation Musterstadt',
+        name: 'Vorname Nachname', photo: { src: '' },
+        contact: ['Musterweg 1', '12345 Musterstadt', 'Telefon 0123 456789'],
+        contents: ['Anschreiben', 'Lebenslauf', 'Examenszeugnis', 'Arbeitszeugnisse'],
+      },
+      max: { eyebrow: words(30), title: words(70), org: words(60), name: words(40), photo: { src: '' }, contact: rep(4, (i) => words(50, i)), contents: rep(6, (i) => words(40, i)) },
+    },
+  }),
+  certificate: L({
+    id: 'certificate', name: 'Urkunde (A4 quer)', sizes: ['a4-quer'],
+    when: 'Nur A4 quer: Urkunde, Zertifikat, Teilnahmebescheinigung, Auszeichnung. recipient = Name der Person oder des Teams ohne Anrede (steht am größten), title = Leistung oder schlicht „Urkunde“, eyebrow = Art des Dokuments. text sagt konkret, wofür: Kurs oder Leistung, Umfang in Stunden, Datum oder Zeitraum. Unterschriftsfelder (signers) nur mit echten Namen und Funktionen, kennst du den Namen nicht, nur die Funktion. Mehrere Empfänger = mehrere Seiten mit gleichem Text. Das Logo kommt aus dem Brand-Kit.',
+    schema: certificate, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Urkunde', recipient: 'Mara' },
+      typ: {
+        eyebrow: 'Teilnahmebescheinigung', title: 'Erste-Hilfe-Kurs', recipient: 'Mara',
+        text: 'hat am 8. Oktober 2026 erfolgreich am Erste-Hilfe-Kurs mit neun Unterrichtseinheiten teilgenommen. Inhalte: Notruf, stabile Seitenlage, Herz-Lungen-Wiederbelebung und der Einsatz eines Defibrillators.',
+        date: 'Musterstadt, 8. Oktober 2026',
+        signers: [{ name: 'Jonas', role: 'Kursleitung' }, { role: 'Geschäftsführung' }],
+      },
+      max: { eyebrow: words(40), title: words(50), recipient: words(50), text: words(260), date: words(50), signers: rep(2, (i) => ({ name: words(40, i), role: words(40, i + 1) })) },
+    },
+  }),
+  invitation: L({
+    id: 'invitation', name: 'Einladung (A4)', sizes: ['a4'],
+    when: 'Nur A4 hoch: Einladung, Save the Date, Karte zu Feier, Jubiläum, Hochzeit, Sommerfest, Tag der offenen Tür. Titel nennt den Anlass persönlich („Wir feiern …“), facts mit Wann (Wochentag, Datum, Uhrzeit) und Wo, rsvp mit Frist und Weg (Nachricht, Telefon, QR-Code), host sagt, wer einlädt. Wenig Text: Einladungen werden oft als A5 oder A6 gedruckt (export print mit size a5/a6). Mit Foto steht es oben, ohne ist die Karte typografisch; mit tone accent oder invert wird sie farbig. Werbung mit Gründen und Handlungsaufforderung → lieber flyer.',
+    schema: invitation, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Sommerfest im Hof', facts: [{ label: 'Wann', value: 'Freitag, 3. Juli, 17 Uhr' }] },
+      typ: {
+        eyebrow: 'Einladung', title: 'Wir feiern 25 Jahre Praxis am Markt',
+        text: 'Seit 25 Jahren sind wir für euch da. Das möchten wir mit allen feiern, die uns auf diesem Weg begleitet haben – mit Musik, Essen und guten Gesprächen.',
+        facts: [{ label: 'Wann', value: 'Samstag, 4. Juli, ab 18 Uhr' }, { label: 'Wo', value: 'Praxis am Markt, Musterweg 1, 12345 Musterstadt' }, { label: 'Dresscode', value: 'Sommerlich' }],
+        rsvp: 'Bitte sagt bis 20. Juni zu, gern über den QR-Code.', host: 'Das Team der Praxis am Markt', qr: 'https://example.com/zusage',
+      },
+      max: { eyebrow: words(40), title: words(60), text: words(240), facts: rep(4, (i) => ({ label: words(14, i), value: words(60, i) })), rsvp: words(80), host: words(60), image: { src: '' }, qr: 'https://example.com/zusage' },
+    },
+  }),
+  letter: L({
+    id: 'letter', name: 'Brief (A4, DIN 5008)', sizes: ['a4'],
+    when: 'Nur A4 hoch: Geschäftsbrief nach DIN 5008 (Fensterumschlag DL bzw. C6/5); Anschriftfeld, Falz- und Lochmarken liegen fest. Anschrift (to) in der Reihenfolge Firma oder Name, ggf. Person, Straße und Hausnummer, PLZ Ort; Datum, Zeichen und Ansprechpartner in den Informationsblock (info); Betreff als Aussage; Text in kurzen Absätzen, eine Seite; Anlagen in enclosures. Das Logo kommt aus dem Brand-Kit. Bewerbungsanschreiben = letter: Absender ist die Bewerberin oder der Bewerber, Name im Briefkopf (sender), Kontakt in senderLine und info, footer kann leer bleiben; Betreff „Bewerbung als …“ mit Kennziffer, Anlagen wie Lebenslauf und Zeugnisse in enclosures, höchstens eine Seite. Absenderdaten (Anschrift, Kontakt, Bank) nie erfinden: fehlen sie, Platzhalter in eckigen Klammern wie „[Straße Nr.]“ setzen und den Nutzer fragen. Will der Nutzer weiterschreiben, als Word (docx) exportieren.',
+    schema: letter, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { sender: 'Praxis am Markt', to: 'Muster GmbH\nMusterweg 1\n12345 Musterstadt', subject: 'Ihr Termin am 4. November steht', body: 'Wir bestätigen den Impftermin für Ihr Team am 4. November um 9 Uhr.' },
+      typ: {
+        sender: 'Praxis am Markt', senderLine: 'Praxis am Markt, Marktplatz 3, 12345 Musterstadt',
+        to: 'Muster GmbH\nPersonalabteilung\nMusterweg 1\n12345 Musterstadt',
+        info: [{ label: 'Ihr Zeichen', value: 'PA-2026-17' }, { label: 'Ansprechpartnerin', value: 'Sabine, Praxisleitung' }, { label: 'Telefon', value: '0123 456789' }, { label: 'Datum', value: '8. Oktober 2026' }],
+        subject: 'Grippeschutzimpfung für Ihr Team am 4. November',
+        salutation: 'Sehr geehrte Damen und Herren,',
+        body: 'vielen Dank für Ihre Anfrage. Gern impfen wir Ihre Mitarbeitenden in Ihren Räumen gegen Grippe. Wir kommen am 4. November um 9 Uhr mit zwei Fachkräften und bringen den Impfstoff mit.\nBitte stellen Sie einen ruhigen Raum mit Tisch und zwei Stühlen bereit. Pro Person rechnen wir mit zehn Minuten, bei 40 Anmeldungen sind wir gegen 12 Uhr fertig.\nDie Kosten übernimmt in der Regel die Krankenkasse. Den Aufklärungsbogen legen wir bei; er sollte ausgefüllt mitgebracht werden.',
+        closing: 'Mit freundlichen Grüßen', signature: 'Sabine\nPraxisleitung', enclosures: ['Aufklärungsbogen'],
+        footer: ['Praxis am Markt\nMarktplatz 3\n12345 Musterstadt', 'Telefon 0123 456789\nexample.com', 'Sparkasse Musterstadt\nIBAN DE12 3456 7890 1234 5678 90', 'Sprechzeiten\nMo–Fr 8–18 Uhr'],
+      },
+      max: {
+        sender: words(60), senderLine: words(50), to: rep(6, (i) => words(29, i)).join('\n'),
+        info: rep(4, (i) => ({ label: words(20, i), value: words(40, i) })), subject: words(90), salutation: words(60),
+        body: rep(4, (i) => words(274, i)).join('\n'), closing: words(40), signature: `${words(39)}\n${words(40, 2)}`, enclosures: rep(6, (i) => words(40, i)), footer: rep(4, (i) => words(100, i)),
+      },
+    },
+  }),
+  'business-card': L({
+    id: 'business-card', name: 'Visitenkarte (85×55 mm)', variants: ['front', 'back'], sizes: ['visitenkarte'],
+    when: 'Nur Format visitenkarte (85 × 55 mm): Visitenkarte, Vorder- und Rückseite. Zwei Seiten mit demselben content anlegen: Seite 1 variant front (Name und Funktion oben, Organisation und Kontaktzeilen unten), Seite 2 variant back (Logo aus dem Brand-Kit, sonst Organisation groß, dazu claim und optional QR-Code); die Rückseite gern mit tone accent. Höchstens 4 Kontaktzeilen, eine Angabe pro Zeile. Kontaktdaten nie erfinden: fehlen sie, Platzhalter in eckigen Klammern wie „[Telefon]“ setzen und nachfragen. Für die Druckerei mit export_deck format print exportieren (PDF mit Beschnitt).',
+    schema: businessCard, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { name: 'Mara' },
+      typ: {
+        name: 'Vorname Nachname', role: 'Landschaftsarchitektin', org: 'Grünwerk Gartenplanung',
+        lines: ['Telefon 0123 456789', 'example.com', 'Musterweg 1, 12345 Musterstadt'],
+        claim: 'Gärten, die mit wenig Pflege durchs ganze Jahr tragen.', qr: 'https://example.com',
+      },
+      max: { name: words(32), role: words(40, 1), org: words(40, 2), lines: rep(4, (i) => words(36, i + 3)), claim: words(60, 4), qr: 'https://example.com/kontakt' },
+    },
+  }),
+  cv: L({
+    id: 'cv', name: 'Lebenslauf (A4)', variants: ['side', 'plain'], sizes: ['a4'],
+    when: 'Nur A4 hoch: Lebenslauf (CV, Bewerbung). Name, Berufsbezeichnung, Kurzprofil, Kontakt, Stationen in Abschnitten (Berufserfahrung, Ausbildung …) und Kenntnisse als Text. Stationen antichronologisch, Zeitraum knapp („2021 – heute“), title = Funktion oder Abschluss, place = Arbeitgeber oder Hochschule mit Ort, text höchstens ein Satz mit Ergebnis. Variante side (Standard) = schmale Seitenspalte mit Foto, Kontakt und Kenntnissen; plain = tabellarisch wie in Deutschland üblich, Zeitraum links, Foto rechts neben dem Namen. Foto optional (in Deutschland üblich, nicht Pflicht). Passt es nicht auf eine Seite: zweite cv-Seite ohne Foto, Profil und Kontakt. In einer Bewerbung folgt der Lebenslauf auf das Anschreiben (letter), Name wie auf Deckblatt und Anschreiben; signed = Ort und Datum klein am Seitenende (optional, nur auf der letzten cv-Seite).',
+    schema: cv, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { name: 'Vorname Nachname', sections: [{ heading: 'Berufserfahrung', entries: [{ period: '2021 – heute', title: 'Projektleitung' }] }] },
+      typ: {
+        name: 'Mara', role: 'Produktdesignerin mit Schwerpunkt Barrierefreiheit',
+        profile: 'Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche eine Rolle mit Verantwortung für ein Designteam.',
+        contact: ['Musterweg 1, 12345 Musterstadt', '0123 456789', 'example.com/mara'],
+        sections: [
+          { heading: 'Berufserfahrung', entries: [
+            { period: '2021 – heute', title: 'Senior Produktdesignerin', place: 'Muster GmbH, Musterstadt', text: 'Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %.' },
+            { period: '2018 – 2021', title: 'Produktdesignerin', place: 'Beispiel AG, Musterstadt', text: 'Aufbau eines Designsystems für zwölf Fachanwendungen.' },
+            { period: '2016 – 2018', title: 'Junior UX-Designerin', place: 'Agentur Nord, Musterstadt' },
+          ] },
+          { heading: 'Ausbildung', entries: [
+            { period: '2013 – 2016', title: 'B. A. Kommunikationsdesign', place: 'Hochschule Musterstadt', text: 'Abschlussarbeit über barrierefreie Formulare, Note 1,3.' },
+          ] },
+        ],
+        skills: [
+          { label: 'Sprachen', text: 'Deutsch (Muttersprache), Englisch (C1), Spanisch (B1)' },
+          { label: 'Werkzeuge', text: 'Figma, HTML und CSS, Nutzertests, WCAG 2.2' },
+        ],
+        signed: 'Musterstadt, 8. Oktober 2026',
+      },
+      max: {
+        name: words(40), role: words(60), image: { src: '' }, profile: words(300), contact: rep(5, (i) => words(40, i)),
+        // Stationen an der Gesamtgrenze, verteilt auf die Höchstzahl der Abschnitte
+        sections: [2, 1, 1, 1].map((n, i) => ({ heading: words(30, i), entries: rep(n, (j) => ({ period: words(24, i + j), title: words(60, i + j), place: words(60, j + 1), text: words(140, i + j) })) })),
+        skills: rep(4, (i) => ({ label: words(24, i), text: words(80, i) })), signed: words(50),
+      },
+    },
+  }),
+  menu: L({
+    id: 'menu', name: 'Speisekarte (A4)', variants: ['one', 'two'], sizes: ['a4'],
+    when: `Nur A4 hoch: Speisekarte, Getränkekarte, Mittagstisch, Preisliste. Abschnitte (Vorspeisen, Hauptgerichte …) mit Gerichten: Name kurz und konkret, text = Zutaten statt Werbesprache, Preis rechts. Preise nie erfinden: fehlen sie, Platzhalter „–,–“ setzen und am Ende nachfragen. tag für „vegan“ oder Allergen-Kürzel, die Kürzel in note erklären (Allergene, Zusatzstoffe, Preise inkl. MwSt.). Variante one = eine Spalte (Standard), two = zwei Spalten ab ca. 8 Gerichten oder bei kurzen Einträgen wie Getränken. Höchstens ${MENU_MAX} Gerichte pro Seite; mehr = weitere menu-Seite (z. B. Getränke).`,
+    schema: menu, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Speisekarte', sections: [{ heading: 'Heute', items: [{ name: 'Linsensuppe', price: '6,50' }] }] },
+      typ: {
+        eyebrow: 'Herbst · ab 1. Oktober', title: 'Herbstkarte',
+        intro: 'Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen.',
+        sections: [
+          { heading: 'Vorspeisen', items: [
+            { name: 'Kürbissuppe', text: 'Hokkaido, Ingwer, geröstete Kerne', price: '7,50', tag: 'vegan' },
+            { name: 'Feldsalat', text: 'Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing', price: '9,80', tag: 'G, H' },
+          ] },
+          { heading: 'Hauptgerichte', items: [
+            { name: 'Rinderroulade', text: 'Rotkohl, Kartoffelklöße, Schmorsauce', price: '21,50', tag: 'A, I' },
+            { name: 'Kürbisrisotto', text: 'Salbeibutter, Bergkäse', price: '16,90', tag: 'G' },
+            { name: 'Saibling', text: 'Aus dem Fichtelgebirge, mit Petersilienkartoffeln und Rahmspinat', price: '23,00', tag: 'D, G' },
+          ] },
+          { heading: 'Nachspeisen', items: [
+            { name: 'Zwetschgendatschi', text: 'Mit geschlagener Sahne', price: '5,50', tag: 'A, C, G' },
+          ] },
+        ],
+        note: 'Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt.',
+      },
+      max: {
+        eyebrow: words(40), title: words(40), intro: words(160),
+        sections: rep(3, (i) => ({ heading: words(30, i), items: rep(4, (j) => ({ name: words(40, i + j), text: words(80, j), price: '1.234,50 €', tag: words(20, j) })) })),
+        note: words(220),
+      },
     },
   }),
   clip: L({

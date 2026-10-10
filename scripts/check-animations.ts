@@ -6,6 +6,27 @@ import assert from 'node:assert/strict'
 import JSZip from 'jszip'
 import PptxGenJS from 'pptxgenjs'
 import { injectAnimations, type SlideAnim } from '../src/main/animations.ts'
+import { animStartOf, itemSteps } from '../src/shared/deck.ts'
+
+// Start und Verzögerung freier Elemente (Präsentieren, itemSteps): Schritt 0 läuft ohne Klick, jeder weitere per Klick
+assert.deepEqual(itemSteps([{ ms: 500 }, { ms: 500 }], 'click'), [[], [{ k: 0, at: 0 }], [{ k: 1, at: 0 }]], 'ohne Start: je ein Klick')
+assert.deepEqual(itemSteps([{ ms: 500 }, { ms: 700 }], 'auto', 400), [[{ k: 0, at: 400 }, { k: 1, at: 900 }]], 'Selbstlauf: nacheinander nach dem Aufbau')
+assert.deepEqual(itemSteps([
+  { start: 'click', ms: 500 },
+  { start: 'with', delay: 0.2, ms: 500 }, // zugleich, 200 ms später → Ende 700
+  { start: 'after', ms: 300 }, // nach allem Bisherigen: 700
+  { start: 'with', ms: 100 }, // gleicher Kettenbeginn wie das vorige: 700
+  { start: 'after', delay: 1, ms: 500 }, // Ende 1000 + 1 s
+  { start: 'click', delay: 0.5, ms: 500 },
+], 'click'), [[], [{ k: 0, at: 0 }, { k: 1, at: 200 }, { k: 2, at: 700 }, { k: 3, at: 700 }, { k: 4, at: 2000 }], [{ k: 5, at: 500 }]], 'click/with/after/delay')
+assert.deepEqual(itemSteps([{ start: 'after', ms: 500 }, { ms: 500 }], 'click', 600), [[{ k: 0, at: 600 }], [{ k: 1, at: 0 }]], 'nach vorherigem ohne Klick hinter den Aufbau')
+// Aufbau aus mehreren after-Ketten (wipe, words, Liste im Selbstlauf): „Zugleich“ startet mit der letzten Kette (500 ms)
+// wie in der PPTX (Folie 9), „Danach“ nach dem Ende des Aufbaus (1000 ms)
+assert.deepEqual(itemSteps([{ start: 'with', delay: 0.1, ms: 500 }, { start: 'after', ms: 300 }], 'click', 1000, 500), [[{ k: 0, at: 600 }, { k: 1, at: 1100 }]], 'Zugleich an der letzten Aufbau-Kette')
+assert.deepEqual(itemSteps([{ start: 'click', ms: 500 }, { start: 'with', ms: 500 }], 'auto'), [[{ k: 0, at: 0 }, { k: 1, at: 0 }]], 'Selbstlauf: Klick wird nach vorherigem')
+// Export: Start → trigger (export-pptx.ts), Selbstlauf ohne Klicks
+assert.deepEqual([undefined, 'click', 'with', 'after'].map((st) => animStartOf(st as never, 'click')), ['click', 'click', 'with', 'after'])
+assert.deepEqual([undefined, 'click', 'with', 'after'].map((st) => animStartOf(st as never, 'auto')), ['after', 'after', 'with', 'after'])
 
 const pptx = new PptxGenJS()
 pptx.layout = 'LAYOUT_WIDE'
@@ -45,6 +66,14 @@ s5.addImage({ objectName: 'dw:image', x: 0, y: 0, w: 6, h: 7.5,
   data: 'image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' })
 s5.addText('Von unten', { objectName: 'dw:up', x: 7, y: 2, w: 5, h: 1, fontSize: 24 })
 s5.addText('Von rechts', { objectName: 'dw:left', x: 7, y: 3.5, w: 5, h: 1, fontSize: 24 })
+// 6–7: Start mit/nach vorherigem mit Verzögerung, langsamer Übergang; 8: schneller Morph
+const s6 = pptx.addSlide()
+;['a', 'b', 'c'].forEach((n, i) => s6.addText(n, { objectName: `dw:${n}`, x: 0.6 + i * 4, y: 2, w: 3, h: 1, fontSize: 24 }))
+title(pptx.addSlide(), 'Langsam')
+title(pptx.addSlide(), 'Schnell')
+// 9: Aufbau in zwei after-Ketten, danach ein Element „Zugleich“ (App: itemSteps oben)
+const s9 = pptx.addSlide()
+;['g1', 'g2', 'w'].forEach((n, i) => s9.addText(n, { objectName: `dw:${n}`, x: 0.6 + i * 4, y: 2, w: 3, h: 1, fontSize: 24 }))
 
 const anims: SlideAnim[] = [
   { transition: 'fade', steps: [0, 1, 2, 3].map(p => ({ shape: 'dw:bullets', effect: 'fade', trigger: 'click', paragraph: p })) },
@@ -65,6 +94,18 @@ const anims: SlideAnim[] = [
     { shape: 'dw:image', effect: 'grow', trigger: 'with', durMs: 12000 },
     { shape: 'dw:up', effect: 'wipe', dir: 'up', trigger: 'after' },
     { shape: 'dw:left', effect: 'pan', dir: 'left', trigger: 'after', durMs: 300 },
+  ] },
+  { transition: 'fade', speed: 'fast', steps: [
+    { shape: 'dw:a', effect: 'fade', trigger: 'click' },
+    { shape: 'dw:b', effect: 'fade', trigger: 'with', delayMs: 200 },
+    { shape: 'dw:c', effect: 'fade', trigger: 'after', delayMs: 1000 },
+  ] },
+  { transition: 'fade', speed: 'slow', steps: [] },
+  { transition: 'morph', speed: 'fast', steps: [] },
+  { transition: 'none', steps: [
+    { shape: 'dw:g1', effect: 'wipe', trigger: 'after' },
+    { shape: 'dw:g2', effect: 'wipe', trigger: 'after' },
+    { shape: 'dw:w', effect: 'fade', trigger: 'with', delayMs: 100 },
   ] },
 ]
 
@@ -113,4 +154,17 @@ assert.match(s5xml, /presetID="6" presetClass="emph"[^>]*>.*?<p:cTn id="\d+" dur
 assert.match(s5xml, /presetID="22" presetClass="entr" presetSubtype="4".*?filter="wipe\(down\)"/s, 'Folie 5: Wischen nach oben = von unten')
 assert.match(s5xml, /presetID="2" presetClass="entr" presetSubtype="2".*?<p:strVal val="#ppt_x\+.05"\/>/s, 'Folie 5: Schwenken nach links startet rechts')
 assert.match(s5xml, /<p:cond delay="500"\/>/, 'Folie 5: Foto-Zoom blockiert die Kette nicht (Wischen 500 ms, dann Schwenken)')
+const s6xml = await zip.file('ppt/slides/slide6.xml')!.async('string')
+assert.match(s6xml, /nodeType="withEffect"><p:stCondLst><p:cond delay="200"\/>/, 'Folie 6: mit vorherigem, 200 ms verzögert')
+assert.match(s6xml, /<p:cond delay="700"\/><\/p:stCondLst><p:childTnLst><p:par><p:cTn id="\d+" presetID="10" presetClass="entr" presetSubtype="0" fill="hold" grpId="0" nodeType="afterEffect"><p:stCondLst><p:cond delay="1000"\/>/,
+  'Folie 6: nach vorherigem (Kette ab 700 ms) mit 1 s Verzögerung')
+assert.match(s6xml, /<mc:Choice xmlns:p14="[^"]+" Requires="p14"><p:transition spd="fast" p14:dur="300"><p:fade\/><\/p:transition><\/mc:Choice><mc:Fallback><p:transition spd="fast"><p:fade\/>/, 'Folie 6: schneller Übergang')
+const s7xml = await zip.file('ppt/slides/slide7.xml')!.async('string')
+assert.match(s7xml, /<p:transition spd="med" p14:dur="800"><p:fade\/>/, 'Folie 7: langsamer Übergang')
+const s8xml = await zip.file('ppt/slides/slide8.xml')!.async('string')
+assert.match(s8xml, /Requires="p159"><p:transition spd="fast" p14:dur="600"><p159:morph option="byObject"\/>.*<mc:Fallback><p:transition spd="fast"><p:fade\/>/, 'Folie 8: schneller Morph')
+assert.doesNotMatch(s1xml + s3xml, /p14:dur/, 'ohne Tempo: Übergänge wie bisher')
+assert.match(s1xml, /<p:transition spd="fast"><p:fade\/><\/p:transition>/)
+const s9xml = await zip.file('ppt/slides/slide9.xml')!.async('string')
+assert.match(s9xml, /<p:cond delay="500"\/><\/p:stCondLst><p:childTnLst><p:par>[^]*?nodeType="afterEffect">[^]*?nodeType="withEffect"><p:stCondLst><p:cond delay="100"\/>/, 'Folie 9: Zugleich hängt an der letzten Kette (500 ms + 100 ms)')
 console.log('ok → out/anim-test.pptx')
