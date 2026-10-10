@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron'
 import { join } from 'node:path'
-import { PRINT_SIZES, profileOf, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
+import { isA4, PRINT_SIZES, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
 import { setPrintBoxes } from './pdf-boxes'
 
 // Offscreen Chromium windows that render slides with the exact same React code as the app.
@@ -130,7 +130,7 @@ export function renderPdf(deck: Deck): Promise<Buffer> {
 const PT = 72 / 25.4 // pt je mm
 export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buffer> {
   const { w, h } = sizeOf(deck)
-  const a4 = profileOf(deck) === 'doc' // A4 hoch oder quer
+  const a4 = isA4({ w, h }) // A4 hoch oder quer; die Visitenkarte druckt in ihrer eigenen Größe
   if (opts.size && !a4) throw new Error(`Druckformat ${opts.size.toUpperCase()} geht nur bei A4-Decks (hoch oder quer); dieses Deck ist ${w}×${h} px. Ohne Format wird es in seiner eigenen Größe gedruckt.`)
   const [pw, ph] = PRINT_SIZES[opts.size ?? 'a4']
   const [tw, th] = a4 ? (w > h ? [ph, pw] : [pw, ph]) : [(w * 25.4) / 96, (h * 25.4) / 96] // Endformat in mm

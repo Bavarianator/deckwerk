@@ -5,7 +5,7 @@ import { GRAPHICS } from '../shared/items'
 import { Chart, registerables, type ChartConfiguration, type Plugin } from 'chart.js'
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
 import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
-import { FONTS, HEAD_ROLES, SCALE, duotoneOf, ensureContrast, mix, resolveTheme, withTone, type FontName, type Theme } from '../shared/themes'
+import { FONTS, HEAD_ROLES, SCALE, duotoneOf, ensureContrast, marginsOf, mix, resolveTheme, withTone, type FontName, type Theme } from '../shared/themes'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { AIRY } from '../shared/lint'
 import { COMPONENTS, splitUnit } from './layouts'
@@ -22,6 +22,18 @@ export const useSlide = () => useContext(SlideCtx)
 
 // sichtbarer Text ohne Markup (Vergleich beim Bearbeiten, sonst ginge Markup schon beim bloßen Anklicken verloren)
 const plain = (text: string) => text.replaceAll('**', '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+// Text nach dem Bearbeiten: sichtbar unverändert → Original samt Markup. Sonst (Tippfehler) kommen **fett** und Links zurück,
+// deren Text genau einmal im neuen Text steht; geänderte oder mehrdeutige Teile werden Klartext.
+export function edited(before: string, typed: string): string {
+  if (typed === plain(before)) return before
+  const hits = [...before.matchAll(/\*\*(.+?)\*\*|\[([^\]]+)\]\((?:https?:|mailto:)[^)\s]+\)/g)].flatMap((m) => {
+    const txt = m[1] ?? m[2], at = typed.indexOf(txt)
+    return at >= 0 && typed.indexOf(txt, at + 1) < 0 ? [{ at, end: at + txt.length, md: m[0] }] : []
+  }).sort((a, b) => a.at - b.at)
+  let out = '', pos = 0
+  for (const h of hits) if (h.at >= pos) { out += typed.slice(pos, h.at) + h.md; pos = h.end }
+  return out + typed.slice(pos)
+}
 // **fett** und [Text](https://…) → Link (als span: ein <a> würde im Electron-Fenster navigieren; PPTX: nativer Hyperlink)
 const rich = (text: string) =>
   text.split(/(\*\*.+?\*\*|\[[^\]]+\]\((?:https?:|mailto:)[^)\s]+\))/g).map((part, i) => {
@@ -62,7 +74,7 @@ export function T(p: { role: keyof typeof SCALE; slot: string; children: string;
       data-build={p.build}
       contentEditable={canEdit || undefined}
       suppressContentEditableWarning
-      onBlur={canEdit ? (e) => e.currentTarget.innerText.trim() !== plain(p.children) && onEdit?.(p.slot, e.currentTarget.innerText.trim()) : undefined}
+      onBlur={canEdit ? (e) => { const t = edited(p.children, e.currentTarget.innerText.trim()); if (t !== p.children) onEdit?.(p.slot, t) } : undefined}
     >
       {words && p.build !== undefined ? splitParts(nodes, 'word') : nodes}
     </div>
@@ -84,7 +96,7 @@ const FOCUS_POS: Record<Extract<Focus, string>, string> = { center: '50% 50%', t
 // Foto oder Logo. under = liegt unter Text (Vollbild), look = Duotone/Mono (PPTX: „Neu einfärben“), round = Kreismaske.
 // Der Radius kommt aus dem CSS (border-radius) und wird im Export zu roundRect.
 // Bildanpassung als CSS-Filter (Export: patch-xml.ts adjustBlip mit denselben Prozentwerten)
-const adjustCss = (a?: Adjust) =>
+export const adjustCss = (a?: Adjust) =>
   a ? [a.bright && `brightness(${1 + a.bright / 100})`, a.contrast && `contrast(${1 + a.contrast / 100})`, a.sat && `saturate(${1 + a.sat / 100})`, a.blur && `blur(${a.blur / 10}px)`].filter(Boolean).join(' ') || undefined : undefined
 
 // Bildrahmen: clip-path aus derselben Form wie im Export, in Pixeln der aktuellen Box (Autofit kann die Box noch ändern)
@@ -105,7 +117,10 @@ function useMask(mask?: MaskId) {
 
 export function Img(p: { src: string; slot: string; className?: string; contain?: boolean; build?: number; focus?: Focus; under?: boolean; look?: Look; alpha?: number; round?: boolean; style?: CSSProperties; attrs?: Record<string, string | undefined>; crop?: Crop; mask?: MaskId; adjust?: Adjust }) {
   const { theme } = useSlide()
-  const look = p.look === 'natural' ? undefined : p.look
+  // Bildstil des Themes für Fotos der Layouts ohne eigenen look; Logos (contain), freie Elemente und Folienhintergrund bleiben natürlich
+  const photo = !p.contain && !p.slot.startsWith('_') && !p.slot.startsWith('items.')
+  const want = p.look ?? (photo ? theme.images : undefined)
+  const look = want === 'natural' ? undefined : want
   const ref = useMask(p.mask)
   const c = p.crop
   // Zuschnitt: Bild so groß, dass der Ausschnitt die Box füllt; background-position in % bezieht sich auf den Überstand
@@ -322,7 +337,9 @@ function Decor({ kind, id }: { kind: DecorKind; id: DecorId }) {
   )
 }
 
-function themeVars(t: Theme): CSSProperties {
+// Zeilenabstand je Token: Faktor auf die Zeilenhöhen der Rollen, Titel schwächer als Fließtext
+const LEADING = { tight: [0.92, 0.96], normal: [1, 1], open: [1.1, 1.04] } as const
+function themeVars(t: Theme, size: { w: number; h: number }): CSSProperties {
   const v: Record<string, string | number> = {
     '--bg': t.c.bg, '--surface': t.c.surface, '--surface2': t.c.surface2, '--text': t.c.text, '--muted': t.c.muted,
     '--accent': t.c.accent, '--accent2': t.c.accent2, '--on-accent': t.c.onAccent, '--border': t.c.border,
@@ -334,6 +351,21 @@ function themeVars(t: Theme): CSSProperties {
     '--font-head': `'${t.head.css}'`, '--font-body': `'${t.body.css}'`, '--head-weight': t.head.weight, '--head-tracking': `${t.head.tracking}em`,
     '--radius': `${t.radius}px`, '--head-scale': t.headScale ?? 1,
     ...(t.mono && { '--font-label': `'${t.mono.css}'` }),
+  }
+  // Tokens nur setzen, wenn vorhanden: die CSS-Fallbacks sind die bisherigen festen Werte
+  if (t.leading) [v['--lh'], v['--lh-head']] = LEADING[t.leading]
+  if (t.measure && t.measure !== 'standard' && size.w / size.h > 1.2) v['--measure'] = t.measure === 'narrow' ? '760px' : 'none' // Hochformate: Seite ist schon die Spalte
+  const sig = t.signature?.kind !== 'none' ? t.signature : undefined
+  if (t.margin || sig?.kind === 'passepartout') {
+    const m = marginsOf(t.margin, size)
+    Object.assign(v, { '--m-l': `${m.l}px`, '--m-r': `${m.r}px`, '--m-t': `${m.t}px`, '--m-b': `${m.b}px`, '--m-foot': `${m.foot + (sig?.kind === 'passepartout' ? 12 : 0)}px` }) // Fußzeile innerhalb des Rahmens
+  }
+  if (sig) {
+    // Kante bis 24 px; Linie und Rahmen bis 8 px (darüber rückte die Linie an den Titel bzw. der Rahmen in die Fußzeile)
+    const size = Math.min(sig.kind === 'edge' ? 24 : 8, Math.max(1, sig.size ?? (sig.kind === 'edge' ? 12 : sig.kind === 'rule' ? 2 : 1)))
+    const c = sig.color ?? (sig.kind === 'edge' ? 'accent' : 'text'), color = c === 'field' ? t.c.fill! : t.c[c]
+    // rule färbt die Kopflinie (rule-over) um, edge/passepartout haben eigene Variablen: sonst erbte die Kopflinie die Kante
+    Object.assign(v, sig.kind === 'rule' ? { '--rule-c': color, '--rule-s': `${size}px`, ...(sig.length !== 'full' && { '--rule-w': '64px' }) } : { '--sig-c': color, '--sig-s': `${size}px` })
   }
   for (const [role, steps] of Object.entries(SCALE)) v[`--fs-${role}`] = `${steps[0]}px`
   return v as CSSProperties
@@ -369,13 +401,16 @@ export function Backdrop(p: { image: PhotoRef; scrim: keyof typeof SCRIM }) {
 // Schrift auf dem Foto: weiß, Akzent aufgehellt. Als Style auf einen Wrapper innerhalb von Frame setzen.
 export const onPhoto = (t: Theme): CSSProperties => ({ '--text': '#FFFFFF', '--muted': '#E9E9E9', '--accent': mix('#FFFFFF', t.c.accent, 0.3), color: '#FFFFFF' }) as CSSProperties
 
+const HERO_TONE = { normal: undefined, field: 'accent', invert: 'invert' } as const
 // Frame stellt den Folien-Ton als abgeleitetes Theme bereit: alles innerhalb (Text, Charts, Dekor) sieht die getönten Farben.
 export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; safeClass?: string; children: ReactNode }) {
   const ctx = useSlide()
   const { deck, index } = ctx
   const s = deck.slides[index]
   const def = LAYOUTS[s.layout as keyof typeof LAYOUTS] as { tone?: Tone; footer: boolean; frames?: FrameId[] } | undefined
-  const theme = withTone(ctx.theme, s.tone ?? p.tone ?? (def?.tone && (ctx.theme.sectionTone ?? def.tone)))
+  // Titel- und Schlussfolie im Ton des Themes (heroTone); Kapitel folgen sectionTone
+  const hero = (s.layout === 'cover' || s.layout === 'closing') && ctx.theme.heroTone ? HERO_TONE[ctx.theme.heroTone] : undefined
+  const theme = withTone(ctx.theme, s.tone ?? hero ?? p.tone ?? (def?.tone && (ctx.theme.sectionTone ?? def.tone))) // Folien-tone vor heroTone vor Layout-Standard
   const frame = s.frame && def?.frames?.includes(s.frame) ? s.frame : 'top'
   // Fußzeile nur als Navigation: Kapitel links, „3 / 12“ rechts; Vortrag (mutig) und luftige Folien ohne. A4 liest man wie ein Dokument: Decktitel und Seite wie bisher.
   const doc = profileOf(deck) === 'doc', nav = !doc && deck.style !== 'mutig'
@@ -384,10 +419,16 @@ export function Frame(p: { decor?: DecorKind; tone?: Tone; media?: ReactNode; sa
   // Logo nie als Wasserzeichen auf jeder Folie: nur Titel- und Schlussfolie, bei A4 (Angebot ohne Titelfolie) wie ein Briefkopf auf Seite 1
   const logo = doc && index === 0 ? theme.logo : undefined
   const footer = def?.footer && (doc || !AIRY.includes(s.layout)) && (left || page || logo)
+  const { w, h } = sizeOf(deck)
+  const sig = theme.signature?.kind !== 'none' ? theme.signature : undefined
+  const rule = sig?.kind === 'rule' ? 'over' : theme.rule // Signatur rule ist die Kopflinie über dem Titel, nie zusätzlich
+  // Rahmen nicht über Farbflächen (split, band) und randabfallenden Fotos: dort wirkte er zerschnitten; ohne Rahmen bleibt die Fußzeile unten (--m-foot)
+  const frameLine = sig?.kind === 'passepartout' && frame !== 'split' && frame !== 'band' && !p.media && !s.bg?.image
   return (
     <SlideCtx.Provider value={{ ...ctx, theme }}>
-      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} prof-${profileOf(deck)} ${sizeOf(deck).w / sizeOf(deck).h <= 1.2 ? 'fmt-tall' : ''} ${sizeOf(deck).w <= 800 ? 'fmt-narrow' : ''} el-${theme.elements ?? 'line'} ${theme.rule ? `rule-${theme.rule}` : ''} ${theme.subBody ? 'sub-body' : ''}`} style={{ ...themeVars(theme), width: sizeOf(deck).w, height: sizeOf(deck).h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
+      <div className={`slide ${theme.dark ? 'dark' : ''} fr-${frame} prof-${profileOf(deck)} ${w / h <= 1.2 ? 'fmt-tall' : ''} ${w <= 800 ? 'fmt-narrow' : ''} el-${theme.elements ?? 'line'} ${rule ? `rule-${rule}` : ''} ${theme.subBody ? 'sub-body' : ''} ${theme.labels === 'caps' ? 'lab-caps' : ''}`} style={{ ...themeVars(theme, { w, h }), ...(sig?.kind === 'passepartout' && !frameLine && { '--m-foot': `${marginsOf(theme.margin, { w, h }).foot}px` }), width: w, height: h, ...(s.bg?.color && { background: s.bg.color }), ...(s.bg?.gradient && { background: `linear-gradient(${s.bg.angle ?? 135}deg, ${s.bg.gradient[0]}, ${s.bg.gradient[1]})` }) }}>
         {s.bg?.image ? <div className="backdrop"><Img src={s.bg.image} slot="_bg" under /></div> : <Decor kind={p.decor ?? 'content'} id={s.decor ?? theme.decor} />}
+        {sig && (sig.kind === 'edge' || frameLine) && <div className={`sig sig-${sig.kind} sig-${sig.side ?? 'left'}`} />}
         {p.media}
         <div className={`safe ${p.safeClass ?? ''}`} data-fit data-slot="_slide">
           {p.children}
@@ -547,15 +588,23 @@ function FreeItem({ it }: { it: Item }) {
   switch (it.kind) {
     case 'text': {
       const edit = editable && editing === it.id
+      const text = it.text ?? ''
+      const by = live && (it.anim === 'typewriter' || it.anim === 'ascend') ? (it.anim === 'ascend' ? 'word' : 'letter') : undefined
+      const body = (s: string) => (by ? splitParts(rich(s), by) : rich(s))
       return (
         <div
+          key={text} // Bearbeiten baut den DOM um (Zeilen, Spans): neuer Text → neu aufbauen statt abgleichen
           {...attrs}
           className="t free-text"
           data-pptx="text" data-slot={slot} data-role="free" data-font={it.font === 'body' ? 'body' : 'head'} data-face={it.font && it.font !== 'head' && it.font !== 'body' ? it.font : undefined}
           data-effect={it.effect && it.effect !== 'none' ? JSON.stringify({ type: it.effect, color: it.effectColor ?? it.color ?? theme.c.text }) : undefined}
+          data-list={it.list}
           contentEditable={edit || undefined}
           suppressContentEditableWarning
-          onBlur={edit ? (e) => onEdit?.(slot, e.currentTarget.innerText.replace(/\n$/, '')) : undefined}
+          // Aufzählung: Zeilen aus den Zeilen-Divs (innerText gäbe für eine leere Zeile <div><br></div> zwei Umbrüche zu viel)
+          onBlur={edit ? (e) => onEdit?.(slot, edited(text, it.list
+            ? [...e.currentTarget.childNodes].map((n) => (n instanceof HTMLElement ? n.innerText : n.textContent ?? '').replace(/\n$/, '')).join('\n')
+            : e.currentTarget.innerText.replace(/\n$/, ''))) : undefined}
           style={{
             ...pos, height: undefined, minHeight: 10, fontFamily: fontCss(it), fontSize: it.size ?? 32, fontWeight: it.bold ? 700 : 400,
             fontStyle: it.italic ? 'italic' : undefined, textDecoration: it.underline ? 'underline' : undefined, color: it.color ?? theme.c.text,
@@ -564,7 +613,8 @@ function FreeItem({ it }: { it: Item }) {
             ...effectCss(it.effect, it.effectColor ?? it.color ?? theme.c.text),
           }}
         >
-          {live && (it.anim === 'typewriter' || it.anim === 'ascend') ? splitParts([it.text ?? ''], it.anim === 'ascend' ? 'word' : 'letter') : it.text ?? ''}
+          {/* Aufzählung: jede Zeile ein Block, Marker per CSS (::before), damit Messung und Export nur den Text sehen */}
+          {it.list ? text.split('\n').map((line, i) => <div key={i} className="dw-li" data-empty={line.trim() ? undefined : ''}>{line.trim() ? body(line) : <br />}</div>) : body(text)}
         </div>
       )
     }
@@ -612,7 +662,7 @@ function FreeItem({ it }: { it: Item }) {
             {...attrs}
             data-pptx="box" data-slot={slot} data-ellipse={shape === 'ellipse' ? '' : undefined}
             style={{
-              ...pos, backgroundColor: fill, backgroundImage: it.fill && it.fill2 ? `linear-gradient(135deg, ${fill}, ${rgba(it.fill2, alpha)})` : undefined,
+              ...pos, backgroundColor: fill, backgroundImage: it.fill && it.fill2 ? `linear-gradient(${it.gradAngle ?? 135}deg, ${fill}, ${rgba(it.fill2, alpha)})` : undefined,
               border: it.stroke && it.strokeW ? `${it.strokeW}px ${it.dash === 'dash' ? 'dashed' : it.dash === 'dot' ? 'dotted' : 'solid'} ${it.stroke}` : undefined,
               borderRadius: shape === 'ellipse' ? '50%' : it.radius, boxShadow: it.shadow ? '0px 12px 32px rgba(0, 0, 0, 0.28)' : undefined,
             }}

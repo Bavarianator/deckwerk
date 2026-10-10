@@ -18,7 +18,7 @@ export interface AnimStep {
   durMs?: number // default 500
   delayMs?: number // default 0
 }
-export interface SlideAnim { transition: keyof typeof TRANSITION; steps: AnimStep[] }
+export interface SlideAnim { transition: keyof typeof TRANSITION; speed?: 'slow' | 'fast'; steps: AnimStep[] } // speed wie AnimSpeed in deck.ts
 
 // slides[i] gehört zu ppt/slides/slide{i+1}.xml
 export async function injectAnimations(pptx: Buffer, slides: SlideAnim[]): Promise<Buffer> {
@@ -35,22 +35,34 @@ export async function injectAnimations(pptx: Buffer, slides: SlideAnim[]): Promi
 const TRANSITION = {
   none: '',
   // Canva Slide und Stapel: waagerecht hereinschieben bzw. überdecken; Farbwischen gibt es in PowerPoint nicht, dort Wischen
-  slide: '<p:transition spd="fast"><p:push dir="l"/></p:transition>',
-  stack: '<p:transition spd="fast"><p:cover dir="l"/></p:transition>',
-  color: '<p:transition spd="fast"><p:wipe dir="r"/></p:transition>',
-  fade: '<p:transition spd="fast"><p:fade/></p:transition>',
-  push: '<p:transition spd="fast"><p:push dir="u"/></p:transition>',
-  // Canva-Übergänge als PowerPoint-2007-Übergänge (laufen in jeder Version, auch LibreOffice); fast = 0,5 s wie Design-Guide §8
-  dissolve: '<p:transition spd="fast"><p:dissolve/></p:transition>',
-  wipe: '<p:transition spd="fast"><p:wipe dir="r"/></p:transition>',
-  cover: '<p:transition spd="fast"><p:cover dir="l"/></p:transition>',
-  split: '<p:transition spd="fast"><p:split orient="vert" dir="out"/></p:transition>',
-  circle: '<p:transition spd="fast"><p:circle/></p:transition>',
-  zoom: '<p:transition spd="fast"><p:zoom/></p:transition>',
-  morph: '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
-    '<mc:Choice xmlns:p159="http://schemas.microsoft.com/office/powerpoint/2015/09/main" Requires="p159">' +
-    '<p:transition spd="slow"><p159:morph option="byObject"/></p:transition></mc:Choice>' +
-    '<mc:Fallback><p:transition spd="slow"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>',
+  slide: '<p:push dir="l"/>',
+  stack: '<p:cover dir="l"/>',
+  color: '<p:wipe dir="r"/>',
+  fade: '<p:fade/>',
+  push: '<p:push dir="u"/>',
+  // Canva-Übergänge als PowerPoint-2007-Übergänge (laufen in jeder Version, auch LibreOffice)
+  dissolve: '<p:dissolve/>',
+  wipe: '<p:wipe dir="r"/>',
+  cover: '<p:cover dir="l"/>',
+  split: '<p:split orient="vert" dir="out"/>',
+  circle: '<p:circle/>',
+  zoom: '<p:zoom/>',
+  morph: '<p159:morph option="byObject"/>',
+}
+const MC = 'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"'
+const P14 = 'xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"'
+const P159 = 'xmlns:p159="http://schemas.microsoft.com/office/powerpoint/2015/09/main"'
+const SPEED = { slow: 1.6, fast: 0.6 } // wie im Präsentieren (PresentScreen SPEED)
+// Normal = fast (0,5 s wie Design-Guide §8), Morph slow (1 s). Mit Tempo: spd als nächste Stufe (fast 0,5 s, med 0,75 s,
+// slow 1 s) und die genaue Dauer als p14:dur (PowerPoint 2010+, daher in mc:AlternateContent mit spd-Fallback)
+function transitionXml(t: keyof typeof TRANSITION, speed?: SlideAnim['speed']): string {
+  if (t === 'none') return ''
+  const ms = Math.round((t === 'morph' ? 1000 : 500) * (speed ? SPEED[speed] : 1))
+  const spd = ms < 625 ? 'fast' : ms < 875 ? 'med' : 'slow'
+  const tr = (fx: string, dur = false) => `<p:transition spd="${spd}"${dur ? ` p14:dur="${ms}"` : ''}>${fx}</p:transition>`
+  const mc = (choice: string, a: string, b: string) => `<mc:AlternateContent ${MC}><mc:Choice ${choice}>${a}</mc:Choice><mc:Fallback>${b}</mc:Fallback></mc:AlternateContent>`
+  if (t === 'morph') return mc(`${P159}${speed ? ` ${P14}` : ''} Requires="p159"`, tr(TRANSITION.morph, !!speed), tr('<p:fade/>'))
+  return speed ? mc(`${P14} Requires="p14"`, tr(TRANSITION[t], true), tr(TRANSITION[t])) : tr(TRANSITION[t])
 }
 // [presetID, presetSubtype] wie in PowerPoints Effektkatalog
 const PRESET: Record<Effect, [number, number]> = {
@@ -136,7 +148,7 @@ function injectSlide(xml: string, anim: SlideAnim, path: string): string {
 
   // Schema-Reihenfolge in p:sld: cSld, clrMapOvr, transition, timing, extLst
   const anchor = xml.includes('</p:clrMapOvr>') ? '</p:clrMapOvr>' : '</p:cSld>'
-  return xml.replace(anchor, () => anchor + TRANSITION[anim.transition] + timing)
+  return xml.replace(anchor, () => anchor + transitionXml(anim.transition, anim.speed) + timing)
 }
 
 // Zeit, die ein Schritt in seiner after-Kette belegt: iterierter Text läuft Wort für Wort nach, Dauerpuls blockiert nichts

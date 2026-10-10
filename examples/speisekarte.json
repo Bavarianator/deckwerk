@@ -1,0 +1,63 @@
+{
+ "title": "Speisekarte",
+ "size": { "w": 794, "h": 1123 },
+ "theme": { "id": "redaktion" },
+ "slides": [
+  { "id": "speisen", "layout": "menu", "variant": "two",
+   "content": {
+    "eyebrow": "Gasthaus am Markt · Herbst",
+    "title": "Speisekarte",
+    "intro": "Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen. Fragen Sie nach dem Tagesgericht.",
+    "sections": [
+     { "heading": "Vorspeisen", "items": [
+      { "name": "Kürbissuppe", "text": "Hokkaido, Ingwer, geröstete Kerne", "price": "7,50", "tag": "vegan" },
+      { "name": "Feldsalat", "text": "Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing", "price": "9,80", "tag": "G, H" },
+      { "name": "Rote Bete", "text": "Im Ofen gegart, mit Meerrettich-Schmand und Brot", "price": "8,50", "tag": "A, G" }
+     ] },
+     { "heading": "Hauptgerichte", "items": [
+      { "name": "Rinderroulade", "text": "Rotkohl, Kartoffelklöße, Schmorsauce", "price": "21,50", "tag": "A, I" },
+      { "name": "Saibling", "text": "Aus dem Fichtelgebirge, Petersilienkartoffeln, Rahmspinat", "price": "23,00", "tag": "D, G" },
+      { "name": "Schweinebraten", "text": "Dunkelbiersauce, Semmelknödel, Krautsalat", "price": "18,50", "tag": "A, C, I" },
+      { "name": "Linsen-Eintopf", "text": "Wurzelgemüse, Thymian, Brot vom Bäcker nebenan", "price": "13,50", "tag": "vegan" }
+     ] },
+     { "heading": "Für Kinder", "items": [
+      { "name": "Kleine Roulade", "text": "Mit Kartoffelpüree und Sauce", "price": "9,50", "tag": "G, I" },
+      { "name": "Nudeln mit Tomatensauce", "price": "7,00", "tag": "A" }
+     ] },
+     { "heading": "Nachspeisen", "items": [
+      { "name": "Zwetschgendatschi", "text": "Mit geschlagener Sahne", "price": "5,50", "tag": "A, C, G" },
+      { "name": "Apfelkücherl", "text": "Zimtzucker, Vanilleeis", "price": "7,50", "tag": "A, C, G" },
+      { "name": "Käse aus der Region", "text": "Drei Sorten, Feigensenf, Brot", "price": "11,00", "tag": "A, G, J" }
+     ] }
+    ],
+    "note": "Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie, J Senf. Alle Preise in Euro inkl. MwSt."
+   } },
+  { "id": "getraenke", "layout": "menu", "variant": "one",
+   "content": {
+    "eyebrow": "Gasthaus am Markt",
+    "title": "Getränke",
+    "sections": [
+     { "heading": "Ohne Alkohol", "items": [
+      { "name": "Apfelschorle", "text": "Saft vom Obsthof, 0,4 l", "price": "4,20" },
+      { "name": "Hausgemachte Limonade", "text": "Zitrone und Minze, 0,4 l", "price": "4,80" },
+      { "name": "Mineralwasser", "text": "Still oder sprudelnd, 0,75 l", "price": "6,50" }
+     ] },
+     { "heading": "Bier", "items": [
+      { "name": "Helles vom Fass", "text": "0,5 l", "price": "4,60" },
+      { "name": "Dunkles", "text": "0,5 l", "price": "4,80" },
+      { "name": "Alkoholfreies Weißbier", "text": "0,5 l", "price": "4,60" }
+     ] },
+     { "heading": "Wein", "items": [
+      { "name": "Silvaner trocken", "text": "Franken, 0,2 l", "price": "6,50" },
+      { "name": "Spätburgunder", "text": "Baden, 0,2 l", "price": "7,20" }
+     ] },
+     { "heading": "Heißgetränke", "items": [
+      { "name": "Kaffee", "price": "3,20" },
+      { "name": "Cappuccino", "price": "3,90", "tag": "G" },
+      { "name": "Tee", "text": "Pfefferminze, Kamille oder Schwarztee", "price": "3,40" }
+     ] }
+    ],
+    "note": "G Milch. Alle Preise in Euro inkl. MwSt."
+   } }
+ ]
+}

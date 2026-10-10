@@ -6,7 +6,8 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
 import { webpSize } from './tools'
-import { MEDIA_EXT, morphKey, morphNames, sizeOf, transitionOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
+import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, transitionSpeedOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type FontFiles, type ImgEl, type Measured, type Run, type TextEl } from '../shared/deck'
+import { fontInfo } from '../shared/font-catalog'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
 import { localAsset } from './sync'
@@ -100,14 +101,36 @@ const lineOf = (el: BoxEl): PptxGenJS.ShapeLineProps =>
     ? { color: hex(el.border.color), width: PT(el.border.width), dashType: el.dash ? DASH[el.dash] : undefined, beginArrowType: el.lineStart ? ARROW[el.lineStart] : undefined, endArrowType: el.lineEnd ? ARROW[el.lineEnd] : undefined }
     : { type: 'none' }
 
+// Aufzählung: Marker je Lauf, weil PptxGenJS die Absatz-Eigenschaften je Lauf schreibt; leere Absätze ohne Marker
+export function listBullets(runs: Run[], list: NonNullable<TextEl['list']>): PptxGenJS.TextPropsOptions['bullet'][] {
+  const paras: Run[][] = [[]]
+  runs.forEach((r, i) => { paras[paras.length - 1].push(r); if (r.breakAfter && i < runs.length - 1) paras.push([]) })
+  const b = list.type === 'number' ? { type: 'number' as const, indent: PT(list.indentPx) } : { indent: PT(list.indentPx) }
+  return paras.flatMap((p) => p.map(() => (p.some((r) => r.text.trim()) ? b : undefined)))
+}
+
+// Aufzählung im XML: Marker in der Schrift des Textes wie in der App (PptxGenJS setzt für Nummern +mj-lt = Titelschrift).
+// Nummern: LibreOffice beginnt bei jedem startAt neu, PptxGenJS schreibt es an jeden Absatz. Nur der erste Absatz eines
+// Blocks behält es; nach einer Leerzeile (buNone) zählt auch PowerPoint wieder ab 1 – wie die App (slide.css).
+export const listXml = (sp: string) => {
+  let prev = false
+  return sp.replace(/<a:buFont typeface="\+mj-lt"\/>/g, '<a:buFontTx/>').replace(/<a:buChar\b/g, '<a:buFontTx/><a:buChar').replace(/<a:p>[\s\S]*?<\/a:p>/g, (p) => {
+    const num = p.includes('<a:buAutoNum')
+    const out = num && prev ? p.replace(/(<a:buAutoNum\b[^>]*?) startAt="\d+"/g, '$1') : p
+    prev = num
+    return out
+  })
+}
+
 function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: string) {
   const b = el.box
   switch (el.kind) {
     case 'text': {
       const extra = b.w * WRAP_SLACK
       const x = el.align === 'center' ? b.x - extra / 2 : el.align === 'right' ? b.x - extra : b.x
+      const bullets = el.list ? listBullets(el.runs, el.list) : []
       slide.addText(
-        el.runs.map((r) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined,
+        el.runs.map((r, i) => ({ text: el.upper ? r.text.toUpperCase() : r.text, options: { bold: r.bold, italic: r.italic, underline: r.underline ? { style: 'sng' as const } : undefined, color: hex(r.color), breakLine: r.breakAfter, hyperlink: r.link ? { url: r.link } : undefined, bullet: bullets[i],
           // eigene Größe (Einheit); Laufweite 0 als 0.001, weil PptxGenJS falsy Werte vom Feld erbt (dessen Laufweite ist negativ)
           ...(r.sizePx && { fontSize: PT(r.sizePx), charSpacing: PT(r.trackingPx ?? 0) || 0.001 }) } })),
         {
@@ -135,15 +158,16 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
     case 'img': {
       const path = assetPath(el.src)
       if (!path && !el.src.startsWith('data:')) break
+      // altText nie leer: PptxGenJS schriebe sonst den lokalen Pfad (Login-Name, Ordner, Dateiname) als Alternativtext in die Datei
       if (el.fit === 'contain' && path) {
         const r = containRect(el, path)
-        slide.addImage({ path, x: IN(r.x), y: IN(r.y), w: IN(r.w), h: IN(r.h), objectName: name, rotate: el.rot, flipH: el.flip })
+        slide.addImage({ path, x: IN(r.x), y: IN(r.y), w: IN(r.w), h: IN(r.h), objectName: name, rotate: el.rot, flipH: el.flip, altText: ' ' })
       } else {
         // Cover: auf volle Bildgröße skalieren und per srcRect nach focus zuschneiden (nicht strecken). Ersetzbar über „Bild ändern“.
         const { width: iw, height: ih } = path ? imageSize(path) : { width: 0, height: 0 }
         const k = iw && ih ? Math.max(b.w / iw, b.h / ih) : 0
         const src = path ? { path } : { data: el.src.slice(5) }
-        const extra = { rotate: el.rot, flipH: el.flip, rounding: el.round, transparency: el.alpha !== undefined ? Math.round((1 - el.alpha) * 100) : undefined, objectName: name }
+        const extra = { rotate: el.rot, flipH: el.flip, rounding: el.round, transparency: el.alpha !== undefined ? Math.round((1 - el.alpha) * 100) : undefined, objectName: name, altText: ' ' }
         if (el.crop && iw) { // freier Zuschnitt: volles Bild so groß, dass der Ausschnitt die Box füllt
           const W = b.w / el.crop.w, H = b.h / el.crop.h
           slide.addImage({ ...src, ...extra, x: IN(b.x), y: IN(b.y), w: IN(W), h: IN(H), sizing: { type: 'crop', x: IN(el.crop.x * W), y: IN(el.crop.y * H), w: IN(b.w), h: IN(b.h) } })
@@ -233,7 +257,8 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
     const groups = new Map<number, string[]>()
     const pulses: AnimStep[] = []
     const photos: string[] = []
-    const itemSteps: AnimStep[] = [] // freie Elemente: je eins pro Klick (Selbstlauf: nacheinander) nach dem Layout-Aufbau
+    const itemSteps: AnimStep[] = [] // freie Elemente nach dem Layout-Aufbau: Start und Verzögerung je Element (animStartOf)
+    const itemOf = new Map((s.items ?? []).map((it) => [`items.${it.id}`, it])) // Slot freier Elemente (slide.tsx FreeItem)
     const used = new Set<string>()
     const ts = withTone(t, s.tone ?? LAYOUTS[s.layout as keyof typeof LAYOUTS]?.tone) // Chart-Farben der Folie
     // Morph in PowerPoint ordnet Formen mit gleichem „!!“-Namen einander zu – dieselbe Zuordnung wie in der App (morphNames)
@@ -249,6 +274,7 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
       addEl(pptx, slide, el, ts, name)
       if (el.kind === 'box' && el.gradient) patches.push({ slide: i + 1, name, fn: gradFill(el.gradient) })
       if (el.kind === 'text' && el.effect) patches.push({ slide: i + 1, name, fn: textEffect(el.effect, el.sizePx) })
+      if (el.kind === 'text' && el.list) patches.push({ slide: i + 1, name, fn: listXml })
       if (el.kind === 'img' && el.mask) patches.push({ slide: i + 1, name, fn: maskShape(el.mask) })
       else if (el.kind === 'img' && el.fit === 'cover' && !el.round && el.radius > 0.5) patches.push({ slide: i + 1, name, fn: roundRect(el.radius, el.box.w, el.box.h) })
       if (el.kind === 'img' && el.adjust) patches.push({ slide: i + 1, name, fn: adjustBlip(el.adjust) })
@@ -258,25 +284,29 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
       // Canva-Foto-Zoom: randlose (under) und halbseitige Fotos (volle Höhe) vergrößern sich langsam ab Folienbeginn
       if (el.kind === 'img' && (el.under || (el.box.y <= 1 && el.box.y + el.box.h >= sizeOf(deck).h - 1))) photos.push(name)
       if (el.anim && el.anim !== 'none') {
-        const fx = ITEM_FX[el.anim], f = el.animSpeed === 'slow' ? 1.6 : el.animSpeed === 'fast' ? 0.6 : 1
-        const step: AnimStep = { shape: name, ...fx, durMs: Math.round((fx.durMs ?? 500) * f), dir: el.animDir, gapMs: fx.by ? Math.round((fx.by === 'word' ? 120 : 45) * f) : undefined, trigger: deck.mode === 'click' ? 'click' : 'after' }
-        if (el.anim === 'breathe') pulses.push({ ...step, trigger: 'with' }) // läuft ab Folienbeginn, ohne Klick
+        const fx = ITEM_FX[el.anim], f = el.animSpeed === 'slow' ? 1.6 : el.animSpeed === 'fast' ? 0.6 : 1, it = itemOf.get(el.slot)
+        const step: AnimStep = { shape: name, ...fx, durMs: Math.round((fx.durMs ?? 500) * f), dir: el.animDir, gapMs: fx.by ? Math.round((fx.by === 'word' ? 120 : 45) * f) : undefined, trigger: animStartOf(it?.animStart, deck.mode), delayMs: Math.round((it?.animDelay ?? 0) * 1000) }
+        if (el.anim === 'breathe') pulses.push({ ...step, trigger: 'with', delayMs: 0 }) // läuft ab Folienbeginn, ohne Klick
         else itemSteps.push(step)
       }
     }
     if (s.notes) slide.addNotes(s.notes)
     const preset = buildOf(deck, i)
     if (preset === 'photo') pulses.push(...photos.map((shape): AnimStep => ({ shape, effect: 'grow', trigger: 'with', durMs: 12000 })))
-    anims.push({ transition: transitionOf(deck, i), steps: [...pulses, ...stepsFor(preset, groups, deck.mode), ...itemSteps] })
+    anims.push({ transition: transitionOf(deck, i), speed: transitionSpeedOf(deck, i), steps: [...pulses, ...stepsFor(preset, groups, deck.mode), ...itemSteps] })
   })
   const buf = await patchShapes((await pptx.write({ outputType: 'nodebuffer' })) as Buffer, patches)
   return embedFonts(await postProcess(await injectAnimations(buf, anims), deck), fontsOf(deck))
 }
 
-// Einzubettende Schriften eines Decks: Theme (Titel, Text, Mono) und freie Elemente mit eigener Schrift (auch für Word)
+// Einzubettende Schriften eines Decks: Theme (Titel, Text, Mono) und freie Elemente mit eigener Schrift (auch für Word).
+// Katalogfamilien freier Texte nur, wenn withDeckFonts sie geladen hat (ThemeRef.fontFiles); sonst steht dort der Ersatz.
 export function fontsOf(deck: Deck): EmbedFont[] {
   const t = resolveTheme(deck.theme)
-  const free = deck.slides.flatMap((s) => s.items ?? []).flatMap((it) => (it.font && it.font in FONTS ? [FONTS[it.font as FontName]] : []))
+  const free = deck.slides.flatMap((s) => s.items ?? []).flatMap((it): FontRef[] => {
+    const files = it.font ? deck.theme.fontFiles?.[it.font] : undefined
+    return !it.font ? [] : it.font in FONTS ? [FONTS[it.font as FontName]] : files ? [{ css: it.font, pptx: it.font, files, serif: /serif|slab/.test(fontInfo(it.font)?.cat ?? '') }] : []
+  })
   return embedList([t.head, t.body, ...(t.mono ? [t.mono] : []), ...free])
 }
 
@@ -286,9 +316,9 @@ function embedList(fonts: FontRef[]): EmbedFont[] {
   for (const f of fonts) {
     if ((!f.embed && !f.files) || out.has(f.pptx)) continue
     const file = (url?: string) => { const p = url && assetPath(url); return p && existsSync(p) ? readFileSync(p) : undefined }
-    if (f.files) { // eigene Schrift des Nutzers
-      const regular = file(f.files.regular)
-      if (regular) out.set(f.pptx, { family: f.pptx, regular, bold: file(f.files.bold), serif: f.serif })
+    if (f.files) { // eigene Schrift des Nutzers oder Katalogschrift (ThemeRef.fontFiles, mit Kursiven)
+      const fl: FontFiles = f.files, regular = file(fl.regular)
+      if (regular) out.set(f.pptx, { family: f.pptx, regular, bold: file(fl.bold), italic: file(fl.italic), boldItalic: file(fl.boldItalic), serif: f.serif })
       continue
     }
     const face = (name: string) => { const p = join(app.getAppPath(), 'assets/fonts', `${f.embed}-${name}.ttf`); return existsSync(p) ? readFileSync(p) : undefined }

@@ -114,7 +114,7 @@ export const clip: { items: Item[]; style: Partial<Item> | null } = { items: [],
 
 // „Stil übertragen“: Aussehen ohne Inhalt und Position
 const STYLE_KEYS = ['font', 'size', 'color', 'bold', 'italic', 'underline', 'upper', 'align', 'lineHeight', 'spacing', 'effect', 'effectColor',
-  'fill', 'fill2', 'stroke', 'strokeW', 'dash', 'radius', 'shadow', 'opacity', 'look', 'mask', 'adjust'] as const satisfies readonly (keyof Item)[]
+  'fill', 'fill2', 'gradAngle', 'stroke', 'strokeW', 'dash', 'radius', 'shadow', 'opacity', 'look', 'mask', 'adjust'] as const satisfies readonly (keyof Item)[]
 export const copyStyle = (it: Item) => { clip.style = Object.fromEntries(STYLE_KEYS.filter((k) => it[k] !== undefined).map((k) => [k, it[k]])) }
 export const pasteStyle = (items: Item[], ids: string[]): Item[] => {
   const s = clip.style

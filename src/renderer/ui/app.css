@@ -160,7 +160,7 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .present-stage { position: relative; overflow: hidden; }
 .present-layer { position: absolute; inset: 0; }
 /* Morph (PresentScreen.nameSlots): gleiche Elemente wandern an ihren neuen Platz, ruhiger als die übrigen Übergänge */
-::view-transition-group(*) { animation-duration: 0.7s; animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
+::view-transition-group(*) { animation-duration: var(--dw-morph, 0.7s); animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: 0.01s; } }
 /* Text: natürliche Größe statt auf die Boxbreite gestreckt, wächst um --dw-r (Schriftgröße neu/alt, gesetzt in nameSlots) */
 ::view-transition-old(.dw-text), ::view-transition-new(.dw-text) { inline-size: auto; block-size: auto; transform-origin: 0 0; animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
@@ -308,3 +308,22 @@ textarea.mono { font-family: ui-monospace, monospace; font-size: 12px; }
 .keys-cols dt { color: var(--text); }
 .keys-cols dd { margin: 0; color: var(--muted); }
 .keys-cols kbd { font: inherit; font-size: 11.5px; font-weight: 600; }
+
+/* ---------- Andere Gestaltung (SlideLooks) ---------- */
+.slide-looks { display: grid; gap: 8px; margin-bottom: 10px; }
+.slide-looks-title { font-size: 12px; color: var(--muted); }
+.slide-looks-grid { display: grid; grid-template-columns: repeat(2, 118px); justify-content: space-between; gap: 8px; }
+.slide-looks-item { padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); overflow: hidden; line-height: 0; }
+.slide-looks-item:not(:disabled) { cursor: pointer; }
+.slide-looks-item:hover:not(:disabled), .slide-looks-item:focus-visible { border-color: var(--accent); outline: none; }
+.slide-looks-thumb { display: block; pointer-events: none; }
+
+/* ---------- Bildfilter und Verlaufsrichtung (ItemInspector, Hintergrund im Inspector) ---------- */
+.img-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.img-presets-item { display: grid; align-content: start; min-width: 0; gap: 3px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: 11px; line-height: 1.2; text-align: center; cursor: pointer; }
+.img-presets-pic { position: relative; display: block; aspect-ratio: 1; border-radius: 6px; overflow: hidden; isolation: isolate; box-shadow: inset 0 0 0 1px var(--border); }
+.img-presets-pic > span { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.img-presets-item:hover .img-presets-pic, .img-presets-item:focus-visible .img-presets-pic { outline: 1px solid var(--border-strong); outline-offset: 1px; }
+.img-presets-item[aria-pressed='true'] { color: var(--text); font-weight: 600; }
+.img-presets-item[aria-pressed='true'] .img-presets-pic { outline: 2px solid var(--accent); outline-offset: 1px; }
+.seg.grad-dirs { justify-self: start; margin-left: 0; }

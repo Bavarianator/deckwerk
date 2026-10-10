@@ -48,8 +48,10 @@ const older = (home: string, rel: string) => utimesSync(join(home, rel), new Dat
 
 // 1) PC lädt hoch (Versionen bleiben lokal), Handy lädt herunter
 put(A, 'pitch/deck.json', '{"v":1}'); put(A, 'pitch/versions/alt.json', 'x'); put(A, 'assets/foto.png', 'PNG'); put(A, '.setup-done', '')
+put(A, 'fonts/Newsreader/Newsreader-Regular.ttf', 'TTF') // Schrift-Cache lädt jedes Gerät selbst
 eq(await sync(A, s), { up: 2, down: 0, deleted: 0, conflicts: 0, changed: [] })
 ok(!files.has('/remote.php/dav/files/anna/Deckwerk/pitch/versions/alt.json'))
+ok(![...files.keys()].some((f) => f.includes('/fonts/')))
 eq((await sync(B, s)).changed.sort(), [join(B, "assets/foto.png"), join(B, "pitch/deck.json")])
 eq(get(B, 'pitch/deck.json'), '{"v":1}')
 eq(await sync(A, s), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] }) // ETag-Fallback für foto.png greift
@@ -132,6 +134,20 @@ const foreign: typeof fetch = async (u, i) => {
 }
 await sync(A, s, foreign).then(() => ok(false, 'fremde hrefs angenommen'), (e) => ok(/passt nicht/.test(e.message), e.message))
 ok(existsSync(join(A, 'pitch/deck.json')))
+
+// 3d) bösartiger Server: `\` im Namen (%5C) wäre unter Windows ein Ordnertrenner → x\..\..\Autostart; nie herunterladen
+let untergeschoben = false, geholt = 0
+const boese: typeof fetch = async (u, i) => {
+  if (i?.method === 'GET' && String(u).includes('%5C')) { geholt++; return new Response('BOOM') }
+  const r = await fetch(u, i)
+  if (i?.method !== 'PROPFIND' || !String(u).endsWith('/Deckwerk/')) return r
+  untergeschoben = true
+  const evil = `<d:response><d:href>/remote.php/dav/files/anna/Deckwerk/x%5C..%5C..%5Cevil.cmd</d:href><d:propstat><d:prop><d:getetag>"e1"</d:getetag><d:getcontentlength>4</d:getcontentlength><d:getlastmodified>${new Date().toUTCString()}</d:getlastmodified><d:resourcetype/></d:prop></d:propstat></d:response>`
+  return new Response((await r.text()).replace('</d:multistatus>', `${evil}</d:multistatus>`), { status: r.status })
+}
+await sync(A, s, boese)
+ok(untergeschoben && geholt === 0, `heruntergeladen: ${geholt}`)
+ok(!readdirSync(A).some((f) => f.includes('\\')))
 
 // 4) Löschen wandert mit
 rmSync(join(B, 'assets/foto.png'))

@@ -552,6 +552,37 @@ function Logos({ c }: Props<'logos'>) {
   )
 }
 
+// Bewerbung – Deckblatt: zwei Pole wie in einer gedruckten Mappe. Oben Stelle und Unternehmen, unten Foto, Name und Kontakt,
+// rechts daneben der Inhalt der Mappe als Liste mit Haarlinien (Linien an Hüllen ohne data-pptx, sonst fehlen sie im Hintergrundbild).
+function ApplicationCover({ c }: Props<'application-cover'>) {
+  const img = photoOf(c.photo)
+  const toc = c.contents ?? []
+  return (
+    <Frame safeClass="bw-safe">
+      <div className="bw">
+        <div className="bw-head">
+          {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="bw-eyebrow">{c.eyebrow}</T>}
+          <T role="display" slot="title" maxLines={3} className="bw-title">{c.title}</T>
+          {c.org && <T role="body" slot="org" maxLines={2} className="bw-org">{c.org}</T>}
+        </div>
+        <div className={`bw-foot ${toc.length ? 'with-toc' : ''}`}>
+          <div className="bw-person">
+            {img && <div className="bw-photo">{img.src ? <Img {...img} slot="photo" build={0} /> : <div className="placeholder" />}</div>}
+            <T role="h1" slot="name" maxLines={2} className="bw-name" build={0}>{c.name}</T>
+            {c.contact?.map((x, i) => <T key={i} role="label" slot={`contact.${i}`} className="bw-contact" build={0}>{x}</T>)}
+          </div>
+          {toc.length > 0 && (
+            <div className="bw-toc">
+              <T role="eyebrow" slot="_toc.label" className="bw-toc-label" build={1}>Inhalt</T>
+              {toc.map((x, i) => <div className="bw-toc-row" key={i}><T role="body" slot={`contents.${i}`} build={1}>{x}</T></div>)}
+            </div>
+          )}
+        </div>
+      </div>
+    </Frame>
+  )
+}
+
 // Videoclip: Standbild am Start des ersten Ausschnitts, Hook darüber. Keine Wiedergabe (v1); MP4 baut export-video.ts.
 // Standbild per asset://…?frame=<s> (ffmpeg, index.ts) als CSS-Hintergrund, kein <video>: im Offscreen-Fenster hängt das Spulen. Ohne data-pptx landet es im Hintergrund-PNG statt als Video im PPTX.
 function Clip({ c }: Props<'clip'>) {
@@ -576,8 +607,272 @@ function Clip({ c }: Props<'clip'>) {
   )
 }
 
+// Urkunde (A4 quer): Art und Titel oben, Empfänger als Held darunter, Ort/Datum und Unterschriftsfelder unten in einem Spaltenraster.
+// Würde über Satzspiegel, Größe und Weißraum statt Zierrahmen oder Siegel; die einzigen Linien sind die zum Unterschreiben.
+function Certificate({ c }: Props<'certificate'>) {
+  const { theme } = useSlide()
+  const signers = c.signers ?? []
+  return (
+    <Frame safeClass="ur-safe">
+      {theme.logo && <Img src={theme.logo} slot="_logo" className="ur-logo" contain />}
+      <div className="ur-head">
+        {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="ur-eyebrow">{c.eyebrow}</T>}
+        <T role="h1" slot="title" maxLines={2} className="ur-title">{c.title}</T>
+      </div>
+      <div className="ur-main">
+        <T role="display" slot="recipient" maxLines={2} className="ur-name" build={0}>{c.recipient}</T>
+        {c.text && <T role="body" slot="text" className="ur-text" build={0}>{c.text}</T>}
+      </div>
+      {(c.date || signers.length > 0) && (
+        <div className="ur-foot">
+          {c.date && <T role="body" slot="date" className="ur-date" build={1}>{c.date}</T>}
+          {signers.map((s, i) => (
+            <div className="ur-sign" key={i}>
+              {s.name && <T role="body" slot={`signers.${i}.name`} className="ur-signer" build={1}>{s.name}</T>}
+              <T role="body" slot={`signers.${i}.role`} className="muted" build={1}>{s.role}</T>
+            </div>
+          ))}
+        </div>
+      )}
+    </Frame>
+  )
+}
+
+// Einladung: zwei Pole wie der Flyer – Anlass, Titel, Text und Absender oben, Eckdaten und Antwort unten; mit Foto steht es oben.
+function Invitation({ c }: Props<'invitation'>) {
+  const { theme } = useSlide()
+  const img = photoOf(c.image)
+  const n = c.facts.length
+  return (
+    <Frame media={img && (
+      <div className="inv-media">{img.src ? <Img {...img} slot="image" /> : <div className="placeholder" />}</div>
+    )} safeClass={`inv-safe ${img ? 'inv-below' : ''}`}>
+      <div className={`inv ${img ? '' : 'inv-type'}`}>
+        <div className="inv-head">
+          {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="inv-eyebrow">{c.eyebrow}</T>}
+          <T role="display" slot="title" maxLines={img ? 3 : 4} className="inv-title">{c.title}</T>
+          {c.text && <T role="body" slot="text" className="inv-text">{c.text}</T>}
+          {c.host && <T role="body" slot="host" className="inv-host">{c.host}</T>}
+        </div>
+        <div className="inv-end">
+          <div className="inv-facts">
+            {c.facts.map((f, i) => (
+              <div className="inv-fact" key={i}>
+                <T role="label" slot={`facts.${i}.label`} build={i} className="inv-label">{f.label}</T>
+                <T role="h3" slot={`facts.${i}.value`} build={i} className="inv-value">{f.value}</T>
+              </div>
+            ))}
+          </div>
+          {(c.rsvp || c.qr || theme.logo) && (
+            <div className="inv-foot">
+              {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="inv-qr" build={n} />}
+              {c.rsvp && <T role="h2" slot="rsvp" maxLines={3} className="inv-rsvp" build={n}>{c.rsvp}</T>}
+              {theme.logo && <Img src={theme.logo} slot="_logo" className="inv-logo" contain />}
+            </div>
+          )}
+        </div>
+      </div>
+    </Frame>
+  )
+}
+
+// Brief nach DIN 5008 Form B: alle Felder in mm an fester Stelle (Anschriftfeld im Umschlagfenster), das Autofit verkleinert nur die Schrift.
+// Falz- und Lochmarken landen im Hintergrundbild.
+function Letter({ c }: Props<'letter'>) {
+  const { theme } = useSlide()
+  // Absätze mit Leerzeile; das geschützte Leerzeichen hält sie auch in PPTX und Word (leere Zeilen fallen beim Messen weg)
+  const body = c.body.split('\n').map((s) => s.trim()).filter(Boolean).join('\n\u00A0\n')
+  return (
+    <Frame safeClass="bf-safe">
+      <div className="bf-marks" />
+      <div className="bf-head">
+        <T role="h1" slot="sender" maxLines={2} className="bf-sender">{c.sender}</T>
+        {theme.logo && <Img src={theme.logo} slot="_logo" className="bf-logo" contain />}
+      </div>
+      <div className="bf-window">
+        <div className="bf-note">{c.senderLine && <T role="small" slot="senderLine" maxLines={1}>{c.senderLine}</T>}</div>
+        <div className="bf-to" data-fit data-slot="_to"><T role="body" slot="to" className="bf-addr">{c.to}</T></div>
+      </div>
+      {!!c.info?.length && (
+        <div className="bf-info" data-fit data-slot="_info">
+          {c.info.map((r, i) => (
+            <div className="bf-row" key={i}>
+              <T role="label" slot={`info.${i}.label`} className="muted">{r.label}</T>
+              <T role="label" slot={`info.${i}.value`}>{r.value}</T>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="bf-text">
+        <div className="bf-main" data-fit data-slot="_body">
+          <T role="body" slot="subject" className="bf-bold">{c.subject}</T>
+          {c.salutation && <T role="body" slot="salutation" className="bf-gap">{c.salutation}</T>}
+          <T role="body" slot="body" className="bf-gap">{body}</T>
+          {c.closing && <T role="body" slot="closing" className="bf-gap">{c.closing}</T>}
+          {c.signature && <T role="body" slot="signature" className="bf-sign">{c.signature}</T>}
+          {!!c.enclosures?.length && <T role="body" slot="_enc" className="bf-gap bf-bold">Anlagen</T>}
+          {c.enclosures?.map((x, i) => <T key={i} role="body" slot={`enclosures.${i}`}>{x}</T>)}
+        </div>
+        {!!c.footer?.length && <div className="bf-foot">{c.footer.map((f, i) => <T key={i} role="small" slot={`footer.${i}`}>{f}</T>)}</div>}
+      </div>
+    </Frame>
+  )
+}
+
+// Visitenkarte: front = Name und Funktion oben, Organisation und Kontakt unten; back = Logo, sonst Organisation (oder Name) groß, unten claim und QR-Code.
+// Auf der Karte stehen alle Rollen außer display bei 12 px: Hierarchie über Rolle, Gewicht und Farbe.
+function BusinessCard({ c, v }: Props<'business-card'>) {
+  const { theme } = useSlide()
+  if (v === 'back') return (
+    <Frame safeClass="vk-safe">
+      <div className="vk">
+        {theme.logo ? <Img src={theme.logo} slot="_logo" className="vk-mark" contain focus={{ x: 0, y: 0 }} />
+          : <T role="display" slot={c.org ? 'org' : 'name'} maxLines={2} className="vk-name">{c.org ?? c.name}</T>}
+        {(c.claim || c.qr) && (
+          <div className="vk-foot">
+            {c.claim ? <T role="body" slot="claim" className="vk-claim">{c.claim}</T> : <div />}
+            {c.qr && <QrCode text={c.qr} slot="_qr" color="#000000" bg="#FFFFFF" className="vk-qr" />}
+          </div>
+        )}
+      </div>
+    </Frame>
+  )
+  return (
+    <Frame safeClass="vk-safe">
+      <div className="vk">
+        <div className="vk-top">
+          <div className="vk-who">
+            <T role="display" slot="name" maxLines={2} className="vk-name">{c.name}</T>
+            {c.role && <T role="label" slot="role" className="vk-role">{c.role}</T>}
+          </div>
+          {theme.logo && <Img src={theme.logo} slot="_logo" className="vk-logo" contain focus={{ x: 1, y: 0 }} />}
+        </div>
+        {(c.org || !!c.lines?.length) && (
+          <div className="vk-contact">
+            {c.org && <T role="label" slot="org" className="vk-org">{c.org}</T>}
+            {c.lines?.map((x, i) => <T key={i} role="label" slot={`lines.${i}`}>{x}</T>)}
+          </div>
+        )}
+      </div>
+    </Frame>
+  )
+}
+
+// Lebenslauf (A4 hoch): side = schmale Seitenspalte (Foto, Kontakt, Kenntnisse) neben Name und Stationen,
+// plain = tabellarisch (Zeitraum in schmaler Spalte links, Foto rechts neben dem Namen). Kenntnisse nur als Text, Abschnitte über Haarlinien.
+function Cv({ c, v }: Props<'cv'>) {
+  const table = v === 'plain'
+  const img = photoOf(c.image)
+  const skills = c.skills ?? []
+  const pic = img && <div className="cv-photo">{img.src ? <Img {...img} slot="image" /> : <div className="placeholder" />}</div>
+  const contact = !!c.contact?.length && <div className="cv-contact">{c.contact.map((x, i) => <T key={i} role="label" slot={`contact.${i}`}>{x}</T>)}</div>
+  // Zeile mit Schlüsselspalte (Zeitraum bzw. Bezeichnung der Kenntnis); die Spalten setzt das CSS je Variante
+  const skillRows = skills.map((k, i) => (
+    <div className="cv-entry" key={i}>
+      <T role="label" slot={`skills.${i}.label`} build={c.sections.length} className="cv-key">{k.label}</T>
+      <T role="label" slot={`skills.${i}.text`} build={c.sections.length}>{k.text}</T>
+    </div>
+  ))
+  const head = (
+    <div className="cv-head">
+      <T role="h1" slot="name" maxLines={2} className="cv-name">{c.name}</T>
+      {c.role && <T role="body" slot="role" className="cv-role">{c.role}</T>}
+      {table && contact}
+    </div>
+  )
+  const body = (
+    <>
+      {c.profile && <T role="body" slot="profile" className="cv-profile">{c.profile}</T>}
+      {c.sections.map((s, i) => (
+        <div className="cv-sec" key={i}>
+          <T role="eyebrow" slot={`sections.${i}.heading`} build={i} className="cv-heading">{s.heading}</T>
+          {s.entries.map((e, j) => {
+            const p = `sections.${i}.entries.${j}`
+            return (
+              <div className="cv-entry" key={j}>
+                <T role="label" slot={`${p}.period`} build={i} className="cv-key">{e.period}</T>
+                <div className="cv-what">
+                  <T role="h3" slot={`${p}.title`} build={i} className="cv-title">{e.title}</T>
+                  {e.place && <T role="label" slot={`${p}.place`} build={i} className="muted">{e.place}</T>}
+                  {e.text && <T role="label" slot={`${p}.text`} build={i}>{e.text}</T>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </>
+  )
+  const signed = c.signed && <T role="label" slot="signed" build={c.sections.length} className="muted cv-signed">{c.signed}</T>
+  if (table) return (
+    <Frame safeClass="cv-safe">
+      <div className="cv cv-table" data-fit data-slot="sections">
+        <div className="cv-top">{head}{pic}</div>
+        {body}
+        {skills.length > 0 && (
+          <div className="cv-sec">
+            <T role="eyebrow" slot="_skills" build={c.sections.length} className="cv-heading">Kenntnisse</T>
+            {skillRows}
+          </div>
+        )}
+        {signed}
+      </div>
+    </Frame>
+  )
+  const aside = (pic || contact || skills.length > 0) && (
+    <div className="cv-aside" data-fit data-slot="_aside">
+      {pic}
+      {contact}
+      {skillRows}
+    </div>
+  )
+  return (
+    <Frame safeClass="cv-safe">
+      <div className={`cv cv-sidebar ${aside ? '' : 'cv-solo'}`}>
+        {aside}
+        <div className="cv-main" data-fit data-slot="sections">{head}{body}{signed}</div>
+      </div>
+    </Frame>
+  )
+}
+
+// Speisekarte: Name und Preis auf einer Zeile, Zutaten darunter, Abschnitte mit Haarlinie. two = CSS-Spalten, die Abschnitte fließen
+// in Lesereihenfolge; die Spalten wachsen mit dem Inhalt (ausgeglichen statt fester Höhe), damit der Autofit den Überlauf sieht.
+function Menu({ c, v }: Props<'menu'>) {
+  return (
+    <Frame>
+      <div className="sk-head">
+        {c.eyebrow && <T role="eyebrow" slot="eyebrow" className="sk-eyebrow">{c.eyebrow}</T>}
+        <T role="h1" slot="title" maxLines={2} className="sk-title">{c.title}</T>
+        {c.intro && <T role="body" slot="intro" className="sk-intro">{c.intro}</T>}
+      </div>
+      <div className="sk" data-fit data-slot="sections">
+        <div className={`sk-cols ${v === 'two' ? 'two' : ''}`}>
+          {c.sections.map((s, i) => (
+            <div className="sk-sec" key={i}>
+              <T role="h2" slot={`sections.${i}.heading`} build={i} className="sk-sec-head">{s.heading}</T>
+              {s.items.map((it, j) => (
+                <div className="sk-item" key={j}>
+                  <div className="sk-name">
+                    <T role="h3" slot={`sections.${i}.items.${j}.name`} build={i}>{it.name}</T>
+                    {it.tag && <T role="small" slot={`sections.${i}.items.${j}.tag`} build={i} className="sk-tag">{it.tag}</T>}
+                  </div>
+                  <T role="h3" slot={`sections.${i}.items.${j}.price`} build={i} className="sk-price">{it.price}</T>
+                  {it.text && <T role="small" slot={`sections.${i}.items.${j}.text`} build={i} className="sk-text">{it.text}</T>}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      {c.note && <T role="small" slot="note" className="sk-note">{c.note}</T>}
+    </Frame>
+  )
+}
+
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos, clip: Clip,
+  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, cv: Cv, menu: Menu,
 }

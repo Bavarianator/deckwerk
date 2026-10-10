@@ -11,6 +11,7 @@ import { z } from 'zod'
 import type { Deck } from '../shared/deck'
 import { buildSystemPrompt, type Engine } from './agent'
 import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
+import { deckJson, withDeckFonts } from './webfonts'
 
 export interface McpOptions {
   deck?: Deck
@@ -94,7 +95,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       inputSchema: z.object({}),
       async run() {
         if (!deck) return { text: 'Noch kein Deck. Erst create_deck oder open_deck.' }
-        return { text: JSON.stringify({ path, ...deck }, null, 1) }
+        return { text: deckJson({ path, ...deck }, 1) }
       },
     },
     {
@@ -104,7 +105,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       async run(i: { name?: string }) {
         if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
         path ??= join(await freeDir(home, i.name ?? deck.title), 'deck.json')
-        await writeFile(path, JSON.stringify(deck, null, 2))
+        await writeFile(path, deckJson(deck))
         return { text: `Gespeichert: ${path}` }
       },
     },
@@ -116,10 +117,12 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
         const file = resolve(home, i.path)
         const d = JSON.parse(await readFile(file, 'utf8'))
         if (!Array.isArray(d?.slides) || !d.theme) throw new Error(`${file} ist keine gültige deck.json.`)
+        const fonts = await withDeckFonts(d) // fontFiles neu bestimmen: Pfade anderer Rechner, fehlende oder verwaiste Schriften
+        d.theme = fonts.theme
         deck = d
         path = file
         opts.onDeck?.(d)
-        return { text: `Geladen: "${d.title}", ${d.slides.length} Folien (${d.slides.map((s: Deck['slides'][number]) => `${s.id}:${s.layout}`).join(', ')})` }
+        return { text: `Geladen: "${d.title}", ${d.slides.length} Folien (${d.slides.map((s: Deck['slides'][number]) => `${s.id}:${s.layout}`).join(', ')})${fonts.notes.length ? `\nSchriften: ${fonts.notes.join('; ')}` : ''}` }
       },
     },
   ]
