@@ -21,7 +21,7 @@ export const TOOL: Record<string, string> = {
 }
 
 // Lange Video-Tools und ihr Job im Main (window.api.jobs, name = Schlüssel vor „:“): der Chip zeigt den Fortschritt
-const JOB: Record<string, string> = { import_video: 'import', video_highlights: 'highlights', transcribe_video: 'transcribe', export_deck: 'export' }
+export const JOB: Record<string, string> = { import_video: 'import', video_highlights: 'highlights', transcribe_video: 'transcribe', export_deck: 'export' }
 
 // Was das Modell-Dropdown anbietet (App lädt es aus Main); null = noch nicht geladen, dann nur Claude
 export const ChatChoices = createContext<ChatModels | null>(null)

@@ -1,11 +1,8 @@
 // Deckvid-Leerzustand: die Arbeitsschritte der KI mit Fortschritt statt eines einzelnen Satzes.
 import { useEffect, useState } from 'react'
 import { Check, CircleAlert, LoaderCircle } from 'lucide-react'
-import { TOOL, type Msg } from './Chat'
+import { JOB, TOOL, type Msg } from './Chat'
 import './deckvid-work.css'
-
-// Wie in Chat.tsx: Tool → Job im Main (window.api.jobs)
-const JOB: Record<string, string> = { import_video: 'import', video_highlights: 'highlights', transcribe_video: 'transcribe', export_deck: 'export' }
 
 export function WorkSteps({ msgs, busy }: { msgs: Msg[]; busy: boolean }) {
   const from = msgs.findLastIndex((m) => m.kind === 'user') + 1
@@ -25,7 +22,7 @@ export function WorkSteps({ msgs, busy }: { msgs: Msg[]; busy: boolean }) {
     <div className="dv-work">
       <h2>Die KI arbeitet</h2>
       <p className="dv-work-sub">Du kannst das Fenster offen lassen. Die Clips erscheinen links, sobald sie fertig sind.</p>
-      <ol aria-label="Arbeitsschritte">
+      <ol aria-label="Arbeitsschritte" role="status" aria-live="polite">
         {steps.length === 0 && (
           <li aria-current="step"><div className="dv-work-row"><LoaderCircle size={16} className="spin dv-work-run" /><span className="dv-work-name">Die KI liest deinen Auftrag …</span></div></li>
         )}
