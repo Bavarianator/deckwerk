@@ -58,6 +58,41 @@ async function main() {
     }
     if (process.env.DW_ONLY_COVER) return
 
+    // Ton klar: Sprach-Ersatz (Klang-Bursts 0–1, 2–3 … s) über Rosa Rauschen; die Sprachkette senkt das Rauschen in den Pausen, original bleibt unverändert.
+    // Lautheit in zwei Durchgängen: integriert −14 LUFS
+    {
+      const src = join(dir, 'ton-src.mkv'), size = { w: 320, h: 180 }
+      await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=10', '-f', 'lavfi', '-i', "aevalsrc='if(lt(mod(t,2),1),0.05*(sin(2*PI*180*t)+0.5*sin(2*PI*360*t)+0.3*sin(2*PI*1200*t))*(0.6+0.4*sin(2*PI*4*t)),0)':s=48000:d=10",
+        '-f', 'lavfi', '-i', 'anoisesrc=c=pink:a=0.01:r=48000:d=10', '-filter_complex', '[1:a][2:a]amix=inputs=2:normalize=0[a]', '-map', '0:v', '-map', '[a]', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-ac', '2', src])
+      const job = { file: src, parts: [{ start: 0, end: 10 }], captions: 'aus' as const, transcript: null, size, font: { name: 'Archivo', files: [], bold: true }, accent: '#FF8800' }
+      const seg = async (n: string, ton?: 'klar' | 'original') => (await clipSegs({ ...job, ton }, `ton-${n}`, dir, { preset: 'ultrafast' }))[0]
+      const [ohne, orig, klar] = [await seg('ohne'), await seg('original', 'original'), await seg('klar', 'klar')]
+      const [po, pk] = [await pcm16k(orig.file), await pcm16k(klar.file)]
+      assert.ok(Buffer.from((await pcm16k(ohne.file)).buffer).equals(Buffer.from(po.buffer)), 'ton original weicht von ohne ton ab')
+      near((await probe(klar.file)).duration, (await probe(orig.file)).duration, 0.02, 'Länge mit ton klar')
+      // Versatz: afftdn verzögert um 25 ms, die Kette gleicht das aus. Sauberer 300-Hz-Burst ab 2 s (ohne Rauschen, damit der Schwellwert nicht an der Pegeländerung hängt): Anfang gleich (≤ 1 ms)
+      const burst = join(dir, 'ton-burst.mkv')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=4', '-f', 'lavfi', '-i', "aevalsrc='if(gte(t,2),0.3*sin(2*PI*300*(t-2)),0)':s=48000:d=4", '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-ac', '2', burst])
+      const onset = async (ton?: 'klar') => {
+        const p = await pcm16k((await clipSegs({ ...job, file: burst, parts: [{ start: 0, end: 4 }], ton }, `burst-${ton ?? 'orig'}`, dir, { preset: 'ultrafast' }))[0].file)
+        return p.findIndex((x) => Math.abs(x) > 0.02) / 16000
+      }
+      const [ao, ak] = [await onset(), await onset('klar')]
+      console.log(`  Burst-Anfang: original ${ao.toFixed(4)} s, klar ${ak.toFixed(4)} s`)
+      near(ak, ao, 0.001, 'Versatz mit ton klar')
+      const pause = (p: Float32Array) => Math.max(...[1.3, 3.3, 5.3, 7.3].map((t) => dbOf(p, t, t + 0.5))), rede = (p: Float32Array) => dbOf(p, 4.2, 4.8)
+      console.log(`  Ton klar: Rauschen in Pausen ${pause(po).toFixed(1)} → ${pause(pk).toFixed(1)} dB, Sprache ${rede(po).toFixed(1)} → ${rede(pk).toFixed(1)} dB`)
+      assert.ok(pause(pk) <= pause(po) - 4, 'ton klar senkt das Rauschen in Pausen kaum')
+      assert.ok(rede(pk) >= rede(po) - 3, 'ton klar dämpft die Sprache zu stark')
+      const mp4 = join(dir, 'ton-klar.mp4')
+      await finish([klar], mp4, dir, { loudnorm: true })
+      const { err } = await run(await ffmpegBin(), ['-hide_banner', '-nostats', '-i', mp4, '-af', 'ebur128', '-f', 'null', '-'])
+      const lufs = Number([...err.matchAll(/\bI:\s+(-?[\d.]+) LUFS/g)].at(-1)?.[1])
+      console.log(`  Lautheit (2 Durchgänge): ${lufs} LUFS`)
+      near(lufs, -14, 1, 'integrierte Lautheit')
+    }
+    if (process.env.DW_ONLY_TON) return
+
     // Szenengrenzen: harte Bildwechsel finden (scdet), Kanten knapp davor/dahinter darauflegen, Polster nie darüber – sonst blitzt die Nachbarszene auf
     {
       const lavfi = async (out: string, ins: string[], graph?: string) => runFfmpeg([...ins.flatMap((i) => ['-f', 'lavfi', '-i', i]), ...(graph ? ['-filter_complex', graph] : []), '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', out])
