@@ -461,6 +461,8 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
               {opt('Pausen', c.pauses ?? 'lassen', (v) => onContent({ pauses: v === 'lassen' ? undefined : v }), [['lassen', 'Lassen'], ['kurz', 'Kürzen']])}
               {opt('Bild', c.fit ?? 'crop', (v) => onContent({ fit: v === 'crop' ? undefined : v }),
                 [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund']])}
+              {opt('Ton', c.ton ?? 'original', (v) => onContent({ ton: v === 'original' ? undefined : v }),
+                [['original', 'Original', 'Ton unverändert'], ['klar', 'Klar', 'Sprache aufbereiten: Rauschen weg, gleichmäßig laut. Nicht bei Musik']])}
             </div>
 
             <div className="dv-btns">
@@ -497,13 +499,13 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
         <div className="dv-line-head">
           <b>Ganzes Video</b>
           <span>{mmss(to)}</span>
-          {/* Strip zeichnet alle Ausschnitte grau, den gewählten Clip nicht eigens */}
           <span className="dv-legend">
-            <span><i className="part" aria-hidden />{others ? 'Clips' : 'dieser Clip'}</span>
+            <span><i className="part on" aria-hidden />dieser Clip</span>
+            {others && <span><i className="part" aria-hidden />andere Clips</span>}
             {!!cached?.highlights.length && <span><i className="mark" aria-hidden />Highlight</span>}
           </span>
         </div>
-        <Strip from={0} to={to} parts={parts} head={player.src} onSeek={player.seekSource} curve={curve}
+        <Strip from={0} to={to} parts={parts} on={(x) => c.parts.includes(x)} head={player.src} onSeek={player.seekSource} curve={curve}
           marks={cached?.highlights.map((h) => ({ start: h.start, end: h.end, label: h.why }))} />
         <div className="dv-scale" aria-hidden>{[0, 1, 2, 3, 4].map((k) => <span key={k}>{mmss((to * k) / 4)}</span>)}</div>
         {!!cached?.highlights.length && (
