@@ -17,6 +17,7 @@ import { lintClip, type ClipIssue } from '../shared/clip-lint'
 import type { Issue } from '../shared/lint'
 import { overview, searchTranscript } from '../shared/transcript-search'
 import { typeset } from '../shared/typo'
+import { retakes } from '../shared/retakes'
 import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
 import type { Engine, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
@@ -826,7 +827,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'transcribe_video',
       readOnly: true,
-      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze und Abschweifungen über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
+      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze, Abschweifungen und die unter dem Transkript gelisteten Neuansätze (verworfene Anläufe) über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
       inputSchema: z.object({
         video: videoInput,
         from: z.number().min(0).optional().describe('Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)'),
@@ -854,14 +855,16 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const [info, t] = r.value
         const from = i.from ?? 0, to = i.to ?? Infinity, lines: string[] = []
         const all = transcriptLines(t).map((l, k) => { const sp = t.segments[k].speaker; return sp === undefined ? l : l.replace(/^\[s\d+\] /, (m) => `${m}S${sp + 1} `) })
-        let size = 0, more = ''
+        let size = 0, more = '', shownEnd = to
         for (const [k, s] of t.segments.entries()) {
           if (s.end <= from || s.start >= to) continue
-          if ((size += all[k].length + 1) > TRANSCRIPT_MAX) { more = `… weiter mit from=${s.start.toFixed(1)}${i.to === undefined ? '' : ` und to=${i.to}`}`; break }
+          if ((size += all[k].length + 1) > TRANSCRIPT_MAX) { more = `… weiter mit from=${s.start.toFixed(1)}${i.to === undefined ? '' : ` und to=${i.to}`}`; shownEnd = s.start; break }
           lines.push(all[k])
         }
         const head = `Video: ${assetUrl(file)} · ${mmss(info.duration)} · ${info.w}×${info.h} · Sprache ${t.lang} · ${t.segments.length} Segmente`
-        return { text: [head, ...lines, ...(lines.length ? [] : ['(keine Sprache in diesem Bereich)']), ...(more ? [more] : []), '', VIDEO_NEXT].join('\n') }
+        const rt = retakes(t).filter((x) => x.drop[1] > from && x.drop[0] < shownEnd)
+        const retake = rt.length ? ['', 'Neuansätze (verworfene Anläufe – herausschneiden):', ...rt.slice(0, 20).map((x) => `${x.drop[0].toFixed(1)}–${x.drop[1].toFixed(1)} „${x.text}“ → neu ab ${x.keep.toFixed(1)}`), ...(rt.length > 20 ? [`… und ${rt.length - 20} weitere`] : [])] : []
+        return { text: [head, ...lines, ...(lines.length ? [] : ['(keine Sprache in diesem Bereich)']), ...(more ? [more] : []), ...retake, '', VIDEO_NEXT].join('\n') }
       },
     }),
     tool({

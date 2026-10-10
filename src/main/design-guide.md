@@ -454,6 +454,9 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - `post` (Short): Zeile 1 Titel wie bei YouTube (≤ 100 Zeichen), dann 1–2 Sätze, dann 3–5 passende Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten. Bei fremdem Material Link oder Quelle nennen. Export `clips` legt je Short Cover (.jpg) und Post-Text (.txt) neben das MP4; `mp4` nimmt Cover und Post der ersten Clip-Folie, die sie hat.
 - `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
 - `style`: `lebendig` für Shorts und Reels (Wort-Pop, Hook blendet mit Balken ein, Fortschrittsbalken, Zoom-Wechsel an Schnitten kaschiert Jump-Cuts), sonst weglassen (= ruhig, ohne Bewegung): Fulltime, Vorträge, Schulungen. Keine weiteren Effekte, Sticker oder Emojis.
+- Neuansätze: verworfene Anläufe immer herausschneiden (`transcribe_video` listet sie unter dem Transkript), nur den letzten sauberen Anlauf behalten.
+- `ton`: `klar` für Sprache aus Handy, Webcam oder Raum (Talking Head, Podcast, Vortrag), `original` bei Musik, Gesang oder Geräuschen.
+- Short-Spannung: nach ~8 s ohne Schnitt auflockern (Füllsatz raus oder `style` `lebendig`). Open Loop: eine im Hook aufgeworfene Frage erst gegen Ende auflösen, aber sicher auflösen. Loop-Ende: der letzte Satz darf in den Anfang zurückführen.
 - `pauses`: `kurz` für Talking Heads mit Denkpausen oder stockendem Sprechen (Pausen ab 0,6 s schrumpfen auf 0,3 s), `lassen` bei Musik, Vorführungen oder bewusst gesetzten Pausen.
 - `fit`: `crop` (Standard) füllt das Format; ohne `focus` sucht der Export das Gesicht. `blur` zeigt das ganze Bild auf unscharfem Grund, wenn Folien, Bildschirm oder Gesten am Rand wichtig sind. Ein 9:16-Ausschnitt zeigt aus einem Querformat nur etwa ein Drittel der Breite.
 - `follow: "sprecher"` bei mehreren Personen im Bild (Podcast, Gespräch): Der Zuschnitt folgt dem, der gerade spricht.
