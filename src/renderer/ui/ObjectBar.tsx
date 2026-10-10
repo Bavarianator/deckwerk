@@ -1,7 +1,7 @@
 // Schwebende Leiste über einem gewählten freien Element: die häufigsten Handgriffe direkt am Objekt
 // (Größe, Farbe, Schnitt, Ausrichtung), alles Weitere im Panel „Anpassen“, Wünsche an die KI über „Frag Deckwerk“.
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { AlignCenter, AlignLeft, AlignRight, Minus, Plus, SlidersHorizontal, Sparkles, WandSparkles } from 'lucide-react'
+import { AlignCenter, AlignLeft, AlignRight, List, ListOrdered, Minus, Plus, SlidersHorizontal, Sparkles, WandSparkles } from 'lucide-react'
 import type { Item } from '../../shared/deck'
 
 const ALIGN = { left: AlignLeft, center: AlignCenter, right: AlignRight }
@@ -104,6 +104,8 @@ export function ObjectBar({ item, rect, colors, busy, onPatch, onMore, onAsk, on
           <button className={`plain ${item.bold ? 'on' : ''}`} aria-label="Fett" aria-pressed={!!item.bold} disabled={busy} onClick={() => onPatch({ bold: !item.bold || undefined })}><b>B</b></button>
           <button className={`plain ${item.italic ? 'on' : ''}`} aria-label="Kursiv" aria-pressed={!!item.italic} disabled={busy} onClick={() => onPatch({ italic: !item.italic || undefined })}><em>I</em></button>
           <button className="plain" aria-label={`Ausrichtung: ${item.align ?? 'left'}`} disabled={busy} onClick={() => onPatch({ align: NEXT[item.align ?? 'left'] })}><Align size={16} /></button>
+          <button className={`plain ${item.list === 'bullet' ? 'on' : ''}`} aria-label="Aufzählung" title="Aufzählung" aria-pressed={item.list === 'bullet'} disabled={busy} onClick={() => onPatch({ list: item.list === 'bullet' ? undefined : 'bullet' })}><List size={16} /></button>
+          <button className={`plain ${item.list === 'number' ? 'on' : ''}`} aria-label="Nummerierung" title="Nummerierung" aria-pressed={item.list === 'number'} disabled={busy} onClick={() => onPatch({ list: item.list === 'number' ? undefined : 'number' })}><ListOrdered size={16} /></button>
           <i aria-hidden="true" />
           <div className="obj-rewrite" ref={wrap} onKeyDown={menuKey} onBlur={(e) => { if (open && !wrap.current?.contains(e.relatedTarget as Node)) setOpen(false) }}>
             <button className={`plain ${open ? 'on' : ''}`} aria-haspopup="menu" aria-expanded={open} aria-label="Umschreiben" title="Text von der KI umschreiben" disabled={busy} onClick={() => setOpen(!open)}><WandSparkles size={15} /></button>

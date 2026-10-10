@@ -1,16 +1,18 @@
 // End-to-End: startet `electron . --mcp` (echte Engine, Offscreen-Chromium), baut per Tools ein Deck,
-// lintet, rendert und exportiert eine PPTX. Aufruf: npm run mcp:e2e  (baut vorher)
+// lintet, rendert und exportiert eine PPTX, dazu ein Short aus einem Testvideo (braucht ffmpeg im PATH). Aufruf: npm run mcp:e2e  (baut vorher)
 // E2E_HEADLESS=1: ohne DISPLAY über scripts/deckwerk.sh, so wie Vibe und Codex den Server starten.
 // E2E_APP=<AppRun oder AppImage>: das Linux-Paket mit demselben sh-Aufruf wie mcpCmd in src/main/ipc.ts.
 import assert from 'node:assert/strict'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
+import { PAD } from '../src/shared/video'
 
 const home = mkdtempSync(join(tmpdir(), 'deckwerk-e2e-'))
-const env = { ...process.env, DECKWERK_HOME: home } as Record<string, string>
+const env = { ...process.env, DECKWERK_HOME: home, DECKWERK_OFFLINE: '1' } as Record<string, string> // Schriften nie aus dem Netz
 if (process.env.E2E_HEADLESS) { delete env.DISPLAY; delete env.WAYLAND_DISPLAY }
 const wrap = 'if [ -n "$DISPLAY$WAYLAND_DISPLAY" ]; then exec "$0" --ozone-platform=x11 --mcp; else exec "$0" --ozone-platform=headless --disable-gpu --mcp; fi'
 const [command, args] = process.env.E2E_APP ? ['/bin/sh', ['-c', wrap, process.env.E2E_APP]]
@@ -22,14 +24,14 @@ await client.connect(transport)
 
 type Res = { content: { type: string; text?: string; data?: string }[]; isError?: boolean }
 const call = async (name: string, args: Record<string, unknown> = {}) => {
-  const r = (await client.callTool({ name, arguments: args })) as Res
+  const r = (await client.callTool({ name, arguments: args }, undefined, { timeout: 300_000 })) as Res // Video-Tools warten bis 240 s
   assert.ok(!r.isError, `${name}: ${r.content[0]?.text}`)
   return r
 }
 const t0 = Date.now()
 const lap = (what: string) => console.log(`${String(Date.now() - t0).padStart(6)} ms  ${what}`)
 
-assert.equal((await client.listTools()).tools.length, 20)
+assert.equal((await client.listTools()).tools.length, 27)
 await call('create_deck', { title: 'E2E Test', theme: 'corporate', brand: { primary: '#0A7C66' } })
 let r = await call('add_slides', { slides: [
   { layout: 'cover', content: { eyebrow: 'E2E', title: 'Der MCP-Server rendert echte Folien', subtitle: 'Offscreen-Chromium im Electron-Main-Prozess' }, notes: 'Testfolie' },
@@ -70,5 +72,41 @@ assert.ok(existsSync(docx) && statSync(docx).size > 10_000, `DOCX fehlt: ${docx}
 
 r = await call('save_deck')
 assert.ok(existsSync(join(home, 'e2e-test', 'deck.json')))
+
+// Video-Schnitt: Testvideo (10 s, Ton), Deck 9:16 mit einer clip-Folie aus zwei Ausschnitten; captions aus, weil im CI kein Whisper-Modell liegt
+const video = join(home, 'test.mp4')
+execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc2=size=1280x720:rate=25:duration=10', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=10',
+  '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', video])
+await call('create_deck', { title: 'E2E Shorts', format: '9:16', brand: null })
+await call('add_slides', { slides: [{ layout: 'clip', content: { video, hook: 'Zwei Ausschnitte, ein Short', parts: [{ start: 1, end: 3 }, { start: 5, end: 7, focus: 0.3 }], captions: 'aus' } }] })
+const clip = JSON.parse((await call('get_deck')).content[0].text!).slides[0]
+assert.match(clip.content.video, /^asset:\/\/local\//, 'absoluter Pfad wird zur asset://-URL')
+r = await call('video_frames', { video, times: [1, 5] })
+lap('video_frames')
+assert.equal(r.content.filter((c) => c.type === 'image').length, 2)
+for (let n = 0; ; n++) { // 10 s gleichmäßiger Ton: keine Spitzen zu erwarten, aber der Weg über Lautheit und Job muss tragen
+  r = await call('video_highlights', { video })
+  if (!/läuft noch/.test(r.content[0].text!)) break
+  assert.ok(n < 5, `Highlight-Suche hängt: ${r.content[0].text}`)
+}
+lap('video_highlights')
+assert.match(r.content[0].text!, /\n1\. \d|keine deutlichen Spitzen/)
+r = await call('check_clip', { slide: clip.id })
+lap('check_clip')
+assert.match(r.content[0].text!, /Länge 4 s · 2 Ausschnitte[\s\S]*Kontaktabzug 3×3/)
+assert.ok(r.content.some((c) => c.type === 'image'), 'Kontaktabzug kommt als Bild')
+r = await call('render_slides', { ids: [clip.id], width: 360 })
+assert.ok(r.content.some((c) => c.type === 'image'))
+for (let n = 0; ; n++) {
+  r = await call('export_deck', { format: 'clips' })
+  if (!/läuft noch/.test(r.content[0].text!)) break
+  assert.ok(n < 5, `Export hängt: ${r.content[0].text}`)
+}
+lap('export_deck clips')
+const mp4 = r.content[0].text!.split('\n')[1]
+assert.ok(existsSync(mp4), `MP4 fehlt: ${mp4}`)
+const [, hh, mm, ss] = spawnSync('ffmpeg', ['-i', mp4]).stderr.toString().match(/Duration: (\d+):(\d+):([\d.]+)/)!
+const dur = +hh * 3600 + +mm * 60 + +ss
+assert.ok(dur > 4 - 0.6 && dur < 4 + 4 * PAD + 0.6, `Short dauert ${dur} s statt ~4 s`)
 await client.close()
-console.log(`E2E OK · ${file}`)
+console.log(`E2E OK · ${file} · ${mp4}`)

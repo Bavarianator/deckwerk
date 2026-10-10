@@ -1,15 +1,17 @@
 // Anpassen-Panel: gewählte freie Elemente und die Einstellungen der Folie (inkl. Hintergrund).
 // Deck-weite Einstellungen (Theme, Übergang, Ablauf, Marke) stehen im Look, die Notizen unter der Folie.
-import type { ReactNode } from 'react'
-import { ImagePlus, X } from 'lucide-react'
-import { BUILDS, DECORS, TONES, TRANSITIONS, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
-import { ItemInspector } from './ItemInspector'
+import { useEffect, useState, type ReactNode } from 'react'
+import { ImagePlus, Scissors, X } from 'lucide-react'
+import { BUILDS, DECORS, TONES, TRANSITIONS, sizeOf, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
+import { ClipCutter } from './ClipCutter'
+import { GradAngle, ItemInspector } from './ItemInspector'
 import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
 import { Select } from './kit'
-import { LAYOUTS, nextLook, type LayoutId } from '../../shared/layouts'
+import { SlideLooks } from './SlideLooks'
+import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { extract, eyebrowRules } from '../measure'
-import { FONT_NAMES, THEMES, themeFromSpec } from '../../shared/themes'
+import { FONT_NAMES, THEMES, mix, themeFromSpec } from '../../shared/themes'
 import { colorsOf, elsToItems, recolor } from '../../shared/items'
 
 const FRAME: Record<FrameId, string> = { top: 'Titel oben', split: 'Titel links auf Farbfläche', band: 'Titel im Farbband', center: 'Zentriert' }
@@ -40,6 +42,9 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
   const colors = colorsOf(items)
   const texts = items.filter((it) => it.kind === 'text')
   const base = deck.theme.custom ? themeFromSpec(deck.theme.custom) : THEMES.find((t) => t.id === deck.theme.id) ?? THEMES[0]
+  const [cutting, setCutting] = useState(false)
+  const clip = slide?.layout === 'clip' && slide.content?.video && slide.content.parts?.length ? slide : null // Schneiden nur mit Quellvideo und Ausschnitten
+  useEffect(() => { if (!clip) setCutting(false) }, [!clip]) // KI hat Layout oder Video geändert: nicht beim nächsten Clip von selbst öffnen
 
   return (
     <aside className="inspector">
@@ -49,7 +54,8 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
         {slide && (
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
-            {(def?.variants || def?.frames) && <button type="button" className="btn wide" title="Nächste Kombination aus Variante, Komposition und Ton" onClick={() => patchSlide(index, nextLook(slide))}>Andere Gestaltung</button>}
+            {clip && <button type="button" className="btn wide" title="Ausschnitte von Hand nachschneiden" onClick={() => setCutting(true)}><Scissors size={14} /> Schneiden</button>}
+            {(def?.variants || def?.frames) && <SlideLooks deck={deck} index={index} patchSlide={patchSlide} />}
             {slide.layout !== 'blank' && (
               <button type="button" className="btn wide" title="Alle Texte, Formen, Bilder und Icons der Folie werden frei verschiebbar wie in Canva. Rückgängig mit Strg+Z."
                 onClick={() => {
@@ -102,13 +108,27 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
               </Select>
             </Field>
             <div className="field">
-              <span>Hintergrund {(slide.bg?.color || slide.bg?.image) && <button type="button" className="link" onClick={() => patchSlide(index, { bg: undefined })}>Theme</button>}</span>
+              <span>Hintergrund {(slide.bg?.color || slide.bg?.image || slide.bg?.gradient) && <button type="button" className="link" onClick={() => patchSlide(index, { bg: undefined })}>Theme</button>}</span>
               <div className="field-row">
-                <input type="color" aria-label="Hintergrundfarbe" value={slide.bg?.color ?? base.c.bg} onChange={(e) => patchSlide(index, { bg: { ...slide.bg, color: e.target.value.toUpperCase() } }, `bg-${slide.id}`)} />
+                {/* Verlauf schlägt Farbe (wie Frame rendert): mit Verlauf ist die erste Farbe sein Anfang */}
+                <input type="color" aria-label={slide.bg?.gradient ? 'Verlauf von' : 'Hintergrundfarbe'} value={slide.bg?.gradient?.[0] ?? slide.bg?.color ?? base.c.bg}
+                  onChange={(e) => { const c = e.target.value.toUpperCase(); patchSlide(index, { bg: { ...slide.bg, ...(slide.bg?.gradient ? { gradient: [c, slide.bg.gradient[1]] } : { color: c }) } }, `bg-${slide.id}`) }} />
                 {slide.bg?.image
                   ? <button type="button" className="btn" onClick={() => patchSlide(index, { bg: { ...slide.bg, image: undefined } })}><X size={14} /> Bild</button>
                   : <button type="button" className="btn" onClick={async () => { const src = await pickImage(); if (src) patchSlide(index, { bg: { ...slide.bg, image: src } }) }}><ImagePlus size={14} /> Bild</button>}
               </div>
+              {slide.bg?.gradient ? (
+                <>
+                  <div className="field-row">
+                    <input type="color" aria-label="Verlauf zu" value={slide.bg.gradient[1]} onChange={(e) => patchSlide(index, { bg: { ...slide.bg, gradient: [slide.bg!.gradient![0], e.target.value.toUpperCase()] } }, `bg2-${slide.id}`)} />
+                    <button type="button" className="btn" onClick={() => patchSlide(index, { bg: { ...slide.bg, color: slide.bg!.gradient![0], gradient: undefined, angle: undefined } })}><X size={14} /> Verlauf</button>
+                  </div>
+                  <GradAngle value={slide.bg.angle} onChange={(angle) => patchSlide(index, { bg: { ...slide.bg, angle } })} />
+                </>
+              ) : (
+                // ruhiger Vorschlag: Richtung Akzent getönt statt voller Akzentfarbe
+                <button type="button" className="btn" disabled={!!slide.bg?.image} title={slide.bg?.image ? 'Das Hintergrundbild liegt über dem Verlauf' : undefined} onClick={() => { const c = slide.bg?.color ?? base.c.bg; patchSlide(index, { bg: { ...slide.bg, color: undefined, gradient: [c, mix(c, base.c.accent, 0.35).toUpperCase()] } }) }}>Verlauf</button>
+              )}
             </div>
             <Field label="Animation">
               <Select value={slide.build ?? ''} onChange={(e) => patchSlide(index, { build: (e.target.value || undefined) as BuildPreset | undefined })}>
@@ -124,9 +144,18 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
                 </Select>
               </Field>
             )}
+            {transitionOf(deck, index) !== 'none' && (
+              // Normal = Tempo des Decks
+              <div className="seg" role="group" aria-label="Tempo des Übergangs">
+                {(['slow', undefined, 'fast'] as const).map((sp) => (
+                  <button key={sp ?? 'normal'} type="button" aria-pressed={transitionSpeedOf(deck, index) === sp} onClick={() => patchSlide(index, { transitionSpeed: sp })}>{sp === 'slow' ? 'Langsam' : sp === 'fast' ? 'Schnell' : 'Normal'}</button>
+                ))}
+              </div>
+            )}
           </section>
         )}
       </fieldset>
+      {cutting && clip && <ClipCutter key={clip.id} content={clip.content} size={sizeOf(deck)} disabled={disabled} onApply={(parts) => patchSlide(index, { content: { ...clip.content, parts } })} onClose={() => setCutting(false)} />}
     </aside>
   )
 }

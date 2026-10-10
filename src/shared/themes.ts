@@ -1,6 +1,7 @@
 import { converter, formatHex, wcagContrast, clampChroma, interpolate } from 'culori'
-import type { BrandKit, DecorId, ThemeRef, ThemeSpec, Tone } from './deck'
+import type { BrandKit, ChartStrategy, DecorId, HeroTone, ImageStyle, Labels, Leading, Margin, Measure, Signature, ThemeRef, ThemeSpec, ThemeTune, Tone } from './deck'
 import { EXTRA_THEMES } from './themes-extra'
+import { fontInfo } from './font-catalog'
 
 // embed: Dateistamm in assets/fonts (<embed>-Regular|Bold|Italic|BoldItalic.ttf); dieselbe TTF misst im Renderer und wird in die PPTX eingebettet.
 export interface FontRef { css: string; pptx: string; embed?: string; serif?: boolean; single?: boolean; files?: { regular: string; bold?: string } } // files: eigene Schrift (asset://) // single: nur ein Schnitt (Titel in 400)
@@ -30,6 +31,11 @@ export interface Theme {
   subBody?: boolean // Zwischentitel (h2/h3) in der Textschrift fett: Plakat-Schriften sind dafür zu schwer und breit
   elements?: 'line' | 'plain' | 'solid' // Bauteile (Klasse el-* am .slide); themeFromSpec setzt es immer (eigene Designs ohne Angabe: solid wie vor dem Hebel)
   logo?: string
+  logos?: { light?: string; dark?: string } // Brand-Logos: withTone wählt nach dem Grund der Folie neu
+  // Gestaltungs-Tokens (applyTokens); fehlt einer, bleibt alles wie ohne Token
+  field?: string // Farbe großer Flächen: resolveTheme leitet fill und onAccent daraus ab
+  chart?: ChartStrategy // gemerkt, damit shuffled die Diagrammfarben nach derselben Strategie neu ableitet
+  leading?: Leading; labels?: Labels; margin?: Margin; measure?: Measure; signature?: Signature; heroTone?: HeroTone; images?: ImageStyle
 }
 
 // Office fonts in the PPTX with metric-compatible twins for measuring → identical line breaks in PowerPoint.
@@ -186,11 +192,69 @@ function withBrand(base: Theme, b?: BrandKit): Theme {
     head: b.headFont && b.headFont in FONTS ? { ...base.head, ...FONTS[b.headFont as FontName] } : base.head,
     body: b.bodyFont && b.bodyFont in FONTS ? FONTS[b.bodyFont as FontName] : base.body,
     logo: (base.dark && b.logoDark) || b.logo,
+    logos: { light: b.logo, dark: b.logoDark },
   }
 }
 
+// Brand-Logo für hellen bzw. dunklen Grund (logoDark fehlt: das helle gilt überall)
+const logoOn = (t: Theme, dark: boolean) => (t.logos ? (dark && t.logos.dark) || t.logos.light : t.logo)
+
 // Titelschrift mit passendem Gewicht und Laufweite (Einschnitt-Schriften nur 400)
 const headRef = (f: FontRef, weight = 700) => ({ ...f, weight: f.single ? 400 : weight, tracking: f.serif ? -0.012 : -0.022 })
+// Gebündelte Schriften haben nur 400 und 700, Einschnitt-Schriften nur 400: Zwischengewichte auf den nächsten Schnitt
+const weightOf = (f: FontRef, w: number) => (f.single || w < 600 ? 400 : 700)
+const onOf = (x: string) => (wcagContrast('#FFFFFF', x) >= wcagContrast('#0B0B0B', x) ? '#FFFFFF' : '#0B0B0B')
+
+// Diagrammfarben je Strategie, alle mit Kontrast 2,5 zum Grund. focus = Akzent + Grautöne (Standard eigener Themes),
+// duo = Akzent + Zweitakzent + Grau, tonal = Akzent in OKLCH-Helligkeitsstufen (Farbton bleibt)
+function chartOf(s: ChartStrategy, c: Pick<Theme['c'], 'bg' | 'text' | 'accent' | 'accent2'>): string[] {
+  const { bg, text, accent, accent2 } = c, g = (k: number) => mix(bg, text, k)
+  const raw = s === 'duo' ? [accent, accent2, g(0.45), g(0.28), g(0.7)] : s === 'tonal' ? tonal(accent, bg) : [accent, g(0.45), g(0.28), accent2, g(0.7)]
+  return raw.map((x) => ensureContrast(x, bg, 2.5))
+}
+// Vier Stufen vom Akzent aus bis zur grundnächsten Helligkeit, die noch Kontrast 2,5 hält, und bis kurz vor Schwarz bzw. Weiß,
+// je Seite nach verfügbarem Spielraum verteilt; die vom Akzent am weitesten entfernte zuerst, damit Serien unterscheidbar bleiben
+function tonal(accent: string, bg: string): string[] {
+  const a = oklch(accent)
+  if (!a) return [accent]
+  const dark = wcagContrast(bg, '#FFFFFF') > wcagContrast(bg, '#000000'), dir = dark ? -1 : 1
+  const at = (l: number) => formatHex(clampChroma({ ...a, l }, 'oklch'))!
+  const near = oklch(ensureContrast(at(dark ? 0.05 : 0.98), bg, 2.5))!.l, far = dark ? 0.94 : 0.26
+  const up = Math.max(0, (near - a.l) * dir), down = Math.max(0, (a.l - far) * dir)
+  const n = up + down ? Math.round((4 * up) / (up + down)) : 0
+  const side = (to: number, k: number) => Array.from({ length: k }, (_, i) => a.l + ((to - a.l) * (i + 1)) / k)
+  const steps = [...side(near, n), ...side(far, 4 - n)].sort((x, y) => Math.abs(y - a.l) - Math.abs(x - a.l))
+  return [accent, ...steps.map(at)]
+}
+
+// Ränder je Token in px (16:9-Maße). Hoch- und Quadratformate (Social, A4 hoch) behalten die Standardränder: dort ist die Seite
+// schon die Spalte und die Schrift im Verhältnis größer. Schmale Querformate bis 800 px bekommen den halben Zuschlag.
+const MARGIN_PX: Record<Margin, { l: number; r: number; t: number; b: number; foot: number }> = {
+  standard: { l: 72, r: 72, t: 60, b: 72, foot: 24 },
+  generous: { l: 112, r: 112, t: 72, b: 80, foot: 28 },
+  asymmetric: { l: 152, r: 72, t: 60, b: 72, foot: 24 }, // editorialer Bundsteg links; Satzbreite wie bei generous
+}
+export function marginsOf(m: Margin | undefined, { w, h }: { w: number; h: number }) {
+  const s = MARGIN_PX.standard, v = MARGIN_PX[m ?? 'standard'] ?? s, k = w / h <= 1.2 ? 0 : w <= 800 ? 0.5 : 1
+  const at = (key: keyof typeof s) => s[key] + (v[key] - s[key]) * k
+  return { l: at('l'), r: at('r'), t: at('t'), b: at('b'), foot: at('foot') }
+}
+
+// Gestaltungs-Tokens auf ein Theme legen: themeFromSpec (eigene Designs) und resolveTheme (ref.tune über jedem Theme)
+// nutzen dieselbe Abbildung. Fehlender Token = keine Änderung.
+export function applyTokens(t: Theme, k: ThemeTune): Theme {
+  const o: Theme = { ...t }
+  if (k.titleSize) o.headScale = k.titleSize === 'huge' ? 1.45 : k.titleSize === 'large' ? 1.22 : undefined
+  if (k.rule) o.rule = k.rule === 'none' ? undefined : k.rule
+  if (k.labelFont) o.mono = k.labelFont === 'mono' ? FONTS['IBM Plex Mono'] : undefined
+  if (k.elements) o.elements = k.elements
+  if (k.headWeight) o.head = { ...o.head, weight: weightOf(o.head, k.headWeight) }
+  if (k.headTracking !== undefined) o.head = { ...o.head, tracking: Math.min(0.02, Math.max(-0.05, k.headTracking)) }
+  if (k.chart) Object.assign(o, { chart: k.chart, c: { ...o.c, chart: chartOf(k.chart, o.c) } })
+  const { field, leading, labels, margin, measure, signature, heroTone, images } = k
+  for (const [key, v] of Object.entries({ field, leading, labels, margin, measure, signature, heroTone, images })) if (v !== undefined) Object.assign(o, { [key]: v })
+  return o
+}
 
 // Grund hell oder dunkel und wenig bunt: getöntes Papier (Salbei, Sand, Eisblau) und tiefe Dunkeltöne (Nachtblau, Tannengrün)
 // bleiben erhalten; mittlere, pastellige oder kräftige Gründe verraten Laien-Design sofort und werden gedämpft.
@@ -209,6 +273,10 @@ function vividBg(hex: string): string {
   return formatHex(clampChroma({ ...c, l: c.l < 0.57 ? Math.min(c.l, 0.42) : Math.max(c.l, 0.74) }, 'oklch'))!
 }
 
+// Gebündelte Schrift zum Namen; Katalogschriften über ihren Ersatz gleicher Anmutung (in Renderer und Main gleich).
+// ponytail: Katalogschriften selbst (ThemeRef.fontFiles) löst der Renderer noch nicht auf, bis dahin gilt der Ersatz
+const bundled = (n: string): FontRef | undefined => FONTS[n as FontName] ?? FONTS[fontInfo(n)?.fallback as FontName]
+
 // Eigenes Theme aus wenigen Vorgaben (KI oder Nutzer): Flächen und Ränder als Mischung von Grund und Text, Akzente mit Mindestkontrast.
 export function themeFromSpec(s: ThemeSpec): Theme {
   const bg = s.vivid ? vividBg(s.bg) : calmBg(s.bg)
@@ -216,27 +284,24 @@ export function themeFromSpec(s: ThemeSpec): Theme {
   const text = ensureContrast(s.text ?? mix(bg, dark ? '#FFFFFF' : mix('#000000', s.accent, 0.15), 0.92), bg, 10) // Schwarz mit einer Spur Akzent, nie reines #000
   const accent = ensureContrast(s.accent, bg, 3)
   const accent2 = ensureContrast(s.accent2 ?? mix(bg, text, 0.5), bg, 3) // ohne Vorgabe neutral: eine Akzentfarbe reicht
-  const head = FONTS[s.headFont as FontName] ?? FONTS.Arial
-  return {
+  const head = bundled(s.headFont) ?? FONTS.Arial
+  return applyTokens({
     id: 'custom', name: s.name, dark,
     c: {
       bg, text, accent, accent2,
       surface: mix(bg, text, dark ? 0.07 : 0.045), surface2: mix(bg, text, dark ? 0.12 : 0.09), border: mix(bg, text, dark ? 0.17 : 0.12),
       muted: mix(bg, text, 0.62),
-      onAccent: wcagContrast('#FFFFFF', accent) >= wcagContrast('#0B0B0B', accent) ? '#FFFFFF' : '#0B0B0B',
+      onAccent: onOf(accent),
       good: dark ? '#5BD08A' : '#1E7A45', bad: dark ? '#F07A6B' : '#B83227',
-      chart: [accent, mix(bg, text, 0.45), mix(bg, text, 0.28), accent2, mix(bg, text, 0.7)].map((c) => ensureContrast(c, bg, 2.5)), // grau + ein Akzent
+      chart: chartOf('focus', { bg, text, accent, accent2 }),
     },
     head: headRef(head, s.titleWeight === 'regular' ? 400 : 700),
-    body: FONTS[s.bodyFont as FontName] ?? FONTS.Calibri,
+    body: bundled(s.bodyFont) ?? FONTS.Calibri,
     radius: s.radius, decor: s.decor, texture: s.texture,
-    headScale: s.titleSize === 'huge' ? 1.45 : s.titleSize === 'large' ? 1.22 : undefined,
-    rule: s.rule === 'none' ? undefined : s.rule,
     sectionTone: s.sectionTone,
     vivid: s.vivid,
-    mono: s.labelFont === 'mono' ? FONTS['IBM Plex Mono'] : undefined,
-    elements: s.elements ?? 'solid', // Designs von vor dem Hebel behalten ihre Kästen; neue setzt tools.ts auf line
-  }
+    elements: 'solid', // Designs von vor dem Hebel behalten ihre Kästen; neue setzt tools.ts auf line
+  }, s)
 }
 
 
@@ -258,12 +323,13 @@ function shuffled(t: Theme, n: number): Theme {
   if (v === 2 || v === 3) [bg, text] = [text, bg]
   if (v >= 4) bg = mix(bg, accent, t.dark ? 0.16 : 0.09)
   const s = themeFromSpec({ name: t.name, bg, text, accent, accent2, headFont: 'Arial', bodyFont: 'Calibri', radius: t.radius, decor: t.decor, texture: t.texture, vivid: t.vivid })
-  return { ...t, dark: s.dark, c: s.c }
+  return { ...t, dark: s.dark, c: s.c, logo: logoOn(t, s.dark) }
 }
 
 export function resolveTheme(ref: ThemeRef): Theme {
   let t = withBrand(ref.custom ? themeFromSpec(ref.custom) : THEMES.find((x) => x.id === ref.id) ?? THEMES[0], ref.brand)
   if (ref.shuffle) t = shuffled(t, ref.shuffle)
+  if (t.chart) t = applyTokens(t, { chart: t.chart }) // Brand und Farbvariante ersetzen Farben: Diagrammfamilie aus den neuen ableiten
   const [hf, bf] = ref.fonts ?? []
   const cf = ref.customFont
   const font = (n?: string): FontRef | undefined =>
@@ -271,13 +337,15 @@ export function resolveTheme(ref: ThemeRef): Theme {
   const hRef = font(hf), bRef = font(bf)
   if (hRef) t = { ...t, head: headRef(hRef, t.head.single ? 700 : t.head.weight) } // Gewicht des Designs behalten
   if (bRef) t = { ...t, body: bRef }
-  const c = t.c
+  if (ref.tune) t = applyTokens(t, ref.tune) // nach Brand, Farbvariante und Schriften: der Feinschliff gewinnt
+  const c = t.c, onAccent = t.field ? onOf(t.field) : c.onAccent // Flächenfarbe: Text darauf neu wählen
   return {
     ...t,
     c: {
       ...c,
+      onAccent,
       accent: ensureContrast(c.accent, c.surface, 4.6),
-      fill: ensureContrast(c.accent, c.onAccent, 4.6),
+      fill: ensureContrast(t.field ?? c.accent, onAccent, 4.6),
       muted: ensureContrast(c.muted, c.surface2, 4.6),
       good: ensureContrast(c.good, c.surface, 4.6),
       bad: ensureContrast(c.bad, c.surface, 4.6),
@@ -303,8 +371,9 @@ export function withTone(t: Theme, tone: Tone = 'normal'): Theme {
     const bg = c.fill!, on = c.onAccent, away = wcagContrast(on, '#FFFFFF') < wcagContrast(on, '#000000') ? '#000000' : '#FFFFFF'
     const surface = mix(bg, away, 0.12), surface2 = mix(bg, away, 0.2)
     const toward = (min: number) => [0.7, 0.75, 0.8, 0.85, 0.9, 0.95].map((k) => mix(bg, on, k)).find((m) => wcagContrast(m, bg) >= min) ?? on
+    const dark = wcagContrast('#FFFFFF', bg) > wcagContrast('#000000', bg)
     return {
-      ...t, tone, dark: wcagContrast('#FFFFFF', bg) > wcagContrast('#000000', bg),
+      ...t, tone, dark, logo: logoOn(t, dark),
       c: {
         ...c, bg, surface, surface2, text: on, muted: toward(4.6),
         accent: on, onAccent: bg, fill: on, border: mix(bg, on, 0.3), // accent2 bleibt: Verlauf der Akzentfläche
@@ -316,7 +385,7 @@ export function withTone(t: Theme, tone: Tone = 'normal'): Theme {
   if (tone === 'invert') {
     const bg = c.text, text = c.bg, surface = mix(bg, text, 0.08), surface2 = mix(bg, text, 0.14)
     return {
-      ...t, tone, dark: !t.dark,
+      ...t, tone, dark: !t.dark, logo: logoOn(t, !t.dark),
       c: {
         ...c, bg, text, surface, surface2, border: mix(bg, text, 0.22),
         muted: ensureContrast(mix(bg, text, 0.65), surface2, 4.6),

@@ -2,8 +2,10 @@
 // Nur Primitive aus slide.tsx (T, Box → native PPTX-Objekte); Trennlinien ohne data-pptx landen im Hintergrundbild.
 import type { z } from 'zod'
 import { EXTRA_LAYOUTS } from '../shared/layouts-extra'
+import { withTone } from '../shared/themes'
 import { Header } from './layouts'
-import { Backdrop, Box, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, useSlide } from './slide'
+import { assetOf } from './ui/itemOps'
+import { Backdrop, Box, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, rgba, useSlide } from './slide'
 import './layouts-extra.css'
 
 type Props<K extends keyof typeof EXTRA_LAYOUTS> = { c: z.infer<(typeof EXTRA_LAYOUTS)[K]['schema']>; v?: string }
@@ -581,6 +583,30 @@ function ApplicationCover({ c }: Props<'application-cover'>) {
   )
 }
 
+// Videoclip: Standbild am Start des ersten Ausschnitts, Hook darüber. Keine Wiedergabe (v1); MP4 baut export-video.ts.
+// Standbild per asset://…?frame=<s> (ffmpeg, index.ts) als CSS-Hintergrund, kein <video>: im Offscreen-Fenster hängt das Spulen. Ohne data-pptx landet es im Hintergrund-PNG statt als Video im PPTX.
+function Clip({ c }: Props<'clip'>) {
+  const { theme } = useSlide()
+  // Dunkler Grund wie im MP4 (Video unverfärbt, Hook hell): auf hellen Themes invertiert, damit Scrim, Hook-Farbe und Lint-Kontrast zusammenpassen
+  const tone = theme.dark ? undefined : 'invert'
+  const d = withTone(theme, tone).c.bg
+  const url = c.video.startsWith('/') ? assetOf(c.video) : c.video
+  const p0 = c.parts[0]
+  const media = (
+    <div className="clip-media">
+      {url ? <div className="clip-still" style={{ backgroundImage: `url("${url}?frame=${p0.start}")`, backgroundPosition: `${(p0.focus ?? 0.5) * 100}% 50%` }} /> : <div className="clip-ph" style={{ background: d }} />}
+      {c.hook && <Box slot="_scrim" className="scrim clip-scrim" style={{ backgroundImage: `linear-gradient(180deg, ${rgba(d, 0.85)} 0%, ${rgba(d, 0.55)} 55%, ${rgba(d, 0)} 100%)` }} />}
+    </div>
+  )
+  return (
+    <Frame tone={tone} media={media}>
+      <div className="clip">
+        {c.hook && <T role="h1" slot="hook" maxLines={4} className="clip-hook">{c.hook}</T>}
+      </div>
+    </Frame>
+  )
+}
+
 // Urkunde (A4 quer): Art und Titel oben, Empfänger als Held darunter, Ort/Datum und Unterschriftsfelder unten in einem Spaltenraster.
 // Würde über Satzspiegel, Größe und Weißraum statt Zierrahmen oder Siegel; die einzigen Linien sind die zum Unterschreiben.
 function Certificate({ c }: Props<'certificate'>) {
@@ -847,6 +873,6 @@ function Menu({ c, v }: Props<'menu'>) {
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
-  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos,
+  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos, clip: Clip,
   'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, cv: Cv, menu: Menu,
 }

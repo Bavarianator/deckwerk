@@ -11,6 +11,7 @@ import { z } from 'zod'
 import type { Deck } from '../shared/deck'
 import { buildSystemPrompt, type Engine } from './agent'
 import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
+import { deckJson, withDeckFonts } from './webfonts'
 
 export interface McpOptions {
   deck?: Deck
@@ -26,6 +27,17 @@ export function guideParts(max = 20000): string[] {
     parts[parts.length - 1] += (parts.at(-1) ? '\n' : '') + block
   }
   return parts
+}
+
+// Reine Video-Aufträge: nur Guide §11 und der Katalog-Eintrag clip statt aller Teile
+export function videoGuide(): string {
+  const p = buildSystemPrompt()
+  const block = (head: string, ends: string[]) => {
+    const a = p.indexOf(`\n${head}`)
+    if (a < 0) return ''
+    return p.slice(a + 1, Math.min(...ends.map((e) => p.indexOf(e, a + 1)).filter((x) => x > 0), p.length)).trim()
+  }
+  return `${block('## 11. ', ['\n## '])}\n\n${block('### clip ', ['\n### ', '\n## '])}`
 }
 
 // Claude Code kürzt Server-Anweisungen auf rund 2.000 Zeichen: das Wesentliche zuerst, der volle Guide per read_guide
@@ -65,9 +77,13 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
     ),
     {
       name: 'read_guide',
-      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen.',
-      inputSchema: z.object({ part: z.number().int().min(1).default(1).describe('Teil 1, 2, … – die Antwort nennt die Anzahl') }),
-      async run(i: { part: number }) {
+      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen. Für reine Video-Aufträge genügt topic video.',
+      inputSchema: z.object({
+        part: z.number().int().min(1).default(1).describe('Teil 1, 2, … – die Antwort nennt die Anzahl'),
+        topic: z.enum(['video']).optional().describe('video = nur Guide §11 (Video-Schnitt) und das Layout clip, in einem Teil'),
+      }),
+      async run(i: { part: number; topic?: 'video' }) {
+        if (i.topic === 'video') return { text: videoGuide() }
         const parts = guideParts()
         const k = Math.min(i.part, parts.length)
         return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }
@@ -79,7 +95,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       inputSchema: z.object({}),
       async run() {
         if (!deck) return { text: 'Noch kein Deck. Erst create_deck oder open_deck.' }
-        return { text: JSON.stringify({ path, ...deck }, null, 1) }
+        return { text: deckJson({ path, ...deck }, 1) }
       },
     },
     {
@@ -89,7 +105,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       async run(i: { name?: string }) {
         if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
         path ??= join(await freeDir(home, i.name ?? deck.title), 'deck.json')
-        await writeFile(path, JSON.stringify(deck, null, 2))
+        await writeFile(path, deckJson(deck))
         return { text: `Gespeichert: ${path}` }
       },
     },
@@ -101,10 +117,12 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
         const file = resolve(home, i.path)
         const d = JSON.parse(await readFile(file, 'utf8'))
         if (!Array.isArray(d?.slides) || !d.theme) throw new Error(`${file} ist keine gültige deck.json.`)
+        const fonts = await withDeckFonts(d) // fontFiles neu bestimmen: Pfade anderer Rechner, fehlende oder verwaiste Schriften
+        d.theme = fonts.theme
         deck = d
         path = file
         opts.onDeck?.(d)
-        return { text: `Geladen: "${d.title}", ${d.slides.length} Folien (${d.slides.map((s: Deck['slides'][number]) => `${s.id}:${s.layout}`).join(', ')})` }
+        return { text: `Geladen: "${d.title}", ${d.slides.length} Folien (${d.slides.map((s: Deck['slides'][number]) => `${s.id}:${s.layout}`).join(', ')})${fonts.notes.length ? `\nSchriften: ${fonts.notes.join('; ')}` : ''}` }
       },
     },
   ]

@@ -1,14 +1,12 @@
 // Freisteller im Main-Prozess: BiRefNet-lite (MIT) über onnxruntime-node (nativ, mehrere Kerne). Das Modell lädt beim
 // ersten Einsatz von Hugging Face nach ~/Deckwerk/models und bleibt dort. Bildverarbeitung mit nativeImage, ohne sharp.
 import { nativeImage } from 'electron'
-import { createHash } from 'node:crypto'
-import { createWriteStream, existsSync } from 'node:fs'
-import { mkdir, rename, rm } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { mkdir } from 'node:fs/promises'
 import { freemem } from 'node:os'
 import { join } from 'node:path'
-import { Readable } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
 import type { InferenceSession } from 'onnxruntime-node'
+import { download } from './download'
 
 // fester Commit + Prüfsumme: ein nachträglich verändertes Modell landet nie im nativen ONNX-Parser
 const MODEL_URL = 'https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/de15b22ba131738a16dff04aab8bdf8dc32e3ac1/onnx/model.onnx'
@@ -18,30 +16,10 @@ const MEAN = [0.485, 0.456, 0.406], STD = [0.229, 0.224, 0.225]
 
 let session: Promise<InferenceSession> | null = null
 
-async function download(file: string, onProgress: (pct: number) => void) {
-  const res = await fetch(MODEL_URL, { signal: AbortSignal.timeout(15 * 60_000) })
-  if (!res.ok || !res.body) throw new Error(`Modell-Download fehlgeschlagen (${res.status})`)
-  const total = Number(res.headers.get('content-length')) || 0
-  let got = 0, last = -1
-  const hash = createHash('sha256')
-  const counted = Readable.fromWeb(res.body as never).on('data', (c: Buffer) => {
-    hash.update(c)
-    got += c.length
-    const pct = total ? Math.floor((got / total) * 100) : 0
-    if (pct !== last) onProgress((last = pct))
-  })
-  const part = `${file}.part` // erst nach vollständigem Download umbenennen, sonst bliebe ein kaputtes Modell liegen
-  try {
-    await pipeline(counted, createWriteStream(part))
-    if (hash.digest('hex') !== MODEL_SHA256) throw new Error('Modell-Download beschädigt (Prüfsumme stimmt nicht). Bitte noch einmal versuchen.')
-  } catch (e) { await rm(part, { force: true }); throw e }
-  await rename(part, file)
-}
-
 function load(dir: string, onProgress: (pct: number) => void): Promise<InferenceSession> {
   return (session ??= (async () => {
     const file = join(dir, 'birefnet-lite.onnx')
-    if (!existsSync(file)) { await mkdir(dir, { recursive: true }); await download(file, onProgress) }
+    if (!existsSync(file)) { await mkdir(dir, { recursive: true }); await download(MODEL_URL, MODEL_SHA256, file, onProgress) }
     const ort = await import('onnxruntime-node')
     // Speicher sparen statt Tempo: ohne Arena/Memory-Pattern werden Zwischenpuffer sofort freigegeben (Spitze deutlich kleiner)
     const create = (executionProviders: string[]) => ort.InferenceSession.create(file, { executionProviders, graphOptimizationLevel: 'basic', enableCpuMemArena: false, enableMemPattern: false, executionMode: 'sequential' })

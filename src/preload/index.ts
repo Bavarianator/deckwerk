@@ -1,8 +1,10 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { BrandKit, CustomFont, Deck, PrintOptions } from '../shared/deck'
+import type { BrandKit, CustomFont, Deck, PrintOptions, ThemeRef } from '../shared/deck'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
 import type { SyncStatus } from '../main/sync'
+import type { Signals, Highlight } from '../shared/highlights'
+import type { Transcript } from '../shared/video'
 
 export type { SyncStatus }
 
@@ -89,8 +91,19 @@ const api = {
   recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
+  /** Cache-Daten eines Videos (asset://-URL oder Pfad), rechnet nie; null = kein erlaubtes Video */
+  videoCached: (src: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null } | null> => invoke('video:cached', src),
+  /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
+  jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
-  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print', print?: PrintOptions): Promise<string> => invoke('deck:export', format, print),
+  /** alle erzeugten Dateien (bei 'clips' mehrere) */
+  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
+  /** Fortschritt eines Video-Exports in % */
+  onExportProgress(cb: (pct: number) => void): () => void {
+    const h = (_: unknown, pct: number) => cb(pct)
+    ipcRenderer.on('export:progress', h)
+    return () => void ipcRenderer.off('export:progress', h)
+  },
   /** Serienbrief: CSV per Dialog wählen, je Zeile eine Datei; null = abgebrochen */
   exportSeries: (format: 'pptx' | 'docx' | 'pdf' | 'png'): Promise<{ dir: string; count: number } | null> => invoke('deck:exportSeries', format),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
@@ -145,6 +158,8 @@ const api = {
   pickMedia: (kind: 'video' | 'audio'): Promise<string | null> => invoke('media:pick', kind),
   /** TTF wählen (Regular, optional Bold); Familienname aus der Datei; null = abgebrochen */
   pickFont: (): Promise<CustomFont | null> => invoke('font:pick'),
+  /** Katalogschriften des Decks laden (Cache ~/Deckwerk/fonts, offline gebündelter Ersatz) → Theme mit fontFiles; notes z. B. „Newsreader geladen“ */
+  ensureFonts: (deck: Deck): Promise<{ theme: ThemeRef; notes: string[] }> => invoke('font:ensure', deck),
   /** data-URL (PNG/JPEG/WebP) unter ~/Deckwerk/assets speichern → asset://-URL */
   saveAsset: (dataUrl: string, name: string): Promise<string> => invoke('asset:save', dataUrl, name),
   /** Text aus TXT/MD/CSV/DOCX/PPTX/PDF lesen; ohne Pfad per Dialog, null = abgebrochen */
