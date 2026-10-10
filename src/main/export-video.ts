@@ -1,7 +1,7 @@
 // Video-Export (mp4, clips): Clip-Folien als Jump Cuts mit Hook und Untertiteln, andere Folien als Standbild. Alles über ffmpeg, ohne Browser-Compositing.
 // Filterketten und ASS-Untertitel angelehnt an BridgeClip (MIT, © 2026 BridgeMind).
 // Ablauf: Szenen als Zwischenstände (mkv, PCM-Ton), je Ausgabedatei ein Endschritt (concat-Demuxer, Video kopiert, Ton einmal AAC + loudnorm + Musik).
-// Electron-Teile (renderSlide, nativeImage, Schriften) lädt erst exportVideo: assSubs, clipSegs, finish und encodeClip laufen im Selbsttest unter Node.
+// Electron-Teile (renderSlide, nativeImage, Schriften) lädt erst exportVideo: assSubs, clipSegs, encodeCover, finish und encodeClip laufen im Selbsttest unter Node.
 import { randomBytes } from 'node:crypto'
 import { mkdir, readFile, readdir, rename, rm, stat, statfs, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
@@ -184,6 +184,29 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
   return segs
 }
 
+/** Titelbild (JPEG in Ausgabegröße) bei Quellsekunde t (Standard: Mitte des ersten parts): Zuschnitt wie der Clip, Hook eingebrannt, ohne Einblendung und Balken. */
+export async function encodeCover(job: ClipJob, t: number | undefined, out: string, dir: string) {
+  const info = await probe(job.file), p0 = job.parts[0]
+  const at = Math.min(Math.max(0, t ?? (p0.start + p0.end) / 2), Math.max(0, info.duration - 0.1))
+  const p = job.parts.find((x) => at >= x.start && at <= x.end) ?? p0
+  // Kamerafahrt: focus linear zwischen den Stützpunkten, davor und danach konstant (wie cropFilter)
+  const k = p.track?.findIndex(([kt]) => kt > at) ?? -1, tr = p.track
+  const focus = !tr?.length ? p.focus : k < 0 ? tr[tr.length - 1][1] : k === 0 ? tr[0][1] : tr[k - 1][1] + ((tr[k][1] - tr[k - 1][1]) * (at - tr[k - 1][0])) / (tr[k][0] - tr[k - 1][0])
+  const { size } = job, hook = job.hook?.trim(), name = basename(out).replace(/\.\w+$/, '')
+  const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2))
+  const fit = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01
+    ? `split[b][f];[b]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g];` +
+      `[f]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h];[g][h]overlay=(W-w)/2:(H-h)/2`
+    : cropFilter(cropRect(info, size, focus), size)
+  if (hook) {
+    await mkdir(join(dir, 'fonts'), { recursive: true })
+    await Promise.all(job.font.files.map((b, i) => writeFile(join(dir, 'fonts', `font-${i}.ttf`), b)))
+    // Einblendung weg: das Standbild läge sonst im Moment ganz durchsichtig
+    await writeFile(join(dir, `${name}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: 1, cues: [], mode: 'aus', style: job.style }).replace(HOOK_FADE, ''))
+  }
+  await runFfmpeg(['-ss', sec(at), '-i', job.file, '-frames:v', '1', '-update', '1', '-vf', `${fit},setsar=1${hook ? `,ass=${name}.ass:fontsdir=fonts` : ''}`, '-q:v', '2', out], { cwd: dir })
+}
+
 /** Standbild (PNG in Ausgabegröße) als Zwischenstand von STILL Sekunden mit stillem Ton, gleiche Video-Parameter wie die Clips. */
 export async function encodeStill(png: string, out: string, dir: string, o: SegOpts, onProgress?: (pct: number) => void): Promise<Seg> {
   const vf = ['setsar=1', o.fadeIn && `fade=t=in:d=${FADE}`, o.fadeOut && `fade=t=out:st=${STILL - FADE}:d=${FADE}`].filter(Boolean).join(',')
@@ -283,14 +306,24 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
   try {
     const font = scenes.some((x) => x.clip) ? await subFont(deck) : { name: 'Archivo', files: [], bold: true }
     const all: Seg[] = [], moves: [string, string][] = [] // erst im Job-Ordner, am Ende per rename: ein Abbruch lässt den letzten guten Export stehen
+    // Titelbild (.jpg) und Post-Text (.txt) neben das MP4; ein Fehler beim Bild kostet nur das Bild
+    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string) => {
+      if (cover) await encodeCover(cover.job, cover.t, join(dir, `${name}.jpg`), dir).then(
+        () => moves.push([join(dir, `${name}.jpg`), `${to}.jpg`]), (e: Error) => console.warn(`[video] Titelbild ${basename(to)}.jpg fehlgeschlagen:`, e.message))
+      if (post?.trim()) { await writeFile(join(dir, `${name}.txt`), post, 'utf8'); moves.push([join(dir, `${name}.txt`), `${to}.txt`]) }
+    }
+    const first: { cover?: { job: ClipJob; t?: number }; post?: string } = {} // mp4: Titelbild und Text der ersten Clip-Folie, die sie hat
     for (const [k, { i, clip }] of scenes.entries()) {
       const name = `szene-${n2(k + 1)}`, so: SegOpts = { preset, fadeIn: fades(k), fadeOut: fades(k + 1) }
-      let segs: Seg[]
+      let segs: Seg[], job: ClipJob | undefined
       if (clip) {
         const file = videoPath(clip.video, i + 1), captions = clip.captions ?? 'wort'
         const transcript = captions === 'aus' && clip.pauses !== 'kurz' ? null : await transcriptOf(file) // pauses kurz: Füllwörter aus dem Transkript
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
-        segs = await clipSegs({ file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts }, name, dir, so, step(weights[k]))
+        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts }
+        segs = await clipSegs(job, name, dir, so, step(weights[k]))
+        if (!first.cover && clip.cover !== undefined) first.cover = { job, t: clip.cover }
+        first.post ??= clip.post?.trim() ? clip.post : undefined
       } else {
         const [{ renderSlide }, { nativeImage }] = await Promise.all([import('./render'), import('electron')])
         const png = join(dir, `folie-${n2(k + 1)}.png`)
@@ -303,14 +336,16 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
       await Promise.all(segs.map((x) => rm(x.file, { force: true }))) // Zwischenstände sofort weg: bei langen Exporten sonst viele GB
       done += weights[k] * 0.2
       moves.push([join(dir, `${name}.mp4`), `${base}-${n2(k + 1)}.mp4`])
+      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post)
     }
     if (format === 'mp4') {
       await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: true, music: o.music, onProgress: step(sum * 0.2) })
       moves.push([join(dir, 'gesamt.mp4'), `${base}.mp4`])
+      await extras('gesamt', base, first.cover, first.post)
     }
     for (const [from, to] of moves) await rename(from, to) // Job-Ordner liegt neben dem Ziel, also im selben Dateisystem
     onProgress(100)
-    return moves.map(([, to]) => to)
+    return moves.map(([, to]) => to).filter((f) => f.endsWith('.mp4')) // Nebendateien liegen daneben mit gleichem Stamm
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

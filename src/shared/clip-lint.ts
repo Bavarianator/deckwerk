@@ -162,6 +162,8 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
   const hookWords = c.hook?.trim().split(/\s+/).filter(Boolean).length ?? 0
   if (short && !hookWords) add('info', 'clip-hook', 'Kein Hook – für Shorts eine Einstiegszeile setzen (3–9 Wörter)')
   if (hookWords > 9) add('info', 'clip-hook', `Hook hat ${hookWords} Wörter – kürzer (3–9 Wörter)`)
+  if (short && !c.post?.trim()) add('info', 'clip-post', 'Kein Post-Text – post mit Titel, 1–2 Sätzen und 3–5 Hashtags setzen')
+  if (c.cover != null && (!Number.isFinite(c.cover) || c.cover < 0 || (dur > 0 && c.cover > dur))) add('warn', 'clip-post', `cover bei ${de(c.cover)} s liegt nicht im Video${dur > 0 ? ` (0–${de(dur)} s)` : ''} – Sekunde aus dem Kontaktabzug nehmen`)
   return out
 }
 
@@ -174,7 +176,7 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   // sauberes Transkript: je Sekunde ein Wort (k+0,1 bis k+0,5), Sätze „Wir sind gut.“
   const clean: Transcript = { duration: 100, lang: 'de', segments: [{ start: 0, end: 100, text: '',
     words: Array.from({ length: 100 }, (_, k) => ({ w: ['Wir', 'sind', 'gut.'][k % 3], start: k + 0.1, end: k + 0.5 })) }] }
-  const ok: ClipContent = { video: 'asset://a.mp4', hook: 'Drei Wörter hier', parts: [{ start: 0, end: 60 }] }
+  const ok: ClipContent = { video: 'asset://a.mp4', hook: 'Drei Wörter hier', post: 'Titel\nSatz. #a #b #c', parts: [{ start: 0, end: 60 }] }
   eq(lintClip(ok, tall, { duration: 100, transcript: clean }), [], 'sauberer Clip')
 
   // Video, ungültige Zeiten, Ende, Länge, Hook
@@ -190,6 +192,13 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   eq(rules(lintClip({ ...ok, hook: undefined }, tall, { transcript: clean })), ['info:clip-hook'], 'Hook fehlt')
   eq(rules(lintClip({ ...ok, hook: undefined }, wide, { transcript: clean })).includes('info:clip-hook'), false, 'Hook quer')
   eq(rules(lintClip({ ...ok, hook: 'eins zwei drei vier fünf sechs sieben acht neun zehn' }, tall, { transcript: clean })), ['info:clip-hook'], 'Hook lang')
+
+  // Post-Text und Cover
+  eq(rules(lintClip({ ...ok, post: ' ' }, tall, { transcript: clean })), ['info:clip-post'], 'post fehlt')
+  eq(rules(lintClip({ ...ok, post: undefined }, wide, { transcript: clean })), [], 'post quer')
+  eq(rules(lintClip({ ...ok, cover: 30 }, tall, { duration: 100, transcript: clean })), [], 'cover im Video')
+  eq(msgs(lintClip({ ...ok, cover: 120 }, wide, { duration: 100, transcript: clean }), 'clip-post'), ['cover bei 120 s liegt nicht im Video (0–100 s) – Sekunde aus dem Kontaktabzug nehmen'], 'cover hinter Ende')
+  eq(rules(lintClip({ ...ok, cover: -1 }, tall, { transcript: clean })), ['warn:clip-post'], 'cover negativ')
 
   // Wort, Satz, Einstieg
   const talk: Transcript = { duration: 100, lang: 'de', segments: [{ start: 0, end: 6, text: '', words: [
