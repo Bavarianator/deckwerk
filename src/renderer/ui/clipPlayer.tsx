@@ -109,12 +109,13 @@ export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, vid
 interface StripProps {
   from: number; to: number; parts: Part[]; label?: string; head?: number; onSeek?(s: number): void
   marks?: { start: number; end: number; label: string }[]; curve?: number[] // curve: gleichmäßig über from..to verteilt, 0..1
+  on?(x: Part): boolean // ohne Griffe hervorgehoben (Deckvid: Ausschnitte des gewählten Clips)
   handles?: { sel: number; onSel(i: number): void; onEdge?(edge: 'start' | 'end', s: number): void; onDragEnd?(): void }
 }
 
 // Zeitleiste von from bis to: Klicken/Ziehen setzt die Abspielposition, Griffe (nur mit onEdge) verschieben Anfang und Ende des gewählten Ausschnitts.
 // Dahinter dezent die Lautheit (curve) und nummerierte Marken (Highlights).
-export function Strip({ from, to, parts, label, head, onSeek, marks, curve, handles: h }: StripProps) {
+export function Strip({ from, to, parts, label, head, onSeek, marks, curve, on, handles: h }: StripProps) {
   const ref = useRef<HTMLDivElement>(null)
   const span = Math.max(0.001, to - from)
   const pct = (s: number) => `${((Math.max(from, Math.min(to, s)) - from) / span) * 100}%`
@@ -146,7 +147,7 @@ export function Strip({ from, to, parts, label, head, onSeek, marks, curve, hand
           <div key={i} className="cut-mark" style={box(m)} title={m.label}><span>{i + 1}</span></div>
         ))}
         {parts.map((x, i) => shown(x) && (
-          <div key={i} className={`cut-part${h && i === h.sel ? ' on' : ''}`} style={box(x)}>
+          <div key={i} className={`cut-part${(h ? i === h.sel : on?.(x)) ? ' on' : ''}`} style={box(x)}>
             <span>{i + 1}</span>
             {h?.onEdge && i === h.sel && <>
               <i className="cut-grip l" aria-hidden onPointerDown={drag((s) => h.onEdge!('start', s), false)} />
