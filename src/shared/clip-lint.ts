@@ -1,5 +1,6 @@
 // Clip-Lint (Layout clip): prüft Länge, Schnitte, Transkript, Überschneidungen und Musik, damit sich die KI beim Schneiden selbst korrigiert. Ohne Electron/Node, läuft in Main und Renderer.
 import type { Issue } from './lint'
+import { retakes } from './retakes'
 import { estimateWords, mmss, partsLength, type ClipContent, type Part, type Transcript, type Word } from './video'
 
 export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[] } // music: je Quellsekunde 0..1 (Signals.music)
@@ -8,6 +9,7 @@ export type ClipIssue = Omit<Issue, 'slide' | 'slideId' | 'severity'> & { severi
 
 const TOL = 0.05 // s: Kante gilt erst so weit im Wort als Schnitt im Wort
 export const SNAP = 0.4 // s: so weit rastet der Export (snapParts) Kanten selbst auf die Wortgrenze
+const CALM = 8 // s: länger ohne sichtbaren Schnitt wirkt ein Short zäh
 // Musik-Wahrscheinlichkeit (CED) ab der eine Sekunde als Musik zählt. Gemessen (check-sherpa): Sprache allein ≤ 0,05, Musik −12 dB unter Sprache 0,09–0,3, Musik pur 0,35–0,77
 export const MUSIC = 0.15
 const SENTENCE_END = /[.!?…]["'»«“”‘’)\]]*$/
@@ -65,9 +67,9 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
   const out: ClipIssue[] = []
   const add = (severity: ClipIssue['severity'], rule: string, message: string) => out.push({ severity, rule, message })
   // Je Regel eine Meldung: ein Treffer ausführlich, mehrere gebündelt mit höchstens 3 Beispielen (ganzes Video kürzen: bis 100 parts)
-  const bundle = (rule: string, hits: Hit[], head: string, tail: string) => {
-    if (hits.length === 1) add('warn', rule, hits[0].msg)
-    else if (hits.length) add('warn', rule, `${hits.length} ${head}: ${hits.slice(0, 3).map((h) => h.ex).join(', ')}${hits.length > 3 ? ' …' : ''} – ${tail}`)
+  const bundle = (rule: string, hits: Hit[], head: string, tail: string, severity: ClipIssue['severity'] = 'warn') => {
+    if (hits.length === 1) add(severity, rule, hits[0].msg)
+    else if (hits.length) add(severity, rule, `${hits.length} ${head}: ${hits.slice(0, 3).map((h) => h.ex).join(', ')}${hits.length > 3 ? ' …' : ''} – ${tail}`)
   }
   const n = (i: number) => `Ausschnitt ${i + 1}`
   const t = info.transcript
@@ -89,6 +91,19 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
   const lenTxt = c.pauses === 'kurz' ? `Quellmaterial ${de(len)} s, ohne Pausen kürzer` : `Länge ${de(len)} s`
   if (short && (len < 20 || len > 90)) add('warn', 'clip-laenge', `${lenTxt} – für einen Short 20–90 s; ${len > 90 ? 'kürzen' : 'verlängern'}`)
   else if (short && (len < 55 || len > 75)) add('info', 'clip-laenge', `${lenTxt} – ideal für einen Short 55–75 s`)
+
+  // Nahtlos anschließende parts zeigen keinen Schnitt, sie laufen als ein Stück; lebendig wechselt den Zoom nur an Schnitten
+  if (short) {
+    const runs: { i: number; len: number }[] = []
+    use.forEach(({ p, i }, k) => {
+      const prev = use[k - 1]
+      if (prev && Math.abs(prev.p.end - p.start) < 1e-3) runs[runs.length - 1].len += p.end - p.start
+      else runs.push({ i, len: p.end - p.start })
+    })
+    const fix = c.style === 'lebendig' ? 'teilen (Füllsatz raus)' : 'teilen (Füllsatz raus) oder style lebendig für Zoom-Wechsel'
+    bundle('clip-ruhe', runs.filter((r) => r.len > CALM).map((r) => ({ msg: `${n(r.i)} läuft ${de(r.len)} s ohne Schnitt – ${fix}`, ex: `${r.i + 1} (${de(r.len)} s)` })),
+      `von ${runs.length} Stücken laufen über ${CALM} s ohne Schnitt`, fix, 'info')
+  }
 
   // Ohne Transkript: nur bis zum Videoende, Lücken unter 0,5 s zählen nicht
   const missing = (p: Part) => gaps(t, p.start, dur > 0 ? Math.min(p.end, dur) : p.end).filter(([a, b]) => b - a >= 0.5)
@@ -126,6 +141,14 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
     bundle('clip-satz', weak, `von ${use.length} Ausschnitten beginnen mitten im Gedanken`, 'Start früher legen, damit jeder für sich steht')
     bundle('clip-satz', open, `von ${use.length} Ausschnitten enden ohne Satzende`, 'Enden hinter das Satzende legen')
     bundle('clip-einstieg', quiet, `von ${use.length} Ausschnitten beginnen mit Stille`, 'Start auf das erste Wort legen')
+
+    // Neuansatz: erster Anlauf läuft (über die Hälfte) mit, und der neue auch – dann hört man den Satz zweimal
+    const inParts = (a: number, b: number) => use.reduce((s, { p }) => s + Math.max(0, Math.min(b, p.end) - Math.max(a, p.start)), 0)
+    bundle('clip-neuansatz', retakes(t).flatMap((r) => {
+      const [a, b] = r.drop, k = use.find(({ p }) => p.start <= r.keep && r.keep < p.end)
+      if (!k || inParts(a, b) <= (b - a) / 2) return []
+      return [{ msg: `${n(k.i)} enthält einen Neuansatz („${r.text}“) – ${de(a, 2)}–${de(b, 2)} s herausschneiden`, ex: `${k.i + 1} (${de(a, 2)}–${de(b, 2)} s)` }]
+    }), 'Neuansätze in den Ausschnitten', 'jeweils den ersten Anlauf herausschneiden')
   }
 
   if (c.captions !== 'aus') {
@@ -173,15 +196,16 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   const rules = (xs: ClipIssue[]) => xs.map((x) => `${x.severity}:${x.rule}`).sort()
   const msgs = (xs: ClipIssue[], rule: string) => xs.filter((x) => x.rule === rule).map((x) => x.message)
   const tall = { w: 720, h: 1280 }, wide = { w: 1280, h: 720 }
-  // sauberes Transkript: je Sekunde ein Wort (k+0,1 bis k+0,5), Sätze „Wir sind gut.“
+  // sauberes Transkript: je Sekunde ein Wort (k+0,1 bis k+0,5), Sätze „Wir sind gut.“, „Wir sind klar.“ … – derselbe Satz erst nach 21 s wieder (kein Neuansatz)
   const clean: Transcript = { duration: 100, lang: 'de', segments: [{ start: 0, end: 100, text: '',
-    words: Array.from({ length: 100 }, (_, k) => ({ w: ['Wir', 'sind', 'gut.'][k % 3], start: k + 0.1, end: k + 0.5 })) }] }
-  const ok: ClipContent = { video: 'asset://a.mp4', hook: 'Drei Wörter hier', post: 'Titel\nSatz. #a #b #c', parts: [{ start: 0, end: 60 }] }
+    words: Array.from({ length: 100 }, (_, k) => ({ w: k % 3 < 2 ? ['Wir', 'sind'][k % 3] : ['gut.', 'klar.', 'stark.', 'bereit.', 'hier.', 'wach.', 'da.'][Math.floor(k / 3) % 7], start: k + 0.1, end: k + 0.5 })) }] }
+  // 10 Stücke à 5,9 s mit Schnitt dazwischen (sonst clip-ruhe), je zwei ganze Sätze
+  const ok: ClipContent = { video: 'asset://a.mp4', hook: 'Drei Wörter hier', post: 'Titel\nSatz. #a #b #c', parts: Array.from({ length: 10 }, (_, j) => ({ start: 6 * j, end: 6 * j + 5.9 })) }
   eq(lintClip(ok, tall, { duration: 100, transcript: clean }), [], 'sauberer Clip')
 
   // Video, ungültige Zeiten, Ende, Länge, Hook
   eq(rules(lintClip({ ...ok, video: ' ' }, tall, { transcript: clean })), ['error:clip-video'], 'video leer')
-  const inv = lintClip({ ...ok, parts: [{ start: 0, end: 60 }, { start: 5, end: 5 }, { start: NaN, end: 3 }, { start: -1, end: 4 }] }, tall, { duration: 100, transcript: null })
+  const inv = lintClip({ ...ok, parts: [{ start: 0, end: 60 }, { start: 5, end: 5 }, { start: NaN, end: 3 }, { start: -1, end: 4 }] }, wide, { duration: 100, transcript: null })
   eq([rules(inv), msgs(inv, 'clip-zeit'), inv.some((x) => x.message.includes('NaN'))], [['warn:clip-transkript', 'warn:clip-zeit'],
     ['Ausschnitte 2, 3, 4 ohne gültige Zeiten (start ≥ 0, end nach start) – Zeiten aus dem Transkript nehmen'], false], 'ungültige parts')
   eq(rules(lintClip({ ...ok, parts: [{ start: 0, end: 30 }, { start: 110, end: 115 }] }, tall, { duration: 100, transcript: clean })).filter((r) => r.includes('ende')), ['error:clip-ende'], 'start hinter Ende')
@@ -226,7 +250,7 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   eq(rules(lintClip({ ...ok, parts: [part], captions: 'aus' }, wide, { transcript: null })), [], 'captions aus')
 
   // Überschneidungen
-  eq(rules(lintClip({ ...ok, parts: [{ start: 0, end: 39 }, { start: 36, end: 63 }] }, tall, { transcript: clean })), ['warn:clip-overlap'], 'parts überlappen')
+  eq(rules(lintClip({ ...ok, parts: [{ start: 0, end: 39 }, { start: 36, end: 63 }] }, wide, { transcript: clean })), ['warn:clip-overlap'], 'parts überlappen')
   eq(msgs(lintClip({ ...ok, parts: [{ start: 0, end: 15 }, { start: 12, end: 27 }, { start: 20, end: 30 }] }, tall, { transcript: clean }), 'clip-overlap'),
     ['2 Paare von Ausschnitten überschneiden sich: 1/2 (3 s), 2/3 (7 s) – Bereiche trennen, sonst laufen Stellen doppelt'], 'Überlappung gebündelt')
   const others = [{ video: 'asset://a.mp4', parts: [{ start: 40, end: 100 }] }, { video: 'asset://b.mp4', parts: [{ start: 0, end: 30 }] }, { video: 'asset://a.mp4', parts: [{ start: 57, end: 63 }] }, { video: ok.video, parts: [{ start: 0, end: 60 }] }]
@@ -250,5 +274,24 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
     moved: [{ i: 0, edge: 'start', from: 1.6, to: 1.5 }, { i: 1, edge: 'end', from: 4.2, to: 4.4 }] }, 'snap nahtlos')
   eq(msgs(lintClip({ ...ok, parts: [{ start: 0, end: 2.5 }, { start: 2.5, end: 2.8 }] }, wide, { transcript: talk }), 'clip-wort'), ['Ausschnitt 2 endet mitten in „wichtig.“ – Ende auf 3,3 s legen'], 'nahtlos kein clip-wort')
   eq(snapToWords([{ start: 3, end: 4.2 }], { duration: 10, lang: 'de', segments: [{ start: 0, end: 6, text: 'Aber das ist wichtig. Wir machen weiter.' }] }), { parts: [{ start: 3, end: 4.2 }], moved: [] }, 'snap ohne words')
+
+  // Neuansatz: erster Anlauf 0–4 s, neuer ab 4 s
+  const re: Transcript = { duration: 100, lang: 'de', segments: [['Heute zeige ich euch drei Tricks.', 0], ['Heute zeige ich euch drei Tricks für Excel.', 4], ['Ich ich klappe das immer.', 10]].map(([s, t0]) => {
+    const words = (s as string).split(' ').map((w, m) => ({ w: ' ' + w, start: +((t0 as number) + m * 0.4).toFixed(2), end: +((t0 as number) + m * 0.4 + 0.3).toFixed(2) }))
+    return { start: t0 as number, end: words[words.length - 1].end, text: s as string, words }
+  }) }
+  const neu = (parts: Part[]) => msgs(lintClip({ ...ok, parts }, wide, { transcript: re }), 'clip-neuansatz')
+  eq(neu([{ start: 0, end: 7.2 }]), ['Ausschnitt 1 enthält einen Neuansatz („Heute zeige ich euch drei Tricks“) – 0–4 s herausschneiden'], 'Neuansatz')
+  eq(neu([{ start: 0, end: 3.9 }, { start: 4, end: 7.2 }]), ['Ausschnitt 2 enthält einen Neuansatz („Heute zeige ich euch drei Tricks“) – 0–4 s herausschneiden'], 'Neuansatz über zwei parts')
+  eq([neu([{ start: 4, end: 7.2 }]), neu([{ start: 0, end: 3.9 }]), neu([{ start: 2.5, end: 7.2 }])], [[], [], []], 'Anlauf geschnitten')
+  eq(neu([{ start: 0, end: 12 }]), ['2 Neuansätze in den Ausschnitten: 1 (0–4 s), 1 (10–10,4 s) – jeweils den ersten Anlauf herausschneiden'], 'Neuansatz gebündelt')
+
+  // Ruhe: Shorts ohne Schnitt über 8 s, nahtlose parts zählen als ein Stück
+  const ruhe = (parts: Part[], o: Partial<ClipContent> = {}, size = tall) => lintClip({ ...ok, ...o, parts }, size, { transcript: clean }).filter((x) => x.rule === 'clip-ruhe').map((x) => `${x.severity}:${x.message}`)
+  eq(ruhe([{ start: 0, end: 29.9 }]), ['info:Ausschnitt 1 läuft 29,9 s ohne Schnitt – teilen (Füllsatz raus) oder style lebendig für Zoom-Wechsel'], 'Ruhe')
+  eq(ruhe([{ start: 0, end: 5 }, { start: 5, end: 11.9 }]), ['info:Ausschnitt 1 läuft 11,9 s ohne Schnitt – teilen (Füllsatz raus) oder style lebendig für Zoom-Wechsel'], 'Ruhe nahtlos')
+  eq(ruhe([{ start: 0, end: 29.9 }], { style: 'lebendig' }), ['info:Ausschnitt 1 läuft 29,9 s ohne Schnitt – teilen (Füllsatz raus)'], 'Ruhe lebendig')
+  eq([ruhe([{ start: 0, end: 8 }, { start: 9, end: 17 }]), ruhe([{ start: 0, end: 29.9 }], {}, wide)], [[], []], 'Ruhe 8 s, quer')
+  eq(ruhe([{ start: 0, end: 11.9 }, { start: 12, end: 23.9 }]), ['info:2 von 2 Stücken laufen über 8 s ohne Schnitt: 1 (11,9 s), 2 (11,9 s) – teilen (Füllsatz raus) oder style lebendig für Zoom-Wechsel'], 'Ruhe gebündelt')
   console.log('clip-lint ok')
 }
