@@ -73,7 +73,7 @@ A4-Seiten kannst du jetzt verlustfrei auf fünf Formate bringen. A5 ist der klas
 
 ## Was bewusst fehlt
 
-Canva kann noch mehr: Videos, Websites, Whiteboards, Infografiken in sehr langen Formaten. Das alles passt nicht zu dem, was Deckwerk sein will, nämlich ein Werkzeug für Dokumente, die man zeigt, verschickt oder druckt. Social-Media-Formate wie Instagram-Post, Story und Link-Vorschau gibt es schon länger.
+Canva kann noch mehr: Websites, Whiteboards, Infografiken in sehr langen Formaten. Das alles passt nicht zu dem, was Deckwerk sein will, nämlich ein Werkzeug für Dokumente, die man zeigt, verschickt oder druckt. Social-Media-Formate wie Instagram-Post, Story und Link-Vorschau gibt es schon länger.
 
 ## So probierst du es aus
 
