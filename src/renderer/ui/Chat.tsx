@@ -1,5 +1,5 @@
 // KI-Verlauf: Nachrichtentypen, Tool-Namen, Modellwahl und die Liste der Nachrichten (für die KI-Leiste).
-import { createContext, useContext, useEffect, useRef } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { Select } from './kit'
 import { Check, CircleAlert, LoaderCircle, Sparkles } from 'lucide-react'
 import { AUTO_CHOICE, MODELS, type ChatModels } from '../../shared/models'
@@ -15,10 +15,13 @@ export const TOOL: Record<string, string> = {
   plan_storyline: 'Storyline planen', propose_looks: 'Looks entwerfen', create_deck: 'Deck anlegen', update_deck: 'Deck ändern', add_slides: 'Folien bauen', update_slide: 'Folie ändern',
   reorder_slides: 'Folien sortieren', delete_slides: 'Folien löschen', render_slides: 'Folien ansehen',
   render_overview: 'Übersicht prüfen', lint_deck: 'Qualität prüfen', search_icons: 'Icons suchen',
-  find_images: 'Bilder suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
+  find_images: 'Bilder suchen', transcribe_video: 'Video transkribieren', video_frames: 'Video ansehen', import_video: 'Video laden', video_highlights: 'Highlights suchen', find_music: 'Musik suchen', check_clip: 'Clip prüfen', search_transcript: 'Im Video suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
   cli_run: 'Denkt nach', // Vibe/Codex laufen (claude-agent.ts)
   auto_model: 'Modell gewählt', // Auto: welches Modell Deckwerk für diesen Auftrag nimmt
 }
+
+// Lange Video-Tools und ihr Job im Main (window.api.jobs, name = Schlüssel vor „:“): der Chip zeigt den Fortschritt
+export const JOB: Record<string, string> = { import_video: 'import', video_highlights: 'highlights', transcribe_video: 'transcribe', export_deck: 'export' }
 
 // Was das Modell-Dropdown anbietet (App lädt es aus Main); null = noch nicht geladen, dann nur Claude
 export const ChatChoices = createContext<ChatModels | null>(null)
@@ -64,6 +67,16 @@ export function ChatLog({ msgs, busy, onSend, className }: { msgs: Msg[]; busy: 
   const log = useRef<HTMLDivElement>(null)
   useEffect(() => { log.current?.scrollTo({ top: log.current.scrollHeight }) }, [msgs, busy])
   const lastUser = msgs.findLastIndex((m) => m.kind === 'user') // beantwortete Rückfragen sind nicht mehr klickbar
+  // Fortschritt nur abfragen, solange ein Video-Chip läuft (nach Abbruch bleibt der Chip auf start, busy nicht)
+  const running = busy && msgs.some((m) => m.kind === 'tool' && m.status === 'start' && m.name in JOB)
+  const [pct, setPct] = useState<Record<string, number>>({})
+  useEffect(() => {
+    if (!running) return
+    const poll = () => window.api.jobs().then((js) => setPct(Object.fromEntries(js.filter((j) => !j.done).map((j) => [j.name, j.pct]))), () => {})
+    void poll()
+    const t = setInterval(poll, 1000)
+    return () => clearInterval(t)
+  }, [running])
   return (
       <div className={className} ref={log}>
         {msgs.map((m, i) =>
@@ -84,6 +97,7 @@ export function ChatLog({ msgs, busy, onSend, className }: { msgs: Msg[]; busy: 
             <span key={i} className={`chip chip-${m.status}`} title={m.summary}>
               {m.status === 'start' ? <LoaderCircle size={12} className="spin" /> : m.status === 'done' ? <Check size={12} /> : <CircleAlert size={12} />}
               {TOOL[m.name] ?? m.name}
+              {m.status === 'start' && pct[JOB[m.name]] !== undefined && ` … ${pct[JOB[m.name]]} %`}
               {m.summary && <span className="chip-sum">{m.summary}</span>}
             </span>
           ) : (

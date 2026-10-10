@@ -295,6 +295,13 @@
 .flb-fact { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .t.flb-legal { flex: none; margin-top: -8px; color: var(--muted); }
 
+/* ---------- Videoclip: Standbild randabfallend, Hook oben im sicheren Bereich ---------- */
+.clip-media { position: absolute; inset: 0; overflow: hidden; }
+.clip-still, .clip-ph, .clip-scrim { position: absolute; inset: 0; width: 100%; height: 100%; }
+.clip-still { background-size: cover; background-repeat: no-repeat; background-color: #000; }
+.clip-scrim { bottom: auto; height: 45%; }
+.clip { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; padding-top: 48px; } /* Abstand zur Plattform-Leiste oben */
+.t.clip-hook { max-width: 900px; line-height: 1.12; }
 /* ---------- Bewerbung – Deckblatt (A4 hoch): Stelle oben, Foto, Name und Kontakt unten, Inhalt der Mappe daneben ---------- */
 .safe.bw-safe { left: 94px; right: 76px; top: 100px; bottom: 90px; } /* Ränder wie DIN 5008 (links 25 mm, rechts 20 mm): dieselbe Satzkante wie das Anschreiben */
 .bw { flex: 1; min-height: 0; display: flex; flex-direction: column; }

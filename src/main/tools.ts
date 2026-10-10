@@ -1,24 +1,31 @@
 // Die 12 KI-Tools, SDK-frei: DeckAgent (agent.ts) und MCP-Server hängen an derselben Definition.
 // Fehler werfen ein Error mit konkreter Meldung; der Aufrufer macht daraus is_error / isError.
 import { execFile } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
-import { appendFileSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { createHash, randomBytes } from 'node:crypto'
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, extname, join, resolve, sep } from 'node:path'
+import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune } from '../shared/deck'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
 import { FONT_CATALOG, type FontCat } from '../shared/font-catalog'
+import { lintClip, type ClipIssue } from '../shared/clip-lint'
 import type { Issue } from '../shared/lint'
 import { axesOf, lintLooks, lintTheme, type ThemeIssue } from '../shared/theme-lint'
+import { overview, searchTranscript } from '../shared/transcript-search'
 import { typeset } from '../shared/typo'
-import type { Engine } from './agent'
+import { retakes } from '../shared/retakes'
+import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
+import type { Engine, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
+import { contactSheet } from './ffmpeg'
+import { fetchMusic, findMusic } from './music'
+import { localAsset } from './sync'
 import { fontNeeds, withDeckFonts, withFonts } from './webfonts'
 
 export interface ToolContext {
@@ -49,7 +56,7 @@ export function localizeDeck(deck: Deck, dir: string): Deck {
   const walk = (o: any): void => {
     for (const k of Object.keys(o ?? {})) {
       const v = o[k]
-      if ((k === 'src' || k === 'image' || k === 'poster') && typeof v === 'string' && v && !/^(asset|data|file|https?):/.test(v)) o[k] = assetUrl(resolve(dir, v))
+      if ((k === 'src' || k === 'image' || k === 'poster' || k === 'video') && typeof v === 'string' && v && !/^(asset|data|file|https?):/.test(v)) o[k] = assetUrl(resolve(dir, v))
       else if (v && typeof v === 'object') walk(v)
     }
   }
@@ -68,7 +75,7 @@ const format = z.enum(Object.keys(FORMATS) as [FormatId, ...FormatId[]]).describ
 const THEME_IDS = THEMES.map((t) => t.id) as [string, ...string[]]
 const layoutId = z.enum(LAYOUT_IDS as [LayoutId, ...LayoutId[]])
 const build = z.enum(BUILDS).describe('Animations-Preset; weglassen = Default des Layouts')
-const slideTransition = z.enum(TRANSITIONS).describe('Übergang zu dieser Folie; weglassen = Deck-Übergang. Praktisch nur für morph: wörtlich gleicher Text, dasselbe Foto oder derselbe Platz im Layout wandert von der vorigen Folie herüber (Design-Guide §8)')
+const slideTransition = z.enum(TRANSITIONS).describe('Übergang zu dieser Folie; weglassen = Deck-Übergang. Praktisch nur für morph: wörtlich gleicher Text, dasselbe Foto oder derselbe Platz im Layout wandert von der vorigen Folie herüber (Design-Guide §8). In Video-Decks: fade = Abblende über Schwarz im MP4, gezielt an Zwischentiteln (Guide §11)')
 const brand = z.object({
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/).describe('Markenfarbe #RRGGBB'),
   secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
@@ -239,7 +246,7 @@ export function newSlideId(deck: Deck): string {
 }
 
 // Feinsatz rekursiv über alle Strings; Quellen, Links und Symbolnamen bleiben unberührt
-const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus'])
+const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus', 'video'])
 const typesetDeep = (v: unknown, key?: string): unknown =>
   typeof v === 'string' ? (key && NO_TYPESET.has(key) ? v : typeset(v))
     : Array.isArray(v) ? v.map((x) => typesetDeep(x, key))
@@ -254,7 +261,11 @@ export function validateContent(layout: string, content: unknown, where: string)
   const r = def.schema.safeParse(content)
   const json = z.toJSONSchema(def.schema) as JsonSchema
   const stray = [...new Set(strayKeys(json, content, ''))]
-  if (r.success && !stray.length) return typesetDeep(r.data) as Record<string, unknown>
+  if (r.success && !stray.length) {
+    const c = typesetDeep(r.data) as Record<string, unknown>
+    if (layout === 'clip' && typeof c.video === 'string' && isAbsolute(c.video)) c.video = assetUrl(c.video) // der Renderer lädt Videos nur über asset://
+    return c
+  }
   const { $schema: _, ...schema } = json as Record<string, unknown>
   throw new Error([
     `${where} (${layout}): Inhalt ungültig.`,
@@ -281,15 +292,48 @@ function strayKeys(s: JsonSchema, v: unknown, path: string): string[] {
 // Markiert ausgeblendete Folien in jeder Auflistung für die KI
 const hid = (s: Slide | undefined) => (s?.hidden ? ' (ausgeblendet)' : '')
 
-function fmtIssues(issues: Issue[]): string {
-  return issues.map((i) => `  - [${i.severity}] ${i.rule}${i.slot ? ` @${i.slot}` : ''}: ${i.message}`).join('\n')
+// Lint-Meldung samt Clip-Prüfung; info = Hinweis, zählt nicht als Warnung
+type Note = Omit<Issue, 'severity'> & { severity: ClipIssue['severity'] }
+const sev = (x: Note) => (x.severity === 'info' ? 'hinweis' : x.severity)
+function fmtIssues(issues: Note[]): string {
+  return issues.map((i) => `  - [${sev(i)}] ${i.rule}${i.slot ? ` @${i.slot}` : ''}: ${i.message}`).join('\n')
+}
+const sec = (n: number) => String(+n.toFixed(1)).replace('.', ',')
+
+// Quelle einer clip-Folie wie mediaFile in engine.ts (Pfade fremder Geräte über localAsset); null = kein Videopfad
+function clipFile(src: unknown): string | null {
+  try {
+    const p = typeof src === 'string' && src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
+    return typeof p === 'string' && isAbsolute(p) && VIDEO_FILE.test(p) ? localAsset(p) : null
+  } catch { return null } // kaputte URL
+}
+// Clip-Prüfung (lintClip) der clip-Folien an `indices`; liest nur den Cache der Engine (Transkript, Dauer, Signale), rechnet nie.
+// music: frisch getaggt (check_clip) statt Cache; im Ergebnis music = ob Musik geprüft wurde
+async function clipChecks(ctx: ToolContext, deck: Deck, indices: number[], music?: number[]): Promise<Map<number, { issues: Note[]; summary: string; music: boolean }>> {
+  const clips = deck.slides.flatMap((s, i) => (s.layout === 'clip' ? [i] : []))
+  const others = clips.map((i) => { const c = deck.slides[i].content as ClipContent; return { video: c.video, parts: c.parts } })
+  const cache = new Map<string, Promise<Awaited<ReturnType<NonNullable<VideoTools['cached']>>> | undefined>>() // je Quelle einmal
+  const out = new Map<number, { issues: Note[]; summary: string; music: boolean }>()
+  for (const i of indices) {
+    const k = clips.indexOf(i)
+    if (k < 0) continue
+    const s = deck.slides[i], c = s.content as ClipContent, file = clipFile(c.video)
+    if (file && !cache.has(file)) cache.set(file, Promise.resolve(ctx.engine.video?.cached?.(file)).catch(() => undefined))
+    const d = file ? await cache.get(file) : undefined
+    // Signal „Musik im Hintergrund“ aus der Highlight-Suche, falls schon gerechnet
+    const info = { duration: d?.duration, transcript: d?.transcript, music: music ?? (d?.signals as { music?: number[] } | null | undefined)?.music }
+    const issues = lintClip(c, sizeOf(deck), info, others, k).map((x) => ({ ...x, slide: i, slideId: s.id }))
+    const n = c.parts.length, transcript = d?.transcript && !issues.some((x) => x.rule === 'clip-transkript') ? 'ok' : 'fehlt'
+    out.set(i, { issues, music: !!info.music?.length, summary: `Länge ${sec(partsLength(c.parts))} s${c.pauses === 'kurz' ? ' (Quelle)' : ''} · ${n} ${n === 1 ? 'Ausschnitt' : 'Ausschnitte'} · Transkript ${transcript}` })
+  }
+  return out
 }
 
 // Autofit + Lint für die Folien an `indices` – die Rückmeldung, mit der die KI korrigiert.
 async function report(ctx: ToolContext, deck: Deck, indices: number[]): Promise<string> {
-  let measured: Awaited<ReturnType<Engine['measure']>>, issues: Issue[]
+  let measured: Awaited<ReturnType<Engine['measure']>>, issues: Issue[], clips: Awaited<ReturnType<typeof clipChecks>>
   try {
-    ;[measured, issues] = await Promise.all([ctx.engine.measure(deck, indices), ctx.engine.lint(deck)])
+    ;[measured, issues, clips] = await Promise.all([ctx.engine.measure(deck, indices), ctx.engine.lint(deck), clipChecks(ctx, deck, indices)])
   } catch (e) {
     // Das Deck ist schon gespeichert: nicht als Tool-Fehler melden, sonst wiederholt die KI die Änderung
     return `Gespeichert (Folien ${indices.map((i) => i + 1).join(', ')}), aber die Messung ist fehlgeschlagen: ${(e as Error).message}. Später lint_deck aufrufen.`
@@ -298,9 +342,11 @@ async function report(ctx: ToolContext, deck: Deck, indices: number[]): Promise<
     .map((i, k) => {
       const s = deck.slides[i]
       const m = measured[k]
-      const own = issues.filter((x) => x.slide === i)
+      const clip = clips.get(i)
+      const own: Note[] = [...issues.filter((x) => x.slide === i), ...(clip?.issues ?? [])]
       const errors = own.filter((x) => x.severity === 'error').length
-      const fit = m ? `Autofit head ${m.fit.head}/body ${m.fit.body}${m.fit.ok ? '' : ', Überlauf: ' + m.fit.overflow.map((o) => `${o.slot} +${Math.round(o.overPx)}px (${o.kind})`).join(', ')}` : 'nicht gemessen'
+      const over = m && !m.fit.ok ? ', Überlauf: ' + m.fit.overflow.map((o) => `${o.slot} +${Math.round(o.overPx)}px (${o.kind})`).join(', ') : ''
+      const fit = clip ? clip.summary + over : m ? `Autofit head ${m.fit.head}/body ${m.fit.body}${over}` : 'nicht gemessen'
       const head = `Folie ${i + 1} (${s.id}, ${s.layout})${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · ${fit}${m ? ` · ${motionOf(deck, i, m)}` : ''}`
       return own.length ? `${head}\n${fmtIssues(own)}` : head
     })
@@ -343,6 +389,74 @@ const indexOf = (deck: Deck, id: string): number => {
 
 function tool<S extends z.ZodType>(t: ToolDef<S>): ToolDef<S> { return t }
 
+// Lange Arbeiten (Transkript, Video-Export) laufen im Hintergrund weiter; ein Aufruf wartet höchstens JOB_WAIT.ms. Grund: Vibe und
+// Codex brechen Tool-Aufrufe nach 300 s ab, der API-Agent hält bei Deck-Tools die Sperre. Der nächste Aufruf mit gleichem Schlüssel
+// hängt sich an den laufenden Job oder holt sein Ergebnis ab; danach ist der Job vergessen.
+export const JOB_WAIT = { ms: 240_000 } // Tests setzen ihn kürzer
+// ponytail: nie abgeholte Ergebnisse bleiben bis Prozessende in der Map (klein: Pfadlisten, Transkripte); Ablaufzeit, falls das stört
+const jobs = new Map<string, { promise: Promise<unknown>; pct: number; done: boolean }>()
+/** Laufende und fertige, nicht abgeholte Jobs für die Fortschrittsanzeige der UI; name = Teil des Schlüssels vor „:“ */
+export const jobList = () => [...jobs].map(([key, j]) => ({ key, name: key.split(':')[0], pct: Math.round(j.pct), done: j.done }))
+async function job<T>(key: string, start: (onProgress: (pct: number) => void) => Promise<T>): Promise<{ value: T } | { pct: number }> {
+  let j = jobs.get(key)
+  if (!j) {
+    const nj = { promise: Promise.resolve() as Promise<unknown>, pct: 0, done: false }
+    nj.promise = start((pct) => { nj.pct = pct })
+    nj.promise.catch(() => {}).finally(() => { // den Fehler holt der nächste Aufruf ab; unbeobachtet würde Node den Prozess beenden
+      nj.done = true
+      setTimeout(() => { if (jobs.get(key) === nj) jobs.delete(key) }, 600_000).unref?.() // nicht abgeholt: nach 10 min vergessen (früher holt die KI ein fertiges Ergebnis sonst nicht mehr ab und rechnet neu)
+    })
+    jobs.set(key, (j = nj))
+  }
+  const cur = j
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const waiting = new Promise<'waiting'>((ok) => { timer = setTimeout(ok, JOB_WAIT.ms, 'waiting') })
+  try {
+    const r = await Promise.race([cur.promise.then((value) => ({ value: value as T })), waiting])
+    if (r === 'waiting') return { pct: Math.round(cur.pct) }
+    if (jobs.get(key) === cur) jobs.delete(key)
+    return r
+  } catch (e) {
+    if (jobs.get(key) === cur) jobs.delete(key)
+    throw e
+  } finally {
+    clearTimeout(timer)
+  }
+}
+const stillRunning = (what: string, pct: number) => `${what} läuft noch (${pct} %). Rufe dasselbe Tool gleich noch einmal mit denselben Eingaben auf; die Arbeit läuft im Hintergrund weiter.`
+
+// Quellvideo der Video-Tools: asset://-URL oder absoluter Pfad → Datei. Nur Video-Endungen, die asset:// auch ausliefert (MEDIA_EXT).
+function videoFile(ctx: ToolContext, video: string): { file: string; v: VideoTools } {
+  const v = ctx.engine.video
+  if (!v) throw new Error('Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server.')
+  const path = video.startsWith('asset:') ? decodeURIComponent(new URL(video).pathname) : video
+  if (!isAbsolute(path)) throw new Error(`video "${video}": asset://-Pfad aus dem Anhang („Video: asset://…“) oder absoluten Dateipfad angeben.`)
+  const file = resolve(path)
+  if (!VIDEO_FILE.test(file)) throw new Error(`${file} ist kein unterstütztes Video (${VIDEO_EXT.join(', ')}).`)
+  if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Video nicht gefunden: ${file}`)
+  return { file, v }
+}
+// Hintergrundmusik (deck.music): asset://-URL oder absoluter Pfad einer Audiodatei → asset://-URL wie clip.video
+function audioSrc(src: string): string {
+  const path = src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
+  if (!isAbsolute(path)) throw new Error(`music.src "${src}": asset://-Pfad aus find_music oder absoluten Dateipfad angeben.`)
+  const file = resolve(path)
+  if (!AUDIO_FILE.test(file)) throw new Error(`music.src: ${file} ist keine Audiodatei (${AUDIO_EXT.join(', ')}).`)
+  if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Musik nicht gefunden: ${file}`)
+  return assetUrl(file) // immer asset://local/…: die Engine erkennt nur diese Form
+}
+// wie musicOf in engine.ts: fehlt die Datei, entsteht das Video still ohne Musik
+function musicMissing(src: string): boolean {
+  try { return !existsSync(localAsset(src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src)) } catch { return true } // kaputte URL
+}
+const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad')
+const TRANSCRIPT_MAX = 30_000 // Zeichen je Antwort; der Rest seitenweise über from
+const hms = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
+const VIDEO_NEXT = 'Weiter (Guide § Video), je nach Auftrag: Short 9:16 = 3–5 stärkste Momente, je ideal 55–75 s, hart 20–90 s, hook, captions wort, style lebendig. Ganzes Video kürzen (Fulltime) 16:9 = eine clip-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge, pauses kurz. Stream = nur die Highlight-Fenster, daraus Shorts, optional ein 16:9-Zusammenschnitt. Kompilation = je Quelle eine clip-Folie, Zwischentitel als section oder statement. Schnitte nur an Segmentgrenzen. Dann video_frames als Kontaktabzug, create_deck im Format (transition none), add_slides (je Short cover = Quellsekunde fürs Titelbild aus dem Kontaktabzug, post = Titel, 1–2 Sätze, 3–5 Hashtags), render_slides, export_deck clips (je Short eine MP4) oder mp4 (alles in einem Video).'
+const OVERVIEW_NEXT = 'Weiter: die besten Fenster mit transcribe_video (from/to) transkribieren, Stellen mit search_transcript finden, dann video_highlights ohne overview oder direkt Shorts bauen (Guide § Video).'
+const CLIP_LOOK = 'Prüfe: Gesicht im Bild, Hook passt zum Bild, keine schwarzen/eingefrorenen Bilder, Untertitelbereich frei.'
+const HIGHLIGHT_NEXT = 'Weiter (Guide § Video, Stream): 1. Für die besten 3–5 Fenster transcribe_video mit from/to; nur diese Bereiche werden transkribiert, gern 30 s Anlauf davor. 2. video_frames als Kontaktabzug, 4–8 Zeitpunkte je Kandidat über das Fenster verteilt. 3. Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil. 4. Shorts bauen (create_deck format 9:16, je Moment eine clip-Folie, ideal 55–75 s, hart 20–90 s), auf Wunsch zusätzlich ein Zusammenschnitt 16:9 (je Moment eine clip-Folie, export_deck mp4).'
+
 export function buildTools(ctx: ToolContext): ToolDef[] {
   // Speichern für Theme- und Folienänderungen: braucht das Deck andere Katalogschriften als vorher (Theme, freie Texte), lädt
   // withDeckFonts sie (offline: Ersatz) und trägt fontFiles ein. Liefert den Hinweis fürs Ergebnis, sonst ''.
@@ -381,7 +495,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'update_deck',
-      description: 'Titel, Theme, Feinschliff (tune), Brand-Kit, Übergang, Modus oder Briefing des Decks ändern.',
+      description: 'Titel, Theme, Feinschliff (tune), Brand-Kit, Übergang, Modus, Briefing oder Hintergrundmusik (Video) des Decks ändern.',
       inputSchema: z.object({
         title: z.string().max(80).optional(),
         brief: z.object({ audience: z.string().optional(), goal: z.string().optional(), tone: z.string().optional() }).optional(),
@@ -395,6 +509,11 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         shuffle: z.number().int().min(0).max(5).optional().describe('Farbvariante des Themes wie Canva „Stile mischen“: 0 = Original, 1 = Akzente getauscht, 2 = Hell/Dunkel getauscht, 3 = beides, 4/5 = getönter Grund'),
         fonts: z.tuple([fontName, fontName]).nullable().optional().describe('Schriftpaar [Titel, Text] über das Theme legen; null = Theme-Schriften'),
         format: format.optional().describe('Magic Resize: Deck in ein anderes Format bringen; freie Elemente werden mitskaliert, Layouts ordnen sich neu an. Danach render_overview prüfen.'),
+        music: z.object({
+          src: z.string().min(1).describe('asset://-Pfad aus find_music oder absoluter Pfad einer Audiodatei'),
+          volume: z.number().min(0).max(1).optional().describe('0–1, Standard 0,25; dezent bleiben'),
+          credit: z.string().max(300).optional().describe('Nachweis aus find_music (bei CC BY Pflicht), zusätzlich in die Notes der letzten Folie'),
+        }).nullable().optional().describe('Hintergrundmusik im Video-Export (mp4, clips), leise unter allem, weicht der Sprache automatisch; nur auf Wunsch oder bei Kompilationen. null = entfernen'),
         tune: tuneSpec.optional(),
         override,
       }),
@@ -405,6 +524,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         // Lint-Stand vor dem Aufruf: alte Fehler (Decks von vor dem Theme-Lint) blockieren keine Korrekturen und keinen Feinschliff;
         // ein ganz neuer Entwurf erbt keine Altlast
         const before = (i.customTheme || i.tune) && deck.theme.custom && !fresh ? lintFor({ ...deck.theme.custom, ...deck.theme.tune }, deck.theme.brand) : []
+        if (i.music === null) delete deck.music
+        else if (i.music) deck.music = { ...i.music, src: audioSrc(i.music.src) }
         if (i.title) deck.title = typeset(i.title)
         if (i.brief) deck.brief = { ...deck.brief, ...i.brief }
         if (i.theme) { deck.theme.id = i.theme; delete deck.theme.custom }
@@ -429,7 +550,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const fonts = await put(deck)
         const look = i.theme || i.customTheme || i.tune || i.brand !== undefined || i.shuffle !== undefined || i.fonts !== undefined // Theme geändert → neue Vorschau
         return {
-          text: `${hints}${fonts}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: { ...deck.theme, fontFiles: undefined }, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt' })}${look ? `\n${PREVIEW_HINT}` : ''}`,
+          text: `${hints}${fonts}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: { ...deck.theme, fontFiles: undefined }, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt', music: deck.music })}${look ? `\n${PREVIEW_HINT}` : ''}`,
           images: look ? await themePreview(ctx, deck) : undefined,
         }
       },
@@ -636,10 +757,11 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       inputSchema: z.object({}),
       async run() {
         const deck = needDeck(ctx)
-        const issues = await ctx.engine.lint(deck)
-        const e = issues.filter((x) => x.severity === 'error').length
+        const [lint, clips] = await Promise.all([ctx.engine.lint(deck), clipChecks(ctx, deck, deck.slides.map((_, i) => i))])
+        const issues: Note[] = [...lint, ...[...clips.values()].flatMap((c) => c.issues)].sort((a, b) => a.slide - b.slide) // stabil: je Folie erst Lint, dann Clip-Prüfung
+        const e = issues.filter((x) => x.severity === 'error').length, h = issues.filter((x) => x.severity === 'info').length
         if (!issues.length) return { text: 'Keine Probleme. Das Deck ist sauber.' }
-        return { text: `${e} Fehler, ${issues.length - e} Warnungen:\n` + issues.map((x) => `  - Folie ${x.slide + 1} (${x.slideId})${hid(deck.slides[x.slide])} [${x.severity}] ${x.rule}${x.slot ? ` @${x.slot}` : ''}: ${x.message}`).join('\n') }
+        return { text: `${e} Fehler, ${issues.length - e - h} Warnungen${h ? `, ${h} Hinweise` : ''}:\n` + issues.map((x) => `  - Folie ${x.slide + 1} (${x.slideId})${hid(deck.slides[x.slide])} [${sev(x)}] ${x.rule}${x.slot ? ` @${x.slot}` : ''}: ${x.message}`).join('\n') }
       },
     }),
     tool({
@@ -694,17 +816,202 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen) oder print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten). Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien mit transition außer none und morph blenden über Schwarz ab und auf, deshalb Video-Decks mit transition none anlegen und fade nur gezielt setzen). fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
       inputSchema: z.object({
-        format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print']),
+        format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks'),
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
-        const paths = await ctx.engine.exportDeck(deck, i.format, ctx.outDir, { size: i.size, bleed: i.bleed })
-        return { text: `Exportiert (${i.format}):\n${paths.join('\n')}` }
+        const print = { size: i.size, bleed: i.bleed }
+        const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
+        const r = await job(key, (onProgress) => ctx.engine.exportDeck(deck, i.format, ctx.outDir, print, onProgress))
+        if (!('value' in r)) return { text: stillRunning('Export', r.pct) }
+        const notes: string[] = []
+        if (i.format === 'mp4') { // wie export-video.ts: Folien mit Übergang außer none/morph blenden über Schwarz
+          const shown = { ...deck, slides: visibleSlides(deck) }
+          const n = shown.slides.filter((_, k) => !['none', 'morph'].includes(transitionOf(shown, k))).length
+          notes.push(`${n} ${n === 1 ? 'Übergang' : 'Übergänge'} mit Abblende (Folien-transition; none = harter Schnitt)`)
+        }
+        if ((i.format === 'mp4' || i.format === 'clips') && deck.music?.src && musicMissing(deck.music.src))
+          notes.push('Musik nicht gefunden – ohne Musik exportiert, Nachweis aus den Notes entfernen')
+        // wie export-video.ts: clips = je Short immer ein Cover, .txt nur mit post; mp4 = aus der ersten Clip-Folie mit cover/post
+        const cs = visibleSlides(deck).filter((s) => s.layout === 'clip').map((s) => s.content as ClipContent)
+        if (i.format === 'clips' && cs.length)
+          notes.push(`Neben jeder MP4: Cover (.jpg${cs.some((c) => c.cover == null) ? ', ohne cover aus der Mitte des ersten Ausschnitts' : ''})${cs.some((c) => c.post?.trim()) ? ' und Post-Text (.txt) bei Shorts mit post' : ''}`)
+        if (i.format === 'mp4' && cs.some((c) => c.cover != null || c.post?.trim()))
+          notes.push('Neben der MP4: Cover (.jpg) und Post-Text (.txt, mit post) aus der ersten Clip-Folie mit cover/post')
+        return { text: [`Exportiert (${i.format}):`, ...r.value, ...notes].join('\n') }
+      },
+    }),
+    tool({
+      name: 'import_video',
+      description: 'Video per Link laden (YouTube, Twitch, Kick und andere Seiten, die yt-dlp kennt), bis 1080p, dazu Kapitel und bei ehemaligen Livestreams auf YouTube und Twitch der Chat (Signal für video_highlights). Nur Material, an dem der Nutzer die Rechte hat (eigener Kanal, eigener Stream, Erlaubnis) oder das frei lizenziert ist; im Zweifel nachfragen statt laden. Laufende Livestreams gehen erst nach dem Ende als Aufzeichnung. Lange Downloads laufen im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit derselben url auf. Rückgabe: asset://-Pfad für die Video-Tools und clip.video. Ablauf: read_guide topic video.',
+      inputSchema: z.object({ url: z.string().url().max(2000).describe('Link zum Video oder zur Aufzeichnung (VOD)') }),
+      async run(i) {
+        const v = ctx.engine.video
+        if (!v?.importUrl) throw new Error('Videos per Link laden gibt es nur in der Deckwerk-App und im MCP-Server.')
+        const r = await job(`import:${i.url}`, (onProgress) => v.importUrl!(i.url, onProgress))
+        if (!('value' in r)) return { text: stillRunning('Download', r.pct) }
+        const x = r.value, src = assetUrl(x.file)
+        const chapters = x.chapters.slice(0, 30).map((c) => `${hms(c.start)} ${c.title}`)
+        if (x.chapters.length > 30) chapters.push(`… und ${x.chapters.length - 30} weitere`)
+        const next = x.duration > LONG_VIDEO ? `video_highlights mit diesem Video (über 10 min: erst die stärksten Fenster finden, dann nur diese transkribieren)` : 'transcribe_video mit diesem Video'
+        return { text: [`Video: ${src}`, `Titel: ${x.title}`, `Dauer: ${hms(x.duration)}`, `Chat: ${x.chat ? 'ja (fließt in video_highlights ein)' : 'nein'}`,
+          ...(chapters.length ? [`Kapitel (${x.chapters.length}):`, ...chapters] : ['Kapitel: keine']), '', `Weiter: ${next}. Link als Quelle in die Notes.`].join('\n') }
+      },
+    }),
+    tool({
+      name: 'video_highlights',
+      readOnly: true,
+      description: 'Für lange Videos und Streams (ab ~10 min): findet die stärksten Momente aus Lautheit, Chat-Ausbrüchen (Chat aus import_video), Lachen und Jubel sowie der YouTube-Heatmap, ohne das ganze Video zu transkribieren. Liefert je Kandidat ein Zeitfenster mit Score und Grund. Läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit demselben video auf. Danach nur die besten Fenster mit transcribe_video (from/to) transkribieren, video_frames als Kontaktabzug, dann Shorts oder Zusammenschnitt bauen. Ablauf: read_guide topic video.',
+      inputSchema: z.object({ video: videoInput, overview: z.boolean().optional().describe('true = statt der Kandidaten eine Zeile je 90 s (Signale, Anfang des Gesagten): grober Überblick langer Videos') }),
+      async run(i) {
+        const { file, v } = videoFile(ctx, i.video)
+        const missing = () => new Error('Die Highlight-Suche fehlt in dieser Deckwerk-Version. Stattdessen transcribe_video in Abschnitten (from/to) lesen.')
+        if (i.overview) {
+          let c = await v.cached?.(file)
+          if (!c?.signals) { // Signale fehlen: erst die Highlight-Suche rechnen lassen, sie legt sie in den Cache
+            if (!v.highlights) throw missing()
+            const r = await job(`overview:${file}`, (onProgress) => v.highlights!(file, onProgress))
+            if (!('value' in r)) return { text: stillRunning('Highlight-Suche', r.pct) }
+            c = await v.cached?.(file)
+          }
+          const dur = c?.duration ?? (await v.probe(file)).duration
+          return { text: [`Überblick über ${assetUrl(file)} (${hms(dur)}), eine Zeile je 90 s:`, ...overview(c?.transcript ?? null, c?.signals ?? null, dur), '', OVERVIEW_NEXT].join('\n') }
+        }
+        if (!v.highlights) throw missing()
+        const r = await job(`highlights:${file}`, (onProgress) => v.highlights!(file, onProgress))
+        if (!('value' in r)) return { text: stillRunning('Highlight-Suche', r.pct) }
+        if (!r.value.length) return { text: `In ${assetUrl(file)} gibt es keine deutlichen Spitzen (Lautheit, Chat, Reaktionen). Stattdessen transcribe_video in Abschnitten (from/to) lesen und Momente nach Inhalt wählen.` }
+        const de = (n: number) => n.toFixed(1).replace('.', ',')
+        // from/to in Sekunden dahinter: die KI soll sie nicht aus h:mm:ss zurückrechnen
+        const lines = r.value.map((h, k) => `${k + 1}. ${hms(h.start)}–${hms(h.end)} · Score ${de(h.score)} · ${h.why} · from=${Math.floor(h.start)} to=${Math.ceil(h.end)}`)
+        return { text: [`${lines.length} Kandidaten in ${assetUrl(file)}, zeitlich sortiert:`, ...lines, '', HIGHLIGHT_NEXT].join('\n') }
+      },
+    }),
+    tool({
+      name: 'transcribe_video',
+      readOnly: true,
+      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze, Abschweifungen und die unter dem Transkript gelisteten Neuansätze (verworfene Anläufe) über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
+      inputSchema: z.object({
+        video: videoInput,
+        from: z.number().min(0).optional().describe('Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)'),
+        to: z.number().min(0).optional().describe('Bereich bis zu dieser Sekunde'),
+        lang: z.string().regex(/^[a-z]{2}$/).optional().describe('Sprache als ISO-639-1-Code (de, en, ja …). Weglassen = Parakeet, der nur die 25 europäischen Sprachen kennt; bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) lang setzen – dann Whisper'),
+        speakers: z.boolean().optional().describe('true = Sprecher unterscheiden (S1, S2 … je Zeile), für Podcasts, Interviews und Gespräche'),
+        all: z.boolean().optional().describe('true = auch über 10 min, z. B. das ganze Video (nur für den Fulltime-Schnitt)'),
+      }),
+      async run(i) {
+        const { file, v } = videoFile(ctx, i.video)
+        if (i.from !== undefined && i.to !== undefined && i.to <= i.from) throw new Error('to muss nach from liegen.')
+        if (!i.all) { // auch ein Bereich über 10 min (fehlendes to = Videoende) nur mit all
+          const { duration } = await v.probe(file), whole = i.from === undefined && i.to === undefined
+          const end = Math.min(i.to ?? duration, duration), span = end - (i.from ?? 0)
+          if (span > LONG_VIDEO) return { text: `${whole ? 'Video' : `Bereich ${mmss(i.from ?? 0)}–${mmss(end)}`} ist ${mmss(span)} lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; das ganze Video nur für einen Fulltime-Schnitt mit all: true.` }
+        }
+        // Bereich und Optionen im Schlüssel: ein anderes Fenster ist eine andere Arbeit
+        const r = await job(`transcribe:${file}:${JSON.stringify([i.from, i.to, i.lang, !!i.speakers])}`, async (onProgress) => {
+          const info = await v.probe(file)
+          const range = i.from === undefined && i.to === undefined ? undefined : { from: i.from ?? 0, to: Math.min(i.to ?? info.duration, info.duration) }
+          if (range && range.from >= range.to) throw new Error(`from liegt hinter dem Ende des Videos (${mmss(info.duration)}).`)
+          return [info, await v.transcribe(file, onProgress, { range, lang: i.lang, speakers: i.speakers })] as const
+        })
+        if (!('value' in r)) return { text: stillRunning('Transkription', r.pct) }
+        const [info, t] = r.value
+        const from = i.from ?? 0, to = i.to ?? Infinity, lines: string[] = []
+        const all = transcriptLines(t).map((l, k) => { const sp = t.segments[k].speaker; return sp === undefined ? l : l.replace(/^\[s\d+\] /, (m) => `${m}S${sp + 1} `) })
+        let size = 0, more = '', shownEnd = to
+        for (const [k, s] of t.segments.entries()) {
+          if (s.end <= from || s.start >= to) continue
+          if ((size += all[k].length + 1) > TRANSCRIPT_MAX) { more = `… weiter mit from=${s.start.toFixed(1)}${i.to === undefined ? '' : ` und to=${i.to}`}`; shownEnd = s.start; break }
+          lines.push(all[k])
+        }
+        const head = `Video: ${assetUrl(file)} · ${mmss(info.duration)} · ${info.w}×${info.h} · Sprache ${t.lang} · ${t.segments.length} Segmente`
+        const rt = retakes(t).filter((x) => x.drop[1] > from && x.drop[0] < shownEnd)
+        const retake = rt.length ? ['', 'Neuansätze (verworfene Anläufe – herausschneiden):', ...rt.slice(0, 20).map((x) => `${x.drop[0].toFixed(1)}–${x.drop[1].toFixed(1)} „${x.text}“ → neu ab ${x.keep.toFixed(1)}`), ...(rt.length > 20 ? [`… und ${rt.length - 20} weitere`] : [])] : []
+        return { text: [head, ...lines, ...(lines.length ? [] : ['(keine Sprache in diesem Bereich)']), ...(more ? [more] : []), ...retake, '', VIDEO_NEXT].join('\n') }
+      },
+    }),
+    tool({
+      name: 'search_transcript',
+      readOnly: true,
+      description: 'Thema oder wörtliches Zitat im schon erkannten Transkript finden → Zeiten (from/to). Damit Zitate exakt treffen statt Zeiten zu raten.',
+      inputSchema: z.object({
+        video: videoInput,
+        query: z.string().min(2).max(300).describe('Thema in Stichworten oder Zitat als Wortfolge'),
+        n: z.number().int().min(1).max(20).optional().describe('höchstens so viele Treffer, Standard 8'),
+      }),
+      async run(i) {
+        const { file, v } = videoFile(ctx, i.video)
+        const t = (await v.cached?.(file))?.transcript
+        if (!t) return { text: 'Noch kein Transkript – erst transcribe_video (bei langen Videos video_highlights overview: true).' }
+        const hits = searchTranscript(t, i.query, i.n)
+        if (!hits.length) return { text: `Keine Stelle zu „${i.query}“${t.covered ? ' in den transkribierten Bereichen' : ''}. Andere Stichworte oder ein kürzeres Zitat versuchen.` }
+        const cut = (x: string) => (x.length > 160 ? x.slice(0, 159).trimEnd() + '…' : x)
+        // from abrunden, to aufrunden (1 Nachkommastelle), damit kein Wort angeschnitten wird; 1e-6 gegen Rundungsrauschen
+        const at = (h: (typeof hits)[number]) => `from=${(Math.floor(h.start * 10 + 1e-6) / 10).toFixed(1)} to=${(Math.ceil(h.end * 10 - 1e-6) / 10).toFixed(1)}`
+        return { text: [`${hits.length} ${hits.length === 1 ? 'Stelle' : 'Stellen'} zu „${i.query}“ in ${assetUrl(file)}:`, ...hits.map((h) => `${mmss(h.start)}–${mmss(h.end)} · „${cut(h.text)}“ · ${at(h)}`)].join('\n') }
+      },
+    }),
+    tool({
+      name: 'video_frames',
+      readOnly: true,
+      description: 'Standbilder eines Videos (JPEG, 640 px breit) zu 1–12 Zeitpunkten. Zweck: Kontaktabzug der Kandidaten (4–8 Zeitpunkte je Moment): Szenenwechsel, schwache Bilder, Personen im Bild, Folien oder Gesten am Rand (dann fit blur). Ohne focus setzt der Export den Zuschnitt aufs Gesicht; focus je part (horizontale Bildmitte, 0 = links, 1 = rechts) nur setzen, wenn etwas anderes ins Bild muss. Zeiten hinter dem Ende gelten als Ende.',
+      inputSchema: z.object({ video: videoInput, times: z.array(z.number().min(0)).min(1).max(12).describe('Sekunden im Video') }),
+      async run(i) {
+        const { file, v } = videoFile(ctx, i.video)
+        const info = await v.probe(file)
+        const times = i.times.map((t) => Math.min(t, Math.max(0, info.duration - 0.1))) // genau am Ende liefert ffmpeg kein Bild
+        const images = await v.frames(file, times)
+        const share = Math.round(100 * Math.min(1, (info.h * 9) / 16 / info.w))
+        return {
+          text: `${images.length} Standbilder aus ${assetUrl(file)} (${info.w}×${info.h}, ${mmss(info.duration)}), Reihenfolge wie die Bilder:\n${times.map((t, k) => `${k + 1}. ${t.toFixed(1)} s (${mmss(t)})`).join('\n')}\nEin 9:16-Short zeigt ${share} % der Bildbreite um focus: Gesicht und Gestik müssen drin bleiben. Wechselt die Szene innerhalb eines parts, den part dort teilen.`,
+          images,
+        }
+      },
+    }),
+    tool({
+      name: 'check_clip',
+      description: 'Clip-Folie vor dem Export prüfen: volle Clip-Prüfung (auch Musik im Hintergrund) und Kontaktabzug (9 Bilder, zugeschnitten wie im Export). Nur für die besten Clips, höchstens 2 Runden.',
+      inputSchema: z.object({ slide: z.string().describe('ID der clip-Folie') }),
+      async run(i) {
+        const deck = needDeck(ctx)
+        const idx = indexOf(deck, i.slide), s = deck.slides[idx]
+        if (s.layout !== 'clip') throw new Error(`Folie ${i.slide} ist keine clip-Folie (${s.layout}).`)
+        if (!ctx.engine.video) throw new Error('Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server.')
+        const c = s.content as ClipContent, file = clipFile(c.video)
+        // Musik nur hier frisch taggen (Sekunden der parts), synchron und deshalb nur bis 10 min; länger → Cache aus video_highlights. report() liest nur den Cache
+        const fresh = file && partsLength(c.parts) <= LONG_VIDEO ? await ctx.engine.video.musicIn?.(file, c.parts).catch(() => []) : undefined
+        const { issues, summary, music } = (await clipChecks(ctx, deck, [idx], fresh?.length ? fresh : undefined)).get(idx)!
+        const head = `Folie ${idx + 1} (${s.id}, clip)${hid(s)}: ${summary}${issues.length ? `\n${fmtIssues(issues)}` : ' · Prüfung ohne Befund'}${music ? '' : '\nMusik nicht geprüft'}`
+        if (!file || !statSync(file, { throwIfNoEntry: false })?.isFile())
+          return { text: `${head}\nKein Kontaktabzug: ${file ? `Video nicht gefunden (${file})` : 'kein Video gesetzt'} – video mit update_slide setzen (asset://-Pfad aus dem Anhang).` }
+        const { jpg, times } = await contactSheet(file, c.parts, { size: sizeOf(deck), fit: c.fit })
+        const total = partsLength(c.parts) // Kachel k zeigt die Clipzeit (k + 0,5) · Länge / Anzahl, wie die Beschriftung im Bild
+        const tiles = times.map((t, k) => `${k + 1}. ${(((k + 0.5) * total) / times.length).toFixed(1)} s = ${t.toFixed(1)} s`)
+        return { text: [head, `Kontaktabzug 3×3, zeilenweise (Clipzeit = Quellzeit): ${tiles.join(', ')}`, CLIP_LOOK].join('\n'), images: [jpg] }
+      },
+    }),
+    tool({
+      name: 'find_music',
+      description: 'Freie Hintergrundmusik für Video-Exporte suchen und laden (Openverse: nur CC0, Public Domain und CC BY). Nur auf Wunsch des Nutzers oder bei Kompilationen; dezent und instrumental, nie laut unter Sprache (das Ducking unter Sprache macht der Export). query = suchen, id = Titel aus der Trefferliste laden. Danach update_deck mit music: { src, credit }; den Nachweis zusätzlich in die Notes der letzten Folie.',
+      inputSchema: z.object({
+        query: z.string().min(2).max(80).optional().describe('englische Suchbegriffe: Stimmung, Genre, Instrument, z. B. "calm piano instrumental"'),
+        id: z.string().max(64).optional().describe('Openverse-ID aus der Trefferliste: lädt diesen Titel'),
+      }),
+      async run(i) {
+        if (i.id) {
+          const { file, credit } = await fetchMusic(i.id, join(ctx.assetDir, 'music'))
+          return { text: `Musik geladen. Weiter: update_deck mit music: ${JSON.stringify({ src: assetUrl(file), credit })} (volume weglassen = 0,25); den Nachweis zusätzlich in die Notes der letzten Folie.` }
+        }
+        if (!i.query) throw new Error('query (suchen) oder id (Titel aus der Trefferliste laden) angeben.')
+        const hits = await findMusic(i.query)
+        if (!hits.length) return { text: `Keine freie Musik zu "${i.query}". Andere englische Begriffe versuchen (Stimmung, Genre, "instrumental").` }
+        const line = (t: (typeof hits)[number]) => [t.id, `„${t.title}“ – ${t.artist}`, t.duration ? mmss(t.duration) : 'Länge unbekannt', LICENSE[t.license], t.tags.join(', ')].filter(Boolean).join(' · ')
+        return { text: `${hits.length} freie Titel (Openverse), zum Laden find_music mit id:\n${hits.map(line).join('\n')}` }
       },
     }),
     tool({
