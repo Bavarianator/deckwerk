@@ -39,6 +39,7 @@ const TASKS: [label: string, ask: string][] = [
   ['Neuer Hook', 'Schreib einen neuen, stärkeren Hook für diesen Clip.'],
   ['Ruhigere Untertitel', 'Mach die Untertitel dieses Clips ruhiger: ganze Sätze statt Wort für Wort.'],
   ['Andere Stelle', 'Nimm für diesen Clip eine andere starke Stelle aus demselben Video, die noch kein Clip nutzt.'],
+  ['Post-Text', 'Schreib für diesen Clip den Post-Text (post): Titel, 1–2 Sätze, 3–5 Hashtags, und wähl ein Cover (cover).'],
 ]
 // Ganzes Video (quer); Untertitel an/aus schaltet die Ansicht selbst
 const WIDE_TASKS: [label: string, ask: string][] = [
@@ -196,7 +197,7 @@ export function Deckvid(p: Props) {
         <nav className="dv-list" aria-label="Clips" ref={list}>
           {slides.map((s, i) => isClip(s) ? (
             <button key={s.id} className="dv-item" aria-current={i === index} onClick={() => p.onSelect(i)}>
-              <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${clipUrl(s.content.video)}?frame=${s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
+              <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${clipUrl(s.content.video)}?frame=${s.content.cover ?? s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
               <span><b>{s.content.hook || `Clip ${no(s)}`}</b><small>{mmss(partsLength(s.content.parts))}<Flag xs={issues[s.id]} /></small></span>
             </button>
           ) : (
@@ -282,6 +283,31 @@ function Hints({ xs, busy, onFix }: { xs: ClipIssue[]; busy: boolean; // busy: K
       <div>
         {xs.length > 4 && <button className="plain" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Weniger' : `+ ${xs.length - 4} weitere`}</button>}
         {count(xs) > 0 && <button className="pill" disabled={busy} onClick={onFix}>Von der KI beheben lassen</button>}
+      </div>
+    </div>
+  )
+}
+
+// Post-Text des Clips: Titelzeile hervorgehoben, lange Texte eingeklappt; Kopieren meldet sich per aria-live
+function Post({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [title, ...rest] = text.trim().split('\n')
+  const body = rest.join('\n').trim()
+  const long = body.length > 160 || rest.length > 4
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 1800)
+    return () => clearTimeout(t)
+  }, [copied])
+  return (
+    <div className="dv-post" role="group" aria-label="Post-Text">
+      <b>{title}</b>
+      {body && <p className={long && !open ? 'clamp' : undefined}>{body}</p>}
+      <div>
+        {long && <button className="plain" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? 'weniger' : 'mehr'}</button>}
+        <button className="pill" onClick={() => { void navigator.clipboard.writeText(text.trim()).then(() => setCopied(true), () => setCopied(false)) }}>Kopieren</button>
+        <span role="status" aria-live="polite">{copied ? 'Kopiert' : ''}</span>
       </div>
     </div>
   )
@@ -385,6 +411,7 @@ function ClipStage({ clip, n, here, size, accent, deck, parts, cached, issues, f
         </div>
         {issues.length > 0 && <Hints xs={issues} busy={busy || !fresh} onFix={() => onSend('Behebe die Prüfhinweise dieses Clips.',
           `Clip ${n} (Folie ${clip.id}), Quelle ${c.video}, ${c.parts.map((x, i) => `Ausschnitt ${i + 1}: ${String(+x.start.toFixed(1)).replace('.', ',')}–${String(+x.end.toFixed(1)).replace('.', ',')} s`).join('; ')}\n\nPrüfhinweise:\n${issues.filter((x) => x.severity !== 'info').map((x) => `- ${x.message}`).join('\n')}`)} />}
+        {c.post?.trim() && <Post key={c.post} text={c.post} />}
         <div className="dv-acts" role="group" aria-label={`Clip ${n} ändern`}>
           {(wide ? WIDE_TASKS : TASKS).map(([label, text]) => <button key={label} className="pill" disabled={busy} onClick={() => onSend(text, here)}>{label}</button>)}
           <i aria-hidden />
