@@ -170,6 +170,7 @@ export interface Item {
   // shape (fill auch Texthintergrund)
   shape?: ShapeId
   lineStart?: LineEnd; lineEnd?: LineEnd // Linienenden (Form line)
+  from?: string; to?: string // Konnektor (Form line): IDs der verbundenen Elemente, Lage berechnet connect()
   dash?: Dash // Strichart für Linie und Umriss
   fill?: string; fill2?: string // fill2 = Verlauf (nur Rechteck/Ellipse)
   gradAngle?: number // Winkel des Verlaufs in Grad (CSS-Sinn, Standard 135)
@@ -184,6 +185,8 @@ export interface Item {
   round?: boolean
   flipX?: boolean
   crop?: Crop // sichtbarer Ausschnitt des Bildes (Anteile 0..1); ohne = füllend (cover, mittig)
+  alt?: string // Bildbeschreibung für Screenreader (PPTX: Alternativtext)
+  link?: string // Klickziel: https://…, mailto: oder #N = Sprung zu Folie N (1-basiert)
   // video/audio: src; poster = Vorschaubild des Videos (asset://), wird beim Einfügen erzeugt
   poster?: string
   autoplay?: boolean; loop?: boolean; muted?: boolean
@@ -247,6 +250,7 @@ export interface Deck {
   motion?: Motion // Bewegungsstil des Decks (Canva „Magic Animate“); einzelne Folien-builds haben Vorrang
   style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
+  music?: { src: string; volume?: number; credit?: string } // Hintergrundmusik im Video-Export (mp4): asset://-Pfad, volume 0–1 (Standard 0,25), credit = Nachweis (CC-BY)
   slides: Slide[]
 }
 // Folien, die präsentiert und exportiert werden (PDF, PNG, Word, Handout); ausgeblendete fehlen
@@ -314,7 +318,7 @@ export interface Box { x: number; y: number; w: number; h: number }
 
 export interface Run { text: string; bold: boolean; italic: boolean; underline?: boolean; color: string; breakAfter?: boolean; link?: string; sizePx?: number; trackingPx?: number } // sizePx/trackingPx nur, wenn die Schrift vom Element abweicht (Einheit einer Kennzahl)
 
-interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim; animDir?: AnimDir; animSpeed?: AnimSpeed }
+interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim; animDir?: AnimDir; animSpeed?: AnimSpeed; link?: string /* Klickziel freier Elemente (Item.link) */ }
 export interface TextEl extends Base {
   kind: 'text'
   font: 'head' | 'body'
@@ -349,6 +353,7 @@ export interface ImgEl extends Base {
   under?: boolean // Foto liegt unter Text (Vollbild): Überlappung erlaubt, Kontrast wird gegen das Overlay geprüft
   nat?: { w: number; h: number } // Pixelgröße der Bilddatei (vom Render-Host), für die Druckauflösung im Lint
   look?: 'duotone' | 'mono'
+  alt?: string // Alternativtext freier Bilder
   mask?: MaskId
   adjust?: Adjust
   alpha?: number
@@ -381,4 +386,10 @@ export interface Measured {
 
 // Dateien, die ein Deck über asset:// bzw. file:// einbinden darf (Protokoll-Handler und PPTX-Export). Alles andere
 // wird verweigert, damit eine fremde deck.json keine beliebigen Dateien (Schlüssel, Zugangsdaten) in eine PPTX zieht.
-export const MEDIA_EXT = /\.(png|jpe?g|gif|webp|svg|avif|bmp|mp4|webm|mov|m4v|ogv|mp3|wav|m4a|ogg|oga|aac|opus|flac|ttf|otf|woff2?)$/i
+// flv = OBS-/Stream-Aufnahmen; .ts (MPEG-TS) bewusst nicht, das gäbe TypeScript-Quellen frei.
+export const VIDEO_EXT = ['mp4', 'webm', 'mov', 'm4v', 'mkv', 'ogv', 'flv']
+export const AUDIO_EXT = ['mp3', 'wav', 'm4a', 'ogg', 'oga', 'aac', 'opus', 'flac']
+const extRe = (exts: string[]) => new RegExp(`\\.(${exts.join('|')})$`, 'i')
+export const VIDEO_FILE = extRe(VIDEO_EXT)
+export const AUDIO_FILE = extRe(AUDIO_EXT)
+export const MEDIA_EXT = extRe(['png', 'jpe?g', 'gif', 'webp', 'svg', 'avif', 'bmp', ...VIDEO_EXT, ...AUDIO_EXT, 'ttf', 'otf', 'woff2?'])

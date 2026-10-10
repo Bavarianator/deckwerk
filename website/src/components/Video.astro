@@ -1,0 +1,30 @@
+---
+// Video-Schnitt: dieselbe Zeilenfläche wie „Alles“ (Stile in Alles.astro), ohne Standbilder, weil fremdes Videomaterial nicht auf die Seite gehört
+const ZEILEN: [string, string][] = [
+  ['Shorts aus langen Videos', 'Die KI hört Vortrag, Interview oder Podcast durch, schlägt die stärksten Momente vor und schneidet sie als Hochformat mit Hook, Cover und Post-Text.'],
+  ['Ganzes Video kürzen', 'Füllsätze, Versprecher, verworfene Anläufe und lange Pausen fliegen raus. Geschnitten wird an Wort- und Satzgrenzen, nie mitten im Wort.'],
+  ['Stream-Highlights', 'Aufzeichnungen von YouTube, Twitch oder Kick per Link laden. Lachen, Applaus, Chat und Kapitel zeigen, wo es spannend wird.'],
+  ['Untertitel und Ton', 'Untertitel Wort für Wort oder als ganze Zeilen. Der Zuschnitt folgt dem Gesicht, Sprache klingt auf Wunsch klarer, Musik im Hintergrund wird vor dem Hochladen gemeldet.'],
+  ['Du behältst das Steuer', 'Untertitel, Stil, Pausen, Bild und Ton je Clip umschalten, Ausschnitte von Hand nachschneiden, der KI Aufträge geben. Export als MP4 in 9:16, 4:5, 1:1 oder 16:9.'],
+  ['Auf deinem Rechner', 'Die Spracherkennung läuft lokal, nichts wird hochgeladen.'],
+]
+---
+
+<section class="abschnitt" id="video">
+  <div class="wrap">
+    <header class="abschnitt-kopf">
+      <h2>Auch Video.</h2>
+      <p class="unterzeile">Aus einer langen Aufnahme werden Shorts, Reels oder eine kürzere Fassung. Die KI schlägt vor, du entscheidest.</p>
+    </header>
+    <dl class="blatt panel">
+      {
+        ZEILEN.map(([k, v]) => (
+          <div>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>

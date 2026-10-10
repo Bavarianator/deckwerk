@@ -41,6 +41,7 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['ablauf', '## 9. Arbeitsablauf', 'Briefing, Idee, Theme, Batches, QA-Schleife, Abschluss.', true],
   ['deck-auftraege', '### Aufträge fürs ganze Deck', 'Übersetzen, Notizen, Kürzen, als Text zusammenfassen, Rechtschreibung.'],
   ['fehler', '## 10. Häufige Fehler', 'Was oft schiefgeht.', true],
+  ['video', '## 11. Video', 'Video-Schnitt: Shorts/Reels, Fulltime kürzen, Stream-Highlights, Kompilation; Bewertung, Hooks, Regeln für clip.'],
   ['katalog', '## Layout-Katalog', 'Layouts statt Koordinaten, freie Elemente (items).', true],
   ['katalog-themes', '## Themes', 'Katalog-Themes, Schriften mit Charakter und Schriftkatalog für headFont/bodyFont.'],
   ['katalog-ton', '## Folien-Ton und Dekor', 'tone pro Folie (normal, accent, invert) und Hintergrundmotive.'],
@@ -127,6 +128,8 @@ export function guideParts(max = 20000): string[] {
   }
   return parts
 }
+
+export const VIDEO_MODULES = ['video', 'layout:clip'] // read_guide topic video
 
 // Regel-Router ohne KI (Rückfall für den Haiku-Router): Layouts nach Format, Abschnitte nach Stichwörtern; lieber ein Modul zu viel
 const SOCIAL_SKIP: LayoutId[] = ['agenda', 'section', 'table'] // Guide „Social-Karussell“: weglassen

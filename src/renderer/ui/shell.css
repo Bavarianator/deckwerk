@@ -100,6 +100,7 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 .home-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 22px; }
 .home-chips .pill { height: 34px; padding: 0 16px; font-weight: 400; font-size: 13.5px; }
 .home-blank { margin-top: 14px; }
+.home-mode { margin-bottom: 28px; }
 .home-recent { padding: 32px max(24px, calc((100% - 1024px) / 2)) 40px; background: var(--bg); }
 .home-recent h2 { margin: 0 0 18px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .home-shelf { display: grid; grid-template-columns: repeat(auto-fill, 232px); gap: 32px; }

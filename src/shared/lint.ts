@@ -14,7 +14,7 @@ export interface Issue {
 }
 
 const MARGIN = 24 // no text closer to the slide edge than this
-export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank'] // absichtlich luftig
+export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank', 'clip'] // absichtlich luftig
 // Grenzen je Profil (aus der Foliengröße): Folien werden projiziert, Social-Posts aufs Handy skaliert, A4 gedruckt und gelesen.
 // Nur Folien haben Struktur-, Rhythmus- und Leere-Regeln; Karussells wiederholen Layouts mit Absicht, Dokumente sind dichter und ruhiger.
 const PROFILE = {
@@ -25,13 +25,15 @@ const PROFILE = {
 const SPARSE = 0.67 // Füllgrad des Satzspiegels, darunter wirkt eine Inhaltsfolie leer (kalibriert an echten KI-Decks: Prozess 65 %, Zeitstrahl 58 % leer; Tabelle 72 %, Pro/Contra 77 % gut)
 const overlapArea = (a: Box, b: Box) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+// Video-Deck: Clips folgen aufeinander, ohne Titel- und Schlussfolie, fade gezielt an Zwischentiteln – Folien-Regeln dazu passen nicht
+const isVideo = (deck: Deck) => deck.slides.some((s) => s.layout === 'clip')
 const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).filter(Boolean)
 
 // ---------- KI-Merkmale im Text ----------
 // Floskeln generierter Texte; Wortstamm + beliebige Endung, damit Flexionen greifen. „Hebel“ fehlt bewusst (oft legitim).
 const FLOSKELN = /(?<![\p{L}\d])(nahtlos\p{L}*|ganzheitlich\p{L}*|innovativ(?:e[rnms]?)?|revolution[äa]r\p{L}*|maßgeschneidert\p{L}*|synergie\p{L}*|mehrwert(?!steuer)\p{L}*|auf (?:das |die )?nächsten? (?:level|stufe)|game[- ]?changer|in der heutigen (?:schnelllebigen )?(?:welt|zeit)|schnelllebig\p{L}*|entfessel\p{L}*|transformativ\p{L}*|potenzial\p{L}* (?:\p{L}+ )?(?:entfalt|freisetz|freizusetz|freigesetzt)\p{L}*|aus einer hand|zukunftssicher\p{L}*|state of the art|leuchtturm(?:projekt\p{L}*)?)(?![\p{L}\d])/giu
 const EMOJI = /\p{Emoji_Presentation}/u // nur Bild-Emoji; Pfeile, Häkchen und ©®™ sind Satzzeichen
-const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr']) // Bild-, Link- und Icon-Felder sieht niemand als Text
+const NO_TEXT = new Set(['src', 'url', 'image', 'icon', 'qr', 'video', 'captions', 'pauses']) // Bild-, Link- und Icon-Felder sieht niemand als Text
 const textsOf = (v: unknown, key = ''): string[] =>
   NO_TEXT.has(key) ? [] : typeof v === 'string' ? [v.replace(/\*\*/g, '').replace(/\]\([^)]*\)/g, ']')]
     : Array.isArray(v) ? v.flatMap((x) => textsOf(x, key))
@@ -134,6 +136,11 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     ? `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`
     : `${count} Wörter auf der ${prof.unit} – zu viel für dieses Format (Ziel: unter ${prof.goal}). Kürzen oder auf eine weitere ${prof.unit} verteilen.`)
   if (/"(src|image)":""/.test(JSON.stringify(s.content ?? {}))) add('warn', 'image', 'Kein Bild gesetzt – es wird ein Platzhalter angezeigt. Mit find_images ein Foto suchen oder eigenes Bild einsetzen.')
+  for (const it of s.items ?? []) if (it.kind === 'image' && !it.alt?.trim()) add('warn', 'alt-fehlt', 'Bild ohne Alternativtext – Screenreader lesen nichts vor. Alternativtext setzen (alt), z. B. was das Bild zeigt.', `items.${it.id}`)
+  for (const it of s.items ?? []) {
+    const n = it.link?.match(/^#(\d+)$/)
+    if (n && (+n[1] < 1 || +n[1] > deck.slides.length)) add('warn', 'link-ziel', `Link ${it.link} zeigt auf keine Folie – das Deck hat ${deck.slides.length} Folien. Ziel korrigieren oder link entfernen.`, `items.${it.id}`)
+  }
   // Druck: Ein Querformat-Foto mit 2560 px, das per cover eine A4-Seite füllt, hat nur ~146 ppi. Logos (_-Slots) und kleine Bilder zählen nicht.
   if (profileOf(deck) === 'doc')
     for (const e of m.els) {
@@ -178,10 +185,11 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   if (!PROFILE[profileOf(deck)].deckRules) return [...out, ...lintMotion(deck, measured)]
   const s = deck.slides
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: s[i].id, severity: 'warn', rule, message })
-  if (s.length && s[0].layout !== 'cover') warn(0, 'structure', 'Das Deck beginnt nicht mit einer Titelfolie (cover).')
-  if (s.length > 3 && s[s.length - 1].layout !== 'closing') warn(s.length - 1, 'structure', 'Das Deck endet nicht mit einer Abschlussfolie (closing).')
+  const video = isVideo(deck)
+  if (!video && s.length && s[0].layout !== 'cover') warn(0, 'structure', 'Das Deck beginnt nicht mit einer Titelfolie (cover).')
+  if (!video && s.length > 3 && s[s.length - 1].layout !== 'closing') warn(s.length - 1, 'structure', 'Das Deck endet nicht mit einer Abschlussfolie (closing).')
   for (let i = 2; i < s.length; i++)
-    if (s[i].layout === s[i - 1].layout && s[i].layout === s[i - 2].layout)
+    if (!video && s[i].layout === s[i - 1].layout && s[i].layout === s[i - 2].layout)
       warn(i, 'rhythm', `Drittes "${s[i].layout}" in Folge – Layout abwechseln, damit das Deck lebendig bleibt.`)
   // Canva-Wirkung: drei gleich aufgebaute Folien ohne Bild hintereinander wirken wie eine Vorlage
   const look = (x: (typeof s)[number]) => !(LAYOUTS[x.layout as keyof typeof LAYOUTS] as { frames?: unknown })?.frames ? `-${x.id}` : `${x.frame ?? 'top'}|${x.tone ?? ''}|${JSON.stringify(x.content ?? {}).includes('"src":"asset') || !!x.bg?.image}`
@@ -243,6 +251,7 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
 export function lintMotion(deck: Deck, measured: Measured[]): Issue[] {
   const out: Issue[] = []
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: deck.slides[i].id, severity: 'warn', rule, message })
+  const video = isVideo(deck)
   const own = (k: number) => measured[k].els.map((e) => ({ slot: e.slot, key: morphKey(e) }))
   deck.slides.forEach((s, i) => {
     const t = transitionOf(deck, i)
@@ -253,7 +262,7 @@ export function lintMotion(deck: Deck, measured: Measured[]): Issue[] {
       if (!morphNames(prev, own(i)).some((n) => before.has(n) && n !== 'title' && !n.startsWith('_')))
         warn(i, 'morph', 'Morph ohne gemeinsames Element mit der vorigen Folie (außer dem Titel) – wirkt nur wie Überblenden. Morph braucht wörtlich denselben Text (Agenda-Punkt = Kapiteltitel, Kennzahl = große Zahl), dasselbe Foto oder dasselbe Layout mit anderem focus/highlight; sonst transition weglassen.')
     }
-    if (s.transition && !['morph', 'none', deck.transition].includes(s.transition))
+    if (s.transition && !video && !['morph', 'none', deck.transition].includes(s.transition))
       warn(i, 'transition', `Übergang ${s.transition} weicht vom Deck-Übergang ${deck.transition} ab. Ein Übergangstyp pro Deck; pro Folie nur morph.`)
     const m = measured[i]
     if (deck.mode !== 'click' || !m) return

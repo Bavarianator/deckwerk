@@ -1,6 +1,6 @@
 ---
 name: deckwerk
-description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
+description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
 ---
 
 # Deckwerk: Präsentationen, die man dem Chef zeigen kann
@@ -13,7 +13,7 @@ Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__�
 
 ## 1. Zuerst den Guide lesen
 
-Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler).
+Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler). Für reine Video-Aufträge genügt `read_guide({ topic: "video" })` (Video-Schnitt und das Layout `clip`).
 
 ## 2. Briefing und Material
 
@@ -96,7 +96,21 @@ Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien al
 - `save_deck` speichert nach `~/Deckwerk/<titel>/deck.json`. Nenne den Pfad; der Nutzer öffnet die Datei in der Deckwerk-App (Doppelklick auf `deck.json`) und kann dort weiterarbeiten.
 - Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `docx` (Word: Text bearbeitbar, Gestaltung als Hintergrundbild), `pdf`, `png`, `zip` (alle Bilder plus PDF in einer Datei, für Karussells) oder `md` (Handout). Pfade nennen; bei Nicht-16:9 tragen die Dateien das Format im Namen (`-4x5`, `-a4`).
 - Drucksachen für die Druckerei: `export_deck` mit `format: "print"` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm). A4-Decks skaliert `size` verlustfrei: a2/a3 = Plakat, a5 = Flyer, a6 = Postkarte oder Einladung; die Visitenkarte druckt in ihrer eigenen Größe. Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB; bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
+- Serien (Urkunden, Namensschilder, Einladungen für mehrere Personen): ein Exemplar mit `{{Spalte}}` in den Texten bauen und `export_deck` mit `rows` aufrufen (je Person ein Objekt, Schlüssel = Spaltennamen); je Zeile entsteht eine Datei in `serie-<format>`.
 - Kurzer Bericht: Folienzahl, Storyline in einem Satz, getroffene Annahmen und was der Nutzer ersetzen muss (Zahlen, Zitate, Fotos).
+
+## 9. Video schneiden
+
+Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights oder einen Zusammenschnitt, gilt Guide §11 „Video“. Eine Folie im Layout `clip` ist ein Video aus Ausschnitten. Meldet ein Video-Tool „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen.
+- **Material:** asset://-Pfad aus dem Anhang, absoluter Pfad oder per Link `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; laufende Livestreams erst nach dem Ende.
+- **Sprache:** Ohne `lang` transkribiert Parakeet, das nur 25 europäische Sprachen kennt. Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper.
+- **Short/Reel (9:16):** `transcribe_video` → 3–5 stärkste Momente (Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen bis zum Payoff, zitierfähig, abgeschlossenes Ende), je ideal 55–75 s (hart 20–90), Schnitte nur an Segmentgrenzen, gelistete Neuansätze herausschneiden → `video_frames` als Kontaktabzug → `create_deck` `format: "9:16"`, `transition: "none"`, je Short eine `clip`-Folie (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`, `style` `lebendig`, `fit` `crop` mit Auto-Zuschnitt aufs Gesicht oder `blur` bei Folien und Gesten am Rand, `follow` `sprecher` bei mehreren Personen, `ton` `klar` bei Sprache aus Handy/Webcam, `cover` = Quellsekunde fürs Titelbild aus dem Kontaktabzug, `post` = Titel ≤ 100 Zeichen, 1–2 Sätze, 3–5 Hashtags) → `export_deck` `clips` (je Short MP4, Cover .jpg, Post-Text .txt).
+- **Auswahl:** Kandidaten 4 × 0–25 bewerten (Hook, Bogen, Wert, Teilbarkeit), nur ≥ 70 nehmen; Shorts ideal 55–75 s (hart 20–90), steht für sich allein, keine doppelten Aussagen, lieber 4–8 gute als 2. Details Guide §11.
+- **Grob → fein:** `video_highlights` mit `overview: true`, dann nur die besten Fenster transkribieren; Stellen per `search_transcript` (Thema oder Zitat).
+- **Selbstkontrolle:** Clip-Prüfung in der `add_slides`-Antwort beheben; vor dem Export `check_clip` für die besten Clips, Kontaktabzug ansehen, höchstens 2 Runden.
+- **Ganzes Video kürzen (16:9):** `transcribe_video` mit `all: true` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), Neuansätze herausschneiden, `pauses` `kurz`, `ton` `klar` bei Sprache (nie bei Musik), `captions` `satz` oder `aus` → `export_deck` `mp4`.
+- **Stream (2–8 h) und Videos über 10 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
+- **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` nur dort; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
 
 ## Häufige Fehler
 
