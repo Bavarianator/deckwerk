@@ -1,4 +1,4 @@
-import { app, BrowserWindow, net, protocol } from 'electron'
+import { app, BrowserWindow, net, protocol, shell } from 'electron'
 import { spawn } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
 import { createHash } from 'node:crypto'
@@ -35,7 +35,11 @@ if (process.platform === 'linux' && app.isPackaged && process.env.WAYLAND_DISPLA
 // Kein Fenster navigiert weg oder öffnet neue (z. B. ein auf die Folie gezogener Link): fremde Seiten bekämen sonst die Preload-API
 app.on('web-contents-created', (_, wc) => {
   wc.on('will-navigate', (e) => e.preventDefault())
-  wc.setWindowOpenHandler(() => ({ action: 'deny' }))
+  // Ausnahme: verlinkte Elemente beim Präsentieren (window.open) – nur Web- und Mail-Adressen, im System-Browser
+  wc.setWindowOpenHandler(({ url }) => {
+    if (/^(https?:\/\/|mailto:)/.test(url)) void shell.openExternal(url).catch(() => {})
+    return { action: 'deny' }
+  })
 })
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'asset', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }])

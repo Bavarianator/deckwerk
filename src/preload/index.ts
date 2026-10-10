@@ -104,6 +104,8 @@ const api = {
     ipcRenderer.on('export:progress', h)
     return () => void ipcRenderer.off('export:progress', h)
   },
+  /** Serienbrief: CSV per Dialog wählen, je Zeile eine Datei; null = abgebrochen */
+  exportSeries: (format: 'pptx' | 'docx' | 'pdf' | 'png'): Promise<{ dir: string; count: number } | null> => invoke('deck:exportSeries', format),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),

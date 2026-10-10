@@ -136,6 +136,11 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     ? `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`
     : `${count} Wörter auf der ${prof.unit} – zu viel für dieses Format (Ziel: unter ${prof.goal}). Kürzen oder auf eine weitere ${prof.unit} verteilen.`)
   if (/"(src|image)":""/.test(JSON.stringify(s.content ?? {}))) add('warn', 'image', 'Kein Bild gesetzt – es wird ein Platzhalter angezeigt. Mit find_images ein Foto suchen oder eigenes Bild einsetzen.')
+  for (const it of s.items ?? []) if (it.kind === 'image' && !it.alt?.trim()) add('warn', 'alt-fehlt', 'Bild ohne Alternativtext – Screenreader lesen nichts vor. Alternativtext setzen (alt), z. B. was das Bild zeigt.', `items.${it.id}`)
+  for (const it of s.items ?? []) {
+    const n = it.link?.match(/^#(\d+)$/)
+    if (n && (+n[1] < 1 || +n[1] > deck.slides.length)) add('warn', 'link-ziel', `Link ${it.link} zeigt auf keine Folie – das Deck hat ${deck.slides.length} Folien. Ziel korrigieren oder link entfernen.`, `items.${it.id}`)
+  }
   // Druck: Ein Querformat-Foto mit 2560 px, das per cover eine A4-Seite füllt, hat nur ~146 ppi. Logos (_-Slots) und kleine Bilder zählen nicht.
   if (profileOf(deck) === 'doc')
     for (const e of m.els) {

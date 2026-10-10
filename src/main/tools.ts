@@ -3,13 +3,14 @@
 import { execFile } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { mkdir, readdir, rename, rm } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions } from '../shared/deck'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -19,9 +20,10 @@ import type { Issue } from '../shared/lint'
 import { axesOf, lintLooks, lintTheme, type ThemeIssue } from '../shared/theme-lint'
 import { overview, searchTranscript } from '../shared/transcript-search'
 import { typeset } from '../shared/typo'
+import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
 import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
-import type { Engine, VideoTools } from './agent'
+import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 import { contactSheet } from './ffmpeg'
 import { fetchMusic, findMusic } from './music'
@@ -816,16 +818,18 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien mit transition außer none und morph blenden über Schwarz ab und auf, deshalb Video-Decks mit transition none anlegen und fade nur gezielt setzen). fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4).',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien mit transition außer none und morph blenden über Schwarz ab und auf, deshalb Video-Decks mit transition none anlegen und fade nur gezielt setzen). fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>.',
       inputSchema: z.object({
         format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks'),
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
+        rows: z.array(z.record(z.string(), z.string())).min(1).max(500).optional().describe('Serienbrief: je Zeile eine Datei, {{Spalte}} im Deck wird ersetzt'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
         const print = { size: i.size, bleed: i.bleed }
+        if (i.rows) return { text: `Exportiert (${i.format}):\n${(await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print)).join('\n')}` }
         const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
         const r = await job(key, (onProgress) => ctx.engine.exportDeck(deck, i.format, ctx.outDir, print, onProgress))
         if (!('value' in r)) return { text: stillRunning('Export', r.pct) }
@@ -1092,6 +1096,34 @@ async function download(url: string, maxMB = 15): Promise<{ buf: Buffer; ext: st
 }
 
 // WebP-Maße aus dem Dateikopf (erweitert, verlustfrei, verlustbehaftet); null = kein WebP
+// Serienbrief: je Zeile ein gefülltes Deck, seriell (ein Render-Fenster, wenig RAM) nach <outDir>/serie-<format>/NN-<erster Wert>
+export async function exportSeries(engine: Engine, deck: Deck, rows: Record<string, string>[], format: ExportFormat, outDir: string, print?: PrintOptions): Promise<string[]> {
+  const missing = placeholders(deck).filter((k) => rows.some((r) => !Object.hasOwn(r, k)))
+  if (missing.length) throw new Error(`Spalten fehlen für Platzhalter: ${missing.map((k) => `{{${k}}}`).join(', ')}. Vorhanden: ${Object.keys(rows[0]).join(', ') || '–'}`)
+  const dir = join(outDir, `serie-${format}`)
+  await mkdir(dir, { recursive: true })
+  // nur eigene Altlasten früherer Läufe entfernen, sonst mischen sich alte und neue Serie; fremde Dateien bleiben
+  for (const e of await readdir(dir)) if (/^(\d{3}-|\d{3}$|\.tmp-)/.test(e)) await rm(join(dir, e), { recursive: true, force: true })
+  const out: string[] = []
+  for (const [n, row] of rows.entries()) {
+    // Engine benennt nach dem Deck-Titel; daher in einen Zwischenordner exportieren und umbenennen
+    const tmp = join(dir, `.tmp-${n}`)
+    try {
+      await mkdir(tmp, { recursive: true })
+      await engine.exportDeck(fillDeck(deck, row), format, tmp, print)
+      const name = [String(n + 1).padStart(3, '0'), Object.values(row)[0]?.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 40)].filter(Boolean).join('-')
+      for (const e of await readdir(tmp)) {
+        const to = join(dir, name + extname(e))
+        await rename(join(tmp, e), to)
+        out.push(to)
+      }
+    } finally {
+      await rm(tmp, { recursive: true, force: true })
+    }
+  }
+  return out
+}
+
 export function webpSize(b: Buffer): { width: number; height: number } | null {
   if (b.length < 30 || b.toString('latin1', 0, 4) !== 'RIFF' || b.toString('latin1', 8, 12) !== 'WEBP') return null
   const chunk = b.toString('latin1', 12, 16)

@@ -4,14 +4,14 @@ import { useEffect, useState, type ReactNode } from 'react'
 import {
   AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight,
   AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
-  ClipboardPaste, Crop, Eraser, Group, Italic, List, ListOrdered, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Trash2, Underline, Ungroup, type LucideIcon,
+  ClipboardPaste, Crop, Eraser, Group, Italic, List, ListOrdered, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Spline, Trash2, Underline, Ungroup, type LucideIcon,
 } from 'lucide-react'
 import { ANIM_DIRS, DASHES, ITEM_ANIMS, animStartOf, type Adjust, type AnimDir, type AnimStart, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
-import { GRAPHICS, csvToSpec, specToCsv } from '../../shared/items'
+import { GRAPHICS, csvToSpec, specToCsv, itemSchema, newConnector } from '../../shared/items'
 import { FONT_NAMES, duotoneOf, resolveTheme, withTone } from '../../shared/themes'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { adjustCss } from '../slide'
-import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, type Align, type Order } from './itemOps'
+import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, geoOf, type Align, type Order } from './itemOps'
 import { Select } from './kit'
 import { animateItem } from './PresentScreen'
 import { removeBackground } from './media'
@@ -67,6 +67,17 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => <
 const Btn = ({ icon: I, label, on, ...rest }: { icon: LucideIcon; label: string; on?: boolean; onClick: () => void; disabled?: boolean }) => (
   <button type="button" className={`icon-btn ${on ? 'on' : ''}`} title={label} aria-label={label} aria-pressed={on} {...rest}><I size={15} /></button>
 )
+// Halbfertige Eingaben (z. B. „http“) bleiben lokal und rot markiert; gespeichert wird nur, was das Item-Schema annimmt
+function LinkField({ value, onChange }: { value?: string; onChange: (v: string | undefined) => void }) {
+  const [v, setV] = useState(value ?? '')
+  const ok = (s: string) => !s || itemSchema.shape.link.safeParse(s).success
+  return (
+    <Field label="Link">
+      <input type="text" value={v} placeholder="https://… oder #3 für Folie 3" aria-invalid={!ok(v.trim())}
+        onChange={(e) => { setV(e.target.value); const s = e.target.value.trim(); if (ok(s)) onChange(s || undefined) }} />
+    </Field>
+  )
+}
 function Num({ value, onChange, min, max, step = 1, suffix }: { value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string }) {
   return (
     <span className="num">
@@ -178,6 +189,9 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
         <span className="h3-acts">
           {chosen.length > 1 && !isGroup(items, picked) && <Btn icon={Group} label="Gruppieren (Strg+G)" onClick={() => onItems((l) => groupItems(l, picked))} />}
           {chosen.some((x) => x.group) && <Btn icon={Ungroup} label="Gruppierung aufheben (Strg+Umschalt+G)" onClick={() => onItems((l) => ungroupItems(l, picked))} />}
+          {chosen.length === 2 && chosen.every((x) => x.shape !== 'line') && <Btn icon={Spline} label="Mit Linie verbinden (folgt beim Verschieben)" onClick={() => onItems((l) => [
+            ...l.map((x) => (x.kind === 'text' && picked.includes(x.id) ? { ...x, h: geoOf(x).h } : x)), // Texthöhe ergibt sich aus dem Inhalt: für connect() echte Höhe merken
+            newConnector(chosen[0].id, chosen[1].id, t.c.text)])} />}
           <Btn icon={locked ? Lock : LockOpen} label={locked ? 'Entsperren' : 'Sperren'} on={locked} onClick={() => set({ locked: !locked || undefined })} />
           <Btn icon={Copy} label="Duplizieren" onClick={() => onItems((l) => [...l, ...cloneItems(chosen)])} />
           <Btn icon={Trash2} label="Löschen" onClick={() => onItems((l) => removeItems(l, picked))} />
@@ -258,6 +272,7 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
             )}
           </div>
         )}
+        {it && <LinkField key={it.id} value={it.link} onChange={(link) => set({ link }, `link-${it.id}`)} />}
 
         {it?.kind === 'text' && (
           <>
@@ -382,6 +397,7 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
             </div>
             <BgRemove it={it} set={set} />
             <button type="button" className="btn wide" onClick={async () => { const src = await pickImage(); if (src) set({ src, crop: undefined }) }}>Bild ersetzen …</button>
+            <Field label="Alternativtext"><textarea rows={2} maxLength={250} value={it.alt ?? ''} placeholder="Was zeigt das Bild?" onChange={(e) => set({ alt: e.target.value || undefined }, `alt-${it.id}`)} /></Field>
           </>
         )}
 

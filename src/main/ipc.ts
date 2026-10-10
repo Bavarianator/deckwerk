@@ -12,7 +12,8 @@ import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
-import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, type Orientation } from './tools'
+import { parseCsv } from '../shared/merge'
+import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, exportSeries, type Orientation } from './tools'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
@@ -240,6 +241,22 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       if (files[0]) shell.showItemInFolder(files[0])
       return files
     } finally { if (video) videoExport = false }
+  })
+
+  // Serienbrief: CSV wählen, je Zeile eine Datei; Format nur aus der festen Liste (Vertrauensgrenze Renderer)
+  ipcMain.handle('deck:exportSeries', async (_, format: unknown) => {
+    if (!deck) throw new Error('Es gibt noch kein Deck zum Exportieren.')
+    if (!(['pptx', 'docx', 'pdf', 'png'] as unknown[]).includes(format)) throw new Error('Unbekanntes Exportformat.')
+    const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Tabelle (CSV)', extensions: ['csv', 'txt'] }] })
+    const csv = r.filePaths[0]
+    if (r.canceled || !csv) return null
+    if ((await stat(csv)).size > 5e6) throw new Error('Die CSV ist größer als 5 MB.')
+    const rows = parseCsv(await readFile(csv, 'utf8'))
+    if (!rows.length) throw new Error('Die CSV enthält keine Datenzeilen (erste Zeile = Spaltennamen).')
+    if (rows.length > 500) throw new Error('Höchstens 500 Zeilen pro Serie.')
+    const files = await exportSeries(engine, deck, rows, format as ExportFormat, outDir())
+    shell.showItemInFolder(files[0])
+    return { dir: dirname(files[0]), count: rows.length }
   })
 
   ipcMain.handle('agent:send', async (_, text: string, model?: string) => {

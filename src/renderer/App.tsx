@@ -4,8 +4,9 @@ import '@fontsource-variable/inter'
 import './ui/app.css'
 import './ui/shell.css'
 import { FORMATS, profileOf, sizeOf, type Deck, type Size, type PrintOptions, type FormatId, type Item, type Slide } from '../shared/deck'
-import { newId, resizeDeck } from '../shared/items'
+import { connect, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
+import { placeholders } from '../shared/merge'
 import { THEMES } from '../shared/themes'
 import { AUTO, pickAvailable, type ChatModels } from '../shared/models'
 import type { Target } from './ui/AskBar'
@@ -167,7 +168,7 @@ export default function App() {
     commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, ...p } : s)) }), tag), [commit])
   // freie Elemente der angezeigten Folie
   const onItems = useCallback((fn: (items: Item[]) => Item[], tag?: string) =>
-    commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === index ? { ...s, items: fn(s.items ?? []) } : s)) }), tag), [commit, index])
+    commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === index ? { ...s, items: connect(fn(s.items ?? [])) } : s)) }), tag), [commit, index])
   const onEdit = useCallback((slot: string, text: string) => {
     if (slot.startsWith('items.')) {
       const id = slot.slice(6)
@@ -275,6 +276,11 @@ export default function App() {
         const first = files[0] ?? ''
         setStatus({ text: format === 'clips' && files.length > 1 ? `${files.length} Clips exportiert: ${first.replace(/\/[^/]*$/, '')}` : `Exportiert: ${first}` })
       } finally { off?.(); if (video) videoBusy.current = false }
+    }),
+    onSeries: () => guard(async () => {
+      setStatus({ text: 'Serienbrief: CSV wählen …' })
+      const r = await api.exportSeries('pdf')
+      setStatus(r ? { text: `Serienbrief: ${r.count} PDF in ${r.dir}` } : null)
     }),
   }
 
@@ -400,6 +406,8 @@ export default function App() {
             hasClip={hasClip}
             canPrint={!!deck && profileOf(deck) === 'doc'}
             onPrint={() => setPrinting(true)}
+            canSeries={!!deck && placeholders(deck).length > 0}
+            onSeries={actions.onSeries}
             onPresent={() => present(0)}
             onRestore={actions.onOpenPath}
             onVideo={videoMode ? () => setSlidesView(false) : undefined}
