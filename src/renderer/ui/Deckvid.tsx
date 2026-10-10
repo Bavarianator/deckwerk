@@ -1,16 +1,17 @@
 // Deckvid: Arbeitsansicht für Video-Decks (Folien im Layout clip). Fast alles läuft über die KI (Chat und Ein-Klick-Aufträge);
 // von Hand gibt es nur, was einfacher ist als ein Satz: abspielen, Feinschnitt, Entfernen, Export.
 import { Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowUp, ChevronLeft, LoaderCircle, Paperclip, Pause, Play, Settings, Share, Square, Undo2 } from 'lucide-react'
+import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type ClipStyle } from '../../shared/video'
+import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent } from '../../shared/video'
 import { loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
 import { ClipCutter } from './ClipCutter'
+import { WorkSteps } from './DeckvidWork'
 import { ClipVideo, Strip, captionAt, clipUrl, useClipPlayer } from './clipPlayer'
 import { confirmDialog } from './kit'
 import { SourceChips, VIDEO_EXAMPLES, sourceContext, useSource } from './Start'
@@ -160,6 +161,13 @@ export function Deckvid(p: Props) {
     const text = draft.trim() || (srcs.length ? 'Nutze diese Videos.' : '')
     if (text && onSend(text + names, withSrcs(here))) { setDraft(''); clear() }
   }
+  // Standardwert = Feld weglassen, wie die KI es schreibt
+  const setClip = (x: Partial<ClipContent>) => {
+    if (!clip) return
+    const content: Partial<ClipContent> = { ...clip.content, ...x }
+    for (const k of Object.keys(x) as (keyof ClipContent)[]) if (x[k] === undefined) delete content[k]
+    p.patchSlide(index, { content })
+  }
   const removeClip = async () => {
     if (clip && await confirmDialog({ title: 'Clip entfernen?', text: 'Der Clip verschwindet aus dem Video. Rückgängig mit Strg+Z.', ok: 'Entfernen', danger: true })) p.delSlide(index)
   }
@@ -195,6 +203,7 @@ export function Deckvid(p: Props) {
 
       <div className="dv">
         <nav className="dv-list" aria-label="Clips" ref={list}>
+          {clips.length > 0 && <div className="dv-list-head"><b>{wide ? 'Ablauf' : 'Shorts'}</b><span>{clips.length} · {mmss(clips.reduce((t, s) => t + partsLength(s.content.parts), 0))}</span></div>}
           {slides.map((s, i) => isClip(s) ? (
             <button key={s.id} className="dv-item" aria-current={i === index} onClick={() => p.onSelect(i)}>
               <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${clipUrl(s.content.video)}?frame=${s.content.cover ?? s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
@@ -209,16 +218,14 @@ export function Deckvid(p: Props) {
         </nav>
 
         {clip ? (
-          <ClipStage key={clip.id} clip={clip} n={no(clip)} here={here!} size={size} deck={deck} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
+          <ClipStage key={clip.id} clip={clip} n={no(clip)} total={clips.length} here={here!} size={size} deck={deck} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
             parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)} cached={cache[clip.content.video] ?? null} issues={issues[clip.id] ?? []} fresh={!!fresh[clip.content.video]}
-            busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()}
-            onCaptions={() => p.patchSlide(index, { content: { ...clip.content, captions: clip.content.captions === 'aus' ? 'satz' : 'aus' } })}
-            onStyle={(style) => p.patchSlide(index, { content: { ...clip.content, style: style === 'ruhig' ? undefined : style } })} />
+            busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()} onContent={setClip} />
         ) : (
           <section className="dv-main" aria-label="Vorschau">
             <div className="dv-empty">
               {busy ? (
-                <p role="status"><LoaderCircle size={16} className="spin" aria-hidden /> Die KI sucht gerade die besten Momente …</p>
+                <WorkSteps msgs={p.msgs} busy={busy} />
               ) : slide ? (
                 <p>{labelOf(slide)} – steht im fertigen Video {STILL} Sekunden zwischen den Clips.</p>
               ) : (
@@ -340,15 +347,16 @@ function useSubFace(deck: Deck | null) {
 }
 
 interface StageProps {
-  clip: ClipSlide; n: number; here: string; size: Size; accent: string; deck: Deck | null
+  clip: ClipSlide; n: number; total: number; here: string; size: Size; accent: string; deck: Deck | null
   parts: ClipContent['parts'] // alle Ausschnitte aus derselben Quelle, für die Zeitleiste
   cached: Cached | null
   issues: ClipIssue[]; fresh: boolean
-  busy: boolean; onSend: (text: string, context?: string) => boolean; undo: ReactNode; onCut: () => void; onRemove: () => void; onCaptions: () => void; onStyle: (s: ClipStyle) => void
+  busy: boolean; onSend: (text: string, context?: string) => boolean; undo: ReactNode; onCut: () => void; onRemove: () => void
+  onContent: (x: Partial<ClipContent>) => void // undefined = Standard, Feld fällt weg
 }
 
-// Vorschau, Aufträge und Quell-Zeitleiste des gewählten Clips (Bereiche main und line im Grid). key = Folien-ID: ein anderer Clip startet frisch.
-function ClipStage({ clip, n, here, size, accent, deck, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onCaptions, onStyle }: StageProps) {
+// Vorschau mit Detailspalte, Aufträge und Quell-Zeitleiste des gewählten Clips (Bereiche main und line im Grid). key = Folien-ID: ein anderer Clip startet frisch.
+function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onContent }: StageProps) {
   const c = clip.content
   const videoRef = useRef<HTMLVideoElement>(null)
   const player = useClipPlayer(videoRef, c.parts)
@@ -387,42 +395,100 @@ function ClipStage({ clip, n, here, size, accent, deck, parts, cached, issues, f
   } as CSSProperties
   const focus = c.parts.find((x) => player.src >= x.start && player.src < x.end)?.focus ?? c.parts[0].focus
   const to = cached?.duration || Math.max(...parts.map((x) => x.end))
+  const others = parts.length > c.parts.length // weitere Clips aus derselben Quelle
+  const n1 = c.parts.length
+
+  // Hook von Hand: Enter/Blur speichert, Escape verwirft (skip, weil das Verlassen des Felds auch blur auslöst)
+  const [edit, setEdit] = useState<string | null>(null)
+  const skip = useRef(false)
+  const saveHook = (v: string) => {
+    const t = v.trim()
+    if (!skip.current && t !== (c.hook ?? '')) onContent({ hook: t || undefined })
+    skip.current = false
+    setEdit(null)
+  }
+  const startEdit = () => { if (!busy) setEdit(c.hook ?? '') }
+
+  // Beschriftete Einstellung als Segmentschalter
+  const opt = <V extends string>(label: string, cur: V, set: (v: V) => void, opts: [v: V, text: string, title?: string][]) => (
+    <div className="dv-opt">
+      <span>{label}</span>
+      <div className="seg" role="group" aria-label={label}>
+        {opts.map(([v, text, title]) => <button key={v} aria-pressed={cur === v} disabled={busy} title={title} onClick={() => { if (cur !== v) set(v) }}>{text}</button>)}
+      </div>
+    </div>
+  )
 
   return (
     <>
       <section className="dv-main" aria-label="Vorschau">
-        <div className="dv-stage">
-          <div className={`dv-screen${live ? ' live' : ''}`} style={screen}>
-            <ClipVideo video={c.video} aspect={size.w / size.h} focus={focus} fit={c.fit} still={c.parts[0].start} videoRef={videoRef}
-              onClick={player.toggle} onBad={() => setBad(true)}>
-              {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
-              {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
-              {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
-              {bad && <p className="dv-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Exportieren geht trotzdem.</p>}
-            </ClipVideo>
+        <div className="dv-row">
+          <div className="dv-view">
+            <div className="dv-stage">
+              <div className={`dv-screen${live ? ' live' : ''}`} style={screen}>
+                <ClipVideo video={c.video} aspect={size.w / size.h} focus={focus} fit={c.fit} still={c.parts[0].start} videoRef={videoRef}
+                  onClick={player.toggle} onBad={() => setBad(true)}>
+                  {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
+                  {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
+                  {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
+                  {bad && <p className="dv-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Exportieren geht trotzdem.</p>}
+                </ClipVideo>
+              </div>
+            </div>
+            <div className="dv-transport">
+              <button className="round" aria-label={player.playing ? 'Pause (Leertaste)' : 'Abspielen (Leertaste)'} onClick={player.toggle}>
+                {player.playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
+              </button>
+              <span>{mmss(player.t)} / {mmss(player.duration)}</span>
+              {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
+            </div>
+          </div>
+
+          <div className="dv-side">
+            <div className="dv-head">
+              <div><small>Clip {n} von {total}</small>{!wide && edit === null && <button className="plain" aria-label="Hook bearbeiten" disabled={busy} onClick={startEdit}>Bearbeiten</button>}</div>
+              {edit !== null
+                ? <input type="text" value={edit} maxLength={70} aria-label="Hook" autoFocus onChange={(e) => setEdit(e.target.value)} onBlur={(e) => saveHook(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') { skip.current = e.key === 'Escape'; e.currentTarget.blur() } }} />
+                : <h2 className={!wide && !busy ? 'edit' : undefined} onClick={wide ? undefined : startEdit}>{c.hook || `Clip ${n}`}</h2>}
+              <p>{mmss(partsLength(c.parts))} · {n1 === 1 ? '1 Ausschnitt' : `${n1} Ausschnitte`} aus {mmss(Math.min(...c.parts.map((x) => x.start)))}–{mmss(Math.max(...c.parts.map((x) => x.end)))}</p>
+            </div>
+
+            <div className="dv-opts">
+              {opt('Untertitel', mode, (v) => onContent({ captions: v === 'wort' ? undefined : v }), [['wort', 'Wort'], ['satz', 'Satz'], ['aus', 'Aus']])}
+              {opt('Stil', c.style ?? 'ruhig', (v) => onContent({ style: v === 'ruhig' ? undefined : v }),
+                CLIP_STYLES.map((st) => [st, st === 'ruhig' ? 'Ruhig' : 'Lebendig', st === 'ruhig' ? 'Ohne Animation' : 'Wort-Pop, Hook-Einblendung, Fortschrittsbalken, Zoom an Schnitten']))}
+              {opt('Pausen', c.pauses ?? 'lassen', (v) => onContent({ pauses: v === 'lassen' ? undefined : v }), [['lassen', 'Lassen'], ['kurz', 'Kürzen']])}
+              {opt('Bild', c.fit ?? 'crop', (v) => onContent({ fit: v === 'crop' ? undefined : v }),
+                [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund']])}
+            </div>
+
+            <div className="dv-btns">
+              <button className="pill" disabled={busy} title="Anfang und Ende von Hand nachschneiden" onClick={() => { player.pause(); onCut() }}>Feinschnitt</button>
+              <button className="plain dv-quiet" disabled={busy} onClick={onRemove}>Entfernen</button>
+            </div>
+
+            {(issues.length > 0 || fresh) && (
+              <div className="dv-sec">
+                <h3>Prüfung</h3>
+                {issues.length > 0
+                  ? <Hints xs={issues} busy={busy || !fresh} onFix={() => onSend('Behebe die Prüfhinweise dieses Clips.',
+                      `Clip ${n} (Folie ${clip.id}), Quelle ${c.video}, ${c.parts.map((x, i) => `Ausschnitt ${i + 1}: ${String(+x.start.toFixed(1)).replace('.', ',')}–${String(+x.end.toFixed(1)).replace('.', ',')} s`).join('; ')}\n\nPrüfhinweise:\n${issues.filter((x) => x.severity !== 'info').map((x) => `- ${x.message}`).join('\n')}`)} />
+                  : <p className="dv-ok"><Check size={15} aria-hidden />Keine Hinweise.</p>}
+              </div>
+            )}
+            {c.post?.trim() && (
+              <div className="dv-sec">
+                <h3>Post-Text</h3>
+                <Post key={c.post} text={c.post} />
+              </div>
+            )}
           </div>
         </div>
-        <div className="dv-transport">
-          <button className="round" aria-label={player.playing ? 'Pause (Leertaste)' : 'Abspielen (Leertaste)'} onClick={player.toggle}>
-            {player.playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
-          </button>
-          <span>{mmss(player.t)} / {mmss(player.duration)}</span>
-          {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
-        </div>
-        {issues.length > 0 && <Hints xs={issues} busy={busy || !fresh} onFix={() => onSend('Behebe die Prüfhinweise dieses Clips.',
-          `Clip ${n} (Folie ${clip.id}), Quelle ${c.video}, ${c.parts.map((x, i) => `Ausschnitt ${i + 1}: ${String(+x.start.toFixed(1)).replace('.', ',')}–${String(+x.end.toFixed(1)).replace('.', ',')} s`).join('; ')}\n\nPrüfhinweise:\n${issues.filter((x) => x.severity !== 'info').map((x) => `- ${x.message}`).join('\n')}`)} />}
-        {c.post?.trim() && <Post key={c.post} text={c.post} />}
-        <div className="dv-acts" role="group" aria-label={`Clip ${n} ändern`}>
+
+        <div className="dv-acts" role="group" aria-label={`Clip ${n}: Auftrag an die KI`}>
+          <span>Auftrag an die KI</span>
           {(wide ? WIDE_TASKS : TASKS).map(([label, text]) => <button key={label} className="pill" disabled={busy} onClick={() => onSend(text, here)}>{label}</button>)}
-          <i aria-hidden />
-          {wide && <button className="pill" disabled={busy} onClick={onCaptions}>{mode === 'aus' ? 'Untertitel an' : 'Untertitel aus'}</button>}
-          <button className="pill" disabled={busy} title="Anfang und Ende von Hand nachschneiden" onClick={() => { player.pause(); onCut() }}>Feinschnitt</button>
-          <div className="seg" role="group" aria-label="Stil">
-            {CLIP_STYLES.map((st) => (
-              <button key={st} aria-pressed={(c.style ?? 'ruhig') === st} disabled={busy} title={st === 'ruhig' ? 'Ohne Animation' : 'Wort-Pop, Hook-Einblendung, Fortschrittsbalken, Zoom an Schnitten'} onClick={() => onStyle(st)}>{st === 'ruhig' ? 'Ruhig' : 'Lebendig'}</button>
-            ))}
-          </div>
-          <button className="pill" disabled={busy} onClick={onRemove}>Entfernen</button>
           {!busy && undo}
         </div>
       </section>
@@ -431,17 +497,21 @@ function ClipStage({ clip, n, here, size, accent, deck, parts, cached, issues, f
         <div className="dv-line-head">
           <b>Ganzes Video</b>
           <span>{mmss(to)}</span>
-          {curve && <span>Kurve: Lautstärke</span>}
-          {!!cached?.highlights.length && <span>Highlights: Klick macht daraus einen Short</span>}
+          {/* Strip zeichnet alle Ausschnitte grau, den gewählten Clip nicht eigens */}
+          <span className="dv-legend">
+            <span><i className="part" aria-hidden />{others ? 'Clips' : 'dieser Clip'}</span>
+            {!!cached?.highlights.length && <span><i className="mark" aria-hidden />Highlight</span>}
+          </span>
         </div>
         <Strip from={0} to={to} parts={parts} head={player.src} onSeek={player.seekSource} curve={curve}
           marks={cached?.highlights.map((h) => ({ start: h.start, end: h.end, label: h.why }))} />
+        <div className="dv-scale" aria-hidden>{[0, 1, 2, 3, 4].map((k) => <span key={k}>{mmss((to * k) / 4)}</span>)}</div>
         {!!cached?.highlights.length && (
           <div className="dv-marks" role="group" aria-label="Highlights">
             {cached.highlights.map((h, k) => (
               <button key={k} className="pill" disabled={busy} title={h.why} aria-label={`Aus Highlight ${k + 1} (${mmss(h.start)} bis ${mmss(h.end)}) einen Short machen`}
                 onClick={() => onSend(`Mach aus ${mmss(h.start)}–${mmss(h.end)} einen Short`, `Quelle ${c.video}, Highlight ${h.start}–${h.end} s (${h.why}). Neue clip-Folie wie die anderen Shorts.`)}>
-                <b>{k + 1}</b> {mmss(h.start)}–{mmss(h.end)}
+                <b>{k + 1}</b> {mmss(h.start)}–{mmss(h.end)} <span>{h.why}</span>
               </button>
             ))}
           </div>
