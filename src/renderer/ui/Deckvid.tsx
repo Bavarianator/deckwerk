@@ -403,7 +403,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
   const skip = useRef(false)
   const saveHook = (v: string) => {
     const t = v.trim()
-    if (!skip.current && t !== (c.hook ?? '')) onContent({ hook: t || undefined })
+    if (!skip.current && !busy && t !== (c.hook ?? '')) onContent({ hook: t || undefined })
     skip.current = false
     setEdit(null)
   }
@@ -458,11 +458,11 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
               {opt('Untertitel', mode, (v) => onContent({ captions: v === 'wort' ? undefined : v }), [['wort', 'Wort'], ['satz', 'Satz'], ['aus', 'Aus']])}
               {opt('Stil', c.style ?? 'ruhig', (v) => onContent({ style: v === 'ruhig' ? undefined : v }),
                 CLIP_STYLES.map((st) => [st, st === 'ruhig' ? 'Ruhig' : 'Lebendig', st === 'ruhig' ? 'Ohne Animation' : 'Wort-Pop, Hook-Einblendung, Fortschrittsbalken, Zoom an Schnitten']))}
-              {opt('Pausen', c.pauses ?? 'lassen', (v) => onContent({ pauses: v === 'lassen' ? undefined : v }), [['lassen', 'Lassen'], ['kurz', 'Kürzen']])}
+              {opt('Pausen', c.pauses ?? 'lassen', (v) => onContent({ pauses: v === 'lassen' ? undefined : v }), [['lassen', 'Lassen'], ['kurz', 'Kürzen', 'Lange Pausen und Füllwörter fallen im Export weg']])}
               {opt('Bild', c.fit ?? 'crop', (v) => onContent({ fit: v === 'crop' ? undefined : v }),
                 [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund']])}
               {opt('Ton', c.ton ?? 'original', (v) => onContent({ ton: v === 'original' ? undefined : v }),
-                [['original', 'Original', 'Ton unverändert'], ['klar', 'Klar', 'Sprache aufbereiten: Rauschen weg, gleichmäßig laut. Nicht bei Musik']])}
+                [['original', 'Original', 'Ton unverändert'], ['klar', 'Klar', 'Sprache aufbereiten: Rauschen weg, gleichmäßig laut (im Export). Nicht bei Musik']])}
             </div>
 
             <div className="dv-btns">
