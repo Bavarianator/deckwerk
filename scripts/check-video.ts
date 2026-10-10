@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless, snapParts } from '../src/main/export-video'
+import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, padParts, seamless, snapParts } from '../src/main/export-video'
 import { cropFilter, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
@@ -34,6 +34,29 @@ async function main() {
   const dir = mkdtempSync(join(base, 'check-video-'))
   try {
     console.log('ffmpeg:', await ffmpegBin())
+
+    // Titelbild: Standbild in Ausgabegröße, Hook eingebrannt (ruhig und lebendig, ohne Einblendung), ohne Hook kein Text; Zeit außerhalb des Videos wird begrenzt
+    {
+      const grau = join(dir, 'cover-src.mp4'), size = { w: 360, h: 640 } // kleiner scheitert boxblur (Chroma-Radius)
+      await runFfmpeg(['-f', 'lavfi', '-i', 'color=c=gray:size=1280x720:rate=30:duration=2', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', grau])
+      const job = { file: grau, parts: [{ start: 0.2, end: 1.8, focus: 0.3 }], captions: 'aus' as const, transcript: null, size, font: { name: 'Archivo', files: [readFileSync(resolve('assets/fonts/Archivo-Bold.ttf'))], bold: true }, accent: '#FF8800' }
+      // Grauwerte der oberen 40 % (Hook sitzt oben links): Spannweite
+      const spread = async (f: string) => {
+        const { out } = await run(await ffmpegBin(), ['-i', f, '-f', 'rawvideo', '-pix_fmt', 'gray', 'pipe:1'])
+        assert.equal(out.length, size.w * size.h, 'Ausgabegröße')
+        const top = out.subarray(0, size.w * Math.round(size.h * 0.4))
+        return Math.max(...top) - Math.min(...top)
+      }
+      for (const [n, x, t] of [['ohne', {}, 99], ['ruhig', { hook: 'Hook hier' }, 1], ['lebendig', { hook: 'Hook hier', style: 'lebendig' as const }, undefined], ['blur', { hook: 'Hook', fit: 'blur' as const }, 0.5]] as const) {
+        const jpg = join(dir, `cover-${n}.jpg`)
+        await encodeCover({ ...job, ...x }, t, jpg, dir)
+        const sp = await spread(jpg) // prüft auch die Größe (probe verlangt eine Dauer, ein JPEG hat keine)
+        if (n === 'ohne') assert.ok(sp < 12, `ohne Hook Text im Bild (Spannweite ${sp})`)
+        else if (n !== 'blur') assert.ok(sp > 100, `${n}: Hook fehlt (Spannweite ${sp})`)
+      }
+      console.log('  Titelbild ok')
+    }
+    if (process.env.DW_ONLY_COVER) return
 
     // Szenengrenzen: harte Bildwechsel finden (scdet), Kanten knapp davor/dahinter darauflegen, Polster nie darüber – sonst blitzt die Nachbarszene auf
     {

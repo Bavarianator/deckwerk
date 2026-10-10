@@ -450,6 +450,8 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - Schnitte nur an Segmentgrenzen des Transkripts, nie mitten im Satz. Füllsätze, Wiederholungen und Abschweifungen herausschneiden: ein Clip besteht dann aus mehreren `parts` (Jump Cuts).
 - Short: ideal 55–75 s, hart 20–90 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
 - `hook` (Short): höchstens 70 Zeichen, löst nicht schon alles auf; kein Clickbait, keine Emojis.
+- `cover` (Short): Quellsekunde fürs Titelbild aus dem Kontaktabzug – Gesicht mit Ausdruck oder der Moment des Payoffs; nicht der erste Frame, kein Schwarz- oder Übergangsbild.
+- `post` (Short): Zeile 1 Titel wie bei YouTube (≤ 100 Zeichen), dann 1–2 Sätze, dann 3–5 passende Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten. Bei fremdem Material Link oder Quelle nennen. Export `clips` legt je Short Cover (.jpg) und Post-Text (.txt) neben das MP4; `mp4` nimmt Cover und Post der ersten Clip-Folie, die sie hat.
 - `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
 - `style`: `lebendig` für Shorts und Reels (Wort-Pop, Hook blendet mit Balken ein, Fortschrittsbalken, Zoom-Wechsel an Schnitten kaschiert Jump-Cuts), sonst weglassen (= ruhig, ohne Bewegung): Fulltime, Vorträge, Schulungen. Keine weiteren Effekte, Sticker oder Emojis.
 - `pauses`: `kurz` für Talking Heads mit Denkpausen oder stockendem Sprechen (Pausen ab 0,6 s schrumpfen auf 0,3 s), `lassen` bei Musik, Vorführungen oder bewusst gesetzten Pausen.

@@ -239,6 +239,8 @@ const clip = z.object({
   fit: z.enum(['crop', 'blur']).optional().describe('Bild im Format: crop = Bild füllt das Format, Zuschnitt um focus (Standard); blur = ganzes Bild mittig auf unscharfem Grund, wenn Gesten oder Folien am Rand wichtig sind'),
   follow: z.enum(['sprecher']).optional().describe('sprecher = Zuschnitt folgt dem, der gerade spricht (Podcast, Gespräch); nur bei mehreren Personen im Bild'),
   style: z.enum(['ruhig', 'lebendig']).optional().describe('Animation im Export: ruhig (Standard, ohne Bewegung) oder lebendig (Wort-Pop, Hook mit Einblendung, Fortschrittsbalken, Zoom-Wechsel an Schnitten) – lebendig für Shorts/Reels, ruhig für Vorträge und Fulltime'),
+  cover: z.number().min(0).optional().describe('Quellsekunde fürs Titelbild (Export: .jpg neben dem MP4): ausdrucksstarkes Gesicht oder der Kernmoment, aus dem Kontaktabzug; muss im Video liegen, nicht der erste Frame, kein Schwarzbild'),
+  post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
 })
 
 const L = <S extends z.ZodObject>(d: LayoutDef<S>) => d
@@ -559,8 +561,8 @@ export const EXTRA_LAYOUTS = {
     sizes: ['9:16', '4:5', '1:1', '16:9'], schema: clip, defaultBuild: 'none', footer: false,
     samples: {
       min: { video: '', parts: [{ start: 0, end: 4 }] },
-      typ: { video: '', hook: 'Warum neun von zehn Pitches scheitern', parts: [{ start: 12.4, end: 21.8, focus: 0.5 }, { start: 40.1, end: 52 }, { start: 63, end: 70.5 }], captions: 'wort' },
-      max: { video: '', hook: words(70), parts: rep(MAX_PARTS, (i) => ({ start: i * 10, end: i * 10 + 8, focus: 1 })), captions: 'satz', fit: 'blur', follow: 'sprecher', style: 'lebendig' },
+      typ: { video: '', hook: 'Warum neun von zehn Pitches scheitern', parts: [{ start: 12.4, end: 21.8, focus: 0.5 }, { start: 40.1, end: 52 }, { start: 63, end: 70.5 }], captions: 'wort', cover: 45.2, post: 'Warum neun von zehn Pitches scheitern\nDer häufigste Fehler steckt in der ersten Minute. So vermeidest du ihn.\n#pitch #startup #gründen' },
+      max: { video: '', hook: words(70), parts: rep(MAX_PARTS, (i) => ({ start: i * 10, end: i * 10 + 8, focus: 1 })), captions: 'satz', fit: 'blur', follow: 'sprecher', style: 'lebendig', cover: 5, post: words(2200) },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>
