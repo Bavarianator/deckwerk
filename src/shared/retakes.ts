@@ -23,12 +23,13 @@ const ends = (w: Word) => SENTENCE_END.test(w.w.trim())
 export function retakes(t: Transcript): Retake[] {
   const ws = t.segments.flatMap((s) => s.words ?? []) // nur echte Wortzeiten, geschätzte sind zum Schneiden zu ungenau
   const b = ws.map(norm)
+  const spk = t.segments.flatMap((s) => (s.words ?? []).map(() => s.speaker)) // anderer Sprecher wiederholt = Interview, kein Neuansatz
   const out: Retake[] = []
   const text = (from: number, k: number) => ws.slice(from, from + k).map((w) => w.w.trim()).join(' ')
   let i = 0
   while (i < ws.length) {
     // Stottern „ich ich ich“: nur die Doppelung raus; „die, die …“ mit Komma ist gewollt
-    if (b[i] && b[i] === b[i + 1] && !/\p{P}$/u.test(ws[i].w.trim())) {
+    if (b[i] && b[i] === b[i + 1] && spk[i] === spk[i + 1] && !/\p{P}$/u.test(ws[i].w.trim())) {
       let j = i + 1
       while (b[j + 1] === b[i]) j++
       if (j === i + 1 && DOUBLE.has(b[i])) { i++; continue } // „die die Arbeit machen“: Relativpronomen ohne Komma (ASR) – erst dreifach ist Stottern
@@ -43,8 +44,8 @@ export function retakes(t: Transcript): Retake[] {
     for (let j = i + 1; start && j < ws.length && ws[j].start - ws[i].start <= MAX_GAP; j++) {
       let k = 0
       while (k < j - i && j + k < ws.length && b[i + k] && b[i + k] === b[j + k]) k++
-      if (!k || ws.slice(i, i + k).every((_, m) => FUNC.has(b[i + m]))) continue
-      const len = j - i, broken = !ws.slice(i, j).some(ends)
+      if (!k || spk[i] !== spk[j] || ws.slice(i, i + k).every((_, m) => FUNC.has(b[i + m]))) continue
+      const len = j - i, broken = !ws.slice(i, j).some(ends) && !/[,;:–-]$/.test(ws[j - 1].w.trim()) // mit Komma davor ist es eine Anapher („Mut, wir brauchen Zeit“)
       const ok = broken ? k >= MIN_BROKEN && len <= MAX_BROKEN && !CONJ.has(b[j - 1]) : k >= MIN_MATCH && k === len // ganzer Satz: nur wenn er komplett wiederholt wird, sonst Anapher
       if (!ok) continue
       out.push({ drop: [ws[i].start, ws[j].start], keep: ws[j].start, text: text(j, k) })
@@ -78,6 +79,11 @@ if (typeof process !== 'undefined' && process.env.DW_RETAKES_SELFTEST) {
   eq(retakes(mk(['und dann', 0], ['und dann kommt der Rest.', 1])), [], 'nur Funktionswörter')
   eq(retakes(mk(['Wir wollen mehr Schulen.', 0], ['Wir wollen mehr Lehrer.', 2])), [], 'Anapher')
   eq(retakes(mk(['Wir wollen mehr Schulen und', 0], ['wir wollen mehr Lehrer.', 2])), [], 'Aufzählung mit und')
+  eq(retakes(mk(['Wir brauchen Mut, wir brauchen Zeit.', 0])), [], 'Anapher mit Komma')
+  eq(retakes(mk(['Es geht um Schulen, es geht um Lehrer.', 0])), [], 'Anapher mit Komma 3 Wörter')
+  const two = mk(['Das Projekt', 0], ['Das Projekt läuft gut.', 1])
+  two.segments[1].speaker = 1
+  eq(retakes(two), [], 'anderer Sprecher')
   eq(retakes({ duration: 10, lang: 'de', segments: [{ start: 0, end: 5, text: 'Heute zeige ich. Heute zeige ich euch was.' }] }), [], 'ohne words')
   console.log('retakes ok')
 }
