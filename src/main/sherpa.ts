@@ -5,7 +5,7 @@
 // sherpa läuft im Kindprozess sherpa-worker: Es bringt eine eigene libonnxruntime mit, die neben onnxruntime-node
 // (Freisteller, YuNet) im selben Prozess kollidieren kann, und das Modell (~1,3 GB RAM) blockiert so nie den Main-Prozess.
 // Ohne Electron, damit der Selbsttest unter Node läuft (scripts/check-sherpa.ts).
-import { fork, type ChildProcess } from 'node:child_process'
+import { execFileSync, fork, type ChildProcess } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { setPriority } from 'node:os'
@@ -66,7 +66,14 @@ export async function ensureModels(kind: Kind, modelsDir: string, onProgress: (p
 // 1,74/1,23 (CPU 1,10/1,16), Spitze 1,32 bzw. 1,37 GB VmHWM. Ohne Last geschätzt RTF 0,75 gegen ~0,57; Modell laden unter Last
 // 15–35 s. Die geteilte FPU kostet ~40 % mehr Rechenzeit, 2 Threads sind trotzdem schneller. Ausnahme: Bei Last ~10 und
 // nice 10 (check-sherpa) war 2 langsamer (RTF 4,5 gegen 3,3), weil ein verdrängter Thread den anderen warten lässt.
-const THREADS = 2
+// macOS: ein Thread je Leistungskern (Apple Silicon M1–M4 4, Pro/Max 6–12, höchstens 8), mit 2 blieb dort mindestens die
+// Hälfte der Leistungskerne ungenutzt. Effizienzkerne nicht mitzählen: ONNX wartet je Schicht auf den langsamsten
+// Thread. Intel-Macs ohne perflevel0: 4.
+let threadCount: number | undefined
+function defaultThreads(): number {
+  if (process.platform !== 'darwin') return 2
+  try { return Math.min(8, Number(execFileSync('/usr/sbin/sysctl', ['-n', 'hw.perflevel0.physicalcpu'], { encoding: 'utf8' })) || 4) } catch { return 4 }
+}
 const IDLE = 60_000 // danach endet der Worker und gibt das Modell (~1,3 GB) frei
 const STALL = 10 * 60_000 // so lange keine Nachricht bei offenem Auftrag: Worker hängt und blockierte sonst alle folgenden
 
@@ -165,7 +172,7 @@ export function stopWorker(): void {
  *  Wortzeiten (s, + offset). onProgress 0–100 über die Erkennung; fehlende Modelle lädt ensureModels vorher ohne Fortschritt. */
 export async function asr(pcm: Float32Array, o: { models: string; offset?: number; onProgress?: (pct: number) => void }): Promise<Segment[]> {
   await ensureModels('asr', o.models)
-  const threads = Number(process.env.DECKWERK_SHERPA_THREADS) || THREADS // Stellschraube für Messungen
+  const threads = Number(process.env.DECKWERK_SHERPA_THREADS) || (threadCount ??= defaultThreads()) // Stellschraube für Messungen
   return call<Segment[]>('asr', { pcm, models: o.models, offset: o.offset ?? 0, threads }, o.onProgress)
 }
 
