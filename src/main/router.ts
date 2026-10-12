@@ -16,7 +16,7 @@ export type RouterVia = { kind: 'api'; apiKey: string } | { kind: 'claude'; bin:
   | { kind: 'vibe'; bin: string; model: string; legacy: boolean } | { kind: 'none' }
 type Run = (args: string[], stdin: string) => Promise<string>
 
-const MODEL = { opus: 'claude-opus-5-5', sonnet: 'claude-sonnet-5-5' } as const
+const MODEL = { opus: 'opus', sonnet: 'sonnet' } as const // Familien wie im Modell-Dropdown (shared/models.ts)
 const EFFORTS: Effort[] = ['low', 'medium', 'high']
 const SCHEMA = {
   type: 'object',

@@ -13,7 +13,7 @@ import { createInterface } from 'node:readline'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import type { Deck } from '../shared/deck'
-import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
+import { DEFAULT_MODEL, type Effort } from '../shared/models'
 import { withEvents, type DeckAgentOptions } from './agent'
 import { corePrompt, leitfaden, type Route } from './guide-modules'
 import { serveTools } from './mcp'
@@ -94,8 +94,8 @@ export function invocation(cli: Cli, m: Mcp, session: string | null, model: stri
     return { env: {}, stdin: msg, args: ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--setting-sources', '', '--disable-slash-commands',
       '--mcp-config', m.file, '--strict-mcp-config', '--tools', 'WebSearch,WebFetch', '--allowedTools', 'mcp__deckwerk,WebSearch,WebFetch',
       '--system-prompt', core, '--model', model, ...(session ? ['--resume', session] : []),
-      // ohne --effort nimmt Claude Code seine Voreinstellung (xhigh): für Decks unnötig langsam; Haiku kennt kein effort
-      ...('legacyThinking' in modelOf(model) ? [] : ['--effort', effort])] }
+      // ohne --effort nimmt Claude Code seine Voreinstellung (xhigh): für Decks unnötig langsam
+      '--effort', effort] }
   if (cli === 'codex')
     // --ignore-user-config: weder MCP-Server noch Profile des Nutzers, nur unser Server (der Login bleibt). Shell- und
     // Exec-Werkzeuge aus, Sandbox nur lesen, nie nachfragen. `exec resume` kennt --sandbox nicht, daher sandbox_mode per -c.

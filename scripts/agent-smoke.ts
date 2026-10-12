@@ -11,7 +11,7 @@ import { assetUrl, buildTools, imageSettings, JOB_WAIT, jobList, lookTyp, recent
 import type { Deck } from '../src/shared/deck'
 import { lintDeck } from '../src/shared/lint'
 import { resolveTheme } from '../src/shared/themes'
-import { autoPick } from '../src/shared/models'
+import { autoPick, modelOf, pickAvailable } from '../src/shared/models'
 import { typeset } from '../src/shared/typo'
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
@@ -79,9 +79,12 @@ assert.equal(webp('ffd8ffe000104a46494600010100000100010000ffdb00430003020203020
   eq('Er sagte "Hallo" (und "tschüss") bei 12" Zoll', 'Er sagte „Hallo“ (und „tschüss“) bei 12" Zoll')
 }
 // Auto-Modellwahl: neues Deck und Umbauten gründlich, gezielte Änderungen schnell
-assert.equal(autoPick('Ein Pitch für unser Café', false).model, 'claude-opus-5-5')
-assert.equal(autoPick('Überarbeite alle Folien im Ton', true).model, 'claude-opus-5-5')
-assert.deepEqual(autoPick('Mach den Titel kürzer (Folie 3, Element title)', true), { model: 'claude-sonnet-5-5', effort: 'medium', why: 'Änderung' })
+assert.equal(autoPick('Ein Pitch für unser Café', false).model, 'opus')
+assert.equal(autoPick('Überarbeite alle Folien im Ton', true).model, 'opus')
+assert.deepEqual(autoPick('Mach den Titel kürzer (Folie 3, Element title)', true), { model: 'sonnet', effort: 'medium', why: 'Änderung' })
+// Modelle als Familien: eine Auswahl von früher mit Version zählt als ihre Familie
+assert.deepEqual([modelOf('claude-haiku-4-5').id, modelOf('fable').id, modelOf('gpt-5').id], ['haiku', 'fable', 'opus'])
+assert.equal(pickAvailable('claude-sonnet-5-5', { claude: true, vibe: [], codex: [] }), 'sonnet')
 const look = (name: string, bg: string, more = {}) => ({ name, bg, accent: '#C4552D', headFont: 'Fraunces', bodyFont: 'Manrope', radius: 4, decor: 'none', ...more })
 await fails(run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E')] }), /unterscheiden sich kaum/) // nur umgefärbt
 await fails(run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E', { margin: 'generous' })] }), /unterscheiden sich kaum/) // ein neues Merkmal reicht nicht
@@ -438,6 +441,13 @@ const agent = new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} })
 const sys = agent.system
 assert.equal(sys, corePrompt(), 'DeckAgent nutzt den Kernprompt'); assert.ok(agent.fresh)
 assert.equal(sys, new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} }).system, 'Systemprompt stabil (Caching)')
+{ // API-Weg: neuestes Modell der Familie aus der Models-API, ohne Treffer der bekannte Stand
+  type Info = { id: string; created_at: string }
+  const a = new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} }) as unknown as { client: unknown; resolve: (m: ReturnType<typeof modelOf>) => Promise<string> }
+  const list: Info[] = [{ id: 'claude-haiku-4-5-20251001', created_at: '2025-10-01T00:00:00Z' }, { id: 'claude-haiku-6', created_at: '2027-01-01T00:00:00Z' }, { id: 'claude-opus-5-5', created_at: '2026-09-01T00:00:00Z' }]
+  a.client = { models: { list: async function* () { yield* list } } }
+  assert.deepEqual([await a.resolve(modelOf('haiku')), await a.resolve(modelOf('opus')), await a.resolve(modelOf('fable'))], ['claude-haiku-6', 'claude-opus-5-5', 'claude-fable-5-1'])
+}
 assert.ok(sys.includes('# Design-Guide') && sys.includes('layout:kpi-grid'), 'Index im Kernprompt')
 assert.ok(!sys.includes('### kpi-grid') && !sys.includes('"maxLength"'), 'volles Layout-Schema nicht im Kernprompt')
 assert.match(sys, /## Zuletzt gebaute Decks \(nur für neue Decks[^\n]*\n(- .*\n)*- „Alt \d“: hell, Serif-Titel regular \(Fraunces\), Grund neutral, Bauteile line, Akzent #/)

@@ -155,6 +155,18 @@ export class DeckAgent {
     }).map((t) => toRunnable(t, opts.onEvent, this.lock))
   }
 
+  // Neuestes Modell der Familie laut Models-API (Liste einmal je Gespräch), sonst der bekannte Stand
+  private models?: Promise<{ id: string; created_at: string }[]>
+  private async resolve(m: ReturnType<typeof modelOf>): Promise<string> {
+    this.models ??= (async () => {
+      const all = []
+      for await (const x of this.client.models.list({}, { timeout: 10_000 })) all.push(x)
+      return all
+    })().catch((e) => { console.warn('[agent] Modell-Liste nicht geladen:', (e as Error).message); return [] })
+    const newest = (await this.models).filter((x) => x.id.startsWith(`claude-${m.id}-`)).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+    return newest?.id ?? m.latest
+  }
+
   // Noch keine Nachricht gesendet: dann soll der Aufrufer den Router fragen
   get fresh(): boolean { return !this.history.length }
 
@@ -172,27 +184,27 @@ export class DeckAgent {
     this.ctl = new AbortController()
 
     const m = modelOf(this.model)
+    let model = await this.resolve(m)
     for (let attempt = 0; ; attempt++) {
       const runner = this.client.beta.messages.toolRunner(
         {
-          model: m.id,
+          model,
           max_tokens: 64000,
           stream: true,
           max_iterations: 80,
           betas: [...('fallback' in m ? ['server-side-fallback-2026-07-01'] : []), ...('updates' in m ? ['thinking-display-updates-2026-08-18'] : [])],
           ...('fallback' in m && { fallbacks: 'default' as const }),
-          // Opus 5.5 hat effort-Default medium, deshalb explizit setzen; Haiku 4.5 kennt weder adaptive noch effort
-          ...('legacyThinking' in m
-            ? { thinking: { type: 'enabled' as const, budget_tokens: 16000 } }
-            : { thinking: { type: 'adaptive' as const, ...('updates' in m && { display: 'updates' as const }) }, output_config: { effort: this.effort } }),
+          // Opus 5.5 und Haiku 5.5 haben effort-Default medium, deshalb explizit setzen
+          thinking: { type: 'adaptive' as const, ...('updates' in m && { display: 'updates' as const }) },
+          output_config: { effort: this.effort },
           system: [{ type: 'text', text: this.system, cache_control: { type: 'ephemeral' } }],
           // Web-Recherche (Canva „Web Research“) läuft serverseitig; Haiku bekommt nur die Basis-Suche
-          tools: [...this.tools, ...('legacyThinking' in m
+          tools: [...this.tools, ...('basicSearch' in m
             ? [{ type: 'web_search_20250305' as const, name: 'web_search' as const, max_uses: 5 }]
             : [{ type: 'web_search_20260209' as const, name: 'web_search' as const, max_uses: 5 }, { type: 'web_fetch_20260209' as const, name: 'web_fetch' as const, max_uses: 5 }])],
           messages: this.history,
         },
-        { signal: this.ctl.signal },
+        { signal: (this.ctl ??= new AbortController()).signal }, // finally leert ctl auch vor einem neuen Versuch
       )
       try {
         let last: Anthropic.Beta.BetaMessage | undefined
@@ -217,6 +229,9 @@ export class DeckAgent {
         return
       } catch (e) {
         if (e instanceof Anthropic.APIUserAbortError) { this.history = [...runner.params.messages]; emit({ type: 'done' }); return }
+        // ponytail: lehnt ein neueres Modell der Familie unsere Parameter ab (400), einmal mit dem bekannten Stand; bei
+        // Bedarf latest in MODELS nachziehen. Lief vorher schon ein Tool, läuft es erneut.
+        if (e instanceof Anthropic.BadRequestError && model !== m.latest && attempt < 1) { console.warn(`[agent] ${model} lehnt ab, nehme ${m.latest}:`, e.message); model = m.latest; continue }
         // eager_input_streaming: unparsbares Tool-JSON → Turn einmal neu anfordern (History ist unverändert)
         if (!(e instanceof Anthropic.APIError) && attempt < 1) continue
         emit({ type: 'error', message: e instanceof Error ? e.message : String(e) })

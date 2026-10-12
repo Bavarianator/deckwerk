@@ -734,7 +734,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   ipcMain.handle('chat:models', async (): Promise<ChatModels> => (detect(), {
     claude: hasApiKey() || !!clis.claude,
     vibe: clis.vibe ? vibeModels() : [],
-    codex: clis.codex ? await (codexModels ??= listCodex(clis.codex)) : [],
+    codex: clis.codex ? await (codexModels = listCodex(clis.codex)) : [], // bei jedem Abruf frisch, nicht nur beim ersten
   }))
   ipcMain.handle('setup:mcp', async (_, c: unknown = 'claude') => {
     const cli = cliArg(c)

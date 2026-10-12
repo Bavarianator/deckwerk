@@ -38,10 +38,10 @@ assert.equal(r.effort, undefined)
 
 // auto: opus/sonnet → Modell-ID, effort mit; ohne gültiges model kein Modell
 r = await routeTask(neu, claude, { auto: true, run: async (args) => (assert.ok(args.at(-1)!.includes('opus für neue Decks')), answer({ modules: ['storyline'], model: 'opus', effort: 'high', reason: 'neu' })) })
-assert.deepEqual([r.model, r.effort], ['claude-opus-5-5', 'high'])
+assert.deepEqual([r.model, r.effort], ['opus', 'high'])
 assert.ok(r.modules.includes('storyline') && r.modules.includes('geruest-praesentation'))
 r = await routeTask(deck, claude, { auto: true, run: async () => answer({ modules: ['animation'], model: 'sonnet', effort: 'low', reason: 'klein' }) })
-assert.deepEqual([r.model, r.effort], ['claude-sonnet-5-5', 'low'])
+assert.deepEqual([r.model, r.effort], ['sonnet', 'low'])
 r = await routeTask(deck, claude, { auto: true, run: async () => answer({ modules: ['animation'], model: 'gpt', effort: 'max', reason: '?' }) })
 assert.deepEqual([r.model, r.effort, r.source], [undefined, undefined, 'haiku'])
 for (const model of ['constructor', 'toString', '__proto__']) {
@@ -112,7 +112,7 @@ assert.equal(req!.output_config!.effort, 'high')
 assert.equal(req!.output_config!.format!.type, 'json_schema')
 assert.equal((req!.output_config!.format!.schema as { additionalProperties: boolean }).additionalProperties, false)
 assert.ok(typeof req!.system === 'string' && req!.system.includes('opus für neue Decks'))
-assert.deepEqual([r.source, r.model, r.effort, r.reason], ['haiku', 'claude-sonnet-5-5', 'medium', 'api'])
+assert.deepEqual([r.source, r.model, r.effort, r.reason], ['haiku', 'sonnet', 'medium', 'api'])
 assert.ok(r.modules.includes('layout:cover') && r.modules.includes('geruest-praesentation'))
 for (const stop_reason of ['refusal', 'max_tokens'] as const) {
   r = await routeTask(neu, api, { client: client({ stop_reason, content: [{ type: 'text', text: '{"modules":["storyline"],"reason":"x"}' }] as Anthropic.ContentBlock[] }) })
