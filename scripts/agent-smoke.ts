@@ -286,6 +286,13 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   let vd: Deck | null = null
   const T6 = Object.fromEntries(buildTools({ engine: { ...engine, video }, getDeck: () => vd, setDeck: (x) => { vd = x }, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
   const go = (name: string, input: unknown) => T6[name].run(T6[name].inputSchema.parse(input))
+  // ohne url: Videos auf dem PC, neueste zuerst; per Link geladene mit Titel und Dauer aus .meta.json, andere per probe
+  const imp = join(dir, '.video', 'import')
+  mkdirSync(imp, { recursive: true })
+  writeFileSync(join(imp, 'abc.mp4'), '')
+  writeFileSync(join(imp, 'abc.mp4.meta.json'), JSON.stringify({ title: 'Tag 7', duration: 11733 }))
+  utimesSync(file, new Date(2020, 0, 1), new Date(2020, 0, 1))
+  assert.match((await go('import_video', {})).text, /^\d+ Videos auf diesem PC, neueste zuerst:\nasset:\/\/local\/.*\/\.video\/import\/abc\.mp4 · „Tag 7“ · 3:15:33 · [\s\S]*\/talk\.mp4 · 0:01:15 · 1\.1\.2020\n[\s\S]*transcribe_video\.$/)
   JOB_WAIT.ms = 20
   assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\)/)
   assert.deepEqual(jobList().map(({ name, pct, done }) => ({ name, pct, done })), [{ name: 'transcribe', pct: 43, done: false }])

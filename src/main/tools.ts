@@ -439,6 +439,22 @@ function videoFile(ctx: ToolContext, video: string): { file: string; v: VideoToo
   if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Video nicht gefunden: ${file}`)
   return { file, v }
 }
+// Videos, die schon auf diesem PC liegen, neueste zuerst: per Link geladene (Titel und Dauer aus .meta.json, siehe engine.ts
+// importUrl), Asset-Ordner, Videos, Downloads. ponytail: nur die oberste Ebene, Unterordner erst, wenn dort Videos fehlen
+async function localVideos(ctx: ToolContext): Promise<string> {
+  const dirs = [join(ctx.assetDir, '.video', 'import'), ctx.assetDir, join(homedir(), 'Videos'), join(homedir(), 'Downloads')]
+  const found = dirs.flatMap((d) => { try { return readdirSync(d).filter((f) => VIDEO_FILE.test(f)).map((f) => join(d, f)) } catch { return [] } })
+    .flatMap((file) => { const st = statSync(file, { throwIfNoEntry: false }); return st?.isFile() ? [{ file, t: st.mtimeMs }] : [] })
+    .sort((a, b) => b.t - a.t).slice(0, 20)
+  if (!found.length) return `Keine Videos auf diesem PC (${dirs.join(', ')}). Den Nutzer bitten, das Video anzuhängen, einen Link zu geben oder den Dateipfad zu nennen.`
+  const lines = await Promise.all(found.map(async ({ file, t }) => {
+    let meta: { title?: string; duration?: number } = {}
+    try { meta = JSON.parse(readFileSync(`${file}.meta.json`, 'utf8')) } catch { /* nur per Link geladene Videos haben Metadaten */ }
+    const dur = meta.duration ?? (await ctx.engine.video?.probe(file).catch(() => null))?.duration
+    return [assetUrl(file), meta.title && `„${meta.title}“`, dur != null && hms(dur), new Date(t).toLocaleDateString('de-DE')].filter(Boolean).join(' · ')
+  }))
+  return [`${found.length} Videos auf diesem PC, neueste zuerst:`, ...lines, '', 'Weiter: das gemeinte Video nehmen (passt keins sicher, kurz nachfragen), dann mit seinem asset://-Pfad video_highlights (über 10 min) oder transcribe_video.'].join('\n')
+}
 // Hintergrundmusik (deck.music): asset://-URL oder absoluter Pfad einer Audiodatei → asset://-URL wie clip.video
 function audioSrc(src: string): string {
   const path = src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
@@ -882,12 +898,13 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'import_video',
-      description: 'Video per Link laden (YouTube, Twitch, Kick und andere Seiten, die yt-dlp kennt), bis 1080p, dazu Kapitel und bei ehemaligen Livestreams auf YouTube und Twitch der Chat (Signal für video_highlights). Nur Material, an dem der Nutzer die Rechte hat (eigener Kanal, eigener Stream, Erlaubnis) oder das frei lizenziert ist; im Zweifel nachfragen statt laden. Laufende Livestreams gehen erst nach dem Ende als Aufzeichnung. Lange Downloads laufen im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit derselben url auf. Rückgabe: asset://-Pfad für die Video-Tools und clip.video. Ablauf: read_guide topic video.',
-      inputSchema: z.object({ url: z.string().url().max(2000).describe('Link zum Video oder zur Aufzeichnung (VOD)') }),
-      async run(i) {
+      description: 'Video per Link laden (YouTube, Twitch, Kick und andere Seiten, die yt-dlp kennt), bis 1080p, dazu Kapitel und bei ehemaligen Livestreams auf YouTube und Twitch der Chat (Signal für video_highlights). Nur Material, an dem der Nutzer die Rechte hat (eigener Kanal, eigener Stream, Erlaubnis) oder das frei lizenziert ist; im Zweifel nachfragen statt laden. Laufende Livestreams gehen erst nach dem Ende als Aufzeichnung. Lange Downloads laufen im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit derselben url auf. Rückgabe: asset://-Pfad für die Video-Tools und clip.video. Ohne url: listet die Videos, die schon auf diesem PC liegen (früher per Link geladen, Asset-Ordner, Videos, Downloads) – so zuerst nachsehen, wenn der Nutzer ein Video oder einen Stream ohne Anhang und Link meint. Ablauf: read_guide topic video.',
+      inputSchema: z.object({ url: z.string().url().max(2000).optional().describe('Link zum Video oder zur Aufzeichnung (VOD); weglassen = Videos auflisten, die schon auf diesem PC liegen') }),
+      async run({ url }) {
+        if (!url) return { text: await localVideos(ctx) }
         const v = ctx.engine.video
         if (!v?.importUrl) throw new Error('Videos per Link laden gibt es nur in der Deckwerk-App und im MCP-Server.')
-        const r = await job(`import:${i.url}`, (onProgress) => v.importUrl!(i.url, onProgress))
+        const r = await job(`import:${url}`, (onProgress) => v.importUrl!(url, onProgress))
         if (!('value' in r)) return { text: stillRunning('Download', r.pct) }
         const x = r.value, src = assetUrl(x.file)
         const chapters = x.chapters.slice(0, 30).map((c) => `${hms(c.start)} ${c.title}`)
@@ -929,7 +946,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'transcribe_video',
       readOnly: true,
-      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze, Abschweifungen und die unter dem Transkript gelisteten Neuansätze (verworfene Anläufe) über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
+      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper). Hat der Nutzer in Einstellungen → Allgemein „Spracherkennung auf dem Android-Handy“ eingeschaltet und ein Handy per USB-Debugging verbunden, rechnet das Handy (etwa fünfmal so schnell), sonst der PC; schalten kann das nur der Nutzer. Liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze, Abschweifungen und die unter dem Transkript gelisteten Neuansätze (verworfene Anläufe) über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
       inputSchema: z.object({
         video: videoInput,
         from: z.number().min(0).optional().describe('Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)'),
