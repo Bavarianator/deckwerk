@@ -8,7 +8,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, profileOf, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
-import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
+import { CLI_NAME, CLIS, CliAgent, findCli, hasFlag, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import type { Route } from './guide-modules'
 import { routeTask, type RouterVia } from './router'
@@ -48,6 +48,8 @@ async function restore(file: string): Promise<string> {
   await writeFile(main, json)
   return main
 }
+
+const ROUTER_NAME: Record<RouterVia['kind'], string> = { api: 'Haiku', claude: 'Haiku', codex: 'Codex', vibe: 'Vibe', none: 'Regeln' }
 
 export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const keyFile = join(app.getPath('userData'), 'api-key.bin')
@@ -274,16 +276,19 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     agentKind = kind
     const isAuto = !r && model === AUTO
     // Gesprächsstart: Haiku 5.5 wählt die Module (und bei „Auto“ das Modell) über denselben Zugang wie der Chat – API-Key im
-    // API-Weg, sonst der Login von Claude Code (Plan). Vibe/Codex: nach Regeln, der Auftrag geht nicht an einen zweiten Anbieter.
-    // Danach übernimmt das Modell (read_guide).
+    // API-Weg, sonst der Login von Claude Code (Plan). Codex und Vibe routen mit ihrem kleinsten Modell, der Auftrag geht so
+    // an keinen zweiten Anbieter. Danach übernimmt das Modell (read_guide).
     let route: Route | undefined
     if (agent.fresh) {
       const stop = stops
-      const via: RouterVia = kind === 'api' && key ? { kind: 'api', apiKey: key } : kind === 'claude' && clis.claude ? { kind: 'claude', bin: clis.claude } : { kind: 'none' }
+      const via: RouterVia = kind === 'api' ? (key ? { kind: 'api', apiKey: key } : { kind: 'none' })
+        : kind === 'claude' ? { kind: 'claude', bin: clis.claude! }
+        : kind === 'codex' ? { kind: 'codex', bin: clis.codex!, model: smallModel((await (codexModels ??= listCodex(clis.codex!))).map((m) => m.id), /luna|mini|nano/, r!.model) }
+        : { kind: 'vibe', bin: clis.vibe!, model: smallModel(vibeModels().map((m) => m.id), /small|mini|tiny/, r!.model), legacy: await hasFlag(clis.vibe!, '--legacy-harness') }
       emit({ type: 'tool', name: 'router', status: 'start' })
       route = await routeTask({ text, profile: profileOf(deck), layoutsInDeck: deck?.slides.map((s) => s.layout) ?? [], hasDeck: !!deck?.slides.length }, via, { auto: isAuto })
-      const n = route.modules.length
-      emit({ type: 'tool', name: 'router', status: 'done', summary: `${route.source === 'haiku' ? 'Haiku' : 'Regeln'}: ${n} ${n === 1 ? 'Modul' : 'Module'}${route.reason?.startsWith('Fallback') ? ' (Haiku nicht erreichbar)' : ''}` })
+      const n = route.modules.length, who = ROUTER_NAME[via.kind]
+      emit({ type: 'tool', name: 'router', status: 'done', summary: `${route.source === 'regel' ? 'Regeln' : who}: ${route.video ? 'Video, ' : ''}${n} ${n === 1 ? 'Modul' : 'Module'}${route.reason?.startsWith('Fallback') ? ` (${who} nicht erreichbar)` : ''}` })
       if (stop !== stops) return
     }
     if (r) agent.model = r.model
@@ -716,6 +721,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return list.length ? list : [{ id: 'vibe:', name: 'Vibe', hint: 'Modell aus der Vibe-Einstellung' }]
   }
   let codexModels: Promise<ChatModels['codex']> | null = null
+  // Router von Codex/Vibe: das erste kleine Modell der Liste („codex:<slug>“, „vibe:<alias>“), sonst das Chat-Modell
+  const smallModel = (ids: string[], small: RegExp, chat: string) => ids.find((id) => small.test(id))?.replace(/^\w+:/, '') ?? chat
   const listCodex = (bin: string) => new Promise<ChatModels['codex']>((ok) => execFile(bin, ['debug', 'models'], { timeout: 20_000, maxBuffer: 20e6 }, (e, out) => {
     try {
       if (e) throw e

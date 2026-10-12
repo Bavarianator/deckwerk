@@ -1,6 +1,6 @@
 // Router ohne Netz (claude -p und API gemockt): npx esbuild scripts/check-router.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/check-router.mjs && node out/check-router.mjs
 import assert from 'node:assert/strict'
-import { mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type Anthropic from '@anthropic-ai/sdk'
@@ -71,12 +71,13 @@ await fallback(async () => answer({ modules: ['gibts-nicht'], reason: 'x' }), /k
 await fallback(async () => answer({ reason: 'x' }), /ohne modules/)
 assert.equal((await routeTask(deck, { kind: 'none' })).source, 'regel')
 
-// Echter spawn mit Fake-claude: cwd = tmpdir, stdin kommt an, Exit-Code ≠ 0 und Zeitlimit → Fallback, Kind wirklich beendet
+// Echter spawn mit Fake-claude: cwd = eigener leerer Ordner, stdin kommt an, Exit-Code ≠ 0 und Zeitlimit → Fallback, Kind wirklich beendet
 const bin = mkdtempSync(join(tmpdir(), 'dw-router-bin-'))
 const fake = (name: string, body: string) => (writeFileSync(join(bin, name), `#!/bin/sh\n${body}\n`, { mode: 0o755 }), { kind: 'claude', bin: join(bin, name) } as const)
 r = await routeTask(deck, fake('ok', `pwd -P > "${bin}/pwd"\ncat > "${bin}/stdin"\necho '${answer({ modules: ['animation'], reason: 'fake' })}'`), { timeoutMs: 5000 })
 assert.deepEqual([r.source, r.reason], ['haiku', 'fake'])
-assert.equal(readFileSync(join(bin, 'pwd'), 'utf8').trim(), realpathSync(tmpdir()))
+const cwd = readFileSync(join(bin, 'pwd'), 'utf8').trim()
+assert.ok(cwd.startsWith(join(realpathSync(tmpdir()), 'deckwerk-router-')) && readdirSync(cwd).every((f) => f === 'schema.json'), cwd)
 assert.ok(readFileSync(join(bin, 'stdin'), 'utf8').includes('Auftrag:\nAnimationen ruhiger machen'))
 r = await routeTask(deck, fake('fail', 'echo kaputt >&2\nexit 3'), { timeoutMs: 5000 })
 assert.deepEqual([r.source, r.reason], ['regel', 'Fallback: claude beendet (3): kaputt'])
@@ -119,5 +120,61 @@ for (const stop_reason of ['refusal', 'max_tokens'] as const) {
 }
 r = await routeTask(neu, api, { client: { messages: { create: async () => { throw new Error('401') } } } as unknown as Anthropic })
 assert.deepEqual([r.source, r.reason], ['regel', 'Fallback: 401'])
+
+// Codex: kleines Modell, Schema-Datei, keine Shell und keine Konfiguration des Nutzers; Antwort aus dem JSONL-Strom
+const codex = { kind: 'codex', bin: '/x/codex', model: 'gpt-5.6-luna' } as const
+const jsonl = (...events: unknown[]) => events.map((e) => JSON.stringify(e)).join('\n')
+seen = undefined
+r = await routeTask(deck, codex, {
+  auto: true,
+  run: async (args, stdin) => {
+    seen = { args, stdin }
+    return jsonl({ type: 'thread.started', thread_id: 't' }, { type: 'item.completed', item: { type: 'agent_message', text: JSON.stringify({ modules: ['animation', 'gibts-nicht'], reason: 'codex' }) } }, { type: 'turn.completed' })
+  },
+})
+{
+  const a = seen!.args
+  assert.deepEqual(a.slice(0, 6), ['exec', '--json', '--skip-git-repo-check', '--ephemeral', '--ignore-user-config', '--ignore-rules'])
+  for (const f of ['shell_tool', 'unified_exec', 'hooks']) assert.equal(a[a.indexOf(f) - 1], '--disable', f)
+  assert.ok(a.includes('sandbox_mode="read-only"') && a.includes('approval_policy="never"') && a.at(-1) === '-')
+  assert.equal(a[a.indexOf('-m') + 1], 'gpt-5.6-luna')
+  const s = JSON.parse(readFileSync(a[a.indexOf('--output-schema') + 1], 'utf8'))
+  assert.deepEqual([s.required, s.additionalProperties, Object.keys(s.properties)], [['modules', 'reason'], false, ['modules', 'reason']], 'striktes Schema: alle Felder required')
+  assert.ok(seen!.stdin.startsWith('Du bist der Router') && seen!.stdin.includes('Auftrag:\nAnimationen ruhiger machen') && seen!.stdin.includes('model und effort weglassen'))
+  assert.ok(a.every((x) => x.length < 1000), 'Prompt nicht in den Argumenten')
+}
+assert.deepEqual([r.source, r.reason, r.model], ['codex', 'codex', undefined], 'kein Auto-Modell für Codex')
+assert.ok(r.modules.includes('animation') && r.modules.includes('layout:chart') && !r.modules.includes('gibts-nicht'))
+assert.ok(!(await routeTask(deck, { ...codex, model: '' }, { run: async (args) => (assert.ok(!args.includes('-m')), jsonl({ type: 'item.completed', item: { type: 'agent_message', text: '{"modules":["text"],"reason":"x"}' } })) })).reason?.startsWith('Fallback'))
+r = await routeTask(deck, codex, { run: async () => jsonl({ type: 'turn.failed', error: { message: 'nicht angemeldet' } }) })
+assert.deepEqual([r.source, r.reason], ['regel', 'Fallback: nicht angemeldet'])
+r = await routeTask(deck, codex, { run: async () => jsonl({ type: 'turn.completed' }) })
+assert.deepEqual([r.source, r.reason], ['regel', 'Fallback: keine Antwort von Codex'])
+
+// Vibe: Modell per Umgebung, keine Werkzeuge und MCP-Server, JSON aus der letzten Antwort (auch mit Zaun und Vorrede)
+const vibe = { kind: 'vibe', bin: '/x/vibe', model: 'devstral-small', legacy: true } as const
+const vibeOut = (text: unknown) => JSON.stringify([{ role: 'user', content: [{ type: 'text', text: 'x' }] }, { role: 'assistant', content: [{ type: 'text', text }] }])
+seen = undefined
+r = await routeTask({ text: 'Schneide mein Video zu einem Short', profile: 'slides', layoutsInDeck: [], hasDeck: false }, vibe, {
+  run: async (args, stdin) => ((seen = { args, stdin }), vibeOut('Gern:\n```json\n{"modules": ["video", "layout:clip"], "reason": "Video"}\n```')),
+})
+assert.deepEqual(seen!.args, ['-p', '--legacy-harness', '--output', 'json', '--max-turns', '1', '--enabled-tools', 'keine', '--trust'])
+assert.ok(seen!.stdin.includes('Antworte nur mit einem JSON-Objekt') && seen!.stdin.includes('Reiner Video-Auftrag'))
+assert.deepEqual([r.source, r.modules, r.video], ['vibe', ['video', 'layout:clip'], true], 'reiner Video-Auftrag ohne Gerüst')
+r = await routeTask(deck, vibe, { run: async () => vibeOut('Weiß ich nicht.') })
+assert.deepEqual([r.source, r.reason], ['regel', 'Fallback: keine JSON-Antwort von Vibe'])
+// echter spawn: Umgebung kommt an (Modell, MCP-Server leer, ohne Telemetrie), ohne Modell bleibt die Voreinstellung
+const fakeVibe = (model: string) => ({ ...vibe, legacy: false, model, bin: fake(`vibe${model}`, `env > "${bin}/env"\ncat > /dev/null\necho '${vibeOut('{"modules":["text"],"reason":"env"}')}'`).bin })
+r = await routeTask(deck, fakeVibe('devstral-small'), { timeoutMs: 5000 })
+let env = readFileSync(join(bin, 'env'), 'utf8')
+assert.deepEqual([r.source, r.reason], ['vibe', 'env'])
+for (const v of ['VIBE_ACTIVE_MODEL=devstral-small', 'VIBE_MCP_SERVERS=[]', 'VIBE_ENABLE_TELEMETRY=false', 'VIBE_ENABLE_UPDATE_CHECKS=false', 'VIBE_INCLUDE_PROJECT_CONTEXT=false']) assert.ok(env.includes(v), v)
+await routeTask(deck, fakeVibe(''), { timeoutMs: 5000 })
+env = readFileSync(join(bin, 'env'), 'utf8')
+assert.ok(!env.includes('VIBE_ACTIVE_MODEL=') || env.includes(`VIBE_ACTIVE_MODEL=${process.env.VIBE_ACTIVE_MODEL ?? ''}\n`))
+
+// Haiku: Video-Auftrag mit Gerüst (z. B. Präsentation mit Video) ist kein reiner Video-Auftrag
+r = await routeTask(neu, claude, { run: async () => answer({ modules: ['video', 'layout:clip'], reason: 'x' }) })
+assert.equal(r.video, undefined)
 
 console.log('check-router: ok')

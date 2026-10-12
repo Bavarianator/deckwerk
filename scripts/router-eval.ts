@@ -1,15 +1,21 @@
 // Messlauf Router: ohne --live nur der Regel-Router, mit --live zusätzlich Haiku über `claude -p` (Login des Nutzers, je Fall
-// ~0,2 Cent und 10–30 s; Zeitlimit wie in der App 30 s, ändern mit --timeout=<s>):
-// npx esbuild scripts/router-eval.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/router-eval.mjs && node out/router-eval.mjs [--live]
+// ~0,2 Cent und 10–30 s; Zeitlimit wie in der App 30 s, ändern mit --timeout=<s>). --via=codex|vibe misst stattdessen den Router
+// dieser CLI (Modell mit --model=<id>, Standard gpt-5.6-luna bzw. devstral-small; Vibe ~20 s je Fall):
+// npx esbuild scripts/router-eval.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/router-eval.mjs && node out/router-eval.mjs [--live] [--via=vibe]
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { corePrompt, fullPrompt, modulesText, ruleRoute, type Route, type RouteInput } from '../src/main/guide-modules'
-import { routeTask } from '../src/main/router'
+import { routeTask, type RouterVia } from '../src/main/router'
 
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-router-eval-')) // ohne Hausstil und Decks des Nutzers: vergleichbar
 const live = process.argv.includes('--live')
 const timeoutMs = Number(process.argv.find((a) => a.startsWith('--timeout='))?.slice(10)) * 1000 || undefined
+const arg = (k: string) => process.argv.find((a) => a.startsWith(`--${k}=`))?.slice(k.length + 3)
+const kind = arg('via') ?? 'claude'
+const via: RouterVia = kind === 'codex' ? { kind, bin: 'codex', model: arg('model') ?? 'gpt-5.6-luna' }
+  : kind === 'vibe' ? { kind, bin: 'vibe', model: arg('model') ?? 'devstral-small', legacy: true } : { kind: 'claude', bin: 'claude' }
+const KI = kind === 'claude' ? 'Haiku' : kind[0].toUpperCase() + kind.slice(1)
 
 const neu = (text: string, profile: RouteInput['profile'] = 'slides'): RouteInput => ({ text, profile, layoutsInDeck: [], hasDeck: false })
 const alt = (text: string, layoutsInDeck: string[], profile: RouteInput['profile'] = 'slides'): RouteInput => ({ text, profile, layoutsInDeck, hasDeck: true })
@@ -37,29 +43,34 @@ const FAELLE: [string, RouteInput, string[]][] = [
   ['Workshop-Agenda', neu('Präsentation für einen halbtägigen Workshop mit Agenda und Übungen'), ['geruest-praesentation', 'layout:agenda']],
   ['Datenschutz-Schulung', neu('Datenschutz-Schulung für neue Mitarbeitende, ca. 15 Folien'), ['geruest-praesentation', 'storyline', 'layout:bullets']],
   ['Tippfehler', alt('Auf Folie 2 steht „Umstaz“ statt „Umsatz“', DECK), ['text']],
+  ['Video schneiden', neu('Nutze ein Video auf meinem PC und schneide es'), ['video', 'layout:clip']],
+  ['Shorts aus Podcast', neu('Mach 3 Reels für Instagram aus meinem Podcast\nVideo: asset://podcast.mp4'), ['video', 'layout:clip']],
+  ['Stream-Highlights', neu('Highlights aus meinem Twitch-Stream von gestern als Zusammenschnitt'), ['video', 'layout:clip']],
+  ['Untertitel', alt('Untertitel größer und Hook kürzer', ['clip', 'clip']), ['video', 'layout:clip']],
 ]
 
-const core = corePrompt().length, full = fullPrompt().length
+const core = (r: Route) => corePrompt(r.video).length, full = fullPrompt().length
 type Mess = { hits: number; must: number; mods: number; chars: number; ms: number; fallback: boolean }
-const sum: Record<string, Mess[]> = { Regel: [], Haiku: [] }
+const sum: Record<string, Mess[]> = { Regel: [], [KI]: [] }
 const pct = (a: number, b: number) => `${Math.round((100 * a) / b)} %`
 const zeile = (name: string, r: Route, must: string[], ms: number) => {
-  const m: Mess = { hits: must.filter((id) => r.modules.includes(id)).length, must: must.length, mods: r.modules.length, chars: core + modulesText(r.modules).length, ms, fallback: r.reason?.startsWith('Fallback') ?? false }
+  const m: Mess = { hits: must.filter((id) => r.modules.includes(id)).length, must: must.length, mods: r.modules.length, chars: core(r) + modulesText(r.modules).length, ms, fallback: r.reason?.startsWith('Fallback') ?? false }
   sum[name].push(m)
   const fehlt = must.filter((id) => !r.modules.includes(id))
   return `${name.padEnd(5)} ${m.hits}/${m.must}  ${String(m.mods).padStart(2)} Module  ${String(m.chars).padStart(6)} Z. (${pct(m.chars, full).padStart(5)})  ${(ms / 1000).toFixed(1).padStart(5)} s` +
-    `${r.model ? `  ${r.model}/${r.effort ?? '-'}` : ''}${fehlt.length ? `  fehlt: ${fehlt.join(', ')}` : ''}${m.fallback ? `  ${r.reason}` : ''}`
+    `${r.video ? '  Video' : ''}${r.model ? `  ${r.model}/${r.effort ?? '-'}` : ''}${fehlt.length ? `  fehlt: ${fehlt.join(', ')}` : ''}${m.fallback ? `  ${r.reason}` : ''}`
 }
 
-console.log(`Kernprompt ${core} Z., voller Prompt ${full} Z.${live ? '' : ' (nur Regeln; Haiku mit --live)'}\n`)
-for (const [name, input, must] of FAELLE) {
+console.log(`Kernprompt ${corePrompt().length} Z. (Video ${corePrompt(true).length}), voller Prompt ${full} Z.${live ? '' : ' (nur Regeln; KI mit --live)'}\n`)
+const only = arg('faelle')?.split(',') // z. B. --faelle=Video,Pitch (Namensanfang)
+for (const [name, input, must] of FAELLE.filter(([n]) => !only || only.some((o) => n.startsWith(o)))) {
   console.log(name)
   let t = performance.now()
   console.log(`  ${zeile('Regel', ruleRoute(input), must, performance.now() - t)}`)
   if (!live) continue
   t = performance.now()
-  const r = await routeTask(input, { kind: 'claude', bin: 'claude' }, { auto: true, timeoutMs })
-  console.log(`  ${zeile('Haiku', r, must, performance.now() - t)}`)
+  const r = await routeTask(input, via, { auto: true, timeoutMs })
+  console.log(`  ${zeile(KI, r, must, performance.now() - t)}`)
 }
 
 console.log('\nSumme')

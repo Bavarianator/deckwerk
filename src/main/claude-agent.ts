@@ -70,7 +70,7 @@ const TOKEN_ENV = 'DECKWERK_MCP_TOKEN'
 
 // Kennt dieses Programm den Schalter? (`--help` einmal je App-Lauf; ein CLI-Update ohne ihn darf den Chat nicht brechen)
 const flags = new Map<string, Promise<string>>()
-const hasFlag = async (bin: string, flag: string) => {
+export const hasFlag = async (bin: string, flag: string) => {
   if (!flags.has(bin)) flags.set(bin, new Promise((ok) => execFile(bin, ['--help'], { timeout: 20_000 }, (_e, out) => ok(String(out ?? '')))))
   return (await flags.get(bin)!).includes(flag)
 }
@@ -85,14 +85,15 @@ export function firstMessage(text: string, route?: Route): string {
 // Aufruf je CLI. Alles, was die Werkzeuge einschränkt, steht hier; bei einer neuen CLI-Version zuerst das prüfen.
 // model: Claude-Modell-ID bzw. Modell von Codex/Vibe (leer = deren Voreinstellung). Systemprompt ist der Kernprompt:
 // Der volle Prompt (~129k Zeichen) stieß an Linux' Grenze von 128 KiB pro Argument.
-export function invocation(cli: Cli, m: Mcp, session: string | null, model: string, text: string, legacy: boolean, effort: Effort, route?: Route): { args: string[]; env: NodeJS.ProcessEnv; stdin: string } {
-  const msg = session ? text : firstMessage(text, route)
+// video: reiner Video-Auftrag (Router zum Gesprächsstart) → schlanker Kernprompt, für alle Nachrichten des Gesprächs gleich
+export function invocation(cli: Cli, m: Mcp, session: string | null, model: string, text: string, legacy: boolean, effort: Effort, route?: Route, video = false): { args: string[]; env: NodeJS.ProcessEnv; stdin: string } {
+  const msg = session ? text : firstMessage(text, route), core = corePrompt(video)
   if (cli === 'claude')
     // --setting-sources "": keine Hooks/Plugins aus den Settings des Nutzers, Login bleibt (--safe-mode würde auch unseren
     // MCP-Server abschalten, --bare den Abo-Login). --tools: nur Deck-Tools plus Web-Recherche.
     return { env: {}, stdin: msg, args: ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--setting-sources', '', '--disable-slash-commands',
       '--mcp-config', m.file, '--strict-mcp-config', '--tools', 'WebSearch,WebFetch', '--allowedTools', 'mcp__deckwerk,WebSearch,WebFetch',
-      '--system-prompt', corePrompt(), '--model', model, ...(session ? ['--resume', session] : []),
+      '--system-prompt', core, '--model', model, ...(session ? ['--resume', session] : []),
       // ohne --effort nimmt Claude Code seine Voreinstellung (xhigh): für Decks unnötig langsam; Haiku kennt kein effort
       ...('legacyThinking' in modelOf(model) ? [] : ['--effort', effort])] }
   if (cli === 'codex')
@@ -102,16 +103,18 @@ export function invocation(cli: Cli, m: Mcp, session: string | null, model: stri
       '--ignore-user-config', '--ignore-rules', '--disable', 'shell_tool', '--disable', 'unified_exec', '--disable', 'hooks',
       '-c', 'sandbox_mode="read-only"', '-c', 'approval_policy="never"', ...(model ? ['-c', `model=${JSON.stringify(model)}`] : []),
       '-c', `mcp_servers={deckwerk={url=${JSON.stringify(m.url)},bearer_token_env_var="${TOKEN_ENV}",tool_timeout_sec=300}}`,
-      '-c', `developer_instructions=${JSON.stringify(corePrompt())}`, '-'] }
+      '-c', `developer_instructions=${JSON.stringify(core)}`, '-'] }
   // Vibe: VIBE_MCP_SERVERS ersetzt die MCP-Server des Nutzers durch unseren. --enabled-tools sperrt im -p-Modus alle anderen
   // Werkzeuge (Shell, Dateien); --auto-approve gilt nur für die freigegebenen. VIBE_* überschreibt Felder der Konfiguration,
   // hier das Modell. Einen eigenen Systemprompt nimmt Vibe nur aus VIBE_HOME (nicht aus dem Arbeitsordner), daher steht er
   // vor der ersten Nachricht. Die alte Harness bietet die MCP-Werkzeuge direkt an statt über eine Werkzeugsuche, das spart
   // Runden (gemessen 2:04 statt 2:35 min).
   return {
-    env: { [TOKEN_ENV]: m.token, VIBE_ENABLE_CONNECTORS: 'false', ...(model && { VIBE_ACTIVE_MODEL: model }),
+    // ohne Update-Prüfung, Telemetrie und Projektkontext (Verzeichnisbaum von ~/Deckwerk) startet Vibe in ~20 statt 30–60 s
+    env: { [TOKEN_ENV]: m.token, VIBE_ENABLE_CONNECTORS: 'false', VIBE_ENABLE_UPDATE_CHECKS: 'false', VIBE_ENABLE_TELEMETRY: 'false',
+      VIBE_INCLUDE_PROJECT_CONTEXT: 'false', VIBE_ENABLE_NOTIFICATIONS: 'false', ...(model && { VIBE_ACTIVE_MODEL: model }),
       VIBE_MCP_SERVERS: JSON.stringify([{ name: 'deckwerk', transport: 'streamable-http', url: m.url, api_key_env: TOKEN_ENV, tool_timeout_sec: 300 }]) },
-    stdin: session ? msg : `${corePrompt()}\n\n---\n\nAnfrage:\n${msg}`,
+    stdin: session ? msg : `${core}\n\n---\n\nAnfrage:\n${msg}`,
     args: ['-p', ...(legacy ? ['--legacy-harness'] : []), '--output', 'streaming', '--enabled-tools', 'deckwerk_*', '--enabled-tools', 'web_search', '--enabled-tools', 'web_fetch',
       '--auto-approve', '--trust', ...(session ? ['--resume', session] : [])],
   }
@@ -126,6 +129,7 @@ export class CliAgent {
   private seen = new Set<string>() // Vibe: IDs schon gezeigter Antworten; --resume spielt sie erneut aus (alte Harness mit neuer Zeit)
   private child: ChildProcess | null = null
   private aborted = false
+  private video = false // reiner Video-Auftrag, beim Gesprächsstart vom Router gesetzt
 
   constructor(private cli: Cli, private bin: string, private opts: DeckAgentOptions) {
     this.deck = opts.deck ?? null
@@ -155,7 +159,8 @@ export class CliAgent {
       current = this.tools
       const cwd = join(homedir(), 'Deckwerk') // Sitzungen tauchen im jeweiligen CLI unter ~/Deckwerk auf
       mkdirSync(cwd, { recursive: true })
-      const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')), this.effort, route)
+      if (!this.session) this.video = !!route?.video
+      const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')), this.effort, route, this.video)
       const child = (this.child = spawn(this.bin, run.args, { cwd, env: { ...process.env, ...run.env }, stdio: ['pipe', 'pipe', 'pipe'] }))
       // Vibe und Codex denken oft minutenlang, bevor das erste Werkzeug läuft: Status zeigen, solange das CLI arbeitet
       if (this.cli !== 'claude') emit({ type: 'tool', name: 'cli_run', status: 'start', summary: `${CLI_NAME[this.cli]} braucht oft ein paar Minuten` })

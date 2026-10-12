@@ -33,4 +33,12 @@ for (const cli of CLIS) {
   }
   assert.equal(next.stdin, 'Weiter', `${cli}: Folgenachricht ohne Leitfaden und Prompt`)
 }
+// Reiner Video-Auftrag: schlanker Kernprompt in jeder Nachricht des Gesprächs (Claude/Codex) bzw. vor der ersten (Vibe)
+const vcore = corePrompt(true)
+for (const cli of CLIS) for (const session of [null, 'sitzung']) {
+  const r = invocation(cli, m, session, cli === 'claude' ? DEFAULT_MODEL : '', 'Schneide', false, 'high', undefined, true)
+  const all = [...r.args, r.stdin].join('\n')
+  assert.ok(!all.includes(core), `${cli}: kein Folien-Kernprompt`)
+  if (cli !== 'vibe' || !session) assert.ok(all.includes(vcore) || all.includes(JSON.stringify(vcore)), `${cli}: Video-Kernprompt`)
+}
 console.log('check-cli-prompt: ok')

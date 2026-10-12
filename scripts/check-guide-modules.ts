@@ -48,5 +48,21 @@ r = route('Seite 2 kürzen', { profile: 'doc', layoutsInDeck: ['doc-text'], hasD
 assert.ok(r.has('geruest-a4') && r.has('layout:offer') && r.has('text') && !r.has('gestaltung'))
 assert.ok(route('Lebenslauf und Anschreiben für die Bewerbung').has('layout:cv'))
 
+// Video: reiner Auftrag nur mit Video-Schnitt, clip und Zwischentiteln (auch Reels für Instagram), schlanker Kernprompt;
+// Präsentation mit Video bekommt das Übliche plus Video; Abschnitt und Durchschnitt sind kein Schnitt
+const vroute = (text: string, o: Partial<RouteInput> = {}) => ruleRoute({ text, profile: 'slides', layoutsInDeck: [], hasDeck: false, ...o })
+for (const t of ['Nutze ein Video auf meinem PC und schneide es', 'Mach 3 Reels für Instagram aus meinem Podcast', 'Highlights aus meinem Twitch-Stream'])
+  assert.deepEqual([vroute(t).modules, vroute(t).video], [['video', 'layout:clip', 'layout:section', 'layout:statement'], true], t)
+assert.equal(vroute('Untertitel größer', { layoutsInDeck: ['clip', 'section'], hasDeck: true }).video, true, 'Video-Deck')
+r = route('Präsentation über unser Produkt mit eingebettetem Video')
+assert.ok(r.has('video') && r.has('layout:clip') && r.has('geruest-praesentation') && r.has('layout:cover'))
+assert.equal(vroute('Präsentation mit Video').video, undefined)
+for (const t of ['Abschnitt 2 kürzen', 'Durchschnitt als Diagramm', 'Erstelle ein Deck zum Kick-off', 'Quartals-Highlights', 'Schnittstellen-Doku als Folien', 'Mainstream vs. Nische', 'Titel und Untertitel tauschen', 'Folie 3: Text schneidet ab'])
+  assert.ok(!route(t).has('video') && !vroute(t).video, t)
+assert.equal(vroute('Clip aus meinem Livestream, Link: https://kick.com/xyz').video, true)
+const vcore = corePrompt(true)
+assert.ok(vcore.length < 5000 && vcore.includes('Video-Schnitt') && vcore.includes('read_guide({ topic: "video" })') && !vcore.includes('## 1. Grundregeln') && !vcore.includes('- layout:kpi-grid'), `Video-Kernprompt ${vcore.length}`)
+assert.equal(vcore, corePrompt(true), 'Video-Kernprompt stabil (Caching)')
+
 const size = (id: string) => mods.find((m) => m.id === id)!.text.length
-console.log(`Guide-Module OK · ${mods.length} Module · Kernprompt ${core.length} · voll ${fullPrompt().length} · gestaltung ${size('gestaltung')} · stil ${size('stil')} · geruest-a4 ${size('geruest-a4')} · layout:kpi-grid ${size('layout:kpi-grid')} · layout:letter ${size('layout:letter')}`)
+console.log(`Guide-Module OK · ${mods.length} Module · Kernprompt ${core.length} · voll ${fullPrompt().length} · gestaltung ${size('gestaltung')} · stil ${size('stil')} · geruest-a4 ${size('geruest-a4')} · layout:kpi-grid ${size('layout:kpi-grid')} · layout:letter ${size('layout:letter')} · Video-Kern ${vcore.length} · video ${size('video')}`)

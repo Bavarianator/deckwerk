@@ -134,7 +134,7 @@ export class DeckAgent {
   private history: BetaMessageParam[] = []
   private client: Anthropic
   private tools
-  readonly system = corePrompt() // pro Instanz fest → Prompt-Caching
+  system = corePrompt() // pro Gespräch fest → Prompt-Caching; reiner Video-Auftrag: schlanker Kernprompt ab der ersten Nachricht
   private ctl: AbortController | null = null
   private lock = { tail: Promise.resolve() as Promise<unknown> } // Deck-Tools nacheinander (toRunnable)
 
@@ -166,6 +166,7 @@ export class DeckAgent {
       const thumbs = route && this.opts.thumbnails !== false
         ? await catalogThumbnails(this.opts.engine, route.modules).catch((e) => { console.warn('[agent] Vorschaubilder übersprungen:', (e as Error).message); return [] })
         : []
+      if (route?.video) this.system = corePrompt(true)
       this.history.push(firstTurn(userText, route, thumbs))
     }
     this.ctl = new AbortController()

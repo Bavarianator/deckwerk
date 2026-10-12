@@ -8,7 +8,8 @@ import { buildCatalog, houseStyle, recentLooks } from './tools'
 
 export interface GuideModule { id: string; title: string; kurz: string; text: string; always?: true }
 // modules: Abschnitts- und layout:-IDs zusätzlich zum Kernprompt
-export type Route = { modules: string[]; model?: string; effort?: 'low' | 'medium' | 'high'; source: 'haiku' | 'regel'; reason?: string }
+// video: reiner Video-Auftrag → schlanker Kernprompt (corePrompt(true)) für das ganze Gespräch
+export type Route = { modules: string[]; model?: string; effort?: 'low' | 'medium' | 'high'; source: 'haiku' | 'codex' | 'vibe' | 'regel'; reason?: string; video?: true }
 export type RouteInput = { text: string; profile: Profile; layoutsInDeck: string[]; hasDeck: boolean }
 
 const WORKFLOW = `## Arbeitsablauf
@@ -96,9 +97,16 @@ export function guideIndex(mods = guideModules()): string {
   ].join('\n\n')
 }
 
+const VIDEO_CORE = `# Deckwerk: Video-Schnitt
+Dieses Gespräch beginnt als Video-Auftrag. Du schneidest mit den Video-Tools (import_video, transcribe_video, video_highlights, search_transcript, video_frames, check_clip, find_music) und baust das Ergebnis als Deck aus clip-Folien, exportiert als MP4. Abläufe, Bewertung und Regeln stehen im Leitfaden der ersten Nachricht (Modul video, layout:clip); fehlt er, lade ihn mit read_guide({ topic: "video" }). Felder nie raten.
+Will der Nutzer später Folien, eine Präsentation oder eine Drucksache, hol dir zuerst mit read_guide() den Index und lade die nötigen Module.
+Antworte auf Deutsch, knapp.`
+
 // Kernprompt: Module mit always und der Index (nach der Katalog-Einleitung). Stabil → Prompt-Caching.
-export function corePrompt(): string {
+// video: reiner Video-Auftrag, ohne Folienregeln und Layout-Index (rund 4k statt 15k Zeichen); der Hausstil bleibt
+export function corePrompt(video = false): string {
   const mods = guideModules()
+  if (video) return [VIDEO_CORE, ...mods.filter((m) => m.id === 'katalog' || m.id === 'hausstil').map((m) => m.text)].join('\n\n')
   return mods.filter((m) => m.always).flatMap((m) => (m.id === 'katalog' ? [m.text, guideIndex(mods)] : [m.text])).join('\n\n')
 }
 
@@ -145,6 +153,11 @@ const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
   ['rhythmus', /rhythmus|abwechslung|eintönig|langweilig|luftig|überladen/, ['rhythmus', 'inhalt-layout']],
   ['bewerbung', /bewerbung|lebenslauf|anschreiben|\bcv\b/, ['geruest-a4', 'layout:application-cover', 'layout:letter', 'layout:cv']],
 ]
+// Video-Auftrag: Stichwörter, ein angehängtes Video oder clip-Folien im Deck. Shorts, Reels und TikTok sind Video, kein Karussell.
+// Eng gefasst: „Kick-off“, „Quartals-Highlights“, „Schnittstelle“, „Mainstream“ oder „Untertitel“ einer Folie sind kein Video.
+const VIDEO = /video|\bclips?\b|\bshorts?\b|\breels?\b|\b(live)?streams?\b|zusammenschnitt|youtube|twitch|kick\.com|\bmp4\b|podcast|transkri/
+const FOLIEN = /\bdecks?\b|\bfolien?\b|\bseiten?\b/ // spricht der Auftrag von Folien oder Seiten, ist er kein reiner Video-Auftrag
+const VIDEO_DECK: string[] = ['clip', 'section', 'statement'] // Zwischentitel einer Kompilation
 const KINDS = {
   karte: /visitenkarte/,
   a4: /\ba4\b|druckerei|druckdatei|drucksache|\bdrucken\b|flyer|plakat|brief(?!ing)|angebot|kostenvoranschlag|infoblatt|one-pager|handzettel|lebenslauf|bewerbung|einladung|save the date|urkunde|zertifikat|bescheinigung|speisekarte|getränkekarte|mittagstisch/,
@@ -156,6 +169,10 @@ export function ruleRoute(input: RouteInput): Route {
   const t = input.text.toLowerCase(), inDeck = input.layoutsInDeck.filter((id): id is LayoutId => id in LAYOUTS)
   // Format: Stichwörter, bei einem Deck auch sein Profil; ohne beides das übergebene Profil
   const kinds = new Set((Object.keys(KINDS) as (keyof typeof KINDS)[]).filter((k) => KINDS[k].test(t)))
+  const video = VIDEO.test(t) || inDeck.includes('clip')
+  // Reiner Video-Auftrag: nur Video-Schnitt und clip (dazu Zwischentitel), kein Gerüst, keine Gestaltung
+  if (video && !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t) && inDeck.every((id) => VIDEO_DECK.includes(id)))
+    return { modules: [...VIDEO_MODULES, ...VIDEO_DECK.slice(1).map((id) => `layout:${id}`)], source: 'regel', reason: 'Regeln: Video', video: true }
   if (input.hasDeck || !kinds.size) kinds.add(input.profile === 'doc' ? (inDeck.includes('business-card') ? 'karte' : 'a4') : input.profile)
   const layouts = new Set<LayoutId>(inDeck)
   const add = (ids: LayoutId[]) => ids.forEach((id) => layouts.add(id))
@@ -178,6 +195,7 @@ export function ruleRoute(input: RouteInput): Route {
   }
   const hits = KEYWORDS.filter(([, re]) => re.test(t))
   for (const [, , m] of hits) mods.push(...m)
+  if (video) mods.push(...VIDEO_MODULES) // z. B. Präsentation mit Video
   return {
     modules: [...new Set([...mods, ...[...layouts].map((id) => `layout:${id}`)])],
     source: 'regel',
