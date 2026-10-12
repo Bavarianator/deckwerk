@@ -319,7 +319,7 @@ export function createEngine(): Engine {
       async asrDevice(lang) {
         if (wantFor(lang) === 'whisper' || whisperOnly) return 'PC (Whisper)'
         const d = await phoneNow()
-        return d ? `Handy (${d.model})` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
+        return d ? `Handy (${d.model}, CPU)` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
       },
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {

@@ -121,7 +121,7 @@ async function asr({ pcm, models, offset, threads, phone }: AsrArgs, progress: (
   vad.flush()
   await drain()
   if (cur) await decode(cur)
-  const rs = phone ? await phoneDecode(phone, parts.map(([a, b]) => pcm.subarray(a, b))) : []
+  const rs = phone ? await phoneDecode(phone, parts.map(([a, b]) => pcm.subarray(a, b)), (p) => progress(Math.min(99, p))) : []
   rs.forEach((res, i) => out.push(...sentences(words(res, offset + parts[i][0] / SR, offset + parts[i][1] / SR))))
   progress(100)
   return out

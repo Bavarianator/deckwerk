@@ -397,13 +397,13 @@ function tool<S extends z.ZodType>(t: ToolDef<S>): ToolDef<S> { return t }
 // hängt sich an den laufenden Job oder holt sein Ergebnis ab; danach ist der Job vergessen.
 export const JOB_WAIT = { ms: 240_000 } // Tests setzen ihn kürzer
 // ponytail: nie abgeholte Ergebnisse bleiben bis Prozessende in der Map (klein: Pfadlisten, Transkripte); Ablaufzeit, falls das stört
-const jobs = new Map<string, { promise: Promise<unknown>; pct: number; done: boolean }>()
-/** Laufende und fertige, nicht abgeholte Jobs für die Fortschrittsanzeige der UI; name = Teil des Schlüssels vor „:“ */
-export const jobList = () => [...jobs].map(([key, j]) => ({ key, name: key.split(':')[0], pct: Math.round(j.pct), done: j.done }))
-async function job<T>(key: string, start: (onProgress: (pct: number) => void) => Promise<T>): Promise<{ value: T } | { pct: number }> {
+const jobs = new Map<string, { promise: Promise<unknown>; pct: number; done: boolean; where?: string }>()
+/** Laufende und fertige, nicht abgeholte Jobs für die Fortschrittsanzeige der UI; name = Teil des Schlüssels vor „:“, where = wer rechnet */
+export const jobList = () => [...jobs].map(([key, j]) => ({ key, name: key.split(':')[0], pct: Math.round(j.pct), done: j.done, where: j.where }))
+async function job<T>(key: string, start: (onProgress: (pct: number) => void) => Promise<T>, where?: string): Promise<{ value: T } | { pct: number }> {
   let j = jobs.get(key)
   if (!j) {
-    const nj = { promise: Promise.resolve() as Promise<unknown>, pct: 0, done: false }
+    const nj = { promise: Promise.resolve() as Promise<unknown>, pct: 0, done: false, where }
     nj.promise = start((pct) => { nj.pct = pct })
     nj.promise.catch(() => {}).finally(() => { // den Fehler holt der nächste Aufruf ab; unbeobachtet würde Node den Prozess beenden
       nj.done = true
@@ -963,14 +963,14 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           const end = Math.min(i.to ?? duration, duration), span = end - (i.from ?? 0)
           if (span > LONG_VIDEO) return { text: `${whole ? 'Video' : `Bereich ${mmss(i.from ?? 0)}–${mmss(end)}`} ist ${mmss(span)} lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; das ganze Video nur für einen Fulltime-Schnitt mit all: true.` }
         }
+        const asr = await v.asrDevice?.(i.lang).catch(() => null), on = asr ? `Spracherkennung: ${asr}` : ''
         // Bereich und Optionen im Schlüssel: ein anderes Fenster ist eine andere Arbeit
         const r = await job(`transcribe:${file}:${JSON.stringify([i.from, i.to, i.lang, !!i.speakers])}`, async (onProgress) => {
           const info = await v.probe(file)
           const range = i.from === undefined && i.to === undefined ? undefined : { from: i.from ?? 0, to: Math.min(i.to ?? info.duration, info.duration) }
           if (range && range.from >= range.to) throw new Error(`from liegt hinter dem Ende des Videos (${mmss(info.duration)}).`)
           return [info, await v.transcribe(file, onProgress, { range, lang: i.lang, speakers: i.speakers })] as const
-        })
-        const asr = await v.asrDevice?.(i.lang).catch(() => null), on = asr ? `Spracherkennung: ${asr}` : ''
+        }, asr ?? undefined)
         if (!('value' in r)) return { text: [stillRunning('Transkription', r.pct), on].filter(Boolean).join('\n') }
         const [info, t] = r.value
         const from = i.from ?? 0, to = i.to ?? Infinity, lines: string[] = []

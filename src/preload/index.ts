@@ -94,7 +94,7 @@ const api = {
   /** Cache-Daten eines Videos (asset://-URL oder Pfad), rechnet nie; null = kein erlaubtes Video */
   videoCached: (src: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null } | null> => invoke('video:cached', src),
   /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
-  jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean }[]> => invoke('jobs:list'),
+  jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean; where?: string }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
   /** alle erzeugten Dateien (bei 'clips' mehrere) */
   exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),

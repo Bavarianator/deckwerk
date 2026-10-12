@@ -65,6 +65,30 @@ export function ChoiceCards({ options, disabled, onSend }: { options: { label: s
 }
 
 // Gleiches Tool direkt danach (Video-Tools fragen alle paar Minuten nach): nur der letzte Aufruf wird gezeigt
+// Fortschritt der Video-Jobs je JOB-Name, solange running: der am weitesten gekommene offene Job (der Worker rechnet einen nach
+// dem anderen, die übrigen warten bei 0 %), wer rechnet und wie viele offen sind
+export type JobState = { pct: number; where?: string; open: number }
+export function useJobs(running: boolean): Record<string, JobState> {
+  const [jobs, setJobs] = useState<Record<string, JobState>>({})
+  useEffect(() => {
+    if (!running) return
+    let off = false // Antworten nach dem Ende und Prozente des vorigen Laufs nicht mehr zeigen
+    const poll = () => window.api.jobs().then((js) => {
+      if (off) return
+      const by: Record<string, JobState> = {}
+      for (const j of js.filter((x) => !x.done)) {
+        const b = by[j.name], open = (b?.open ?? 0) + 1
+        by[j.name] = !b || j.pct > b.pct ? { pct: j.pct, where: j.where ?? b?.where, open } : { ...b, open }
+      }
+      setJobs(by)
+    }, () => {})
+    void poll()
+    const t = setInterval(poll, 1000)
+    return () => { off = true; clearInterval(t); setJobs({}) }
+  }, [running])
+  return jobs
+}
+
 export const sameNext = <M extends { kind: string; name?: string }>(ms: M[], i: number) => ms[i].kind === 'tool' && ms[i + 1]?.kind === 'tool' && ms[i + 1].name === ms[i].name
 
 // Verlauf: Nachrichten, Tool-Chips, Rückfragen mit Antwort-Buttons (Verlauf der KI-Leiste)
@@ -74,14 +98,7 @@ export function ChatLog({ msgs, busy, onSend, className }: { msgs: Msg[]; busy: 
   const lastUser = msgs.findLastIndex((m) => m.kind === 'user') // beantwortete Rückfragen sind nicht mehr klickbar
   // Fortschritt nur abfragen, solange ein Video-Chip läuft (nach Abbruch bleibt der Chip auf start, busy nicht)
   const running = busy && msgs.some((m) => m.kind === 'tool' && m.status === 'start' && m.name in JOB)
-  const [pct, setPct] = useState<Record<string, number>>({})
-  useEffect(() => {
-    if (!running) return
-    const poll = () => window.api.jobs().then((js) => setPct(Object.fromEntries(js.filter((j) => !j.done).map((j) => [j.name, j.pct]))), () => {})
-    void poll()
-    const t = setInterval(poll, 1000)
-    return () => clearInterval(t)
-  }, [running])
+  const jobs = useJobs(running)
   return (
       <div className={className} ref={log}>
         {msgs.map((m, i) =>
@@ -102,7 +119,7 @@ export function ChatLog({ msgs, busy, onSend, className }: { msgs: Msg[]; busy: 
             <span key={i} className={`chip chip-${m.status}`} title={m.summary}>
               {m.status === 'start' ? <LoaderCircle size={12} className="spin" /> : m.status === 'done' ? <Check size={12} /> : <CircleAlert size={12} />}
               {TOOL[m.name] ?? m.name}
-              {m.status === 'start' && pct[JOB[m.name]] !== undefined && ` … ${pct[JOB[m.name]]} %`}
+              {m.status === 'start' && jobs[JOB[m.name]] && ` … ${jobs[JOB[m.name]].pct} %`}
               {m.summary && <span className="chip-sum">{m.summary}</span>}
             </span>
           ) : (

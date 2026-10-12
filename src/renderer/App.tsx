@@ -109,7 +109,10 @@ export default function App() {
       else if (e.type === 'tool')
         setMsgs((m) => {
           if (e.status === 'start') return [...m, { kind: 'tool', name: e.name, status: 'start', summary: e.summary }]
-          const i = m.findLastIndex((x) => x.kind === 'tool' && x.name === e.name && x.status === 'start')
+          // der älteste offene Aufruf seit der letzten Nachricht (abgebrochene ältere bleiben auf start): bei parallelen gleichnamigen
+          // Tools (Transkription mehrerer Fenster) bleibt die angezeigte letzte Zeile offen, bis alle fertig sind
+          const from = m.findLastIndex((x) => x.kind === 'user')
+          const i = m.findIndex((x, k) => k > from && x.kind === 'tool' && x.name === e.name && x.status === 'start')
           return i < 0 ? m : m.with(i, { kind: 'tool', name: e.name, status: e.status, summary: e.summary })
         })
       else if (e.type === 'deck') setDoc((d) => ({ deck: e.deck, past: d.deck ? [...d.past, d.deck].slice(-100) : d.past, future: [] }))

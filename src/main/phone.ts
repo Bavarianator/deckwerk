@@ -19,6 +19,8 @@ export const phoneMarker = (appData: string) => join(appData, 'deckwerk', 'phone
 // sherpa-onnx für Termux (läuft auch per adb shell), fester Release + Prüfsumme. Es braucht libc++_shared.so, die weder dieses
 // noch das App-Paket von sherpa mitbringt: die kommt aus Termux (Pfad und Prüfsumme aus dessen Paketindex, der Pfad wechselt
 // mit jeder Version).
+// GPU/NPU: Der Termux-Build ist für API 24 übersetzt, NNAPI schaltet sherpa erst ab API 27 ein (12.10. gemessen: --provider=nnapi
+// → „Fallback to cpu“, gleiche RTF). Dafür bräuchte es einen eigenen Android-Build mit API ≥ 27.
 const TOP = 'sherpa-onnx-v1.13.8-android-aarch64-termux-shared'
 const SHERPA = [`https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/${TOP}.tar.bz2`, 'ad7bac42adc6295293fe6d36475936afb227cdc757cf293c02a706f6aca4e0a2']
 const LIBS = ['libsherpa-onnx-c-api.so', 'libsherpa-onnx-cxx-api.so', 'libonnxruntime.so']
@@ -101,10 +103,21 @@ export type PhoneResult = { text: string; tokens: string[]; timestamps: number[]
 export const parseResults = (stdout: string): PhoneResult[] =>
   stdout.split('\n').filter((l) => l.startsWith('{')).map((l) => JSON.parse(l.replace(/(?<=[[,]\s*)-?(?:nan|inf)(?=\s*[,\]])/gi, 'null')))
 
+// Sekunden Laufzeit (Übertragen, Laden, Erkennen) je Sekunde Audio, nach jedem Lauf gemessen; Start: S20+ ~0,1–0,2
+let phoneRtf = 0.2
 /** Sprachstücke (16 kHz mono f32) auf dem Handy erkennen, ein Programmlauf (Modell einmal laden) für alle */
-export async function phoneDecode(serial: string, parts: Float32Array[]): Promise<PhoneResult[]> {
+export async function phoneDecode(serial: string, parts: Float32Array[], onProgress?: (pct: number) => void): Promise<PhoneResult[]> {
   if (!parts.length) return []
   const local = await mkdtemp(join(tmpdir(), 'deckwerk-phone-')), remote = `${PHONE_DIR}/job-${process.pid}`
+  // ponytail: Fortschritt geschätzt (Laufzeit / erwartete Dauer, höchstens 95 %), weil sherpa alle Ergebnisse erst am Ende ausgibt;
+  // echte Schritte gingen nur mit mehreren Läufen, die jedes Mal das Modell neu laden
+  const secs = parts.reduce((s, p) => s + p.length, 0) / 16000, t0 = Date.now()
+  // bei 95 % still: dann greift die Stillstands-Wache in sherpa.ts wieder, falls adb hängt
+  const tick = onProgress && setInterval(() => {
+    const pct = Math.min(95, Math.floor(((Date.now() - t0) / 1000 / (secs * phoneRtf)) * 100))
+    onProgress(pct)
+    if (pct >= 95) clearInterval(tick)
+  }, 1000)
   try {
     await Promise.all(parts.map((p, i) => writeFile(join(local, `${String(i).padStart(4, '0')}.wav`), wav(p))))
     const names = (await readdir(local)).sort()
@@ -113,8 +126,10 @@ export async function phoneDecode(serial: string, parts: Float32Array[]): Promis
     const { stdout } = await adb(serial, 'shell', `cd ${PHONE_DIR} && LD_LIBRARY_PATH=. ./sherpa-onnx-offline --tokens=tokens.txt --encoder=encoder.int8.onnx --decoder=decoder.int8.onnx --joiner=joiner.int8.onnx --model-type=nemo_transducer --num-threads=4 ${names.map((n) => `${remote}/${n}`).join(' ')} 2>/dev/null`)
     const out = parseResults(stdout)
     if (out.length !== parts.length) throw new Error(`Handy lieferte ${out.length} von ${parts.length} Ergebnissen`)
+    if (secs >= 30) phoneRtf = Math.min(1, (Date.now() - t0) / 1000 / secs) // kurze Läufe: Fixkosten (Laden) verzerren
     return out
   } finally {
+    clearInterval(tick)
     await rm(local, { recursive: true, force: true })
     await adb(serial, 'shell', `rm -rf ${remote}`).catch(() => {})
   }
