@@ -6,7 +6,7 @@ import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent } from '../../shared/video'
+import { CLIP_STYLES, DUCK, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent } from '../../shared/video'
 import { loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -391,21 +391,42 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     return clipWords(t, c.parts, c.pauses === 'kurz' ? c.parts.flatMap((x) => fillerQuiet(t, x.start, x.end)) : [])
   }, [cached, c, mode])
   const cap = words && mode !== 'aus' ? captionAt(words, player.t, mode) : null
-  // Hintergrundmusik wie im MP4: eine Schleife über das ganze Video, hier ab der Zeit der Folien davor (Standbilder STILL), leiser, solange gesprochen wird
-  const music = deck?.music?.src ? clipUrl(deck.music.src) : null, vol = Math.min(1, Math.max(0, deck?.music?.volume ?? 0.25))
-  const before = useMemo(() => {
+  // Hintergrundmusik wie im MP4 (finish in export-video.ts, Werte aus DUCK): Schleife über das ganze Video ab der Zeit der Folien davor (Standbilder STILL),
+  // Ein-/Ausblende, Ducking per Sidechain auf dem echten Ton des Videos. ponytail: Pegel ohne loudnorm und ohne Ton „klar“; das Verhältnis Sprache/Musik stimmt
+  const music = deck?.music?.src ? clipUrl(deck.music.src) : null, vol = Math.min(1, Math.max(0, deck?.music?.volume ?? DUCK.volume))
+  const [before, videoLen] = useMemo(() => {
     const vis = (deck?.slides ?? []).filter((s) => !s.hidden), k = vis.findIndex((s) => s.id === clip.id)
-    return vis.slice(0, Math.max(0, k)).reduce((s, x) => s + (isClip(x) ? partsLength(x.content.parts) : STILL), 0)
+    const len = (x: Slide) => (isClip(x) ? partsLength(x.content.parts) : STILL)
+    return [vis.slice(0, Math.max(0, k)).reduce((s, x) => s + len(x), 0), vis.reduce((s, x) => s + len(x), 0)]
   }, [deck, clip.id])
-  useEffect(() => { // ponytail: Ducking grob über laufende Untertitel, die Lautheit nicht wie loudnorm; reicht zum Hineinhören
-    const a = musicRef.current
-    if (!a) return
-    if (!player.playing) { a.pause(); return }
-    const want = (before + player.t) % (a.duration || Infinity)
+  const mix = useRef<{ ctx: AudioContext; an: AnalyserNode; gain: GainNode; buf: Float32Array<ArrayBuffer>; env: number; at: number; el?: HTMLAudioElement } | null>(null)
+  useEffect(() => {
+    const a = musicRef.current, v = videoRef.current
+    if (!a || !v) return
+    if (!mix.current) { // einmal je Clip: ein Medienelement lässt sich nur einmal an Web Audio hängen (crossOrigin, sonst käme nur Stille an)
+      const ctx = new AudioContext(), an = ctx.createAnalyser(), gain = ctx.createGain()
+      an.fftSize = 1024
+      ctx.createMediaElementSource(v).connect(an).connect(ctx.destination)
+      gain.connect(ctx.destination)
+      mix.current = { ctx, an, gain, buf: new Float32Array(an.fftSize), env: 0, at: 0 }
+    }
+    const m = mix.current
+    if (m.el !== a) { m.ctx.createMediaElementSource(a).connect(m.gain); m.el = a } // andere Musik = neues <audio> (key)
+    if (!player.playing) { a.pause(); m.at = 0; return }
+    void m.ctx.resume()
+    const pos = before + player.t, want = pos % (a.duration || Infinity)
     if (a.paused || Math.abs(a.currentTime - want) > 0.5) a.currentTime = want
-    a.volume = vol * (cap ? 0.35 : 1)
+    // wie sidechaincompress: Sprachpegel (RMS) mit Attack/Release geglättet, über der Schwelle im Verhältnis ratio leiser
+    m.an.getFloatTimeDomainData(m.buf)
+    const rms = Math.sqrt(m.buf.reduce((s, x) => s + x * x, 0) / m.buf.length), now = performance.now(), dt = m.at ? (now - m.at) / 1000 : 0
+    m.at = now
+    m.env += (rms - m.env) * (1 - Math.exp(-dt / ((rms > m.env ? DUCK.attackMs : DUCK.releaseMs) / 1000)))
+    const duck = m.env > DUCK.threshold ? (m.env / DUCK.threshold) ** (1 / DUCK.ratio - 1) : 1
+    const fade = Math.min(1, pos / DUCK.fadeIn, Math.max(0, (videoLen - pos) / DUCK.fadeOut))
+    m.gain.gain.setTargetAtTime(vol * duck * fade, m.ctx.currentTime, 0.01)
     if (a.paused) void a.play().catch(() => {})
-  }, [player.playing, player.t, before, vol, cap, music])
+  }, [player.playing, player.t, before, videoLen, vol, music])
+  useEffect(() => () => { void mix.current?.ctx.close() }, [])
   const curve = useMemo(() => cached?.signals?.loud.length ? loudCurve(cached.signals.loud) : undefined, [cached])
 
   const wide = size.w > size.h, m = Math.min(size.w, size.h)
@@ -482,7 +503,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
               <input type="range" className="dv-seek" aria-label="Position im Clip" min={0} max={player.duration} step={0.1} value={Math.min(player.t, player.duration)} onChange={(e) => player.seekClip(+e.currentTarget.value)}
                 onPointerUp={(e) => e.currentTarget.blur()} /* danach greifen Leertaste, J, K, L wieder */ />
               <span>{mmss(player.t)} / {mmss(player.duration)}</span>
-              {music && <audio ref={musicRef} src={music} loop preload="auto" />}
+              {music && <audio key={music} ref={musicRef} src={music} crossOrigin="anonymous" loop preload="auto" />}
               {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
             </div>
           </div>

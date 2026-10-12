@@ -8,7 +8,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, isCompilation } from '../shared/video'
+import { DUCK, MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, isCompilation } from '../shared/video'
 import { HOOK_FADE, POP, cropFilter, hookBox, progressBar } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
@@ -263,8 +263,8 @@ export async function finish(segs: Seg[], out: string, dir: string, o: { loudnor
   // sidechaincompress endet mit dem ersten Eingang, der endet, und verwirft, was der andere noch hat: Musik darum endlos hinein, Länge gibt die Sprache vor.
   // Schwelle 0,006 statt 0,03: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik sonst kaum (gemessen 11 dB statt 1 dB). ponytail: feste Schwelle; Upgrade: relativ zum gemessenen Sprachpegel
   const graph = (loud: string) => o.music
-    ? `[0:a]asplit[s][k];[1:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${Math.min(1, Math.max(0, o.music.volume ?? 0.25))},afade=t=in:d=1[m];` +
-      `[m][k]sidechaincompress=threshold=0.006:ratio=8:attack=20:release=300,afade=t=out:st=${sec(Math.max(0, dur - 2))}:d=2[d];[s][d]amix=inputs=2:normalize=0:duration=first${loud}[a]`
+    ? `[0:a]asplit[s][k];[1:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${Math.min(1, Math.max(0, o.music.volume ?? DUCK.volume))},afade=t=in:d=${DUCK.fadeIn}[m];` +
+      `[m][k]sidechaincompress=threshold=${DUCK.threshold}:ratio=${DUCK.ratio}:attack=${DUCK.attackMs}:release=${DUCK.releaseMs},afade=t=out:st=${sec(Math.max(0, dur - DUCK.fadeOut))}:d=${DUCK.fadeOut}[d];[s][d]amix=inputs=2:normalize=0:duration=first${loud}[a]`
     : `[0:a]anull${loud}[a]`
   const music = o.music ? ['-stream_loop', '-1', '-i', resolve(o.music.file)] : []
   const input = ['-f', 'concat', '-safe', '0', '-i', list, ...music]

@@ -95,7 +95,7 @@ export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, vid
   return (
     <div className={`clip-video${fit === 'blur' ? ' blur' : ''}`} style={{ aspectRatio: aspect }} onClick={onClick}>
       {fit === 'blur' && <div className="clip-video-bg" style={{ backgroundImage: `url("${url}?frame=${first ?? 0}")` }} />}
-      <video ref={videoRef} src={url} poster={first != null ? `${url}?frame=${first}` : undefined} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
+      <video ref={videoRef} src={url} crossOrigin="anonymous" /* asset:// antwortet mit CORS: so hört Web Audio den Ton (Musik-Ducking in Deckvid) */ poster={first != null ? `${url}?frame=${first}` : undefined} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
         onLoadedMetadata={(e) => {
           const v = e.currentTarget
           if (!v.videoWidth) onBad?.() // nur Ton oder Videospur unbekannt

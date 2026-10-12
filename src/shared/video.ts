@@ -37,6 +37,9 @@ export const zoomOf = (style: ClipStyle | undefined, part: number, compilation =
 // Zusammenschnitt (Stream-Highlights, Kompilation): mehrere sichtbare Clip-Folien im Querformat. Fulltime, Vorträge, Bildschirmaufnahmen und Shorts nicht
 export const isCompilation = (deck: { size?: { w: number; h: number }; slides: { layout: string; hidden?: boolean }[] }) =>
   deck.slides.filter((s) => s.layout === 'clip' && !s.hidden).length > 1 && (deck.size ?? { w: 1280, h: 720 }).w > (deck.size ?? { w: 1280, h: 720 }).h // Standard wie sizeOf
+// Hintergrundmusik im MP4 (finish in export-video.ts) und im Deckvid-Player gleich: Lautstärke, Ein-/Ausblende (s) über das ganze Video und Ducking
+// unter der Sprache (Sidechain: Schwelle linear, Verhältnis, Attack/Release ms). Schwelle 0,006: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik ~11 dB
+export const DUCK = { volume: 0.25, fadeIn: 1, fadeOut: 2, threshold: 0.006, ratio: 8, attackMs: 20, releaseMs: 300 }
 export const PAD = 0.15 // Puffer an jedem Schnitt, damit kein Wort angeschnitten wird
 export const STILL = 3 // Sekunden je Folie ohne Video im MP4
 export const MIN_PAUSE = 0.6 // pauses 'kurz': Stillen ab dieser Länge fallen weg, padParts lässt je Seite PAD stehen
