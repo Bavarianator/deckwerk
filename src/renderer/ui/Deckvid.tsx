@@ -6,7 +6,7 @@ import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent } from '../../shared/video'
+import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent } from '../../shared/video'
 import { loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -400,7 +400,8 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     '--dv-sub': `${cq((m * (mode === 'satz' ? 0.055 : wide ? 0.065 : 0.075)) / face.win)}cqw`,
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
-    ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar, '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) }),
+    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part)), !!deck && isCompilation(deck)),
+    ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar }),
   } as CSSProperties
   const focus = c.parts.find((x) => player.src >= x.start && player.src < x.end)?.focus ?? c.parts[0].focus
   const to = cached?.duration || Math.max(...parts.map((x) => x.end))

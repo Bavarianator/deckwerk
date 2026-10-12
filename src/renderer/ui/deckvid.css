@@ -42,7 +42,7 @@
 .dv-sub em { font-style: normal; color: var(--dv-accent); }
 
 /* Stil „lebendig“: Werte kommen als Variablen aus FX (video.ts), damit Vorschau und MP4 gleich aussehen */
-.dv-screen.live .clip-video video { transform: scale(var(--dv-zoom)); } /* harter Wechsel an der Naht, keine Transition */
+.dv-screen .clip-video video { transform: scale(var(--dv-zoom, 1)); } /* Zoom-Wechsel an Schnitten (beide Stile); hart, die Überblendung macht nur der Export */
 .dv-screen.live .dv-sub em { display: inline-block; animation: dv-pop var(--dv-pop-ms) ease-out; }
 .dv-screen.live .dv-hook { right: auto; left: calc(8% - var(--dv-pad)); max-width: calc(84% + 2 * var(--dv-pad)); opacity: var(--dv-hook-o, 1); animation: dv-fade var(--dv-fade) linear; } /* Ausblenden: --dv-hook-o aus der Zeit; Textbreite 84 % wie MarginL/R im ASS */
 .dv-screen.live .dv-hook span { padding: var(--dv-pad-y) var(--dv-pad); background: rgb(0 0 0 / 0.65); box-decoration-break: clone; -webkit-box-decoration-break: clone; } /* je Zeile eine Fläche wie BorderStyle 3 */

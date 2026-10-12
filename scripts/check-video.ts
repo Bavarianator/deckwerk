@@ -9,7 +9,7 @@ import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, f
 import { cropFilter, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
-import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Transcript } from '../src/shared/video'
+import { FX, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, isCompilation, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -175,7 +175,10 @@ async function main() {
       // Zuschnitt: part 0 wie bisher, part 1 um 1,08 enger um denselben Mittelpunkt
       const c = cropRect({ w: 1280, h: 720 }, { w: 1080, h: 1920 }, 0.5)
       assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf('lebendig', 0)), 'crop=406:720:437:0,scale=1080:1920')
-      assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf(undefined, 1)), 'crop=406:720:437:0,scale=1080:1920')
+      assert.deepEqual([zoomOf(undefined, 0), zoomOf('ruhig', 1), zoomOf('ruhig', 1, true), zoomOf('lebendig', 1)], [1, 1, FX.zoomRuhig, FX.zoom], 'ruhig zoomt nur im Zusammenschnitt und leiser als lebendig, gerade Ausschnitte nie')
+      const clipS = { layout: 'clip' }, quer = { w: 1920, h: 1080 }
+      assert.deepEqual([isCompilation({ size: quer, slides: [clipS, { layout: 'section' }, clipS] }), isCompilation({ size: quer, slides: [clipS] }), isCompilation({ size: { w: 1080, h: 1920 }, slides: [clipS, clipS] }), isCompilation({ size: quer, slides: [clipS, { ...clipS, hidden: true }] })],
+        [true, false, false, false], 'Zusammenschnitt = mehrere sichtbare Clip-Folien im Querformat')
       const z = zoomCrop(c, zoomOf('lebendig', 1))
       // Zoom wechselt nur an echten Schnitten: nahtlos anschließende parts (follow) behalten den Zoom
       assert.deepEqual([0, 1, 2, 3].map((i) => cutIndex([{ start: 0, end: 2 }, { start: 2, end: 4 }, { start: 6, end: 8 }, { start: 9, end: 10 }], i)), [0, 0, 1, 2])
@@ -339,8 +342,18 @@ async function main() {
     assert.deepEqual([c.w, c.h, c.audio], [1080, 1920, true])
     assert.ok(last >= 90, `Fortschritt endet bei ${last}`)
     assert.ok(existsSync(join(dir, 'fonts', 'font-0.ttf')), 'Schrift im Unterordner fonts (libass lädt alles in fontsdir)')
-    const faded = dip(await pcm16k(clip), 3.3, 1.5)
-    assert.ok(faded < 0.5, `Fade am Schnitt mit Lücke fehlt (Pegel ${faded.toFixed(2)})`)
+    // Schnitt mit Lücke: Überblendung statt Sprung – kein Knacks im Ton (Sinus, Phasensprung wäre ein Sprung), Länge aufs Frame wie ohne Blende
+    const pc = await pcm16k(clip), step = (t: number) => { let m = 0; for (let s = Math.round((t - 0.15) * 16000); s < (t + 0.15) * 16000; s++) m = Math.max(m, Math.abs(pc[s + 1] - pc[s])); return m }
+    assert.ok(step(3.3) < step(1.5) * 1.5, `Knacks am Schnitt (${step(3.3).toFixed(3)} gegen ${step(1.5).toFixed(3)})`)
+    near(c.duration, partsLength(padParts(parts, 12)), 0.05, 'Länge mit Überblendung')
+    // Bild: rot 0–2 s, blau 2–4 s; zwei Ausschnitte, an der Naht (1,3 s nach dem Polster) eine Mischung aus beiden
+    const rotblau = join(dir, 'rotblau.mp4'), misch = join(dir, 'misch.mp4')
+    await runFfmpeg(['-f', 'lavfi', '-i', 'color=red:size=320x180:rate=30:duration=2', '-f', 'lavfi', '-i', 'color=blue:size=320x180:rate=30:duration=2', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4', '-filter_complex', '[0:v][1:v]concat=n=2:v=1:a=0[v]', '-map', '[v]', '-map', '2:a', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', rotblau])
+    near(await encodeClip({ file: rotblau, parts: [{ start: 0.2, end: 1.2 }, { start: 2.8, end: 3.8 }], captions: 'aus', transcript: null, size: { w: 320, h: 180 }, font, accent: '#FF8800' }, misch, dir), 2 + 4 * PAD, 0.01, 'Länge rot/blau')
+    const px = async (t: number) => { const [f] = await rawFrames(misch, [t], 32); const o = (9 * 32 + 16) * 3; return { b: f[o], r: f[o + 2] } }
+    const [vor, naht, nach] = [await px(0.5), await px(1.3), await px(2.1)]
+    assert.ok(vor.r > 200 && nach.b > 200, `Testbild falsch: ${JSON.stringify([vor, nach])}`)
+    assert.ok(naht.r > 50 && naht.r < 210 && naht.b > 50 && naht.b < 210, `keine Überblendung an der Naht: ${JSON.stringify(naht)}`)
 
     // Nahtloser Schnitt: kein Pegelloch mitten im Satz
     const nahtlos = join(dir, 'nahtlos.mp4')

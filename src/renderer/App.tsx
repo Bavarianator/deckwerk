@@ -272,7 +272,8 @@ export default function App() {
       const video = format === 'mp4' || format === 'clips'
       if (video && videoBusy.current) throw new Error('Es läuft schon ein Video-Export. Warte, bis er fertig ist.')
       setStatus({ text: video ? 'Video wird gerendert …' : `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
-      const off = video ? api.onExportProgress((pct) => setStatus({ text: `Video wird gerendert … ${pct} %` })) : undefined
+      const phone = video ? await api.phoneStatus().catch(() => null) : null, where = phone?.on && phone.device ? ` auf dem Handy (${phone.device})` : ''
+      const off = video ? api.onExportProgress((pct) => setStatus({ text: `Video wird${where} gerendert … ${pct} %` })) : undefined
       videoBusy.current = video
       try {
         const files = await api.exportDeck(format, print)

@@ -59,9 +59,9 @@ export function AllgemeinSection({ go }: SectionProps) {
       </Group>
       <Group label="Video">
         <div className="setup-opt settings-row">
-          <Switch checked={!!phone?.on} label={<b>Spracherkennung auf dem Android-Handy</b>}
+          <Switch checked={!!phone?.on} label={<b>Android-Handy als Rechenhilfe</b>}
             onChange={(on) => { setPhone((p) => p && { ...p, on }); window.api.setPhone(on).catch(() => setPhone((p) => p && { ...p, on: !on })) }}
-            hint={`Für lange Videos: Ein aktuelles Handy erkennt Sprache etwa fünfmal so schnell wie ein einfacher PC. Handy per USB anschließen und in den Entwickleroptionen USB-Debugging erlauben. Beim ersten Mal überträgt Deckwerk das Sprachmodell (rund 700 MB). ${phone?.device ? `Verbunden: ${phone.device}.` : 'Gerade ist kein Handy verbunden, dann rechnet der PC.'}`} />
+            hint={`Für lange Videos: Spracherkennung und Video-Export laufen auf dem Handy, ein aktuelles Handy rechnet etwa fünfmal so schnell wie ein einfacher PC. Handy per USB anschließen und in den Entwickleroptionen USB-Debugging erlauben. Beim ersten Mal überträgt Deckwerk Sprachmodell und ffmpeg (zusammen rund 800 MB), für den Export einmal das Quellvideo (die zwei zuletzt genutzten bleiben auf dem Handy). ${phone?.device ? `Verbunden: ${phone.device}.` : 'Gerade ist kein Handy verbunden, dann rechnet der PC.'}`} />
         </div>
       </Group>
       <Group label="Datenschutz">

@@ -11,14 +11,14 @@ import { pipeline } from 'node:stream/promises'
 export const httpFetch = async (url: string | URL, init?: RequestInit): Promise<Response> =>
   process.type === 'browser' ? (await import('electron')).net.fetch(String(url), init as never) : fetch(url, init)
 
-export async function download(url: string, sha256: string, file: string, onProgress: (pct: number) => void = () => {}) {
+export async function download(url: string, sha256: string, file: string, onProgress: (pct: number) => void = () => {}, headers?: Record<string, string>) {
   // Abbruch erst, wenn 60 s keine Daten kommen: ein fester Gesamt-Timeout brach große Modelle (650 MB) bei langsamer Leitung ab
   const ac = new AbortController()
   let stall: ReturnType<typeof setTimeout> | undefined
   const arm = () => { clearTimeout(stall); stall = setTimeout(() => ac.abort(new Error('Download hängt (60 s ohne Daten). Bitte noch einmal versuchen.')), 60_000) }
   arm()
   try {
-    await save(await httpFetch(url, { signal: ac.signal }), sha256, file, onProgress, arm)
+    await save(await httpFetch(url, { signal: ac.signal, headers }), sha256, file, onProgress, arm)
   } finally {
     clearTimeout(stall)
   }

@@ -360,7 +360,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   // mp4: Übergänge mit Abblende zählen (ausgeblendete Folien und morph nicht), fehlende Musik melden
   const s0 = vd!.slides[0]
   vd!.slides.push({ ...s0, id: 'f1', transition: 'fade' }, { ...s0, id: 'm1', transition: 'morph' }, { ...s0, id: 'h1', transition: 'fade', hidden: true }, { ...s0, id: 'n1', transition: 'none' })
-  assert.match((await go('export_deck', { format: 'mp4' })).text, /\n1 Übergang mit Abblende \(Folien-transition; none = harter Schnitt\)$/)
+  assert.match((await go('export_deck', { format: 'mp4' })).text, /\n1 Übergang mit Abblende \(Zwischentitel immer, sonst Folien-transition; innerhalb eines Clips blendet jeder Schnitt 0,2 s über\)$/)
   vd!.music = { src: assetUrl(join(dir, 'music', 'weg.mp3')) }
   assert.match((await go('export_deck', { format: 'clips' })).text, /deck\.clips\nMusik nicht gefunden – ohne Musik exportiert/)
   vd!.music = { src: assetUrl(mp3) }

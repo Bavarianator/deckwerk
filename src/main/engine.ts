@@ -89,6 +89,11 @@ export function createEngine(): Engine {
   // Option „Spracherkennung auf dem Android-Handy“: je Aufruf neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
   const phoneOn = () => existsSync(phoneMarker(app.getPath('appData')))
   const phoneNow = async () => (phoneOn() ? phoneDevice() : null)
+  // wer rechnet (Spracherkennung, Video-Export): Handy oder PC mit Grund, für die Antworten der KI und die Arbeitsansicht
+  const device = async () => {
+    const d = await phoneNow()
+    return d ? `Handy (${d.model}, CPU)` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
+  }
 
   // Ein Chunk: Parakeet (sherpa); Whisper nur für Sprachen außerhalb von Parakeet oder wenn sherpa nicht nutzbar ist
   async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
@@ -263,7 +268,11 @@ export function createEngine(): Engine {
       // Video: Zuschnitt 5 %, dann fehlende Transkript-Chunks der Ausschnitte (je Chunk 5 %, höchstens bis 60 %), Rest der Export
       if (format === 'mp4' || format === 'clips') {
         const report = onProgress ?? (() => {}), music = musicOf(deck), t = transcriptsOf(deck)
-        const run = (ready: Deck, pre: number) => import('./export-video').then((m) => m.exportVideo(ready, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), music))
+        // Handy-Option: die Clip-Gruppen rechnet das Handy (phone-ffmpeg.ts), Standbilder und Endschritt der PC
+        const run = async (ready: Deck, pre: number) => {
+          const d = await phoneNow(), m = await import('./export-video')
+          return m.exportVideo(ready, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), { ...music, phone: d ? { serial: d.serial, models } : undefined })
+        }
         if (!clipsOk(deck)) return run(deck, 0) // exportVideo meldet, was fehlt
         const files = [...t.need.keys()], miss = await Promise.all(files.map((f) => chunkPlan(f, t.need.get(f)!).then((p) => p.missing.length, () => 0)))
         const total = miss.reduce((a, b) => a + b, 0), pre = Math.min(60, 5 + 5 * total) // ponytail: Schätzung, ein Chunk (5 min Ton) wiegt so viel wie 5 % Export
@@ -316,11 +325,8 @@ export function createEngine(): Engine {
       probe,
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
-      async asrDevice(lang) {
-        if (wantFor(lang) === 'whisper' || whisperOnly) return 'PC (Whisper)'
-        const d = await phoneNow()
-        return d ? `Handy (${d.model}, CPU)` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
-      },
+      device,
+      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : device() },
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)

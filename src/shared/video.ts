@@ -21,17 +21,22 @@ export interface Cue { start: number; end: number; words: Word[] }
 
 export const CAPTIONS: Captions[] = ['wort', 'satz', 'aus']
 export const CLIP_STYLES: ClipStyle[] = ['ruhig', 'lebendig']
-// Werte für style 'lebendig', gemeinsam für Export (ASS/ffmpeg) und Vorschau (CSS), damit beide gleich aussehen
+// Werte der Clip-Stile (meist 'lebendig'), gemeinsam für Export (ASS/ffmpeg) und Vorschau (CSS), damit beide gleich aussehen
 export const FX = {
   pop: 1.08, popMs: 120, // gesprochenes Wort wächst kurz und geht zurück
   hookFadeMs: 200, // Hook blendet ein und aus
   zoom: 1.08, // jeder zweite Ausschnitt (ungerader Index) enger: kaschiert Jump-Cuts
+  zoomRuhig: 1.06, // dasselbe leiser im Stil ruhig, nur in Zusammenschnitten (12.10.: harte Schnitte wirkten undynamisch); mit der Überblendung im Export ein weicher Zoom
   bar: 0.006, // Fortschrittsbalken: Höhe als Anteil der Bildhöhe, Akzentfarbe, unten
 }
 // Zahl der echten Schnitte bis Ausschnitt i: nahtlose Übergänge (Quelle läuft weiter) zählen nicht
 export const cutIndex = (parts: Part[], i: number) => parts.slice(1, i + 1).filter((p, j) => Math.abs(parts[j].end - p.start) >= 1e-3).length
-// Zoom nach dem part-ten Schnitt (cutIndex): nur lebendig und nur jeder zweite
-export const zoomOf = (style: ClipStyle | undefined, part: number) => (style === 'lebendig' && part % 2 === 1 ? FX.zoom : 1)
+// Zoom nach dem part-ten Schnitt (cutIndex): jeder zweite; lebendig immer, ruhig nur in Zusammenschnitten (compilation); bei fit blur setzen die Aufrufer 1
+export const zoomOf = (style: ClipStyle | undefined, part: number, compilation = false) =>
+  part % 2 === 1 ? (style === 'lebendig' ? FX.zoom : compilation ? FX.zoomRuhig : 1) : 1
+// Zusammenschnitt (Stream-Highlights, Kompilation): mehrere sichtbare Clip-Folien im Querformat. Fulltime, Vorträge, Bildschirmaufnahmen und Shorts nicht
+export const isCompilation = (deck: { size?: { w: number; h: number }; slides: { layout: string; hidden?: boolean }[] }) =>
+  deck.slides.filter((s) => s.layout === 'clip' && !s.hidden).length > 1 && (deck.size ?? { w: 1280, h: 720 }).w > (deck.size ?? { w: 1280, h: 720 }).h // Standard wie sizeOf
 export const PAD = 0.15 // Puffer an jedem Schnitt, damit kein Wort angeschnitten wird
 export const STILL = 3 // Sekunden je Folie ohne Video im MP4
 export const MIN_PAUSE = 0.6 // pauses 'kurz': Stillen ab dieser Länge fallen weg, padParts lässt je Seite PAD stehen
