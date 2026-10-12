@@ -12,9 +12,10 @@ const MAC_UPDATE = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/de
 export function AllgemeinSection({ go }: SectionProps) {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [spell, setSpell] = useState(true)
+  const [phone, setPhone] = useState<{ on: boolean; device: string | null } | null>(null)
   const [upd, setUpd] = useState<UpdateInfo | null>(null)
   const { busy, err, run } = useRun<'suche' | 'update'>()
-  useEffect(() => { void window.api.appInfo().then(setInfo); void window.api.spellcheck().then(setSpell) }, [])
+  useEffect(() => { void window.api.appInfo().then(setInfo); void window.api.spellcheck().then(setSpell); void window.api.phoneStatus().then(setPhone) }, [])
   return (
     <>
       <Head title="Allgemein" />
@@ -54,6 +55,13 @@ export function AllgemeinSection({ go }: SectionProps) {
           {/* macOS prüft mit dem System, sonst lädt Electron Hunspell-Wörterbücher vom Google-CDN */}
           <Switch checked={spell} label={<b>Rechtschreibprüfung</b>} onChange={(on) => { setSpell(on); window.api.setSpellcheck(on).catch(() => setSpell(!on)) }}
             hint={info?.platform.startsWith('darwin') ? 'Deutsch und Englisch, mit der Rechtschreibprüfung von macOS.' : 'Deutsch und Englisch. Die Wörterbücher lädt Deckwerk einmalig von einem Google-Server herunter.'} />
+        </div>
+      </Group>
+      <Group label="Video">
+        <div className="setup-opt settings-row">
+          <Switch checked={!!phone?.on} label={<b>Spracherkennung auf dem Android-Handy</b>}
+            onChange={(on) => { setPhone((p) => p && { ...p, on }); window.api.setPhone(on).catch(() => setPhone((p) => p && { ...p, on: !on })) }}
+            hint={`Für lange Videos: Ein aktuelles Handy erkennt Sprache etwa fünfmal so schnell wie ein einfacher PC. Handy per USB anschließen und in den Entwickleroptionen USB-Debugging erlauben. Beim ersten Mal überträgt Deckwerk das Sprachmodell (rund 700 MB). ${phone?.device ? `Verbunden: ${phone.device}.` : 'Gerade ist kein Handy verbunden, dann rechnet der PC.'}`} />
         </div>
       </Group>
       <Group label="Datenschutz">

@@ -12,6 +12,7 @@ import { setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type { Segment } from '../shared/video'
 import { download } from './download'
+import { ensurePhone } from './phone'
 
 export const PARAKEET_LANGS: readonly string[] = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 'el', 'hu', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 'sk', 'sl', 'es', 'sv', 'ru', 'uk']
 
@@ -72,7 +73,7 @@ const STALL = 10 * 60_000 // so lange keine Nachricht bei offenem Auftrag: Worke
 
 // Schutz vor dem OOM-Killer (wie transcribe.ts), bevor ein Modell in den Worker kommt: asr ~1,3 GB Spitze, tag/diar je < 0,1 GB.
 // MemAvailable statt os.freemem(): zählt den freigebbaren Datei-Cache mit. macOS lagert aus statt zu beenden, dort nicht sperren.
-const NEED_GB: Record<string, number> = { asr: 1.5, tag: 0.6, diar: 0.6 }
+const NEED_GB: Record<string, number> = { asr: 1.5, 'asr-phone': 0.3, tag: 0.6, diar: 0.6 } // asr-phone: nur Silero-VAD hier
 function memCheck(op: string) {
   if (process.platform !== 'linux') return
   let gb: number
@@ -163,8 +164,13 @@ export function stopWorker(): void {
 
 /** Transkript aus 16 kHz mono f32: Silero-VAD teilt in Sprachstücke, Parakeet erkennt sie. Segmente = Sätze mit echten
  *  Wortzeiten (s, + offset). onProgress 0–100 über die Erkennung; fehlende Modelle lädt ensureModels vorher ohne Fortschritt. */
-export async function asr(pcm: Float32Array, o: { models: string; offset?: number; onProgress?: (pct: number) => void }): Promise<Segment[]> {
+export async function asr(pcm: Float32Array, o: { models: string; offset?: number; onProgress?: (pct: number) => void; phone?: string }): Promise<Segment[]> {
   await ensureModels('asr', o.models)
+  // phone: Seriennummer eines Handys (phone.ts), das erkennt; geht dort etwas schief, rechnet der PC wie ohne Handy
+  if (o.phone) try {
+    await ensurePhone(o.phone, o.models)
+    return await call<Segment[]>('asr-phone', { pcm, models: o.models, offset: o.offset ?? 0, threads: 1, phone: o.phone }, o.onProgress)
+  } catch (e) { console.warn('[sherpa] Handy nicht nutzbar, Erkennung auf dem PC:', (e as Error).message) }
   const threads = Number(process.env.DECKWERK_SHERPA_THREADS) || THREADS // Stellschraube für Messungen
   return call<Segment[]>('asr', { pcm, models: o.models, offset: o.offset ?? 0, threads }, o.onProgress)
 }

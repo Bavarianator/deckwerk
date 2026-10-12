@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DeckAgent, catalogThumbnails, corePrompt, firstTurn, toRunnable, type Engine, type VideoTools } from '../src/main/agent'
+import { DeckAgent, catalogThumbnails, corePrompt, firstTurn, summaryOf, toRunnable, type Engine, type VideoTools } from '../src/main/agent'
 import { modulesText, type Route } from '../src/main/guide-modules'
 import { z } from 'zod'
 import { assetUrl, buildTools, imageSettings, JOB_WAIT, jobList, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
@@ -78,6 +78,9 @@ assert.equal(webp('ffd8ffe000104a46494600010100000100010000ffdb00430003020203020
   eq('Ergebnis (ok) - gut und "Ja" - nein', `Ergebnis (ok)${NB}– gut und „Ja“${NB}– nein`)
   eq('Er sagte "Hallo" (und "tschüss") bei 12" Zoll', 'Er sagte „Hallo“ (und „tschüss“) bei 12" Zoll')
 }
+// Kurztext der Tool-Chips: ohne Bitte an die KI, Dateiname statt asset://-URL
+assert.equal(summaryOf('Transkription läuft noch (10 %). Rufe dasselbe Tool gleich noch einmal mit denselben Eingaben auf; die Arbeit läuft im Hintergrund weiter.\nmehr'), 'Transkription läuft noch (10 %).')
+assert.equal(summaryOf('Video: asset://local/home/u/Deckwerk/assets/.video/import/Mein%20Clip.mp4 (3:15:33, 1920×1080)'), 'Video: Mein Clip.mp4 (3:15:33, 1920×1080)')
 // Auto-Modellwahl: neues Deck und Umbauten gründlich, gezielte Änderungen schnell
 assert.equal(autoPick('Ein Pitch für unser Café', false).model, 'opus')
 assert.equal(autoPick('Überarbeite alle Folien im Ton', true).model, 'opus')

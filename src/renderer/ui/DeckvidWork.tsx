@@ -1,12 +1,13 @@
 // Deckvid-Leerzustand: die Arbeitsschritte der KI mit Fortschritt statt eines einzelnen Satzes.
 import { useEffect, useState } from 'react'
 import { Check, CircleAlert, LoaderCircle } from 'lucide-react'
-import { JOB, TOOL, type Msg } from './Chat'
+import { JOB, TOOL, sameNext, type Msg } from './Chat'
 import './deckvid-work.css'
 
 export function WorkSteps({ msgs, busy }: { msgs: Msg[]; busy: boolean }) {
   const from = msgs.findLastIndex((m) => m.kind === 'user') + 1
-  const steps = msgs.slice(from).filter((m): m is Extract<Msg, { kind: 'tool' }> => m.kind === 'tool' && m.name !== 'ask_user' && m.name !== 'auto_model')
+  const steps = msgs.slice(from).filter((m): m is Extract<Msg, { kind: 'tool' }> => m.kind === 'tool' && !['ask_user', 'auto_model', 'router'].includes(m.name))
+    .filter((_, i, all) => !sameNext(all, i)) // Nachfragen eines laufenden Video-Tools: eine Zeile
   const running = busy && steps.some((s) => s.status === 'start' && s.name in JOB)
   const [pct, setPct] = useState<Record<string, number>>({})
   useEffect(() => {

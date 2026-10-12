@@ -1,4 +1,4 @@
-import { nativeImage } from 'electron'
+import { app, nativeImage } from 'electron'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
@@ -16,6 +16,7 @@ import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
 import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
+import { phoneDevice, phoneMarker } from './phone'
 import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
 import { localAsset } from './sync'
 import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
@@ -97,7 +98,9 @@ export function createEngine(): Engine {
     }
     if (want === 'whisper' || whisperOnly) return whisper()
     try {
-      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress }), k) }
+      // Option „Spracherkennung auf dem Android-Handy“: je Chunk neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
+      const phone = existsSync(phoneMarker(app.getPath('appData'))) ? (await phoneDevice())?.serial : undefined
+      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone }), k) }
     } catch (e) {
       if ((e as { code?: string }).code !== 'SHERPA_UNAVAILABLE') throw e
       console.warn('[video] sherpa-onnx nicht nutzbar, Spracherkennung mit Whisper:', (e as Error).message)
