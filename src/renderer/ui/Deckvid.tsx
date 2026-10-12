@@ -6,7 +6,7 @@ import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, DUCK, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent } from '../../shared/video'
+import { CLIP_STYLES, DUCK, FX, STILL, cutFrames, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent } from '../../shared/video'
 import { loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -361,8 +361,8 @@ interface StageProps {
 function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onContent }: StageProps) {
   const c = clip.content
   const videoRef = useRef<HTMLVideoElement>(null), fadeRef = useRef<HTMLCanvasElement>(null), musicRef = useRef<HTMLAudioElement>(null)
-  // Überblendung wie im Export (XF, 0,2 s): das letzte Bild vor dem Schnitt liegt kurz über dem neuen und blendet aus
-  const dissolve = () => {
+  // Überblendung wie im Export (cutFrames: Jump-Cut kurz, neuer Moment länger): das letzte Bild vor dem Schnitt liegt über dem neuen und blendet aus
+  const dissolve = (gap: number) => {
     const v = videoRef.current, cv = fadeRef.current
     if (!v || !cv || !v.videoWidth) return
     const st = getComputedStyle(v)
@@ -370,7 +370,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     cv.width = v.videoWidth; cv.height = v.videoHeight
     cv.getContext('2d')?.drawImage(v, 0, 0)
     cv.getAnimations().forEach((a) => a.cancel())
-    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200 })
+    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: (cutFrames(gap) / 30) * 1000 })
   }
   const player = useClipPlayer(videoRef, c.parts, dissolve)
   const [bad, setBad] = useState(false) // Chromium spielt die Quelle nicht (HEVC, ProRes …)

@@ -9,7 +9,7 @@ import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, f
 import { cropFilter, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
-import { FX, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, isCompilation, type Transcript } from '../src/shared/video'
+import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, isCompilation, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -176,6 +176,8 @@ async function main() {
       const c = cropRect({ w: 1280, h: 720 }, { w: 1080, h: 1920 }, 0.5)
       assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf('lebendig', 0)), 'crop=406:720:437:0,scale=1080:1920')
       assert.deepEqual([zoomOf(undefined, 0), zoomOf('ruhig', 1), zoomOf('ruhig', 1, true), zoomOf('lebendig', 1)], [1, 1, FX.zoomRuhig, FX.zoom], 'ruhig zoomt nur im Zusammenschnitt und leiser als lebendig, gerade Ausschnitte nie')
+      // Überblendung nach Art des Schnitts: Jump-Cut kurz, neuer Moment (Sprung ab CUT.moment s oder zurück) lang
+      assert.deepEqual([cutFrames(0.3), cutFrames(19.9), cutFrames(CUT.moment), cutFrames(-4)], [CUT.jumpFrames, CUT.jumpFrames, CUT.momentFrames, CUT.momentFrames])
       const clipS = { layout: 'clip' }, quer = { w: 1920, h: 1080 }
       assert.deepEqual([isCompilation({ size: quer, slides: [clipS, { layout: 'section' }, clipS] }), isCompilation({ size: quer, slides: [clipS] }), isCompilation({ size: { w: 1080, h: 1920 }, slides: [clipS, clipS] }), isCompilation({ size: quer, slides: [clipS, { ...clipS, hidden: true }] })],
         [true, false, false, false], 'Zusammenschnitt = mehrere sichtbare Clip-Folien im Querformat')

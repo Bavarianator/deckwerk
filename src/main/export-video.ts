@@ -8,7 +8,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { DUCK, MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, isCompilation } from '../shared/video'
+import { CUT, DUCK, MAX_PARTS, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, isCompilation } from '../shared/video'
 import { HOOK_FADE, POP, cropFilter, hookBox, progressBar } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
@@ -22,9 +22,9 @@ export interface Music { file: string; volume?: number } // absoluter Pfad, volu
 // ponytail: bis zu 20 Decoder gleichzeitig (4K braucht viel RAM); Upgrade: nahtlose Teilstücke eines parts aus einem Input per trim/atrim
 const GROUP = 20
 const FADE = 0.4 // Übergang aus/in Schwarz (s)
-// Weicher Schnitt: Überblendung in Bild und Ton über XF Frames (0,2 s bei 30 fps); je Seite XF/2 Frames Material über die Naht hinaus,
-// die Mitte der Blende liegt auf der alten Naht, Länge und Untertitel bleiben gleich. Wo das nicht geht (Gruppengrenze, Bildwechsel, Videoende): Tonblende AFADE.
-const XF = 6, AFADE = 0.08
+// Weicher Schnitt: Überblendung in Bild und Ton (Dauer je Schnitt aus cutFrames in shared/video.ts); je Seite die halbe Blende Material über die Naht
+// hinaus, die Mitte der Blende liegt auf der alten Naht, Länge und Untertitel bleiben gleich. Wo das nicht geht (Gruppengrenze, Bildwechsel, Videoende): Tonblende AFADE.
+const AFADE = 0.08
 // Alle Zwischenstände eines Exports mit denselben Video-Parametern, sonst passt -c:v copy beim Verbinden nicht
 const video = (preset: string) => ['-c:v', 'libx264', '-preset', preset, '-profile:v', 'high', '-crf', '20', '-pix_fmt', 'yuv420p', '-r', '30']
 const PCM = ['-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2'] // AAC in Zwischenständen verschöbe den Ton an jeder concat-Naht (Priming: Lücke oder Versatz)
@@ -177,29 +177,32 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     // Frames je Ausschnitt aus den aufsummierten Nahtzeiten, nicht je Ausschnitt abgerundet: so laufen Bild, Ton und Untertitel nicht auseinander
     const at = ps.reduce<number[]>((s, p) => [...s, s[s.length - 1] + p.end - p.start], [0]), fr = (t: number) => Math.round(t * 30)
     const own = (i: number) => fr(at[i + 1]) - fr(at[i]) // Frames ohne Überblendung; zwei Blenden eines Ausschnitts dürfen sich nicht überlappen
-    const half = ps.map((p, i) => (i === 0 || joined[k0 + i] ? 0
-      : Math.max(0, Math.min(XF / 2, Math.floor(own(i - 1) / 2), Math.floor(own(i) / 2), Math.floor(room(ps[i - 1].end, 1) * 30), Math.floor(room(p.start, -1) * 30)))))
+    // je Naht i: Bild hv Frames je Seite (nach Art des Schnitts), Ton ha ≤ CUT.jumpFrames/2; jede Naht zieht nur ihre eigene Überlappung ab, Bild und Ton bleiben gleich lang
+    const hv = ps.map((p, i) => (i === 0 || joined[k0 + i] ? 0
+      : Math.max(0, Math.min(Math.floor(cutFrames(p.start - ps[i - 1].end) / 2), Math.floor(own(i - 1) / 2), Math.floor(own(i) / 2), Math.floor(room(ps[i - 1].end, 1) * 30), Math.floor(room(p.start, -1) * 30)))))
+    const ha = hv.map((h) => Math.min(h, CUT.jumpFrames / 2))
     const graph = ps.map((p, i) => {
-      const before = (half[i] ?? 0) / 30, after = (half[i + 1] ?? 0) / 30, frames = own(i) + (half[i] ?? 0) + (half[i + 1] ?? 0)
-      const c = cropRect(info, size, p.focus), len = p.end - p.start + before + after, k = k0 + i
+      const before = (hv[i] ?? 0) / 30, frames = own(i) + (hv[i] ?? 0) + (hv[i + 1] ?? 0), a0 = (ha[i] ?? 0) / 30
+      const c = cropRect(info, size, p.focus), len = p.end - p.start + a0 + (ha[i + 1] ?? 0) / 30, k = k0 + i // len: Ton
       const fit = blur
         ? `split[b${i}][f${i}];[b${i}]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g${i}];` +
           `[f${i}]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h${i}];[g${i}][h${i}]overlay=(W-w)/2:(H-h)/2`
         : cropFilter(c, size, job.fit === 'blur' ? 1 : zoomOf(job.style, cutIndex(parts, k), job.compilation), p.track ? { src: info, keys: p.track, start: p.start - before } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
-      const a = info.audio ? `[${i}:a]atrim=duration=${sec(len)},asetpts=PTS-STARTPTS,` : `anullsrc=r=48000:cl=stereo,atrim=duration=${sec(len)},`
+      // Ton ab p.start − a0: die Eingabe beginnt beim längeren Bild-Vorlauf (before)
+      const a = info.audio ? `[${i}:a]atrim=start=${sec(before - a0)}:duration=${sec(len)},asetpts=PTS-STARTPTS,` : `anullsrc=r=48000:cl=stereo,atrim=duration=${sec(len)},`
       // Tonblende nur an Kanten ohne Überblendung; nahtlose Kanten bleiben unberührt
-      const fade = `${joined[k] || half[i] ? '' : `,afade=t=in:d=${AFADE}`}${joined[k + 1] || half[i + 1] ? '' : `,afade=t=out:st=${sec(Math.max(0, len - AFADE))}:d=${AFADE}`}`
+      const fade = `${joined[k] || ha[i] ? '' : `,afade=t=in:d=${AFADE}`}${joined[k + 1] || ha[i + 1] ? '' : `,afade=t=out:st=${sec(Math.max(0, len - AFADE))}:d=${AFADE}`}`
       return `[${i}:v]setpts=PTS-STARTPTS,fps=30,trim=end_frame=${frames},${fit},setsar=1,format=yuv420p[v${i}];` +
         `${a}aformat=sample_rates=48000:channel_layouts=stereo${fade}[a${i}]`
     })
     // Bild und Ton getrennt verketten: an Nähten mit Überblendung xfade/acrossfade, sonst concat; offset = bisherige Frames minus Blende.
     // concat liefert die Zeitbasis 1/1000000, xfade verlangt bei beiden Eingängen dieselbe: darum settb zurück auf 1/30.
     // offset einen halben Frame vor der ersten Blendfläche: xfade beginnt beim ersten Frame mit pts ≥ offset, sec() rundet auf 1 ms
-    let cv = '[v0]', ca = '[a0]', n = own(0) + (half[1] ?? 0)
+    let cv = '[v0]', ca = '[a0]', n = own(0) + (hv[1] ?? 0)
     for (let i = 1; i < ps.length; i++) {
-      const h = half[i], d = sec((2 * h) / 30), frames = own(i) + h + (half[i + 1] ?? 0)
-      graph.push(h ? `${cv}[v${i}]xfade=transition=fade:duration=${d}:offset=${sec((n - 2 * h - 0.5) / 30)}[xv${i}]` : `${cv}[v${i}]concat=n=2:v=1:a=0,settb=1/30[xv${i}]`,
-        h ? `${ca}[a${i}]acrossfade=d=${d}[xa${i}]` : `${ca}[a${i}]concat=n=2:v=0:a=1[xa${i}]`)
+      const h = hv[i], g = ha[i], frames = own(i) + h + (hv[i + 1] ?? 0)
+      graph.push(h ? `${cv}[v${i}]xfade=transition=fade:duration=${sec((2 * h) / 30)}:offset=${sec((n - 2 * h - 0.5) / 30)}[xv${i}]` : `${cv}[v${i}]concat=n=2:v=1:a=0,settb=1/30[xv${i}]`,
+        g ? `${ca}[a${i}]acrossfade=d=${sec((2 * g) / 30)}[xa${i}]` : `${ca}[a${i}]concat=n=2:v=0:a=1[xa${i}]`)
       cv = `[xv${i}]`; ca = `[xa${i}]`; n += frames - 2 * h
     }
     const vf = [subs && `ass=${id}.ass:fontsdir=fonts`, o.fadeIn && first && `fade=t=in:d=${FADE}`, o.fadeOut && last && `fade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
@@ -207,7 +210,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const af = [job.ton === 'klar' && info.audio && SPEECH, o.fadeIn && first && `afade=t=in:d=${FADE}`, o.fadeOut && last && `afade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
     graph.push(`${cv}${vf.filter(Boolean).join(',') || 'null'}[v]`, `${ca}${af.filter(Boolean).join(',') || 'anull'}[a]`)
     // je Ausschnitt mit Vorlauf für die Überblendung; 0,1 s Reserve, damit trim die Frames sicher bekommt (atrim schneidet den Ton genau)
-    const inputs = ps.flatMap((p, i) => ['-ss', sec(p.start - (half[i] ?? 0) / 30), '-t', sec(p.end - p.start + ((half[i] ?? 0) + (half[i + 1] ?? 0)) / 30 + 0.1), '-i', job.file])
+    const inputs = ps.flatMap((p, i) => ['-ss', sec(p.start - (hv[i] ?? 0) / 30), '-t', sec(p.end - p.start + ((hv[i] ?? 0) + (hv[i + 1] ?? 0)) / 30 + 0.1), '-i', job.file])
     const file = join(dir, `${id}.mkv`)
     const args = [...inputs, '-filter_complex', graph.join(';'), '-map', '[v]', '-map', '[a]', ...video(o.preset), ...PCM, file]
     const ro = { cwd: dir, duration: dur, onProgress: onProgress && ((pct: number) => onProgress(Math.floor(((done + (dur * pct) / 100) / total) * 100))) }

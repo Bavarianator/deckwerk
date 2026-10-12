@@ -40,6 +40,11 @@ export const isCompilation = (deck: { size?: { w: number; h: number }; slides: {
 // Hintergrundmusik im MP4 (finish in export-video.ts) und im Deckvid-Player gleich: Lautstärke, Ein-/Ausblende (s) über das ganze Video und Ducking
 // unter der Sprache (Sidechain: Schwelle linear, Verhältnis, Attack/Release ms). Schwelle 0,006: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik ~11 dB
 export const DUCK = { volume: 0.25, fadeIn: 1, fadeOut: 2, threshold: 0.006, ratio: 8, attackMs: 20, releaseMs: 300 }
+// Überblendung je Schnitt nach dem Sprung in der Quelle (Export und Vorschau gleich, Frames bei 30 fps): Jump-Cut innerhalb eines Moments (gekürzte
+// Pause, Füllwort, Neuansatz) nur kurz, eine längere Blende wirkte dort wie ein Stocken; neuer Moment (Sprung ab CUT.moment s oder zurück) deutlich.
+// Der Ton blendet immer nur jumpFrames, sonst klängen beim Momentwechsel Wörter von jenseits der Naht leise mit
+export const CUT = { moment: 20, jumpFrames: 4, momentFrames: 16 }
+export const cutFrames = (gap: number) => (gap >= CUT.moment || gap < 0 ? CUT.momentFrames : CUT.jumpFrames)
 export const PAD = 0.15 // Puffer an jedem Schnitt, damit kein Wort angeschnitten wird
 export const STILL = 3 // Sekunden je Folie ohne Video im MP4
 export const MIN_PAUSE = 0.6 // pauses 'kurz': Stillen ab dieser Länge fallen weg, padParts lässt je Seite PAD stehen
