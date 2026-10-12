@@ -1,7 +1,7 @@
 // Deckvid: Arbeitsansicht für Video-Decks (Folien im Layout clip). Fast alles läuft über die KI (Chat und Ein-Klick-Aufträge);
 // von Hand gibt es nur, was einfacher ist als ein Satz: abspielen, Feinschnitt, Entfernen, Export.
 import { Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, Settings, Share, Square, Undo2 } from 'lucide-react'
+import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, RotateCcw, RotateCw, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
@@ -64,10 +64,12 @@ function useKey(fn: (e: KeyboardEvent) => void) {
     return () => removeEventListener('keydown', h)
   }, [])
 }
-// Tasten der Ansicht nicht beim Tippen, nicht mit Modifikator und nicht, solange ein Dialog, Menü oder Dropdown offen ist (Feinschnitt fängt seine Tasten selbst ab)
-const keysFree = (e: KeyboardEvent) => {
+// Tasten der Ansicht nicht beim Tippen, nicht mit Modifikator und nicht, solange ein Dialog, Menü oder Dropdown offen ist (Feinschnitt fängt seine Tasten selbst ab).
+// emptyAsk: auch im leeren Chatfeld, dort steht der Cursor nach dem Senden (nur für die Leertaste, Buchstaben wären Text)
+const keysFree = (e: KeyboardEvent, emptyAsk = false) => {
   const t = e.target as HTMLElement
-  return !(e.ctrlKey || e.metaKey || e.altKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest('[role=menu], [role=listbox]')
+  const typing = t.isContentEditable || (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !(emptyAsk && t.matches('.dv-ask input') && !(t as HTMLInputElement).value))
+  return !(e.ctrlKey || e.metaKey || e.altKey || typing || t.closest('[role=menu], [role=listbox]')
     || document.querySelector('[aria-modal="true"], dialog[open], .kit-menu, [role=menu]'))
 }
 
@@ -361,7 +363,14 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
   const videoRef = useRef<HTMLVideoElement>(null)
   const player = useClipPlayer(videoRef, c.parts)
   const [bad, setBad] = useState(false) // Chromium spielt die Quelle nicht (HEVC, ProRes …)
-  useKey((e) => { if (e.key === ' ' && !e.repeat && keysFree(e) && !(e.target as Element).closest('button')) { e.preventDefault(); player.toggle() } })
+  const jump = (d: number) => player.seekClip(Math.max(0, Math.min(player.duration - 0.05, player.t + d)))
+  // Leertaste/K: Pause und Weiter, J/L: 10 s zurück/vor wie bei YouTube (←/→ wechseln den Clip)
+  useKey((e) => {
+    const k = e.key.toLowerCase()
+    if (e.repeat || (k === ' ' && (e.target as Element).closest('button'))) return // Leertaste auf einem Knopf löst ihn selbst aus
+    if (k === ' ' ? keysFree(e, true) : k === 'k' && keysFree(e)) { e.preventDefault(); player.toggle() }
+    else if ((k === 'j' || k === 'l') && keysFree(e)) { e.preventDefault(); jump(k === 'j' ? -10 : 10) }
+  })
 
   const mode = c.captions ?? 'wort' // Standard wie im Export
   // wie im Export: bei pauses kurz fallen Füllwörter weg, geschätzte Wortzeiten verteilen sich dann ohne sie
@@ -431,14 +440,17 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                   {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
                   {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
                   {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
+                  {!player.playing && !bad && <span className="dv-play" aria-hidden><Play size={26} fill="currentColor" /></span>}
                   {bad && <p className="dv-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Exportieren geht trotzdem.</p>}
                 </ClipVideo>
               </div>
             </div>
             <div className="dv-transport">
+              <button className="plain" aria-label="10 s zurück (J)" title="10 s zurück (J)" onClick={() => jump(-10)}><RotateCcw size={16} /></button>
               <button className="round" aria-label={player.playing ? 'Pause (Leertaste)' : 'Abspielen (Leertaste)'} onClick={player.toggle}>
                 {player.playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
               </button>
+              <button className="plain" aria-label="10 s vor (L)" title="10 s vor (L)" onClick={() => jump(10)}><RotateCw size={16} /></button>
               <span>{mmss(player.t)} / {mmss(player.duration)}</span>
               {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
             </div>

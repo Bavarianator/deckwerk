@@ -3,7 +3,7 @@
 import { spawn } from 'node:child_process'
 import { createReadStream, createWriteStream, existsSync } from 'node:fs'
 import { chmod, mkdir, rename, rm } from 'node:fs/promises'
-import { homedir } from 'node:os'
+import { homedir, setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
@@ -33,6 +33,8 @@ export type RunOpts = {
 export function run(bin: string, args: string[], o: RunOpts = {}) {
   return new Promise<{ code: number | null; out: Buffer; err: string }>((resolve, reject) => {
     const p = spawn(bin, args, { cwd: o.cwd, env: o.env, stdio: ['ignore', 'pipe', 'pipe'] })
+    // Hintergrundarbeit wie der Sprach-Worker (sherpa.ts): ein Export soll UI und Spracherkennung nicht aushungern
+    if (p.pid) try { setPriority(p.pid, 10) } catch {}
     const out: Buffer[] = []
     let err = ''
     p.stdout.on('data', (c: Buffer) => (o.onBin ? o.onBin(c) : o.onOut ? o.onOut(c.toString()) : out.push(c)))
