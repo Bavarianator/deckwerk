@@ -64,6 +64,9 @@ export function ChoiceCards({ options, disabled, onSend }: { options: { label: s
   )
 }
 
+// Gleiches Tool direkt danach (Video-Tools fragen alle paar Minuten nach): nur der letzte Aufruf wird gezeigt
+export const sameNext = <M extends { kind: string; name?: string }>(ms: M[], i: number) => ms[i].kind === 'tool' && ms[i + 1]?.kind === 'tool' && ms[i + 1].name === ms[i].name
+
 // Verlauf: Nachrichten, Tool-Chips, Rückfragen mit Antwort-Buttons (Verlauf der KI-Leiste)
 export function ChatLog({ msgs, busy, onSend, className }: { msgs: Msg[]; busy: boolean; onSend: (text: string) => boolean; className: string }) {
   const log = useRef<HTMLDivElement>(null)
@@ -95,7 +98,7 @@ export function ChatLog({ msgs, busy, onSend, className }: { msgs: Msg[]; busy: 
               <ChoiceCards options={m.options} disabled={busy || i < lastUser} onSend={onSend} />
             </div>
           ) : m.kind === 'tool' ? (
-            m.name === 'ask_user' ? null :
+            m.name === 'ask_user' || sameNext(msgs, i) ? null :
             <span key={i} className={`chip chip-${m.status}`} title={m.summary}>
               {m.status === 'start' ? <LoaderCircle size={12} className="spin" /> : m.status === 'done' ? <Check size={12} /> : <CircleAlert size={12} />}
               {TOOL[m.name] ?? m.name}

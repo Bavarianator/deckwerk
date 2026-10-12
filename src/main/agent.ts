@@ -91,6 +91,10 @@ export function firstTurn(text: string, route: Route | undefined, thumbs: BetaCo
   return { role: 'user', content: [...blocks, { type: 'text', text, cache_control: { type: 'ephemeral' } }] }
 }
 
+// Kurztext eines Tool-Ergebnisses für Menschen: ohne die Bitte an die KI, es erneut aufzurufen, asset://-URLs als Dateiname
+export const summaryOf = (text: string) =>
+  text.split('\n')[0].replace(/\s*Rufe dasselbe Tool.*$/, '').replace(/asset:\/\/local\/\S*\/([^/\s]+)/g, (_, f: string) => decodeURIComponent(f)).slice(0, 120)
+
 // Tool-Status-Chips für die UI (auch für den Chat über Claude Code, claude-agent.ts)
 export function withEvents(t: ToolDef, emit: (e: AgentEvent) => void): ToolDef {
   return {
@@ -104,7 +108,7 @@ export function withEvents(t: ToolDef, emit: (e: AgentEvent) => void): ToolDef {
         emit({ type: 'tool', name: t.name, status: 'error', summary: (e as Error).message.split('\n')[0] })
         throw e
       }
-      emit({ type: 'tool', name: t.name, status: 'done', summary: out.text.split('\n')[0].slice(0, 120) })
+      emit({ type: 'tool', name: t.name, status: 'done', summary: summaryOf(out.text) })
       return out
     },
   }

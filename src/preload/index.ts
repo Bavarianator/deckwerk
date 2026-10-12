@@ -183,6 +183,9 @@ const api = {
   /** Rechtschreibprüfung (Deutsch/Englisch) an/aus; gilt sofort und bleibt gespeichert */
   spellcheck: (): Promise<boolean> => invoke('spellcheck:get'),
   setSpellcheck: (on: boolean): Promise<void> => invoke('spellcheck:set', on),
+  /** Spracherkennung auf dem Android-Handy (adb): Option und gerade verbundenes Gerät (Modellname) */
+  phoneStatus: (): Promise<{ on: boolean; device: string | null }> => invoke('phone:status'),
+  setPhone: (on: boolean): Promise<void> => invoke('phone:set', on),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
   setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
   setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),

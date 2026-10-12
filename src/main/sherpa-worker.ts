@@ -2,6 +2,7 @@
 // {id, progress} | {id, result} | {id, error}. Weitere Ops kommen in OPS dazu.
 import { join } from 'node:path'
 import type { Segment, Word } from '../shared/video'
+import { phoneDecode } from './phone'
 
 // sherpa-onnx-node bringt keine Typen mit; nur das Benutzte
 interface Result { text: string; tokens: string[]; timestamps: number[]; durations?: number[] }
@@ -87,9 +88,10 @@ export function sentences(ws: Word[]): Segment[] {
   return out
 }
 
-interface AsrArgs { pcm: Float32Array; models: string; offset: number; threads: number }
-async function asr({ pcm, models, offset, threads }: AsrArgs, progress: (pct: number) => void): Promise<Segment[]> {
-  const r = await recognizer(models, threads)
+// phone: Seriennummer eines Handys (phone.ts) – die Sprachstücke erkennt dann das Handy, alle in einem Lauf am Ende
+interface AsrArgs { pcm: Float32Array; models: string; offset: number; threads: number; phone?: string }
+async function asr({ pcm, models, offset, threads, phone }: AsrArgs, progress: (pct: number) => void): Promise<Segment[]> {
+  const r = phone ? null : await recognizer(models, threads), parts: [number, number][] = []
   // Vorträge/Streams: Pausen ab 0,4 s sind Schnittstellen, einzelne Sprachstücke höchstens 20 s (danach sucht Silero die
   // nächste kurze Pause). Folgestücke mit Pausen bis 2 s erkennt Parakeet gemeinsam (bis 30 s): Einzeln setzte es an jeder
   // Pause einen Punkt („Ask not. What your country …“) und verlor den Satzzusammenhang.
@@ -100,6 +102,7 @@ async function asr({ pcm, models, offset, threads }: AsrArgs, progress: (pct: nu
   const out: Segment[] = []
   let cur: [number, number] | null = null // gesammeltes Stück pcm[a, b)
   const decode = async ([a, b]: [number, number]) => {
+    if (!r) { parts.push([a, b]); return }
     const s = r.createStream()
     s.acceptWaveform({ samples: pcm.subarray(a, b), sampleRate: SR })
     out.push(...sentences(words(await r.decodeAsync(s), offset + a / SR, offset + b / SR)))
@@ -118,6 +121,8 @@ async function asr({ pcm, models, offset, threads }: AsrArgs, progress: (pct: nu
   vad.flush()
   await drain()
   if (cur) await decode(cur)
+  const rs = phone ? await phoneDecode(phone, parts.map(([a, b]) => pcm.subarray(a, b))) : []
+  rs.forEach((res, i) => out.push(...sentences(words(res, offset + parts[i][0] / SR, offset + parts[i][1] / SR))))
   progress(100)
   return out
 }
@@ -189,7 +194,7 @@ async function diar({ pcm, models, offset }: DiarArgs, progress: (pct: number) =
   return out.map((t) => ({ start: at(t.start + offset), end: at(t.end + offset), speaker: ids.get(t.speaker)! }))
 }
 
-const OPS: Record<string, (args: never, progress: (pct: number) => void) => Promise<unknown>> = { asr, tag, diar }
+const OPS: Record<string, (args: never, progress: (pct: number) => void) => Promise<unknown>> = { asr, 'asr-phone': asr, tag, diar }
 
 let busy: Promise<unknown> = Promise.resolve() // ein Auftrag nach dem anderen: ein Modell, ein Satz Kerne
 process.on('message', ({ id, op, args }: { id: number; op: string; args: never }) => {
