@@ -479,7 +479,8 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                 {player.playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
               </button>
               <button className="plain" aria-label="10 s vor (L)" title="10 s vor (L)" onClick={() => jump(10)}><RotateCw size={16} /></button>
-              <input type="range" className="dv-seek" aria-label="Position im Clip" min={0} max={player.duration} step={0.1} value={Math.min(player.t, player.duration)} onChange={(e) => player.seekClip(+e.currentTarget.value)} />
+              <input type="range" className="dv-seek" aria-label="Position im Clip" min={0} max={player.duration} step={0.1} value={Math.min(player.t, player.duration)} onChange={(e) => player.seekClip(+e.currentTarget.value)}
+                onPointerUp={(e) => e.currentTarget.blur()} /* danach greifen Leertaste, J, K, L wieder */ />
               <span>{mmss(player.t)} / {mmss(player.duration)}</span>
               {music && <audio ref={musicRef} src={music} loop preload="auto" />}
               {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}

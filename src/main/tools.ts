@@ -881,10 +881,12 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const print = { size: i.size, bleed: i.bleed }
         if (i.rows) return { text: `Exportiert (${i.format}):\n${(await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print)).join('\n')}` }
         const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
-        const where = i.format === 'mp4' || i.format === 'clips' ? await ctx.engine.video?.device?.('export').catch(() => undefined) : undefined
+        // ein Ausstieg des Handys (phoneFault) gilt nur für den laufenden Export, nicht für einen neuen: dessen Start setzt den Grund erst zurück
+        const where = i.format === 'mp4' || i.format === 'clips' ? await ctx.engine.video?.device?.(jobs.has(key) ? 'export' : undefined).catch(() => undefined) : undefined
         const r = await job(key, (onProgress) => ctx.engine.exportDeck(deck, i.format, ctx.outDir, print, onProgress), where)
         if (!('value' in r)) return { text: [stillRunning('Export', r.pct), where && `Export rechnet: ${where} (scheitert das Handy, rechnet der PC weiter)`].filter(Boolean).join('\n') }
         const notes: string[] = []
+        if (where) notes.push(`Gerechnet: ${(await ctx.engine.video?.device?.('export').catch(() => undefined)) ?? where}`) // nach dem Export neu: ein Ausstieg des Handys steht mit Grund da
         if (i.format === 'mp4') { // wie fades in export-video.ts: Zwischentitel immer, sonst Folien mit Übergang außer none/morph blenden über Schwarz
           const shown = { ...deck, slides: visibleSlides(deck) }, still = (k: number) => shown.slides[k].layout !== 'clip'
           const n = shown.slides.filter((_, k) => k > 0 && (still(k) || still(k - 1) || !['none', 'morph'].includes(transitionOf(shown, k)))).length

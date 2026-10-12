@@ -8,7 +8,6 @@ import { createReadStream, existsSync, statSync } from 'node:fs'
 import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { pipeline } from 'node:stream/promises'
 import { promisify } from 'node:util'
 import { download, httpFetch } from './download'
 import { run } from './ffmpeg'
@@ -62,29 +61,33 @@ export const phoneArgs = (args: string[], cwd: string, remoteCwd: string, source
 export const stale = (cached: { path: string; t: number }[], used: string[], keep = KEEP) =>
   cached.filter((c) => !used.includes(c.path)).sort((a, b) => b.t - a.t).slice(Math.max(0, keep - used.length)).map((c) => c.path)
 
-// Quelle aufs Handy streamen statt adb push: die Bytes zählen wir selbst (Fortschritt beim ersten Export, ein Stream hat 2,4 GB).
-// Erst .part, dann umbenennen: ein Abbruch hinterlässt keine falsche Datei gleicher Größe. 120 s ohne Daten (USB hängt) → abbrechen.
+// Quelle aufs Handy per adb push: die Daten laufen ganz im adb-Prozess. Gestreamt über exec-in musste die App jeden Block selbst nachreichen;
+// war ihr Hauptprozess beschäftigt, stockte das, und die Wache brach nach ~1 GB ab (12.10., „adb Code null; write EPIPE“). Fortschritt aus der
+// wachsenden Dateigröße auf dem Handy; wächst sie 120 s nicht (USB hängt), abbrechen. Erst .part, dann umbenennen: kein Rest mit falscher Größe.
 async function upload(serial: string, from: string, to: string, onBytes: (n: number) => void): Promise<void> {
-  const p = spawn('adb', ['-s', serial, 'exec-in', `cat > ${quote(`${to}.part`)}`], { stdio: ['pipe', 'ignore', 'pipe'] })
-  let err = '', n = 0, stall = setTimeout(() => p.kill(), 120_000)
+  const part = `${to}.part`, size = statSync(from).size
+  await adb(serial, 'shell', `rm -f ${quote(part)}`) // Rest eines abgebrochenen Laufs: seine Größe hielte die Wache sonst für Fortschritt
+  const p = spawn('adb', ['-s', serial, 'push', from, part], { stdio: ['ignore', 'ignore', 'pipe'] })
+  let err = '', n = 0, still = 0, stalled = false, done = false
   p.stderr.on('data', (c: Buffer) => { err = (err + c).slice(-2000) })
   const closed = new Promise<number | null>((ok, fail) => { p.on('error', fail); p.on('close', ok) })
-  const src = createReadStream(from).on('data', (c) => {
-    n += c.length
-    onBytes(n)
-    clearTimeout(stall)
-    stall = setTimeout(() => p.kill(), 120_000)
-  })
+  const poll = setInterval(() => void adb(serial, 'shell', `stat -c %s ${quote(part)} 2>/dev/null || echo 0`).then(({ stdout }) => {
+    const k = Number(stdout.trim()) || 0
+    if (done) return // verspätete Antwort nach dem Ende
+    if (k > n) { n = k; still = 0; onBytes(k) } else if (++still >= 60) { stalled = true; p.kill() }
+  }, () => {}), 2000)
   try {
-    await pipeline(src, p.stdin)
     const code = await closed
-    if (code !== 0) throw new Error(`Video aufs Handy übertragen fehlgeschlagen (Code ${code}): ${err.trim()}`)
-    await adb(serial, 'shell', `mv ${quote(`${to}.part`)} ${quote(to)}`)
+    done = true
+    if (code !== 0) throw new Error(`Video aufs Handy übertragen fehlgeschlagen nach ${(n / 1e9).toFixed(2)} von ${(size / 1e9).toFixed(2)} GB (${stalled ? 'keine Übertragung seit 120 s' : `adb Code ${code}`}${err.trim() ? `: ${err.trim().split('\n').slice(-1)[0]}` : ''})`)
+    onBytes((n = size))
+    await adb(serial, 'shell', `mv ${quote(part)} ${quote(to)}`)
   } catch (e) {
-    await adb(serial, 'shell', `rm -f ${quote(`${to}.part`)}`).catch(() => {})
+    await adb(serial, 'shell', `rm -f ${quote(part)}`).catch(() => {})
     throw e
   } finally {
-    clearTimeout(stall)
+    done = true
+    clearInterval(poll)
   }
 }
 
