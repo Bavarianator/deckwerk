@@ -25,6 +25,7 @@ import { retakes } from '../shared/retakes'
 import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
 import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
+import { guideIndex, guideModules, guideParts, VIDEO_MODULES } from './guide-modules'
 import { contactSheet } from './ffmpeg'
 import { fetchMusic, findMusic } from './music'
 import { localAsset } from './sync'
@@ -774,6 +775,35 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const terms = i.query.toLowerCase().split(/[\s,]+/).filter(Boolean)
         const hits = ICON_NAMES.filter((n) => terms.some((t) => n.includes(t))).slice(0, i.limit)
         return { text: hits.length ? hits.join(', ') : `Kein Icon zu "${i.query}". Anderen englischen Begriff versuchen.` }
+      },
+    }),
+    tool({
+      name: 'read_guide',
+      readOnly: true,
+      description: 'Design-Guide und Layout-Katalog nachladen. `module`: Modul-IDs aus dem Index, z. B. ["storyline", "geruest-a4", "gestaltung", "layout:kpi-grid"]; `layout:<id>` liefert Felder und JSON-Schema eines Layouts (vor add_slides/update_slide laden, Felder nie raten). Ohne Eingabe: der Index aller Module. `part` 1, 2, …: der vollständige Guide samt Katalog in Teilen. Für reine Video-Aufträge genügt `topic: "video"`.',
+      inputSchema: z.object({
+        module: z.array(z.string().max(60)).max(60).optional().describe('Modul-IDs aus dem Index, z. B. "stil", "layout:chart"'),
+        part: z.number().int().min(1).optional().describe('vollständiger Guide in Teilen: 1, 2, … (die Antwort nennt die Anzahl)'),
+        topic: z.enum(['video']).optional().describe('video = Video-Schnitt (Guide §11) und das Layout clip, kurz für module ["video", "layout:clip"]'),
+      }),
+      async run(i) {
+        if (i.topic === 'video') i = { ...i, module: [...VIDEO_MODULES, ...(i.module ?? [])] }
+        if (i.module?.length) {
+          const all = guideModules(), unknown = i.module.filter((id) => !all.some((m) => m.id === id))
+          // Claude Code verwirft zu lange Tool-Ergebnisse: was nicht mehr passt, in einem weiteren Aufruf
+          let text = ''
+          const rest: string[] = []
+          for (const m of all.filter((m) => i.module!.includes(m.id))) {
+            if (text && text.length + m.text.length > 30000) rest.push(m.id)
+            else text += (text ? '\n\n' : '') + m.text
+          }
+          return { text: [text, rest.length && `Nicht mehr in dieser Antwort, bitte erneut anfordern: ${rest.join(', ')}`, unknown.length && `Unbekannte Module: ${unknown.join(', ')} (Index: read_guide ohne Eingabe)`].filter(Boolean).join('\n\n') }
+        }
+        if (i.part) {
+          const parts = guideParts(), k = Math.min(i.part, parts.length)
+          return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }
+        }
+        return { text: guideIndex() }
       },
     }),
     tool({

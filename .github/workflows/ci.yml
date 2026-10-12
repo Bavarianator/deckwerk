@@ -28,6 +28,7 @@ jobs:
           $E scripts/check-update.ts --format=esm --outfile=out/check-update.mjs && node out/check-update.mjs
           for c in check-hidden check-find check-layers; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-brand.ts --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
+          for c in check-guide-modules check-router check-cli-prompt; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           for c in check-recolor check-handout check-docx check-lint-profile check-pdf-boxes story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
           $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
           for c in check-looks check-webfonts check-theme-tokens; do $E scripts/$c.ts --format=esm --outfile=out/$c.mjs && node out/$c.mjs; done

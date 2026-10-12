@@ -18,6 +18,8 @@ export const TOOL: Record<string, string> = {
   find_images: 'Bilder suchen', transcribe_video: 'Video transkribieren', video_frames: 'Video ansehen', import_video: 'Video laden', video_highlights: 'Highlights suchen', find_music: 'Musik suchen', check_clip: 'Clip prüfen', search_transcript: 'Im Video suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
   cli_run: 'Denkt nach', // Vibe/Codex laufen (claude-agent.ts)
   auto_model: 'Modell gewählt', // Auto: welches Modell Deckwerk für diesen Auftrag nimmt
+  router: 'Auftrag einordnen', // Gesprächsstart: Haiku wählt die Teile des Leitfadens
+  read_guide: 'Leitfaden lesen',
 }
 
 // Lange Video-Tools und ihr Job im Main (window.api.jobs, name = Schlüssel vor „:“): der Chip zeigt den Fortschritt
