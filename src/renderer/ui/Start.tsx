@@ -1,7 +1,7 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter ähnliche vorhandene Decks, die Formate als Papier (auch Video), Beispiele, „Leer beginnen“,
 // dann Suche und Filter über die zuletzt bearbeiteten Decks (auch per MCP gebaute) und die Vorlagen.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, Image as ImageIcon, Paperclip, Search, Settings, X } from 'lucide-react'
+import { ArrowUp, Award, Clapperboard, FileText, IdCard, Image as ImageIcon, Mail, Newspaper, Paperclip, Presentation, Search, Settings, Smartphone, SquareUser, X, type LucideIcon } from 'lucide-react'
 import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
@@ -93,16 +93,16 @@ const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatI
 
 // Format-Regal unter dem Feld: die häufigsten Formate als Papier in ihrer Form (Maße in px), der Rest bleibt im Format-Menü.
 // id = FORMAT_CHOICES-id; „video“ schaltet in den Video-Modus
-const PAPERS: { id: string; name: string; w: number; h: number; mark?: 'img' | 'lines' | 'win' | 'play' }[] = [
-  { id: 'praesentation', name: 'Präsentation', w: 50, h: 28 },
-  { id: 'dokument', name: 'Dokument', w: 28, h: 40, mark: 'lines' },
-  { id: 'brief', name: 'Brief', w: 28, h: 40, mark: 'win' },
-  { id: 'flyer', name: 'Flyer', w: 28, h: 40, mark: 'img' },
-  { id: 'urkunde', name: 'Urkunde', w: 40, h: 28, mark: 'lines' },
-  { id: 'social', name: 'Social-Post', w: 32, h: 40, mark: 'img' },
-  { id: 'story', name: 'Story', w: 23, h: 40, mark: 'img' },
-  { id: 'visitenkarte', name: 'Visitenkarte', w: 22, h: 14 },
-  { id: 'video', name: 'Video', w: 50, h: 28, mark: 'play' },
+const PAPERS: { id: string; name: string; icon: LucideIcon }[] = [
+  { id: 'praesentation', name: 'Präsentation', icon: Presentation },
+  { id: 'dokument', name: 'Dokument', icon: FileText },
+  { id: 'brief', name: 'Brief', icon: Mail },
+  { id: 'flyer', name: 'Flyer', icon: Newspaper },
+  { id: 'urkunde', name: 'Urkunde', icon: Award },
+  { id: 'social', name: 'Social-Post', icon: SquareUser },
+  { id: 'story', name: 'Story', icon: Smartphone },
+  { id: 'visitenkarte', name: 'Visitenkarte', icon: IdCard },
+  { id: 'video', name: 'Video', icon: Clapperboard },
 ]
 const VIDEO_HINT = 'Shorts, gekürzte Fassung, Stream-Highlights oder Zusammenschnitt'
 
@@ -255,14 +255,11 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             ))}
           </div>
         )}
-        <div className="home-papers" role="group" aria-label="Format">
+        <div className="seg home-papers" role="group" aria-label="Format">
           {PAPERS.map((p) => {
             const on = p.id === 'video' ? video : !video && fmt === p.id
             return (
-              <button key={p.id} type="button" className="home-paper" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}>
-                <span><i className="home-sheet" data-mark={p.mark} style={{ width: p.w, height: p.h }} /></span>
-                <b>{p.name}</b>
-              </button>
+              <button key={p.id} type="button" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}><p.icon size={15} strokeWidth={1.75} />{p.name}</button>
             )
           })}
         </div>
