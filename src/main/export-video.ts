@@ -134,6 +134,8 @@ function checkParts(parts: Part[] | undefined, where: string) {
 export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; compilation?: boolean }
 /** Handy für die Clip-Gruppen (phone-ffmpeg.ts); failed: einmal gescheitert, rechnet für den Rest des Exports der PC */
 export interface Phone { serial: string; models: string; failed?: boolean }
+/** Warum das Handy im laufenden Export ausgestiegen ist (leer = nicht): die App verwirft console-Ausgaben, so sehen KI und Arbeitsansicht den Grund */
+export const phoneFault = { reason: '' }
 interface SegOpts { preset: string; fadeIn?: boolean; fadeOut?: boolean; phone?: Phone } // fadeIn/fadeOut: Übergang aus/in Schwarz am Anfang/Ende der Szene
 
 /** Eine Clip-Szene als Zwischenstände, je GROUP Teilstücke ein mkv: Zuschnitt (crop um focus oder blur), Hook nur in der ersten Gruppe, Untertitel je Gruppe ab 0. Fortschritt über alle Gruppen. */
@@ -214,6 +216,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     await (phone ? phoneFfmpeg(phone.serial, args, { ...ro, models: phone.models }).catch((e: Error) => {
       console.warn('[video] Export auf dem Handy fehlgeschlagen, der PC rechnet weiter:', e.message)
       phone.failed = true
+      phoneFault.reason = e.message.trim().split('\n').slice(-1)[0].slice(0, 160)
       return runFfmpeg(args, ro)
     }) : runFfmpeg(args, ro))
     segs.push({ file, dur })
@@ -317,6 +320,7 @@ export function exportVideo(...a: Parameters<typeof exportOnce>): Promise<string
 
 async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', transcriptOf: (file: string) => Promise<Transcript | null>, onProgress: (pct: number) => void = () => {}, o: { music?: Music; phone?: Phone } = {}): Promise<string[]> {
   const base = resolve(target), parent = dirname(base)
+  phoneFault.reason = ''
   // Job-Ordner abgestürzter Exporte wegräumen (mtime ändert sich mit jeder neuen Datei darin)
   await mkdir(parent, { recursive: true })
   for (const e of await readdir(parent, { withFileTypes: true })) {

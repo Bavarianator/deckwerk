@@ -343,7 +343,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   const added = await go('add_slides', { slides: [{ layout: 'clip', content: { video: file, hook: 'Der Kern in 5 Sekunden', parts: [{ start: 61.2, end: 66.8 }] } }] })
   assert.equal(vd!.slides[0].content.video, assetUrl(file))
   // Clip-Prüfung in der Antwort: Länge statt Autofit, Meldung aus lintClip
-  assert.match(added.text, /^Folie 1 \(s[0-9a-f]{4}, clip\): OK · Länge 5,6 s · 1 Ausschnitt · Transkript ok · Übergang/)
+  assert.match(added.text, /^Folie 1 \(s[0-9a-f]{4}, clip\): OK · Länge 5,6 s · 1 Ausschnitt · Transkript ok · Folienwechsel none; im MP4 blendet jeder Schnitt 0,2 s über/)
   assert.match(added.text, /\n  - \[warn\] clip-laenge: Länge 5,6 s – für einen Short 20–90 s; verlängern/)
   // Hintergrundmusik: absoluter Pfad wird asset://, nur Audiodateien, null entfernt
   const mp3 = join(dir, 'music', 'ruhig.mp3')

@@ -22,7 +22,7 @@ import { overview, searchTranscript } from '../shared/transcript-search'
 import { typeset } from '../shared/typo'
 import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
-import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
+import { LONG_VIDEO, isCompilation, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
 import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 import { guideIndex, guideModules, guideParts, VIDEO_MODULES } from './guide-modules'
@@ -362,6 +362,10 @@ function motionOf(deck: Deck, i: number, m: Measured): string {
   const groups = new Set(m.els.flatMap((e) => (e.build === undefined ? [] : [e.build]))).size
   const clicks = deck.mode === 'click' ? (preset === 'list' ? groups : 0) + itemClicks(deck.slides[i]) : 0
   const build = preset === 'none' || !groups ? 'ohne Aufbau' : `Aufbau ${preset} (${groups} ${groups > 1 ? 'Gruppen' : 'Gruppe'})`
+  if (deck.slides[i].layout === 'clip') { // Clips: die Übergänge an den Schnitten macht der Export selbst (export-video.ts), transition gilt nur für den Folienwechsel
+    const live = (deck.slides[i].content as ClipContent).style === 'lebendig' || isCompilation(deck)
+    return `Folienwechsel ${transitionOf(deck, i)}; im MP4 blendet jeder Schnitt 0,2 s über${live ? ', jeder zweite zoomt leicht' : ''} (die Vorschau zeigt das als kurze Blende)`
+  }
   return `Übergang ${transitionOf(deck, i)}, ${build}${clicks ? `, ${clicks} Klick${clicks > 1 ? 's' : ''}` : ''}`
 }
 
@@ -410,7 +414,7 @@ async function job<T>(key: string, start: (onProgress: (pct: number) => void) =>
       setTimeout(() => { if (jobs.get(key) === nj) jobs.delete(key) }, 600_000).unref?.() // nicht abgeholt: nach 10 min vergessen (früher holt die KI ein fertiges Ergebnis sonst nicht mehr ab und rechnet neu)
     })
     jobs.set(key, (j = nj))
-  }
+  } else if (where) j.where = where // neu nachgesehen: steigt das Handy aus, zeigt die Arbeitsansicht den PC
   const cur = j
   let timer: ReturnType<typeof setTimeout> | undefined
   const waiting = new Promise<'waiting'>((ok) => { timer = setTimeout(ok, JOB_WAIT.ms, 'waiting') })
@@ -471,7 +475,7 @@ function musicMissing(src: string): boolean {
 const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad')
 const TRANSCRIPT_MAX = 30_000 // Zeichen je Antwort; der Rest seitenweise über from
 const hms = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
-const VIDEO_NEXT = 'Weiter (Guide § Video), je nach Auftrag: Short 9:16 = 3–5 stärkste Momente, je ideal 55–75 s, hart 20–90 s, hook, captions wort, style lebendig. Ganzes Video kürzen (Fulltime) 16:9 = eine clip-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge, pauses kurz. Stream = nur die Highlight-Fenster, daraus Shorts, optional ein 16:9-Zusammenschnitt. Kompilation = je Quelle eine clip-Folie, Zwischentitel als section oder statement. Schnitte nur an Segmentgrenzen. Dann video_frames als Kontaktabzug, create_deck im Format (transition none), add_slides (je Short cover = Quellsekunde fürs Titelbild aus dem Kontaktabzug, post = Titel, 1–2 Sätze, 3–5 Hashtags), render_slides, export_deck clips (je Short eine MP4) oder mp4 (alles in einem Video).'
+const VIDEO_NEXT = 'Weiter (Guide § Video), je nach Auftrag: Short 9:16 = 3–5 stärkste Momente, je ideal 55–75 s, hart 20–90 s, hook, captions wort, style lebendig. Ganzes Video kürzen (Fulltime) 16:9 = eine clip-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge, pauses kurz. Stream = nur die Highlight-Fenster, daraus Shorts, optional ein 16:9-Zusammenschnitt (je Moment eine clip-Folie, nie alle als parts einer Folie). Kompilation = je Quelle eine clip-Folie, Zwischentitel als section oder statement. Schnitte nur an Segmentgrenzen. Dann video_frames als Kontaktabzug, create_deck im Format (transition none), add_slides (je Short cover = Quellsekunde fürs Titelbild aus dem Kontaktabzug, post = Titel, 1–2 Sätze, 3–5 Hashtags), render_slides, export_deck clips (je Short eine MP4) oder mp4 (alles in einem Video).'
 const OVERVIEW_NEXT = 'Weiter: die besten Fenster mit transcribe_video (from/to) transkribieren, Stellen mit search_transcript finden, dann video_highlights ohne overview oder direkt Shorts bauen (Guide § Video).'
 const CLIP_LOOK = 'Prüfe: Gesicht im Bild, Hook passt zum Bild, keine schwarzen/eingefrorenen Bilder, Untertitelbereich frei.'
 const HIGHLIGHT_NEXT = 'Weiter (Guide § Video, Stream): 1. Für die besten 3–5 Fenster transcribe_video mit from/to; nur diese Bereiche werden transkribiert, gern 30 s Anlauf davor. 2. video_frames als Kontaktabzug, 4–8 Zeitpunkte je Kandidat über das Fenster verteilt. 3. Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil. 4. Shorts bauen (create_deck format 9:16, je Moment eine clip-Folie, ideal 55–75 s, hart 20–90 s), auf Wunsch zusätzlich ein Zusammenschnitt 16:9 (je Moment eine clip-Folie, export_deck mp4).'
@@ -877,7 +881,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const print = { size: i.size, bleed: i.bleed }
         if (i.rows) return { text: `Exportiert (${i.format}):\n${(await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print)).join('\n')}` }
         const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
-        const where = i.format === 'mp4' || i.format === 'clips' ? await ctx.engine.video?.device?.().catch(() => undefined) : undefined
+        const where = i.format === 'mp4' || i.format === 'clips' ? await ctx.engine.video?.device?.('export').catch(() => undefined) : undefined
         const r = await job(key, (onProgress) => ctx.engine.exportDeck(deck, i.format, ctx.outDir, print, onProgress), where)
         if (!('value' in r)) return { text: [stillRunning('Export', r.pct), where && `Export rechnet: ${where} (scheitert das Handy, rechnet der PC weiter)`].filter(Boolean).join('\n') }
         const notes: string[] = []

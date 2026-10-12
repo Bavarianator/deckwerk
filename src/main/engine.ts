@@ -90,8 +90,9 @@ export function createEngine(): Engine {
   const phoneOn = () => existsSync(phoneMarker(app.getPath('appData')))
   const phoneNow = async () => (phoneOn() ? phoneDevice() : null)
   // wer rechnet (Spracherkennung, Video-Export): Handy oder PC mit Grund, für die Antworten der KI und die Arbeitsansicht
-  const device = async () => {
-    const d = await phoneNow()
+  const device = async (task?: 'export') => {
+    const d = await phoneNow(), fault = task === 'export' && d ? (await import('./export-video')).phoneFault.reason : ''
+    if (fault) return `PC (Handy-Export gescheitert: ${fault})`
     return d ? `Handy (${d.model}, CPU)` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
   }
 

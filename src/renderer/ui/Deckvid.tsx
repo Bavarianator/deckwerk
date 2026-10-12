@@ -360,8 +360,19 @@ interface StageProps {
 // Vorschau mit Detailspalte, Aufträge und Quell-Zeitleiste des gewählten Clips (Bereiche main und line im Grid). key = Folien-ID: ein anderer Clip startet frisch.
 function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onContent }: StageProps) {
   const c = clip.content
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const player = useClipPlayer(videoRef, c.parts)
+  const videoRef = useRef<HTMLVideoElement>(null), fadeRef = useRef<HTMLCanvasElement>(null), musicRef = useRef<HTMLAudioElement>(null)
+  // Überblendung wie im Export (XF, 0,2 s): das letzte Bild vor dem Schnitt liegt kurz über dem neuen und blendet aus
+  const dissolve = () => {
+    const v = videoRef.current, cv = fadeRef.current
+    if (!v || !cv || !v.videoWidth) return
+    const st = getComputedStyle(v)
+    Object.assign(cv.style, { objectFit: st.objectFit, objectPosition: st.objectPosition, transform: st.transform })
+    cv.width = v.videoWidth; cv.height = v.videoHeight
+    cv.getContext('2d')?.drawImage(v, 0, 0)
+    cv.getAnimations().forEach((a) => a.cancel())
+    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200 })
+  }
+  const player = useClipPlayer(videoRef, c.parts, dissolve)
   const [bad, setBad] = useState(false) // Chromium spielt die Quelle nicht (HEVC, ProRes …)
   const jump = (d: number) => player.seekClip(Math.max(0, Math.min(player.duration - 0.05, player.t + d)))
   // Leertaste/K: Pause und Weiter, J/L: 10 s zurück/vor wie bei YouTube (←/→ wechseln den Clip)
@@ -380,6 +391,21 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     return clipWords(t, c.parts, c.pauses === 'kurz' ? c.parts.flatMap((x) => fillerQuiet(t, x.start, x.end)) : [])
   }, [cached, c, mode])
   const cap = words && mode !== 'aus' ? captionAt(words, player.t, mode) : null
+  // Hintergrundmusik wie im MP4: eine Schleife über das ganze Video, hier ab der Zeit der Folien davor (Standbilder STILL), leiser, solange gesprochen wird
+  const music = deck?.music?.src ? clipUrl(deck.music.src) : null, vol = Math.min(1, Math.max(0, deck?.music?.volume ?? 0.25))
+  const before = useMemo(() => {
+    const vis = (deck?.slides ?? []).filter((s) => !s.hidden), k = vis.findIndex((s) => s.id === clip.id)
+    return vis.slice(0, Math.max(0, k)).reduce((s, x) => s + (isClip(x) ? partsLength(x.content.parts) : STILL), 0)
+  }, [deck, clip.id])
+  useEffect(() => { // ponytail: Ducking grob über laufende Untertitel, die Lautheit nicht wie loudnorm; reicht zum Hineinhören
+    const a = musicRef.current
+    if (!a) return
+    if (!player.playing) { a.pause(); return }
+    const want = (before + player.t) % (a.duration || Infinity)
+    if (a.paused || Math.abs(a.currentTime - want) > 0.5) a.currentTime = want
+    a.volume = vol * (cap ? 0.35 : 1)
+    if (a.paused) void a.play().catch(() => {})
+  }, [player.playing, player.t, before, vol, cap, music])
   const curve = useMemo(() => cached?.signals?.loud.length ? loudCurve(cached.signals.loud) : undefined, [cached])
 
   const wide = size.w > size.h, m = Math.min(size.w, size.h)
@@ -441,6 +467,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                   {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
                   {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
                   {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
+                  <canvas ref={fadeRef} className="dv-fade" aria-hidden />
                   {!player.playing && !bad && <span className="dv-play" aria-hidden><Play size={26} fill="currentColor" /></span>}
                   {bad && <p className="dv-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Exportieren geht trotzdem.</p>}
                 </ClipVideo>
@@ -452,7 +479,9 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                 {player.playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
               </button>
               <button className="plain" aria-label="10 s vor (L)" title="10 s vor (L)" onClick={() => jump(10)}><RotateCw size={16} /></button>
+              <input type="range" className="dv-seek" aria-label="Position im Clip" min={0} max={player.duration} step={0.1} value={Math.min(player.t, player.duration)} onChange={(e) => player.seekClip(+e.currentTarget.value)} />
               <span>{mmss(player.t)} / {mmss(player.duration)}</span>
+              {music && <audio ref={musicRef} src={music} loop preload="auto" />}
               {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
             </div>
           </div>

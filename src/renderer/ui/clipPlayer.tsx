@@ -16,8 +16,10 @@ function locate(ps: Part[], k: number, s: number) {
 
 /** Spielt die parts nacheinander (Schnittfassung), am Ende Pause und zurück auf den Anfang. t/duration in Clipzeit, src in Quellzeit.
  *  playSource spielt die Quelle ohne Sprünge (Schneiden: „Quelle“), part = Index des Ausschnitts an der Abspielposition (-1 = hinter allen). */
-export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[]) {
+export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[], onCut?: () => void) {
   const [playing, setPlaying] = useState(false)
+  const cut = useRef(onCut) // echter Schnitt beim Abspielen (nicht nahtlos): Deckvid blendet dort über wie der Export
+  cut.current = onCut
   const [src, setSrc] = useState(parts[0]?.start ?? 0)
   const ps = useRef(parts)
   ps.current = parts
@@ -67,7 +69,7 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
       const k = idx.current, p = l[k], c = v.currentTime
       if (free.current || (p && c >= p.start - 0.1 && c < p.end)) setSrc(c) // Toleranz: nach dem Spulen meldet das Video evtl. knapp davor
       else if (p && c < p.start) go(p.start, k) // beim Abspielen in eine Lücke gespult
-      else if (p && l[k + 1]) go(l[k + 1].start, k + 1)
+      else if (p && l[k + 1]) { if (Math.abs(l[k + 1].start - p.end) >= 1e-3) cut.current?.(); go(l[k + 1].start, k + 1) }
       else { v.pause(); go(l[0]?.start ?? 0, 0); setPlaying(false); return } // Ende, auch wenn der laufende Ausschnitt gelöscht wurde (!p)
       raf = requestAnimationFrame(tick)
     }
