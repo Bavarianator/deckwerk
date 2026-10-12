@@ -267,6 +267,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   let hl = [{ start: 2832, end: 2892, score: 6.24, why: 'Chat ×4,2 · laut +9 dB' }, { start: 3723, end: 3783, score: 3, why: 'oft gesehen' }]
   const video: VideoTools = {
     probe: async () => ({ duration: 75, w: 1920, h: 1080 }),
+    asrDevice: async (lang) => (lang === 'ja' ? 'PC (Whisper)' : 'Handy (SM G986B)'),
     frames: async (_f, times) => times.map(() => PNG),
     transcribe: async (_f, onProgress, o) => {
       seen.push(o)
@@ -294,19 +295,19 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   utimesSync(file, new Date(2020, 0, 1), new Date(2020, 0, 1))
   assert.match((await go('import_video', {})).text, /^\d+ Videos auf diesem PC, neueste zuerst:\nasset:\/\/local\/.*\/\.video\/import\/abc\.mp4 · „Tag 7“ · 3:15:33 · [\s\S]*\/talk\.mp4 · 0:01:15 · 1\.1\.2020\n[\s\S]*transcribe_video\.$/)
   JOB_WAIT.ms = 20
-  assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\)/)
+  assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\).*\nSpracherkennung: Handy \(SM G986B\)$/)
   assert.deepEqual(jobList().map(({ name, pct, done }) => ({ name, pct, done })), [{ name: 'transcribe', pct: 43, done: false }])
   finish()
   await new Promise((r) => setTimeout(r, 5))
   assert.equal(jobList()[0].done, true)
   const tr = await go('transcribe_video', { video: file }) // anderer Weg zur selben Datei: derselbe Job
-  assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente\n\[s0\] 0\.0–4\.2 Hallo zusammen\.\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
+  assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente · Spracherkennung: Handy \(SM G986B\)\n\[s0\] 0\.0–4\.2 Hallo zusammen\.\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
   assert.deepEqual(seen, [{ range: undefined, lang: undefined, speakers: undefined }])
   assert.deepEqual(jobList(), []) // abgeholt = vergessen
   // from/to bestimmen, was transkribiert wird (to höchstens bis zum Ende); Sprecher als S1, S2 …
   const win = await go('transcribe_video', { video: file, from: 60, to: 999, lang: 'de', speakers: true })
   assert.deepEqual(seen[1], { range: { from: 60, to: 75 }, lang: 'de', speakers: true })
-  assert.match(win.text, /· 2 Segmente\n\[s1\] S2 61\.2–66\.8 Der Kern\.\n\n/)
+  assert.match(win.text, /· 2 Segmente · Spracherkennung: Handy \(SM G986B\)\n\[s1\] S2 61\.2–66\.8 Der Kern\.\n\n/)
   await fails(go('transcribe_video', { video: file, from: 10, to: 5 }), /to muss nach from/)
   await fails(go('transcribe_video', { video: file, from: 80 }), /hinter dem Ende/)
   // Download per Link: läuft noch, dann Pfad, Dauer, Chat, Kapitel (höchstens 30) und nächster Schritt nach Länge

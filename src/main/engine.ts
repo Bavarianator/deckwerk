@@ -86,6 +86,9 @@ export function createEngine(): Engine {
   type Chunk = { engine: 'parakeet' | 'whisper'; segments: Segment[] }
   let whisperOnly = false // sherpa grundsätzlich nicht nutzbar: Rest der Sitzung mit Whisper
   const wantFor = (lang?: string) => engineFor(lang, PARAKEET_LANGS, whisperOnly)
+  // Option „Spracherkennung auf dem Android-Handy“: je Aufruf neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
+  const phoneOn = () => existsSync(phoneMarker(app.getPath('appData')))
+  const phoneNow = async () => (phoneOn() ? phoneDevice() : null)
 
   // Ein Chunk: Parakeet (sherpa); Whisper nur für Sprachen außerhalb von Parakeet oder wenn sherpa nicht nutzbar ist
   async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
@@ -98,8 +101,7 @@ export function createEngine(): Engine {
     }
     if (want === 'whisper' || whisperOnly) return whisper()
     try {
-      // Option „Spracherkennung auf dem Android-Handy“: je Chunk neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
-      const phone = existsSync(phoneMarker(app.getPath('appData'))) ? (await phoneDevice())?.serial : undefined
+      const phone = (await phoneNow())?.serial
       return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone }), k) }
     } catch (e) {
       if ((e as { code?: string }).code !== 'SHERPA_UNAVAILABLE') throw e
@@ -314,6 +316,11 @@ export function createEngine(): Engine {
       probe,
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
+      async asrDevice(lang) {
+        if (wantFor(lang) === 'whisper' || whisperOnly) return 'PC (Whisper)'
+        const d = await phoneNow()
+        return d ? `Handy (${d.model})` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
+      },
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)

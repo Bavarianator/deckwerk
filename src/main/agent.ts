@@ -29,6 +29,7 @@ export interface VideoTools {
   probe(file: string): Promise<VideoInfo>
   frames(file: string, times: number[]): Promise<Buffer[]> // JPEG je Zeitpunkt (s), 640 px breit
   transcribe(file: string, onProgress?: (pct: number) => void, o?: { range?: { from: number; to: number }; lang?: string; speakers?: boolean }): Promise<Transcript> // lokal: Parakeet (sherpa-onnx), Whisper nur für Sprachen außerhalb von Parakeet; in 5-min-Stücken gecacht; range = nur diesen Bereich (s), speakers = Sprechertrennung
+  asrDevice?(lang?: string): Promise<string> // wer neue Stücke erkennt: „Handy (Modell)“ oder „PC (Grund)“, für die Antworten von transcribe_video
   highlights?(file: string, onProgress?: (pct: number) => void): Promise<Highlight[]> // Streams/lange Videos: stärkste Momente aus Lautheit, Chat, Ereignissen, Heatmap
   musicIn?(file: string, parts: Part[]): Promise<number[]> // Musik im Hintergrund je Quellsekunde 0..1, getaggt nur in den Sekunden der parts (Rest 0); Fehler → []
   cached?(file: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null }> // nur Cache lesen, nie rechnen; Fehler → null-Felder
