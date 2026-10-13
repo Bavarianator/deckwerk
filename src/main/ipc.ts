@@ -732,12 +732,12 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       ok(list.map((m) => ({ id: `codex:${m.slug}`, name: `Codex · ${m.display_name ?? m.slug}` }))) // ohne die englische Katalogbeschreibung
     } catch { ok([{ id: 'codex:', name: 'Codex', hint: 'Modell aus der Codex-Einstellung' }]) }
   }))
-  // Spracherkennung auf dem Android-Handy (phone.ts): Option als Marker, dazu das gerade verbundene Gerät
+  // Rechenhilfe Android-Handy (phone.ts): Marker = ausgeschaltet, dazu das gerade verbundene Gerät
   const phoneFile = phoneMarker(app.getPath('appData'))
-  ipcMain.handle('phone:status', async () => ({ on: existsSync(phoneFile), device: (await phoneDevice())?.model ?? null }))
+  ipcMain.handle('phone:status', async () => ({ on: !existsSync(phoneFile), device: (await phoneDevice())?.model ?? null }))
   ipcMain.handle('phone:set', async (_, on: unknown) => {
-    if (on === true) await mkdir(dirname(phoneFile), { recursive: true }).then(() => writeFile(phoneFile, ''))
-    else await rm(phoneFile, { force: true })
+    if (on === true) await rm(phoneFile, { force: true })
+    else await mkdir(dirname(phoneFile), { recursive: true }).then(() => writeFile(phoneFile, ''))
   })
   ipcMain.handle('chat:models', async (): Promise<ChatModels> => (detect(), {
     claude: hasApiKey() || !!clis.claude,
