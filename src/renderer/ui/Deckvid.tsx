@@ -6,7 +6,7 @@ import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent, type Part } from '../../shared/video'
+import { CLIP_STYLES, CUT, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type Part } from '../../shared/video'
 import { loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -371,7 +371,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     cv.width = v.videoWidth; cv.height = v.videoHeight
     cv.getContext('2d')?.drawImage(v, 0, 0)
     cv.getAnimations().forEach((a) => a.cancel())
-    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: (cutFrames(gap) / 30) * 1000 })
+    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ((next.transition ? CUT.momentFrames : cutFrames(gap)) / 30) * 1000 }) // eigener Übergang: Länge wie im Export
   }
   const player = useClipPlayer(videoRef, c.parts, dissolve)
   const [bad, setBad] = useState(false) // Chromium spielt die Quelle nicht (HEVC, ProRes …)
@@ -425,7 +425,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     m.env += (rms - m.env) * (1 - Math.exp(-dt / ((rms > m.env ? DUCK.attackMs : DUCK.releaseMs) / 1000)))
     const duck = m.env > DUCK.threshold ? (m.env / DUCK.threshold) ** (1 / DUCK.ratio - 1) : 1
     const fade = Math.min(1, pos / DUCK.fadeIn, Math.max(0, (videoLen - pos) / DUCK.fadeOut))
-    // Grundpegel je Ausschnitt (part.music), weich über ~0,5 s
+    // Grundpegel je Ausschnitt (part.music), weich (Zeitkonstante 0,15 s, nach ~0,5 s am Ziel wie die Rampe im Export)
     const level = Math.min(1, Math.max(0, cur?.music ?? vol))
     m.base = m.base === undefined ? level : m.base + (level - m.base) * (1 - Math.exp(-dt / 0.15))
     m.gain.gain.setTargetAtTime(m.base * duck * fade, m.ctx.currentTime, 0.01)
@@ -453,7 +453,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
     '--dv-ov': `${cq((m * 0.05) / face.win)}cqw`,
-    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part)), !!deck && isCompilation(deck)),
+    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))),
     ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar }),
   } as CSSProperties
   const focus = c.parts.find((x) => player.src >= x.start && player.src < x.end)?.focus ?? c.parts[0].focus

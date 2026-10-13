@@ -9,7 +9,7 @@ import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, f
 import { cropFilter, levelExpr, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
-import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, isCompilation, type Part, type Transcript } from '../src/shared/video'
+import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Part, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -243,15 +243,12 @@ async function main() {
       // Zuschnitt: part 0 wie bisher, part 1 um 1,08 enger um denselben Mittelpunkt
       const c = cropRect({ w: 1280, h: 720 }, { w: 1080, h: 1920 }, 0.5)
       assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf('lebendig', 0)), 'crop=406:720:437:0,scale=1080:1920')
-      assert.deepEqual([zoomOf(undefined, 0), zoomOf('ruhig', 1), zoomOf('ruhig', 1, true), zoomOf('lebendig', 1)], [1, 1, FX.zoomRuhig, FX.zoom], 'ruhig zoomt nur im Zusammenschnitt und leiser als lebendig, gerade Ausschnitte nie')
+      assert.deepEqual([zoomOf(undefined, 0), zoomOf('ruhig', 1), zoomOf('lebendig', 1)], [1, 1, FX.zoom], 'ruhig zoomt nie, lebendig jeden zweiten Moment')
       // Überblendung nach Art des Schnitts: Jump-Cut kurz, neuer Moment (Sprung ab CUT.moment s oder zurück) lang
       assert.deepEqual([cutFrames(0.3), cutFrames(19.9), cutFrames(CUT.moment), cutFrames(-4)], [CUT.jumpFrames, CUT.jumpFrames, CUT.momentFrames, CUT.momentFrames])
-      const clipS = { layout: 'clip' }, quer = { w: 1920, h: 1080 }
-      assert.deepEqual([isCompilation({ size: quer, slides: [clipS, { layout: 'section' }, clipS] }), isCompilation({ size: quer, slides: [clipS] }), isCompilation({ size: { w: 1080, h: 1920 }, slides: [clipS, clipS] }), isCompilation({ size: quer, slides: [clipS, { ...clipS, hidden: true }] })],
-        [true, false, false, false], 'Zusammenschnitt = mehrere sichtbare Clip-Folien im Querformat')
       const z = zoomCrop(c, zoomOf('lebendig', 1))
       // Zoom wechselt nur an echten Schnitten: nahtlos anschließende parts (follow) behalten den Zoom
-      assert.deepEqual([0, 1, 2, 3].map((i) => cutIndex([{ start: 0, end: 2 }, { start: 2, end: 4 }, { start: 6, end: 8 }, { start: 9, end: 10 }], i)), [0, 0, 1, 2])
+      assert.deepEqual([0, 1, 2, 3].map((i) => cutIndex([{ start: 0, end: 2 }, { start: 2, end: 4 }, { start: 6, end: 8 }, { start: 30, end: 32 }], i)), [0, 0, 0, 1])
       assert.ok(z.w < c.w && z.h < c.h && Math.abs(z.x + z.w / 2 - (c.x + c.w / 2)) <= 1 && Math.abs(z.y + z.h / 2 - (c.y + c.h / 2)) <= 1, JSON.stringify(z))
       // ffmpeg nimmt Filtergraph und ASS an: 4-s-Quelle, zwei parts, Hook, Balken
       const fxSrc = join(dir, 'fx.mp4')

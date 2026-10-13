@@ -8,7 +8,7 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, clipSpans, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, isCompilation } from '../shared/video'
+import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, clipSpans, joinOf, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex } from '../shared/video'
 import { HOOK_FADE, POP, cropFilter, hookBox, levelExpr, progressBar } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
@@ -142,7 +142,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; compilation?: boolean; overlays?: Overlay[] } // overlays: image als aufgelöster Pfad
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[] } // overlays: image als aufgelöster Pfad
 /** Handy für die Clip-Gruppen (phone-ffmpeg.ts); failed: einmal gescheitert, rechnet für den Rest des Exports der PC */
 export interface Phone { serial: string; models: string; failed?: boolean }
 /** Warum das Handy im laufenden Export ausgestiegen ist (leer = nicht): die App verwirft console-Ausgaben, so sehen KI und Arbeitsansicht den Grund */
@@ -205,7 +205,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
       const fit = blur
         ? `split[b${i}][f${i}];[b${i}]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g${i}];` +
           `[f${i}]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h${i}];[g${i}][h${i}]overlay=(W-w)/2:(H-h)/2`
-        : cropFilter(c, size, job.fit === 'blur' ? 1 : zoomOf(job.style, cutIndex(parts, k), job.compilation), p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
+        : cropFilter(c, size, job.fit === 'blur' ? 1 : zoomOf(job.style, cutIndex(parts, k)), p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
       // Ton ab p.start − a0: die Eingabe beginnt beim längeren Bild-Vorlauf (before)
       // Tempo nach dem Zuschnitt im Quellbereich, dann Lautstärke des Originaltons
       const vol = p.volume !== undefined && p.volume !== 1 ? `volume=${Math.min(2, Math.max(0, p.volume))},` : ''
@@ -411,8 +411,9 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
   const step = (w: number) => (pct: number) => onProgress(Math.min(100, Math.floor(((done + (w * pct) / 100) / total) * 100)))
   // Übergang mit xfade-Typ (außer color): echte Überblendung, die Nahtstücke beider Szenen werden neu kodiert (joinSegs). Sonst ≠ none (morph = harter Schnitt):
   // Einblende aus Schwarz am Anfang der Folie, Abblende am Ende der Szene davor. Zwischentitel (Folien ohne Video) blenden immer: der harte Sprung auf ein Standbild wirkte abrupt (12.10.)
-  const xf = (k: number) => (format === 'mp4' && k > 0 && k < scenes.length && transitionOf(deck, scenes[k].i) !== 'color' ? XFADE[transitionOf(deck, scenes[k].i)] : undefined)
-  const fades = (k: number) => format === 'mp4' && k > 0 && k < scenes.length && !xf(k) && (!scenes[k].clip || !scenes[k - 1].clip || !['none', 'morph'].includes(transitionOf(deck, scenes[k].i)))
+  const seam = (k: number) => (format === 'mp4' && k > 0 && k < scenes.length ? joinOf(transitionOf(deck, scenes[k].i), !scenes[k].clip || !scenes[k - 1].clip) : undefined)
+  const xf = (k: number) => (seam(k) === 'blend' ? XFADE[transitionOf(deck, scenes[k].i)] : undefined)
+  const fades = (k: number) => seam(k) === 'schwarz'
   const dir = join(parent, `.video-tmp-${randomBytes(4).toString('hex')}`) // nicht /tmp: tmpfs läuft bei langen Videos voll
   await mkdir(dir, { recursive: true })
   try {
@@ -433,7 +434,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         const transcript = captions === 'aus' && clip.pauses !== 'kurz' ? null : await transcriptOf(file) // pauses kurz: Füllwörter aus dem Transkript
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
         const overlays = clip.overlays?.map((x) => (x.image ? { ...x, image: videoPath(x.image, i + 1, 'image') } : x))
-        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, compilation: isCompilation(deck), overlays }
+        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays }
         segs = await clipSegs(job, name, dir, so, step(weights[k]))
         if (!first.cover && clip.cover !== undefined) first.cover = { job, t: clip.cover }
         first.post ??= clip.post?.trim() ? clip.post : undefined

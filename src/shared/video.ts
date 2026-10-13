@@ -9,11 +9,14 @@ export interface VideoInfo { duration: number; w: number; h: number } // w/h so,
 // speed: Tempo (< 1 Zeitlupe, > 1 Zeitraffer, Ton per atempo); volume: Originalton (0 = stumm, Standard 1); music: Pegel der Hintergrundmusik in diesem
 // Ausschnitt (0–1, fehlt = deck.music.volume); transition: Übergang am Schnitt VOR diesem Ausschnitt (fehlt = weiche Blende nach cutFrames, none = hart)
 export interface Part { start: number; end: number; focus?: number; track?: [t: number, focus: number][]; speed?: number; volume?: number; music?: number; transition?: CutTransition }
-export const CUT_TRANSITIONS = ['none', 'fade', 'dissolve', 'push', 'wipe', 'slide', 'circle', 'zoom', 'split', 'cover', 'stack', 'color'] as const
+export const CUT_TRANSITIONS = ['none', 'fade', 'dissolve', 'push', 'wipe', 'circle', 'zoom', 'split', 'stack', 'color'] as const
 export type CutTransition = (typeof CUT_TRANSITIONS)[number]
 // Übergänge als ffmpeg-xfade, an Schnitten (part.transition) und im mp4 zwischen Folien (Folien-transition); none/morph = harter Schnitt.
 // Nur Typen, die auch das Rückfall-ffmpeg 6.1 kennt (coverleft gibt es erst ab 7.0)
 export const XFADE: Partial<Record<string, string>> = { fade: 'fade', dissolve: 'dissolve', push: 'slideleft', slide: 'slideleft', wipe: 'wipeleft', circle: 'circleopen', zoom: 'zoomin', split: 'horzopen', cover: 'smoothleft', stack: 'smoothleft', color: 'fadeblack' }
+/** Folienwechsel im mp4 (Export und Meldung von export_deck): blend = echte Überblendung, schwarz = über Schwarz, hart = Schnitt.
+ *  still = eine der beiden Folien hat kein Video (Zwischentitel): die blenden ohne Überblendung immer über Schwarz. */
+export const joinOf = (t: string, still: boolean): 'blend' | 'schwarz' | 'hart' => (t !== 'color' && XFADE[t] ? 'blend' : t === 'color' || still ? 'schwarz' : 'hart')
 // Einblendung über dem Video: Text oder Bild von start bis end (Quellsekunden wie parts; über Schnitte hinweg nur, wo die Quelle zu sehen ist)
 export const OVERLAY_POS = ['oben', 'mitte', 'unten', 'oben-links', 'oben-rechts'] as const
 export interface Overlay { start: number; end: number; text?: string; image?: string; pos?: (typeof OVERLAY_POS)[number]; size?: 'klein' | 'mittel' | 'gross' }
@@ -38,18 +41,13 @@ export const CLIP_STYLES: ClipStyle[] = ['ruhig', 'lebendig']
 export const FX = {
   pop: 1.08, popMs: 120, // gesprochenes Wort wächst kurz und geht zurück
   hookFadeMs: 200, // Hook blendet ein und aus
-  zoom: 1.08, // jeder zweite Ausschnitt (ungerader Index) enger: kaschiert Jump-Cuts
-  zoomRuhig: 1.06, // dasselbe leiser im Stil ruhig, nur in Zusammenschnitten (12.10.: harte Schnitte wirkten undynamisch); mit der Überblendung im Export ein weicher Zoom
+  zoom: 1.08, // lebendig: jeder zweite Moment enger (13.10.: Zoom an fast jedem Jump-Cut nervte, ruhig zoomt gar nicht mehr)
   bar: 0.006, // Fortschrittsbalken: Höhe als Anteil der Bildhöhe, Akzentfarbe, unten
 }
-// Zahl der echten Schnitte bis Ausschnitt i: nahtlose Übergänge (Quelle läuft weiter) zählen nicht
-export const cutIndex = (parts: Part[], i: number) => parts.slice(1, i + 1).filter((p, j) => Math.abs(parts[j].end - p.start) >= 1e-3).length
-// Zoom nach dem part-ten Schnitt (cutIndex): jeder zweite; lebendig immer, ruhig nur in Zusammenschnitten (compilation); bei fit blur setzen die Aufrufer 1
-export const zoomOf = (style: ClipStyle | undefined, part: number, compilation = false) =>
-  part % 2 === 1 ? (style === 'lebendig' ? FX.zoom : compilation ? FX.zoomRuhig : 1) : 1
-// Zusammenschnitt (Stream-Highlights, Kompilation): mehrere sichtbare Clip-Folien im Querformat. Fulltime, Vorträge, Bildschirmaufnahmen und Shorts nicht
-export const isCompilation = (deck: { size?: { w: number; h: number }; slides: { layout: string; hidden?: boolean }[] }) =>
-  deck.slides.filter((s) => s.layout === 'clip' && !s.hidden).length > 1 && (deck.size ?? { w: 1280, h: 720 }).w > (deck.size ?? { w: 1280, h: 720 }).h // Standard wie sizeOf
+// Zahl der Momentwechsel bis Ausschnitt i: nur Sprünge ab CUT.moment s (oder zurück) zählen, Jump-Cuts innerhalb eines Moments nicht
+export const cutIndex = (parts: Part[], i: number) => parts.slice(1, i + 1).filter((p, j) => cutFrames(p.start - parts[j].end) === CUT.momentFrames).length
+// Zoom nach dem part-ten Momentwechsel (cutIndex): jeder zweite, nur im Stil lebendig; bei fit blur setzen die Aufrufer 1
+export const zoomOf = (style: ClipStyle | undefined, part: number) => (part % 2 === 1 && style === 'lebendig' ? FX.zoom : 1)
 // Hintergrundmusik im MP4 (finish in export-video.ts) und im Deckvid-Player gleich: Lautstärke, Ein-/Ausblende (s) über das ganze Video und Ducking
 // unter der Sprache (Sidechain: Schwelle linear, Verhältnis, Attack/Release ms). Schwelle 0,006: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik ~11 dB
 export const DUCK = { volume: 0.25, fadeIn: 1, fadeOut: 2, threshold: 0.006, ratio: 8, attackMs: 20, releaseMs: 300 }

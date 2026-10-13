@@ -7,7 +7,7 @@ import { homedir, setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { createGunzip } from 'node:zlib'
-import { cropRect, partsLength, type Fit, type Part, type Quiet, type VideoInfo } from '../shared/video'
+import { cropRect, partLen, partsLength, speedOf, type Fit, type Part, type Quiet, type VideoInfo } from '../shared/video'
 import { download } from './download'
 
 // Statische Builds mit libass und libx264 (ffmpeg-static, GPL); darwin-arm64 für den Mac-Fork
@@ -219,9 +219,9 @@ export async function contactSheet(file: string, parts: Part[], o: { size: { w: 
   for (let i = 0; i < n; i++) {
     let c = ((i + 0.5) * total) / n // Clipzeit der Kachelmitte
     at.push(c)
-    const p = parts.find((q) => (c -= q.end - q.start) < 0) ?? parts[parts.length - 1]
+    const p = parts.find((q) => (c -= partLen(q)) < 0) ?? parts[parts.length - 1]
     ps.push(p)
-    times.push(Math.min(Math.max(0, p.start + c + (p.end - p.start)), Math.max(0, info.duration - 0.1)))
+    times.push(Math.min(Math.max(0, p.start + (c + partLen(p)) * speedOf(p)), Math.max(0, info.duration - 0.1))) // Clipzeit im part → Quellzeit (Tempo)
   }
   const blur = o.fit === 'blur' && Math.abs(info.w / info.h - o.size.w / o.size.h) > 0.01
   const build = (label: boolean) => {

@@ -22,7 +22,7 @@ import { overview, searchTranscript } from '../shared/transcript-search'
 import { typeset } from '../shared/typo'
 import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
-import { LONG_VIDEO, XFADE, isCompilation, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
+import { LONG_VIDEO, joinOf, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
 import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 import { guideIndex, guideModules, guideParts, VIDEO_MODULES } from './guide-modules'
@@ -366,8 +366,8 @@ function motionOf(deck: Deck, i: number, m: Measured): string {
   const clicks = deck.mode === 'click' ? (preset === 'list' ? groups : 0) + itemClicks(deck.slides[i]) : 0
   const build = preset === 'none' || !groups ? 'ohne Aufbau' : `Aufbau ${preset} (${groups} ${groups > 1 ? 'Gruppen' : 'Gruppe'})`
   if (deck.slides[i].layout === 'clip') { // Clips: die Übergänge an den Schnitten macht der Export selbst (export-video.ts), transition gilt nur für den Folienwechsel
-    const live = (deck.slides[i].content as ClipContent).style === 'lebendig' || isCompilation(deck)
-    return `Folienwechsel ${transitionOf(deck, i)}; im MP4 blenden die Schnitte über (Jump-Cuts kurz, neuer Moment ab 20 s Sprung 0,5 s)${live ? ', jeder zweite zoomt leicht' : ''}, die Vorschau ebenso`
+    const live = (deck.slides[i].content as ClipContent).style === 'lebendig'
+    return `Folienwechsel ${transitionOf(deck, i)}; im MP4 blenden die Schnitte über (Jump-Cuts kurz, neuer Moment ab 20 s Sprung 0,5 s)${live ? ', bei jedem zweiten neuen Moment leichter Zoom' : ''}, die Vorschau ebenso`
   }
   return `Übergang ${transitionOf(deck, i)}, ${build}${clicks ? `, ${clicks} Klick${clicks > 1 ? 's' : ''}` : ''}`
 }
@@ -893,7 +893,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.format === 'mp4') { // wie xf/fades in export-video.ts: XFADE außer color überblendet; color und Zwischentitel ohne Überblendung über Schwarz; sonst hart
           const shown = { ...deck, slides: visibleSlides(deck) }, still = (k: number) => shown.slides[k].layout !== 'clip' || shown.slides[k - 1].layout !== 'clip'
           const ts = shown.slides.slice(1).map((_, k) => ({ t: transitionOf(shown, k + 1), still: still(k + 1) }))
-          const x = ts.filter(({ t }) => t !== 'color' && XFADE[t]).length, b = ts.filter(({ t, still }) => t === 'color' || (still && !XFADE[t])).length
+          const x = ts.filter(({ t, still }) => joinOf(t, still) === 'blend').length, b = ts.filter(({ t, still }) => joinOf(t, still) === 'schwarz').length
           notes.push(`Folienwechsel: ${x} mit Überblendung, ${b} über Schwarz, ${ts.length - x - b} harte Schnitte (Folien-transition; innerhalb eines Clips blenden die Schnitte automatisch über, part.transition je Schnitt)`)
         }
         if ((i.format === 'mp4' || i.format === 'clips') && deck.music?.src && musicMissing(deck.music.src))
@@ -1047,7 +1047,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (!ctx.engine.video) throw new Error('Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server.')
         const c = s.content as ClipContent, file = clipFile(c.video)
         // Musik nur hier frisch taggen (Sekunden der parts), synchron und deshalb nur bis 10 min; länger → Cache aus video_highlights. report() liest nur den Cache
-        const fresh = file && partsLength(c.parts) <= LONG_VIDEO ? await ctx.engine.video.musicIn?.(file, c.parts).catch(() => []) : undefined
+        const fresh = file && c.parts.reduce((s, p) => s + p.end - p.start, 0) <= LONG_VIDEO ? await ctx.engine.video.musicIn?.(file, c.parts).catch(() => []) : undefined
         const { issues, summary, music } = (await clipChecks(ctx, deck, [idx], fresh?.length ? fresh : undefined)).get(idx)!
         const head = `Folie ${idx + 1} (${s.id}, clip)${hid(s)}: ${summary}${issues.length ? `\n${fmtIssues(issues)}` : ' · Prüfung ohne Befund'}${music ? '' : '\nMusik nicht geprüft'}`
         if (!file || !statSync(file, { throwIfNoEntry: false })?.isFile())

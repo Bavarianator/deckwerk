@@ -65,7 +65,7 @@ Jedes ändernde Tool antwortet mit Autofit und Lint pro Folie; daran korrigiert 
 - Decks liegen unter `~/Deckwerk/<titel>/deck.json`, alte Stände in `versions/`. Bilder liegen in `~/Deckwerk/assets/`.
 - In Tests setzt `DECKWERK_HOME` das Deck-Verzeichnis um.
 - Der Anthropic-Key liegt mit `safeStorage` verschlüsselt im userData.
-- Gemeinsame Einstellungen für App, Entwicklung und MCP-Prozess liegen unter `appData/deckwerk/`, weil sich das userData zwischen diesen Wegen unterscheidet. Dazu gehören `setup-done`, `image-settings.bin` (Bild-KI: Mammouth/OpenAI-Key, Anbieter, Modell) und `phone-asr` (Spracherkennung auf dem Android-Handy per adb, `src/main/phone.ts`; Selbsttest `scripts/check-phone.ts`).
+- Gemeinsame Einstellungen für App, Entwicklung und MCP-Prozess liegen unter `appData/deckwerk/`, weil sich das userData zwischen diesen Wegen unterscheidet. Dazu gehören `setup-done`, `image-settings.bin` (Bild-KI: Mammouth/OpenAI-Key, Anbieter, Modell) und `phone-off` (vorhanden = Android-Handy als Rechenhilfe aus; ohne Marker rechnet ein per adb verbundenes Handy Spracherkennung und Export, `src/main/phone.ts`; Selbsttest `scripts/check-phone.ts`).
 - Cloud-Sync (`src/main/sync.ts`, Electron-frei, läuft auch in der Android-Engine): WebDAV-Spiegel von `~/Deckwerk` ohne `versions/`, `out/`, `models/`, Punktdateien; Abgleich über `.sync-state.json`, Konflikt → neuere gewinnt, ältere deck.json nach `versions/`. Zugang in `appData/deckwerk/sync.bin`. Selbsttest `scripts/check-sync.ts`.
 - Weitere Schlüssel kommen aus der Umgebung: `UNSPLASH_ACCESS_KEY`, `MAMMOUTH_API_KEY`, `OPENAI_API_KEY`, `IMAGE_MODEL`.
 

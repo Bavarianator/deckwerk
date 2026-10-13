@@ -108,5 +108,23 @@ assert.ok(existsSync(mp4), `MP4 fehlt: ${mp4}`)
 const [, hh, mm, ss] = spawnSync('ffmpeg', ['-i', mp4]).stderr.toString().match(/Duration: (\d+):(\d+):([\d.]+)/)!
 const dur = +hh * 3600 + +mm * 60 + +ss
 assert.ok(dur > 4 - 0.6 && dur < 4 + 4 * PAD + 0.6, `Short dauert ${dur} s statt ~4 s`)
+
+// Zwei Clips zu einem Video: zweite Folie blendet echt über (joinSegs), Zeitraffer, Originalton leiser, Text-Einblendung
+await call('create_deck', { title: 'E2E Zusammenschnitt', format: '16:9', brand: null, transition: 'none' })
+await call('add_slides', { slides: [
+  { layout: 'clip', content: { video, parts: [{ start: 1, end: 4 }], captions: 'aus' } },
+  { layout: 'clip', transition: 'fade', content: { video, parts: [{ start: 5, end: 9, speed: 2, volume: 0.5 }], captions: 'aus', overlays: [{ start: 5, end: 8, text: 'Zeitraffer' }] } },
+] })
+for (let n = 0; ; n++) {
+  r = await call('export_deck', { format: 'mp4' })
+  if (!/läuft noch/.test(r.content[0].text!)) break
+  assert.ok(n < 5, `Export hängt: ${r.content[0].text}`)
+}
+lap('export_deck mp4 Übergang')
+assert.match(r.content[0].text!, /1 mit Überblendung/)
+const joined = r.content[0].text!.split('\n')[1]
+const [, h2, m2, s2] = spawnSync('ffmpeg', ['-i', joined]).stderr.toString().match(/Duration: (\d+):(\d+):([\d.]+)/)!
+const dur2 = +h2 * 3600 + +m2 * 60 + +s2 // 3 s + 4 s / 2 = 5 s, minus 0,5 s Blende, plus Polster
+assert.ok(dur2 > 4.3 && dur2 < 5 + 4 * PAD + 0.3, `Zusammenschnitt dauert ${dur2} s statt ~4,5–5 s`)
 await client.close()
 console.log(`E2E OK · ${file} · ${mp4}`)
