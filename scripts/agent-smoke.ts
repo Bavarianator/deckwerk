@@ -357,10 +357,10 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.equal(vd!.music!.src, assetUrl(mp3))
   await go('update_deck', { music: null })
   assert.equal(vd!.music, undefined)
-  // mp4: Übergänge mit Abblende zählen (ausgeblendete Folien und morph nicht), fehlende Musik melden
+  // mp4: Folienwechsel nach Art zählen (ausgeblendete Folien und morph nicht), fehlende Musik melden
   const s0 = vd!.slides[0]
-  vd!.slides.push({ ...s0, id: 'f1', transition: 'fade' }, { ...s0, id: 'm1', transition: 'morph' }, { ...s0, id: 'h1', transition: 'fade', hidden: true }, { ...s0, id: 'n1', transition: 'none' })
-  assert.match((await go('export_deck', { format: 'mp4' })).text, /\n1 Übergang mit Abblende \(Zwischentitel immer, sonst Folien-transition; innerhalb eines Clips blenden die Schnitte über: Jump-Cuts kurz, neue Momente 0,5 s\)$/)
+  vd!.slides.push({ ...s0, id: 'f1', transition: 'fade' }, { ...s0, id: 'm1', transition: 'morph' }, { ...s0, id: 'h1', transition: 'fade', hidden: true }, { ...s0, id: 'n1', transition: 'none' }, { ...s0, id: 'z1', layout: 'section', content: { title: 'Kapitel' }, transition: 'none' }) // Zwischentitel mit none: über Schwarz
+  assert.match((await go('export_deck', { format: 'mp4' })).text, /\nFolienwechsel: 1 mit Überblendung, 1 über Schwarz, 2 harte Schnitte \(/)
   vd!.music = { src: assetUrl(join(dir, 'music', 'weg.mp3')) }
   assert.match((await go('export_deck', { format: 'clips' })).text, /deck\.clips\nMusik nicht gefunden – ohne Musik exportiert/)
   vd!.music = { src: assetUrl(mp3) }

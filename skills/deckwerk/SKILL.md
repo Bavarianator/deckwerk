@@ -110,7 +110,8 @@ Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights ode
 - **Selbstkontrolle:** Clip-Prüfung in der `add_slides`-Antwort beheben; vor dem Export `check_clip` für die besten Clips, Kontaktabzug ansehen, höchstens 2 Runden.
 - **Ganzes Video kürzen (16:9):** `transcribe_video` mit `all: true` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), Neuansätze herausschneiden, `pauses` `kurz`, `ton` `klar` bei Sprache (nie bei Musik), `captions` `satz` oder `aus` → `export_deck` `mp4`.
 - **Stream (2–8 h) und Videos über 10 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
-- **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` nur dort; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
+- **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` oder `dissolve` (echte Überblendung im MP4) nur dort und an Ortswechseln; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
+- **Effekte (sparsam):** je Ausschnitt `speed` (Zeitlupe für den Höhepunkt einer Aktion, Zeitraffer ohne Sprache), `volume`/`music` (Montage: `volume` 0, `music` 0.8), `transition` am Schnitt nur an Orts-/Szenenwechseln (weglassen = automatische Blende); `overlays` für Bauchbinde, Zahl oder Logo, nie das Gesagte. Details Guide §11 „Effekte“.
 
 ## Häufige Fehler
 
