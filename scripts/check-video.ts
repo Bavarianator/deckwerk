@@ -421,7 +421,9 @@ async function main() {
     await runFfmpeg(['-f', 'lavfi', '-i', 'color=c=gray:s=640x360', '-frames:v', '1', grau])
     const standbild = await encodeStill(grau, join(dir, 'still.mkv'), dir, { preset: 'veryfast', fadeOut: true })
     const zwei = await clipSegs({ file: src, parts: [{ start: 2, end: 5 }], captions: 'aus', transcript: null, size: small, font, accent: '#FF8800' }, 'blende', dir, { preset: 'veryfast', fadeIn: true })
-    await finish([standbild, ...zwei], blende, dir, { loudnorm: true })
+    const stand: number[] = [] // Messlauf meldet 0–50 %, der Endlauf 50–100 % (sonst stand die Anzeige im Messlauf still)
+    await finish([standbild, ...zwei], blende, dir, { loudnorm: true, onProgress: (p) => stand.push(p) })
+    assert.ok(stand.some((p) => p > 0 && p <= 50) && stand.at(-1)! > 90 && stand.every((p, i) => !i || p >= stand[i - 1] - 1), `Fortschritt Endschritt: ${stand.join(',')}`)
     near((await probe(blende)).duration, STILL + 3 + PAD * 2, 0.1, 'Länge mit Übergang')
     await runFfmpeg(['-v', 'error', '-xerror', '-i', blende, '-f', 'null', '-']) // dekodiert ohne Fehler über die Naht
     const hell = async (t: number) => luma((await rawFrames(blende, [t], 320))[0], 320, 0, 0, 320, 180)

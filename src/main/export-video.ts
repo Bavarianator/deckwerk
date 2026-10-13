@@ -274,14 +274,17 @@ export async function finish(segs: Seg[], out: string, dir: string, o: { loudnor
   let loud = ''
   if (o.loudnorm) {
     // Messlauf nur über den Ton (schnell); fällt er aus oder ist alles still (-inf), bleibt es beim dynamischen Durchgang
-    const err = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', ...input, '-filter_complex', graph(`,${NORM}:print_format=json`), '-map', '[a]', '-f', 'null', '-'], { cwd: dir })
+    // Messlauf zählt bis 50 %: ohne Meldung stand die Anzeige bei 15 min Material minutenlang still (13.10., „hängt bei 83 %“)
+    const err = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-progress', 'pipe:1', ...input, '-filter_complex', graph(`,${NORM}:print_format=json`), '-map', '[a]', '-f', 'null', '-'], { cwd: dir, onOut: (s) => {
+      for (const m of s.matchAll(/out_time_us=(\d+)/g)) o.onProgress?.(Math.min(50, Math.floor(Number(m[1]) / 2e4 / dur)))
+    } })
       .then((r) => (r.code === 0 ? r.err : ''), () => '')
     const v = ['input_i', 'input_tp', 'input_lra', 'input_thresh', 'target_offset'].map((k) => Number(new RegExp(`"${k}" : "([^"]+)"`).exec(err)?.[1])) // "-inf" → NaN
     loud = v.every(Number.isFinite)
       ? `,${NORM}:measured_I=${v[0]}:measured_TP=${v[1]}:measured_LRA=${v[2]}:measured_thresh=${v[3]}:offset=${v[4]}:linear=true,aresample=48000,asetpts=N/SR/TB`
       : `,${LOUD}`
   }
-  await runFfmpeg([...input, '-filter_complex', graph(loud), '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress })
+  await runFfmpeg([...input, '-filter_complex', graph(loud), '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress && ((p) => o.onProgress!(o.loudnorm ? 50 + Math.floor(p / 2) : p)) })
 }
 
 /** Eine Clip-Szene fertig als MP4 (Zwischenstände + Endschritt). Gibt die Länge (s) zurück. */
