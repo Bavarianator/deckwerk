@@ -831,7 +831,7 @@ export const EXTRA_LAYOUTS = {
   }),
   clip: L({
     id: 'clip', name: 'Videoclip',
-    when: 'Video aus Ausschnitten einer Quelle, eine Folie = ein Video. Short/Reel (9:16, ideal 55–75 s, Hook, Untertitel); ganzes Video kürzen (16:9, Füllsätze und Pausen raus); Stream-Highlights (je Moment eine Folie); Zusammenschnitt mehrerer Quellen (je Quelle eine clip-Folie, dazwischen Titel). Nur mit Video aus dem Anhang und Zeiten aus dem Transkript; Export über export_deck (mp4 = alles in einem Video, clips = je Folie eine MP4). Ablauf: read_guide § Video.',
+    when: 'Video aus Ausschnitten einer Quelle, eine Folie = ein Video. Short/Reel (9:16, ideal 55–75 s, Hook, Untertitel); ganzes Video kürzen (16:9, Füllsätze und Pausen raus); Stream-Highlights (Shorts je Moment eine Folie; langes Video = eine Folie mit allen Momenten als parts); Zusammenschnitt mehrerer Quellen (je Quelle eine clip-Folie, dazwischen Titel). Nur mit Video aus dem Anhang und Zeiten aus dem Transkript; Export über export_deck (mp4 = alles in einem Video, clips = je Folie eine MP4). Ablauf: read_guide § Video.',
     sizes: ['9:16', '4:5', '1:1', '16:9'], schema: clip, defaultBuild: 'none', footer: false,
     samples: {
       min: { video: '', parts: [{ start: 0, end: 4 }] },

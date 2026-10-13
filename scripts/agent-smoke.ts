@@ -322,12 +322,18 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.match(hi.text, /transcribe_video mit from\/to[\s\S]*video_frames/)
   hl = []
   assert.match((await go('video_highlights', { video: file })).text, /keine deutlichen Spitzen/)
+  // minutes: mehr Fenster aus denselben Signalen (2 h, Spitze alle 5 min = 24) und der Ablauf fürs lange Video statt Shorts
+  const spiky = Array.from({ length: 7200 }, (_, s) => (s % 300 < 5 ? -10 : -30 + ((s * 7919) % 13) / 13))
+  const TL = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, highlights: async () => [], cached: async () => ({ signals: { loud: spiky }, highlights: [], transcript: null, duration: 7200 }) } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  const long = (await TL.video_highlights.run({ video: file, minutes: 12 })).text
+  assert.match(long, /^16 Kandidaten in asset:[\s\S]*eine\*\* clip-Folie mit allen Momenten/)
+  assert.doesNotMatch(long, /Shorts bauen/)
   const T7 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, highlights: undefined } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
   await fails(T7.video_highlights.run({ video: file }), /Highlight-Suche fehlt/)
   assert.match((await T7.video_highlights.run({ video: file, overview: true })).text, /^Überblick über/, 'Signale im Cache: Überblick ohne Highlight-Suche')
   // über 10 min ohne from/to: Verweis auf Überblick und Fenster statt alles zu transkribieren; all erzwingt das ganze Video
   const T9 = Object.fromEntries(buildTools({ engine: { ...engine, video: { ...video, probe: async () => ({ duration: 1290, w: 1920, h: 1080 }) } }, getDeck: () => vd, setDeck: () => {}, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
-  assert.equal((await T9.transcribe_video.run({ video: file })).text, 'Video ist 21:30 lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; das ganze Video nur für einen Fulltime-Schnitt mit all: true.')
+  assert.equal((await T9.transcribe_video.run({ video: file })).text, 'Video ist 21:30 lang – erst video_highlights (overview: true), dann transcribe_video mit from/to der besten Fenster; Fulltime oder langes Video aus einer Quelle bis ~45 min mit all: true, längere über video_highlights mit minutes.')
   assert.match((await T9.transcribe_video.run({ video: file, all: true })).text, /· 21:30 · 1920×1080 · Sprache de · 2 Segmente/)
   // Bereich über 10 min ebenso gesperrt, fehlendes to = Videoende
   assert.match((await T9.transcribe_video.run({ video: file, from: 600 })).text, /^Bereich 10:00–21:30 ist 11:30 lang – erst video_highlights/)
