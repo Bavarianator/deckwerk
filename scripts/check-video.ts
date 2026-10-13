@@ -5,11 +5,11 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, padParts, seamless, snapParts } from '../src/main/export-video'
-import { cropFilter, zoomCrop } from '../src/main/video-fx'
+import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, joinSegs, padParts, seamless, snapParts } from '../src/main/export-video'
+import { cropFilter, levelExpr, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
-import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, isCompilation, type Transcript } from '../src/shared/video'
+import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, isCompilation, type Part, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -57,6 +57,74 @@ async function main() {
       console.log('  Titelbild ok')
     }
     if (process.env.DW_ONLY_COVER) return
+
+    // Effekte am Testvideo (4 s, 640×360, ohne Ton; hier mit Sinuston dazu): Tempo, Lautstärke, Übergänge an Schnitten, Einblendungen, Musikpegel, Folienübergang
+    {
+      const tv = join(dir, 'tv.mkv'), size = { w: 180, h: 320 }, poster = resolve('examples/assets/test-video-poster.jpg')
+      await runFfmpeg(['-i', resolve('examples/assets/test-video.mp4'), '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=4', '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'pcm_s16le', '-shortest', tv])
+      const font = { name: 'Archivo', files: [readFileSync(resolve('assets/fonts/Archivo-Bold.ttf'))], bold: true }
+      const job = { file: tv, captions: 'aus' as const, transcript: null, size, font, accent: '#FF8800' }
+      const seg1 = async (n: string, parts: Part[], x: object = {}) => (await clipSegs({ ...job, parts, ...x }, n, dir, { preset: 'ultrafast' }))[0]
+      // Tempo: Länge = Quelllänge (mit Polster) durch Tempo, Ton per atempo genauso lang; Kamerafahrt bei Tempo 2
+      for (const [n, parts] of [['zeitlupe', [{ start: 0.5, end: 2, speed: 0.5 }]], ['zeitraffer', [{ start: 0.5, end: 3.5, speed: 2, track: [[0.5, 0.2], [3.5, 0.8]] as [number, number][] }]]] as const) {
+        const s = await seg1(n, [...parts]), want = partsLength(padParts([...parts], 4))
+        near(s.dur, want, 1e-6, `${n}: gemeldete Länge`)
+        near((await probe(s.file)).duration, want, 0.1, `${n}: Länge`)
+        near((await pcm16k(s.file)).length / 16000, want, 0.05, `${n}: Tonlänge`)
+      }
+      // Originalton stumm
+      const stumm = await pcm16k((await seg1('leise', [{ start: 0.5, end: 2, volume: 0 }])).file)
+      assert.ok(stumm.every((x) => Math.abs(x) < 1e-3), 'volume 0: Ton nicht stumm')
+      // Übergänge am Schnitt auf rot/blau: wipe = halb rot, halb blau mitten in der Blende; none = harter Schnitt ohne Mischbild; Länge bleibt
+      const rb = join(dir, 'rb.mkv')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'color=red:size=320x180:rate=30:duration=2', '-f', 'lavfi', '-i', 'color=blue:size=320x180:rate=30:duration=2', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4', '-filter_complex', '[0:v][1:v]concat=n=2:v=1:a=0[v]', '-map', '[v]', '-map', '2:a', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-shortest', rb])
+      const naht = 1.6 - 0.2 + 2 * PAD // erster part gepolstert
+      const rgb = async (f: string, t: number, x: number) => { const [img] = await rawFrames(f, [t], 32); const o = (9 * 32 + x) * 3; return { b: img[o], r: img[o + 2] } }
+      for (const tr of ['wipe', 'none'] as const) {
+        const parts: Part[] = [{ start: 0.2, end: 1.6 }, { start: 2.4, end: 3.8, transition: tr }]
+        const s = await seg1(`schnitt-${tr}`, parts, { file: rb, size: { w: 320, h: 180 } })
+        near((await probe(s.file)).duration, partsLength(padParts(parts, 4)), 0.1, `${tr}: Länge`)
+        if (tr === 'wipe') {
+          const [l, r] = [await rgb(s.file, naht, 2), await rgb(s.file, naht, 29)]
+          assert.ok((l.r > 200 && r.b > 200) || (l.b > 200 && r.r > 200), `wipe: keine Wischblende ${JSON.stringify([l, r])}`)
+        } else {
+          const [vor, nach] = [await rgb(s.file, naht - 0.04, 16), await rgb(s.file, naht + 0.02, 16)]
+          assert.ok(vor.r > 230 && vor.b < 25 && nach.b > 230 && nach.r < 25, `none: Mischbild am Schnitt ${JSON.stringify([vor, nach])}`)
+        }
+      }
+      // Einblendungen: Text als ASS-Dialogue oben mit Blende, Bild mittig groß (Mitte des Bilds ändert sich gegenüber ohne)
+      const ovParts: Part[] = [{ start: 0.5, end: 3 }]
+      const ohne = await seg1('ov-ohne', ovParts), mit = await seg1('ov-mit', ovParts, { overlays: [{ start: 1, end: 2, text: 'Hallo', pos: 'oben' }, { start: 0.5, end: 2.5, image: poster, pos: 'mitte', size: 'gross' }] })
+      assert.ok(readFileSync(join(dir, 'ov-mit-01.ass'), 'utf8').includes(',Ov8,,0,0,0,,{\\fad(200,200)}Hallo'), 'Text-Einblendung fehlt in der ASS')
+      near((await probe(mit.file)).duration, mit.dur, 0.1, 'Einblendung: Länge')
+      const kante = assSubs({ size, font: 'Archivo', bold: true, accent: '#FF8800', hookDur: 4, cues: [], mode: 'aus', overlays: [{ start: 0, end: 1, text: 'weiter', fade: [false, true] }] })
+      assert.ok(kante.includes(',Ov2,,0,0,0,,{\\fad(0,200)}weiter'), 'Gruppenkante: keine Einblende')
+      const mitte = async (f: string, t: number) => (await rawFrames(f, [t], 64))[0].subarray((32 * 64 + 10) * 3, (32 * 64 + 26) * 3)
+      const diff = (a: Buffer, b: Buffer) => a.reduce((q, v, k) => q + Math.abs(v - b[k]), 0) / a.length
+      const [d1, d2] = [diff(await mitte(ohne.file, 1.2), await mitte(mit.file, 1.2)), diff(await mitte(ohne.file, 2.6), await mitte(mit.file, 2.6))]
+      assert.ok(d1 > 10 && d2 < 3, `Bild-Einblendung: Abweichung ${d1.toFixed(1)} im Fenster, ${d2.toFixed(1)} danach`)
+      // Musikpegel: Ausdruck stückweise linear mit Rampen um die Grenzen; im Ausschnitt mit music 0 schweigt die Musik
+      assert.equal(levelExpr(0.25, [[1, 3, 0.5]]), "'if(lt(t,1.25),0.25+(0.5)*max(0,t-0.75),if(lt(t,2.75),0.5+(0)*max(0,t-1.25),if(lt(t,3.25),0.5+(-0.5)*max(0,t-2.75),0.25)))'")
+      assert.equal(levelExpr(0.3, []), "'0.3'")
+      const mus = join(dir, 'vfx-musik.wav'), mixed = join(dir, 'vfx-musik.mp4')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'sine=frequency=2000:sample_rate=48000:duration=5', mus])
+      const ms = await clipSegs({ ...job, file: resolve('examples/assets/test-video.mp4'), parts: [{ start: 0.5, end: 1.5 }, { start: 2, end: 3.5, music: 0 }] }, 'vfx-musik', dir, { preset: 'ultrafast' })
+      assert.deepEqual(ms[0].music?.map((x) => x.map((v) => +v.toFixed(3))), [[1.3, 3.1, 0]], 'Musikpegel-Span der Seg')
+      await finish(ms, mixed, dir, { music: { file: mus, volume: 0.5 } })
+      near((await probe(mixed)).duration, ms[0].dur, 0.1, 'Länge mit Musikpegel')
+      const mp = await pcm16k(mixed)
+      assert.ok(dbOf(mp, 0.4, 0.9) - dbOf(mp, 1.8, 2.6) > 30, `Musik im Ausschnitt mit music 0 nicht leise (${dbOf(mp, 0.4, 0.9).toFixed(1)} / ${dbOf(mp, 1.8, 2.6).toFixed(1)} dB)`)
+      // Folienübergang: Standbild + Clip per xfade zu einer Seg, Länge = Summe − Blende, Musikpegel rücken nach
+      const grauHoch = join(dir, 'grau-hoch.png')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'color=c=gray:s=180x320', '-frames:v', '1', grauHoch])
+      const still = await encodeStill(grauHoch, join(dir, 'vfx-still.mkv'), dir, { preset: 'ultrafast' })
+      const joined = await joinSegs(still, ms[0], 'slideleft', join(dir, 'vfx-join.mkv'), dir, 'ultrafast')
+      near(joined.dur, STILL + ms[0].dur - 0.5, 1e-6, 'Folienübergang: gemeldete Länge')
+      near((await probe(joined.file)).duration, joined.dur, 0.1, 'Folienübergang: Länge')
+      near(joined.music![0][0], 1.3 + STILL - 0.5, 1e-6, 'Folienübergang: Musikpegel verschoben')
+      console.log('  Effekte ok')
+    }
+    if (process.env.DW_ONLY_VFX) return
 
     // Ton klar: Sprach-Ersatz (Klang-Bursts 0–1, 2–3 … s) über Rosa Rauschen; die Sprachkette senkt das Rauschen in den Pausen, original bleibt unverändert.
     // Lautheit in zwei Durchgängen: integriert −14 LUFS
@@ -455,6 +523,10 @@ async function main() {
     const deck = { title: 'Musik', theme: { id: 'beratung' }, transition: 'none', mode: 'click', slides: [{ layout: 'clip', content: { video: src, parts: [{ start: 1, end: 2 }] } }] } as unknown as Deck
     await assert.rejects(exportVideo(deck, join(dir, 'x'), 'mp4', async () => null, undefined, { music: { file: stumm } }), /Die Musikdatei .*stumm\.mp4 hat keine Tonspur\./)
     await assert.rejects(exportVideo(deck, join(dir, 'x'), 'clips', async () => null, undefined, { music: { file: join(dir, 'fehlt.mp3') } }), /Die Musikdatei .*fehlt\.mp3 fehlt\./)
+    const ovDeck = { ...deck, slides: [{ layout: 'clip', content: { video: src, parts: [{ start: 1, end: 2 }], overlays: [{ start: 1, end: 2, image: join(dir, 'fehlt.png') }] } }] } as unknown as Deck
+    await assert.rejects(exportVideo(ovDeck, join(dir, 'x'), 'clips', async () => null), /Folie 1: Das Bild der Einblendung fehlt \(fehlt\.png\)\./)
+    const svgDeck = { ...deck, slides: [{ layout: 'clip', content: { video: src, parts: [{ start: 1, end: 2 }], overlays: [{ start: 1, end: 2, image: join(dir, 'logo.svg') }] } }] } as unknown as Deck
+    await assert.rejects(exportVideo(svgDeck, join(dir, 'x'), 'clips', async () => null), /Folie 1: Die Einblendung braucht ein Rasterbild .*logo\.svg/)
 
     // Obergrenzen vor dem Encoden: höchstens MAX_PARTS Ausschnitte (nahtlose Stücke zählen nicht extra), Material höchstens 6 h
     const clipDeck = (parts: { start: number; end: number }[]) => ({ ...deck, slides: [{ layout: 'clip', content: { video: src, parts } }] }) as unknown as Deck
