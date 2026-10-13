@@ -42,6 +42,13 @@
 .dv-hook { top: var(--dv-hook-y); font-size: var(--dv-hook); text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); }
 .dv-sub { bottom: var(--dv-sub-y); font-size: var(--dv-sub); text-align: center; text-shadow: 0 0 2px #000, 0 2px 3px rgb(0 0 0 / 0.6); }
 .dv-sub em { font-style: normal; color: var(--dv-accent); }
+.dv-ov { position: absolute; left: 4%; right: 4%; z-index: 1; color: #fff; font-family: var(--dv-font); font-weight: var(--dv-weight); font-size: var(--dv-ov); line-height: var(--dv-lh); text-align: center; text-wrap: balance; text-shadow: 0 0 2px #000, 0 2px 3px rgb(0 0 0 / 0.6); pointer-events: none; transition: opacity 200ms linear; } /* Einblendungen (overlays), Lage nach pos mit 4 % Rand */
+.dv-ov img { display: inline-block; vertical-align: top; }
+.dv-ov.oben, .dv-ov.oben-links, .dv-ov.oben-rechts { top: 4%; }
+.dv-ov.mitte { top: 50%; transform: translateY(-50%); }
+.dv-ov.unten { bottom: calc(var(--dv-sub-y) + var(--dv-sub) * var(--dv-lh) + 4%); } /* über der Untertitelzeile */
+.dv-ov.oben-links { text-align: left; }
+.dv-ov.oben-rechts { text-align: right; }
 
 /* Stil „lebendig“: Werte kommen als Variablen aus FX (video.ts), damit Vorschau und MP4 gleich aussehen */
 .dv-screen .clip-video video { transform: scale(var(--dv-zoom, 1)); } /* Zoom-Wechsel an Schnitten (beide Stile); hart, die Überblendung macht nur der Export */
