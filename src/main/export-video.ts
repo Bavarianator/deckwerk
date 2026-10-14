@@ -143,6 +143,16 @@ function checkParts(parts: Part[] | undefined, where: string) {
 }
 
 export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[] } // overlays: image als aufgelöster Pfad
+/** Jeder ffmpeg-Schritt des Exports: auf dem Handy, wenn eins mitrechnet (gleiche Parameter, damit -c:v copy beim Verbinden passt); scheitert es, rechnet der PC */
+const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
+  if (!phone || phone.failed) return runFfmpeg(args, ro)
+  return phoneFfmpeg(phone.serial, args, { ...ro, models: phone.models }).catch((e: Error) => {
+    console.warn('[video] Export auf dem Handy fehlgeschlagen, der PC rechnet weiter:', e.message)
+    phone.failed = true
+    phoneFault.reason = e.message.trim().split('\n').slice(-1)[0].slice(0, 160)
+    return runFfmpeg(args, ro)
+  })
+}
 /** Handy für die Clip-Gruppen (phone-ffmpeg.ts); failed: einmal gescheitert, rechnet für den Rest des Exports der PC */
 export interface Phone { serial: string; models: string; failed?: boolean }
 /** Warum das Handy im laufenden Export ausgestiegen ist (leer = nicht): die App verwirft console-Ausgaben, so sehen KI und Arbeitsansicht den Grund */
@@ -246,14 +256,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const file = join(dir, `${id}.mkv`)
     const args = [...inputs, '-filter_complex', graph.join(';'), '-map', '[v]', '-map', '[a]', ...video(o.preset), ...PCM, file]
     const ro = { cwd: dir, duration: dur, onProgress: onProgress && ((pct: number) => onProgress(Math.floor(((done + (dur * pct) / 100) / total) * 100))) }
-    // Gruppe auf dem Handy, wenn eins mitrechnet (gleiche Parameter: -c:v copy beim Verbinden passt weiter); scheitert es, rechnet der PC
-    const phone = o.phone && !o.phone.failed ? o.phone : undefined
-    await (phone ? phoneFfmpeg(phone.serial, args, { ...ro, models: phone.models }).catch((e: Error) => {
-      console.warn('[video] Export auf dem Handy fehlgeschlagen, der PC rechnet weiter:', e.message)
-      phone.failed = true
-      phoneFault.reason = e.message.trim().split('\n').slice(-1)[0].slice(0, 160)
-      return runFfmpeg(args, ro)
-    }) : runFfmpeg(args, ro))
+    await ffx(args, ro, o.phone)
     const music = ps.flatMap((p, i): [number, number, number][] => (p.music === undefined ? [] : [[at[i], at[i + 1], p.music]]))
     segs.push({ file, dur, ...(music.length ? { music } : {}) })
     done += dur
@@ -262,7 +265,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
 }
 
 /** Titelbild (JPEG in Ausgabegröße) bei Quellsekunde t (Standard: Mitte des ersten parts): Zuschnitt wie der Clip, Hook eingebrannt, ohne Einblendung und Balken. */
-export async function encodeCover(job: ClipJob, t: number | undefined, out: string, dir: string) {
+export async function encodeCover(job: ClipJob, t: number | undefined, out: string, dir: string, phone?: Phone) {
   const info = await probe(job.file), p0 = job.parts[0]
   const at = Math.min(Math.max(0, t ?? (p0.start + p0.end) / 2), Math.max(0, info.duration - 0.1))
   const p = job.parts.find((x) => at >= x.start && at <= x.end) ?? p0
@@ -281,19 +284,19 @@ export async function encodeCover(job: ClipJob, t: number | undefined, out: stri
     // Einblendung weg: das Standbild läge sonst im Moment ganz durchsichtig
     await writeFile(join(dir, `${name}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: 1, cues: [], mode: 'aus', style: job.style }).replace(HOOK_FADE, ''))
   }
-  await runFfmpeg(['-ss', sec(at), '-i', job.file, '-frames:v', '1', '-update', '1', '-vf', `${fit},setsar=1${hook ? `,ass=${name}.ass:fontsdir=fonts` : ''}`, '-q:v', '2', out], { cwd: dir })
+  await ffx(['-ss', sec(at), '-i', job.file, '-frames:v', '1', '-update', '1', '-vf', `${fit},setsar=1${hook ? `,ass=${name}.ass:fontsdir=fonts` : ''}`, '-q:v', '2', out], { cwd: dir }, phone)
 }
 
 /** Standbild (PNG in Ausgabegröße) als Zwischenstand von STILL Sekunden mit stillem Ton, gleiche Video-Parameter wie die Clips. */
 export async function encodeStill(png: string, out: string, dir: string, o: SegOpts, onProgress?: (pct: number) => void): Promise<Seg> {
   const vf = ['setsar=1', o.fadeIn && `fade=t=in:d=${FADE}`, o.fadeOut && `fade=t=out:st=${STILL - FADE}:d=${FADE}`].filter(Boolean).join(',')
-  await runFfmpeg(['-loop', '1', '-framerate', '30', '-t', String(STILL), '-i', png, '-f', 'lavfi', '-t', String(STILL), '-i', 'anullsrc=r=48000:cl=stereo', '-vf', vf, ...video(o.preset), ...PCM, out], { cwd: dir, duration: STILL, onProgress })
+  await ffx(['-loop', '1', '-framerate', '30', '-t', String(STILL), '-i', png, '-f', 'lavfi', '-t', String(STILL), '-i', 'anullsrc=r=48000:cl=stereo', '-vf', vf, ...video(o.preset), ...PCM, out], { cwd: dir, duration: STILL, onProgress }, o.phone)
   return { file: out, dur: STILL }
 }
 
 /** Endschritt je Ausgabedatei: Zwischenstände (alle in dir) per concat-Demuxer verbinden, Video kopiert, Ton einmal AAC.
  *  Musik läuft in Schleife über die ganze Länge (1 s Ein-, 2 s Ausblende) und weicht der Sprache (Sidechain-Kompressor), danach loudnorm. */
-export async function finish(segs: Seg[], out: string, dir: string, o: { loudnorm?: boolean; music?: Music; onProgress?: (pct: number) => void } = {}) {
+export async function finish(segs: Seg[], out: string, dir: string, o: { loudnorm?: boolean; music?: Music; onProgress?: (pct: number) => void; phone?: Phone } = {}) {
   const dur = segs.reduce((s, x) => s + x.dur, 0), list = `${basename(out)}.txt`
   await writeFile(join(dir, list), segs.map((s) => `file '${basename(s.file)}'`).join('\n'))
   // sidechaincompress endet mit dem ersten Eingang, der endet, und verwirft, was der andere noch hat: Musik darum endlos hinein, Länge gibt die Sprache vor.
@@ -318,17 +321,17 @@ export async function finish(segs: Seg[], out: string, dir: string, o: { loudnor
       ? `,${NORM}:measured_I=${v[0]}:measured_TP=${v[1]}:measured_LRA=${v[2]}:measured_thresh=${v[3]}:offset=${v[4]}:linear=true,aresample=48000,asetpts=N/SR/TB`
       : `,${LOUD}`
   }
-  await runFfmpeg([...input, '-filter_complex', graph(loud), '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress })
+  await ffx([...input, '-filter_complex', graph(loud), '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress }, o.phone)
 }
 
 /** Folienübergang im mp4: letzten Zwischenstand der Szene davor und ersten der Szene (beide in dir) per xfade (ffmpeg-Typ) und acrossfade zu einem neuen
  *  verbinden, Blende 0,5 s (höchstens die halbe Länge eines der beiden); Länge = Summe − Blende, Musikpegel des zweiten rücken mit. */
 // ponytail: kodiert beide Nahtstücke ganz neu (bis GROUP parts), ohne Fortschritt und immer auf dem PC; Upgrade: nur die Blende neu kodieren und den Rest kopieren
-export async function joinSegs(a: Seg, b: Seg, transition: string, out: string, dir: string, preset: string): Promise<Seg> {
+export async function joinSegs(a: Seg, b: Seg, transition: string, out: string, dir: string, preset: string, phone?: Phone): Promise<Seg> {
   const fa = Math.round(a.dur * 30), d = Math.max(1, Math.min(15, Math.floor(fa / 2), Math.floor(Math.round(b.dur * 30) / 2))), off = (fa - d) / 30
   // offset einen halben Frame vor der Blende wie in clipSegs
-  await runFfmpeg(['-i', basename(a.file), '-i', basename(b.file), '-filter_complex', `[0:v][1:v]xfade=transition=${transition}:duration=${sec(d / 30)}:offset=${sec((fa - d - 0.5) / 30)}[v];[0:a][1:a]acrossfade=d=${sec(d / 30)}[a]`,
-    '-map', '[v]', '-map', '[a]', ...video(preset), ...PCM, out], { cwd: dir })
+  await ffx(['-i', basename(a.file), '-i', basename(b.file), '-filter_complex', `[0:v][1:v]xfade=transition=${transition}:duration=${sec(d / 30)}:offset=${sec((fa - d - 0.5) / 30)}[v];[0:a][1:a]acrossfade=d=${sec(d / 30)}[a]`,
+    '-map', '[v]', '-map', '[a]', ...video(preset), ...PCM, out], { cwd: dir }, phone)
   const music = [...(a.music ?? []), ...(b.music ?? []).map(([x, y, v]): [number, number, number] => [x + off, y + off, v])]
   return { file: out, dur: a.dur + b.dur - d / 30, ...(music.length ? { music } : {}) }
 }
@@ -420,8 +423,8 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
     const font = scenes.some((x) => x.clip) ? await subFont(deck) : { name: 'Archivo', files: [], bold: true }
     const all: Seg[] = [], moves: [string, string][] = [] // erst im Job-Ordner, am Ende per rename: ein Abbruch lässt den letzten guten Export stehen
     // Titelbild (.jpg) und Post-Text (.txt) neben das MP4; ein Fehler beim Bild kostet nur das Bild
-    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string) => {
-      if (cover) await encodeCover(cover.job, cover.t, join(dir, `${name}.jpg`), dir).then(
+    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string, phone?: Phone) => {
+      if (cover) await encodeCover(cover.job, cover.t, join(dir, `${name}.jpg`), dir, phone).then(
         () => moves.push([join(dir, `${name}.jpg`), `${to}.jpg`]), (e: Error) => console.warn(`[video] Titelbild ${basename(to)}.jpg fehlgeschlagen:`, e.message))
       if (post?.trim()) { await writeFile(join(dir, `${name}.txt`), post, 'utf8'); moves.push([join(dir, `${name}.txt`), `${to}.txt`]) }
     }
@@ -448,20 +451,20 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
       const t = xf(k)
       if (t) { // mp4: Nahtstücke zu einem verbinden, die beiden alten sofort weg
         const a = all.pop()!, b = segs[0]
-        segs[0] = await joinSegs(a, b, t, join(dir, `${name}-x.mkv`), dir, preset)
+        segs[0] = await joinSegs(a, b, t, join(dir, `${name}-x.mkv`), dir, preset, o.phone)
         await Promise.all([a, b].map((x) => rm(x.file, { force: true })))
       }
       if (format === 'mp4') { all.push(...segs); continue }
-      await finish(segs, join(dir, `${name}.mp4`), dir, { loudnorm: true, music: o.music, onProgress: step(weights[k] * 0.2) })
+      await finish(segs, join(dir, `${name}.mp4`), dir, { loudnorm: true, music: o.music, phone: o.phone, onProgress: step(weights[k] * 0.2) })
       await Promise.all(segs.map((x) => rm(x.file, { force: true }))) // Zwischenstände sofort weg: bei langen Exporten sonst viele GB
       done += weights[k] * 0.2
       moves.push([join(dir, `${name}.mp4`), `${base}-${n2(k + 1)}.mp4`])
-      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post)
+      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post, o.phone)
     }
     if (format === 'mp4') {
-      await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: true, music: o.music, onProgress: step(sum * 0.2) })
+      await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: true, music: o.music, phone: o.phone, onProgress: step(sum * 0.2) })
       moves.push([join(dir, 'gesamt.mp4'), `${base}.mp4`])
-      await extras('gesamt', base, first.cover, first.post)
+      await extras('gesamt', base, first.cover, first.post, o.phone)
     }
     for (const [from, to] of moves) await rename(from, to) // Job-Ordner liegt neben dem Ziel, also im selben Dateisystem
     onProgress(100)
