@@ -100,7 +100,7 @@ export function assSubs(o: { size: Size; font: string; bold: boolean; accent: st
 
 // Abstand der Untertitelzeile von unten (ASS MarginV): Querformat 7 %, 9:16 33 % (über der Plattform-Leiste), sonst 12 %
 const capMargin = ({ w, h }: Size) => h * (w > h ? 0.07 : h / w >= 1.6 ? 0.33 : 0.12)
-const OV_ALIGN = { oben: 8, mitte: 5, unten: 2, 'oben-links': 7, 'oben-rechts': 9 } as const
+const OV_ALIGN = { oben: 8, mitte: 5, unten: 2, 'oben-links': 7, 'oben-rechts': 9, 'unten-links': 1, 'unten-rechts': 3, voll: 5 } as const
 // atempo je Instanz nur 0,5–2: Kette, z. B. 0,25 = 0,5 · 0,5
 const atempo = (sp: number): string[] => (sp > 2 ? ['atempo=2', ...atempo(sp / 2)] : sp < 0.5 ? ['atempo=0.5', ...atempo(sp / 0.5)] : sp === 1 ? [] : [`atempo=${sp}`])
 

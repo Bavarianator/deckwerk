@@ -8,7 +8,8 @@ export interface VideoInfo { duration: number; w: number; h: number } // w/h so,
 // focus: horizontaler Bildmittelpunkt 0..1; track: Kamerafahrt als Stützpunkte (Quellsekunde, focus), setzt nur der Export (autoFocus), nie die KI
 // speed: Tempo (< 1 Zeitlupe, > 1 Zeitraffer, Ton per atempo); volume: Originalton (0 = stumm, Standard 1); music: Pegel der Hintergrundmusik in diesem
 // Ausschnitt (0–1, fehlt = deck.music.volume); transition: Übergang am Schnitt VOR diesem Ausschnitt (fehlt = weiche Blende nach cutFrames, none = hart)
-export interface Part { start: number; end: number; focus?: number; track?: [t: number, focus: number][]; speed?: number; volume?: number; music?: number; transition?: CutTransition }
+// zoom: Punch-in von Hand (1–1,5, mit dem Zoom des Stils multipliziert); freeze: letztes Bild so viele Sekunden halten (Clip-Zeit, Ton still)
+export interface Part { start: number; end: number; focus?: number; track?: [t: number, focus: number][]; speed?: number; volume?: number; music?: number; transition?: CutTransition; zoom?: number; freeze?: number }
 export const CUT_TRANSITIONS = ['none', 'fade', 'dissolve', 'push', 'wipe', 'circle', 'zoom', 'split', 'stack', 'color'] as const
 export type CutTransition = (typeof CUT_TRANSITIONS)[number]
 // Übergänge als ffmpeg-xfade, an Schnitten (part.transition) und im mp4 zwischen Folien (Folien-transition); none/morph = harter Schnitt.
@@ -17,11 +18,24 @@ export const XFADE: Partial<Record<string, string>> = { fade: 'fade', dissolve: 
 /** Folienwechsel im mp4 (Export und Meldung von export_deck): blend = echte Überblendung, schwarz = über Schwarz, hart = Schnitt.
  *  still = eine der beiden Folien hat kein Video (Zwischentitel): die blenden ohne Überblendung immer über Schwarz. */
 export const joinOf = (t: string, still: boolean): 'blend' | 'schwarz' | 'hart' => (t !== 'color' && XFADE[t] ? 'blend' : t === 'color' || still ? 'schwarz' : 'hart')
-// Einblendung über dem Video: Text oder Bild von start bis end (Quellsekunden wie parts; über Schnitte hinweg nur, wo die Quelle zu sehen ist)
-export const OVERLAY_POS = ['oben', 'mitte', 'unten', 'oben-links', 'oben-rechts'] as const
-export interface Overlay { start: number; end: number; text?: string; image?: string; pos?: (typeof OVERLAY_POS)[number]; size?: 'klein' | 'mittel' | 'gross' }
+// Einblendung über dem Video von start bis end (Quellsekunden wie parts; über Schnitte hinweg nur, wo die Quelle zu sehen ist).
+// Quelle: text (art text/bauchbinde/titel/zahl, sub = zweite Zeile), image, video (stumm, ab Sekunde from) oder slide (Nummer einer ausgeblendeten Folie, 1-basiert);
+// art verpixeln: Bereich box [x, y, w, h] als Anteile des Bildes. pos voll = Cutaway über das ganze Bild (Bild mit langsamem Zoom)
+export const OVERLAY_POS = ['oben', 'mitte', 'unten', 'oben-links', 'oben-rechts', 'unten-links', 'unten-rechts', 'voll'] as const
+export const OVERLAY_ARTS = ['text', 'bauchbinde', 'titel', 'zahl', 'verpixeln'] as const
+export type OverlayArt = (typeof OVERLAY_ARTS)[number]
+export interface Overlay { start: number; end: number; art?: OverlayArt; text?: string; sub?: string; image?: string; video?: string; from?: number; slide?: number; box?: [x: number, y: number, w: number, h: number]; pos?: (typeof OVERLAY_POS)[number]; size?: 'klein' | 'mittel' | 'gross' }
+/** Bild-Einblendung (Bild, Video, Folie) statt ASS-Text */
+export const isMedia = (o: Overlay) => !!(o.image || o.video || o.slide)
+export const MAX_MEDIA = 8 // Medien-Einblendungen je Clip-Folie: jede ist ein eigener Decoder im ffmpeg-Aufruf
+// Farblook je Clip (Export: eq/colorbalance/curves, Vorschau: CSS-filter); auto misst Helligkeit und Kontrast der Quelle
+export const VIDEO_LOOKS = ['neutral', 'warm', 'kuehl', 'kontrast', 'matt', 'sw', 'auto'] as const
+export type Look = (typeof VIDEO_LOOKS)[number]
+export const CAPTION_POS = ['unten', 'mitte', 'oben'] as const
 export const OVERLAY_W = { klein: 0.25, mittel: 0.4, gross: 0.6 } // Bildbreite als Anteil der Videobreite, Standard mittel
 export const SPEED = { min: 0.25, max: 4 }
+export const ZOOM = { min: 1, max: 1.5 }
+export const FREEZE = { min: 0.3, max: 3 }
 export type Captions = 'wort' | 'satz' | 'aus'
 export type Pauses = 'kurz' | 'lassen'
 export type Fit = 'crop' | 'blur' // blur: ganzes Bild mittig auf unscharfem, abgedunkeltem Vollbild-Grund (Querformat in 9:16)
@@ -31,7 +45,8 @@ export type ClipStyle = 'ruhig' | 'lebendig'
 // cuts: harte Bildwechsel der Quelle (s); setzt nur der Export (prepareClips), nie die KI, nicht im Schema
 // ton: klar = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser) für Sprache aus Handy/Webcam; original = unverändert (Standard); bei Musik nie klar
 // cover: Quellsekunde fürs Titelbild (Export legt es als .jpg neben das MP4), post: Text zum Posten – Titel in der ersten Zeile, dann Beschreibung und Hashtags (.txt)
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[] }
+// look: Farblook; stabil: Verwackeln glätten (deshake, nur Export); captionPos: Lage der Untertitel (oben/mitte, wenn unten Wichtiges steht)
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: (typeof CAPTION_POS)[number] }
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
@@ -65,8 +80,9 @@ export const LONG_VIDEO = 600 // s: ab 10 min erst video_highlights, dann nur Fe
 export const FILLERS = /^[\p{P}\s]*(?:äh|ähm|öh|öhm|hm|hmm|mhm|uh|um|uhm|erm)[\p{P}\s]*$/iu
 
 export const speedOf = (p: Part) => Math.min(SPEED.max, Math.max(SPEED.min, p.speed ?? 1))
-/** Länge eines parts im fertigen Clip (s): Quelllänge durch Tempo */
-export const partLen = (p: Part) => Math.max(0, p.end - p.start) / speedOf(p)
+export const freezeOf = (p: Part) => (p.freeze ? Math.min(FREEZE.max, Math.max(FREEZE.min, p.freeze)) : 0)
+/** Länge eines parts im fertigen Clip (s): Quelllänge durch Tempo, dazu das gehaltene Standbild am Ende */
+export const partLen = (p: Part) => Math.max(0, p.end - p.start) / speedOf(p) + freezeOf(p)
 export const partsLength = (parts: Part[]) => parts.reduce((s, p) => s + partLen(p), 0)
 
 /** Quellbereich a–b auf der Zeitachse des fertigen Clips: je part, der ihn schneidet, ein Stück (mit Tempo); aneinanderstoßende Stücke verbunden. */
@@ -76,7 +92,7 @@ export function clipSpans(parts: Part[], a: number, b: number): [number, number]
   for (const p of parts) {
     const s = Math.max(a, p.start), e = Math.min(b, p.end), sp = speedOf(p)
     if (e > s) {
-      const x = off + (s - p.start) / sp, y = off + (e - p.start) / sp, l = out[out.length - 1]
+      const x = off + (s - p.start) / sp, y = off + (e - p.start) / sp + (e >= p.end ? freezeOf(p) : 0), l = out[out.length - 1] // reicht der Bereich bis ans Ende, gilt er auch fürs Standbild
       if (l && x - l[1] < 1e-3) l[1] = y
       else out.push([x, y])
     }
@@ -260,5 +276,8 @@ if (typeof process !== 'undefined' && process.env.DW_VIDEO_SELFTEST) {
   if (FILLERS.test('ähnlich') || FILLERS.test('Hummel') || !FILLERS.test('Ähm...')) throw new Error('FILLERS')
   const sp = clipSpans([{ start: 0, end: 4 }, { start: 10, end: 14, speed: 2 }, { start: 14, end: 16 }], 2, 15)
   if (JSON.stringify(sp) !== '[[2,7]]' || partsLength([{ start: 0, end: 2, speed: 0.5 }]) !== 4) throw new Error('clipSpans/Tempo ' + JSON.stringify(sp))
+  const fz = [{ start: 0, end: 4, freeze: 1 }, { start: 10, end: 12 }]
+  if (partsLength(fz) !== 7 || JSON.stringify(clipSpans(fz, 2, 11)) !== '[[2,6]]' || JSON.stringify(clipSpans(fz, 1, 3)) !== '[[1,3]]') throw new Error('freeze ' + JSON.stringify(clipSpans(fz, 2, 11)))
+  if (Math.abs(clipWords({ duration: 20, lang: 'de', segments: [{ start: 10, end: 11, text: '', words: [w('x', 10.2)] }] }, fz)[0].start - 5.2) > 1e-9) throw new Error('clipWords freeze')
   console.log('video ok')
 }

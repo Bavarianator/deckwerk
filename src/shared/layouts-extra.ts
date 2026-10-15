@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import type { LayoutDef } from './layouts'
 import { MASKS } from './deck'
-import { CUT_TRANSITIONS, MAX_PARTS, OVERLAY_POS, SPEED } from './video'
+import { CAPTION_POS, CUT_TRANSITIONS, FREEZE, MAX_MEDIA, MAX_PARTS, OVERLAY_ARTS, OVERLAY_POS, SPEED, VIDEO_LOOKS, ZOOM } from './video'
 
 // Foto: dasselbe Objekt in allen Layouts. Ein einfacher String wird als { src } akzeptiert (ältere Decks).
 export const FOCI = ['center', 'top', 'bottom', 'left', 'right'] as const
@@ -236,6 +236,8 @@ const clip = z.object({
     volume: z.number().min(0).max(2).optional().describe('Lautstärke des Originaltons: 0 = stumm (nur Musik), 0.5 = leise, 1 = unverändert (Standard), bis 2 lauter'),
     music: z.number().min(0).max(1).optional().describe('Pegel der Hintergrundmusik (deck.music) in diesem Ausschnitt: 0 = aus, 0.25 = dezent (Standard aus deck.music.volume), 0.8 = laut (z. B. mit volume 0 für eine Montage ohne Sprache); wechselt weich'),
     transition: z.enum(CUT_TRANSITIONS).optional().describe('Übergang am Schnitt vor diesem Ausschnitt: fade, dissolve, push, wipe, circle, zoom, split, stack, color (über Schwarz), none = harter Schnitt; weglassen = automatische weiche Blende (Standard, meist richtig). Effekte sparsam: an Szenen- oder Ortswechseln, nicht an Jump-Cuts'),
+    zoom: z.number().min(ZOOM.min).max(ZOOM.max).optional().describe('Punch-in: Bild enger, z. B. 1.15 für eine Pointe oder zur Betonung; ein eigener part mit zoom wirkt wie ein zweiter Kamerawinkel. Standard 1'),
+    freeze: z.number().min(FREEZE.min).max(FREEZE.max).optional().describe('Standbild: letztes Bild des Ausschnitts so viele Sekunden halten (Ton still), z. B. 1 für einen Moment zum Staunen oder unter einer Einblendung; nie mitten im Satz'),
   }).refine((p) => p.end > p.start + 0.2, 'end muss nach start liegen')).min(1).max(MAX_PARTS).describe(`Ausschnitte, nacheinander abgespielt (Jump Cuts), Schnitte an Satzgrenzen. Short: zusammen ideal 55–75 s; ganzes Video kürzen: alles Behaltene, bis ${MAX_PARTS} Ausschnitte; Highlight: der Moment mit Anlauf und Auflösung`),
   hook: z.string().max(70).optional().describe('Einstiegszeile oben in den ersten Sekunden: macht neugierig, ohne Clickbait'),
   captions: z.enum(['wort', 'satz', 'aus']).optional().describe('Untertitel aus dem Transkript (nur im MP4): wort = wenige Wörter, aktuelles Wort in Akzentfarbe (Standard); satz = ganze Zeilen; aus'),
@@ -248,12 +250,27 @@ const clip = z.object({
   overlays: z.array(z.object({
     start: z.number().min(0).describe('Quellsekunde, ab der die Einblendung steht (wie parts)'),
     end: z.number().min(0),
-    text: z.string().min(1).max(80).optional().describe('kurzer Text: Name/Ort (Bauchbinde), Zahl, Stichwort; nie das Gesagte wiederholen (dafür captions)'),
-    image: z.string().optional().describe('Bild: asset://-Pfad (Logo, Foto, Grafik aus dem Anhang oder find_images) oder absoluter Pfad'),
-    pos: z.enum(OVERLAY_POS).optional().describe('Lage: oben, mitte, unten (Standard; bei Untertiteln darüber), oben-links, oben-rechts'),
-    size: z.enum(['klein', 'mittel', 'gross']).optional().describe('Bildbreite: klein 25 %, mittel 40 % (Standard), gross 60 % der Videobreite; Text immer in einer festen Größe'),
-  }).refine((o) => o.end > o.start + 0.3, 'end muss nach start liegen').refine((o) => !!o.text !== !!o.image, 'genau eins von text oder image')).max(30).optional()
-    .describe('Einblendungen über dem Video (nur im MP4 und in der Vorschau): Text oder Bild für einen Quellbereich, blendet weich ein und aus; sichtbar nur dort, wo der Bereich im Clip vorkommt'),
+    art: z.enum(OVERLAY_ARTS).optional().describe('text (Standard): kurzer Text; bauchbinde: Name in text, Funktion/Ort in sub, unten links mit Akzentlinie; titel: Kapiteltitel groß in der Mitte, Bild dahinter abgedunkelt; zahl: große Zahl in text, Erklärung in sub; verpixeln: Bereich box unkenntlich (Gesicht, Kennzeichen, Bildschirm-Daten)'),
+    text: z.string().min(1).max(80).optional().describe('kurzer Text: Name, Ort, Zahl, Kapitel, Stichwort; nie das Gesagte wiederholen (dafür captions)'),
+    sub: z.string().min(1).max(60).optional().describe('zweite Zeile zu text bei bauchbinde, zahl oder titel'),
+    image: z.string().optional().describe('Bild: asset://-Pfad (Logo, Foto, Grafik aus dem Anhang, find_images oder generate_image) oder absoluter Pfad'),
+    video: z.string().optional().describe('zweites Video (asset:// oder Pfad) ohne Ton: Bild-in-Bild (pos Ecke) oder B-Roll über dem Sprecher (pos voll), der Originalton läuft weiter'),
+    from: z.number().min(0).optional().describe('bei video: Sekunde im Einblend-Video, ab der es läuft (Standard 0)'),
+    slide: z.number().int().min(1).optional().describe('Nummer einer ausgeblendeten Folie (hidden: true) dieses Decks, gerendert eingeblendet: Diagramm, KPI, Liste, Zitat aus dem Layout-Katalog; meist pos voll oder mitte'),
+    box: z.tuple([z.number().min(0).max(1), z.number().min(0).max(1), z.number().min(0.02).max(1), z.number().min(0.02).max(1)]).optional().describe('nur bei verpixeln: Bereich [x, y, Breite, Höhe] als Anteile des fertigen Bildes, 0,0 = oben links (aus check_clip/video_frames); steht still'),
+    pos: z.enum(OVERLAY_POS).optional().describe('Lage: oben, mitte, unten (Standard; bei Untertiteln darüber), oben-links, oben-rechts, unten-links, unten-rechts; voll = Bild, Video oder Folie füllt das ganze Bild (Cutaway/B-Roll, Bild mit langsamem Zoom)'),
+    size: z.enum(['klein', 'mittel', 'gross']).optional().describe('Breite von Bild, Video oder Folie: klein 25 %, mittel 40 % (Standard), gross 60 % der Videobreite; Text immer in einer festen Größe'),
+  }).refine((o) => o.end > o.start + 0.3, 'end muss nach start liegen')
+    .refine((o) => (o.art === 'verpixeln' ? !!o.box && !o.text && !o.image && !o.video && !o.slide : [o.text, o.image, o.video, o.slide].filter((x) => x !== undefined).length === 1),
+      'genau eins von text, image, video oder slide (verpixeln: nur box)')
+    .refine((o) => !o.art || o.art === 'verpixeln' || !!o.text, 'bauchbinde, titel und zahl brauchen text')
+    .refine((o) => !o.box || o.art === 'verpixeln', 'box nur bei art verpixeln')
+    .refine((o) => o.box === undefined || (o.box[0] + o.box[2] <= 1.001 && o.box[1] + o.box[3] <= 1.001), 'box ragt aus dem Bild'))
+    .max(30).refine((xs) => xs.filter((o) => o.image || o.video || o.slide).length <= MAX_MEDIA, `höchstens ${MAX_MEDIA} Einblendungen mit Bild, Video oder Folie je Clip`).optional()
+    .describe('Einblendungen über dem Video (nur im MP4 und in der Vorschau): Text, Bauchbinde, Titel, Zahl, Bild, Video, Folie oder Verpixeln für einen Quellbereich, blendet weich ein und aus; sichtbar nur dort, wo der Bereich im Clip vorkommt'),
+  look: z.enum(VIDEO_LOOKS).optional().describe('Farblook des ganzen Clips: neutral (Standard, unverändert), warm, kuehl, kontrast (kräftiger), matt (weich, gedämpft), sw (Schwarzweiß), auto (Helligkeit und Kontrast der Quelle ausgleichen, für zu dunkle oder flaue Handy-Aufnahmen); einer je Video, für alle Clip-Folien gleich'),
+  stabil: z.boolean().optional().describe('true = Verwackeln glätten (Handy aus der Hand, Gehen); nur im Export, kostet Zeit; nie bei Stativ oder Bildschirmaufnahme'),
+  captionPos: z.enum(CAPTION_POS).optional().describe('Lage der Untertitel: unten (Standard), mitte, oben – wenn unten Wichtiges im Bild steht (Tafel, Formel, Produkt)'),
   post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
 })
 
