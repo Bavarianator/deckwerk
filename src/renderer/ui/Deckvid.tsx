@@ -1,13 +1,13 @@
 // Deckvid: Arbeitsansicht für Video-Decks (Folien im Layout clip). Fast alles läuft über die KI (Chat und Ein-Klick-Aufträge);
 // von Hand gibt es nur, was einfacher ist als ein Satz: abspielen, Feinschnitt, Entfernen, Export.
-import { Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Fragment, memo, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, RotateCcw, RotateCw, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, CUT, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type Part } from '../../shared/video'
-import { loadCustomFont } from '../slide'
+import { CLIP_STYLES, CUT, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipSpans, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type Look, type Overlay, type Part } from '../../shared/video'
+import { SlideView, loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
 import { ClipCutter } from './ClipCutter'
@@ -348,6 +348,63 @@ function useSubFace(deck: Deck | null) {
   return { css, weight: bold ? 700 : 400, win: ok?.win ?? (own ? (own.embed ? WIN[own.embed] : undefined) : WIN.Archivo) ?? hhea, hhea }
 }
 
+// Farblook der Vorschau als CSS-filter aufs Video (der Export nimmt ffmpeg-Filter mit derselben Absicht); auto misst erst der Export
+const LOOK_CSS: Record<Look, string> = {
+  neutral: '', warm: 'sepia(.15) saturate(1.1)', kuehl: 'hue-rotate(-8deg) saturate(.95) brightness(1.02)', kontrast: 'contrast(1.12) saturate(1.15)',
+  matt: 'contrast(.9) brightness(1.04) saturate(.85)', sw: 'grayscale(1) contrast(1.05)', auto: '',
+}
+
+// Einblendungs-Video stumm, synchron zur Clipzeit: t = Sekunde im Einblend-Video; beim Abspielen erst ab 0,3 s Abweichung nachstellen (sonst ruckelt es)
+function OvVideo({ src, t, run, w }: { src: string; t: number; run: boolean; w?: string }) {
+  const ref = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const v = ref.current
+    if (!v) return
+    if (Math.abs(v.currentTime - t) > (run ? 0.3 : 0.05)) v.currentTime = t
+    if (run && v.paused) void v.play().catch(() => {})
+    else if (!run && !v.paused) v.pause()
+  })
+  return <video ref={ref} src={clipUrl(src)} muted playsInline preload="auto" style={{ width: w }} />
+}
+
+// Ausgeblendete Folie n (1-basiert) als Einblendung; memo, weil SlideView bei jedem Rendern misst und die Bühne je Bild neu rendert
+const OvSlide = memo(function OvSlide({ deck, n, w }: { deck: Deck | null; n: number; w?: string }) {
+  const ref = useRef<HTMLDivElement>(null), [px, setPx] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setPx(el.clientWidth))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return <div ref={ref} className="dv-ov-slide" style={{ width: w }}>{deck?.slides[n - 1]?.hidden && px > 0 && <SlideView deck={deck} index={n - 1} width={px} />}</div> // fehlt sie oder ist sichtbar: nichts (meldet die Clip-Prüfung)
+})
+
+// Einblendung wie im Export: on = ihre Quellzeit ist gerade im Clip zu sehen, at = Sekunden seit Beginn des Stücks, len = seine Länge (langsamer Zoom bei voll)
+function Ov({ o, on, at, len, playing, deck }: { o: Overlay; on: boolean; at: number; len: number; playing: boolean; deck: Deck | null }) {
+  const art = o.art ?? 'text', op = { opacity: on ? 1 : 0 }
+  if (art === 'verpixeln') {
+    const [x, y, w, h] = o.box ?? [0, 0, 0, 0]
+    return <div className="dv-pix" style={{ ...op, left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` }} aria-hidden />
+  }
+  const pos = o.pos ?? (art === 'bauchbinde' ? 'unten-links' : art === 'titel' || art === 'zahl' ? 'mitte' : 'unten')
+  const w = pos === 'voll' ? undefined : `${OVERLAY_W[o.size ?? 'mittel'] * 100}cqw`
+  const rule = <i className="dv-rule" />, sub = o.sub && <small>{o.sub}</small>
+  const body = o.image ? <img src={clipUrl(o.image)} alt="" style={{ width: w, '--dv-kb': Math.min(1, at / Math.max(0.001, len)) } as CSSProperties} />
+    : o.video ? <OvVideo src={o.video} t={(o.from ?? 0) + at} run={on && playing} w={w} />
+    : o.slide ? <OvSlide deck={deck} n={o.slide} w={w} />
+    : art === 'bauchbinde' ? <>{rule}<b>{o.text}</b>{sub}</>
+    : art === 'zahl' ? <><b>{o.text}</b>{rule}{sub}</>
+    : art === 'titel' ? <><b>{o.text}</b>{sub}</>
+    : o.text
+  return (
+    <>
+      {art === 'titel' && <div className="dv-dim" style={op} aria-hidden />}
+      <div className={`dv-ov ${pos} ${art}${on ? ' on' : ''}`} style={op} aria-hidden>{body}</div>
+    </>
+  )
+}
+
 interface StageProps {
   clip: ClipSlide; n: number; total: number; here: string; size: Size; accent: string; deck: Deck | null
   parts: ClipContent['parts'] // alle Ausschnitte aus derselben Quelle, für die Zeitleiste
@@ -367,7 +424,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     const v = videoRef.current, cv = fadeRef.current
     if (!v || !cv || !v.videoWidth || next.transition === 'none') return
     const st = getComputedStyle(v)
-    Object.assign(cv.style, { objectFit: st.objectFit, objectPosition: st.objectPosition, transform: st.transform })
+    Object.assign(cv.style, { objectFit: st.objectFit, objectPosition: st.objectPosition, transform: st.transform, filter: st.filter })
     cv.width = v.videoWidth; cv.height = v.videoHeight
     cv.getContext('2d')?.drawImage(v, 0, 0)
     cv.getAnimations().forEach((a) => a.cancel())
@@ -453,15 +510,16 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
     '--dv-ov': `${cq((m * 0.05) / face.win)}cqw`,
-    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))),
+    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) * (c.parts[player.part]?.zoom ?? 1), // Punch-in mal Stil-Zoom wie im Export
+    '--dv-look': LOOK_CSS[c.look ?? 'neutral'] || 'none',
     ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar }),
   } as CSSProperties
   const focus = c.parts.find((x) => player.src >= x.start && player.src < x.end)?.focus ?? c.parts[0].focus
   const to = cached?.duration || Math.max(...parts.map((x) => x.end))
   const others = parts.length > c.parts.length // weitere Clips aus derselben Quelle
   const n1 = c.parts.length
-  // Einblendungen nur, wo ihre Quellzeit im Clip zu sehen ist (im laufenden Ausschnitt)
-  const at = c.parts[player.part], seen = !!at && player.src >= at.start && player.src < at.end
+  // Einblendungen nur, wo ihre Quellzeit im Clip zu sehen ist: Stücke in Clipzeit wie im Export (mit Tempo und Standbild)
+  const spans = useMemo(() => (c.overlays ?? []).map((o) => clipSpans(c.parts, o.start, o.end)), [c])
 
   // Hook von Hand: Enter/Blur speichert, Escape verwirft (skip, weil das Verlassen des Felds auch blur auslöst)
   const [edit, setEdit] = useState<string | null>(null)
@@ -490,16 +548,15 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
         <div className="dv-row">
           <div className="dv-view">
             <div className="dv-stage">
-              <div className={`dv-screen${live ? ' live' : ''}`} style={screen}>
+              <div className={`dv-screen${live ? ' live' : ''}${c.captionPos && c.captionPos !== 'unten' ? ` cap-${c.captionPos}` : ''}`} style={screen}>
                 <ClipVideo video={c.video} aspect={size.w / size.h} focus={focus} fit={c.fit} still={c.parts[0].start} videoRef={videoRef}
                   onClick={player.toggle} onBad={() => setBad(true)}>
                   {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
                   {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
-                  {c.overlays?.map((o, k) => (
-                    <div key={k} className={`dv-ov ${o.pos ?? 'unten'}`} style={{ opacity: seen && player.src >= o.start && player.src < o.end ? 1 : 0 }} aria-hidden>
-                      {o.image ? <img src={clipUrl(o.image)} alt="" style={{ width: `${OVERLAY_W[o.size ?? 'mittel'] * 100}cqw` }} /> : o.text}
-                    </div>
-                  ))}
+                  {c.overlays?.map((o, k) => {
+                    const sp = spans[k]?.find(([a, b]) => player.t >= a && player.t < b)
+                    return <Ov key={k} o={o} on={!!sp} at={sp ? player.t - sp[0] : 0} len={sp ? sp[1] - sp[0] : 1} playing={player.playing} deck={deck} />
+                  })}
                   {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
                   <canvas ref={fadeRef} className="dv-fade" aria-hidden />
                   {!player.playing && !bad && <span className="dv-play" aria-hidden><Play size={26} fill="currentColor" /></span>}
@@ -540,6 +597,14 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                 [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund']])}
               {opt('Ton', c.ton ?? 'original', (v) => onContent({ ton: v === 'original' ? undefined : v }),
                 [['original', 'Original', 'Ton unverändert'], ['klar', 'Klar', 'Sprache aufbereiten: Rauschen weg, gleichmäßig laut (im Export). Nicht bei Musik']])}
+              {opt('Look', c.look ?? 'neutral', (v) => onContent({ look: v === 'neutral' ? undefined : v }),
+                [['neutral', 'Neutral', 'Farben unverändert'], ['warm', 'Warm'], ['kuehl', 'Kühl'], ['kontrast', 'Kontrast', 'Kräftiger'], ['matt', 'Matt', 'Weich, gedämpft'], ['sw', 'S/W', 'Schwarzweiß'],
+                  ['auto', 'Auto', 'Helligkeit und Kontrast ausgleichen (wirkt nur im Export)']])}
+              {opt('Untertitel-Lage', c.captionPos ?? 'unten', (v) => onContent({ captionPos: v === 'unten' ? undefined : v }),
+                [['unten', 'Unten'], ['mitte', 'Mitte'], ['oben', 'Oben', 'Wenn unten Wichtiges im Bild steht']])}
+              {opt('Stabilisieren', c.stabil ? 'an' : 'aus', (v) => onContent({ stabil: v === 'an' || undefined }),
+                [['aus', 'Aus'], ['an', 'An', 'Verwackeln glätten (nur im Export, kostet Zeit)']])}
+              {(c.stabil || c.look === 'auto') && <p className="dv-note">{c.stabil && c.look === 'auto' ? 'Stabilisieren und Look „Auto“ wirken' : c.stabil ? 'Stabilisieren wirkt' : 'Look „Auto“ wirkt'} nur im Export.</p>}
             </div>
 
             <div className="dv-btns">

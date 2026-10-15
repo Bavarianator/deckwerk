@@ -47,18 +47,46 @@
 .dv-ov.oben, .dv-ov.oben-links, .dv-ov.oben-rechts { top: 4%; }
 .dv-ov.mitte { top: 50%; transform: translateY(-50%); }
 .dv-ov.unten { bottom: calc(var(--dv-sub-y) + var(--dv-sub) * var(--dv-lh) + 4%); } /* über der Untertitelzeile */
-.dv-ov.oben-links { text-align: left; }
-.dv-ov.oben-rechts { text-align: right; }
+.dv-ov.unten-links, .dv-ov.unten-rechts { bottom: calc(var(--dv-sub-y) + var(--dv-sub) * var(--dv-lh) + 4%); }
+.dv-ov.oben-links, .dv-ov.unten-links { text-align: left; }
+.dv-ov.oben-rechts, .dv-ov.unten-rechts { text-align: right; }
+.dv-ov.voll { inset: 0; display: grid; place-items: center; }
+.dv-ov.voll :is(img, video, .dv-ov-slide) { width: 100%; height: 100%; object-fit: cover; }
+.dv-ov.voll img { transform: scale(calc(1 + 0.06 * var(--dv-kb, 0))); } /* langsamer Zoom über die Dauer der Einblendung (--dv-kb 0..1 aus der Clipzeit) */
+.dv-ov video, .dv-ov-slide { display: inline-block; vertical-align: top; }
+/* Arten: Name/Zahl/Titel fett in der Untertitelschrift, zweite Zeile normal; Akzent nur als kurze Linie */
+.dv-ov :is(b, small) { display: block; font-weight: inherit; }
+.dv-ov small { font-size: 0.6em; font-weight: 400; }
+.dv-rule { display: inline-block; width: 2.4em; height: max(2px, 0.06em); background: var(--dv-accent); vertical-align: top; }
+.dv-ov.bauchbinde { transform: translateX(-3%); transition: opacity 200ms linear, transform 400ms ease-out; }
+.dv-ov.bauchbinde.unten-rechts { transform: translateX(3%); }
+.dv-ov.bauchbinde.on { transform: none; }
+.dv-ov.bauchbinde .dv-rule { margin-bottom: 0.25em; }
+.dv-ov.titel { font-size: calc(var(--dv-ov) * 1.8); }
+.dv-ov.titel small { margin-top: 0.3em; font-size: 0.45em; }
+.dv-ov.zahl b { font-size: calc(var(--dv-ov) * 3.2); line-height: 1; }
+.dv-ov.zahl .dv-rule { margin: 0.3em 0; }
+.dv-ov.mitte.bauchbinde, .dv-ov.mitte.bauchbinde.on { transform: translateY(-50%); }
+.dv-dim { position: absolute; inset: 0; z-index: 1; background: rgb(0 0 0 / 0.35); pointer-events: none; transition: opacity 200ms linear; } /* hinter einem Titel */
+.dv-pix { position: absolute; z-index: 1; backdrop-filter: blur(1.2cqw); pointer-events: none; transition: opacity 200ms linear; } /* verpixeln: Bereich als Anteile der Bühne */
+/* Untertitel-Lage (captionPos): oben unter dem Hook; Einblendungen unten rücken dann auf die Untertitelhöhe */
+.dv-screen.cap-mitte .dv-sub { bottom: auto; top: 50%; transform: translateY(-50%); }
+.dv-screen.cap-oben .dv-sub { bottom: auto; top: calc(var(--dv-hook-y) + 2 * var(--dv-hook) * var(--dv-lh) + 3%); }
+.dv-screen:is(.cap-mitte, .cap-oben) .dv-ov:is(.unten, .unten-links, .unten-rechts) { bottom: var(--dv-sub-y); }
 
 /* Stil „lebendig“: Werte kommen als Variablen aus FX (video.ts), damit Vorschau und MP4 gleich aussehen */
-.dv-screen .clip-video video { transform: scale(var(--dv-zoom, 1)); } /* Zoom-Wechsel an Schnitten (beide Stile); hart, die Überblendung macht nur der Export */
+.dv-screen .clip-video video { transform: scale(var(--dv-zoom, 1)); filter: var(--dv-look, none); } /* Zoom-Wechsel an Schnitten (beide Stile); hart, die Überblendung macht nur der Export */
 .dv-screen.live .dv-sub em { display: inline-block; animation: dv-pop var(--dv-pop-ms) ease-out; }
 .dv-screen.live .dv-hook { right: auto; left: calc(8% - var(--dv-pad)); max-width: calc(84% + 2 * var(--dv-pad)); opacity: var(--dv-hook-o, 1); animation: dv-fade var(--dv-fade) linear; } /* Ausblenden: --dv-hook-o aus der Zeit; Textbreite 84 % wie MarginL/R im ASS */
 .dv-screen.live .dv-hook span { padding: var(--dv-pad-y) var(--dv-pad); background: rgb(0 0 0 / 0.65); box-decoration-break: clone; -webkit-box-decoration-break: clone; } /* je Zeile eine Fläche wie BorderStyle 3 */
 .dv-bar { position: absolute; left: 0; bottom: 0; z-index: 1; height: max(3px, calc(100cqw / var(--dv-ratio) * var(--dv-bar))); background: var(--dv-accent); pointer-events: none; }
 @keyframes dv-pop { from { transform: scale(var(--dv-pop)); } }
 @keyframes dv-fade { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .dv-screen.live .dv-sub em, .dv-screen.live .dv-hook { animation: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .dv-screen.live .dv-sub em, .dv-screen.live .dv-hook { animation: none; opacity: 1; }
+  .dv-ov.voll img { transform: none; }
+  .dv-ov.bauchbinde { transition: opacity 200ms linear; }
+}
 .dv-transport { display: flex; align-items: center; gap: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .dv-note { font-size: 12px; color: var(--faint); }
 .dv-acts { align-self: stretch; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -77,6 +105,7 @@
 .dv-opts { display: flex; flex-direction: column; gap: 10px; }
 .dv-opt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .dv-opt > span { color: var(--muted); font-size: 12px; }
+.dv-opt .seg { flex-wrap: wrap; } /* Look hat sieben Stufen */
 .dv-opt .seg button { padding: 0 12px; }
 .dv-btns { display: flex; align-items: center; gap: 8px; }
 .dv-quiet { color: var(--muted); }
