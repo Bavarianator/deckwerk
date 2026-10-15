@@ -271,7 +271,8 @@ export function createEngine(): Engine {
       if (format === 'mp4' || format === 'clips') {
         // Dasselbe Video schon in Arbeit (Knopf „Exportieren“ und export_deck der KI): der zweite Auftrag hängt sich an, gleicher Fortschritt statt
         // eines zweiten Durchgangs hinter dem ersten (12.10.: KI-Export stand 25 min bei 5 % in der Warteschlange und hätte danach alles neu gerechnet)
-        const key = createHash('sha1').update(JSON.stringify([deck, format, outDir])).digest('hex'), same = videoRuns.get(key)
+        // volles Deck hashen: ausgeblendete Folien stecken als Einblendung (overlays.slide) im Video
+        const key = createHash('sha1').update(JSON.stringify([all, format, outDir])).digest('hex'), same = videoRuns.get(key)
         if (same) {
           if (onProgress) { same.listeners.add(onProgress); onProgress(same.pct) }
           return same.done

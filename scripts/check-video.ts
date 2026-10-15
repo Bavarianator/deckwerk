@@ -149,6 +149,9 @@ async function main() {
       near(fzPcm.length / 16000, partsLength(padded), 1 / 30, 'freeze: Tonlänge')
       assert.ok(diff(await img(fz.file, fs + 0.15), await img(fz.file, fs + 0.75)) < 2, 'freeze: Bild bewegt sich im Standbild')
       assert.ok(diff(await img(fz.file, fs - 0.6), await img(fz.file, fs - 0.1)) > 5, 'freeze: Bild steht schon vorher')
+      // mit Kamerafahrt: der Zuschnitt schwenkt im Standbild nicht weiter
+      const fzt = await seg1('pro-freeze-track', [{ start: 0.5, end: 2, freeze: 1, track: [[0.5, 0.2], [3.5, 0.8]] }])
+      assert.ok(diff(await img(fzt.file, fs + 0.15), await img(fzt.file, fs + 0.75)) < 2, 'freeze+track: Ausschnitt fährt im Standbild weiter')
       assert.ok(dbOf(fzPcm, fs + 0.15, fs + 0.8) < -60, `freeze: Ton im Standbild ${dbOf(fzPcm, fs + 0.15, fs + 0.8).toFixed(1)} dB`)
       // Bauchbinde, Titel, Zahl in der ASS; Text-Einblendung wie bisher; Lagen unten-links/-rechts unten (über den Untertiteln)
       const big = { w: 1080, h: 1920 }, base = { size: big, font: 'Archivo', bold: true, accent: '#FF8800', hookDur: 4, cues: [], mode: 'aus' as const }

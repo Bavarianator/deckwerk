@@ -256,7 +256,8 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
       // Tempo: Zuschnitt (Kamerafahrt in Quellzeit) vor dem Umrechnen der Zeitstempel; ohne Tempo die alte Reihenfolge
       // stabil: deshake vor dem Zuschnitt (braucht das ganze Bild); kostet etwa so viel Rechenzeit wie das Encoden selbst
       const ds = job.stabil ? 'deshake,' : ''
-      const v = sp[i] === 1 ? `[${i}:v]${ds}setpts=PTS-STARTPTS,fps=30,${end},${fit},` : `[${i}:v]${ds}setpts=PTS-STARTPTS,${fit},setpts=PTS/${sp[i]},fps=30,${end},`
+      // Standbild: tpad erst hinter dem Zuschnitt, sonst schwenkte eine Kamerafahrt (track, Ausdruck in t) im Standbild weiter
+      const v = sp[i] === 1 ? (F ? `[${i}:v]${ds}setpts=PTS-STARTPTS,fps=30,${fit},${end},` : `[${i}:v]${ds}setpts=PTS-STARTPTS,fps=30,${end},${fit},`) : `[${i}:v]${ds}setpts=PTS-STARTPTS,${fit},setpts=PTS/${sp[i]},fps=30,${end},`
       return `${v}setsar=1,format=yuv420p[v${i}];` +
         `${a}aformat=sample_rates=48000:channel_layouts=stereo${fade}[a${i}]`
     })
@@ -307,7 +308,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const ro = { cwd: dir, duration: dur, onProgress: onProgress && ((pct: number) => onProgress(Math.floor(((done + (dur * pct) / 100) / total) * 100))) }
     await ffx(args, ro, o.phone)
     const music = ps.flatMap((p, i): [number, number, number][] => (p.music === undefined ? [] : [[at[i], at[i + 1], p.music]]))
-    segs.push({ file, dur, ...(music.length ? { music } : {}), ...(words.length ? { cues: cues(words, 'satz') } : {}) }) // SRT immer in Zeilen, auch bei wort
+    segs.push({ file, dur, ...(music.length ? { music } : {}), ...(words.length ? { cues: cues(words, 'satz') } : {}) }) // SRT (nur mit Untertiteln, captions ≠ aus und Transkript da) immer in Zeilen, auch bei wort
     done += dur
   }
   return segs
