@@ -82,7 +82,7 @@ def mapped(sd, hf, check):
 def main():
     model = nemo_asr.models.ASRModel.restore_from(fetch(NV, NV_NEMO), map_location='cpu')
     model.eval()
-    sd = model.state_dict()
+    sd = {k: v.clone() for k, v in model.state_dict().items()}  # Kopie: state_dict() teilt den Speicher mit dem Modell
     _, rest = mapped(sd, load_file(fetch(NV, NV_HF)), check=True)
     print(f'Zuordnung geprüft: {len(sd)} Tensoren der .nemo bitgleich aus NVIDIAs HF-Checkpoint, übrig: {rest}')
     ultra, rest = mapped(sd, load_file(fetch(ULTRA, ULTRA_HF)), check=False)
