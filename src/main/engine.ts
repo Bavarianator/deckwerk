@@ -83,7 +83,7 @@ export function createEngine(): Engine {
   })
 
   class TagFailed extends Error { constructor(cause: unknown) { super('tag', { cause }) } } // Ereigniserkennung gescheitert, nicht der Rest
-  type Chunk = { engine: 'parakeet' | 'whisper'; segments: Segment[] }
+  type Chunk = { engine: 'parakeet' | 'whisper'; model?: 'de-schnell'; segments: Segment[] } // model: mit „Deutsch schnell“ erkannt (fehlt = Parakeet)
   let whisperOnly = false // sherpa grundsätzlich nicht nutzbar: Rest der Sitzung mit Whisper
   const wantFor = (lang?: string) => engineFor(lang, PARAKEET_LANGS, whisperOnly)
   // „Deutsch schnell“ (Einstellung) nur für Deutsch: Ohne lang (Export-Untertitel, transcribe_video ohne lang, Transkript-lang „auto“)
@@ -112,7 +112,8 @@ export function createEngine(): Engine {
     if (want === 'whisper' || whisperOnly) return whisper()
     try {
       const phone = (await phoneNow())?.serial
-      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone, model: asrModel(lang) }), k) }
+      const model = asrModel(lang)
+      return { engine: 'parakeet', ...(model === 'de-schnell' ? { model } : {}), segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone, model }), k) }
     } catch (e) {
       if ((e as { code?: string }).code !== 'SHERPA_UNAVAILABLE') throw e
       console.warn('[video] sherpa-onnx nicht nutzbar, Spracherkennung mit Whisper:', (e as Error).message)
@@ -128,7 +129,7 @@ export function createEngine(): Engine {
     const all = chunksIn([[0, duration]], duration) // 0 … n−1, Index = k
     const have = legacy ? [] : await Promise.all(all.map((k) => readJson<Chunk>(`${base}.t${k}.json`)))
     // fits fragt whisperOnly bei jedem Aufruf neu: fällt sherpa mitten im Lauf aus, passen schon gecachte Whisper-Chunks
-    const want = wantFor(lang), valid = (c: Chunk | null) => !!c && Array.isArray(c.segments), fits = (c: Chunk | null) => valid(c) && (!wantFor(lang) || c!.engine === wantFor(lang))
+    const want = wantFor(lang), valid = (c: Chunk | null) => !!c && Array.isArray(c.segments), fits = (c: Chunk | null) => valid(c) && (!wantFor(lang) || c!.engine === wantFor(lang)) && !(c!.model === 'de-schnell' && asrModel(lang) === 'parakeet') // zurück auf „Genau“: schnell Erkanntes neu rechnen, umgekehrt bleibt Parakeet
     const missing = legacy ? [] : chunksIn(ranges ?? [[0, duration]], duration).filter((k) => !fits(have[k]))
     return { duration, base, legacy, all, have, want, valid, fits, missing }
   }

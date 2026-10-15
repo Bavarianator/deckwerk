@@ -69,7 +69,7 @@ export function AllgemeinSection({ go }: SectionProps) {
             onChange={(on) => { setPhone((p) => p && { ...p, on }); window.api.setPhone(on).catch(() => setPhone((p) => p && { ...p, on: !on })) }}
             hint={`Ist ein Handy verbunden, laufen Spracherkennung und Video-Export automatisch dort, sonst auf dem PC. Ein aktuelles Handy rechnet etwa fünfmal so schnell wie ein einfacher PC. Handy per USB anschließen und in den Entwickleroptionen USB-Debugging erlauben. Beim ersten Mal überträgt Deckwerk Sprachmodell und ffmpeg (zusammen rund 800 MB), für den Export einmal das Quellvideo (die zwei zuletzt genutzten bleiben auf dem Handy). ${phone?.device ? `Verbunden: ${phone.device}.` : 'Gerade ist kein Handy verbunden, dann rechnet der PC.'}`} />
         </div>
-        <div role="radiogroup" aria-label="Spracherkennung">
+        <div role="radiogroup" aria-label="Spracherkennung" style={{ display: 'flex', flexDirection: 'column' }}>
           {ASR_MODELS.map((m) => (
             <button key={m.id} type="button" role="radio" aria-checked={asr === m.id} className={`setup-opt ${asr === m.id ? 'on' : ''}`}
               onClick={() => { const was = asr; setAsr(m.id); window.api.setAsrModel(m.id).catch(() => setAsr(was)) }}>
