@@ -26,7 +26,9 @@ const SHERPA = [`https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8
 const LIBS = ['libsherpa-onnx-c-api.so', 'libsherpa-onnx-cxx-api.so', 'libonnxruntime.so']
 const TERMUX = 'https://packages.termux.dev/apt/termux-main/'
 const BUNDLE = ['sherpa-onnx-offline', ...LIBS, 'libc++_shared.so']
-const PARAKEET = ['encoder.int8.onnx', 'decoder.int8.onnx', 'joiner.int8.onnx', 'tokens.txt']
+const ASR = ['encoder.int8.onnx', 'decoder.int8.onnx', 'joiner.int8.onnx', 'tokens.txt']
+// Modellordner auf dem Handy, relativ zu PHONE_DIR: Parakeet liegt seit der ersten Version direkt darin (keine Migration), andere Modelle in Unterordnern
+const sub = (dir: string) => (dir === 'parakeet-v3' ? '' : `${dir}/`)
 
 /** Verbundene Geräte aus `adb devices -l` (nur freigegebene, nicht „unauthorized“) */
 export function parseDevices(out: string): { serial: string; model: string }[] {
@@ -75,17 +77,14 @@ async function bundle(models: string): Promise<string> {
   }
 }
 
-/** Programm, Bibliotheken und Parakeet aufs Handy, was dort fehlt oder eine andere Größe hat (abgebrochene Übertragung).
- *  Beim ersten Mal ~700 MB: per USB etwa 30 s. */
-export async function ensurePhone(serial: string, models: string): Promise<void> {
-  const dir = await bundle(models)
-  const want = [...BUNDLE.map((f) => join(dir, f)), ...PARAKEET.map((f) => join(models, 'parakeet-v3', f))]
-  const { stdout } = await adb(serial, 'shell', `mkdir -p ${PHONE_DIR} && cd ${PHONE_DIR} && stat -c '%n %s' * 2>/dev/null; true`)
+/** Programm, Bibliotheken und das Erkennungsmodell (Ordner model unter models) aufs Handy, was dort fehlt oder eine andere
+ *  Größe hat (abgebrochene Übertragung). Beim ersten Mal ~700 MB (Parakeet): per USB etwa 30 s. */
+export async function ensurePhone(serial: string, models: string, model: string): Promise<void> {
+  const dir = await bundle(models), p = sub(model)
+  const want = [...BUNDLE.map((f) => [join(dir, f), f]), ...ASR.map((f) => [join(models, model, f), p + f])]
+  const { stdout } = await adb(serial, 'shell', `mkdir -p ${PHONE_DIR}/${p} && cd ${PHONE_DIR} && stat -c '%n %s' * ${p ? `${p}*` : ''} 2>/dev/null; true`)
   const have = new Map(stdout.split('\n').map((l) => l.trim().split(' ') as [string, string]))
-  for (const f of want) {
-    const name = f.split('/').pop()!
-    if (Number(have.get(name)) !== statSync(f).size) await adb(serial, 'push', f, `${PHONE_DIR}/${name}`)
-  }
+  for (const [f, name] of want) if (Number(have.get(name)) !== statSync(f).size) await adb(serial, 'push', f, `${PHONE_DIR}/${name}`)
   await adb(serial, 'shell', `chmod 755 ${PHONE_DIR}/sherpa-onnx-offline`)
 }
 
@@ -106,9 +105,9 @@ export const parseResults = (stdout: string): PhoneResult[] =>
 // Sekunden Laufzeit (Übertragen, Laden, Erkennen) je Sekunde Audio, nach jedem Lauf gemessen; Start: S20+ ~0,1–0,2
 let phoneRtf = 0.2
 /** Sprachstücke (16 kHz mono f32) auf dem Handy erkennen, ein Programmlauf (Modell einmal laden) für alle */
-export async function phoneDecode(serial: string, parts: Float32Array[], onProgress?: (pct: number) => void): Promise<PhoneResult[]> {
+export async function phoneDecode(serial: string, model: string, parts: Float32Array[], onProgress?: (pct: number) => void): Promise<PhoneResult[]> {
   if (!parts.length) return []
-  const local = await mkdtemp(join(tmpdir(), 'deckwerk-phone-')), remote = `${PHONE_DIR}/job-${process.pid}`
+  const local = await mkdtemp(join(tmpdir(), 'deckwerk-phone-')), remote = `${PHONE_DIR}/job-${process.pid}`, p = sub(model)
   // ponytail: Fortschritt geschätzt (Laufzeit / erwartete Dauer, höchstens 95 %), weil sherpa alle Ergebnisse erst am Ende ausgibt;
   // echte Schritte gingen nur mit mehreren Läufen, die jedes Mal das Modell neu laden
   const secs = parts.reduce((s, p) => s + p.length, 0) / 16000, t0 = Date.now()
@@ -123,7 +122,7 @@ export async function phoneDecode(serial: string, parts: Float32Array[], onProgr
     const names = (await readdir(local)).sort()
     await adb(serial, 'shell', `rm -rf ${remote} && mkdir -p ${remote}`)
     await adb(serial, 'push', ...names.map((n) => join(local, n)), remote)
-    const { stdout } = await adb(serial, 'shell', `cd ${PHONE_DIR} && LD_LIBRARY_PATH=. ./sherpa-onnx-offline --tokens=tokens.txt --encoder=encoder.int8.onnx --decoder=decoder.int8.onnx --joiner=joiner.int8.onnx --model-type=nemo_transducer --num-threads=4 ${names.map((n) => `${remote}/${n}`).join(' ')} 2>/dev/null`)
+    const { stdout } = await adb(serial, 'shell', `cd ${PHONE_DIR} && LD_LIBRARY_PATH=. ./sherpa-onnx-offline --tokens=${p}tokens.txt --encoder=${p}encoder.int8.onnx --decoder=${p}decoder.int8.onnx --joiner=${p}joiner.int8.onnx --model-type=nemo_transducer --num-threads=4 ${names.map((n) => `${remote}/${n}`).join(' ')} 2>/dev/null`)
     const out = parseResults(stdout)
     if (out.length !== parts.length) throw new Error(`Handy lieferte ${out.length} von ${parts.length} Ergebnissen`)
     if (secs >= 30) phoneRtf = Math.min(1, (Date.now() - t0) / 1000 / secs) // kurze Läufe: Fixkosten (Laden) verzerren

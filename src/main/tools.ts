@@ -972,7 +972,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         video: videoInput,
         from: z.number().min(0).optional().describe('Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)'),
         to: z.number().min(0).optional().describe('Bereich bis zu dieser Sekunde'),
-        lang: z.string().regex(/^[a-z]{2}$/).optional().describe('Sprache als ISO-639-1-Code (de, en, ja …). Weglassen = Parakeet, der nur die 25 europäischen Sprachen kennt; bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) lang setzen – dann Whisper'),
+        lang: z.string().regex(/^[a-z]{2}$/).optional().describe('Sprache als ISO-639-1-Code (de, en, ja …). Weglassen = Parakeet, der nur die 25 europäischen Sprachen kennt; bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) lang setzen – dann Whisper. Bei nicht deutschem Video lang immer setzen: Ist in den Einstellungen „Deutsch schnell“ gewählt, nimmt es ohne lang das rein deutsche Modell'),
         speakers: z.boolean().optional().describe('true = Sprecher unterscheiden (S1, S2 … je Zeile), für Podcasts, Interviews und Gespräche'),
         all: z.boolean().optional().describe('true = auch über 10 min, z. B. das ganze Video (Fulltime oder langes Video aus einer Quelle bis ~45 min; Streams über video_highlights mit minutes)'),
       }),
