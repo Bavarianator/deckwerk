@@ -113,6 +113,8 @@ export function Deckvid(p: Props) {
   const [menu, setMenu] = useState(false)
   const [cutting, setCutting] = useState(false)
   const box = useRef<HTMLDivElement>(null)
+  // Ausgeblendete Folie gewählt (z. B. die erste, die nur als Einblendung dient): zur ersten sichtbaren springen
+  useEffect(() => { const j = slides.findIndex((s) => !s.hidden); if (slides[index]?.hidden && j >= 0) p.onSelect(j) }, [index, slides]) // eslint-disable-line react-hooks/exhaustive-deps
   const list = useRef<HTMLElement>(null)
   useEffect(() => {
     if (!menu) return
@@ -206,7 +208,7 @@ export function Deckvid(p: Props) {
       <div className="dv">
         <nav className="dv-list" aria-label="Clips" ref={list}>
           {clips.length > 0 && <div className="dv-list-head"><b>{wide ? 'Ablauf' : 'Shorts'}</b><span>{clips.length} · {mmss(clips.reduce((t, s) => t + partsLength(s.content.parts), 0))}</span></div>}
-          {slides.map((s, i) => isClip(s) ? (
+          {slides.map((s, i) => s.hidden ? null : isClip(s) ? ( // ausgeblendet: nicht im Video (Folien als Einblendung, overlays.slide)
             <button key={s.id} className="dv-item" aria-current={i === index} onClick={() => p.onSelect(i)}>
               <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${clipUrl(s.content.video)}?frame=${s.content.cover ?? s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
               <span><b>{s.content.hook || `Clip ${no(s)}`}</b><small>{mmss(partsLength(s.content.parts))}<Flag xs={issues[s.id]} /></small></span>
