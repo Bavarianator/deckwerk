@@ -27,8 +27,8 @@ const LIBS = ['libsherpa-onnx-c-api.so', 'libsherpa-onnx-cxx-api.so', 'libonnxru
 const TERMUX = 'https://packages.termux.dev/apt/termux-main/'
 const BUNDLE = ['sherpa-onnx-offline', ...LIBS, 'libc++_shared.so']
 const ASR = ['encoder.int8.onnx', 'decoder.int8.onnx', 'joiner.int8.onnx', 'tokens.txt']
-// Modellordner auf dem Handy, relativ zu PHONE_DIR: Parakeet liegt seit der ersten Version direkt darin (keine Migration), andere Modelle in Unterordnern
-const sub = (dir: string) => (dir === 'parakeet-v3' ? '' : `${dir}/`)
+// Modellordner auf dem Handy, relativ zu PHONE_DIR (bis v0.2.4 lag Parakeet v3 direkt darin, ensurePhone räumt es weg)
+const sub = (dir: string) => `${dir}/`
 
 /** Verbundene Geräte aus `adb devices -l` (nur freigegebene, nicht „unauthorized“) */
 export function parseDevices(out: string): { serial: string; model: string }[] {
@@ -78,11 +78,11 @@ async function bundle(models: string): Promise<string> {
 }
 
 /** Programm, Bibliotheken und das Erkennungsmodell (Ordner model unter models) aufs Handy, was dort fehlt oder eine andere
- *  Größe hat (abgebrochene Übertragung). Beim ersten Mal ~700 MB (Parakeet): per USB etwa 30 s. */
+ *  Größe hat (abgebrochene Übertragung). Beim ersten Mal ~700 MB (Parakeet Ultra): per USB etwa 30 s. */
 export async function ensurePhone(serial: string, models: string, model: string): Promise<void> {
   const dir = await bundle(models), p = sub(model)
   const want = [...BUNDLE.map((f) => [join(dir, f), f]), ...ASR.map((f) => [join(models, model, f), p + f])]
-  const { stdout } = await adb(serial, 'shell', `mkdir -p ${PHONE_DIR}/${p} && cd ${PHONE_DIR} && stat -c '%n %s' * ${p ? `${p}*` : ''} 2>/dev/null; true`)
+  const { stdout } = await adb(serial, 'shell', `mkdir -p ${PHONE_DIR}/${p} && cd ${PHONE_DIR} && rm -f ${ASR.join(' ')} && stat -c '%n %s' * ${p}* 2>/dev/null; true`) // rm: altes Parakeet v3
   const have = new Map(stdout.split('\n').map((l) => l.trim().split(' ') as [string, string]))
   for (const [f, name] of want) if (Number(have.get(name)) !== statSync(f).size) await adb(serial, 'push', f, `${PHONE_DIR}/${name}`)
   await adb(serial, 'shell', `chmod 755 ${PHONE_DIR}/sherpa-onnx-offline`)

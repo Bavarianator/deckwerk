@@ -1,5 +1,5 @@
 // sherpa-onnx lokal, opt-in mit DW_NET=1 (lädt einmalig ~850 MB nach $DECKWERK_HOME/models bzw. ~/.cache/deckwerk-check/models, braucht ffmpeg): npx esbuild scripts/check-sherpa.ts --bundle --packages=external --platform=node --format=esm --outfile=node_modules/.cache/check-sherpa.mjs && npx esbuild src/main/sherpa-worker.ts --bundle --packages=external --platform=node --format=cjs --outfile=node_modules/.cache/sherpa-worker.cjs && DW_NET=1 node node_modules/.cache/check-sherpa.mjs
-// DW_PHONE=<adb-Seriennummer> prüft „Deutsch schnell“ zusätzlich auf dem Handy
+// DW_PHONE=<adb-Seriennummer> prüft Parakeet Ultra und „Deutsch schnell“ zusätzlich auf dem Handy
 import { deepStrictEqual, ok } from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -93,13 +93,13 @@ ok(/software/.test(fc.text) && /\bfrei/.test(fc.text), 'Deutsch schnell: Stichwo
 ok(!fc.segs.some((s) => / [.,!?]/.test(s.text)), 'Deutsch schnell: Satzzeichen als eigenes Wort')
 rtf.push(`Deutsch schnell: RTF ${fc.rtf.toFixed(3)} inkl. Laden, Spitze ${fc.peak.toFixed(2)} GB`)
 stopWorker()
-// Handy direkt (asr() fiele bei Fehlern still auf den PC zurück): FC-DE nach PHONE_DIR/fc-de, ein Lauf
-if (process.env.DW_PHONE) {
-  await ensurePhone(process.env.DW_PHONE, models, 'fc-de')
-  const t0 = performance.now(), [res] = await phoneDecode(process.env.DW_PHONE, 'fc-de', [frei])
+// Handy direkt (asr() fiele bei Fehlern still auf den PC zurück): Parakeet Ultra und FC-DE in ihre Unterordner von PHONE_DIR, je ein Lauf
+if (process.env.DW_PHONE) for (const [dir, name] of [['parakeet-ultra', 'Parakeet Ultra'], ['fc-de', 'Deutsch schnell']]) {
+  await ensurePhone(process.env.DW_PHONE, models, dir)
+  const t0 = performance.now(), [res] = await phoneDecode(process.env.DW_PHONE, dir, [frei])
   const secs = (performance.now() - t0) / 1000
-  console.log(`Handy Deutsch schnell: ${secs.toFixed(1)} s für ${(frei.length / 16000).toFixed(1)} s, RTF ${(secs / (frei.length / 16000)).toFixed(3)}\n  ${res.text}`)
-  ok(/software/.test(norm(res.text)) && /\bfrei/.test(norm(res.text)) && res.tokens.length === res.timestamps.length, 'Handy Deutsch schnell: Stichwort nicht erkannt')
+  console.log(`Handy ${name}: ${secs.toFixed(1)} s für ${(frei.length / 16000).toFixed(1)} s, RTF ${(secs / (frei.length / 16000)).toFixed(3)}\n  ${res.text}`)
+  ok(/software/.test(norm(res.text)) && /\bfrei/.test(norm(res.text)) && res.tokens.length === res.timestamps.length, `Handy ${name}: Stichwort nicht erkannt`)
 }
 console.log(rtf.join('\n'))
 

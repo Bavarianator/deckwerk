@@ -9,7 +9,7 @@ const OS: Record<string, string> = { linux: 'Linux', darwin: 'macOS', win32: 'Wi
 // macOS-Ausgabe (eigenes Repo, nur der laufende Stand „latest“ ohne Versionsnummer): kein Versionsvergleich, ihr Installer aktualisiert
 // Spracherkennungs-Modell (sherpa.ts); „Schnell“ gilt nur für Deutsch, andere Sprachen erkennt weiter Parakeet
 const ASR_MODELS = [
-  { id: 'parakeet', name: 'Spracherkennung: Genau', hint: 'Parakeet, 25 Sprachen. Standard.' },
+  { id: 'parakeet', name: 'Spracherkennung: Genau', hint: 'Parakeet Ultra, 25 Sprachen. Standard.' },
   { id: 'de-schnell', name: 'Spracherkennung: Schnell', hint: 'Nur Deutsch, etwa dreimal so schnell, für sehr lange Videos und langsame Rechner. Schreibt Zahlen als Wörter und verhört sich öfter. Lädt einmalig rund 140 MB.' },
 ] as const
 const MAC_UPDATE = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-macos/main/install.sh | sh'
@@ -87,7 +87,7 @@ export function AllgemeinSection({ go }: SectionProps) {
         <Row title="Schlüssel und Passwörter">Liegen verschlüsselt auf diesem Rechner.</Row>
       </Group>
       <Group label="Modelle und Lizenzen">
-        <Row title="Spracherkennung">Parakeet-TDT-0.6B-v3 und stt_de_fastconformer_hybrid_large_pc von NVIDIA (CC BY 4.0), ausgeführt mit sherpa-onnx (Apache-2.0).</Row>
+        <Row title="Spracherkennung">Parakeet Ultra von moondream auf Basis von Parakeet-TDT-0.6B-v3 sowie stt_de_fastconformer_hybrid_large_pc von NVIDIA (CC BY 4.0), ausgeführt mit sherpa-onnx (Apache-2.0).</Row>
         <Row title="Videoanalyse">Silero VAD (MIT), CED (Apache-2.0), YuNet (MIT).</Row>
         <Row title="Video laden">yt-dlp (Unlicense), TwitchDownloader (MIT).</Row>
         <Row title="Musik">Von Openverse; der Nachweis steht im Deck.</Row>

@@ -349,7 +349,7 @@ export function createEngine(): Engine {
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
       device,
-      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : `${await device()}, ${asrModel(lang) === 'de-schnell' ? 'Deutsch schnell' : 'Parakeet'}` },
+      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : `${await device()}, ${asrModel(lang) === 'de-schnell' ? 'Deutsch schnell' : 'Parakeet Ultra'}` },
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)

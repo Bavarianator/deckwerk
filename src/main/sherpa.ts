@@ -1,4 +1,5 @@
-// Spracherkennung lokal und offline mit sherpa-onnx (Apache-2.0): NVIDIA Parakeet-TDT-0.6B-v3 int8 (CC-BY-4.0, 25 Sprachen,
+// Spracherkennung lokal und offline mit sherpa-onnx (Apache-2.0): Parakeet Ultra int8 (moondream, Feinabstimmung von NVIDIA
+// Parakeet-TDT-0.6B-v3, CC-BY-4.0, 25 Sprachen,
 // Satzzeichen, Token-Zeitstempel) hinter Silero-VAD. Standard vor Whisper (transcribe.ts bleibt Fallback).
 // Dazu Audio-Ereignisse (CED-mini, Apache-2.0) für Stream-Highlights und Sprechertrennung (pyannote-segmentation-3.0, MIT,
 // + 3D-Speaker CAM++, Apache-2.0) für den Zuschnitt auf den aktiven Sprecher. Modellwahl und Messungen in sherpa-worker.ts.
@@ -7,7 +8,7 @@
 // Ohne Electron, damit der Selbsttest unter Node läuft (scripts/check-sherpa.ts).
 import { execFileSync, fork, type ChildProcess } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, rm } from 'node:fs/promises'
 import { setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type { Segment } from '../shared/video'
@@ -17,7 +18,9 @@ import { ensurePhone } from './phone'
 export const PARAKEET_LANGS: readonly string[] = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 'el', 'hu', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 'sk', 'sl', 'es', 'sv', 'ru', 'uk']
 
 // fester Commit + Prüfsummen (wie transcribe.ts): ein nachträglich verändertes Modell landet nie im nativen ONNX-Parser
-const PARAKEET = 'https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/'
+// Parakeet Ultra gibt es nur als Hugging-Face-Checkpoint: selbst umgewandelt (scripts/convert-parakeet-ultra.py, Workflow modelle.yml) und als
+// Vorabversion-Release abgelegt. Gleiche Architektur und Tokenizer wie v3, laut moondream FLEURS (25 Sprachen) 9,55 % statt 11,62 % WER, gleich schnell.
+const PARAKEET = 'https://github.com/Bavarianator/deckwerk/releases/download/parakeet-ultra-1/'
 const VAD = 'https://huggingface.co/csukuangfj/vad/resolve/fba88cd2e921609e7675c3aaf51e0b9b295da4bc/'
 const CED = 'https://huggingface.co/k2-fsa/sherpa-onnx-ced-mini-audio-tagging-2024-04-19/resolve/4da6df50dc47b25f91074b5ef7df4c1cc0dd7d4d/'
 const SEG = 'https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/resolve/9403a6902bb58e3d5ae8c7e77c3422de279db2e0/'
@@ -31,7 +34,7 @@ const FC_DE = 'https://huggingface.co/csukuangfj/sherpa-onnx-nemo-transducer-stt
 // teils alt („muß“) und Zahlen als Wörter („achtundzwanzig Zentimeter“). Daher nur für sehr lange deutsche Videos und schwache PCs.
 // Verworfen: Meta Omnilingual-300M (kleingeschrieben, ohne Satzzeichen, langsamer).
 export type AsrModel = 'parakeet' | 'de-schnell'
-export const ASR_DIR: Record<AsrModel, string> = { parakeet: 'parakeet-v3', 'de-schnell': 'fc-de' }
+export const ASR_DIR: Record<AsrModel, string> = { parakeet: 'parakeet-ultra', 'de-schnell': 'fc-de' }
 /** Gewähltes Modell unter appData/deckwerk (gemeinsam für App, Entwicklung und MCP-Server wie phone-off): Inhalt „de-schnell“, sonst Parakeet */
 export const asrModelFile = (appData: string) => join(appData, 'deckwerk', 'asr-model')
 export function asrModelOf(appData: string): AsrModel {
@@ -43,10 +46,10 @@ type File = [dir: string, url: string, sha256: string, bytes: number]
 const SILERO: File = ['silero-vad', VAD + 'silero_vad.onnx', 'a35ebf52fd3ce5f1469b2a36158dba761bc47b973ea3382b3186ca15b1f5af28', 1807522]
 const FILES: Record<Kind, File[]> = {
   parakeet: [
-    ['parakeet-v3', PARAKEET + 'encoder.int8.onnx', 'acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247', 652184281],
-    ['parakeet-v3', PARAKEET + 'decoder.int8.onnx', '179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e', 11845275],
-    ['parakeet-v3', PARAKEET + 'joiner.int8.onnx', '3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3', 6355277],
-    ['parakeet-v3', PARAKEET + 'tokens.txt', 'd58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d', 93939],
+    ['parakeet-ultra', PARAKEET + 'encoder.int8.onnx', '435dc88bd15024d607d3b20829946a5b32deac4485ae1eb7860481b89fb9de02', 652282395],
+    ['parakeet-ultra', PARAKEET + 'decoder.int8.onnx', '1fab98fe6c12aded87d2da66272cc9e148d0a0044ce3850a12fe56302ec4a922', 11845274],
+    ['parakeet-ultra', PARAKEET + 'joiner.int8.onnx', '8a71aaccfdba3d451775507a889afd2257d2e754463fd81095a8c8f290f924c2', 6355277],
+    ['parakeet-ultra', PARAKEET + 'tokens.txt', 'd58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d', 93939],
     SILERO,
   ],
   'de-schnell': [
@@ -81,6 +84,7 @@ export async function ensureModels(kind: Kind, modelsDir: string, onProgress: (p
       await download(f[1], f[2], local(modelsDir, f), (pct) => onProgress(Math.floor(((done + (f[3] * pct) / 100) / total) * 100)))
       done += f[3]
     }
+    if (kind === 'parakeet') await rm(join(modelsDir, 'parakeet-v3'), { recursive: true, force: true }) // Vorgänger (bis v0.2.4), ~670 MB
   })
   queue = run.catch(() => {})
   return run
