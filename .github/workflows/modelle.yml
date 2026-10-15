@@ -6,6 +6,9 @@ on:
     branches: ['modelle/**']
 permissions:
   contents: write
+defaults:
+  run:
+    shell: bash # mit pipefail: „| tee“ verschluckt sonst Fehler
 jobs:
   parakeet-ultra:
     runs-on: ubuntu-24.04
@@ -22,7 +25,7 @@ jobs:
       - name: Abhängigkeiten
         run: |
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install "nemo_toolkit[asr]" "numpy<2" onnx==1.17.0 onnxruntime==1.17.1 safetensors huggingface_hub sherpa-onnx==1.13.8 soundfile
+          pip install "nemo_toolkit[asr]" onnx==1.17.0 onnxruntime==1.20.1 safetensors huggingface_hub sherpa-onnx==1.13.8 soundfile
       - name: Umwandeln
         run: mkdir out && cd out && python ../scripts/convert-parakeet-ultra.py 2>&1 | tee convert.log
       - name: Prüfen (sherpa-onnx 1.13.8, wie die App)
