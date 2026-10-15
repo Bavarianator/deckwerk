@@ -92,7 +92,8 @@ export function clipSpans(parts: Part[], a: number, b: number): [number, number]
   for (const p of parts) {
     const s = Math.max(a, p.start), e = Math.min(b, p.end), sp = speedOf(p)
     if (e > s) {
-      const x = off + (s - p.start) / sp, y = off + (e - p.start) / sp + (e >= p.end ? freezeOf(p) : 0), l = out[out.length - 1] // reicht der Bereich bis ans Ende, gilt er auch fürs Standbild
+      // reicht der Bereich bis ans Ende, gilt er auch fürs Standbild; bis PAD davor zählt als Ende, der Export verlängert jeden part um PAD
+      const x = off + (s - p.start) / sp, y = e >= p.end - PAD - 1e-3 ? off + partLen(p) : off + (e - p.start) / sp, l = out[out.length - 1]
       if (l && x - l[1] < 1e-3) l[1] = y
       else out.push([x, y])
     }
@@ -278,6 +279,7 @@ if (typeof process !== 'undefined' && process.env.DW_VIDEO_SELFTEST) {
   if (JSON.stringify(sp) !== '[[2,7]]' || partsLength([{ start: 0, end: 2, speed: 0.5 }]) !== 4) throw new Error('clipSpans/Tempo ' + JSON.stringify(sp))
   const fz = [{ start: 0, end: 4, freeze: 1 }, { start: 10, end: 12 }]
   if (partsLength(fz) !== 7 || JSON.stringify(clipSpans(fz, 2, 11)) !== '[[2,6]]' || JSON.stringify(clipSpans(fz, 1, 3)) !== '[[1,3]]') throw new Error('freeze ' + JSON.stringify(clipSpans(fz, 2, 11)))
+  if (JSON.stringify(clipSpans([{ start: 0, end: 4.15, freeze: 1 }], 1, 4)) !== '[[1,5.15]]') throw new Error('freeze nach PAD ' + JSON.stringify(clipSpans([{ start: 0, end: 4.15, freeze: 1 }], 1, 4)))
   if (Math.abs(clipWords({ duration: 20, lang: 'de', segments: [{ start: 10, end: 11, text: '', words: [w('x', 10.2)] }] }, fz)[0].start - 5.2) > 1e-9) throw new Error('clipWords freeze')
   console.log('video ok')
 }
