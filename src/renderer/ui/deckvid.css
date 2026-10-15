@@ -54,6 +54,7 @@
 .dv-ov.voll :is(img, video, .dv-ov-slide) { width: 100%; height: 100%; object-fit: cover; }
 .dv-ov.voll img { transform: scale(calc(1 + 0.06 * var(--dv-kb, 0))); } /* langsamer Zoom über die Dauer der Einblendung (--dv-kb 0..1 aus der Clipzeit) */
 .dv-ov video, .dv-ov-slide { display: inline-block; vertical-align: top; }
+.dv-ov-slide { text-shadow: none; } /* Folie bringt ihre eigene Typografie mit */
 /* Arten: Name/Zahl/Titel fett in der Untertitelschrift, zweite Zeile normal; Akzent nur als kurze Linie */
 .dv-ov :is(b, small) { display: block; font-weight: inherit; }
 .dv-ov small { font-size: 0.6em; font-weight: 400; }

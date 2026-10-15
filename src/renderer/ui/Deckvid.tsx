@@ -380,7 +380,7 @@ const OvSlide = memo(function OvSlide({ deck, n, w }: { deck: Deck | null; n: nu
   return <div ref={ref} className="dv-ov-slide" style={{ width: w }}>{deck?.slides[n - 1]?.hidden && px > 0 && <SlideView deck={deck} index={n - 1} width={px} />}</div> // fehlt sie oder ist sichtbar: nichts (meldet die Clip-Prüfung)
 })
 
-// Einblendung wie im Export: on = ihre Quellzeit ist gerade im Clip zu sehen, at = Sekunden seit Beginn des Stücks, len = seine Länge (langsamer Zoom bei voll)
+// Einblendung wie im Export: on = ihre Quellzeit ist gerade im Clip zu sehen, at = Clip-Sekunden seit ihrem ersten Stück, len = bis zum Ende des letzten (langsamer Zoom bei voll)
 function Ov({ o, on, at, len, playing, deck }: { o: Overlay; on: boolean; at: number; len: number; playing: boolean; deck: Deck | null }) {
   const art = o.art ?? 'text', op = { opacity: on ? 1 : 0 }
   if (art === 'verpixeln') {
@@ -555,7 +555,8 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                   {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
                   {c.overlays?.map((o, k) => {
                     const sp = spans[k]?.find(([a, b]) => player.t >= a && player.t < b)
-                    return <Ov key={k} o={o} on={!!sp} at={sp ? player.t - sp[0] : 0} len={sp ? sp[1] - sp[0] : 1} playing={player.playing} deck={deck} />
+                    const all = spans[k] ?? [], a = all[0]?.[0] ?? 0 // fortlaufend ab dem ersten Stück: Einblend-Video läuft in Clip-Echtzeit wie im Export
+                    return <Ov key={k} o={o} on={!!sp} at={sp ? player.t - a : 0} len={all.length ? all[all.length - 1][1] - a : 1} playing={player.playing} deck={deck} />
                   })}
                   {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
                   <canvas ref={fadeRef} className="dv-fade" aria-hidden />

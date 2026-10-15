@@ -30,6 +30,9 @@ function clipAt(l: Part[], k: number, src: number, hold: number | null) {
   return partsLength(l.slice(0, k)) + (hold !== null ? (p.end - p.start) / speedOf(p) + hold : Math.min(Math.max(0, src - p.start), p.end - p.start) / speedOf(p))
 }
 
+// Standbild fällig: Ausschnitt mit freeze ist am Ende angekommen, auch wenn das Video dort zu Ende ist (ended, paused = true)
+const holdDue = (p: Part | undefined, c: number, ended: boolean): p is Part => !!p && freezeOf(p) > 0 && (ended || c >= p.end)
+
 /** Spielt die parts nacheinander (Schnittfassung), am Ende Pause und zurück auf den Anfang. t/duration in Clipzeit, src in Quellzeit.
  *  playSource spielt die Quelle ohne Sprünge (Schneiden: „Quelle“), part = Index des Ausschnitts an der Abspielposition (-1 = hinter allen). */
 export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[], onCut?: (gap: number, next: Part) => void) {
@@ -111,11 +114,15 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
         raf = requestAnimationFrame(tick)
         return
       }
+      if (v && !free.current && holdDue(l[idx.current], v.currentTime, v.ended)) { // vor dem paused-Test: am Dateiende meldet das Video paused
+        v.pause(); setSrc(l[idx.current].end); setHold(0)
+        raf = requestAnimationFrame(tick)
+        return
+      }
       if (!v || v.paused) { setPlaying(false); if (v) setSrc(v.currentTime); return } // Videoende oder von außen angehalten
       const k = idx.current, p = l[k], c = v.currentTime
       if (free.current || (p && c >= p.start - 0.1 && c < p.end)) setSrc(c) // Toleranz: nach dem Spulen meldet das Video evtl. knapp davor
       else if (p && c < p.start) go(p.start, k) // beim Abspielen in eine Lücke gespult
-      else if (p && freezeOf(p) > 0) { v.pause(); setSrc(p.end); setHold(0) } // letztes Bild halten, Ton still
       else if (!next(v, l, k)) return
       raf = requestAnimationFrame(tick)
     }
@@ -241,6 +248,7 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_SELFTEST) {
   eq(locate([{ start: 0, end: 10 }, { start: 5, end: 15 }], 1, 7), 1, 'locate: laufender Ausschnitt bei Überlappung')
   const fz: Part[] = [{ start: 0, end: 4, freeze: 1 }, { start: 10, end: 12, speed: 2 }] // Clip: 0–4 Video, 4–5 Standbild, 5–6 Zeitraffer
   eq([sourceAt(fz, 2), sourceAt(fz, 4.5), sourceAt(fz, 5.5), sourceAt(fz, 9)], [{ k: 0, src: 2, hold: null }, { k: 0, src: 4, hold: 0.5 }, { k: 1, src: 11, hold: null }, { k: 1, src: 12, hold: null }], 'sourceAt mit freeze')
+  eq([holdDue(fz[0], 3, false), holdDue(fz[0], 4, false), holdDue(fz[0], 3.9, true), holdDue(fz[1], 12, true)], [false, true, true, false], 'holdDue (auch am Dateiende)')
   eq([clipAt(fz, 0, 2, null), clipAt(fz, 0, 4, 0.5), clipAt(fz, 1, 11, null), clipAt(fz, -1, 0, null)], [2, 4.5, 5.5, 6], 'clipAt mit freeze')
   console.log('clipPlayer ok')
 }
