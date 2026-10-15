@@ -3,19 +3,25 @@ import { useEffect, useState } from 'react'
 import type { AppInfo, UpdateInfo } from '../../../preload'
 import { Switch } from '../kit'
 import { Logo } from '../Logo'
-import { Befehl, Group, Head, MAC, Row, Spin, TERMINAL, useRun, type SectionProps } from './parts'
+import { Befehl, Group, Head, MAC, Ok, Row, Spin, TERMINAL, useRun, type SectionProps } from './parts'
 
 const OS: Record<string, string> = { linux: 'Linux', darwin: 'macOS', win32: 'Windows' } // app:info liefert „linux x64“
 // macOS-Ausgabe (eigenes Repo, nur der laufende Stand „latest“ ohne Versionsnummer): kein Versionsvergleich, ihr Installer aktualisiert
+// Spracherkennungs-Modell (sherpa.ts); „Schnell“ gilt nur für Deutsch, andere Sprachen erkennt weiter Parakeet
+const ASR_MODELS = [
+  { id: 'parakeet', name: 'Spracherkennung: Genau', hint: 'Parakeet, 25 Sprachen. Standard.' },
+  { id: 'de-schnell', name: 'Spracherkennung: Schnell', hint: 'Nur Deutsch, etwa dreimal so schnell, für sehr lange Videos und langsame Rechner. Schreibt Zahlen als Wörter und verhört sich öfter. Lädt einmalig rund 140 MB.' },
+] as const
 const MAC_UPDATE = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-macos/main/install.sh | sh'
 
 export function AllgemeinSection({ go }: SectionProps) {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [spell, setSpell] = useState(true)
   const [phone, setPhone] = useState<{ on: boolean; device: string | null } | null>(null)
+  const [asr, setAsr] = useState<'parakeet' | 'de-schnell'>('parakeet')
   const [upd, setUpd] = useState<UpdateInfo | null>(null)
   const { busy, err, run } = useRun<'suche' | 'update'>()
-  useEffect(() => { void window.api.appInfo().then(setInfo); void window.api.spellcheck().then(setSpell); void window.api.phoneStatus().then(setPhone) }, [])
+  useEffect(() => { void window.api.appInfo().then(setInfo); void window.api.spellcheck().then(setSpell); void window.api.phoneStatus().then(setPhone); void window.api.asrModel().then(setAsr) }, [])
   return (
     <>
       <Head title="Allgemein" />
@@ -63,6 +69,15 @@ export function AllgemeinSection({ go }: SectionProps) {
             onChange={(on) => { setPhone((p) => p && { ...p, on }); window.api.setPhone(on).catch(() => setPhone((p) => p && { ...p, on: !on })) }}
             hint={`Ist ein Handy verbunden, laufen Spracherkennung und Video-Export automatisch dort, sonst auf dem PC. Ein aktuelles Handy rechnet etwa fünfmal so schnell wie ein einfacher PC. Handy per USB anschließen und in den Entwickleroptionen USB-Debugging erlauben. Beim ersten Mal überträgt Deckwerk Sprachmodell und ffmpeg (zusammen rund 800 MB), für den Export einmal das Quellvideo (die zwei zuletzt genutzten bleiben auf dem Handy). ${phone?.device ? `Verbunden: ${phone.device}.` : 'Gerade ist kein Handy verbunden, dann rechnet der PC.'}`} />
         </div>
+        <div role="radiogroup" aria-label="Spracherkennung">
+          {ASR_MODELS.map((m) => (
+            <button key={m.id} type="button" role="radio" aria-checked={asr === m.id} className={`setup-opt ${asr === m.id ? 'on' : ''}`}
+              onClick={() => { const was = asr; setAsr(m.id); window.api.setAsrModel(m.id).catch(() => setAsr(was)) }}>
+              {asr === m.id ? <Ok /> : <span className="setup-num" />}
+              <span><b>{m.name}</b>{m.hint}</span>
+            </button>
+          ))}
+        </div>
       </Group>
       <Group label="Datenschutz">
         <Row title="Kein Konto">Deckwerk hat kein Konto bei uns.</Row>
@@ -72,7 +87,7 @@ export function AllgemeinSection({ go }: SectionProps) {
         <Row title="Schlüssel und Passwörter">Liegen verschlüsselt auf diesem Rechner.</Row>
       </Group>
       <Group label="Modelle und Lizenzen">
-        <Row title="Spracherkennung">Parakeet-TDT-0.6B-v3 von NVIDIA (CC BY 4.0), ausgeführt mit sherpa-onnx (Apache-2.0).</Row>
+        <Row title="Spracherkennung">Parakeet-TDT-0.6B-v3 und stt_de_fastconformer_hybrid_large_pc von NVIDIA (CC BY 4.0), ausgeführt mit sherpa-onnx (Apache-2.0).</Row>
         <Row title="Videoanalyse">Silero VAD (MIT), CED (Apache-2.0), YuNet (MIT).</Row>
         <Row title="Video laden">yt-dlp (Unlicense), TwitchDownloader (MIT).</Row>
         <Row title="Musik">Von Openverse; der Nachweis steht im Deck.</Row>

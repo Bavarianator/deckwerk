@@ -186,6 +186,9 @@ const api = {
   /** Spracherkennung auf dem Android-Handy (adb): Option und gerade verbundenes Gerät (Modellname) */
   phoneStatus: (): Promise<{ on: boolean; device: string | null }> => invoke('phone:status'),
   setPhone: (on: boolean): Promise<void> => invoke('phone:set', on),
+  /** Spracherkennungs-Modell: parakeet (genau, 25 Sprachen) oder de-schnell (nur Deutsch, ~3× schneller) */
+  asrModel: (): Promise<'parakeet' | 'de-schnell'> => invoke('asr:model'),
+  setAsrModel: (m: 'parakeet' | 'de-schnell'): Promise<void> => invoke('asr:set-model', m),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
   setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
   setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),

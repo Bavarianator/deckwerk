@@ -17,7 +17,7 @@ import { autoFocus, speakerFaces } from './faces'
 import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { phoneDevice, phoneMarker } from './phone'
-import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
+import { PARAKEET_LANGS, asr, asrModelOf, diarize, tag, type AsrModel } from './sherpa'
 import { localAsset } from './sync'
 import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
 
@@ -86,6 +86,9 @@ export function createEngine(): Engine {
   type Chunk = { engine: 'parakeet' | 'whisper'; segments: Segment[] }
   let whisperOnly = false // sherpa grundsätzlich nicht nutzbar: Rest der Sitzung mit Whisper
   const wantFor = (lang?: string) => engineFor(lang, PARAKEET_LANGS, whisperOnly)
+  // „Deutsch schnell“ (Einstellung) nur für Deutsch: Ohne lang (Export-Untertitel, transcribe_video ohne lang, Transkript-lang „auto“)
+  // gilt Deutsch als Annahme, eine andere bekannte Sprache erkennt Parakeet
+  const asrModel = (lang?: string): AsrModel => ((!lang || /^de\b/i.test(lang)) && asrModelOf(app.getPath('appData')) === 'de-schnell' ? 'de-schnell' : 'parakeet')
   // Option „Spracherkennung auf dem Android-Handy“: je Aufruf neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
   const videoRuns = new Map<string, { pct: number; listeners: Set<(pct: number) => void>; done: Promise<string[]> }>() // laufende Video-Exporte (exportDeck)
   const phoneOn = () => !existsSync(phoneMarker(app.getPath('appData')))
@@ -98,7 +101,7 @@ export function createEngine(): Engine {
   }
 
   // Ein Chunk: Parakeet (sherpa); Whisper nur für Sprachen außerhalb von Parakeet oder wenn sherpa nicht nutzbar ist
-  async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
+  async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, lang: string | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
     const { from, dur } = chunkWindow(k, duration), pcm = await pcm16k(file, from, dur)
     const whisper = async (): Promise<Chunk> => {
       // transcribePcm erkennt die Sprache selbst, eine Vorgabe nimmt es nicht an
@@ -109,7 +112,7 @@ export function createEngine(): Engine {
     if (want === 'whisper' || whisperOnly) return whisper()
     try {
       const phone = (await phoneNow())?.serial
-      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone }), k) }
+      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone, model: asrModel(lang) }), k) }
     } catch (e) {
       if ((e as { code?: string }).code !== 'SHERPA_UNAVAILABLE') throw e
       console.warn('[video] sherpa-onnx nicht nutzbar, Spracherkennung mit Whisper:', (e as Error).message)
@@ -154,7 +157,7 @@ export function createEngine(): Engine {
     let t = legacy
     if (!t) {
       for (const [i, k] of missing.entries())
-        have[k] = await cached(`${base}.t${k}.json`, () => recognize(file, k, duration, want, (p) => onProgress(Math.floor(((i + p / 100) / missing.length) * share))), fits)
+        have[k] = await cached(`${base}.t${k}.json`, () => recognize(file, k, duration, want, o.lang, (p) => onProgress(Math.floor(((i + p / 100) / missing.length) * share))), fits)
       const ok = all.filter((k) => valid(have[k])) // außerhalb von ranges zählt auch ein Chunk der anderen Erkennung
       t = { duration, lang: o.lang ?? 'auto', segments: mergeSegments(ok.flatMap((k) => have[k]!.segments)), covered: coveredOf(ok, duration) }
     }
@@ -345,7 +348,7 @@ export function createEngine(): Engine {
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
       device,
-      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : device() },
+      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : `${await device()}, ${asrModel(lang) === 'de-schnell' ? 'Deutsch schnell' : 'Parakeet'}` },
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)
