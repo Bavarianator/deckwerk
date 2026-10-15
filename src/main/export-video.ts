@@ -5,17 +5,17 @@
 import { randomBytes } from 'node:crypto'
 import { mkdir, readFile, readdir, rename, rm, stat, statfs, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
-import { MEDIA_EXT, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
+import { MEDIA_EXT, VIDEO_FILE, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, clipSpans, joinOf, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex } from '../shared/video'
-import { HOOK_FADE, POP, cropFilter, hookBox, levelExpr, progressBar } from './video-fx'
+import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM, clipSpans, freezeOf, joinOf, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type Look, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex } from '../shared/video'
+import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, cropFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
 import { localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
-export interface Seg { file: string; dur: number; music?: [number, number, number][] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music)
+export interface Seg { file: string; dur: number; music?: [number, number, number][]; cues?: Cue[] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music), cues: Untertitel-Zeilen ab Seg-Anfang (fürs SRT)
 export interface Music { file: string; volume?: number } // absoluter Pfad, volume 0–1 (Standard 0,25)
 
 // Teilstücke je ffmpeg-Aufruf: je Teilstück ein Input mit eigenem Decoder, und der Filtergraph steht in argv (Linux: max. 128 KiB je Argument).
@@ -64,7 +64,7 @@ function assColor(hex: string) {
 /** Untertitel-Datei: Hook oben linksbündig, Untertitel unten mittig, Lage nach Format. Hochformat (9:16): bei 33 % der Höhe, über der Plattform-Leiste
  *  (Reels/TikTok verdecken unten ~35 %); 4:5 und 1:1: 12 %; Querformat: kleiner, 7 %. Weiß mit dünner Kontur und Schatten, keine Kästen, kein Pop.
  *  style 'lebendig': Wort-Pop, Hook mit Einblendung auf dunklem Balken, Fortschrittsbalken (bar: Lage der Gruppe in der Szene, s). */
-export function assSubs(o: { size: Size; font: string; bold: boolean; accent: string; hook?: string; hookDur: number; cues: Cue[]; mode: Captions; style?: ClipStyle; bar?: { off: number; dur: number; total: number }; overlays?: { start: number; end: number; text: string; pos?: Overlay['pos']; fade?: [boolean, boolean] }[] }): string {
+export function assSubs(o: { size: Size; font: string; bold: boolean; accent: string; hook?: string; hookDur: number; cues: Cue[]; mode: Captions; style?: ClipStyle; bar?: { off: number; dur: number; total: number }; overlays?: { start: number; end: number; text: string; pos?: Overlay['pos']; art?: Overlay['art']; sub?: string; fade?: [boolean, boolean] }[]; captionPos?: ClipContent['captionPos'] }): string {
   const { w, h } = o.size, m = Math.min(w, h), line = Math.max(1, Math.round(m * 0.002)), wide = w > h, wort = o.mode === 'wort', live = o.style === 'lebendig'
   const hookV = h * (wide ? 0.07 : 0.12), capV = capMargin(o.size)
   const style = (name: string, size: number, align: number, marginV: number) =>
@@ -83,17 +83,26 @@ export function assSubs(o: { size: Size; font: string; bold: boolean; accent: st
     })
   }
   // Einblendungen: Style je Lage (ASS-Alignment), unten über der Untertitelzeile, oben auf Höhe des Hooks; blenden wie der Hook, nur an echten Enden (fade: [ein, aus])
-  const ovs = (o.overlays ?? []).map((x) => ({ ...x, al: OV_ALIGN[x.pos ?? 'unten'] }))
-  for (const x of ovs) events.push(dlg(x.start, x.end, `Ov${x.al}`, `{\\fad(${x.fade?.[0] === false ? 0 : FX.hookFadeMs},${x.fade?.[1] === false ? 0 : FX.hookFadeMs})}` + esc(x.text.trim())))
-  const hookStyle = style('Hook', m * (wide ? 0.045 : 0.06), 7, hookV)
+  // bauchbinde/titel/zahl: eigene Bausteine (artEvents) mit Standardlage unten-links bzw. mitte, titel immer mitte; die Abdunklung von titel zuerst (unter allem)
+  const ovs = (o.overlays ?? []).map((x) => ({ ...x, al: OV_ALIGN[x.art === 'titel' ? 'mitte' : x.pos ?? (x.art === 'bauchbinde' ? 'unten-links' : x.art === 'zahl' ? 'mitte' : 'unten')] }))
+  const low = capV + m * 0.16, hookSize = m * (wide ? 0.045 : 0.06)
+  for (const x of ovs) {
+    if (x.art === 'bauchbinde' || x.art === 'titel' || x.art === 'zahl') {
+      const r = artEvents({ size: o.size, accent: assColor(o.accent), art: x.art, text: x.text, sub: x.sub, al: x.al, top: hookV, low, start: x.start, end: x.end, fade: [x.fade?.[0] !== false, x.fade?.[1] !== false], fadeMs: FX.hookFadeMs }, at, esc)
+      events.unshift(...r.back); events.push(...r.front)
+    } else events.push(dlg(x.start, x.end, `Ov${x.al}`, `{\\fad(${x.fade?.[0] === false ? 0 : FX.hookFadeMs},${x.fade?.[1] === false ? 0 : FX.hookFadeMs})}` + esc(x.text.trim())))
+  }
+  // Untertitel oben: unter der Hook-Zeile; mitte: Bildmitte
+  const cap = o.captionPos === 'oben' ? [8, hookV + hookSize * 1.6] : o.captionPos === 'mitte' ? [5, 0] : [2, capV]
+  const hookStyle = style('Hook', hookSize, 7, hookV)
   return [
     '[Script Info]', 'ScriptType: v4.00+', `PlayResX: ${w}`, `PlayResY: ${h}`, 'WrapStyle: 0', 'ScaledBorderAndShadow: yes', '',
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
     live ? hookBox(hookStyle, Math.round(m * 0.012)) : hookStyle,
-    style('Cap', m * (wort ? (wide ? 0.065 : 0.075) : 0.055), 2, capV),
+    style('Cap', m * (wort ? (wide ? 0.065 : 0.075) : 0.055), cap[0], cap[1]),
     ...(bar ? [bar.style] : []),
-    ...[...new Set(ovs.map((x) => x.al))].map((al) => style(`Ov${al}`, m * 0.05, al, al === 2 ? capV + m * 0.16 : hookV)),
+    ...[...new Set(ovs.map((x) => x.al))].map((al) => style(`Ov${al}`, m * 0.05, al, al <= 3 ? low : hookV)),
     '', '[Events]', 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text', ...events, '',
   ].join('\n')
 }
@@ -142,7 +151,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[] } // overlays: image als aufgelöster Pfad
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos'] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image
 /** Jeder ffmpeg-Schritt des Exports: auf dem Handy, wenn eins mitrechnet (gleiche Parameter, damit -c:v copy beim Verbinden passt); scheitert es, rechnet der PC */
 const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
   if (!phone || phone.failed) return runFfmpeg(args, ro)
@@ -158,6 +167,14 @@ export interface Phone { serial: string; models: string; failed?: boolean }
 /** Warum das Handy im laufenden Export ausgestiegen ist (leer = nicht): die App verwirft console-Ausgaben, so sehen KI und Arbeitsansicht den Grund */
 export const phoneFault = { reason: '' }
 interface SegOpts { preset: string; fadeIn?: boolean; fadeOut?: boolean; phone?: Phone } // fadeIn/fadeOut: Übergang aus/in Schwarz am Anfang/Ende der Szene
+
+/** Filter des Farblooks (leer = keiner); auto misst Helligkeit und Kontrast per signalstats. ponytail: misst nur bis 5 s am Anfang des ersten parts */
+async function lookFilter(job: ClipJob): Promise<string> {
+  if (job.look !== 'auto') return LOOK_FILTER[job.look ?? 'neutral'] ?? ''
+  const p = job.parts[0], r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-ss', sec(p.start), '-t', sec(Math.min(5, p.end - p.start)), '-i', job.file, '-an', '-vf', 'scale=320:-2,signalstats,metadata=mode=print:file=-', '-f', 'null', '-'])
+  const avg = (k: string) => { const v = [...r.out.toString().matchAll(new RegExp(`signalstats\\.${k}=([\\d.]+)`, 'g'))].map((x) => Number(x[1])); return v.reduce((a, b) => a + b, 0) / v.length }
+  return autoLook({ avg: avg('YAVG'), low: avg('YLOW'), high: avg('YHIGH') })
+}
 
 /** Eine Clip-Szene als Zwischenstände, je GROUP Teilstücke ein mkv: Zuschnitt (crop um focus oder blur), Hook nur in der ersten Gruppe, Untertitel je Gruppe ab 0. Fortschritt über alle Gruppen. */
 export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOpts, onProgress?: (pct: number) => void): Promise<Seg[]> {
@@ -175,12 +192,17 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     quiet.push(...(await silences(job.file, p.start, p.end, MIN_PAUSE)))
     if (job.transcript) quiet.push(...fillerQuiet(job.transcript, p.start, p.end))
   }
-  // Übergang nur am ersten Stück eines geteilten parts: an gekürzten Pausen bleibt die übliche Blende
-  const parts = padParts(snapped.parts.flatMap((p) => tighten([p], quiet).map((q, j) => (j && q.transition ? { ...q, transition: undefined } : q))), info.duration, job.cuts), joined = seamless(parts), total = partsLength(parts), { size } = job
+  // Übergang nur am ersten Stück eines geteilten parts: an gekürzten Pausen bleibt die übliche Blende. Standbild nur am letzten Stück, auch wenn follow
+  // (prepareClips) den part nahtlos an Sprecherwechseln geteilt hat
+  const split = snapped.parts.flatMap((p) => tighten([p], quiet).map((q, j, all) => {
+    const r = j && q.transition ? { ...q, transition: undefined } : q
+    return r.freeze && j < all.length - 1 ? { ...r, freeze: undefined } : r
+  }))
+  const parts = padParts(split.map((p, i) => (p.freeze && split[i + 1] && Math.abs(split[i + 1].start - p.end) < 1e-3 ? { ...p, freeze: undefined } : p)), info.duration, job.cuts), joined = seamless(parts), total = partsLength(parts), { size } = job
   const blur = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // gleiches Seitenverhältnis: blur = crop
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2)) // Grund klein weichzeichnen, dann hochskalieren: billig und weich
   const captions = job.transcript && job.captions !== 'aus' ? job.captions : null
-  const live = job.style === 'lebendig'
+  const live = job.style === 'lebendig', look = await lookFilter(job)
   if (job.hook?.trim() || captions || live || job.overlays?.some((x) => x.text?.trim())) {
     // Eigener Unterordner: libass lädt alles in fontsdir, auch fertige Szenen. Relativ zu cwd = dir: kein Pfad-Escaping im Filter.
     await mkdir(join(dir, 'fonts'), { recursive: true })
@@ -193,11 +215,13 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const id = `${name}-${n2(segs.length + 1)}`, hook = first ? job.hook?.trim() : undefined
     const words = captions ? clipWords(job.transcript!, ps, quiet) : []
     // Einblendungen je sichtbarem Stück der Quelle über alle parts, auf die Gruppe (ab 0) beschnitten; Blende nur an echten Enden, nicht an Gruppenkanten
-    const ovs = (job.overlays ?? []).flatMap((x) => clipSpans(parts, x.start, x.end).filter(([a, b]) => b > done && a < done + dur)
-      .map(([a, b]) => ({ ...x, a: Math.max(0, a - done), b: Math.min(dur, b - done), fade: [a >= done - 1e-3, b <= done + dur + 1e-3] as [boolean, boolean] })))
-    const texts = ovs.filter((x) => x.text?.trim()).map((x) => ({ start: x.a, end: x.b, text: x.text!, pos: x.pos, fade: x.fade })), imgs = ovs.filter((x) => x.image)
+    // vt: Sekunde im Einblend-Video am Anfang des Stücks – es läuft über die sichtbaren Stücke weiter, ab from
+    const ovs = (job.overlays ?? []).flatMap((x) => clipSpans(parts, x.start, x.end).map(([a, b], k, all) => [a, b, all.slice(0, k).reduce((q, [c, d]) => q + d - c, 0)]).filter(([a, b]) => b > done && a < done + dur)
+      .map(([a, b, run]) => ({ ...x, a: Math.max(0, a - done), b: Math.min(dur, b - done), vt: (x.from ?? 0) + run + Math.max(0, done - a), fade: [a >= done - 1e-3, b <= done + dur + 1e-3] as [boolean, boolean] })))
+    const texts = ovs.filter((x) => x.text?.trim()).map((x) => ({ start: x.a, end: x.b, text: x.text!, pos: x.pos, art: x.art, sub: x.sub, fade: x.fade })), imgs = ovs.filter((x) => x.image || x.video)
+    const pix = ovs.filter((x) => x.art === 'verpixeln' && x.box)
     const subs = !!hook || words.length > 0 || live || texts.length > 0
-    if (subs) await writeFile(join(dir, `${id}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: Math.min(4, dur), cues: captions && words.length ? cues(words, captions) : [], mode: job.captions, style: job.style, bar: { off: done, dur, total }, ...(texts.length ? { overlays: texts } : {}) }))
+    if (subs) await writeFile(join(dir, `${id}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: Math.min(4, dur), cues: captions && words.length ? cues(words, captions) : [], mode: job.captions, style: job.style, bar: { off: done, dur, total }, ...(texts.length ? { overlays: texts } : {}), ...(job.captionPos ? { captionPos: job.captionPos } : {}) }))
     // Überblendung je Naht i (zwischen ps[i-1] und ps[i]): halbe Länge in Frames, begrenzt durch Videoanfang/-ende und harte Bildwechsel (cuts)
     const room = (s: number, dir: 1 | -1) => Math.min(dir > 0 ? info.duration - s : s, ...(job.cuts ?? []).map((c) => (c - s) * dir).filter((d) => d > -1e-6))
     // Frames je Ausschnitt aus den aufsummierten Nahtzeiten, nicht je Ausschnitt abgerundet: so laufen Bild, Ton und Untertitel nicht auseinander
@@ -212,18 +236,27 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const graph = ps.map((p, i) => {
       const before = (hv[i] ?? 0) / 30, frames = own(i) + (hv[i] ?? 0) + (hv[i + 1] ?? 0), a0 = (ha[i] ?? 0) / 30
       const c = cropRect(info, size, p.focus), len = partLen(p) + a0 + (ha[i + 1] ?? 0) / 30, k = k0 + i // len: Ton (Clip-Zeit)
+      // Punch-in von Hand mal Stil-Zoom; ponytail: bei echtem blur ohne Punch-in (gälte nur fürs Vordergrundbild), Upgrade: zoomCrop vor dem scale des Vordergrunds
+      const pz = Math.min(ZOOM.max, Math.max(ZOOM.min, p.zoom ?? 1))
+      // Standbild: F Frames des letzten bewegten Bilds halten, dazu der Vorlauf der Blende danach (die blendet aus dem Standbild, nicht aus der Quelle nach dem Ende)
+      const fz = freezeOf(p), F = Math.round(fz * 30), h1 = hv[i + 1] ?? 0
+      const end = F ? `trim=end_frame=${Math.max(1, frames - F - h1)},tpad=stop_mode=clone:stop=${frames - Math.max(1, frames - F - h1)}` : `trim=end_frame=${frames}`
       const fit = blur
         ? `split[b${i}][f${i}];[b${i}]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g${i}];` +
           `[f${i}]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h${i}];[g${i}][h${i}]overlay=(W-w)/2:(H-h)/2`
-        : cropFilter(c, size, job.fit === 'blur' ? 1 : zoomOf(job.style, cutIndex(parts, k)), p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
+        : cropFilter(c, size, (job.fit === 'blur' ? 1 : zoomOf(job.style, cutIndex(parts, k))) * pz, p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
       // Ton ab p.start − a0: die Eingabe beginnt beim längeren Bild-Vorlauf (before)
       // Tempo nach dem Zuschnitt im Quellbereich, dann Lautstärke des Originaltons
       const vol = p.volume !== undefined && p.volume !== 1 ? `volume=${Math.min(2, Math.max(0, p.volume))},` : ''
-      const a = info.audio ? `[${i}:a]atrim=start=${sec((before - a0) * sp[i])}:duration=${sec(len * sp[i])},asetpts=PTS-STARTPTS,${atempo(sp[i]).map((x) => `${x},`).join('')}${vol}` : `anullsrc=r=48000:cl=stereo,atrim=duration=${sec(len)},`
+      // Standbild: Quellton nur bis zum Ende der Bewegung, kurz ausgeblendet, dann Stille bis len
+      const src = fz ? len - fz - (ha[i + 1] ?? 0) / 30 : len, still = fz ? `afade=t=out:st=${sec(Math.max(0, src - AFADE))}:d=${AFADE},apad=whole_dur=${sec(len)},` : ''
+      const a = info.audio ? `[${i}:a]atrim=start=${sec((before - a0) * sp[i])}:duration=${sec(src * sp[i])},asetpts=PTS-STARTPTS,${atempo(sp[i]).map((x) => `${x},`).join('')}${vol}${still}` : `anullsrc=r=48000:cl=stereo,atrim=duration=${sec(len)},`
       // Tonblende nur an Kanten ohne Überblendung; nahtlose Kanten bleiben unberührt
       const fade = `${joined[k] || ha[i] ? '' : `,afade=t=in:d=${AFADE}`}${joined[k + 1] || ha[i + 1] ? '' : `,afade=t=out:st=${sec(Math.max(0, len - AFADE))}:d=${AFADE}`}`
       // Tempo: Zuschnitt (Kamerafahrt in Quellzeit) vor dem Umrechnen der Zeitstempel; ohne Tempo die alte Reihenfolge
-      const v = sp[i] === 1 ? `[${i}:v]setpts=PTS-STARTPTS,fps=30,trim=end_frame=${frames},${fit},` : `[${i}:v]setpts=PTS-STARTPTS,${fit},setpts=PTS/${sp[i]},fps=30,trim=end_frame=${frames},`
+      // stabil: deshake vor dem Zuschnitt (braucht das ganze Bild); kostet etwa so viel Rechenzeit wie das Encoden selbst
+      const ds = job.stabil ? 'deshake,' : ''
+      const v = sp[i] === 1 ? `[${i}:v]${ds}setpts=PTS-STARTPTS,fps=30,${end},${fit},` : `[${i}:v]${ds}setpts=PTS-STARTPTS,${fit},setpts=PTS/${sp[i]},fps=30,${end},`
       return `${v}setsar=1,format=yuv420p[v${i}];` +
         `${a}aformat=sample_rates=48000:channel_layouts=stereo${fade}[a${i}]`
     })
@@ -237,14 +270,30 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
         g ? `${ca}[a${i}]acrossfade=d=${sec((2 * g) / 30)}[xa${i}]` : `${ca}[a${i}]concat=n=2:v=0:a=1[xa${i}]`)
       cv = `[xv${i}]`; ca = `[xa${i}]`; n += frames - 2 * h
     }
+    // Look aufs Video vor allen Einblendungen
+    if (look) { graph.push(`${cv}${look}[lk]`); cv = '[lk]' }
     // Bild-Einblendungen vor den Untertiteln (die liegen oben): je Stück ein Input ab 0, weich per Alpha-Blende, Rand 4 % der Breite
+    // video: Input ab vt, Zeitstempel auf a verschoben; voll: füllt das Format, ein Bild (nicht Folie) mit langsamem Zoom aus einem Einzelbild (zoompan d = Frames)
+    // auf doppelter Größe, damit die Ganzzahl-Positionen von zoompan nicht ruckeln
     const r4 = Math.round(size.w * 0.04), low = Math.round(capMargin(size) + Math.min(size.w, size.h) * 0.16) // unten: über der Untertitelzeile wie der Text
+    const kb = (x: { image?: string; video?: string; slide?: number; pos?: Overlay['pos'] }) => x.pos === 'voll' && !x.video && !x.slide
     imgs.forEach((x, j) => {
-      const d = sec(Math.min(0.2, (x.b - x.a) / 2)), pos = x.pos ?? 'unten'
-      const ox = pos === 'oben-links' ? r4 : pos === 'oben-rechts' ? `W-w-${r4}` : '(W-w)/2', oy = pos.startsWith('oben') ? r4 : pos === 'mitte' ? '(H-h)/2' : `H-h-${low}`
-      graph.push(`[${ps.length + j}:v]scale=${Math.round(OVERLAY_W[x.size ?? 'mittel'] * size.w)}:-1,format=rgba${x.fade[0] ? `,fade=t=in:st=${sec(x.a)}:d=${d}:alpha=1` : ''}${x.fade[1] ? `,fade=t=out:st=${sec(x.b - Number(d))}:d=${d}:alpha=1` : ''}[o${j}]`,
+      const d = sec(Math.min(0.2, (x.b - x.a) / 2)), pos = x.pos ?? 'unten', voll = pos === 'voll', n = Math.ceil((x.b - x.a) * 30) + 2
+      const ox = voll ? 0 : pos.endsWith('links') ? r4 : pos.endsWith('rechts') ? `W-w-${r4}` : '(W-w)/2', oy = voll ? 0 : pos.startsWith('oben') ? r4 : pos === 'mitte' ? '(H-h)/2' : `H-h-${low}`
+      const cover = (w: number, h: number) => `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}`
+      const fit = kb(x) ? `${cover(2 * size.w, 2 * size.h)},zoompan=z='1+${Math.min(KEN_BURNS.max, KEN_BURNS.perSec * (x.b - x.a))}*on/${n}':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=${n}:s=${size.w}x${size.h}:fps=30,setpts=PTS-STARTPTS+${sec(x.a)}/TB`
+        : `${x.video ? `setpts=PTS-STARTPTS+${sec(x.a)}/TB,` : ''}${voll ? cover(size.w, size.h) : `scale=${Math.round(OVERLAY_W[x.size ?? 'mittel'] * size.w)}:-1`}`
+      graph.push(`[${ps.length + j}:v]${fit},format=rgba${x.fade[0] ? `,fade=t=in:st=${sec(x.a)}:d=${d}:alpha=1` : ''}${x.fade[1] ? `,fade=t=out:st=${sec(x.b - Number(d))}:d=${d}:alpha=1` : ''}[o${j}]`,
         `${cv}[o${j}]overlay=${ox}:${oy}:enable='between(t,${sec(x.a)},${sec(x.b)})'[ov${j}]`)
       cv = `[ov${j}]`
+    })
+    // Verpixeln: Bereich (Anteile des fertigen Bildes, gerade px) klein rechnen und blockig zurück, ohne Blende – soll durchgehend unkenntlich sein
+    pix.forEach((x, j) => {
+      const [bx, by, bw2, bh2] = x.box!, even = (v: number) => Math.max(2, Math.round(v / 2) * 2), blk = Math.max(4, Math.round(Math.min(size.w, size.h) / 36))
+      const cw = Math.min(even(bw2 * size.w), size.w), ch = Math.min(even(bh2 * size.h), size.h), cx = Math.min(even(bx * size.w), size.w - cw), cy = Math.min(even(by * size.h), size.h - ch)
+      graph.push(`${cv}split[pa${j}][pb${j}]`, `[pb${j}]crop=${cw}:${ch}:${cx}:${cy},scale=${Math.max(1, Math.round(cw / blk))}:${Math.max(1, Math.round(ch / blk))}:flags=area,scale=${cw}:${ch}:flags=neighbor[pc${j}]`,
+        `[pa${j}][pc${j}]overlay=${cx}:${cy}:enable='between(t,${sec(x.a)},${sec(x.b)})'[px${j}]`)
+      cv = `[px${j}]`
     })
     const vf = [subs && `ass=${id}.ass:fontsdir=fonts`, o.fadeIn && first && `fade=t=in:d=${FADE}`, o.fadeOut && last && `fade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
     // Sprachkette nach dem concat: Entrauschen lernt über die ganze Gruppe; vor den Szenen-Blenden, sonst höbe der Kompressor sie an
@@ -252,13 +301,13 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     graph.push(`${cv}${vf.filter(Boolean).join(',') || 'null'}[v]`, `${ca}${af.filter(Boolean).join(',') || 'anull'}[a]`)
     // je Ausschnitt mit Vorlauf für die Überblendung; 0,1 s Reserve, damit trim die Frames sicher bekommt (atrim schneidet den Ton genau)
     const inputs = [...ps.flatMap((p, i) => ['-ss', sec(p.start - ((hv[i] ?? 0) / 30) * sp[i]), '-t', sec(p.end - p.start + (((hv[i] ?? 0) + (hv[i + 1] ?? 0)) / 30) * sp[i] + 0.1 * Math.max(1, sp[i])), '-i', job.file]), // Reserve 0,1 s Clip-Zeit auch bei Zeitraffer
-      ...imgs.flatMap((x) => ['-loop', '1', '-framerate', '30', '-t', sec(x.b), '-i', x.image!])]
+      ...imgs.flatMap((x) => (x.video ? ['-ss', sec(x.vt), '-t', sec(x.b - x.a + 0.5), '-i', x.video] : kb(x) ? ['-i', x.image!] : ['-loop', '1', '-framerate', '30', '-t', sec(x.b), '-i', x.image!]))]
     const file = join(dir, `${id}.mkv`)
     const args = [...inputs, '-filter_complex', graph.join(';'), '-map', '[v]', '-map', '[a]', ...video(o.preset), ...PCM, file]
     const ro = { cwd: dir, duration: dur, onProgress: onProgress && ((pct: number) => onProgress(Math.floor(((done + (dur * pct) / 100) / total) * 100))) }
     await ffx(args, ro, o.phone)
     const music = ps.flatMap((p, i): [number, number, number][] => (p.music === undefined ? [] : [[at[i], at[i + 1], p.music]]))
-    segs.push({ file, dur, ...(music.length ? { music } : {}) })
+    segs.push({ file, dur, ...(music.length ? { music } : {}), ...(words.length ? { cues: cues(words, 'satz') } : {}) }) // SRT immer in Zeilen, auch bei wort
     done += dur
   }
   return segs
@@ -272,7 +321,7 @@ export async function encodeCover(job: ClipJob, t: number | undefined, out: stri
   // Kamerafahrt: focus linear zwischen den Stützpunkten, davor und danach konstant (wie cropFilter)
   const k = p.track?.findIndex(([kt]) => kt > at) ?? -1, tr = p.track
   const focus = !tr?.length ? p.focus : k < 0 ? tr[tr.length - 1][1] : k === 0 ? tr[0][1] : tr[k - 1][1] + ((tr[k][1] - tr[k - 1][1]) * (at - tr[k - 1][0])) / (tr[k][0] - tr[k - 1][0])
-  const { size } = job, hook = job.hook?.trim(), name = basename(out).replace(/\.\w+$/, '')
+  const { size } = job, hook = job.hook?.trim(), name = basename(out).replace(/\.\w+$/, ''), look = await lookFilter(job)
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2))
   const fit = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01
     ? `split[b][f];[b]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g];` +
@@ -284,7 +333,7 @@ export async function encodeCover(job: ClipJob, t: number | undefined, out: stri
     // Einblendung weg: das Standbild läge sonst im Moment ganz durchsichtig
     await writeFile(join(dir, `${name}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: 1, cues: [], mode: 'aus', style: job.style }).replace(HOOK_FADE, ''))
   }
-  await ffx(['-ss', sec(at), '-i', job.file, '-frames:v', '1', '-update', '1', '-vf', `${fit},setsar=1${hook ? `,ass=${name}.ass:fontsdir=fonts` : ''}`, '-q:v', '2', out], { cwd: dir }, phone)
+  await ffx(['-ss', sec(at), '-i', job.file, '-frames:v', '1', '-update', '1', '-vf', `${fit}${look ? `,${look}` : ''},setsar=1${hook ? `,ass=${name}.ass:fontsdir=fonts` : ''}`, '-q:v', '2', out], { cwd: dir }, phone)
 }
 
 /** Standbild (PNG in Ausgabegröße) als Zwischenstand von STILL Sekunden mit stillem Ton, gleiche Video-Parameter wie die Clips. */
@@ -333,7 +382,8 @@ export async function joinSegs(a: Seg, b: Seg, transition: string, out: string, 
   await ffx(['-i', basename(a.file), '-i', basename(b.file), '-filter_complex', `[0:v][1:v]xfade=transition=${transition}:duration=${sec(d / 30)}:offset=${sec((fa - d - 0.5) / 30)}[v];[0:a][1:a]acrossfade=d=${sec(d / 30)}[a]`,
     '-map', '[v]', '-map', '[a]', ...video(preset), ...PCM, out], { cwd: dir }, phone)
   const music = [...(a.music ?? []), ...(b.music ?? []).map(([x, y, v]): [number, number, number] => [x + off, y + off, v])]
-  return { file: out, dur: a.dur + b.dur - d / 30, ...(music.length ? { music } : {}) }
+  const subs = [...(a.cues ?? []), ...(b.cues ?? []).map((c) => ({ ...c, start: c.start + off, end: c.end + off }))]
+  return { file: out, dur: a.dur + b.dur - d / 30, ...(music.length ? { music } : {}), ...(subs.length ? { cues: subs } : {}) }
 }
 
 /** Eine Clip-Szene fertig als MP4 (Zwischenstände + Endschritt). Gibt die Länge (s) zurück. */
@@ -383,7 +433,8 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
     const p = join(parent, e.name), st = await stat(p).catch(() => null)
     if (st && Date.now() - st.mtimeMs > STALE) await rm(p, { recursive: true, force: true })
   }
-  const scenes = deck.slides.map((s, i) => ({ i, clip: s.layout === 'clip' ? (s.content as ClipContent) : undefined })).filter((x) => format === 'mp4' || x.clip)
+  // Ausgeblendete Folien nie als Szene: der Aufrufer reicht sie mit, weil Clips sie als Einblendung (overlays.slide, Nummer in deck.slides) zeigen
+  const scenes = deck.slides.map((s, i) => ({ i, clip: s.layout === 'clip' ? (s.content as ClipContent) : undefined })).filter((x) => !deck.slides[x.i].hidden && (format === 'mp4' || x.clip))
   if (!scenes.length) throw new Error('Keine Clip-Folie im Deck: Einzelne Clips entstehen nur aus Folien mit dem Layout „clip“.')
   // Vorab prüfen, damit ein Fehler in Folie 5 nicht erst nach vier fertigen Szenen auffällt
   for (const { i, clip } of scenes) {
@@ -392,6 +443,17 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
     videoPath(clip.video, i + 1)
     checkParts(clip.parts, `Folie ${i + 1}`)
     for (const x of clip.overlays ?? []) {
+      if (x.video) {
+        const v = videoPath(x.video, i + 1, 'video')
+        if (!VIDEO_FILE.test(v)) throw new Error(`Folie ${i + 1}: Die Einblendung „video“ braucht eine Videodatei, nicht ${basename(v)}.`)
+        if (!(await stat(v).catch(() => null))) throw new Error(`Folie ${i + 1}: Das Video der Einblendung fehlt (${basename(v)}).`)
+      }
+      if (x.slide !== undefined) {
+        const s = deck.slides[x.slide - 1]
+        if (!s) throw new Error(`Folie ${i + 1}: Die Einblendung zeigt Folie ${x.slide}, das Deck hat nur ${deck.slides.length} Folien.`)
+        if (!s.hidden) throw new Error(`Folie ${i + 1}: Folie ${x.slide} ist nicht ausgeblendet. Einblend-Folien brauchen hidden: true, sonst stehen sie zusätzlich als eigene Szene im Video.`)
+        if (s.layout === 'clip') throw new Error(`Folie ${i + 1}: Folie ${x.slide} ist ein Clip. Eingeblendet werden nur Folien ohne Video (Diagramm, Zahl, Liste, Zitat).`)
+      }
       const img = x.image && videoPath(x.image, i + 1, 'image')
       if (!img) continue
       if (!/\.(png|jpe?g|webp|bmp|gif)$/i.test(img)) throw new Error(`Folie ${i + 1}: Die Einblendung braucht ein Rasterbild (PNG, JPEG, WebP, BMP oder GIF), nicht ${basename(img)}.`)
@@ -423,7 +485,17 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
     const font = scenes.some((x) => x.clip) ? await subFont(deck) : { name: 'Archivo', files: [], bold: true }
     const all: Seg[] = [], moves: [string, string][] = [] // erst im Job-Ordner, am Ende per rename: ein Abbruch lässt den letzten guten Export stehen
     // Titelbild (.jpg) und Post-Text (.txt) neben das MP4; ein Fehler beim Bild kostet nur das Bild
-    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string, phone?: Phone) => {
+    // Folie als PNG in Ausgabegröße (Standbild-Szene oder Einblendung)
+    const slidePng = async (idx: number, file: string) => {
+      const [{ renderSlide }, { nativeImage }] = await Promise.all([import('./render'), import('electron')])
+      const png = join(dir, file)
+      await writeFile(png, nativeImage.createFromBuffer((await renderSlide(deck, idx, { png: true })).png!).resize({ width: size.w, height: size.h, quality: 'best' }).toPNG())
+      return png
+    }
+    // Untertitel aller Zwischenstände auf der Achse der Ausgabedatei (Standbilder und Folienblenden stecken in Seg.dur)
+    const subsOf = (segs: Seg[]) => { let off = 0; return segs.flatMap((x) => { const r = (x.cues ?? []).map((c) => ({ ...c, start: c.start + off, end: c.end + off })); off += x.dur; return r }) }
+    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string, phone?: Phone, subs: Cue[] = []) => {
+      if (subs.length) { await writeFile(join(dir, `${name}.srt`), srt(subs), 'utf8'); moves.push([join(dir, `${name}.srt`), `${to}.srt`]) }
       if (cover) await encodeCover(cover.job, cover.t, join(dir, `${name}.jpg`), dir, phone).then(
         () => moves.push([join(dir, `${name}.jpg`), `${to}.jpg`]), (e: Error) => console.warn(`[video] Titelbild ${basename(to)}.jpg fehlgeschlagen:`, e.message))
       if (post?.trim()) { await writeFile(join(dir, `${name}.txt`), post, 'utf8'); moves.push([join(dir, `${name}.txt`), `${to}.txt`]) }
@@ -436,15 +508,14 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         const file = videoPath(clip.video, i + 1), captions = clip.captions ?? 'wort'
         const transcript = captions === 'aus' && clip.pauses !== 'kurz' ? null : await transcriptOf(file) // pauses kurz: Füllwörter aus dem Transkript
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
-        const overlays = clip.overlays?.map((x) => (x.image ? { ...x, image: videoPath(x.image, i + 1, 'image') } : x))
-        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays }
+        const overlays = clip.overlays && await Promise.all(clip.overlays.map(async (x, j) => (x.image ? { ...x, image: videoPath(x.image, i + 1, 'image') }
+          : x.video ? { ...x, video: videoPath(x.video, i + 1, 'video') } : x.slide ? { ...x, image: await slidePng(x.slide - 1, `einblendung-${n2(k + 1)}-${n2(j + 1)}.png`) } : x)))
+        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays, look: clip.look, stabil: clip.stabil, captionPos: clip.captionPos }
         segs = await clipSegs(job, name, dir, so, step(weights[k]))
         if (!first.cover && clip.cover !== undefined) first.cover = { job, t: clip.cover }
         first.post ??= clip.post?.trim() ? clip.post : undefined
       } else {
-        const [{ renderSlide }, { nativeImage }] = await Promise.all([import('./render'), import('electron')])
-        const png = join(dir, `folie-${n2(k + 1)}.png`)
-        await writeFile(png, nativeImage.createFromBuffer((await renderSlide(deck, i, { png: true })).png!).resize({ width: size.w, height: size.h, quality: 'best' }).toPNG())
+        const png = await slidePng(i, `folie-${n2(k + 1)}.png`)
         segs = [await encodeStill(png, join(dir, `${name}.mkv`), dir, so, step(weights[k]))]
       }
       done += weights[k]
@@ -455,16 +526,17 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         await Promise.all([a, b].map((x) => rm(x.file, { force: true })))
       }
       if (format === 'mp4') { all.push(...segs); continue }
+      const subs = subsOf(segs)
       await finish(segs, join(dir, `${name}.mp4`), dir, { loudnorm: true, music: o.music, phone: o.phone, onProgress: step(weights[k] * 0.2) })
       await Promise.all(segs.map((x) => rm(x.file, { force: true }))) // Zwischenstände sofort weg: bei langen Exporten sonst viele GB
       done += weights[k] * 0.2
       moves.push([join(dir, `${name}.mp4`), `${base}-${n2(k + 1)}.mp4`])
-      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post, o.phone)
+      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post, o.phone, subs)
     }
     if (format === 'mp4') {
       await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: true, music: o.music, phone: o.phone, onProgress: step(sum * 0.2) })
       moves.push([join(dir, 'gesamt.mp4'), `${base}.mp4`])
-      await extras('gesamt', base, first.cover, first.post, o.phone)
+      await extras('gesamt', base, first.cover, first.post, o.phone, subsOf(all))
     }
     for (const [from, to] of moves) await rename(from, to) // Job-Ordner liegt neben dem Ziel, also im selben Dateisystem
     onProgress(100)
