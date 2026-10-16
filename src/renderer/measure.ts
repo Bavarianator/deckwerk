@@ -238,6 +238,25 @@ export function extract(root: HTMLElement): El[] {
       case 'chart':
         els.push({ ...base, kind: 'chart', spec: JSON.parse(el.dataset.chart ?? '{}') })
         break
+      case 'table': {
+        // Folienpixel wie base.box (offset*, ungedreht und unskaliert)
+        const rows = [...(el as HTMLTableElement).rows]
+        const first = [...(rows[0]?.cells ?? [])]
+        const td = rows[1]?.cells[0]
+        els.push({
+          ...base, kind: 'table',
+          cells: rows.map((r) => [...r.cells].map((c) => c.innerText)),
+          colW: first.map((c) => c.offsetWidth),
+          rowH: rows.map((r) => r.offsetHeight),
+          sizePx: parseFloat(cs.fontSize),
+          font: el.dataset.font === 'head' ? 'head' : 'body',
+          fontFace: el.dataset.face ? FONTS[el.dataset.face as FontName]?.pptx ?? el.dataset.face : undefined,
+          color: parseColor(cs.color)?.color ?? '#000000',
+          line: (td && parseColor(getComputedStyle(td).borderBottomColor)?.color) || cs.getPropertyValue('--free-line').trim().toUpperCase() || '#000000', // ohne Körperzeile: Wert aus slide.tsx (#RRGGBB)
+          align: first.map((c) => (getComputedStyle(c).textAlign === 'right' ? 'right' : 'left')),
+        })
+        break
+      }
     }
   }
   return els

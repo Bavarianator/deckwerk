@@ -16,6 +16,12 @@
 .hide-text .slide [data-pptx="text"] { visibility: hidden !important; } /* Word-Export: nur der Text wird nativ */
 .hide-text .slide [data-pptx="text"]::before { visibility: visible; }
 
+/* ---------- freie Tabelle: nur Haarlinien, Kopfzeile fett über 2px-Linie in Textfarbe ---------- */
+.free-table { border-collapse: collapse; table-layout: fixed; line-height: 1.25; }
+/* 8px seitlich wie die PPTX-Zelle (export-pptx.ts), damit der Umbruch gleich bleibt; vertikale Luft steckt in rowH */
+.free-table th, .free-table td { padding: 0.45em 8px; border-bottom: 1px solid var(--free-line); vertical-align: middle; overflow-wrap: break-word; }
+.free-table th { font-weight: 700; border-bottom: 2px solid currentColor; }
+
 /* ---------- decor ---------- */
 .decor { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .decor .blob { position: absolute; border-radius: 50%; filter: blur(90px); }

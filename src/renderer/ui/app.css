@@ -272,6 +272,8 @@ fieldset.plain { display: block; height: auto; border: 0; margin: 0; padding: 0;
 input[type='range'] { width: 100%; accent-color: var(--accent); }
 input[type='number'] { color-scheme: dark; }
 textarea.mono { font-family: ui-monospace, monospace; font-size: 12px; }
+.tbl-edit { display: grid; gap: 4px; align-items: center; }
+.tbl-edit input { min-width: 0; padding: 4px 6px; font-size: 12px; }
 
 .thumb-acts { position: absolute; right: 6px; top: 6px; z-index: 1; display: none; gap: 2px; }
 .thumb:hover .thumb-acts { display: flex; }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { icons } from 'lucide-react'
 import QRCode from 'qrcode'
-import { GRAPHICS, connect } from '../shared/items'
+import { GRAPHICS, connect, squareCells } from '../shared/items'
 import { Chart, registerables, type ChartConfiguration, type Plugin } from 'chart.js'
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
 import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
@@ -538,6 +538,9 @@ function AudioItem({ it, attrs, pos, slot, live, color }: { it: Item; attrs: Rec
   )
 }
 
+// wie isNum in layouts-extra.tsx (Layout „table“)
+const isNum = (v: string) => /^[−+-]?[\d.,\s]+(%|€|Mio|Mrd|Pkt\.?|Tsd\.?|k|M|€\s*[kM]?)?\s*€?$/.test(v.trim()) || /^[€$]\s?[\d.,]/.test(v.trim())
+
 function FreeItem({ it }: { it: Item }) {
   const { theme, editable, editing, onEdit, live } = useSlide()
   const slot = `items.${it.id}`
@@ -599,6 +602,19 @@ function FreeItem({ it }: { it: Item }) {
         <span {...attrs} className="icon" data-pptx="icon" data-slot={slot} style={{ ...pos, color: it.color ?? theme.c.accent, opacity: alpha < 1 ? alpha : undefined }}>
           <Cmp width="100%" height="100%" strokeWidth={it.strokeW ?? 1.75} />
         </span>
+      )
+    }
+    case 'table': {
+      const [head = [], ...body] = squareCells(it.cells ?? [[]])
+      // Spalte rechtsbündig, wenn alle gefüllten Zellen darunter Zahlen sind
+      const num = head.map((_, i) => body.some((r) => r[i].trim()) && body.every((r) => !r[i].trim() || isNum(r[i])))
+      const al = (i: number): CSSProperties => ({ textAlign: num[i] ? 'right' : 'left' })
+      return (
+        <table {...attrs} className="free-table" data-pptx="table" data-slot={slot} data-font={it.font === 'head' ? 'head' : 'body'} data-face={it.font && it.font !== 'head' && it.font !== 'body' ? it.font : undefined}
+          style={{ ...pos, height: undefined, fontFamily: fontCss({ ...it, font: it.font ?? 'body' }), fontSize: it.size ?? 22, color: it.color ?? theme.c.text, '--free-line': it.stroke ?? theme.c.border, opacity: alpha < 1 ? alpha : undefined } as CSSProperties}>
+          <thead><tr>{head.map((v, i) => <th key={i} style={al(i)}>{v}</th>)}</tr></thead>
+          <tbody>{body.map((r, j) => <tr key={j}>{r.map((v, i) => <td key={i} style={al(i)}>{v}</td>)}</tr>)}</tbody>
+        </table>
       )
     }
     case 'chart':

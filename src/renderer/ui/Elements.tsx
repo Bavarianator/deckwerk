@@ -3,7 +3,7 @@
 import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Film, icons, ImagePlus, Music, QrCode as QrCodeIcon, Search } from 'lucide-react'
 import { FORMATS, SHAPES, sizeOf, type ChartSpec, type Deck, type FormatId, type Item } from '../../shared/deck'
-import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newMedia, newQr, newShape, newText } from '../../shared/items'
+import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newMedia, newQr, newShape, newTable, newText } from '../../shared/items'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { SHAPE_PATHS } from '../slide'
@@ -210,6 +210,7 @@ export function Elements({ deck, slideId, disabled, onAdd, onAddSlide, pickImage
         <h3>Diagramme</h3>
         <div className="el-grid wide">
           {CHARTS.map(([type, name]) => <Tile key={type} {...tile} make={() => newChart(type)} title={`${name}diagramm`} className="el-chip">{name}</Tile>)}
+          <Tile {...tile} make={newTable} title="Tabelle (Zellen im Inspector bearbeiten)" className="el-chip">Tabelle</Tile>
         </div>
       </section>
 

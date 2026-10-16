@@ -95,7 +95,7 @@ export type AnimDir = (typeof ANIM_DIRS)[number]
 export type AnimSpeed = 'slow' | 'fast' // ohne = normal
 export interface Item {
   id: string
-  kind: 'text' | 'shape' | 'image' | 'icon' | 'chart' | 'video' | 'audio' | 'qr' | 'graphic' // qr: text = Inhalt; graphic: Name aus GRAPHICS
+  kind: 'text' | 'shape' | 'image' | 'icon' | 'chart' | 'video' | 'audio' | 'qr' | 'graphic' | 'table' // qr: text = Inhalt; graphic: Name aus GRAPHICS
   group?: string // gemeinsame ID = Gruppe: wird zusammen gewählt, verschoben und skaliert
   x: number; y: number; w: number; h: number // Text: h ergibt sich aus dem Inhalt
   rot?: number // Grad im Uhrzeigersinn
@@ -140,6 +140,8 @@ export interface Item {
   icon?: string
   graphic?: string
   spec?: ChartSpec
+  // table: Zellen zeilenweise, erste Zeile = Kopfzeile; Schrift über size/font/color, Linien über stroke
+  cells?: string[][]
 }
 
 export interface Crop { x: number; y: number; w: number; h: number }
@@ -286,7 +288,13 @@ export interface IconEl extends Base { kind: 'icon'; svg: string; png?: string; 
 export interface ChartEl extends Base { kind: 'chart'; spec: ChartSpec }
 // Video/Audio: in der PPTX als eingebettetes Medium, im PDF/PNG als Vorschaubild
 export interface MediaEl extends Base { kind: 'media'; media: 'video' | 'audio'; src: string; poster?: string }
-export type El = TextEl | BoxEl | ImgEl | IconEl | ChartEl | MediaEl
+// Tabelle (freies Element): in der PPTX native Tabelle; Spaltenbreiten und Zeilenhöhen gemessen, Zeile 0 = Kopfzeile
+export interface TableEl extends Base {
+  kind: 'table'; cells: string[][]; colW: number[]; rowH: number[]
+  sizePx: number; font: 'head' | 'body'; fontFace?: string; color: string; line: string
+  align: ('left' | 'right')[] // je Spalte: Zahlen rechtsbündig
+}
+export type El = TextEl | BoxEl | ImgEl | IconEl | ChartEl | MediaEl | TableEl
 
 export interface ChartSpec {
   type: 'bar' | 'hbar' | 'stacked' | 'waterfall' | 'line' | 'donut'
