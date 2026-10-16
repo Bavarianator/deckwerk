@@ -1,11 +1,12 @@
 import { app, BrowserWindow, net, protocol, shell } from 'electron'
 import { spawn } from 'node:child_process'
 import { setDefaultResultOrder } from 'node:dns'
-import { readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { MEDIA_EXT, profileOf } from '../shared/deck'
+import { MEDIA_EXT, profileOf, VIDEO_FILE } from '../shared/deck'
 import type { createEngine } from './engine'
 import { setupSpellcheck } from './spellcheck'
 import { localAsset } from './sync'
@@ -43,6 +44,15 @@ app.on('web-contents-created', (_, wc) => {
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'asset', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true } }])
 
+// Höchstens 2 ffmpeg-Standbilder gleichzeitig: eine fremde deck.json mit vielen Clip-Folien löste sonst eine Prozessflut aus
+let frameFree = 2
+const frameQueue: (() => void)[] = []
+async function frameSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (frameFree > 0) frameFree--
+  else await new Promise<void>((go) => frameQueue.push(go))
+  try { return await fn() } finally { const next = frameQueue.shift(); if (next) next(); else frameFree++ }
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1600, height: 960, minWidth: 1200, minHeight: 760, backgroundColor: '#ffffff', title: 'Deckwerk',
@@ -67,6 +77,9 @@ function createWindow() {
 async function renderCli(engine: ReturnType<typeof createEngine>, file: string, outDir: string) {
   const { localizeDeck } = await import('./tools')
   const deck = localizeDeck(JSON.parse(await readFile(resolve(file), 'utf8')), dirname(resolve(file)))
+  const fonts = await (await import('./webfonts')).withDeckFonts(deck) // Katalogschriften laden bzw. Ersatz, verwaiste Einträge weg
+  deck.theme = fonts.theme
+  for (const n of fonts.notes) console.log(`Schriften: ${n}`)
   const issues = await engine.lint(deck)
   for (const i of issues) console.log(`${i.severity === 'error' ? '✗' : '!'} Folie ${i.slide + 1} [${i.rule}] ${i.message}`)
   console.log(`${issues.filter((i) => i.severity === 'error').length} Fehler, ${issues.filter((i) => i.severity === 'warn').length} Warnungen`)
@@ -81,9 +94,46 @@ app.whenReady().then(async () => {
   protocol.handle('asset', async (req) => {
     const file = localAsset(decodeURIComponent(new URL(req.url).pathname))
     if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
-    const res = await net.fetch(pathToFileURL(file).toString(), { headers: req.headers })
+    // ?frame=<s> auf einer Videodatei: Standbild als JPEG (ffmpeg, gecacht). Die Clip-Folie braucht kein <video>, das im Offscreen-Fenster nach dem Spulen hängt.
+    const frame = new URL(req.url).searchParams.get('frame')
+    if (frame !== null && VIDEO_FILE.test(file)) {
+      try {
+        const t = Math.round(Math.min(48 * 3600, Math.max(0, Number(frame) || 0)) * 10) / 10 // fremde deck.json: keine Fantasiezeiten im Cache-Namen
+        const st = await stat(file)
+        const dir = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'assets', '.video')
+        const jpg = join(dir, `${createHash('sha1').update(`${file}|${st.size}|${st.mtimeMs}`).digest('hex')}-${t}.jpg`)
+        let buf: Uint8Array | undefined = await readFile(jpg).catch(() => undefined)
+        if (!buf) {
+          buf = await frameSlot(async () => (await (await import('./ffmpeg')).frames(file, [t], 1280))[0])
+          await mkdir(dir, { recursive: true })
+          await writeFile(jpg, buf)
+        }
+        return new Response(buf as BodyInit, { headers: { 'Content-Type': 'image/jpeg', 'Access-Control-Allow-Origin': '*' } })
+      } catch {
+        return new Response(null, { status: 404 })
+      }
+    }
+    // net.fetch schneidet bei Range zwar die Bytes zu, antwortet aber mit 200 ohne Content-Range: dann hält Chromium Videos für nicht spulbar.
+    // Darum Range selbst auflösen (auch bytes=100- und bytes=-500) und als 206 beantworten.
+    const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.get('range') ?? '')
+    let part: { start: number; end: number; size: number } | undefined
+    if (m && (m[1] || m[2])) {
+      const size = (await stat(file)).size
+      const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2])), end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1
+      if (start > end) return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } })
+      part = { start, end, size }
+    }
+    const ask = new Headers(req.headers)
+    if (part) ask.set('Range', `bytes=${part.start}-${part.end}`)
+    const res = await net.fetch(pathToFileURL(file).toString(), { headers: ask })
     const headers = new Headers(res.headers)
     headers.set('Access-Control-Allow-Origin', '*')
+    headers.set('Accept-Ranges', 'bytes')
+    if (part && res.status === 200) {
+      headers.set('Content-Range', `bytes ${part.start}-${part.end}/${part.size}`)
+      headers.set('Content-Length', String(part.end - part.start + 1))
+      return new Response(res.body, { status: 206, headers })
+    }
     return new Response(res.body, { status: res.status, headers })
   })
   const argv = process.argv

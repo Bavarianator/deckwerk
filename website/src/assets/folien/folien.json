@@ -684,14 +684,63 @@
       "layout": "photo",
       "theme": "zen",
       "notes": "Warum wir wachsen: Die Nachfrage ist da, die Plätze fehlen. Foto: Jeff Sheldon / Unsplash."
+    },
+    "druck-bewerbung-1": {
+      "title": "als Pflegefachkraft in der ambulanten Pflege",
+      "layout": "application-cover",
+      "theme": "redaktion",
+      "notes": ""
+    },
+    "druck-bewerbung-2": {
+      "title": "Bewerbung als Pflegefachkraft in der ambulanten Pflege (Kennziffer PF-26-14)",
+      "layout": "letter",
+      "theme": "redaktion",
+      "notes": ""
+    },
+    "druck-bewerbung-3": {
+      "title": "Mara",
+      "layout": "cv",
+      "theme": "redaktion",
+      "notes": ""
+    },
+    "druck-urkunde-1": {
+      "title": "Erste-Hilfe-Kurs",
+      "layout": "certificate",
+      "theme": "redaktion",
+      "notes": ""
+    },
+    "druck-einladung-1": {
+      "title": "Wir feiern 25 Jahre Praxis am Markt",
+      "layout": "invitation",
+      "theme": "editorial",
+      "notes": ""
+    },
+    "druck-speisekarte-1": {
+      "title": "Speisekarte",
+      "layout": "menu",
+      "theme": "redaktion",
+      "notes": ""
+    },
+    "druck-visitenkarte-1": {
+      "title": "Mara",
+      "layout": "business-card",
+      "theme": "redaktion",
+      "notes": ""
+    },
+    "druck-visitenkarte-2": {
+      "title": "Mara",
+      "layout": "business-card",
+      "theme": "redaktion",
+      "notes": ""
     }
   },
   "lint": [
-    "! Folie 2 [density] 59 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
-    "! Folie 3 [density] 63 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
-    "! Folie 4 [density] 59 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
+    "! Folie 2 [density] 56 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
+    "! Folie 3 [density] 60 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
+    "! Folie 4 [density] 56 Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.",
     "! Folie 4 [rhythm] Drittes \"bullets\" in Folge – Layout abwechseln, damit das Deck lebendig bleibt.",
     "! Folie 4 [monotone] Dritte Folie in Folge mit gleicher Komposition, gleichem Ton und ohne Foto – ein Foto, eine luftige Folie (statement, big-number) oder einen anderen frame einsetzen.",
+    "! Folie 4 [ki-muster] Auf 3 Folien genau drei Punkte – immer genau drei wirkt generiert. So viele Punkte nehmen, wie das Material hergibt: zwei, vier, oder einen einzigen als Statement.",
     "! Folie 5 [morph] Morph ohne gemeinsames Element mit der vorigen Folie (außer dem Titel) – wirkt nur wie Überblenden. Morph braucht wörtlich denselben Text (Agenda-Punkt = Kapiteltitel, Kennzahl = große Zahl), dasselbe Foto oder dasselbe Layout mit anderem focus/highlight; sonst transition weglassen."
   ]
 }

@@ -6,20 +6,21 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { PRINT_SIZES, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
+import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { parseCsv } from '../shared/merge'
-import { assetUrl, BRAND_FILE, buildTools, defaultBrand, exportSeries, IMAGE_SIZE, IMG_FILE, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, type Orientation } from './tools'
+import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, exportSeries, type Orientation } from './tools'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
 import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
 import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
+import { deckJson, withDeckFonts } from './webfonts'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -62,6 +63,25 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const detect = () => { for (const c of CLIS) clis[c] = findCli(c) } // erneut in Einrichtung und Modell-Liste: frisch Installiertes zählt sofort
   detect()
   const hasApiKey = () => existsSync(keyFile) || !!process.env.ANTHROPIC_API_KEY
+  // Katalogschriften des geöffneten Decks neu bestimmen: zuerst aus dem Cache (ohne Netz, darauf wartet das Öffnen), fehlende dann
+  // im Hintergrund laden und der UI wie beim Cloud-Sync nachreichen. Nicht als Änderung markiert: fontFiles sind Pfade dieses
+  // Rechners, jedes Öffnen bestimmt sie neu. ponytail: ändert jemand das Deck während des Downloads, verfällt dessen Ergebnis;
+  // die Schriften kommen dann mit font:ensure oder beim nächsten Öffnen (bei Bedarf: fontFiles in den neuen Stand mischen)
+  const heal = async () => {
+    const cur = deck
+    if (!cur) return
+    try {
+      const { theme } = await withDeckFonts(cur, { offline: true })
+      if (deck !== cur) return
+      const d = deck = { ...cur, theme }
+      void withDeckFonts(d).then(({ theme }) => {
+        if (deck !== d || JSON.stringify(theme) === JSON.stringify(d.theme)) return
+        deck = { ...d, theme }
+        agent?.setDeck(deck)
+        if (!win.isDestroyed()) win.webContents.send('deck:synced', deck)
+      }).catch((e) => console.warn('[fonts] Schriften nachladen:', e))
+    } catch (e) { console.warn('[fonts] Schriften beim Öffnen:', e) } // kaputte deck.json: öffnen ohne Katalogschriften
+  }
   loadImageSettings()
 
   // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/deckwerk wie image-settings.bin; Lauf beim Start und 5 s nach dem Speichern
@@ -71,7 +91,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Hat der Sync das offene Deck überschrieben, neu laden. ponytail: mit ungesicherten Änderungen gewinnt die lokale Fassung beim nächsten Speichern
   const syncChanged = (files: string[]) => {
     if (!path || dirty || !files.includes(path) || !existsSync(path)) return
-    try { deck = readDeck(path); agent?.setDeck(deck); if (!win.isDestroyed()) win.webContents.send('deck:synced', deck) } catch (e) { console.warn('[sync] Deck neu laden:', e) }
+    try { deck = readDeck(path) } catch (e) { console.warn('[sync] Deck neu laden:', e); return }
+    void heal().then(() => { agent?.setDeck(deck!); if (!win.isDestroyed()) win.webContents.send('deck:synced', deck) })
   }
   const syncFetch = syncFetchFor(HOME) // Ordner-Ziele nie in HOME, auch wenn der Ordner später per Link dorthin zeigt
   const syncer = createSyncer(HOME, () => syncCfg, (st) => { if (!win.isDestroyed()) win.webContents.send('sync:status', st) }, syncChanged, syncFetch)
@@ -99,7 +120,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const flush = () => {
     if (!dirty || !deck) return
     path ??= join(freeDir(deck.title), 'deck.json')
-    writeFileSync(path, JSON.stringify(deck, null, 2))
+    writeFileSync(path, deckJson(deck))
     dirty = false
   }
   win.on('closed', () => {
@@ -125,6 +146,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   if (first) {
     try {
       reset(readDeck(first), first)
+      void heal()
     } catch (e) {
       console.error(`[ipc] --open ${first}:`, e instanceof Error ? e.message : e)
     }
@@ -137,6 +159,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       flush()
       const file = await restore(f)
       reset(readDeck(file), file)
+      await heal()
       if (!win.isDestroyed()) win.webContents.send('deck:opened', state())
     } catch (e) {
       console.error(`[ipc] Öffnen von außen ${f}:`, e instanceof Error ? e.message : e)
@@ -159,6 +182,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     flush() // offene Änderungen zuerst, sonst überschriebe reset() eine gerade wiederhergestellte Version
     const file = await restore(r.filePaths[0])
     reset(readDeck(file), file)
+    await heal()
     return state()
   })
 
@@ -167,6 +191,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     flush()
     const file = await restore(resolve(f))
     reset(readDeck(file), file)
+    await heal()
     return state()
   })
   // zuletzt geänderte Decks unter ~/Deckwerk/*/deck.json, neueste zuerst
@@ -186,7 +211,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
     path ??= join(freeDir(deck.title), 'deck.json')
     await snapshot(path)
-    const json = JSON.stringify(deck, null, 2)
+    const json = deckJson(deck)
     dirty = false // vor dem Schreiben: eine Änderung, die währenddessen kommt, bleibt markiert
     // atomar über eine Punktdatei (vom Sync ausgenommen): ein gleichzeitiger Cloud-Abgleich liest nie eine halbe deck.json
     await writeFile(`${dirname(path)}/.deck.json.part`, json)
@@ -195,16 +220,27 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return path
   })
 
-  ipcMain.handle('deck:export', async (_, format: ExportFormat, printIn?: PrintOptions) => {
+  let videoExport = false // ein Video-Export belegt ffmpeg und Renderfenster: kein zweiter parallel
+  ipcMain.handle('deck:export', async (e, format: ExportFormat, printIn?: PrintOptions) => {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Exportieren.')
+    const video = format === 'mp4' || format === 'clips'
+    if (video && videoExport) throw new Error('Es läuft schon ein Video-Export. Warte, bis er fertig ist.')
     // Vertrauensgrenze: print kommt aus dem Renderer, nur bekannte Größe und Beschnitt 0–5 mm durchlassen
     const size = typeof printIn?.size === 'string' && Object.hasOwn(PRINT_SIZES, printIn.size) ? printIn.size : undefined
     const bleed = typeof printIn?.bleed === 'number' && Number.isFinite(printIn.bleed) ? Math.min(5, Math.max(0, printIn.bleed)) : undefined
     const print: PrintOptions = { size, bleed }
     await mkdir(outDir(), { recursive: true })
-    const [file] = await engine.exportDeck(deck, format, outDir(), print)
-    shell.showItemInFolder(file)
-    return file
+    let last = -1
+    const onProgress = (pct: number) => {
+      const p = Math.round(pct)
+      if (p !== last && !e.sender.isDestroyed()) { last = p; e.sender.send('export:progress', p) }
+    }
+    if (video) videoExport = true
+    try {
+      const files = await engine.exportDeck(deck, format, outDir(), print, video ? onProgress : undefined)
+      if (files[0]) shell.showItemInFolder(files[0])
+      return files
+    } finally { if (video) videoExport = false }
   })
 
   // Serienbrief: CSV wählen, je Zeile eine Datei; Format nur aus der festen Liste (Vertrauensgrenze Renderer)
@@ -340,8 +376,17 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     await writeFile(out, png)
     return assetUrl(out)
   })
+  // Nur Cache-Daten eines Videos (Signale, Highlights, Transkript, Dauer), rechnet nie; null = kein Video / nicht erlaubt
+  ipcMain.handle('video:cached', async (_, src: string) => {
+    if (typeof src !== 'string') return null
+    try {
+      const file = src.startsWith('asset://') ? localAsset(decodeURIComponent(new URL(src).pathname)) : isAbsolute(src) ? resolve(src) : null
+      return file && VIDEO_FILE.test(file) ? ((await engine.video?.cached?.(file)) ?? null) : null
+    } catch { return null }
+  })
+  ipcMain.handle('jobs:list', () => jobList())
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {
-    const extensions = kind === 'video' ? ['mp4', 'webm', 'mov', 'm4v'] : ['mp3', 'wav', 'm4a', 'ogg', 'aac']
+    const extensions = kind === 'video' ? VIDEO_EXT : AUDIO_EXT
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: kind === 'video' ? 'Videos' : 'Audio', extensions }] })
     const file = r.filePaths[0]
     return r.canceled || !file ? null : assetUrl(file)
@@ -401,6 +446,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const err = await shell.openPath(STYLE_FILE)
     if (err) throw new Error(err)
   })
+  // Katalogschriften für ein Deck laden (offline: Ersatz) → Theme mit fontFiles; die UI übernimmt es nach einer Schriftwahl
+  ipcMain.handle('font:ensure', (_, d: Deck) => withDeckFonts(d))
   // eigene Schrift: 1–2 TTF (Regular, Bold am Dateinamen erkannt); Familienname aus der name-Tabelle, damit PowerPoint sie zuordnet
   ipcMain.handle('font:pick', async () => {
     const r = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'TrueType-Schrift', extensions: ['ttf'] }] })
@@ -473,7 +520,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     }))
   ipcMain.handle('deck:saveCopy', async (_, copy: Deck) => {
     const file = join(freeDir(copy.title), 'deck.json')
-    await writeFile(file, JSON.stringify(copy, null, 2))
+    await writeFile(file, deckJson(copy))
     return file
   })
   // Versionsverlauf: die Stände aus snapshot() des offenen Decks, neueste zuerst; wiederhergestellt wird über deck:openPath (restore())

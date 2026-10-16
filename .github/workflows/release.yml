@@ -25,6 +25,7 @@ jobs:
       - name: Paket prüfen (MCP ohne Bildschirm)
         run: |
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg # Testvideo für den Video-Schritt in mcp-e2e
           (cd dist && ./Deckwerk-x86_64.AppImage --appimage-extract >/dev/null)
           npx esbuild scripts/mcp-e2e.ts --bundle --packages=external --platform=node --format=esm --outfile=out/mcp-e2e.mjs --log-level=warning
           E2E_HEADLESS=1 E2E_APP="$PWD/dist/squashfs-root/AppRun" node out/mcp-e2e.mjs

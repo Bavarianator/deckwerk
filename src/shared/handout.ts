@@ -1,7 +1,7 @@
 import type { Deck } from './deck'
 
 // Handout (Canva „Deck → Doc“): Titel als Überschrift, übrige Texte als Liste, Notizen als Zitat
-const SKIP = /^(image|src|icon|logo|url|href|qr|photo|focus|look|color)$/i
+const SKIP = /^(image|src|icon|logo|url|href|qr|photo|focus|look|color|video|captions|pauses)$/i
 // Zeile 0 = Kopf; | in Zellen escapen, Zeilenumbrüche zu Leerzeichen
 const mdTable = (c: string[][]) => {
   const row = (r: string[]) => `| ${r.map((x) => x.replace(/\|/g, '\\|').replace(/\n+/g, ' ')).join(' | ')} |`
