@@ -6,7 +6,7 @@ import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, CUT, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipSpans, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type Look, type Overlay, type Part } from '../../shared/video'
+import { CLIP_STYLES, CUT, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipSpans, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, ovPos, listStep, type ClipContent, type Look, type Overlay, type Part } from '../../shared/video'
 import { SlideView, loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -385,11 +385,11 @@ const OvSlide = memo(function OvSlide({ deck, n, w }: { deck: Deck | null; n: nu
 // Einblendung wie im Export: on = ihre Quellzeit ist gerade im Clip zu sehen, at = Clip-Sekunden seit ihrem ersten Stück, len = bis zum Ende des letzten (langsamer Zoom bei voll)
 function Ov({ o, on, at, len, playing, deck }: { o: Overlay; on: boolean; at: number; len: number; playing: boolean; deck: Deck | null }) {
   const art = o.art ?? 'text', op = { opacity: on ? 1 : 0 }
-  if (art === 'verpixeln') {
-    const [x, y, w, h] = o.box ?? [0, 0, 0, 0]
-    return <div className="dv-pix" style={{ ...op, left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` }} aria-hidden />
+  if (art === 'verpixeln' || art === 'markierung') {
+    const [x, y, w, h] = o.box ?? [0, 0, 0, 0], label = o.text && <span className={y > 0.08 ? 'over' : 'under'}>{o.text}</span>
+    return <div className={art === 'verpixeln' ? 'dv-pix' : 'dv-mark'} style={{ ...op, left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` }} aria-hidden>{art === 'markierung' && label}</div>
   }
-  const pos = o.pos ?? (art === 'bauchbinde' ? 'unten-links' : art === 'titel' || art === 'zahl' ? 'mitte' : 'unten')
+  const pos = ovPos(o)
   const w = pos === 'voll' ? undefined : `${OVERLAY_W[o.size ?? 'mittel'] * 100}cqw`
   const rule = <i className="dv-rule" />, sub = o.sub && <small>{o.sub}</small>
   const body = o.image ? <img src={clipUrl(o.image)} alt="" style={{ width: w, '--dv-kb': Math.min(1, at / Math.max(0.001, len)) } as CSSProperties} />
@@ -398,10 +398,13 @@ function Ov({ o, on, at, len, playing, deck }: { o: Overlay; on: boolean; at: nu
     : art === 'bauchbinde' ? <>{rule}<b>{o.text}</b>{sub}</>
     : art === 'zahl' ? <><b>{o.text}</b>{rule}{sub}</>
     : art === 'titel' ? <><b>{o.text}</b>{sub}</>
+    : art === 'zitat' ? <><b>„{o.text?.replace(/^[„“"»«]+|[„“"»«]+$/g, '')}“</b>{sub}</>
+    : art === 'abspann' ? <>{rule}<b>{o.text}</b>{sub}</>
+    : art === 'liste' ? <>{rule}{o.text && <b>{o.text}</b>}{sub}{o.items?.map((x, k) => <span key={k} className="dv-li" style={{ opacity: at >= k * listStep(o.items!.length, len) - 1e-3 ? 1 : 0 }}>{x}</span>)}</>
     : o.text
   return (
     <>
-      {art === 'titel' && <div className="dv-dim" style={op} aria-hidden />}
+      {(art === 'titel' || art === 'zitat' || art === 'abspann') && <div className="dv-dim" style={op} aria-hidden />}
       <div className={`dv-ov ${pos} ${art}${on ? ' on' : ''}`} style={op} aria-hidden>{body}</div>
     </>
   )

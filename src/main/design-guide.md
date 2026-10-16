@@ -505,11 +505,12 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - Musik nur auf Wunsch oder bei Kompilationen, dezent und instrumental. Unter Sprache macht der Export sie automatisch leiser. Den Nachweis (CC BY) aus `find_music` in `music.credit` und in die Notes der letzten Folie.
 - Zurückhaltend wie die Folien: keine Emojis, Sticker oder Effektschriften, Zwischentitel kurz und sachlich.
 
-**Effekte** (sparsam, nur wo der Inhalt es verlangt; höchstens eine Einblendung zur Zeit, `verpixeln` ausgenommen; die Clip-Prüfung meldet Übertreibungen):
+**Effekte** (sparsam, nur wo der Inhalt es verlangt; höchstens eine Einblendung zur Zeit, `verpixeln` und Logo zum `abspann` ausgenommen; die Clip-Prüfung meldet Übertreibungen):
 - Bauchbinde (`art: "bauchbinde"`): einmal je Person beim ersten Auftritt, 3–5 s, Name in `text`, Funktion in `sub`. `titel`: Kapitelwechsel in langen Videos, 2–3 s. `zahl`: eine Kernzahl, die gerade gesagt wird. Text höchstens 40 Zeichen, nie das Gesagte (dafür `captions`). Zeiten sind Quellsekunden in einem Ausschnitt.
 - Bild-in-Bild (`video`, `image` oder `slide` in einer Ecke): Beleg, Produkt, Bildschirm. B-Roll (`pos: "voll"`): zeigt das Gesagte, 2–6 s; nie über ein Gesicht mit Emotion, nie in den ersten 3 s eines Shorts.
 - Folie einblenden: Diagramm, Zahl oder Liste als Folie aus dem Katalog mit `add_slides` anlegen, mit `update_slide` `hidden: true` ausblenden, dann `slide` = ihre Nummer im Deck.
 - `verpixeln`: Daten Dritter, Kennzeichen, Gesichter Unbeteiligter; `box` aus dem Kontaktabzug.
+- `liste`: Schritte in Erklärvideos. `zitat`: der Kernsatz eines Shorts. `markierung`: Rahmen um ein Detail (`box` wie bei `verpixeln`), 2–6 s. `abspann`: einmal in den letzten 8 s; ein Logo nur hier als kleines `image`.
 - `zoom` 1.1–1.2 als Punch-in an der Pointe (eigener part), höchstens zwei Stufen; `freeze` 0.5–1.5 s nur am Satzende.
 - `look` einer je Video: `auto` bei dunklen oder flauen Handy-Aufnahmen, sonst weglassen; `sw`/`matt` nur auf Wunsch oder passend zum Inhalt. `stabil` nur bei verwackelten Aufnahmen aus der Hand. `captionPos` `oben`/`mitte`, wenn unten Wichtiges zu sehen ist.
 - `speed`: Zeitlupe für den Höhepunkt einer Aktion, Zeitraffer für Abläufe ohne Sprache; nie über Sprache. Montage ohne Sprache: `volume: 0`, `music: 0.8` (nur mit `deck.music`).

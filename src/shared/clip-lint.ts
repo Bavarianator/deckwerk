@@ -1,7 +1,7 @@
 // Clip-Lint (Layout clip): prüft Länge, Schnitte, Transkript, Überschneidungen und Musik, damit sich die KI beim Schneiden selbst korrigiert. Ohne Electron/Node, läuft in Main und Renderer.
 import type { Issue } from './lint'
 import { retakes } from './retakes'
-import { clipSpans, estimateWords, mmss, partLen, partsLength, speedOf, type ClipContent, type Part, type Transcript, type Word } from './video'
+import { clipSpans, estimateWords, mmss, partLen, partsLength, speedOf, type ClipContent, type Overlay, type Part, type Transcript, type Word } from './video'
 
 export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[]; deckMusic?: boolean; slides?: { layout: string; hidden?: boolean }[] } // music: je Quellsekunde 0..1 (Signals.music); deckMusic: ob das Deck Hintergrundmusik hat (fehlt = unbekannt)
 // slides: alle Folien des Decks (für overlays.slide); fehlt = Verweise nicht prüfen
@@ -13,6 +13,8 @@ export const SNAP = 0.4 // s: so weit rastet der Export (snapParts) Kanten selbs
 const CALM = 8 // s: länger ohne sichtbaren Schnitt wirkt ein Short zäh
 const BROLL = 8 // s: länger verdeckt ein Cutaway (pos voll) den Sprecher zu lange
 const HOOK_S = 3 // s: so lange gehört ein Short mit Hook dem Gesicht
+const MARK = 6 // s: länger lenkt ein Rahmen (markierung) nur ab
+const OUTRO = 8 // s: der Abspann gehört ans Ende
 // Musik-Wahrscheinlichkeit (CED) ab der eine Sekunde als Musik zählt. Gemessen (check-sherpa): Sprache allein ≤ 0,05, Musik −12 dB unter Sprache 0,09–0,3, Musik pur 0,35–0,77
 export const MUSIC = 0.15
 const SENTENCE_END = /[.!?…]["'»«“”‘’)\]]*$/
@@ -205,12 +207,13 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
   bundle('clip-einblendung', ov.flatMap((o, k) => clipSpans(use.map((u) => u.p), o.start, o.end).length ? [] : [{ msg: `${ovN(k)} (${de(o.start)}–${de(o.end)} s) liegt in keinem Ausschnitt und ist nie zu sehen – Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)`, ex: `${k + 1} (${de(o.start)}–${de(o.end)} s)` }]),
     `von ${ov.length} Einblendungen liegen in keinem Ausschnitt`, 'Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)')
   bundle('clip-einblendung', ov.flatMap((o, k) => {
-    const l = Math.max(o.text?.trim().length ?? 0, o.sub?.trim().length ?? 0)
+    const l = Math.max(o.art === 'zitat' ? 0 : o.text?.trim().length ?? 0, o.sub?.trim().length ?? 0)
     return l > 40 ? [{ msg: `${ovN(k)} hat ${l} Zeichen in einer Zeile – kürzer (höchstens 40: Name, Funktion, Ort, Zahl)`, ex: `${k + 1}` }] : []
   }), 'Einblendungen über 40 Zeichen', 'kürzer (höchstens 40: Name, Funktion, Ort, Zahl)', 'info')
-  // Verpixeln liegt unter allem und darf mitlaufen; zwei sichtbare Einblendungen zugleich überladen das Bild
+  // Verpixeln liegt unter allem und darf mitlaufen; zwei sichtbare Einblendungen zugleich überladen das Bild – nur der Abspann darf ein Bild (Logo) dabeihaben
   const shown = ov.map((o, k) => ({ o, k })).filter(({ o }) => o.art !== 'verpixeln')
-  bundle('clip-einblendung', shown.flatMap((a, j) => shown.slice(j + 1).flatMap((b) => (Math.min(a.o.end, b.o.end) - Math.max(a.o.start, b.o.start) > TOL
+  const logo = (a: Overlay, b: Overlay) => (a.art === 'abspann' && !!b.image) || (b.art === 'abspann' && !!a.image)
+  bundle('clip-einblendung', shown.flatMap((a, j) => shown.slice(j + 1).flatMap((b) => (!logo(a.o, b.o) && Math.min(a.o.end, b.o.end) - Math.max(a.o.start, b.o.start) > TOL
     ? [{ msg: `${ovN(a.k)} und ${b.k + 1} stehen gleichzeitig – höchstens eine Einblendung zur Zeit, Zeiten trennen`, ex: `${a.k + 1}/${b.k + 1}` }] : []))),
     'Paare von Einblendungen stehen gleichzeitig', 'höchstens eine Einblendung zur Zeit, Zeiten trennen')
   const spans = (o: (typeof ov)[number]) => clipSpans(use.map((u) => u.p), o.start, o.end)
@@ -218,6 +221,15 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
     const l = spans(o).reduce((s, [a, b]) => s + b - a, 0)
     return o.pos === 'voll' && l > BROLL ? [{ msg: `${ovN(k)} (pos voll) verdeckt ${de(l)} s den Sprecher – B-Roll 2–6 s, höchstens ${BROLL} s`, ex: `${k + 1} (${de(l)} s)` }] : []
   }), `Einblendungen mit pos voll länger als ${BROLL} s`, 'B-Roll 2–6 s', 'info')
+  bundle('clip-einblendung', ov.flatMap((o, k) => {
+    const l = spans(o).reduce((s, [a, b]) => s + b - a, 0)
+    return o.art === 'markierung' && l > MARK ? [{ msg: `${ovN(k)} (markierung) steht ${de(l)} s – ein Rahmen zeigt kurz, wo man hinschauen soll: 2–${MARK} s`, ex: `${k + 1} (${de(l)} s)` }] : []
+  }), `Markierungen länger als ${MARK} s`, `2–${MARK} s, solange das Detail erklärt wird`, 'info')
+  const ends = ov.map((o, k) => ({ k, sp: spans(o) })).filter(({ k }) => ov[k].art === 'abspann')
+  bundle('clip-einblendung', ends.flatMap(({ k, sp }) => (sp.length && sp[0][0] < len - OUTRO
+    ? [{ msg: `${ovN(k)} (abspann) beginnt ${de(len - sp[0][0])} s vor dem Ende – Abspann nur in die letzten ${OUTRO} s`, ex: `${k + 1}` }] : [])),
+    `Abspann vor den letzten ${OUTRO} s`, `Abspann nur in die letzten ${OUTRO} s`)
+  if (ends.length > 1) add('warn', 'clip-einblendung', `${ends.length} Abspanne – höchstens einer je Clip, am Ende`)
   if (c.hook?.trim()) bundle('clip-einblendung', ov.flatMap((o, k) => (o.pos === 'voll' && spans(o).some(([a]) => a < HOOK_S)
     ? [{ msg: `${ovN(k)} (pos voll) steht in den ersten ${HOOK_S} s – dort hält das Gesicht mit dem Hook den Zuschauer, später einblenden`, ex: `${k + 1}` }] : [])),
     `Einblendungen mit pos voll in den ersten ${HOOK_S} s`, 'dort hält das Gesicht mit dem Hook den Zuschauer, später einblenden')
