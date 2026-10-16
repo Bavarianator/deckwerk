@@ -46,6 +46,10 @@ export function localAsset(file: string, home = process.env.DECKWERK_HOME ?? joi
   return alt.startsWith(resolve(home) + sep) && existsSync(alt) ? alt : file
 }
 
+// asset://local/<pfad> → Pfad; Windows-Laufwerk ohne führenden Schrägstrich (/C:/… → C:/…). Bewusst nicht fileURLToPath:
+// Linux-Pfade aus der Cloud-Sync müssen auch unter Windows erhalten bleiben, damit localAsset sie umbiegen kann.
+export const assetPath = (url: string) => decodeURIComponent(new URL(url).pathname).replace(/^\/(?=[A-Za-z]:)/, '')
+
 const enc = (rel: string) => rel.split('/').map(encodeURIComponent).join('/')
 
 // ETags kommen je Server mit oder ohne Anführungszeichen bzw. W/-Präfix (PUT-Header und PROPFIND unterscheiden sich)

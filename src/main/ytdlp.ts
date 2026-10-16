@@ -27,7 +27,7 @@ export function slimEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
  *  wird die ganze Prozessgruppe beendet (yt-dlp startet ffmpeg) – kein Gesamt-Timeout, lange Streams laden lange. */
 export function runTool(bin: string, args: string[], env: NodeJS.ProcessEnv, onLine: (l: string) => void = () => {}, stallMs = 5 * 60_000) {
   return new Promise<{ code: number | null; err: string; stalled: boolean }>((done, fail) => {
-    const p = spawn(bin, args, { env, detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
+    const p = spawn(bin, args, { env, detached: true, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
     let err = '', rest = '', stalled = false, timer: NodeJS.Timeout | undefined
     const alive = () => {
       clearTimeout(timer)

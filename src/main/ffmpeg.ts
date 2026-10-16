@@ -32,7 +32,7 @@ export type RunOpts = {
 /** Ein Aufruf ohne Shell; stdout gesammelt (oder an onOut/onBin), von stderr nur das Ende */
 export function run(bin: string, args: string[], o: RunOpts = {}) {
   return new Promise<{ code: number | null; out: Buffer; err: string }>((resolve, reject) => {
-    const p = spawn(bin, args, { cwd: o.cwd, env: o.env, stdio: ['ignore', 'pipe', 'pipe'] })
+    const p = spawn(bin, args, { cwd: o.cwd, env: o.env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
     const out: Buffer[] = []
     let err = ''
     p.stdout.on('data', (c: Buffer) => (o.onBin ? o.onBin(c) : o.onOut ? o.onOut(c.toString()) : out.push(c)))

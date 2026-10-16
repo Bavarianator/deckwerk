@@ -10,7 +10,7 @@ import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, tra
 import { fontInfo } from '../shared/font-catalog'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
-import { localAsset } from './sync'
+import { assetPath as assetFile, localAsset } from './sync'
 import { injectAnimations, type AnimStep, type SlideAnim } from './animations'
 import { adjustBlip, gradFill, maskShape, patchShapes, recolor, roundRect, textEffect, type ShapePatch } from './patch-xml'
 import { postProcess } from './pptx-post'
@@ -27,7 +27,7 @@ const WRAP_SLACK = 0.015
 export interface ExportSlide { measured: Measured; background: Buffer }
 
 export function assetPath(src: string): string | undefined {
-  const p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src.startsWith('file://') ? fileURLToPath(src) : undefined
+  const p = src.startsWith('asset://') ? assetFile(src) : src.startsWith('file://') ? fileURLToPath(src) : undefined
   return p && MEDIA_EXT.test(p) ? localAsset(p) : undefined
 }
 

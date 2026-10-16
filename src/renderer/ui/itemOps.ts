@@ -128,7 +128,8 @@ export const pasteStyle = (items: Item[], ids: string[]): Item[] => {
 }
 
 // asset://-URL wie ipc.ts (pathToFileURL-Kodierung pro Pfadsegment)
-export const assetOf = (path: string) => `asset://local${path.split('/').map(encodeURIComponent).join('/')}`
+// Explorer-Pfade (C:\Users\…) in dieselbe Form wie pathToFileURL im Main-Prozess: /C:/Users/…
+export const assetOf = (path: string) => `asset://local${path.replace(/\\/g, '/').replace(/^(?=[A-Za-z]:)/, '/').split('/').map(encodeURIComponent).join('/')}`
 
 export const imageRatio = (src: string) => new Promise<number>((resolve) => {
   const img = new Image()

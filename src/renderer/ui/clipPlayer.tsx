@@ -78,7 +78,7 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
   return { playing, t, duration, src, part, play, playSource, pause, toggle: () => (playing ? pause() : play()), seekClip, seekSource }
 }
 
-export const clipUrl = (video: string) => (video.startsWith('/') ? assetOf(video) : video) // assetOf kodiert auch # und ?
+export const clipUrl = (video: string) => (/^(\/|[A-Za-z]:[\\/])/.test(video) ? assetOf(video) : video) // absoluter Pfad, auch C:\…; assetOf kodiert auch # und ?
 
 interface VideoProps {
   video: string; aspect: number; focus?: number; fit?: Fit; still?: number; videoRef: RefObject<HTMLVideoElement | null>; children?: ReactNode

@@ -11,7 +11,7 @@ import { snapToWords } from '../shared/clip-lint'
 import { MAX_PARTS, MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, fillerQuiet, outSize, partsLength, tighten, type Captions, type ClipContent, type ClipStyle, type Cue, type Fit, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex } from '../shared/video'
 import { HOOK_FADE, POP, cropFilter, hookBox, progressBar } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
-import { localAsset } from './sync'
+import { assetPath, localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
 export interface Seg { file: string; dur: number } // Zwischenstand (mkv) und seine Länge in s
@@ -265,7 +265,7 @@ async function subFont(deck: Deck): Promise<SubFont> {
 
 // asset://local/<pfad> oder absoluter Pfad; auf einem anderen Gerät auf den lokalen Deckwerk-Ordner umleiten
 function videoPath(src: string, slide: number) {
-  const p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src
+  const p = src.startsWith('asset://') ? assetPath(src) : src
   if (!isAbsolute(p)) throw new Error(`Folie ${slide}: „video“ muss ein asset://-Pfad oder ein absoluter Dateipfad sein.`)
   if (!MEDIA_EXT.test(p)) throw new Error(`Folie ${slide}: „video“ ist keine Mediendatei (${basename(p)}).`)
   return localAsset(p)

@@ -26,7 +26,7 @@ const imageLine = (url: string, b: Buffer) => {
   const s = imageSize(b)
   return `Bild: ${url}${s ? ` (${s.width}×${s.height} px)` : /\.svg$/i.test(url) ? ' (SVG)' : ''}`
 }
-const run = (cmd: string, args: string[], timeout = 0) => new Promise<string>((ok, fail) => execFile(cmd, args, { maxBuffer: 64 << 20, timeout }, (e, out) => (e ? fail(e) : ok(out))))
+const run = (cmd: string, args: string[], timeout = 0) => new Promise<string>((ok, fail) => execFile(cmd, args, { maxBuffer: 64 << 20, timeout, windowsHide: true }, (e, out) => (e ? fail(e) : ok(out))))
 
 // assetDir: Bilder einer PPTX dorthin kopieren und je Folie als asset://-URL nennen, damit die KI sie im Nachbau nutzt
 // Bilder einer Folie laut ppt/slides/_rels/slideN.xml.rels; EMF/WMF u. ä. kann der Renderer nicht zeigen

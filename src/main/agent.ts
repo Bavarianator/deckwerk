@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 // KI-Agent: Tool-Runner-Loop (claude-opus-5, adaptive thinking, Streaming), Systemprompt aus
 // design-guide.md + Layout-Katalog (+ Thumbnails), Events an die UI. Läuft im Main-Prozess, der Key bleibt dort.
+import { homedir } from 'node:os'
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod'
 import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
@@ -146,8 +147,8 @@ export class DeckAgent {
       engine: opts.engine,
       getDeck: () => this.deck,
       setDeck: (deck) => { this.deck = deck; opts.onEvent({ type: 'deck', deck }) },
-      assetDir: opts.assetDir ?? `${process.env.HOME}/Deckwerk/assets`,
-      outDir: opts.outDir ?? `${process.env.HOME}/Deckwerk/out`,
+      assetDir: opts.assetDir ?? `${homedir()}/Deckwerk/assets`,
+      outDir: opts.outDir ?? `${homedir()}/Deckwerk/out`,
       unsplashKey: opts.unsplashKey ?? process.env.UNSPLASH_ACCESS_KEY,
       ask: (q) => opts.onEvent({ type: 'ask', ...q }),
       storyline: (slides) => opts.onEvent({ type: 'storyline', slides }),

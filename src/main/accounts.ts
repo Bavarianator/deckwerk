@@ -15,7 +15,7 @@ const ANSI = /\x1b\[[0-9;?]*[A-Za-z]/g
 /** Anmeldung über den Login-Befehl des CLI. Es öffnet den Browser selbst; die Adresse geht trotzdem an onUrl, falls nicht.
  * Klappt bei Claude der Rückweg auf localhost nicht, zeigt der Browser einen Code, den code() auf stdin durchreicht. */
 export function cliLogin(bin: string, cli: LoginCli, onUrl: (e: { url: string; code: boolean }) => void, signal: AbortSignal): { done: Promise<void>; code(c: string): void } {
-  const p = spawn(bin, cli === 'claude' ? ['auth', 'login', '--claudeai'] : ['login'], { stdio: 'pipe' })
+  const p = spawn(bin, cli === 'claude' ? ['auth', 'login', '--claudeai'] : ['login'], { stdio: 'pipe', windowsHide: true })
   p.stdin.on('error', () => {}) // Code nach dem Ende des Prozesses (EPIPE)
   let url = '', lastErr = ''
   // zeilenweise, weil eine Zeile in mehreren Stücken ankommen kann; Codex schreibt die Adresse auf stderr
@@ -51,7 +51,7 @@ export function cliLogin(bin: string, cli: LoginCli, onUrl: (e: { url: string; c
 
 /** Angemeldet? null = unbekannt (CLI zu alt, hängt oder startet nicht); who: Konto für die Anzeige */
 export function cliStatus(bin: string, cli: LoginCli): Promise<{ login: boolean | null; who?: string }> {
-  return new Promise((ok) => execFile(bin, cli === 'claude' ? ['auth', 'status'] : ['login', 'status'], { timeout: 10_000 }, (e, out, err) => {
+  return new Promise((ok) => execFile(bin, cli === 'claude' ? ['auth', 'status'] : ['login', 'status'], { timeout: 10_000, windowsHide: true }, (e, out, err) => {
     if (cli === 'codex') {
       if (e && typeof e.code !== 'number') return ok({ login: null }) // nicht startbar oder Zeitlimit
       const t = `${out}${err}`
@@ -67,7 +67,7 @@ export function cliStatus(bin: string, cli: LoginCli): Promise<{ login: boolean 
 }
 
 export const cliLogout = (bin: string, cli: LoginCli) => new Promise<void>((ok, fail) =>
-  execFile(bin, cli === 'claude' ? ['auth', 'logout'] : ['logout'], { timeout: 30_000 }, (e, _out, err) => (e ? fail(new Error(`Abmelden fehlgeschlagen: ${err.trim() || e.message}`)) : ok())))
+  execFile(bin, cli === 'claude' ? ['auth', 'logout'] : ['logout'], { timeout: 30_000, windowsHide: true }, (e, _out, err) => (e ? fail(new Error(`Abmelden fehlgeschlagen: ${err.trim() || e.message}`)) : ok())))
 
 // Vibe liest MISTRAL_API_KEY aus der Umgebung, dem Schlüsselbund oder $VIBE_HOME/.env; prüfen lassen sich nur Umgebung und .env
 const vibeEnv = () => join(process.env.VIBE_HOME ?? join(homedir(), '.vibe'), '.env')

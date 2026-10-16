@@ -29,7 +29,7 @@ export async function checkUpdate(current: string, execPath = process.execPath):
 /** install.sh aus master ausführen; bei Fehler die letzten Zeilen der Ausgabe als Meldung */
 export function installUpdate(): Promise<void> {
   return new Promise((ok, fail) => {
-    const p = spawn('sh', ['-c', `curl -fsSL https://raw.githubusercontent.com/${REPO}/master/scripts/install.sh | sh`], { stdio: ['ignore', 'pipe', 'pipe'] })
+    const p = spawn('sh', ['-c', `curl -fsSL https://raw.githubusercontent.com/${REPO}/master/scripts/install.sh | sh`], { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
     let log = ''
     for (const s of [p.stdout, p.stderr]) s.on('data', (d: Buffer) => { log = (log + d).slice(-2000) })
     p.on('error', fail)

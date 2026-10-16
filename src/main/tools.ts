@@ -24,10 +24,10 @@ import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
 import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
 import type { Engine, ExportFormat, VideoTools } from './agent'
-import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
+import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat
 import { contactSheet } from './ffmpeg'
 import { fetchMusic, findMusic } from './music'
-import { localAsset } from './sync'
+import { assetPath, localAsset } from './sync'
 import { fontNeeds, withDeckFonts, withFonts } from './webfonts'
 
 export interface ToolContext {
@@ -305,7 +305,7 @@ const sec = (n: number) => String(+n.toFixed(1)).replace('.', ',')
 // Quelle einer clip-Folie wie mediaFile in engine.ts (Pfade fremder Geräte über localAsset); null = kein Videopfad
 function clipFile(src: unknown): string | null {
   try {
-    const p = typeof src === 'string' && src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
+    const p = typeof src === 'string' && src.startsWith('asset:') ? assetPath(src) : src
     return typeof p === 'string' && isAbsolute(p) && VIDEO_FILE.test(p) ? localAsset(p) : null
   } catch { return null } // kaputte URL
 }
@@ -431,7 +431,7 @@ const stillRunning = (what: string, pct: number) => `${what} läuft noch (${pct}
 function videoFile(ctx: ToolContext, video: string): { file: string; v: VideoTools } {
   const v = ctx.engine.video
   if (!v) throw new Error('Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server.')
-  const path = video.startsWith('asset:') ? decodeURIComponent(new URL(video).pathname) : video
+  const path = video.startsWith('asset:') ? assetPath(video) : video
   if (!isAbsolute(path)) throw new Error(`video "${video}": asset://-Pfad aus dem Anhang („Video: asset://…“) oder absoluten Dateipfad angeben.`)
   const file = resolve(path)
   if (!VIDEO_FILE.test(file)) throw new Error(`${file} ist kein unterstütztes Video (${VIDEO_EXT.join(', ')}).`)
@@ -440,7 +440,7 @@ function videoFile(ctx: ToolContext, video: string): { file: string; v: VideoToo
 }
 // Hintergrundmusik (deck.music): asset://-URL oder absoluter Pfad einer Audiodatei → asset://-URL wie clip.video
 function audioSrc(src: string): string {
-  const path = src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
+  const path = src.startsWith('asset:') ? assetPath(src) : src
   if (!isAbsolute(path)) throw new Error(`music.src "${src}": asset://-Pfad aus find_music oder absoluten Dateipfad angeben.`)
   const file = resolve(path)
   if (!AUDIO_FILE.test(file)) throw new Error(`music.src: ${file} ist keine Audiodatei (${AUDIO_EXT.join(', ')}).`)
@@ -449,7 +449,7 @@ function audioSrc(src: string): string {
 }
 // wie musicOf in engine.ts: fehlt die Datei, entsteht das Video still ohne Musik
 function musicMissing(src: string): boolean {
-  try { return !existsSync(localAsset(src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src)) } catch { return true } // kaputte URL
+  try { return !existsSync(localAsset(src.startsWith('asset:') ? assetPath(src) : src)) } catch { return true } // kaputte URL
 }
 const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad')
 const TRANSCRIPT_MAX = 30_000 // Zeichen je Antwort; der Rest seitenweise über from
@@ -1178,7 +1178,7 @@ function dims(buf: Buffer, file: string): { label: string; w: number; h: number 
 
 // Bild aus dem Asset-Ordner ansehen, ohne es zu kopieren; die KI wählt den Pfad, deshalb nur dort und nur Bilddateien
 async function fromAsset(ctx: ToolContext, url: string): Promise<ToolOutput> {
-  const file = resolve(decodeURIComponent(new URL(url).pathname))
+  const file = resolve(assetPath(url))
   if (!IMG_FILE.test(file) || !file.startsWith(resolve(ctx.assetDir) + sep)) throw new Error(`Nur Bilder aus dem Asset-Ordner (${ctx.assetDir}) lassen sich ansehen.`)
   const buf = readFileSync(file), d = dims(buf, file), src = assetUrl(file)
   return { text: `Bild: ${src} — ${d.label}
@@ -1311,7 +1311,7 @@ function codexImage(prompt: string, orientation: Orientation): Promise<Buffer> {
     const child = execFile(findCli('codex')!, ['exec', '--skip-git-repo-check', '--ephemeral', '--ignore-user-config', '--ignore-rules',
       '--disable', 'shell_tool', '--disable', 'unified_exec', '--disable', 'hooks', '--enable', 'image_generation',
       '-c', 'sandbox_mode="read-only"', '-c', 'approval_policy="never"', '-c', 'model_reasoning_effort="low"', '-'],
-    { timeout: 240_000, maxBuffer: 20e6 }, (e, _out, err) => {
+    { timeout: 240_000, maxBuffer: 20e6, windowsHide: true }, (e, _out, err) => {
       let files: string[] = []
       try { files = (readdirSync(dir, { recursive: true }) as string[]).map((f) => join(dir, f)).filter((f) => /\.(png|jpe?g|webp)$/i.test(f) && statSync(f).mtimeMs >= start) } catch {}
       const newest = files.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0]

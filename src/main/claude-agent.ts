@@ -25,7 +25,8 @@ export const CLI_NAME: Record<Cli, string> = { claude: 'Claude Code', codex: 'Co
 // ~/.local/bin fehlt im PATH, wenn die App über den Desktop-Eintrag startet (Claude Code und Vibe installieren dorthin)
 export function findCli(cli: Cli): string | null {
   const dirs = [...(process.env.PATH ?? '').split(delimiter), join(homedir(), '.local/bin'), join(homedir(), '.claude/local')]
-  return dirs.map((d) => join(d, cli)).find((p) => existsSync(p)) ?? null
+  // Windows: nur .exe, npm-Shims (.cmd) lassen sich ohne Shell nicht starten
+  return dirs.map((d) => join(d, process.platform === 'win32' ? `${cli}.exe` : cli)).find((p) => existsSync(p)) ?? null
 }
 export const findClaude = () => findCli('claude')
 
@@ -70,7 +71,7 @@ const TOKEN_ENV = 'DECKWERK_MCP_TOKEN'
 // Kennt dieses Programm den Schalter? (`--help` einmal je App-Lauf; ein CLI-Update ohne ihn darf den Chat nicht brechen)
 const flags = new Map<string, Promise<string>>()
 const hasFlag = async (bin: string, flag: string) => {
-  if (!flags.has(bin)) flags.set(bin, new Promise((ok) => execFile(bin, ['--help'], { timeout: 20_000 }, (_e, out) => ok(String(out ?? '')))))
+  if (!flags.has(bin)) flags.set(bin, new Promise((ok) => execFile(bin, ['--help'], { timeout: 20_000, windowsHide: true }, (_e, out) => ok(String(out ?? '')))))
   return (await flags.get(bin)!).includes(flag)
 }
 
@@ -142,7 +143,7 @@ export class CliAgent {
       const cwd = join(homedir(), 'Deckwerk') // Sitzungen tauchen im jeweiligen CLI unter ~/Deckwerk auf
       mkdirSync(cwd, { recursive: true })
       const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')), this.effort)
-      const child = (this.child = spawn(this.bin, run.args, { cwd, env: { ...process.env, ...run.env }, stdio: ['pipe', 'pipe', 'pipe'] }))
+      const child = (this.child = spawn(this.bin, run.args, { cwd, env: { ...process.env, ...run.env }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true }))
       // Vibe und Codex denken oft minutenlang, bevor das erste Werkzeug läuft: Status zeigen, solange das CLI arbeitet
       if (this.cli !== 'claude') emit({ type: 'tool', name: 'cli_run', status: 'start', summary: `${CLI_NAME[this.cli]} braucht oft ein paar Minuten` })
       child.stdin.end(run.stdin) // Prompt über stdin: kein Flag-Parsing von Nutzertext, nicht in `ps`

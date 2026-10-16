@@ -16,7 +16,7 @@ import { parseCsv } from '../shared/merge'
 import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, exportSeries, type Orientation } from './tools'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
-import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
+import { assetPath, createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
 import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
 import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
@@ -368,7 +368,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Freisteller (nativ, siehe bg-remove.ts); Fortschritt des einmaligen Modell-Downloads als Ereignis
   ipcMain.handle('image:removeBg', async (_, src: string) => {
     if (!src.startsWith('asset://')) throw new Error('Nur eigene Bilddateien lassen sich freistellen')
-    const file = localAsset(decodeURIComponent(new URL(src).pathname))
+    const file = localAsset(assetPath(src))
     const { removeBackground } = await import('./bg-remove')
     const png = await removeBackground(file, join(HOME, 'models'), (pct) => !win.isDestroyed() && win.webContents.send('bg:progress', pct))
     await mkdir(assets, { recursive: true })
@@ -380,7 +380,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   ipcMain.handle('video:cached', async (_, src: string) => {
     if (typeof src !== 'string') return null
     try {
-      const file = src.startsWith('asset://') ? localAsset(decodeURIComponent(new URL(src).pathname)) : isAbsolute(src) ? resolve(src) : null
+      const file = src.startsWith('asset://') ? localAsset(assetPath(src)) : isAbsolute(src) ? resolve(src) : null
       return file && VIDEO_FILE.test(file) ? ((await engine.video?.cached?.(file)) ?? null) : null
     } catch { return null }
   })
@@ -695,7 +695,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     return list.length ? list : [{ id: 'vibe:', name: 'Vibe', hint: 'Modell aus der Vibe-Einstellung' }]
   }
   let codexModels: Promise<ChatModels['codex']> | null = null
-  const listCodex = (bin: string) => new Promise<ChatModels['codex']>((ok) => execFile(bin, ['debug', 'models'], { timeout: 20_000, maxBuffer: 20e6 }, (e, out) => {
+  const listCodex = (bin: string) => new Promise<ChatModels['codex']>((ok) => execFile(bin, ['debug', 'models'], { timeout: 20_000, maxBuffer: 20e6, windowsHide: true }, (e, out) => {
     try {
       if (e) throw e
       const all = (JSON.parse(out).models as { slug: string; display_name?: string; description?: string; visibility?: string; priority?: number }[])
@@ -713,7 +713,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const bin = clis[cli]
     if (!bin) throw new Error(`${CLI_NAME[cli]} ist nicht installiert.`)
     const run = (args: string[]) => new Promise<void>((ok, fail) =>
-      execFile(bin, args, { timeout: 60_000 }, (e, _out, err) => (e ? fail(new Error(err.trim() || e.message)) : ok())))
+      execFile(bin, args, { timeout: 60_000, windowsHide: true }, (e, _out, err) => (e ? fail(new Error(err.trim() || e.message)) : ok())))
     const { command, args } = mcpCmd
     const [remove, add] = {
       claude: [['mcp', 'remove', '-s', 'user', 'deckwerk'], ['mcp', 'add', '-s', 'user', 'deckwerk', '--', command, ...args]],
@@ -737,7 +737,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
   // Verbindung testen wie Claude Code: Server per stdio starten, initialize + tools/list, Anzahl der Werkzeuge zurück
   ipcMain.handle('setup:mcpTest', () => new Promise<number>((ok, fail) => {
-    const p = spawn(mcpCmd.command, mcpCmd.args, { stdio: ['pipe', 'pipe', 'ignore'] })
+    const p = spawn(mcpCmd.command, mcpCmd.args, { stdio: ['pipe', 'pipe', 'ignore'], windowsHide: true })
     const done = (e: Error | null, n = 0) => { clearTimeout(timer); p.kill(); e ? fail(e) : ok(n) }
     const timer = setTimeout(() => done(new Error('Der Server hat nicht innerhalb von 30 Sekunden geantwortet. Einmal „npm run build“ ausführen oder die App neu starten.')), 30_000)
     let buf = ''
