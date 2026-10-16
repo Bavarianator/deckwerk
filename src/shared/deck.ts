@@ -117,7 +117,19 @@ export interface Slide {
   items?: Item[] // freie Elemente über dem Layout (Canvas: ziehen, skalieren, drehen); Reihenfolge = Ebenen
   bg?: { color?: string; image?: string; gradient?: [string, string]; angle?: number } // eigener Folienhintergrund statt Theme-Fläche; gradient = Verlauf (Winkel in Grad, Standard 135)
   hidden?: boolean // ausgeblendet (Canva „Seite ausblenden“): fehlt beim Präsentieren und im Export, PowerPoint behält sie versteckt
+  // Feature „Animation“ (nur bei Deck.film, src/shared/film.ts): voice = Sprechertext der Szene, [klick] startet den nächsten Takt;
+  // duration = Szenenlänge in s (sonst aus Stimme, Animationen und Lesezeit); camera = Kamerafahrt je Takt
+  voice?: string
+  duration?: number
+  camera?: CameraMove[]
 }
+// Kamerafahrt im Film: zu Beginn von Takt step fährt die Kamera in 0,8 s auf box (Anteile der Folie x, y, w, h); ohne box zurück auf die ganze Folie
+export interface CameraMove { step: number; box?: [x: number, y: number, w: number, h: number] }
+// Feature „Animation“ (Videos in Remotion-Art): Deck mit film = jede Folie ist eine Szene; mp4 rendert Frame für Frame (main/export-film.ts).
+// voice = Stimme (Piper, lokal), speed = Sprechtempo 0,8–1,3, captions = Untertitel eingebrannt (satz) oder nur als .srt (aus, Standard)
+export const VOICES = ['de', 'en'] as const
+export type VoiceId = (typeof VOICES)[number]
+export interface FilmSettings { voice?: VoiceId; speed?: number; captions?: 'satz' | 'aus' }
 
 // ---- freie Elemente (wie in Canva): Position in px auf der 1280x720-Folie ----
 export const SHAPES = ['rect', 'ellipse', 'triangle', 'diamond', 'hexagon', 'star', 'arrow', 'line',
@@ -251,6 +263,7 @@ export interface Deck {
   style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
   music?: { src: string; volume?: number; credit?: string } // Hintergrundmusik im Video-Export (mp4): asset://-Pfad, volume 0–1 (Standard 0,25), credit = Nachweis (CC-BY)
+  film?: FilmSettings // Feature „Animation“: Szenen mit Zeitachse, Stimme und Kamera statt Standbildern (fehlt = Präsentation bzw. Video-Schnitt wie bisher)
   slides: Slide[]
 }
 // Folien, die präsentiert und exportiert werden (PDF, PNG, Word, Handout); ausgeblendete fehlen

@@ -7,6 +7,7 @@ import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBloc
 import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } from '../shared/deck'
 import type { Issue } from '../shared/lint'
 import type { Part, Transcript, VideoInfo } from '../shared/video'
+import type { ScreenZoom } from '../shared/film'
 import type { Highlight, Signals } from '../shared/highlights'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
@@ -23,6 +24,10 @@ export interface Engine {
   exportDeck(deck: Deck, format: ExportFormat, outDir: string, print?: PrintOptions, onProgress?: (pct: number) => void): Promise<string[]> // print nur bei format 'print'; onProgress nur bei mp4/clips
   thumbnail?(img: Buffer, width: number): Buffer | null // JPEG-Vorschau eines Bildes ohne Rendern; null = Format unbekannt (WebP)
   video?: VideoTools // fehlt in den Mock-Engines der Smoke-Tests
+  // Feature „Animation“ (Deck.film, src/shared/film.ts); fehlen in den Mock-Engines
+  renderFrames?(deck: Deck, index: number, times: number[], width?: number): Promise<{ t: number; png: Buffer }[]> // Frames einer Szene zu Zeitpunkten (s ab Szenenbeginn, Takte und Stimme wie im Export)
+  capturePage?(url: string, o?: { device?: 'desktop' | 'handy'; scroll?: number[] }): Promise<string[]> // Website als PNG nach ~/Deckwerk/assets (absolute Pfade); scroll = Stellen 0..1 der Seitenhöhe, je Stelle ein Bild
+  screenZooms?(file: string): Promise<ScreenZoom[]> // Zoom-Vorschläge aus Bildänderungen einer Bildschirmaufnahme (Videosekunden)
 }
 // Video-Schnitt (ffmpeg.ts, transcribe.ts); file = absoluter Pfad einer Videodatei
 export interface VideoTools {
