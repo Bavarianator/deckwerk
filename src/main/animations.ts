@@ -65,6 +65,10 @@ interface Shape { id: string; kind: string; txBox: boolean; paras: number; hasTe
 interface Step extends Required<Omit<AnimStep, 'paragraph' | 'by' | 'gapMs' | 'dir'>> { paragraph?: number; by?: AnimStep['by']; gapMs?: number; dir?: Dir; sh: Shape }
 
 function injectSlide(xml: string, anim: SlideAnim, path: string): string {
+  // PptxGenJS gibt Tabellen die ID Tabellennr.·Foliennr.+1, die mit Formen (Index+2) kollidiert; eindeutig machen,
+  // sonst träfe spid die falsche Form. Tabellen animieren als Ganzes wie Bilder (ohne bld-Eintrag).
+  let max = Math.max(0, ...[...xml.matchAll(/<p:cNvPr id="(\d+)"/g)].map((m) => +m[1]))
+  xml = xml.replace(/<p:graphicFrame>[\s\S]*?<\/p:graphicFrame>/g, (el) => el.includes('/drawingml/2006/table"') ? el.replace(/(<p:cNvPr id=")\d+/, (_, a) => `${a}${++max}`) : el)
   if (/<p:(timing|transition)\b/.test(xml)) { console.warn(`[animations] ${path} hat schon Animationen, übersprungen`); return xml }
 
   // ponytail: Regex statt XML-Parser – reicht für PptxGenJS-Ausgabe (keine Gruppen-Shapes)
@@ -79,7 +83,7 @@ function injectSlide(xml: string, anim: SlideAnim, path: string): string {
       id, kind, words: text.split(/\s+/).filter(Boolean).length, letters: text.length,
       txBox: /<p:cNvSpPr\b[^>]*\btxBox="1"/.test(el),
       paras: el.match(/<a:p[\s/>]/g)?.length ?? 0,
-      hasText: /<a:t>[^<]*\S/.test(el),
+      hasText: kind === 'sp' && /<a:t>[^<]*\S/.test(el), // Tabellen: kein Wort-/Buchstaben-Aufbau
       chart: el.includes('/drawingml/2006/chart"'),
     })
   }

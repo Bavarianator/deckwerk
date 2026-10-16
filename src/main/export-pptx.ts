@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
 import { webpSize } from './tools'
-import { MEDIA_EXT, morphKey, morphNames, sizeOf, transitionOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
+import { MEDIA_EXT, morphKey, morphNames, sizeOf, transitionOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type TableEl, type Deck, type El, type ImgEl, type Measured } from '../shared/deck'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
 import { localAsset } from './sync'
@@ -84,6 +84,21 @@ function addChart(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: ChartEl, t: Theme
     showLegend: !line && !wf && s.series.length > 1, legendPos: 't', legendFontFace: font.fontFace, legendFontSize: font.size, legendColor: hex(t.c.text),
     // Platz rechts für die Seriennamen am Linienende (pptx-post.ts)
     layout: line && s.series.length > 1 ? { x: 0.07, y: 0.05, w: 0.74, h: 0.82 } : undefined,
+  })
+}
+
+// Native PowerPoint-Tabelle, gestaltet wie im Renderer: ohne Füllung, Kopfzeile fett mit 2px-Linie, sonst 1px-Haarlinie unten.
+// Zeilenhöhen und Spaltenbreiten sind gemessen; der Text steht senkrecht mittig, daher oben/unten kein Abstand.
+const TABLE_PAD = 8 // px links/rechts je Zelle – muss zum Renderer passen
+function addTable(slide: PptxGenJS.Slide, el: TableEl, t: Theme, name: string) {
+  const none = { type: 'none' } as const
+  const rows: PptxGenJS.TableRow[] = el.cells.map((row, r) => row.map((text, c) => ({
+    text, options: { bold: r === 0, align: el.align[c] ?? 'left', border: [none, none, { type: 'solid', pt: PT(r === 0 ? 2 : 1), color: hex(r === 0 ? el.color : el.line) }, none] as [PptxGenJS.BorderProps, PptxGenJS.BorderProps, PptxGenJS.BorderProps, PptxGenJS.BorderProps] },
+  })))
+  slide.addTable(rows, {
+    x: IN(el.box.x), y: IN(el.box.y), w: IN(el.box.w), colW: el.colW.map(IN), rowH: el.rowH.map(IN), objectName: name,
+    fontFace: el.fontFace ?? (el.font === 'head' ? t.head.pptx : t.body.pptx), fontSize: PT(el.sizePx), color: hex(el.color),
+    valign: 'middle', margin: [0, IN(TABLE_PAD), 0, IN(TABLE_PAD)], // Zoll: PptxGenJS 4 liest Werte < 1 an Index 0 als Zoll
   })
 }
 
@@ -179,6 +194,9 @@ function addEl(pptx: PptxGenJS, slide: PptxGenJS.Slide, el: El, t: Theme, name: 
       break
     case 'chart':
       addChart(pptx, slide, el, t, name)
+      break
+    case 'table':
+      addTable(slide, el, t, name)
       break
   }
 }
