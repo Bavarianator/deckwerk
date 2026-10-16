@@ -132,6 +132,7 @@ Wähle das Layout nach der Form der Aussage, nicht nach Abwechslung um jeden Pre
 | Ablauf in 3–5 Schritten | `process` |
 | Nächste Schritte, Ask, Kontakt | `closing` |
 
+- Tabelle mit Titel: Layout `table`. Eine freie Tabelle (`kind:'table'`, `cells`, erste Zeile = Kopf) nur auf `blank` oder auf Wunsch, z. B. neben anderem Inhalt; höchstens ~6 Zeilen × 4 Spalten.
 - Eine einzelne große Zahl: `big-number` (mit Foto für Emotion). Bei 2–4 Zahlen `kpi-grid` mit `focus`.
 - Behauptet der Titel eine Zahl oder einen Anteil („bindet die Hälfte des Budgets“), muss diese Zahl auf der Folie dominieren: `chart` mit `highlight`, `kpi-grid` oder `statement`, nicht als Nebensatz in Prozess-Karten.
 - Zahlen immer mit Einheit und Bezug („+42 % ggü. Vorjahr“, nicht „42“).

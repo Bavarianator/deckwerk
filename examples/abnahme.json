@@ -39,6 +39,15 @@
       { "id": "g1", "kind": "graphic", "graphic": "sparkle", "x": 420, "y": 470, "w": 110, "h": 110, "color": "#7C5CFF" },
       { "id": "g2", "kind": "graphic", "graphic": "scribble", "x": 900, "y": 260, "w": 260, "h": 200, "color": "#FF8A4C" }
     ] },
+  { "id": "tabelle", "layout": "blank", "content": {},
+    "notes": "PRÜFEN: 1) Echte PowerPoint-Tabellen (Menüband zeigt Tabellenentwurf), Zeilen lassen sich einfügen. 2) Kopfzeile fett mit kräftiger Linie darunter, sonst feine Linien, keine senkrechten Linien. 3) Zahlenspalten rechtsbündig. 4) Rechts eigene Text- und Linienfarbe.",
+    "items": [
+      { "id": "tt", "kind": "text", "text": "Native Tabelle", "x": 80, "y": 60, "w": 800, "h": 80, "size": 56, "bold": true, "font": "head" },
+      { "id": "tb1", "kind": "table", "x": 80, "y": 180, "w": 640, "h": 300, "size": 22,
+        "cells": [["Posten", "2025", "2026", "Δ"], ["Umsatz", "1,2 Mio €", "1,5 Mio €", "+25 %"], ["Kunden", "340", "410", "+21 %"], ["Team", "12", "15", "+3"], ["Standorte", "2", "3", "+1"]] },
+      { "id": "tb2", "kind": "table", "x": 800, "y": 180, "w": 400, "h": 200, "size": 18, "color": "#E8E4FF", "stroke": "#7C5CFF",
+        "cells": [["Phase", "Woche"], ["Analyse", "1–2"], ["Bau", "3–6"], ["Abnahme", "7"]] }
+    ] },
   { "id": "ende", "layout": "closing",
     "notes": "PRÜFEN: 1) QR-Code unten rechts scannbar. 2) Link in der Unterzeile anklickbar (Bildschirmpräsentation). 3) Datei öffnet ohne Reparaturdialog; Schriften unter Datei → Informationen eingebettet (Space Grotesk, Inter).",
     "content": { "title": "Alles geprüft? Rückmeldung an das Team", "subtitle": "Unterlagen unter [example.com](https://example.com)", "qr": "https://example.com" } }

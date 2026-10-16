@@ -2,6 +2,11 @@ import type { Deck } from './deck'
 
 // Handout (Canva „Deck → Doc“): Titel als Überschrift, übrige Texte als Liste, Notizen als Zitat
 const SKIP = /^(image|src|icon|logo|url|href|qr|photo|focus|look|color)$/i
+// Zeile 0 = Kopf; | in Zellen escapen, Zeilenumbrüche zu Leerzeichen
+const mdTable = (c: string[][]) => {
+  const row = (r: string[]) => `| ${r.map((x) => x.replace(/\|/g, '\\|').replace(/\n+/g, ' ')).join(' | ')} |`
+  return [row(c[0]), `|${c[0].map(() => '---').join('|')}|`, ...c.slice(1).map(row)]
+}
 export function handout(deck: Deck): string {
   const texts = (v: unknown, k = ''): string[] =>
     typeof v === 'string' ? (SKIP.test(k) || /^(asset|https?):/.test(v) || !v.trim() ? [] : [v.trim()])
@@ -16,6 +21,7 @@ export function handout(deck: Deck): string {
     const body = [...texts(c), ...(s.items ?? []).flatMap((it) => (it.kind === 'text' ? texts(it.text) : []))]
     out.push(`## ${i + 1}. ${title.replace(/\n+/g, ' ')}`, '')
     out.push(...body.map((t) => `- ${t.replace(/\n+/g, ' ')}`))
+    for (const it of s.items ?? []) if (it.kind === 'table' && it.cells?.length) out.push('', ...mdTable(it.cells))
     if (s.notes?.trim()) out.push('', ...s.notes.trim().split('\n').map((l) => `> ${l}`))
     out.push('')
   })
