@@ -6,11 +6,13 @@
 // sherpa läuft im Kindprozess sherpa-worker: Es bringt eine eigene libonnxruntime mit, die neben onnxruntime-node
 // (Freisteller, YuNet) im selben Prozess kollidieren kann, und das Modell (~1,3 GB RAM) blockiert so nie den Main-Prozess.
 // Ohne Electron, damit der Selbsttest unter Node läuft (scripts/check-sherpa.ts).
-import { execFileSync, fork, type ChildProcess } from 'node:child_process'
+import { execFile, execFileSync, fork, type ChildProcess } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { mkdir, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rename, rm } from 'node:fs/promises'
 import { setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
+import { promisify } from 'node:util'
+import type { VoiceId } from '../shared/deck'
 import type { Segment } from '../shared/video'
 import { download } from './download'
 import { ensurePhone } from './phone'
@@ -70,6 +72,17 @@ const FILES: Record<Kind, File[]> = {
 }
 const local = (models: string, [dir, url]: File) => join(models, dir, basename(url))
 
+// Sprecherstimme (Feature Animation, voice.ts): Piper-VITS medium über sherpa-onnx OfflineTts, je Stimme ein Archiv (Modell, tokens.txt,
+// espeak-ng-data) aus dem Release tts-models von k2-fsa/sherpa-onnx. Lizenzen laut MODEL_CARD im Archiv:
+// de = Thorsten (Datensatz Thorsten-Voice, CC0), en = Norman (LibriVox, gemeinfrei, von Grund auf trainiert).
+// Verworfen: Lessac (Blizzard-2013-Lizenz, nur nicht-kommerziell).
+const TTS_URL = 'https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/'
+export const TTS: Record<VoiceId, [name: string, sha256: string, bytes: number]> = {
+  de: ['vits-piper-de_DE-thorsten-medium', '50487d9c95fdf2191f31d2588569381063ba1591dcd4c7d4bdd30f12b2191714', 67214254],
+  en: ['vits-piper-en_US-norman-medium', '1f32065d480abe9abc7c7f91442125d0b34c1cc065d1e600466cac408eabf3b8', 67203672],
+}
+const ttsModel = (voice: VoiceId) => `${TTS[voice][0].replace('vits-piper-', '')}.onnx`
+
 let queue: Promise<unknown> = Promise.resolve() // nacheinander, sonst schrieben zwei Aufrufe dieselbe .part-Datei
 
 /** Lädt fehlende Modelle nach modelsDir (parakeet ~670 MB bzw. de-schnell ~137 MB, je + Silero-VAD 2 MB, tag: 10 MB, diar: 30 MB).
@@ -90,6 +103,28 @@ export async function ensureModels(kind: Kind, modelsDir: string, onProgress: (p
   return run
 }
 
+/** Lädt die Stimme nach <models>/tts-<voice> (Archiv je ~67 MB, entpackt ~125 MB). Entpackt in einen Temp-Ordner daneben und
+ *  benennt erst den fertigen Ordner um: Ein Abbruch hinterlässt kein halbes Modell. */
+export async function ensureVoice(voice: VoiceId, models: string, onProgress: (pct: number) => void = () => {}): Promise<string> {
+  const [name, sha] = TTS[voice], dir = join(models, `tts-${voice}`)
+  const run = queue.then(async () => {
+    if (existsSync(join(dir, ttsModel(voice)))) return
+    await rm(dir, { recursive: true, force: true }) // andere, früher gepinnte Stimme
+    await mkdir(models, { recursive: true })
+    const tmp = await mkdtemp(join(models, '.tts-'))
+    try {
+      await download(TTS_URL + name + '.tar.bz2', sha, join(tmp, 'voice.tar.bz2'), onProgress)
+      await promisify(execFile)('tar', ['-xf', join(tmp, 'voice.tar.bz2'), '-C', tmp])
+      await rename(join(tmp, name), dir)
+    } finally {
+      await rm(tmp, { recursive: true, force: true }) // samt Archiv
+    }
+  })
+  queue = run.catch(() => {})
+  await run
+  return dir
+}
+
 // Gemessen 09.10. auf AMD A4-9125 (2 Kerne, eine FPU), 90 s deutsche Sprache, Rechner durch andere Prozesse belastet
 // (Last 5–8), abwechselnd je 2 Läufe: 1 Thread RTF 2,33/2,42 (CPU-Zeit je Audiosekunde 0,77/0,74), 2 Threads RTF
 // 1,74/1,23 (CPU 1,10/1,16), Spitze 1,32 bzw. 1,37 GB VmHWM. Ohne Last geschätzt RTF 0,75 gegen ~0,57; Modell laden unter Last
@@ -108,7 +143,7 @@ const STALL = 10 * 60_000 // so lange keine Nachricht bei offenem Auftrag: Worke
 
 // Schutz vor dem OOM-Killer (wie transcribe.ts), bevor ein Modell in den Worker kommt: asr ~1,3 GB Spitze, tag/diar je < 0,1 GB.
 // MemAvailable statt os.freemem(): zählt den freigebbaren Datei-Cache mit. macOS lagert aus statt zu beenden, dort nicht sperren.
-const NEED_GB: Record<string, number> = { asr: 1.5, 'asr-phone': 0.3, tag: 0.6, diar: 0.6 } // asr-phone: nur Silero-VAD hier
+const NEED_GB: Record<string, number> = { asr: 1.5, 'asr-phone': 0.3, tag: 0.6, diar: 0.6, tts: 0.5 } // asr-phone: nur Silero-VAD hier
 function memCheck(op: string) {
   if (process.platform !== 'linux') return
   let gb: number
@@ -224,4 +259,10 @@ export async function tag(pcm: Float32Array, o: { models: string; onProgress?: (
 export async function diarize(pcm: Float32Array, o: { models: string; offset?: number; onProgress?: (pct: number) => void }): Promise<{ start: number; end: number; speaker: number }[]> {
   await ensureModels('diar', o.models)
   return call('diar', { pcm, models: o.models, offset: o.offset ?? 0 }, o.onProgress)
+}
+
+/** Sprecherstimme: je Satz mono f32 bei sampleRate der Stimme (Piper 22 050 Hz), Sprecher 0, speed 1 = normal. Lädt die Stimme vorher, falls sie fehlt. */
+export async function tts(sentences: string[], o: { voice: VoiceId; speed: number; models: string; onProgress?: (pct: number) => void }): Promise<{ samples: Float32Array[]; sampleRate: number }> {
+  const dir = await ensureVoice(o.voice, o.models)
+  return call('tts', { sentences, speed: o.speed, dir, model: ttsModel(o.voice) }, o.onProgress)
 }

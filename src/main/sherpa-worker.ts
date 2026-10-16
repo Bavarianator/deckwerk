@@ -12,11 +12,13 @@ interface Vad { acceptWaveform(s: Float32Array): void; isEmpty(): boolean; front
 interface Tagger { createStream(): Stream; compute(s: Stream): { index: number; prob: number }[] }
 interface Turn { start: number; end: number; speaker: number }
 interface Diarizer { handle: unknown; setConfig(c: { clustering: { numClusters: number; threshold: number } }): void }
+interface Tts { sampleRate: number; generateAsync(r: { text: string; sid: number; speed: number; enableExternalBuffer: boolean }): Promise<{ samples: Float32Array }> }
 interface Sherpa {
   OfflineRecognizer: { createAsync(config: object): Promise<Recognizer> }
   Vad: new (config: object, bufferSeconds: number) => Vad
   AudioTagging: new (config: object) => Tagger
   OfflineSpeakerDiarization: new (config: object) => Diarizer
+  OfflineTts: { createAsync(config: object): Promise<Tts> }
 }
 let lib: Sherpa | undefined
 const sherpa = (): Sherpa => (lib ??= require('sherpa-onnx-node')) // erst bei Bedarf: check-sherpa importiert sentences() ohne Addon
@@ -195,7 +197,25 @@ async function diar({ pcm, models, offset }: DiarArgs, progress: (pct: number) =
   return out.map((t) => ({ start: at(t.start + offset), end: at(t.end + offset), speaker: ids.get(t.speaker)! }))
 }
 
-const OPS: Record<string, (args: never, progress: (pct: number) => void) => Promise<unknown>> = { asr, 'asr-phone': asr, tag, diar }
+// Sprecherstimme (voice.ts): Piper-VITS, Instanz je Stimme bleibt geladen, solange der Worker läuft
+const voices = new Map<string, Promise<Tts>>()
+interface TtsArgs { sentences: string[]; speed: number; dir: string; model: string }
+async function tts({ sentences, speed, dir, model }: TtsArgs, progress: (pct: number) => void): Promise<{ samples: Float32Array[]; sampleRate: number }> {
+  let v = voices.get(dir)
+  if (!v) voices.set(dir, (v = sherpa().OfflineTts.createAsync({
+    model: { vits: { model: join(dir, model), tokens: join(dir, 'tokens.txt'), dataDir: join(dir, 'espeak-ng-data') }, numThreads: 2, provider: 'cpu', debug: 0 },
+    maxNumSentences: 1,
+  }).catch((e) => { voices.delete(dir); throw e })))
+  const t = await v, samples: Float32Array[] = []
+  for (const [i, text] of sentences.entries()) {
+    samples.push((await t.generateAsync({ text, sid: 0, speed, enableExternalBuffer: false })).samples) // false: Electron verbietet externe Puffer
+    progress(Math.floor(((i + 1) / sentences.length) * 99))
+  }
+  progress(100)
+  return { samples, sampleRate: t.sampleRate }
+}
+
+const OPS: Record<string, (args: never, progress: (pct: number) => void) => Promise<unknown>> = { asr, 'asr-phone': asr, tag, diar, tts }
 
 let busy: Promise<unknown> = Promise.resolve() // ein Auftrag nach dem anderen: ein Modell, ein Satz Kerne
 process.on('message', ({ id, op, args }: { id: number; op: string; args: never }) => {
