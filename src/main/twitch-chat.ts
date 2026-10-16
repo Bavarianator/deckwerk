@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import JSZip from 'jszip'
 import { download } from './download'
-import { chatWeight, runTool, slimEnv } from './ytdlp'
+import { type ChatEntry, chatEntry, chatWeight, runTool, slimEnv } from './ytdlp'
 
 const VERSION = '1.56.5'
 const BUILDS: Record<string, { name: string; sha256: string }> = {
@@ -42,7 +42,7 @@ let bin: Promise<string> | undefined
 export const twitchBin = (models: string) => (bin ??= locate(models).catch((e) => { bin = undefined; throw e }))
 
 /** Chat eines VODs → [{ t: Sekunde im Video, w: Gewicht }]; out = Pfad der Roh-JSON von TwitchDownloaderCLI. Bits → 3. */
-export async function twitchChat(vodId: string, out: string, o: { models: string; onProgress?: (pct: number) => void }): Promise<{ t: number; w: number }[]> {
+export async function twitchChat(vodId: string, out: string, o: { models: string; onProgress?: (pct: number) => void }): Promise<ChatEntry[]> {
   if (!/^\d+$/.test(vodId)) throw new Error(`Ungültige Twitch-VOD-ID: ${vodId}`)
   let last = -1
   // ohne libicu startet .NET sonst evtl. gar nicht
@@ -56,7 +56,12 @@ export async function twitchChat(vodId: string, out: string, o: { models: string
     throw new Error(`Twitch-Chat ließ sich nicht laden: ${why.trim()}`)
   }
   // ponytail: ganze Datei in den Speicher; bei sehr großen Chats (> ~500 MB JSON) zu groß, dann zeilenweise/streamend parsen
-  const { comments = [] } = JSON.parse(await readFile(out, 'utf8')) as { comments?: { content_offset_seconds: number; message?: { body?: string; bits_spent?: number } }[] }
-  return comments.filter((c) => Number.isFinite(c.content_offset_seconds) && c.content_offset_seconds >= 0)
-    .map((c) => ({ t: c.content_offset_seconds, w: (c.message?.bits_spent ?? 0) > 0 ? 3 : chatWeight(c.message?.body ?? '') }))
+  return twitchEntries(JSON.parse(await readFile(out, 'utf8')))
+}
+
+type TwitchComment = { content_offset_seconds: number; commenter?: { display_name?: string; name?: string }; message?: { body?: string; bits_spent?: number; user_color?: string | null } }
+/** Roh-JSON von TwitchDownloaderCLI → Chat-Einträge (Name, Farbe, Text mit). */
+export function twitchEntries(json: { comments?: TwitchComment[] }): ChatEntry[] {
+  return (json.comments ?? []).filter((c) => Number.isFinite(c.content_offset_seconds) && c.content_offset_seconds >= 0)
+    .map((c) => chatEntry(c.content_offset_seconds, (c.message?.bits_spent ?? 0) > 0 ? 3 : chatWeight(c.message?.body ?? ''), c.commenter?.display_name || c.commenter?.name, c.message?.user_color, c.message?.body))
 }

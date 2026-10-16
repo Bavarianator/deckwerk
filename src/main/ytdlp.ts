@@ -82,9 +82,22 @@ export function chatWeight(text: string): number {
   return /\b(KEKW|LULW?|OMEGALUL|Pog\w*|POGGERS|clip)\b|^[WL]$|\?{3,}/i.test(text.trim()) ? 2 : 1
 }
 
-/** YouTube-Chat (<id>.live_chat.json, JSON Lines) → [{ t: Sekunde im Video, w }]; Super Chats 3. Kaputte Zeilen und solche ohne Nachricht fallen weg. */
-export function chatTimes(jsonl: string): { t: number; w: number }[] {
-  const out: { t: number; w: number }[] = []
+/** Chat-Eintrag in <id>.chat.json: t Sekunde im Video, w Gewicht, n Autor, c Namensfarbe #RRGGBB, x Text (gekürzt). */
+export type ChatEntry = { t: number; w: number; n?: string; c?: string; x?: string }
+/** Eintrag mit optionalen Feldern, nur gesetzt wenn vorhanden/gültig. Datenschutz: Namen liegen nur lokal neben dem Video, die Einblendung zeigt sie nur auf Wunsch. */
+export function chatEntry(t: number, w: number, n?: unknown, c?: unknown, x?: unknown): ChatEntry {
+  const e: ChatEntry = { t, w }
+  const name = typeof n === 'string' ? n.trim().slice(0, 60) : ''
+  if (name) e.n = name
+  if (typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)) e.c = c
+  const text = typeof x === 'string' ? x.trim().slice(0, 200) : '' // 8-h-Streams: Datei klein halten
+  if (text) e.x = text
+  return e
+}
+
+/** YouTube-Chat (<id>.live_chat.json, JSON Lines) → [{ t: Sekunde im Video, w, n, x }]; Super Chats 3. Kaputte Zeilen und solche ohne Nachricht fallen weg. */
+export function chatTimes(jsonl: string): ChatEntry[] {
+  const out: ChatEntry[] = []
   for (const line of jsonl.split('\n')) {
     let j
     try { j = JSON.parse(line) } catch { continue }
@@ -96,8 +109,9 @@ export function chatTimes(jsonl: string): { t: number; w: number }[] {
       const paid = item?.liveChatPaidMessageRenderer
       const r = paid ?? item?.liveChatTextMessageRenderer
       const text = ((r?.message?.runs ?? []) as { text?: string; emoji?: { shortcuts?: string[] } }[]).map((x) => x.text ?? x.emoji?.shortcuts?.[0] ?? '').join('')
-      if (paid) out.push({ t, w: 3 }) // Super Chat zählt auch ohne Text
-      else if (text.trim()) out.push({ t, w: chatWeight(text) })
+      const n = r?.authorName?.simpleText
+      if (paid) out.push(chatEntry(t, 3, n, undefined, text)) // Super Chat zählt auch ohne Text
+      else if (text.trim()) out.push(chatEntry(t, chatWeight(text), n, undefined, text))
     }
   }
   return out
