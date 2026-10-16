@@ -25,6 +25,7 @@ import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
 import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 import { deckJson, withDeckFonts } from './webfonts'
+import { recordArm, recordCancel, recordChunk, recordSources, recordStart, recordStop } from './record'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -419,6 +420,13 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const file = r.filePaths[0]
     return r.canceled || !file ? null : assetUrl(file)
   })
+  // Bildschirmaufnahme (Animation): Zielpfad, Quellen- und Absenderprüfung nur im Main (record.ts)
+  ipcMain.handle('record:sources', (e) => recordSources(win, e.sender))
+  ipcMain.handle('record:arm', (e, source: unknown, mic: unknown) => recordArm(win, e.sender, source, mic))
+  ipcMain.handle('record:start', (e) => recordStart(e.sender))
+  ipcMain.handle('record:chunk', (e, data: unknown) => recordChunk(e.sender, data))
+  ipcMain.handle('record:stop', (e, cut: unknown) => recordStop(e.sender, cut === true))
+  ipcMain.handle('record:cancel', (e) => recordCancel(e.sender))
   // Quellmaterial (mehrere Dateien, auch Bilder); ohne Pfade per Dialog. null = abgebrochen
   ipcMain.handle('source:read', async (_, paths?: string[]) => {
     if (!paths?.length) {

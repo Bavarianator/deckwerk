@@ -9,6 +9,7 @@ import { pathToFileURL } from 'node:url'
 import { MEDIA_EXT, profileOf, VIDEO_FILE } from '../shared/deck'
 import type { createEngine } from './engine'
 import { setupSpellcheck } from './spellcheck'
+import { guardMedia } from './record'
 import { localAsset } from './sync'
 
 // Schwere Module (Engine, Agent, MCP, pptxgenjs, lucide …) erst nach dem Fenster laden: der Splash erscheint sofort,
@@ -144,6 +145,7 @@ app.whenReady().then(async () => {
     if (!app.requestSingleInstanceLock()) return app.quit()
     const win = createWindow()
     setupSpellcheck(win)
+    guardMedia(win) // Bildschirm/Mikrofon nur während einer angeforderten Aufnahme (record.ts)
     // Die versteckten Render-Fenster (render.ts) halten die App sonst nach dem Schließen am Leben: window-all-closed kommt nie,
     // und ein zweiter Start griff auf das zerstörte Fenster zu („Object has been destroyed“). Speichern (ipc.ts flush) läuft vorher.
     win.on('closed', () => app.quit())

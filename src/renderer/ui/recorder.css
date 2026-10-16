@@ -1,0 +1,19 @@
+/* Bildschirmaufnahme: Sheet wie die Einrichtung (shell.css .setup), schmaler */
+.rec { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgb(242 242 244 / 0.72); backdrop-filter: blur(14px); }
+.rec-card { display: flex; flex-direction: column; gap: 14px; width: min(600px, calc(100% - 48px)); max-height: calc(100vh - 48px); padding: 24px 28px; box-sizing: border-box; border-radius: 26px; }
+.rec-card h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.rec-sub { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; min-height: 0; overflow-y: auto; padding: 3px; }
+.rec-grid button { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 0; border-radius: 12px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.rec-grid button:hover { background: var(--hover); }
+.rec-grid button.on { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); }
+.rec-thumb { display: grid; place-items: center; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: var(--panel-2); color: var(--faint); box-shadow: inset 0 0 0 1px var(--border); }
+.rec-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.rec-name { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; }
+.rec-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-name svg { flex: none; color: var(--muted); }
+.rec-err { margin: 0; font-size: 13px; color: var(--danger); }
+.rec-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.rec-nav:has(> :only-child) { justify-content: flex-end; }
+.rec-card h1.rec-count { justify-content: center; padding: 24px 0 8px; font-size: 96px; font-variant-numeric: tabular-nums; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); }

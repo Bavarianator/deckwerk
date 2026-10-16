@@ -25,6 +25,8 @@ export interface AppInfo { version: string; electron: string; chrome: string; no
 export interface UpdateInfo { current: string; latest: string; newer: boolean; canInstall: boolean }
 /** hasKey: irgendein KI-Zugang (API-Key oder ein Agenten-CLI) */
 export interface AppState { deck: Deck | null; path: string | null; hasKey: boolean; setupDone: boolean }
+/** Quelle der Bildschirmaufnahme (screen = ganzer Bildschirm, sonst Fenster) */
+export interface RecordSource { id: string; name: string; screen: boolean; thumb: string }
 /** Steuerbefehl vom Referenten an das Publikumsfenster */
 export type PresentCmd = { type: 'next' } | { type: 'go'; i: number } | { type: 'ink'; ink: Ink } | { type: 'pause'; on: boolean }
 /** Laserpunkt und Stiftstriche über der Folie, Koordinaten 0–1 (gleich auf jedem Bildschirm) */
@@ -156,6 +158,24 @@ const api = {
   },
   /** Video- oder Audiodatei wählen → asset://-URL oder null */
   pickMedia: (kind: 'video' | 'audio'): Promise<string | null> => invoke('media:pick', kind),
+  /** Bildschirmaufnahme: Quellen mit Vorschau (thumb = data-URL); portal = Wayland, dort wählt das System beim Start, sources ist leer */
+  recordSources: (): Promise<{ portal: boolean; sources: RecordSource[] }> => invoke('record:sources'),
+  /** Aufnahme anfordern (source aus recordSources, im Portal null); erst danach erlaubt Main getDisplayMedia und das Mikrofon */
+  recordArm: (source: string | null, mic: boolean): Promise<void> => invoke('record:arm', source, mic),
+  /** nach dem Countdown: Main legt die Datei an und minimiert Deckwerk */
+  recordStart: (): Promise<void> => invoke('record:start'),
+  /** ein MediaRecorder-Teil (höchstens 32 MB), wird an die Datei gehängt */
+  recordChunk: (data: Uint8Array): Promise<void> => invoke('record:chunk', data),
+  /** beendet die Aufnahme, holt Deckwerk nach vorn → absoluter Pfad der .webm unter Deckwerk/assets; cut = letzte 0,7 s weg (Rückkehr per Klick) */
+  recordStop: (cut: boolean): Promise<string> => invoke('record:stop', cut),
+  /** Anforderung bzw. laufende Aufnahme verwerfen */
+  recordCancel: (): Promise<void> => invoke('record:cancel'),
+  /** Main bittet um Stopp: cut = true nach Rückkehr ins Fenster, false nach 30 min */
+  onRecordBack(cb: (cut: boolean) => void): () => void {
+    const h = (_: unknown, cut: boolean) => cb(cut)
+    ipcRenderer.on('record:back', h)
+    return () => void ipcRenderer.off('record:back', h)
+  },
   /** TTF wählen (Regular, optional Bold); Familienname aus der Datei; null = abgebrochen */
   pickFont: (): Promise<CustomFont | null> => invoke('font:pick'),
   /** Katalogschriften des Decks laden (Cache ~/Deckwerk/fonts, offline gebündelter Ersatz) → Theme mit fontFiles; notes z. B. „Newsreader geladen“ */
