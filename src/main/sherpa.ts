@@ -115,7 +115,9 @@ export async function ensureVoice(voice: VoiceId, models: string, onProgress: (p
     try {
       await download(TTS_URL + name + '.tar.bz2', sha, join(tmp, 'voice.tar.bz2'), onProgress)
       await promisify(execFile)('tar', ['-xf', join(tmp, 'voice.tar.bz2'), '-C', tmp])
-      await rename(join(tmp, name), dir)
+        .catch((e) => { throw new Error(`Stimme entpacken fehlgeschlagen (bzip2 fehlt?): ${e.message}`) })
+      // App und MCP-Server können gleichzeitig laden: liegt die Stimme schon da, gewinnt der andere Prozess
+      await rename(join(tmp, name), dir).catch((e) => { if (!['ENOTEMPTY', 'EEXIST'].includes(e.code) || !existsSync(join(dir, ttsModel(voice)))) throw e })
     } finally {
       await rm(tmp, { recursive: true, force: true }) // samt Archiv
     }
@@ -261,8 +263,9 @@ export async function diarize(pcm: Float32Array, o: { models: string; offset?: n
   return call('diar', { pcm, models: o.models, offset: o.offset ?? 0 }, o.onProgress)
 }
 
-/** Sprecherstimme: je Satz mono f32 bei sampleRate der Stimme (Piper 22 050 Hz), Sprecher 0, speed 1 = normal. Lädt die Stimme vorher, falls sie fehlt. */
+/** Sprecherstimme: je Satz mono f32 bei sampleRate der Stimme (Piper 22 050 Hz), Sprecher 0, speed 1 = normal. Lädt die Stimme vorher, falls sie fehlt.
+ *  onProgress: 0–30 Download der Stimme (fehlt nichts, springt er gleich auf 30), 30–100 Synthese. */
 export async function tts(sentences: string[], o: { voice: VoiceId; speed: number; models: string; onProgress?: (pct: number) => void }): Promise<{ samples: Float32Array[]; sampleRate: number }> {
-  const dir = await ensureVoice(o.voice, o.models)
-  return call('tts', { sentences, speed: o.speed, dir, model: ttsModel(o.voice) }, o.onProgress)
+  const dir = await ensureVoice(o.voice, o.models, (p) => o.onProgress?.(Math.floor(p * 0.3)))
+  return call('tts', { sentences, speed: o.speed, dir, model: ttsModel(o.voice) }, (p) => o.onProgress?.(30 + Math.floor(p * 0.7)))
 }

@@ -3,7 +3,7 @@
 // Ohne Electron, damit der Selbsttest unter Node läuft (scripts/check-voice.ts).
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { VoiceId } from '../shared/deck'
 import { VOICE_SPEED, voiceChunks, voiceTiming, type VoiceTiming } from '../shared/film'
@@ -24,13 +24,14 @@ const SAY: Record<VoiceId, [RegExp, string][]> = {
   en: [],
 }
 const say = (s: string, voice: VoiceId) => SAY[voice].reduce((t, [re, to]) => t.replace(re, to), s)
+const CACHE_V = 1 // erhöhen, wenn sich SAY oder das Zusammensetzen der Tonspur ändert: alte Cache-Einträge gelten dann nicht mehr
 
 /** Sprechertext → WAV (16 bit mono) und Zeitplan. Sätze aus voiceChunks (ohne [klick]), dazwischen die Pausen aus voiceTiming. */
 export async function synthesize(text: string, o: { voice: VoiceId; speed?: number; models: string; cacheDir: string; onProgress?: (pct: number) => void }): Promise<{ wav: string; timing: VoiceTiming }> {
   const chunks = voiceChunks(text), sentences = chunks.flat()
   if (!sentences.length) throw new Error('Kein Sprechertext: Die Szene hat nichts, was die Stimme sprechen könnte.')
   const speed = Math.min(VOICE_SPEED.max, Math.max(VOICE_SPEED.min, o.speed ?? 1))
-  const key = createHash('sha256').update(JSON.stringify([o.voice, TTS[o.voice][1], speed, text])).digest('hex')
+  const key = createHash('sha256').update(JSON.stringify([CACHE_V, o.voice, TTS[o.voice][1], speed, text])).digest('hex')
   const wav = join(o.cacheDir, `${key}.wav`), json = join(o.cacheDir, `${key}.json`)
   if (existsSync(wav) && existsSync(json)) return { wav, timing: JSON.parse(await readFile(json, 'utf8')) }
 
@@ -44,7 +45,10 @@ export async function synthesize(text: string, o: { voice: VoiceId; speed?: numb
   const buf = wav16k(pcm)
   buf.writeUInt32LE(sr, 24); buf.writeUInt32LE(sr * 2, 28) // phone.wav schreibt 16 kHz in den Kopf, Piper liefert 22 050 Hz
   await mkdir(o.cacheDir, { recursive: true })
-  await writeFile(wav, buf)
-  await writeFile(json, JSON.stringify(timing)) // zuletzt: erst damit gilt der Eintrag als fertig
+  // je Prozess über .tmp + rename: Player und Export lesen nie eine halbe Datei; json zuletzt, erst damit gilt der Eintrag als fertig
+  for (const [f, data] of [[wav, buf], [json, JSON.stringify(timing)]] as const) {
+    await writeFile(`${f}.${process.pid}.tmp`, data)
+    await rename(`${f}.${process.pid}.tmp`, f)
+  }
   return { wav, timing }
 }
