@@ -1,0 +1,85 @@
+# Baut Deckwerk für Windows (x64) auf einem Runner von GitHub und testet das fertige Paket. Tag v* → Setup.exe kommt an
+# denselben Release wie AppImage (release.yml) und DMG (mac.yml).
+# Windows ist im Aufbau: Der Installer ist unsigniert, SmartScreen warnt beim ersten Start („Weitere Informationen“ →
+# „Trotzdem ausführen“).
+name: Windows-Build
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+    paths-ignore: ['website/**'] # GitHub wertet Pfadfilter bei Tags nicht aus, Tags bauen also immer
+  pull_request:
+    paths-ignore: ['website/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  exe:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Tag passt zur Version in package.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: test "${GITHUB_REF_NAME}" = "v$(node -p 'require("./package.json").version')"
+      - run: npm ci
+      # Quellcode auf Windows: Typen und KI-Werkzeuge/MCP gegen die Mock-Engine
+      - run: npm run typecheck
+      - run: npm run smoke
+      - name: Bauen
+        run: npm run dist:win
+
+      # Das fertige Paket prüfen, nicht den Quellcode: natives onnxruntime (Freisteller) und sherpa-onnx (Spracherkennung),
+      # MCP-Server (lädt ajv aus node_modules), App-Fenster (Screenshot) und Export (PPTX/DOCX/PDF/ZIP/PNG, Druck-PDF)
+      - name: Paket prüfen
+        env:
+          MSYS_NO_PATHCONV: 1 # Git-Bash soll '/app.asar/…' im -e-Skript nicht für einen Pfad halten und umschreiben
+        run: |
+          BIN=dist/win-unpacked/Deckwerk.exe; RES=dist/win-unpacked/resources
+          mkdir -p check
+          test -f "$RES/app.asar.unpacked/skills/deckwerk/SKILL.md" || exit 1; echo "Skill ok"
+          ELECTRON_RUN_AS_NODE=1 "$BIN" -e "require(process.resourcesPath + '/app.asar/node_modules/onnxruntime-node'); console.log('onnxruntime ok')"
+          ELECTRON_RUN_AS_NODE=1 "$BIN" -e "require(process.resourcesPath + '/app.asar/node_modules/sherpa-onnx-node'); console.log('sherpa-onnx ok')"
+          { printf '%s\n' \
+              '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+              '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+              '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+            sleep 30; } | timeout 120 "$BIN" --mcp > check/mcp.out
+          grep -q '"id":2' check/mcp.out || exit 1; echo "MCP ok: $(grep -o '"name":"[a-z_]*"' check/mcp.out | wc -l) Werkzeuge"
+          DW_SHOT="$(pwd -W)/check/fenster.png" DW_SHOT_DELAY=8000 timeout 120 "$BIN" # pwd -W: Windows-Pfad (D:/a/…) für die App
+          test -s check/fenster.png || exit 1; echo "Fenster ok"
+          timeout 600 "$BIN" --render examples/pitch.json --out check/render
+          ls check/render/*.pptx check/render/*.docx check/render/*.pdf check/render/*.zip check/render/*/01.png || exit 1; echo "Export ok"
+          # Vorlage aus dem Paket (app.asar) rendern: sind examples/ und ihre Fotos in der installierten App erreichbar?
+          # Der Flyer ist A4, dafür entsteht zusätzlich das Druck-PDF mit Beschnitt (pdf-boxes.ts)
+          timeout 600 "$BIN" --render "$RES/app.asar/examples/flyer.json" --out check/vorlage
+          ls check/vorlage/*/01.png check/vorlage/*-druck.pdf || exit 1; echo "Vorlagen im Paket ok, Druck-PDF ok"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Pruefung
+          path: check/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Deckwerk-exe
+          path: dist/*.exe
+
+      # Linux, macOS und Windows hängen an denselben Release: wer zuerst kommt, legt ihn an, die anderen finden ihn vor
+      - name: An den Release hängen
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" --title "Deckwerk ${TAG#v}" --generate-notes 2>/dev/null || gh release view "$TAG" >/dev/null
+          gh release upload "$TAG" dist/Deckwerk-Setup-x64.exe --clobber
