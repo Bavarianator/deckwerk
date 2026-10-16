@@ -16,6 +16,7 @@ import { SlideView, loadCustomFont } from './slide'
 import { PresentScreen } from './ui/PresentScreen'
 import { autofit, extract } from './measure'
 import { FONTS } from '../shared/themes'
+import { filmPrepare, type FilmScene } from './film'
 
 // App.tsx is built in parallel; fall back to a stub until it exists.
 const apps = import.meta.glob('./App.tsx', { eager: true }) as Record<string, { default: () => JSX.Element }>
@@ -35,6 +36,14 @@ async function imagesLoaded(root: ParentNode) {
   await Promise.all(urls.map((src) => Object.assign(new Image(), { src }).decode().catch(() => {})))
   await frames()
 }
+
+// Videos einer Film-Szene: erstes Bild abwarten (preload="metadata" lädt es sonst erst beim Spulen)
+const videosLoaded = (root: ParentNode) =>
+  Promise.all([...root.querySelectorAll('video')].map((v) => v.readyState >= 2 || new Promise<void>((r) => {
+    for (const e of ['loadeddata', 'error']) v.addEventListener(e, () => r(), { once: true })
+    setTimeout(r, 5000)
+    v.preload = 'auto'
+  })))
 
 async function svgToPng(svg: string, w: number, h: number): Promise<string> {
   const img = new Image(w, h)
@@ -71,9 +80,13 @@ function mirrorBleed(box: HTMLElement, w: number, h: number, bx: number, by: num
   }
 }
 
+// Film-Host (render.ts renderFilm): die geladene Szene; jedes filmLoad baut die Folie neu (n), film.ts zerlegt Text im DOM
+let scene: FilmScene | null = null, loads = 0
+const loaded = () => { if (!scene) throw new Error('Szene verloren – Render-Prozess neu gestartet, bitte erneut exportieren'); return scene }
+
 // Offscreen host driven by the main process: render one slide, autofit, measure. Also used for PDF (all slides).
 function Host({ mode }: { mode: string }) {
-  const [state, setState] = useState<{ deck: Deck; index: number; geo?: PrintGeo } | null>(null)
+  const [state, setState] = useState<{ deck: Deck; index: number; geo?: PrintGeo; n?: number } | null>(null)
   ;(window as any).dw = {
     // 1px marker row below the slide; its colour tells the main process which job a painted frame belongs to
     mark(seq: number) {
@@ -116,6 +129,26 @@ function Host({ mode }: { mode: string }) {
       for (const box of document.querySelectorAll<HTMLElement>('.bleed-slide')) mirrorBleed(box, w, h, geo.bx, geo.by)
       await frames()
     },
+    // Film: Szene laden und alle Animationen pausiert anlegen; Takte und Zeitpunkte plant der Main-Prozess
+    async filmLoad(deck: Deck, index: number): Promise<Pick<FilmScene, 'steps' | 'endless' | 'words'>> {
+      scene?.dispose()
+      scene = null
+      await fontsLoaded()
+      await loadCustomFont(deck)
+      flushSync(() => setState({ deck, index, n: ++loads }))
+      await frames()
+      const root = document.querySelector<HTMLElement>('.slide')!
+      await imagesLoaded(root)
+      await videosLoaded(root)
+      autofit(root)
+      scene = filmPrepare(root, deck, index)
+      return { steps: scene.steps, endless: scene.endless, words: scene.words }
+    },
+    filmBeats: (beats: number[]) => loaded().setBeats(beats),
+    async filmSeek(t: number) {
+      await loaded().seek(t)
+      await frames()
+    },
   }
   if (!state) return null
   const g = state.geo
@@ -155,6 +188,7 @@ function Host({ mode }: { mode: string }) {
         ))}
       </div>
     )
+  if (mode === 'film') return <SlideView key={state.n} deck={state.deck} index={state.index} film />
   return <SlideView deck={state.deck} index={state.index} />
 }
 
@@ -166,6 +200,6 @@ function Audience() {
 }
 
 const mode = location.hash.slice(1)
-const hosted = ['render', 'print', 'overview'].includes(mode)
+const hosted = ['render', 'print', 'overview', 'film'].includes(mode)
 if (hosted) document.body.style.cssText = 'margin:0;overflow:hidden;background:transparent'
 createRoot(document.getElementById('root')!).render(hosted ? <Host mode={mode} /> : mode === 'audience' ? <Audience /> : <App />)

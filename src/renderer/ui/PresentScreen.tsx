@@ -1,7 +1,7 @@
 // Präsentationsmodus: Vollbild, Builds per Web Animations API mit denselben Presets wie der PPTX-Export.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { flushSync } from 'react-dom'
-import { itemSteps, morphNames, morphText, showOf, sizeOf, transitionOf, transitionSpeedOf, type AnimDir, type AnimSpeed, type BuildPreset, type Deck, type Item, type ItemAnim, type MorphEl, type Transition } from '../../shared/deck'
+import { itemSteps, morphNames, morphText, showOf, sizeOf, transitionOf, transitionSpeedOf, type AnimDir, type AnimStart, type AnimSpeed, type BuildPreset, type Deck, type Item, type ItemAnim, type MorphEl, type Transition } from '../../shared/deck'
 import { fmtSec, speakSec } from '../../shared/handout'
 import { LAYOUTS, buildOf, type LayoutId } from '../../shared/layouts'
 import type { Ink } from '../../preload'
@@ -116,7 +116,8 @@ const inkPos = (e: { clientX: number; clientY: number; currentTarget: Element })
 // Legt pausierte Animationen an (fill: both → Elemente sind sofort versteckt) und liefert die Schritte. Der erste läuft
 // von selbst (Layout-Aufbau, außer Liste per Klick), jeder weitere per Klick.
 // keep = Slots, die per Morph schon von der vorigen Folie herübergewandert sind: die treten nicht noch einmal auf.
-function prepare(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>, items?: Item[]): Animation[][] {
+// Auch der Film (film.ts) nutzt es: dort starten die Schritte nach Zeitplan statt per Klick.
+export function prepare(root: HTMLElement, preset: BuildPreset, mode: Deck['mode'], keep: Set<string>, items?: Item[]): Animation[][] {
   const { steps: builds, chain } = prepareBuilds(root, preset, mode, keep)
   const steps = preset !== 'none' && !(preset === 'list' && mode === 'click') ? builds : [[], ...builds]
   const [joined, ...clicks] = prepareItems(root, mode, keep, items, steps.at(-1)!, chain)
@@ -165,7 +166,8 @@ function prepareItems(root: HTMLElement, mode: Deck['mode'], keep: Set<string>, 
   const runs = els.filter((el) => el.dataset.anim !== 'breathe').map((el) => {
     const as = animateItem(el, el.dataset.anim as ItemAnim)
     as.forEach((a) => a.pause())
-    return { as, it: items?.find((x) => x.id === el.dataset.item) }
+    // Layout-Elemente mit data-anim (Code, Terminal) haben kein Item: Start und Verzögerung (s) aus dem Dataset
+    return { as, it: items?.find((x) => x.id === el.dataset.item) ?? { animStart: el.dataset.animStart as AnimStart | undefined, animDelay: Number(el.dataset.animDelay) || undefined } }
   })
   const end = (as: Animation[]) => Math.max(0, ...as.map((a) => Number(a.effect?.getComputedTiming().endTime ?? 0)))
   return itemSteps(runs.map(({ as, it }) => ({ start: it?.animStart, delay: it?.animDelay, ms: end(as) })), mode, end(prev), chain).map((step) =>

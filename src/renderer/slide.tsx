@@ -14,7 +14,8 @@ import './slide.css'
 
 Chart.register(...registerables)
 
-interface Ctx { theme: Theme; deck: Deck; index: number; editable: boolean; onEdit?: (slot: string, text: string) => void; print: boolean; editing?: string; live?: boolean; words?: boolean }
+// film = Szene im Film (film.ts): Text zerlegt wie live, aber Videos ohne Bedienelemente und Autoplay (der Film spult sie je Frame)
+interface Ctx { theme: Theme; deck: Deck; index: number; editable: boolean; onEdit?: (slot: string, text: string) => void; print: boolean; editing?: string; live?: boolean; film?: boolean; words?: boolean }
 const SlideCtx = createContext<Ctx>(null!)
 export const useSlide = () => useContext(SlideCtx)
 
@@ -580,7 +581,7 @@ function AudioItem({ it, attrs, pos, slot, live, color }: { it: Item; attrs: Rec
 }
 
 function FreeItem({ it }: { it: Item }) {
-  const { theme, editable, editing, onEdit, live } = useSlide()
+  const { theme, editable, editing, onEdit, live, film } = useSlide()
   const slot = `items.${it.id}`
   const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined, 'data-anim-dir': it.animDir, 'data-anim-speed': it.animSpeed, 'data-link': it.link }
   const pos: CSSProperties = { position: 'absolute', left: it.x, top: it.y, width: it.w, height: it.h, transform: it.rot ? `rotate(${it.rot}deg)` : undefined, cursor: live && it.link ? 'pointer' : undefined }
@@ -589,7 +590,7 @@ function FreeItem({ it }: { it: Item }) {
     case 'text': {
       const edit = editable && editing === it.id
       const text = it.text ?? ''
-      const by = live && (it.anim === 'typewriter' || it.anim === 'ascend') ? (it.anim === 'ascend' ? 'word' : 'letter') : undefined
+      const by = (live || film) && (it.anim === 'typewriter' || it.anim === 'ascend') ? (it.anim === 'ascend' ? 'word' : 'letter') : undefined
       const body = (s: string) => (by ? splitParts(rich(s), by) : rich(s))
       return (
         <div
@@ -685,7 +686,7 @@ function FreeItem({ it }: { it: Item }) {
 
 // ---------- SlideView: one slide, scaled to `width`, autofitted ----------
 
-export function SlideView(p: { deck: Deck; index: number; width?: number; editable?: boolean; editing?: string; onEdit?: (slot: string, text: string) => void; onFit?: (fit: Measured['fit']) => void; print?: boolean; live?: boolean }) {
+export function SlideView(p: { deck: Deck; index: number; width?: number; editable?: boolean; editing?: string; onEdit?: (slot: string, text: string) => void; onFit?: (fit: Measured['fit']) => void; print?: boolean; live?: boolean; film?: boolean }) {
   const size = sizeOf(p.deck)
   const width = p.width ?? size.w
   const host = useRef<HTMLDivElement>(null)
@@ -706,7 +707,7 @@ export function SlideView(p: { deck: Deck; index: number; width?: number; editab
     Promise.all([document.fonts.ready, loadCustomFont(p.deck)]).then(run)
   })
 
-  const ctx: Ctx = { theme, deck: p.deck, index: p.index, editable: !!p.editable, onEdit: p.onEdit, print: !!p.print, editing: p.editing, live: p.live, words: !!p.live && !!slide && buildOf(p.deck, p.index) === 'words' }
+  const ctx: Ctx = { theme, deck: p.deck, index: p.index, editable: !!p.editable, onEdit: p.onEdit, print: !!p.print, editing: p.editing, live: p.live, film: p.film, words: (!!p.live || !!p.film) && !!slide && buildOf(p.deck, p.index) === 'words' }
   return (
     <div className="slide-host" style={{ width, height: (width * size.h) / size.w }} ref={host}>
       <div style={{ transform: `scale(${width / size.w})`, transformOrigin: '0 0', width: size.w, height: size.h }}>

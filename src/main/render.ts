@@ -8,21 +8,30 @@ import { setPrintBoxes } from './pdf-boxes'
 const ZOOM = 2
 
 const hosts = new Map<string, Promise<BrowserWindow>>()
-function host(mode: 'render' | 'print' | 'overview'): Promise<BrowserWindow> {
+const zooms = new Map<string, number>()
+// zoom: Gerätepixel je CSS-px. Nur der Film-Host wechselt ihn (Ausgabebreite); dann entsteht das Fenster neu, denn setZoomFactor
+// gälte für alle Fenster derselben Herkunft (file://) und verstellte die übrigen Hosts.
+function host(mode: 'render' | 'print' | 'overview' | 'film', zoom = ZOOM): Promise<BrowserWindow> {
   let p = hosts.get(mode)
+  if (p && zooms.get(mode) !== zoom) {
+    void p.then((w) => w.destroy(), () => {})
+    hosts.delete(mode)
+    p = undefined
+  }
   if (!p) {
+    zooms.set(mode, zoom)
     p = (async () => {
       const offscreen = mode !== 'print'
       const win = new BrowserWindow({
         show: false, width: 1280 * ZOOM, height: 721 * ZOOM, useContentSize: true, frame: false, enableLargerThanScreen: true,
         // spellcheck aus: Electron prüft standardmäßig, Wellenlinien unter editierbarem Text landeten sonst im Export
-        webPreferences: { offscreen, zoomFactor: offscreen ? ZOOM : 1, backgroundThrottling: false, spellcheck: false },
+        webPreferences: { offscreen, zoomFactor: offscreen ? zoom : 1, backgroundThrottling: false, spellcheck: false },
       })
       if (offscreen) win.webContents.setFrameRate(60)
       win.setContentSize(1280 * ZOOM, 721 * ZOOM)
       if (process.env.ELECTRON_RENDERER_URL) await win.loadURL(`${process.env.ELECTRON_RENDERER_URL}#${mode}`)
       else await win.loadFile(join(__dirname, '../renderer/index.html'), { hash: mode })
-      win.on('closed', () => hosts.delete(mode))
+      win.on('closed', () => { if (hosts.get(mode) === p) hosts.delete(mode) })
       // Stirbt der Renderer (z. B. OOM bei wenig RAM neben der Spracherkennung), Seite neu laden statt das Fenster zu schließen:
       // ohne Fenster beendet window-all-closed den MCP-Prozess. call() wartet danach wieder auf window.dw.
       win.webContents.on('render-process-gone', () => { if (!win.isDestroyed()) win.webContents.reload() })
@@ -61,10 +70,13 @@ const call = async <T>(win: BrowserWindow, js: string): Promise<T> => {
 // whose marker matches, then crop the marker away.
 let seq = 0
 async function snap(win: BrowserWindow, heightCss = 720, widthCss = 1280): Promise<Buffer> {
+  return (await shot(win, Math.round(widthCss * ZOOM), Math.round(heightCss * ZOOM))).toPNG()
+}
+// Kern von snap: w × h Gerätepixel ohne Markerzeile. strict (Film): ohne passenden Marker abbrechen statt ein altes Bild zu nehmen
+async function shot(win: BrowserWindow, w: number, h: number, strict = false): Promise<Electron.NativeImage> {
   const wc = win.webContents
   const n = ++seq
   const want = [n % 200, 255 - (n % 200), 128]
-  const [w, h] = [Math.round(widthCss * ZOOM), Math.round(heightCss * ZOOM)]
   const matches = (img: Electron.NativeImage | null): img is Electron.NativeImage => {
     if (!img) return false
     const size = img.getSize()
@@ -80,6 +92,7 @@ async function snap(win: BrowserWindow, heightCss = 720, widthCss = 1280): Promi
   for (let t = 0; !matches(img); t++) {
     if (t > 150) {
       if (!img) throw new Error(`Frame ${n} ließ sich nicht aufnehmen`)
+      if (strict) throw new Error(`Frame ${n}: nach 3 s kein frisches Bild, Film-Export abgebrochen (sonst stünde ein altes Bild im Film). Bitte erneut exportieren.`)
       console.warn(`[render] Frame ${n} ohne passenden Marker nach 3 s – nehme den letzten`)
       break
     }
@@ -87,7 +100,7 @@ async function snap(win: BrowserWindow, heightCss = 720, widthCss = 1280): Promi
     await new Promise((r) => setTimeout(r, 20))
     img = await capture()
   }
-  return img.crop({ x: 0, y: 0, width: w, height: h }).toPNG()
+  return img.crop({ x: 0, y: 0, width: w, height: h })
 }
 
 const fitWindow = (win: BrowserWindow, w: number, h: number) => {
@@ -111,6 +124,28 @@ export function renderSlide(deck: Deck, i: number, opts: { png?: boolean; backgr
       await call(win, 'dw.hideExportables(false)')
     }
     return out
+  })
+}
+
+export interface FilmScene { steps: number[]; endless: boolean; words: number } // renderer/film.ts
+/** Film (Feature „Animation“): Szene i Frame für Frame per Seek wie bei Remotion. plan bekommt die Takte der Szene und liefert
+ *  Taktbeginne (beats) und Zeitpunkte (times, s ab Szenenbeginn); onFrame erhält je Zeitpunkt das Bild in width px Breite.
+ *  Ein Job in der Render-Warteschlange: Vorschauen und Exporte warten so lange. Kein Resize je Frame (UnknownVizError). */
+export function renderFilm(deck: Deck, i: number, o: { width: number; plan: (scene: FilmScene) => { beats: number[]; times: number[] } }, onFrame: (t: number, img: Electron.NativeImage) => void | Promise<void>): Promise<void> {
+  return serial(async () => {
+    const { w, h } = sizeOf(deck)
+    const f = Math.max(1, o.width / w) // kleiner wäre die Markerzeile unter einem Pixel: dann in Folienauflösung aufnehmen und verkleinern
+    const win = await host('film', f)
+    const [fw, fh] = [Math.round(w * f), Math.round(h * f)]
+    fitWindow(win, fw, Math.round((h + 1) * f)) // vor dem Laden, eine Zeile CSS-px für den Marker
+    const scene = await call<FilmScene>(win, `dw.filmLoad(${JSON.stringify(deck)}, ${i})`)
+    const { beats, times } = o.plan(scene)
+    await call(win, `dw.filmBeats(${JSON.stringify(beats)})`)
+    for (const t of times) {
+      await call(win, `dw.filmSeek(${t})`)
+      const img = await shot(win, fw, fh, true)
+      await onFrame(t, o.width < fw ? img.resize({ width: Math.round(o.width), quality: 'good' }) : img)
+    }
   })
 }
 
