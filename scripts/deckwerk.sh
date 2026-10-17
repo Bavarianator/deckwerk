@@ -12,9 +12,9 @@ command -v unshare >/dev/null 2>&1 && ! unshare -Ur true 2>/dev/null && set -- -
 case " $* " in *" --mcp "*) [ -f out/main/index.js ] && exec ./node_modules/.bin/electron . "$@" ;; esac
 note() { notify-send -a Deckwerk -i "$PWD/assets/icon.png" "$@" 2>/dev/null; }
 # Eine Sperre für alle Builds: ein zweiter Klick baut nicht parallel (das leerte out/ unter dem ersten weg)
-exec 9>"${XDG_RUNTIME_DIR:-/tmp}/deckwerk-build.lock"
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/deckwerk-pro-build.lock"
 lock() { ! command -v flock >/dev/null || flock "$@" 9; }
-log="${XDG_RUNTIME_DIR:-/tmp}/deckwerk-build.log" failed="${XDG_RUNTIME_DIR:-/tmp}/deckwerk-build.failed"
+log="${XDG_RUNTIME_DIR:-/tmp}/deckwerk-pro-build.log" failed="${XDG_RUNTIME_DIR:-/tmp}/deckwerk-pro-build.failed"
 newer() { [ -n "$(find src assets package.json -newer "$1" -print -quit)" ]; }
 # Ohne jeden Build auf den laufenden warten; mit Build und belegter Sperre sofort den vorhandenen starten
 if lock -n || { [ ! -f out/main/index.js ] && { note Deckwerk 'Ein Build läuft noch, das Fenster öffnet sich danach.'; lock; }; }; then

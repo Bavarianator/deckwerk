@@ -1,6 +1,6 @@
 # Deckwerk Pro
 
-Fork von Deckwerk für Profis (Details und Abgrenzung: [PRO.md](PRO.md)). Deckwerk Pro läuft neben Deckwerk: eigener Datenordner `~/DeckwerkPro`, eigener MCP-Server und Skill `deckwerk-pro`. Modelle (`~/Deckwerk/models`) und Bild-KI-Schlüssel teilen sich beide Apps.
+Fork von Deckwerk für Profis (Details und Abgrenzung: [PRO.md](PRO.md)). Deckwerk Pro läuft neben Deckwerk: eigener Datenordner `~/DeckwerkPro`, eigener MCP-Server und Skill `deckwerk-pro`. Geteilt sind nur Modelle und geladene Schriften unter `~/Deckwerk` (`models/`, `fonts/`); Einstellungen wie die Bild-KI-Schlüssel richtest du in Pro eigens ein.
 
 - **Druck-PDF in CMYK:** Im Druckdialog entsteht ein PDF/X-4 in CMYK (FOGRA39); das braucht Ghostscript ab 10.05.
 - **Premiere/Resolve-XML:** Neben jedem Clip-MP4 liegt automatisch eine Final-Cut-7-XML. Premiere importiert sie über „Datei → Importieren“, DaVinci Resolve über „Timeline importieren“.
@@ -239,8 +239,7 @@ Bei einer Quellcode-Installation nutzt der Server den vorhandenen Build und baut
 | `~/DeckwerkPro/brand.json` | Brand-Kit (Farben, Schriften, Logo) für neue Decks |
 | `~/Deckwerk/models/` | Modelle für Freisteller und Spracherkennung, bei Bedarf ffmpeg |
 | `~/DeckwerkPro/.sync-state.json` | Stand des letzten Cloud-Abgleichs |
-| `~/.config/deckwerk-pro/` | Einstellungen, API-Key (verschlüsselt über den System-Schlüsselbund), Einrichtung und Cloud-Zugang |
-| `~/.config/deckwerk/` | mit Deckwerk geteilt: Bild-KI-Schlüssel, Rechtschreibung, Handy, Spracherkennungs-Modell |
+| `~/.config/deckwerk-pro/` | Einstellungen, API-Key und Bild-KI-Schlüssel (verschlüsselt über den System-Schlüsselbund), Rechtschreibung, Handy, Spracherkennungs-Modell, Einrichtung und Cloud-Zugang |
 
 ## Datenschutz und Sicherheit
 

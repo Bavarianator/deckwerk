@@ -11,6 +11,7 @@ import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
 import { MAX_PARTS, followParts, snapToScenes, type ClipContent, type Segment, type Transcript } from '../shared/video'
 import type { Engine } from './agent'
+import { dataDir } from './clients'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
@@ -48,7 +49,8 @@ export function createEngine(): Engine {
 
   // Video-Caches je Datei (Pfad, Größe, Änderungszeit) im Punktordner, der nicht gesynct wird: <key>.t<k>.json je Transkript-Chunk,
   // .d<k>.json je Sprecher-Stück, .em<s>.json je Ereignis-/Musik-Chunk, .signals.json; <key>.transcript.json ist der alte Ganzdatei-Cache (Whisper)
-  const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), models = join(home, 'models')
+  // Caches und Video-Import im eigenen Datenordner (dort sucht tools.ts localVideos), nur die Modelle teilt Pro mit Deckwerk
+  const home = dataDir(), models = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'models')
   const baseOf = async (file: string) => {
     const s = await stat(file)
     return join(home, 'assets', '.video', createHash('sha1').update(file + s.size + s.mtimeMs).digest('hex'))

@@ -23,11 +23,35 @@ const unxml = (s: string) => s.replace(/&(#x[\da-fA-F]+|#\d+|amp|lt|gt|quot|apos
 })
 // Attribute ohne Namensraum-Präfix (r:id → id)
 const attrs = (tag: string) => Object.fromEntries([...tag.matchAll(/([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map((m) => [m[1].replace(/^[\w.-]+:/, ''), unxml(m[2] ?? m[3])]))
-// <name …/> oder <name …>inhalt</name>, Präfix egal; reicht für die flachen Teile hier (c, row, si, t, v, sheet, Relationship verschachteln sich nicht)
-const elems = (xml: string, name: string): Elem[] =>
-  [...xml.matchAll(new RegExp(`<(?:[\\w.-]+:)?${name}(\\s[^>]*?)?(?:/>|>([\\s\\S]*?)</(?:[\\w.-]+:)?${name}>)`, 'g'))].map((m) => ({ a: attrs(m[1] ?? ''), body: m[2] ?? '' }))
+// <name …/> oder <name …>inhalt</name>, Präfix egal; reicht für die flachen Teile hier (c, row, si, t, v, sheet, Relationship, rPh verschachteln sich nicht).
+// Linear per indexOf statt Regex mit [\s\S]*?: Der suchte bei vielen offenen Tags ohne Schluss-Tag quadratisch und fror den Hauptprozess ein.
+// Fehlt ein Schluss-Tag, endet die Suche (kaputtes XML, danach kommt nichts Verlässliches mehr).
+function scan(xml: string, name: string) {
+  const out: { from: number; to: number; attrs: string; body: string }[] = []
+  const open = new RegExp(`<((?:[\\w.-]+:)?${name})(?=[\\s>]|/>)`, 'g')
+  for (let m: RegExpExecArray | null; (m = open.exec(xml)); ) {
+    const gt = xml.indexOf('>', open.lastIndex)
+    if (gt < 0) break
+    const head = xml.slice(open.lastIndex, gt)
+    if (head.endsWith('/')) {
+      out.push({ from: m.index, to: gt + 1, attrs: head.slice(0, -1), body: '' })
+      open.lastIndex = gt + 1
+      continue
+    }
+    const close = `</${m[1]}>`, end = xml.indexOf(close, gt + 1)
+    if (end < 0) break
+    open.lastIndex = end + close.length
+    out.push({ from: m.index, to: open.lastIndex, attrs: head, body: xml.slice(gt + 1, end) })
+  }
+  return out
+}
+const elems = (xml: string, name: string): Elem[] => scan(xml, name).map((e) => ({ a: attrs(e.attrs), body: e.body }))
 // Text eines <si> oder <is>: alle <t>, auch aus Rich-Text-Läufen <r>, ohne Lautschrift <rPh>
-const textOf = (xml: string) => elems(xml.replace(/<(?:[\w.-]+:)?rPh[\s>][\s\S]*?<\/(?:[\w.-]+:)?rPh>/g, ''), 't').map((t) => unxml(t.body)).join('')
+const textOf = (xml: string) => {
+  let rest = '', at = 0
+  for (const p of scan(xml, 'rPh')) { rest += xml.slice(at, p.from); at = p.to }
+  return elems(rest + xml.slice(at), 't').map((t) => unxml(t.body)).join('')
+}
 
 const colNum = (s: string) => [...s].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0)
 const colName = (n: number): string => (n > 26 ? colName(Math.floor((n - 1) / 26)) : '') + String.fromCharCode(65 + ((n - 1) % 26))

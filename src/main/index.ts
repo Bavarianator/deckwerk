@@ -8,6 +8,7 @@ import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { APP } from '../shared/app-id'
 import { MEDIA_EXT, profileOf, VIDEO_FILE } from '../shared/deck'
+import { dataDir } from './clients'
 import type { createEngine } from './engine'
 import { setupSpellcheck } from './spellcheck'
 import { localAsset } from './sync'
@@ -101,7 +102,7 @@ app.whenReady().then(async () => {
       try {
         const t = Math.round(Math.min(48 * 3600, Math.max(0, Number(frame) || 0)) * 10) / 10 // fremde deck.json: keine Fantasiezeiten im Cache-Namen
         const st = await stat(file)
-        const dir = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'assets', '.video')
+        const dir = join(dataDir(), 'assets', '.video')
         const jpg = join(dir, `${createHash('sha1').update(`${file}|${st.size}|${st.mtimeMs}`).digest('hex')}-${t}.jpg`)
         let buf: Uint8Array | undefined = await readFile(jpg).catch(() => undefined)
         if (!buf) {
