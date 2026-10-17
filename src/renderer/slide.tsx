@@ -4,8 +4,8 @@ import QRCode from 'qrcode'
 import { GRAPHICS } from '../shared/items'
 import { Chart, registerables, type ChartConfiguration, type Plugin } from 'chart.js'
 import { chartColors, decimals, fmt, readableOn, valueLabels, waterfall } from '../shared/charts'
-import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
-import { FONTS, HEAD_ROLES, SCALE, duotoneOf, ensureContrast, marginsOf, mix, resolveTheme, withTone, type FontName, type Theme } from '../shared/themes'
+import { profileOf, sizeOf, type ChartSpec, type Crop, type Deck, type DecorId, type FontFiles, type FrameId, type Item, type MaskId, type Adjust, type Measured, type Tone } from '../shared/deck'
+import { HEAD_ROLES, SCALE, duotoneOf, ensureContrast, fontRef, marginsOf, mix, resolveTheme, withTone, type FontRef, type Theme } from '../shared/themes'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { AIRY } from '../shared/lint'
 import { COMPONENTS, splitUnit } from './layouts'
@@ -348,9 +348,9 @@ function themeVars(t: Theme, size: { w: number; h: number }): CSSProperties {
     '--accent-tint': t.tone === 'accent' ? t.c.surface2 : mix(t.c.bg, t.c.accent, t.dark ? 0.22 : 0.1),
     '--fill': t.c.fill!,
     '--on-accent-soft': ensureContrast(mix(t.c.fill!, t.c.onAccent, 0.85), t.c.fill!, 4.6),
-    '--font-head': `'${t.head.css}'`, '--font-body': `'${t.body.css}'`, '--head-weight': t.head.weight, '--head-tracking': `${t.head.tracking}em`,
+    '--font-head': family(t.head), '--font-body': family(t.body), '--head-weight': t.head.weight, '--head-tracking': `${t.head.tracking}em`,
     '--radius': `${t.radius}px`, '--head-scale': t.headScale ?? 1,
-    ...(t.mono && { '--font-label': `'${t.mono.css}'` }),
+    ...(t.mono && { '--font-label': family(t.mono) }),
   }
   // Tokens nur setzen, wenn vorhanden: die CSS-Fallbacks sind die bisherigen festen Werte
   if (t.leading) [v['--lh'], v['--lh-head']] = LEADING[t.leading]
@@ -548,22 +548,31 @@ export function QrCode(p: { text: string; slot: string; color: string; bg: strin
   )
 }
 
-// Eigene Schrift (theme.customFont) einmal pro Datei registrieren; Messen erst danach, sonst misst Autofit die Ersatzschrift
-const customFonts = new Map<string, Promise<void>>()
-export function loadCustomFont(deck: Deck): Promise<void> {
-  const cf = deck.theme.customFont
-  if (!cf) return Promise.resolve()
-  const key = `${cf.family}|${cf.regular}|${cf.bold ?? ''}`
-  let p = customFonts.get(key)
-  if (!p) {
-    const faces = [new FontFace(cf.family, `url("${cf.regular}")`, { weight: '400' }), ...(cf.bold ? [new FontFace(cf.family, `url("${cf.bold}")`, { weight: '700' })] : [])]
-    p = Promise.all(faces.map((f) => f.load().then((ff) => void document.fonts.add(ff)))).then(() => {}, (e) => console.warn('[font] eigene Schrift lädt nicht', e))
-    customFonts.set(key, p)
-  }
-  return p
+// Schriften des Decks per FontFace registrieren: geladene Katalogschriften (theme.fontFiles, alle Schnitte) und die eigene Schrift
+// (customFont). Je Datei einmal; Messen erst danach, sonst misst Autofit die Ersatzschrift. Lädt eine nicht, gilt der CSS-Rückfall.
+const FACES = [['regular', '400', 'normal'], ['bold', '700', 'normal'], ['italic', '400', 'italic'], ['boldItalic', '700', 'italic']] as const
+const faces = new Map<string, Promise<void>>()
+export function loadFonts(deck: Deck): Promise<void> {
+  const { fontFiles, customFont: cf } = deck.theme
+  const all: Record<string, FontFiles> = { ...fontFiles, ...(cf && { [cf.family]: { regular: cf.regular, bold: cf.bold } }) }
+  return Promise.all(Object.entries(all).flatMap(([fam, f]) => FACES.flatMap(([slot, weight, style]) => {
+    const url = f[slot]
+    if (!url) return []
+    let p = faces.get(`${fam}|${url}`)
+    if (!p) faces.set(`${fam}|${url}`, p = new FontFace(fam, `url("${url}")`, { weight, style }).load().then((ff) => void document.fonts.add(ff), (e) => console.warn(`[font] ${fam} lädt nicht`, e)))
+    return [p]
+  }))).then(() => {})
 }
 
-export const fontCss = (it: Item) => (it.font === 'head' || !it.font ? 'var(--font-head)' : it.font === 'body' ? 'var(--font-body)' : `'${FONTS[it.font as FontName]?.css ?? it.font}'`)
+// CSS-Schriftliste: Katalogschrift mit ihrem gebündelten Ersatz dahinter (solange die Datei lädt oder fehlt)
+const family = (f: FontRef) => (f.fallback ? `'${f.css}', '${f.fallback}'` : `'${f.css}'`)
+// Schrift eines freien Texts: Theme-Schrift oder eigener Name; Katalogschriften ohne geladene Dateien als gebündelter Ersatz
+export function fontCss(it: Item, files?: Record<string, FontFiles>): string {
+  if (!it.font || it.font === 'head') return 'var(--font-head)'
+  if (it.font === 'body') return 'var(--font-body)'
+  const f = fontRef(it.font, files)
+  return f ? family(f) : `'${it.font}'`
+}
 
 // Audio: runder Lautsprecher-Knopf; beim Präsentieren spielt ein Klick ab bzw. pausiert (Klick blättert dann nicht weiter)
 function AudioItem({ it, attrs, pos, slot, live, color }: { it: Item; attrs: Record<string, string | undefined>; pos: CSSProperties; slot: string; live?: boolean; color: string }) {
@@ -580,7 +589,7 @@ function AudioItem({ it, attrs, pos, slot, live, color }: { it: Item; attrs: Rec
 }
 
 function FreeItem({ it }: { it: Item }) {
-  const { theme, editable, editing, onEdit, live } = useSlide()
+  const { theme, deck, editable, editing, onEdit, live } = useSlide()
   const slot = `items.${it.id}`
   const attrs = { 'data-item': it.id, 'data-rot': it.rot ? String(it.rot) : undefined, 'data-anim': it.anim && it.anim !== 'none' ? it.anim : undefined, 'data-anim-dir': it.animDir, 'data-anim-speed': it.animSpeed }
   const pos: CSSProperties = { position: 'absolute', left: it.x, top: it.y, width: it.w, height: it.h, transform: it.rot ? `rotate(${it.rot}deg)` : undefined }
@@ -596,7 +605,9 @@ function FreeItem({ it }: { it: Item }) {
           key={text} // Bearbeiten baut den DOM um (Zeilen, Spans): neuer Text → neu aufbauen statt abgleichen
           {...attrs}
           className="t free-text"
-          data-pptx="text" data-slot={slot} data-role="free" data-font={it.font === 'body' ? 'body' : 'head'} data-face={it.font && it.font !== 'head' && it.font !== 'body' ? it.font : undefined}
+          data-pptx="text" data-slot={slot} data-role="free" data-font={it.font === 'body' ? 'body' : 'head'}
+          // PPTX-Name der Schrift, die auch gemessen wird: Katalogname nur mit geladenen Dateien, sonst der Ersatz
+          data-face={it.font && it.font !== 'head' && it.font !== 'body' ? fontRef(it.font, deck.theme.fontFiles)?.pptx ?? it.font : undefined}
           data-effect={it.effect && it.effect !== 'none' ? JSON.stringify({ type: it.effect, color: it.effectColor ?? it.color ?? theme.c.text }) : undefined}
           data-list={it.list}
           contentEditable={edit || undefined}
@@ -606,7 +617,7 @@ function FreeItem({ it }: { it: Item }) {
             ? [...e.currentTarget.childNodes].map((n) => (n instanceof HTMLElement ? n.innerText : n.textContent ?? '').replace(/\n$/, '')).join('\n')
             : e.currentTarget.innerText.replace(/\n$/, ''))) : undefined}
           style={{
-            ...pos, height: undefined, minHeight: 10, fontFamily: fontCss(it), fontSize: it.size ?? 32, fontWeight: it.bold ? 700 : 400,
+            ...pos, height: undefined, minHeight: 10, fontFamily: fontCss(it, deck.theme.fontFiles), fontSize: it.size ?? 32, fontWeight: it.bold ? 700 : 400,
             fontStyle: it.italic ? 'italic' : undefined, textDecoration: it.underline ? 'underline' : undefined, color: it.color ?? theme.c.text,
             textAlign: it.align ?? 'left', lineHeight: it.lineHeight ?? 1.2, letterSpacing: it.spacing ? `${it.spacing}em` : undefined,
             textTransform: it.upper ? 'uppercase' : undefined, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', opacity: alpha < 1 ? alpha : undefined,
@@ -703,7 +714,7 @@ export function SlideView(p: { deck: Deck; index: number; width?: number; editab
       if (key !== last.current) (last.current = key), p.onFit?.(fit)
     }
     run()
-    Promise.all([document.fonts.ready, loadCustomFont(p.deck)]).then(run)
+    Promise.all([document.fonts.ready, loadFonts(p.deck)]).then(run)
   })
 
   const ctx: Ctx = { theme, deck: p.deck, index: p.index, editable: !!p.editable, onEdit: p.onEdit, print: !!p.print, editing: p.editing, live: p.live, words: !!p.live && !!slide && buildOf(p.deck, p.index) === 'words' }

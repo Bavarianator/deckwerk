@@ -1,10 +1,11 @@
 import { converter, formatHex, wcagContrast, clampChroma, interpolate } from 'culori'
-import type { BrandKit, ChartStrategy, DecorId, HeroTone, ImageStyle, Labels, Leading, Margin, Measure, Signature, ThemeRef, ThemeSpec, ThemeTune, Tone } from './deck'
+import type { BrandKit, ChartStrategy, DecorId, FontFiles, HeroTone, ImageStyle, Labels, Leading, Margin, Measure, Signature, ThemeRef, ThemeSpec, ThemeTune, Tone } from './deck'
+import { fontInfo, instanceFamily, nearestWeight } from './font-catalog'
 import { EXTRA_THEMES } from './themes-extra'
-import { fontInfo } from './font-catalog'
 
 // embed: Dateistamm in assets/fonts (<embed>-Regular|Bold|Italic|BoldItalic.ttf); dieselbe TTF misst im Renderer und wird in die PPTX eingebettet.
-export interface FontRef { css: string; pptx: string; embed?: string; serif?: boolean; single?: boolean; files?: { regular: string; bold?: string } } // files: eigene Schrift (asset://) // single: nur ein Schnitt (Titel in 400)
+// files: eigene Schrift bzw. geladene Katalogschrift (asset://) // single: nur ein Schnitt (Titel in 400) // fallback: CSS-Name der gebündelten Ersatzschrift (solange files lädt oder fehlt)
+export interface FontRef { css: string; pptx: string; embed?: string; serif?: boolean; single?: boolean; files?: FontFiles; fallback?: string }
 export interface Theme {
   id: string
   name: string
@@ -65,6 +66,17 @@ const FONT_LIST = {
 export type FontName = keyof typeof FONT_LIST
 export const FONTS: Record<FontName, FontRef> = FONT_LIST
 export const FONT_NAMES = Object.keys(FONTS) as FontName[]
+
+// Schriftname → FontRef, für Theme, Marke, Schriftpaar und freie Texte: gebündelt, Katalogschrift mit geladenen Dateien (ThemeRef.fontFiles)
+// oder sonst deren gebündelter Ersatz. Ohne Dateien deterministisch der Ersatz: Renderer, Messung und PPTX sehen dieselbe Schrift.
+export function fontRef(name: string | undefined, files?: Record<string, FontFiles>): FontRef | undefined {
+  if (!name) return undefined
+  if (Object.hasOwn(FONTS, name)) return FONTS[name as FontName]
+  const info = fontInfo(name)
+  if (!info) return undefined
+  const fl = files?.[info.family], alt = FONTS[info.fallback as FontName]
+  return fl?.regular ? { css: info.family, pptx: info.family, files: fl, serif: /serif|slab/.test(info.cat), single: !fl.bold, fallback: alt.css } : alt
+}
 
 // Autofit steps per text role (px on the 1280x720 slide; 1px = 0.75pt). Step 0 = preferred size.
 export const SCALE: Record<string, number[]> = {
@@ -180,8 +192,9 @@ export function ensureContrast(color: string, bg: string, min: number): string {
   return out
 }
 
-function withBrand(base: Theme, b?: BrandKit): Theme {
+function withBrand(base: Theme, b?: BrandKit, files?: Record<string, FontFiles>): Theme {
   if (!b) return base
+  const head = fontRef(b.headFont, files)
   const accent = ensureContrast(b.primary, base.c.bg, 4.5)
   const accent2 = ensureContrast(b.secondary ?? base.c.accent2, base.c.bg, 3)
   const onAccent = wcagContrast('#FFFFFF', accent) >= 3 ? '#FFFFFF' : '#0B0B0B'
@@ -189,8 +202,9 @@ function withBrand(base: Theme, b?: BrandKit): Theme {
     ...base,
     id: `${base.id}+brand`,
     c: { ...base.c, accent, accent2, onAccent, chart: [accent, accent2, ...base.c.chart.slice(2)] },
-    head: b.headFont && b.headFont in FONTS ? { ...base.head, ...FONTS[b.headFont as FontName] } : base.head,
-    body: b.bodyFont && b.bodyFont in FONTS ? FONTS[b.bodyFont as FontName] : base.body,
+    // nur Gewicht und Laufweite vom Theme: embed, files oder single der alten Titelschrift gehören nicht zur neuen
+    head: head ? { ...head, weight: head.single ? 400 : base.head.weight, tracking: base.head.tracking } : base.head,
+    body: fontRef(b.bodyFont, files) ?? base.body,
     logo: (base.dark && b.logoDark) || b.logo,
     logos: { light: b.logo, dark: b.logoDark },
   }
@@ -273,18 +287,15 @@ function vividBg(hex: string): string {
   return formatHex(clampChroma({ ...c, l: c.l < 0.57 ? Math.min(c.l, 0.42) : Math.max(c.l, 0.74) }, 'oklch'))!
 }
 
-// Gebündelte Schrift zum Namen; Katalogschriften über ihren Ersatz gleicher Anmutung (in Renderer und Main gleich).
-// ponytail: Katalogschriften selbst (ThemeRef.fontFiles) löst der Renderer noch nicht auf, bis dahin gilt der Ersatz
-const bundled = (n: string): FontRef | undefined => FONTS[n as FontName] ?? FONTS[fontInfo(n)?.fallback as FontName]
-
 // Eigenes Theme aus wenigen Vorgaben (KI oder Nutzer): Flächen und Ränder als Mischung von Grund und Text, Akzente mit Mindestkontrast.
-export function themeFromSpec(s: ThemeSpec): Theme {
+// files: geladene Katalogschriften (ThemeRef.fontFiles); ohne sie gilt für Katalognamen der gebündelte Ersatz.
+export function themeFromSpec(s: ThemeSpec, files?: Record<string, FontFiles>): Theme {
   const bg = s.vivid ? vividBg(s.bg) : calmBg(s.bg)
   const dark = wcagContrast(bg, '#FFFFFF') > wcagContrast(bg, '#000000')
   const text = ensureContrast(s.text ?? mix(bg, dark ? '#FFFFFF' : mix('#000000', s.accent, 0.15), 0.92), bg, 10) // Schwarz mit einer Spur Akzent, nie reines #000
   const accent = ensureContrast(s.accent, bg, 3)
   const accent2 = ensureContrast(s.accent2 ?? mix(bg, text, 0.5), bg, 3) // ohne Vorgabe neutral: eine Akzentfarbe reicht
-  const head = bundled(s.headFont) ?? FONTS.Arial
+  const head = fontRef(s.headFont, files) ?? FONTS.Arial
   return applyTokens({
     id: 'custom', name: s.name, dark,
     c: {
@@ -296,7 +307,7 @@ export function themeFromSpec(s: ThemeSpec): Theme {
       chart: chartOf('focus', { bg, text, accent, accent2 }),
     },
     head: headRef(head, s.titleWeight === 'regular' ? 400 : 700),
-    body: bundled(s.bodyFont) ?? FONTS.Calibri,
+    body: fontRef(s.bodyFont, files) ?? FONTS.Calibri,
     radius: s.radius, decor: s.decor, texture: s.texture,
     sectionTone: s.sectionTone,
     vivid: s.vivid,
@@ -327,17 +338,24 @@ function shuffled(t: Theme, n: number): Theme {
 }
 
 export function resolveTheme(ref: ThemeRef): Theme {
-  let t = withBrand(ref.custom ? themeFromSpec(ref.custom) : THEMES.find((x) => x.id === ref.id) ?? THEMES[0], ref.brand)
+  const files = ref.fontFiles
+  let t = withBrand(ref.custom ? themeFromSpec(ref.custom, files) : THEMES.find((x) => x.id === ref.id) ?? THEMES[0], ref.brand, files)
   if (ref.shuffle) t = shuffled(t, ref.shuffle)
   if (t.chart) t = applyTokens(t, { chart: t.chart }) // Brand und Farbvariante ersetzen Farben: Diagrammfamilie aus den neuen ableiten
   const [hf, bf] = ref.fonts ?? []
   const cf = ref.customFont
   const font = (n?: string): FontRef | undefined =>
-    n && cf && n === cf.family ? { css: n, pptx: n, files: { regular: cf.regular, bold: cf.bold }, single: !cf.bold } : n && n in FONTS ? FONTS[n as FontName] : undefined
+    n && cf && n === cf.family ? { css: n, pptx: n, files: { regular: cf.regular, bold: cf.bold }, single: !cf.bold } : fontRef(n, files)
   const hRef = font(hf), bRef = font(bf)
   if (hRef) t = { ...t, head: headRef(hRef, t.head.single ? 700 : t.head.weight) } // Gewicht des Designs behalten
   if (bRef) t = { ...t, body: bRef }
   if (ref.tune) t = applyTokens(t, ref.tune) // nach Brand, Farbvariante und Schriften: der Feinschliff gewinnt
+  // Titelgewicht zwischen den Schnitten: liegt die Instanz-Familie („Inter SemiBold“) in fontFiles (webfonts.ts lädt sie nach derselben
+  // Regel: tune vor custom, Titelschrift nach Schriftpaar, Marke, Design), echtes 300/500/600/800 in 400 statt auf 400/700 geklemmt
+  const hw = ref.tune?.headWeight ?? ref.custom?.headWeight, info = hw ? fontInfo(t.head.pptx) : undefined
+  const w = info ? nearestWeight(info, hw!) : 400, inst = w !== 400 && w !== 700 ? instanceFamily(info!.family, w) : undefined
+  const fl = inst ? files?.[inst] : undefined
+  if (inst && fl?.regular) t = { ...t, head: { css: inst, pptx: inst, files: fl, serif: t.head.serif, fallback: t.head.css, weight: 400, tracking: t.head.tracking } }
   const c = t.c, onAccent = t.field ? onOf(t.field) : c.onAccent // Flächenfarbe: Text darauf neu wählen
   return {
     ...t,

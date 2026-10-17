@@ -498,3 +498,5 @@ button.setup-opt { cursor: pointer; }
 .font-pick-opt { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; font-size: 15px; }
 .font-pick-probe { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .kit-opt.on .font-pick-probe { color: rgb(255 255 255 / 0.8); }
+/* Schriftwahl im Anpassen-Panel (freie Texte): volle Feldbreite wie die anderen Auswahlen */
+.field > .font-pick { display: block; width: auto; }

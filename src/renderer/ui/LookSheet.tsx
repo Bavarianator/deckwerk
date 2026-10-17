@@ -6,7 +6,7 @@ import { MOTIONS, TRANSITIONS, sizeOf, type AnimSpeed, type BrandKit, type Deck,
 import { FONT_PAIRS, THEMES, resolveTheme, themeFromSpec } from '../../shared/themes'
 import { SlideView } from '../slide'
 import { OWN_DESIGN } from './Chat'
-import { FontPicker } from './FontPicker'
+import { FontPicker, ensureFonts } from './FontPicker'
 import { playTransition } from './PresentScreen'
 import { Select } from './kit'
 
@@ -69,9 +69,10 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   // alte Themes nur, wenn das Deck gerade eins nutzt; mutige nur im Stil mutig
   const ids = [...(orig.theme.custom ? ['custom'] : []), ...THEMES.filter((t) => (!t.legacy && (!t.mutig || deck.style === 'mutig')) || t.id === orig.theme.id).map((t) => t.id)]
   const at = Math.max(0, ids.indexOf(deck.theme.custom ? 'custom' : deck.theme.id))
-  // Gestaltung (tune) liegt über jedem Theme und bleibt beim Blättern
-  const themeRef = (id: string) => (id === 'custom' ? { ...orig.theme, brand: deck.theme.brand, tune: deck.theme.tune } : { id, brand: deck.theme.brand, tune: deck.theme.tune })
-  const themeOf = (id: string) => (id === 'custom' ? themeFromSpec(orig.theme.custom!) : THEMES.find((t) => t.id === id) ?? THEMES[0])
+  // Gestaltung (tune) liegt über jedem Theme und bleibt beim Blättern, ebenso geladene Katalogschriften (Marke, eigenes Design)
+  const { fontFiles } = deck.theme
+  const themeRef = (id: string) => (id === 'custom' ? { ...orig.theme, brand: deck.theme.brand, tune: deck.theme.tune, fontFiles } : { id, brand: deck.theme.brand, tune: deck.theme.tune, fontFiles })
+  const themeOf = (id: string) => (id === 'custom' ? themeFromSpec(orig.theme.custom!, fontFiles) : THEMES.find((t) => t.id === id) ?? THEMES[0])
   const pick = (i: number) => patchDeck({ theme: themeRef(ids[(i + ids.length) % ids.length]) }, 'look-theme')
   const preview = (i: number) => ({ ...deck, theme: themeRef(ids[(i + ids.length) % ids.length]) })
 
@@ -96,6 +97,14 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   const [saved, setSaved] = useState<BrandKit | null>(null) // gespeichertes Brand-Kit (brand.json)
   useEffect(() => { void window.api.getBrand().then(setSaved) }, [])
   const setBrand = (p: Partial<BrandKit>, tag?: string) => patchDeck({ theme: { ...deck.theme, brand: { primary: t.c.accent, ...brand, ...p } } }, tag)
+  // Schrift der Marke: Katalogschriften lädt Main nach; bis dahin zeigt die Folie den Ersatz. Hinweise (offline, Ersatz) hier, die Statuszeile liegt unter dem Look
+  const [fontNote, setFontNote] = useState('')
+  const setBrandFonts = (b: BrandKit) => {
+    const theme = { ...deck.theme, brand: b }
+    patchDeck({ theme })
+    setFontNote('')
+    void ensureFonts({ ...deck, theme }, b.headFont, b.bodyFont).then((n) => setFontNote(n.join(' · ')))
+  }
   // Gestaltung: Standard je Hebel = was das Theme ohne Feinschliff macht (eigene Designs bringen eigene Werte mit)
   const tune = deck.theme.tune ?? {}
   const own = ids[at] === 'custom' ? orig.theme.custom : undefined
@@ -281,7 +290,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
               <input type="color" aria-label="Sekundärfarbe" value={brand?.secondary ?? t.c.accent2} onChange={(e) => setBrand({ secondary: e.target.value.toUpperCase() }, 'brand-secondary')} />
             </label>
             {brand
-              ? <button className="plain tint" onClick={() => patchDeck({ theme: { id: deck.theme.id, custom: deck.theme.custom, tune: deck.theme.tune } })}>Zurücksetzen</button>
+              ? <button className="plain tint" onClick={() => patchDeck({ theme: { id: deck.theme.id, custom: deck.theme.custom, tune: deck.theme.tune, fontFiles } })}>Zurücksetzen</button>
               : <span className="muted">aus dem Theme</span>}
           </div>
           <div className="look-group">
@@ -301,15 +310,15 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
           </div>
           <div className="look-group">
             <b>Überschriften</b>
-            <FontPicker aria-label="Schrift der Überschriften" placeholder="Wie im Theme" value={brand?.headFont} onChange={(f) => setBrand({ headFont: f })} />
-            <FontPicker aria-label="Schrift des Fließtexts" placeholder="Text wie im Theme" value={brand?.bodyFont} onChange={(f) => setBrand({ bodyFont: f })} />
+            <FontPicker aria-label="Schrift der Überschriften" placeholder="Wie im Theme" value={brand?.headFont} onChange={(f) => setBrandFonts({ primary: t.c.accent, ...brand, headFont: f })} />
+            <FontPicker aria-label="Schrift des Fließtexts" placeholder="Text wie im Theme" value={brand?.bodyFont} onChange={(f) => setBrandFonts({ primary: t.c.accent, ...brand, bodyFont: f })} />
           </div>
           <div className="look-group">
             <b>Brand-Kit</b>
             <button className="pill" disabled={!brand} title="Marke dieses Decks für jedes neue Deck der KI speichern (~/Deckwerk/brand.json)"
               onClick={() => void window.api.setBrand(brand!).then(() => setSaved(brand!))}>Als Standard speichern</button>
             <button className="pill" disabled={!saved} title="Gespeicherte Marke auf dieses Deck anwenden"
-              onClick={() => saved && patchDeck({ theme: { ...deck.theme, brand: saved } })}>Standard übernehmen</button>
+              onClick={() => saved && setBrandFonts(saved)}>Standard übernehmen</button>
           </div>
           <div className="look-group">
             <b>Mischen</b>
@@ -328,6 +337,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
               onClick={() => void window.api.openStyle()}>Bearbeiten …</button>
           </div>
         </div>
+        {fontNote && <p className="look-note" role="status">Schriften: {fontNote}</p>}
       </section>
     </div>
   )

@@ -13,6 +13,7 @@ import { BuildView, type StoryItem } from './ui/BuildView'
 import { ChatChoices, type Msg } from './ui/Chat'
 import { EditorScreen } from './ui/EditorScreen'
 import { FindBar } from './ui/FindBar'
+import type { FontsLoaded } from './ui/FontPicker'
 import { KeyDialog } from './ui/KeyDialog'
 import { Logo } from './ui/Logo'
 import { FormatSheet } from './ui/FormatSheet'
@@ -229,6 +230,21 @@ export default function App() {
     turnStart.current = null
   }
   useEffect(() => api.onDeckOpened((s) => load(s.deck, s.path)), []) // Doppelklick auf eine deck.json bei laufender App
+  // Katalogschriften nach einer Schriftwahl (FontPicker ensureFonts): neue Dateien in den aktuellen Stand mischen, ohne eigenen Undo-Schritt
+  // (fontFiles sind Pfade dieses Rechners, kein Inhalt). Vorhandene Einträge gewinnen: ein veraltetes Ergebnis überschreibt nichts.
+  useEffect(() => {
+    const on = (e: Event) => {
+      const { fontFiles, notes } = (e as CustomEvent<FontsLoaded>).detail
+      setDoc((d) => {
+        const cur = d.deck?.theme.fontFiles ?? {}
+        if (!d.deck || Object.keys(fontFiles).every((k) => k in cur)) return d
+        return { ...d, deck: { ...d.deck, theme: { ...d.deck.theme, fontFiles: { ...fontFiles, ...cur } } }, local: true }
+      })
+      if (notes.length) setStatus({ text: `Schriften: ${notes.join(' · ')}` })
+    }
+    addEventListener('dw:fonts', on)
+    return () => removeEventListener('dw:fonts', on)
+  }, [])
   // Cloud-Sync brachte eine neuere Fassung: nur das Deck tauschen, Chat und Auswahl bleiben
   useEffect(() => api.onDeckSynced((d) => {
     skipSave.current = true

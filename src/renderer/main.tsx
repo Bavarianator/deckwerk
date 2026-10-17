@@ -12,7 +12,7 @@ import '@fontsource/gelasio/700.css'
 import '@fontsource/gelasio/400-italic.css'
 import './fonts.css'
 import { sizeOf, type Deck, type Measured } from '../shared/deck'
-import { SlideView, loadCustomFont } from './slide'
+import { SlideView, loadFonts } from './slide'
 import { PresentScreen } from './ui/PresentScreen'
 import { autofit, extract } from './measure'
 import { FONTS } from '../shared/themes'
@@ -83,7 +83,7 @@ function Host({ mode }: { mode: string }) {
     },
     async render(deck: Deck, index: number): Promise<Measured> {
       await fontsLoaded()
-      await loadCustomFont(deck)
+      await loadFonts(deck)
       flushSync(() => setState({ deck, index }))
       await frames()
       const root = document.querySelector<HTMLElement>('.slide')!
@@ -107,7 +107,7 @@ function Host({ mode }: { mode: string }) {
     async renderAll(deck: Deck, geo?: PrintGeo) {
       document.querySelectorAll('.bleed-clip').forEach((e) => e.remove()) // Spiegel-Klone des letzten Druck-PDFs; React kennt sie nicht
       await fontsLoaded()
-      await loadCustomFont(deck)
+      await loadFonts(deck)
       flushSync(() => setState({ deck, index: -1, geo }))
       await frames(3)
       await imagesLoaded(document)

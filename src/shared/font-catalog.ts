@@ -165,9 +165,12 @@ export function suggestFont(name: string): string | undefined {
   return best && best.d <= Math.max(2, Math.floor(a.length / 3)) ? best.i.family : undefined
 }
 
+// Kategorien in Anzeige-Reihenfolge (Systemprompt, Schriftwahl)
+export const CAT_NAMES: Record<FontCat, string> = { grotesk: 'Grotesk', humanist: 'Humanistisch', geometric: 'Geometrisch', condensed: 'Condensed (nur Titel)', serif: 'Serif (Text und Titel)', 'display-serif': 'Display-Serif (nur Titel)', slab: 'Slab', mono: 'Mono' }
+
 // Kurzliste für den Systemprompt: eine Zeile je Familie, nach Kategorie gruppiert
 export function catalogPrompt(): string {
-  const cats: Record<FontCat, string> = { grotesk: 'Grotesk', humanist: 'Humanistisch', geometric: 'Geometrisch', condensed: 'Condensed (nur Titel)', serif: 'Serif (Text und Titel)', 'display-serif': 'Display-Serif (nur Titel)', slab: 'Slab', mono: 'Mono' }
+  const cats = CAT_NAMES
   return (Object.keys(cats) as FontCat[]).map((c) => `${cats[c]}: ` + FONT_CATALOG.filter((i) => i.cat === c)
     .map((i) => `${i.family} (${i.mood}${i.role === 'head' ? ', nur Titel' : i.role === 'body' ? ', nur Text' : ''}; ${i.weights.length > 2 ? `${i.weights[0]}–${i.weights.at(-1)}` : i.weights.join('/')}${i.flag === 'slop' ? '; SLOP, nur auf Wunsch' : i.flag === 'common' ? '; verbreitet' : ''})`).join(' · ')).join('\n')
 }
