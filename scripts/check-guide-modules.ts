@@ -16,7 +16,7 @@ assert.equal(heads(fullPrompt()), mods.length)
 const flat = (s: string) => s.replace(/\s+/g, ' ')
 assert.equal(flat(mods.map((m) => m.text).join('\n\n')), flat(fullPrompt()), 'Module decken Guide und Katalog vollständig ab')
 for (const id of LAYOUT_IDS) assert.ok(ids.has(`layout:${id}`), `layout:${id}`)
-for (const id of ['grundregeln', 'storyline', 'geruest-praesentation', 'geruest-social', 'geruest-a4', 'geruest-visitenkarte', 'inhalt-layout', 'rhythmus', 'gestaltung', 'abwechslung', 'stil', 'fotos', 'ki-bilder', 'text', 'animation', 'ablauf', 'deck-auftraege', 'fehler', 'katalog-themes', 'katalog-ton', 'katalog-animationen'])
+for (const id of ['grundregeln', 'storyline', 'geruest-praesentation', 'geruest-social', 'geruest-a4', 'geruest-visitenkarte', 'inhalt-layout', 'rhythmus', 'gestaltung', 'abwechslung', 'stil', 'fotos', 'ki-bilder', 'text', 'animation', 'film', 'ablauf', 'deck-auftraege', 'fehler', 'katalog-themes', 'katalog-ton', 'katalog-animationen'])
   assert.ok(ids.has(id), id)
 
 const core = corePrompt()
@@ -33,9 +33,16 @@ const route = (text: string, o: Partial<RouteInput> = {}) => {
   for (const id of r.modules) assert.ok(ids.has(id) && !mods.find((m) => m.id === id)!.always, `${text}: ${id}`)
   return new Set(r.modules)
 }
+for (const t of ['Erklärvideo schneiden aus Aufnahme.mp4', 'Schneide die Demo aus dem Video', 'Tutorial-Video aus meinem Stream kürzen', 'Zusammenschnitt der Bildschirmaufnahme']) {
+  const v = route(t); assert.ok(v.has('video') && !v.has('film'), t)
+}
+assert.ok(!route('Pitch mit Demo-Folie').has('film'))
+for (const t of ['Folien animieren', 'Animation auf Folie 3', 'Übergang einstellen']) { const a = route(t); assert.ok(a.has('animation') && !a.has('film'), t) }
+for (const t of ['Erklärvideo mit Stimme über unsere App', 'Live-Demo unserer Website als Video']) assert.ok(route(t).has('film'), t)
 let r = route('Mach mir eine Visitenkarte für unser Büro')
 assert.ok(r.has('layout:business-card') && r.has('geruest-visitenkarte') && !r.has('layout:cover') && !r.has('layout:doc-text'))
 assert.ok(route('Bitte die Folien dezent animieren', { layoutsInDeck: ['cover'], hasDeck: true }).has('animation'))
+assert.ok(['film', 'layout:screen', 'layout:code'].every((id) => route('Ein Erklärvideo mit Live-Demo unserer App', { hasDeck: false }).has(id)))
 r = route('Telefonnummer ändern', { profile: 'doc', layoutsInDeck: ['business-card', 'kpi-grid'], hasDeck: true })
 assert.ok(r.has('layout:kpi-grid') && r.has('layout:business-card') && !r.has('layout:letter'))
 r = route('Pitch für unser Startup, 12 Folien')

@@ -516,3 +516,54 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - `speed`: Zeitlupe für den Höhepunkt einer Aktion, Zeitraffer für Abläufe ohne Sprache; nie über Sprache. Montage ohne Sprache: `volume: 0`, `music: 0.8` (nur mit `deck.music`).
 - `transition` je Ausschnitt meist weglassen (automatische Blende); `fade`/`dissolve` an Orts- oder Szenenwechseln.
 - Der Export legt die Untertitel auch als .srt neben das MP4.
+
+## 12. Animation (Film)
+
+Ein Deck mit `film` (`create_deck`/`update_deck`) ist ein Film: Jede sichtbare Folie ist eine Szene, alle Layouts und Themes gelten, Export `export_deck` mp4. Für Erklärvideo, Produkt- und Live-Demo, Tutorial, Kennzahlen-Video und Social-Clip. Videos aus vorhandenem Material schneiden ist §11, nicht dies.
+
+**Feld `film`:** `{ voice?: "de"|"en", speed?: 0,8–1,3, captions?: "satz"|"aus" }`. `voice` wählt die lokale Stimme (de Thorsten, en Norman), `speed` das Sprechtempo, `captions` `satz` brennt Untertitel ein, `aus` lässt sie weg. Die .srt liegt immer daneben.
+
+**Format nach Ziel:** 16:9 für YouTube, Website, LinkedIn; 9:16 für Reels und Shorts; 1:1 für Feed. Social: `captions` `satz`, Text größer und kürzer, Hook sofort.
+
+**Gerüst für 30–90 s:**
+1. Hook, höchstens 3 s: eine Frage, eine Zahl oder das Ergebnis (`statement`, `big-number`).
+2. Problem: eine Szene.
+3. Demo oder Lösung: 2–4 Szenen (`screen`, `code`, `process`, `image-text`).
+4. Beleg: eine Zahl (`big-number`, `kpi-grid`) oder ein Zitat.
+5. Handlungsaufruf: eine Szene, ein nächster Schritt (`closing`).
+
+Eine Idee pro Szene, 4–10 s je Szene. Wer mehr zeigen will, macht eine zweite Szene.
+
+**Sprechtext (`voice` je Szene):**
+- 1–2 kurze Sätze, gesprochen statt geschrieben: Hauptsatz, Verb früh, keine Schachtelsätze, Zahlen so, wie man sie spricht („zwölf Prozent“). Lint warnt ab 40 Wörtern.
+- Titel ≠ Sprechtext: Die Folie zeigt das Stichwort, die Stimme erzählt. Nie den Titel vorlesen lassen.
+- `[klick]` im Text startet den nächsten Takt, also den nächsten Aufbauschritt der Folie (Klick-Schritt der Layout-Animation, freie Elemente mit Start „Klick“). Setze es genau vor das Wort, bei dem das Gezeigte erscheinen soll: „Drei Zahlen zählen. [klick] Der Umsatz wächst um zwölf Prozent.“ Ohne `[klick]` laufen die Schritte hintereinander.
+- `duration` (Sekunden) nur setzen, wenn die Szene länger stehen soll (Blick auf eine Zahl, Musik-Pause). Sonst ergibt sich die Länge aus Stimme, Animationen und Lesezeit; die Stimme wird nie abgeschnitten. Eine `duration` kürzer als die Stimme meldet Lint.
+
+**Kamera (`camera: [{ step, box: [x,y,w,h] }]`):** `box` in Anteilen der Folie (0–1). Zu Beginn von Takt `step` fährt die Kamera in 0,8 s auf die Box; ohne `box` zurück auf die ganze Folie. Nur auf das, was die Stimme gerade sagt, höchstens 1–2 Fahrten je Szene, nicht hin und her. Am Szenenende nicht zurückfahren, die nächste Szene beginnt ohnehin frisch.
+
+**Im Film:** Zahlen in `big-number` und `kpi-grid` zählen hoch. `code` tippt bzw. baut Zeile für Zeile auf. Freie Elemente nutzen `anim`, `animStart`, `animDelay`. Übergänge zwischen Szenen sind Überblendungen; `morph` wird zur Überblendung, `none` ist ein harter Schnitt (für Takt und Hook-Wechsel, sonst `fade`). Musik wie beim Video: `deck.music`, `find_music`, dezent und instrumental.
+
+**Live-Demo:**
+- Website oder lokale Web-App: `capture_page { url, device?, scroll? }` nimmt sie auf (PNG in die Assets), dann Layout `screen` mit `image`, `frame`, `url`. `cursor: [{ x, y, step?, click?, zoom? }]` (Bildanteile) führt den Zeiger Takt für Takt zu den Klickpunkten, `zoom` vergrößert dort. Nur für Screenshots.
+- Bildschirmaufnahme: macht der Nutzer in der App (Knopf „Bildschirm aufnehmen“ in der Animations-Ansicht); du bekommst den Pfad. `screen_zooms { video }` schlägt Zooms vor → `screen.zooms` (Zeiten in Videosekunden, nur für Video). Dann je Abschnitt eine `screen`-Szene mit `video` + `from`/`to`, darüber Stimme oder (`muted` weglassen) Originalton. Bei `video` kein `cursor`: Der echte Zeiger ist im Bild.
+- Pro Szene ein Handgriff, nicht die ganze Oberfläche: Zoom auf den Klickpunkt, `caption` benennt, was man sieht.
+
+**Code-Tutorial:** Layout `code`, Variante `terminal` für Befehle (`$ `-Zeilen werden getippt), `editor` für Quelltext. `focus` ("3-5,8") statt Riesenblöcke, `note` erklärt die Zeilen in einem Satz. Lieber mehrere kurze Szenen mit demselben Code und wechselndem `focus` als eine Wand mit 20 Zeilen. `reveal` `tippen` nur für kurze Befehle.
+
+**Arbeitsablauf:**
+1. `read_guide` mit `film` und den Layouts, die du nutzt (`layout:code`, `layout:screen`, …).
+2. Leitidee in einem Satz, dazu Liste aus Titel und Sprechtext je Szene im Chat.
+3. `create_deck` mit `film`, `add_slides` in Batches.
+4. `render_slides` mit `at: [Sekunden]` an 2–3 Zeitpunkten je kritischer Szene (Anfang, nach dem ersten Takt, Ende); während eines Exports warten Vorschauen.
+5. `lint_deck` (`film-…`-Regeln), dann `export_deck` mp4.
+
+**Häufige Fehler:**
+- Titel als Sprechtext vorlesen lassen; Sprechtext über 40 Wörter je Szene.
+- `[klick]` ohne Aufbauschritt (nichts erscheint) oder mehr `[klick]` als Schritte.
+- Kamera auf Details, die nicht gesprochen werden; ständige Fahrten.
+- `cursor` bei Aufnahmen, `zooms` bei Screenshots; Zeiten von `zooms` in Folien- statt Videosekunden.
+- Szenen über 10 s ohne neuen Inhalt; fünf Ideen in einer Szene.
+- Tippen langer Texte (Lint `film-…`): kürzen oder `reveal` `zeilen`.
+
+Zurückhaltung nach §6 gilt auch im Film: flach, eine Akzentfarbe, ein Übergangstyp, keine Effekt-Parade, keine Sticker und Texteffekte.

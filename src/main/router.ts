@@ -44,7 +44,8 @@ ${index}
 - Immer das Gerüst zum Format: geruest plus geruest-praesentation, geruest-social, geruest-a4 oder geruest-visitenkarte.
 - Neues Deck: gestaltung, abwechslung, stil, katalog-themes, katalog-ton; bei mehreren Folien oder Seiten auch storyline und rhythmus.
 - Bestehendes Deck und kleine Änderung: wenige Module, nur was der Auftrag berührt.
-- animation und katalog-animationen nur, wenn es um Bewegung, Übergänge oder Animation geht.
+- animation und katalog-animationen nur, wenn es um Bewegung, Übergänge oder Animation der Folien geht.
+- film (mit layout:screen, layout:code) für Erklärvideo, Produkt-/Live-Demo, Tutorial oder animierten Film aus Folien und Sprechtext; kein Videoschnitt (der ist video).
 - ki-bilder nur bei ausdrücklichem Bildwunsch (KI-Bild, Illustration); fotos bei Fotos, Bildern, Logo, QR-Code.
 - Zahlen, Daten, Diagramme: inhalt-layout und die passenden Datenlayouts (chart, kpi-grid, table, big-number).
 - Texte ändern, übersetzen, kürzen, Notizen: text und deck-auftraege.
