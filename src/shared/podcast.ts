@@ -26,7 +26,8 @@ export type Span = [start: number, end: number]
 
 export const POD_TON: PodTon[] = ['original', 'klar', 'stark']
 export const CUT_WHY: CutWhy[] = ['pause', 'fuell', 'versprecher', 'hand']
-export const LUFS = -16 // Podcast-Ziel (Apple/Spotify-Sprache); Video bleibt bei −14
+export const LUFS = -16
+const MIN_CUT = 0.2 // s: kürzere automatische Pausenschnitte lohnen nicht // Podcast-Ziel (Apple/Spotify-Sprache); Video bleibt bei −14
 
 const src = z.string().min(1).describe('asset://-Pfad aus dem Anhang oder absoluter Dateipfad (Audio oder Video)')
 export const cutSchema = z.object({ start: z.number().min(0), end: z.number().min(0), why: z.enum(['pause', 'fuell', 'versprecher', 'hand']).optional() })
@@ -97,6 +98,17 @@ export interface AutoClean { pauses?: number; fillers?: boolean; retakes?: boole
 /** Füllwort (FILLERS); „um“ nur im Englischen, im Deutschen ist es meist Präposition (wie fillerQuiet in video.ts). */
 export const isFiller = (w: string, lang: string) => FILLERS.test(w) && (lang.startsWith('en') || !/^um$/i.test(w.replace(/[\p{P}\s]/gu, '')))
 
+/** Transkripte je Spur zu einem: Sprecher = Spurnummer (je Mikrofon eine Person). Eine Spur bleibt, wie sie ist (dort trennt speakers die Sprecher). */
+export function mergeTracks(ts: (Transcript | null)[]): Transcript | null {
+  const ok = ts.map((t, k) => [t, k] as const).filter((x): x is readonly [Transcript, number] => !!x[0])
+  if (!ok.length) return null
+  if (ts.length === 1) return ok[0][0]
+  return {
+    duration: Math.max(...ok.map(([t]) => t.duration)), lang: ok[0][0].lang,
+    segments: ok.flatMap(([t, k]) => t.segments.map((s) => ({ ...s, speaker: k }))).sort((a, b) => a.start - b.start),
+  }
+}
+
 export function autoCuts(ep: Episode, t: Transcript | null, quiet: Span[], o: AutoClean): Cut[] {
   const out: Cut[] = ep.cuts.filter((c) => !c.why || c.why === 'hand')
   const ws = t ? realWords(t) : []
@@ -107,7 +119,7 @@ export function autoCuts(ep: Episode, t: Transcript | null, quiet: Span[], o: Au
       let start = a + p / 2, end = b - p / 2 // kürzen, nicht entfernen: Atempause bleibt
       // leise Wortenden (silencedetect hört sie nicht) bleiben ganz: der Schnitt weicht den Wörtern aus
       for (const w of ws) if (w.end > start && w.start < end) { if (w.start + w.end < start + end) start = w.end; else end = w.start }
-      if (end - start > 0.05) out.push({ start, end, why: 'pause' })
+      if (end - start >= MIN_CUT) out.push({ start, end, why: 'pause' }) // kürzere brächten nur eine Naht
     }
   }
   if (t && o.fillers) {
@@ -183,7 +195,13 @@ export function deckToEpisode(deck: Deck, duration: number): Episode {
   for (const k of keep) { if (k.start > at) cuts.push({ start: at, end: k.start, why: 'hand' }); at = k.end }
   if (at < duration) cuts.push({ start: at, end: duration, why: 'hand' })
   const chapters = clips.flatMap((c, i) => (c.parts.length ? [{ at: c.parts[0].start, title: c.hook?.trim() || `Teil ${i + 1}` }] : []))
-  return { duration, tracks: [{ src: srcs[0] }], cuts, chapters, ton: clips.some((c) => c.ton === 'klar') ? 'klar' : 'original' }
+  // Clip-Soundeffekte: at zählt im fertigen Clip, hier in Quellzeit über die parts der Folie
+  const sfx = clips.flatMap((c) => (c.sfx ?? []).flatMap((f) => {
+    let t = f.at
+    for (const p of c.parts) { if (t < p.end - p.start) return [{ ...f, at: p.start + t }]; t -= p.end - p.start }
+    return []
+  }))
+  return { duration, tracks: [{ src: srcs[0] }], cuts, chapters, ...(sfx.length ? { sfx } : {}), ton: clips.some((c) => c.ton === 'klar') ? 'klar' : 'original' }
 }
 
 /** Eine Zeile für Tool-Antworten und UI. */
@@ -214,6 +232,8 @@ if (typeof process !== 'undefined' && process.env.DW_PODCAST_SELFTEST) {
     const t: Transcript = { duration: 10, lang: 'de', segments: [{ start: 0, end: 3, text: 'eins zwei', words: [{ w: 'eins', start: 0, end: 1 }, { w: 'zwei', start: 1.2, end: 3 }] }] }
     eq(autoCuts({ duration: 10, tracks: [{ src: '/a.wav' }], cuts: [] }, t, [[2, 6]], { pauses: 0.6 }), [{ start: 3, end: 5.7, why: 'pause' }], 'Pause weicht Wort aus')
   }
+  eq(deckToEpisode({ slides: [{ layout: 'clip', content: { video: '/v.mp4', parts: [{ start: 2, end: 12 }, { start: 40, end: 50 }], sfx: [{ src: '/p.wav', at: 3 }, { src: '/p.wav', at: 15 }] } }] } as unknown as Deck, 60).sfx,
+    [{ src: '/p.wav', at: 5 }, { src: '/p.wav', at: 45 }], 'deckToEpisode sfx')
   eq(keepRanges(cuts, 14), [[0, 2], [3, 5], [8, 12]], 'keepRanges')
   eq(editedLength(cuts, 14), 8, 'editedLength')
   eq([0, 2.5, 4, 6, 10, 13].map((t) => toEdited(t, cuts, 14)), [0, 2, 3, 4, 6, 8], 'toEdited')

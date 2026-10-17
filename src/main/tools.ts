@@ -23,7 +23,7 @@ import { typeset } from '../shared/typo'
 import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
 import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent, type Transcript } from '../shared/video'
-import { autoCuts, editedLength, normCuts, episodeSchema, episodeSummary, lintEpisode, snapCut, toEdited, type Cut, type CutWhy, type Episode, type Span } from '../shared/podcast'
+import { autoCuts, editedLength, mergeTracks, normCuts, episodeSchema, episodeSummary, lintEpisode, snapCut, toEdited, type Cut, type CutWhy, type Episode, type Span } from '../shared/podcast'
 import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 import { contactSheet } from './ffmpeg'
@@ -460,7 +460,7 @@ const OVERVIEW_NEXT = 'Weiter: die besten Fenster mit transcribe_video (from/to)
 const CLIP_LOOK = 'Prüfe: Gesicht im Bild, Hook passt zum Bild, keine schwarzen/eingefrorenen Bilder, Untertitelbereich frei.'
 const HIGHLIGHT_NEXT = 'Weiter (Guide § Video, Stream): 1. Für die besten 3–5 Fenster transcribe_video mit from/to; nur diese Bereiche werden transkribiert, gern 30 s Anlauf davor. 2. video_frames als Kontaktabzug, 4–8 Zeitpunkte je Kandidat über das Fenster verteilt. 3. Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil. 4. Shorts bauen (create_deck format 9:16, je Moment eine clip-Folie, ideal 55–75 s, hart 20–90 s), auf Wunsch zusätzlich ein Zusammenschnitt 16:9 (je Moment eine clip-Folie, export_deck mp4).'
 
-const POD_NEXT = 'Weiter (Guide § Podcast): transcribe_video mit der ersten Spur (all: true; speakers: true, wenn auf einer Spur mehrere sprechen), dann edit_episode mit clean { pauses: 0.6, fillers: true, retakes: true }, Kapitel aus den Themenwechseln (search_transcript), export_deck mp3.'
+const POD_NEXT = 'Weiter (Guide § Podcast): transcribe_video mit jeder Spur (all: true; speakers: true, wenn auf einer Spur mehrere sprechen), dann edit_episode mit clean { pauses: 0.6, fillers: true, retakes: true }, Kapitel aus den Themenwechseln (search_transcript), export_deck mp3.'
 const ton = z.enum(['original', 'klar', 'stark']).describe('klar (Standard) = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser); stark = dazu kräftiger entrauschen (Lüfter, Raumhall); original = unverändert')
 // Spur einer Episode → Datei wie clipFile (Pfade fremder Geräte über localAsset)
 function trackPath(src: string): string {
@@ -1030,7 +1030,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'create_episode',
-      description: 'Neue Podcast-Episode anlegen (ersetzt das aktuelle Deck, ohne Folien): 1–4 Tonspuren, die gemeinsam ab 0 laufen (je Mikrofon eine Spur oder eine gemischte Aufnahme; Audio oder Video, vom Video zählt der Ton). title = Episodentitel. Danach transcribe_video mit der ersten Spur, edit_episode zum Schneiden und für Kapitel, export_deck mp3. Ablauf: read_guide topic podcast.',
+      description: 'Neue Podcast-Episode anlegen (ersetzt das aktuelle Deck, ohne Folien): 1–4 Tonspuren, die gemeinsam ab 0 laufen (je Mikrofon eine Spur oder eine gemischte Aufnahme; Audio oder Video, vom Video zählt der Ton). title = Episodentitel. Danach transcribe_video mit jeder Spur, edit_episode zum Schneiden und für Kapitel, export_deck mp3. Ablauf: read_guide topic podcast.',
       inputSchema: z.object({
         title: z.string().max(80),
         tracks: z.array(z.object({ src: videoInput, name: z.string().max(40).optional().describe('Sprecher oder Spur, z. B. „Anna“') })).min(1).max(4),
@@ -1056,7 +1056,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       inputSchema: z.object({
         clean: z.object({
           pauses: z.union([z.number().min(0.3).max(5), z.literal(false)]).optional().describe('längere Pausen auf diese Länge in s kürzen, üblich 0.6; false = Pausen wieder ungekürzt'),
-          fillers: z.boolean().optional().describe('Füllwörter (äh, ähm …) herausschneiden; braucht das Transkript der ersten Spur'),
+          fillers: z.boolean().optional().describe('Füllwörter (äh, ähm …) herausschneiden; braucht das Transkript der Spuren'),
           retakes: z.boolean().optional().describe('Versprecher und verworfene Neuansätze herausschneiden; braucht das Transkript'),
         }).optional(),
         cut: z.array(z.object({ start: z.number().min(0), end: z.number().min(0) })).max(200).optional().describe('Bereiche herausschneiden; Kanten in einem Wort rasten auf dessen Rand'),
@@ -1073,7 +1073,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (!deck.podcast) throw new Error('Das Deck hat keine Podcast-Episode – erst create_episode.')
         const old = deck.podcast, ep: Episode = structuredClone(old)
         const v = ctx.engine.video
-        const t = (await v?.cached?.(trackPath(ep.tracks[0].src)).catch(() => undefined))?.transcript ?? null
+        const t = mergeTracks(await Promise.all(ep.tracks.map(async (x) => (await v?.cached?.(trackPath(x.src)).catch(() => undefined))?.transcript ?? null))) // je Spur ein Sprecher
         const words = t?.segments.flatMap((s) => s.words ?? []) ?? []
         const notes: string[] = []
         const span = (r: { start: number; end: number }, what: string) => { if (r.end <= r.start) throw new Error(`${what}: end (${r.end}) muss nach start (${r.start}) liegen.`) }
@@ -1100,7 +1100,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           const o = { ...i.clean, pauses: i.clean.pauses || undefined }, given = i.clean
           if (!v) throw new Error('Podcast-Schnitt gibt es nur in der Deckwerk-App und im MCP-Server.')
           if (!['pauses', 'fillers', 'retakes'].some((k) => k in given)) throw new Error('clean: pauses, fillers oder retakes angeben.')
-          if ((o.fillers || o.retakes) && !t) throw new Error('Für Füllwörter und Versprecher fehlt das Transkript der ersten Spur – erst transcribe_video mit dieser Spur (all: true).')
+          if ((o.fillers || o.retakes) && !t) throw new Error('Für Füllwörter und Versprecher fehlt das Transkript – erst transcribe_video mit jeder Spur (all: true).')
           let quiet: Span[] = []
           if (o.pauses !== undefined) {
             if (!v.silences) throw new Error('Die Pausensuche fehlt in dieser Deckwerk-Version.')

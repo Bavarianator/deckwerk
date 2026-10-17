@@ -177,7 +177,7 @@ export function Deckvid(p: Props) {
           {state && <span className={p.status?.error ? 'error' : undefined} role="status">— {state}</span>}
         </div>
         <div className="top-r">
-          <button className="plain" disabled={!deck} title="Alle Folien mit allen Werkzeugen bearbeiten" onClick={p.onSlides}>Folien-Ansicht</button>
+          {!pod && <button className="plain" disabled={!deck} title="Alle Folien mit allen Werkzeugen bearbeiten" onClick={p.onSlides}>Folien-Ansicht</button>}
           <button className="plain" title="Einstellungen" aria-label="Einstellungen" onClick={() => openSettings()}><Settings size={17} /></button>
           <div className="top-export" ref={box}>
             <button className="pill tint" disabled={!(pod ? ep : clips.length) || !idle} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Share size={14} />Exportieren</button>

@@ -115,7 +115,7 @@ Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights ode
 ## 10. Podcast schneiden
 
 Will der Nutzer eine Aufnahme als Podcast schneiden, gilt Guide §12 „Podcast“. Die Episode braucht keine Folien.
-- **Ablauf:** Audio aus dem Anhang → `create_episode` (`title`, `tracks` 1–4, je Mikrofon eine Spur) → `transcribe_video` mit der ersten Spur, `all: true`, `speakers: true` bei mehreren Sprechern auf einer Spur → `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }` („läuft noch“ = gleich noch einmal) → Kapitel aus den Themenwechseln (`search_transcript`; erstes bei 0, 3–8 je Stunde, kurze Titel) per `edit_episode` `chapters` → `export_deck` `mp3` (Kapitel in der Datei, `.chapters.json` daneben).
+- **Ablauf:** Audio aus dem Anhang → `create_episode` (`title`, `tracks` 1–4, je Mikrofon eine Spur) → `transcribe_video` mit jeder Spur, `all: true` (je Spur ein Sprecher), `speakers: true` nur bei mehreren Sprechern auf einer Spur → `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }` („läuft noch“ = gleich noch einmal) → Kapitel aus den Themenwechseln (`search_transcript`; erstes bei 0, 3–8 je Stunde, kurze Titel) per `edit_episode` `chapters` → `export_deck` `mp3` (Kapitel in der Datei, `.chapters.json` daneben).
 - **Nachbessern:** `edit_episode` mit `cut`/`uncut` (Quellzeit, rastet an Wortgrenzen); ohne Eingaben zeigt es Zustand und Prüfung.
 - **Regeln:** nie mitten im Satz schneiden, Inhalt nicht umstellen, Füllwörter nicht übertreiben (natürliche Sprache bleibt). Intro, Outro und Soundeffekte nur auf Wunsch und sparsam (`find_music` mit `kurz: true`, dann `edit_episode` `intro`/`outro`/`sfx`). Die Lautheit macht die Engine.
 

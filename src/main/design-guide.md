@@ -499,7 +499,7 @@ Eine Episode hängt als `podcast` am Deck: 1–4 Tonspuren, die gemeinsam ab 0 l
 
 **Ablauf:**
 1. Audio aus dem Anhang (mp3, wav, m4a …; von Videos zählt der Ton) → `create_episode` mit `title` und `tracks` (je Mikrofon eine Spur mit `name`, sonst eine gemischte Spur).
-2. `transcribe_video` mit der ersten Spur und `all: true`; `speakers: true`, wenn auf einer Spur mehrere sprechen.
+2. `transcribe_video` mit jeder Spur und `all: true` (je Spur ein Sprecher); `speakers: true` nur, wenn auf einer Spur mehrere sprechen.
 3. `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }`. Meldet es „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen. Ergebnis und Prüfung lesen, einzelne Stellen mit `cut`/`uncut` nachbessern.
 4. Kapitel aus den Themenwechseln (Transkript lesen, Stellen mit `search_transcript` finden): erstes bei 0, 3–8 je Stunde, Titel kurz und sachlich (2–5 Wörter). Kapitel an den Anfang eines Satzes legen.
 5. Intro, Outro und Soundeffekte nur auf Wunsch: `find_music` mit `kurz: true`, dann `edit_episode` mit `intro`, `outro` oder `sfx`. Den Nachweis (CC BY) in die Shownotes.

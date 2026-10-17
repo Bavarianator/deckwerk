@@ -3,7 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react'
 import { Check, Pause, Play } from 'lucide-react'
 import type { Deck } from '../../shared/deck'
-import { editedLength, isFiller, episodeSummary, lintEpisode, normCuts, snapCut, toEdited, toSource, type Cut, type CutWhy, type Episode, type PodTon } from '../../shared/podcast'
+import { editedLength, isFiller, mergeTracks, episodeSummary, lintEpisode, normCuts, snapCut, toEdited, toSource, type Cut, type CutWhy, type Episode, type PodTon } from '../../shared/podcast'
 import { estimateWords, mmss, type Transcript } from '../../shared/video'
 import { Hints, keysFree, useKey } from './deckvid-parts'
 import { Waveform, type Peaks, type WaveMark, type WaveSpan } from './Waveform'
@@ -22,15 +22,6 @@ const POD_TASKS: [label: string, ask: string, hint: string][] = [
 ]
 
 // Mehrere Spuren = je Person eine Spur: Sprecher = Spurnummer
-function merge(ts: (Transcript | null)[]): Transcript | null {
-  const ok = ts.map((t, k) => [t, k] as const).filter((x): x is readonly [Transcript, number] => !!x[0])
-  if (!ok.length) return null
-  if (ts.length === 1) return ok[0][0]
-  return {
-    duration: Math.max(...ok.map(([t]) => t.duration)), lang: ok[0][0].lang,
-    segments: ok.flatMap(([t, k]) => t.segments.map((s) => ({ ...s, speaker: k }))).sort((a, b) => a.start - b.start),
-  }
-}
 // Index des Schnitts, in dem t liegt (cuts normalisiert: sortiert, ohne Überlappung); −1 = keiner
 function cutAt(t: number, cuts: Cut[]) {
   let lo = 0, hi = cuts.length - 1
@@ -92,7 +83,7 @@ export function PodcastStage({ deck, busy, idle, onSend, undo, onPodcast }: Prop
     Promise.all(ep.tracks.map((x) => window.api.videoCached(x.src).then((d) => d?.transcript ?? null, () => null))).then((r) => { if (!off) setTs(r) })
     return () => { off = true }
   }, [srcKey, idle])
-  const transcript = useMemo(() => (ts ? merge(ts) : null), [ts])
+  const transcript = useMemo(() => (ts ? mergeTracks(ts) : null), [ts])
   const { words, paras } = useMemo(() => {
     const words: PWord[] = [], paras: Para[] = []
     let last: number | undefined, prevEnd = -Infinity
