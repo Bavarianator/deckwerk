@@ -4,6 +4,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod'
 import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
+import { APP } from '../shared/app-id'
 import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } from '../shared/deck'
 import type { Issue } from '../shared/lint'
 import type { Part, Transcript, VideoInfo } from '../shared/video'
@@ -152,8 +153,8 @@ export class DeckAgent {
       engine: opts.engine,
       getDeck: () => this.deck,
       setDeck: (deck) => { this.deck = deck; opts.onEvent({ type: 'deck', deck }) },
-      assetDir: opts.assetDir ?? `${process.env.HOME}/Deckwerk/assets`,
-      outDir: opts.outDir ?? `${process.env.HOME}/Deckwerk/out`,
+      assetDir: opts.assetDir ?? `${process.env.HOME}/${APP.home}/assets`,
+      outDir: opts.outDir ?? `${process.env.HOME}/${APP.home}/out`,
       unsplashKey: opts.unsplashKey ?? process.env.UNSPLASH_ACCESS_KEY,
       ask: (q) => opts.onEvent({ type: 'ask', ...q }),
       storyline: (slides) => opts.onEvent({ type: 'storyline', slides }),

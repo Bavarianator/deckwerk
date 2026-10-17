@@ -16,7 +16,7 @@ import { Deckvid } from './ui/Deckvid'
 import { EditorScreen } from './ui/EditorScreen'
 import { FindBar } from './ui/FindBar'
 import { KeyDialog } from './ui/KeyDialog'
-import { Logo } from './ui/Logo'
+import { Logo, Wordmark } from './ui/Logo'
 import { FormatSheet } from './ui/FormatSheet'
 import { PrintSheet } from './ui/PrintSheet'
 import { LookSheet } from './ui/LookSheet'
@@ -375,7 +375,7 @@ export default function App() {
       ) : building ? (
         <>
           <header className="top">
-            <div className="home-brand"><Logo size={22} />Deckwerk</div>
+            <div className="home-brand"><Logo size={22} /><Wordmark /></div>
             <div className="top-title"><b>{deck?.title ?? 'Neues Deck'}</b></div>
             <span />
           </header>

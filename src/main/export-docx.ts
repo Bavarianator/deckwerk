@@ -3,6 +3,7 @@
 import JSZip from 'jszip'
 import { randomUUID } from 'node:crypto'
 import type { EmbedFont } from './embed-fonts'
+import { APP } from '../shared/app-id'
 import { sizeOf, type Deck, type Measured, type Run, type TextEl } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 
@@ -111,7 +112,7 @@ export async function buildDocx(deck: Deck, pages: DocxPage[], fonts: EmbedFont[
   zip.file('[Content_Types].xml', `${XML}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="odttf" ContentType="application/vnd.openxmlformats-officedocument.obfuscatedFont"/>` +
     `${part('document', 'document.main')}${part('styles', 'styles')}${part('settings', 'settings')}${part('fontTable', 'fontTable')}<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`)
   zip.file('_rels/.rels', rels([`<Relationship Id="rId1" Type="${R}/officeDocument" Target="word/document.xml"/>`, '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>']))
-  zip.file('docProps/core.xml', `${XML}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${esc(deck.title)}</dc:title><dc:creator>Deckwerk</dc:creator></cp:coreProperties>`)
+  zip.file('docProps/core.xml', `${XML}<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${esc(deck.title)}</dc:title><dc:creator>${APP.name}</dc:creator></cp:coreProperties>`)
   zip.file('word/document.xml', `${XML}<w:document ${DOC_NS}><w:body>${body.join('')}${sect}</w:body></w:document>`)
   zip.file('word/_rels/document.xml.rels', rels(docRels))
   const bf = esc(t.body.pptx)

@@ -201,7 +201,7 @@ codex mcp add deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp   # danach in ~/.
 
 Vibe und Codex starten den Server ohne Bildschirm. Deckwerk rendert dann headless, deshalb dauert der erste Aufruf etwas länger.
 
-Claude Code und Codex bekommen dazu den Skill `deckwerk` (`skills/deckwerk/SKILL.md`, abgelegt unter `~/.claude/skills/` bzw. `~/.codex/skills/`). Er bringt dem Agenten den Arbeitsablauf bei: Guide lesen, Briefing und Quellmaterial, Storyline, Look, Bildplan, Folien in Etappen mit Korrekturen nach dem Lint, Prüfrunden, Speichern und Export. Der Agent lädt ihn von selbst, sobald du eine Präsentation willst. Nach einem Update zeigt die Einrichtung den Schritt wieder als offen; ein Klick erneuert den Skill.
+Claude Code und Codex bekommen dazu den Skill `deckwerk-pro` (`skills/deckwerk-pro/SKILL.md`, abgelegt unter `~/.claude/skills/` bzw. `~/.codex/skills/`). Er bringt dem Agenten den Arbeitsablauf bei: Guide lesen, Briefing und Quellmaterial, Storyline, Look, Bildplan, Folien in Etappen mit Korrekturen nach dem Lint, Prüfrunden, Speichern und Export. Der Agent lädt ihn von selbst, sobald du eine Präsentation willst. Nach einem Update zeigt die Einrichtung den Schritt wieder als offen; ein Klick erneuert den Skill.
 
 Claude Code bekommt dieselben Werkzeuge wie der Chat in der App: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen, Fotos und Icons suchen, rendern und exportieren. Dazu kommen `get_deck`, `save_deck` und `open_deck`. Layout-Katalog und Design-Guide stehen in den Server-Anweisungen. Decks landen unter `~/Deckwerk/<titel>/deck.json`; die Umgebungsvariable `DECKWERK_HOME` wählt einen anderen Ordner.
 

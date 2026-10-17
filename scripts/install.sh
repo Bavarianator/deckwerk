@@ -1,8 +1,8 @@
 #!/bin/sh
-# Deckwerk installieren oder aktualisieren (Linux; Windows über WSL; auf dem Mac geht es zu deckwerk-macos weiter):
-#   curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh
-# Standard: die fertige App aus dem neuesten Release (kein Git, kein Node) nach ~/.local/share/deckwerk (DECKWERK_APP).
-# Aus dem Quellcode: DECKWERK_SOURCE=1 (Git + Node 22 nach DECKWERK_DIR, Standard ~/deckwerk, auf dem neuesten
+# Deckwerk Pro installieren oder aktualisieren (Linux; Windows über WSL; auf dem Mac geht es zu deckwerk-macos weiter):
+#   curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-pro/HEAD/scripts/install.sh | sh
+# Standard: die fertige App aus dem neuesten Release (kein Git, kein Node) nach ~/.local/share/deckwerk-pro (DECKWERK_APP).
+# Aus dem Quellcode: DECKWERK_SOURCE=1 (Git + Node 22 nach DECKWERK_DIR, Standard ~/deckwerk-pro, auf dem neuesten
 # Release-Tag, DECKWERK_REF wählt einen anderen), ein vorhandener Checkout dort oder ./scripts/install.sh im Checkout.
 set -eu
 
@@ -14,11 +14,11 @@ if [ "$(uname)" = Darwin ]; then
   exec sh -c "$script"
 fi
 
-REPO="${DECKWERK_REPO:-https://github.com/Bavarianator/deckwerk.git}"
-DIR="${DECKWERK_DIR:-$HOME/deckwerk}"
-APP="${DECKWERK_APP:-$HOME/.local/share/deckwerk}"
+REPO="${DECKWERK_REPO:-https://github.com/Bavarianator/deckwerk-pro.git}"
+DIR="${DECKWERK_DIR:-$HOME/deckwerk-pro}"
+APP="${DECKWERK_APP:-$HOME/.local/share/deckwerk-pro}"
 # ponytail: nur x86_64 als fertige App; andere Architekturen bauen aus dem Quellcode
-APPIMAGE="${DECKWERK_APPIMAGE:-https://github.com/Bavarianator/deckwerk/releases/latest/download/Deckwerk-x86_64.AppImage}"
+APPIMAGE="${DECKWERK_APPIMAGE:-https://github.com/Bavarianator/deckwerk-pro/releases/latest/download/DeckwerkPro-x86_64.AppImage}"
 CHECKOUT=
 case "$0" in */install.sh) [ -f "$(dirname "$0")/../package.json" ] && DIR="$(cd "$(dirname "$0")/.." && pwd)" && CHECKOUT=1 ;; esac
 SOURCE="${DECKWERK_SOURCE:-}"
@@ -46,12 +46,12 @@ if [ -z "$SOURCE" ]; then
     { echo "Entpacken fehlgeschlagen (genug Speicherplatz in $(dirname "$APP")?). Die bisherige Version bleibt." >&2; exit 1; }
   rm -rf "$APP.alt" && { [ ! -e "$APP" ] || mv "$APP" "$APP.alt"; } && mv "$tmp/squashfs-root" "$APP" && rm -rf "$APP.alt"
   RUN="$APP/AppRun"
-  ICON="$APP/deckwerk.png"
-  SKILL="$APP/resources/app.asar.unpacked/skills/deckwerk/SKILL.md"
+  ICON="$APP/deckwerk-pro.png"
+  SKILL="$APP/resources/app.asar.unpacked/skills/deckwerk-pro/SKILL.md"
   # MCP-Server: Vibe und Codex starten ihn ohne DISPLAY, dann headless (gleicher Aufruf wie mcpCmd in src/main/ipc.ts)
   WRAP='if [ -n "$DISPLAY$WAYLAND_DISPLAY" ]; then exec "$0" --ozone-platform=x11 --mcp; else exec "$0" --ozone-platform=headless --disable-gpu --mcp; fi'
   set -- /bin/sh -c "$WRAP" "$RUN"
-  UPDATE='curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh'
+  UPDATE='curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-pro/HEAD/scripts/install.sh | sh'
 else
   need git "https://git-scm.com"
   need node "Node.js 22 oder neuer, https://nodejs.org"
@@ -84,29 +84,29 @@ else
   chmod +x scripts/deckwerk.sh
   RUN="$DIR/scripts/deckwerk.sh"
   ICON="$DIR/assets/icon.png"
-  SKILL="$DIR/skills/deckwerk/SKILL.md"
+  SKILL="$DIR/skills/deckwerk-pro/SKILL.md"
   set -- "$RUN" --mcp
   UPDATE="sh '$DIR/scripts/install.sh'"
 fi
 
-# Befehl „deckwerk“ im Terminal: ohne Argument startet die App, „deckwerk update“ aktualisiert (gleicher Weg wie diese Installation).
+# Befehl „deckwerk-pro“ im Terminal: ohne Argument startet die App, „deckwerk-pro update“ aktualisiert (gleicher Weg wie diese Installation).
 # Atomar ersetzen (mv), damit ein laufendes „deckwerk update“ nicht in einer überschriebenen Datei weiterliest.
 BIN="$HOME/.local/bin"
 mkdir -p "$BIN"
-cat > "$BIN/.deckwerk.neu" <<EOF
+cat > "$BIN/.deckwerk-pro.neu" <<EOF
 #!/bin/sh
-# Von scripts/install.sh angelegt. deckwerk [Optionen] startet Deckwerk, deckwerk update aktualisiert es.
+# Von scripts/install.sh angelegt. deckwerk-pro [Optionen] startet Deckwerk Pro, deckwerk-pro update aktualisiert es.
 case "\${1:-}" in
   update|aktualisieren) exec sh -c "$UPDATE" ;;
   *) exec "$RUN" "\$@" ;;
 esac
 EOF
-chmod +x "$BIN/.deckwerk.neu" && mv "$BIN/.deckwerk.neu" "$BIN/deckwerk"
-case ":$PATH:" in *":$BIN:"*) ;; *) echo "  Hinweis: $BIN steht nicht im PATH, sonst gäbe es den Befehl „deckwerk“ im Terminal." ;; esac
+chmod +x "$BIN/.deckwerk-pro.neu" && mv "$BIN/.deckwerk-pro.neu" "$BIN/deckwerk-pro"
+case ":$PATH:" in *":$BIN:"*) ;; *) echo "  Hinweis: $BIN steht nicht im PATH, sonst gäbe es den Befehl „deckwerk-pro“ im Terminal." ;; esac
 
 # Startmenü-Eintrag und Dateizuordnung: Doppelklick auf eine deck.json öffnet sie in Deckwerk
 mkdir -p "$HOME/.local/share/applications" "$HOME/.local/share/mime/packages"
-cat > "$HOME/.local/share/mime/packages/deckwerk.xml" <<'XML'
+cat > "$HOME/.local/share/mime/packages/deckwerk-pro.xml" <<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
   <mime-type type="application/x-deckwerk">
@@ -116,10 +116,10 @@ cat > "$HOME/.local/share/mime/packages/deckwerk.xml" <<'XML'
   </mime-type>
 </mime-info>
 XML
-cat > "$HOME/.local/share/applications/deckwerk.desktop" <<EOF
+cat > "$HOME/.local/share/applications/deckwerk-pro.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Deckwerk
+Name=Deckwerk Pro
 GenericName=KI-Präsentationsstudio
 Comment=Präsentationen mit KI erstellen, prüfen und als PowerPoint exportieren
 Exec="$RUN" %f
@@ -128,37 +128,38 @@ MimeType=application/x-deckwerk;
 Terminal=false
 Categories=Office;Presentation;
 Keywords=Präsentation;Folien;PowerPoint;PPTX;KI;Pitch;
-StartupWMClass=deckwerk
+StartupWMClass=deckwerk-pro
 StartupNotify=true
 EOF
 command -v update-mime-database >/dev/null 2>&1 && update-mime-database "$HOME/.local/share/mime" >/dev/null 2>&1 || true
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
-command -v xdg-mime >/dev/null 2>&1 && xdg-mime default deckwerk.desktop application/x-deckwerk 2>/dev/null || true
+# Standard-App für deck.json nur setzen, wenn noch keine gewählt ist (ein installiertes Deckwerk behält sie)
+command -v xdg-mime >/dev/null 2>&1 && { xdg-mime query default application/x-deckwerk 2>/dev/null | grep -q . || xdg-mime default deckwerk-pro.desktop application/x-deckwerk 2>/dev/null; } || true
 echo "→ Startmenü-Eintrag und Dateizuordnung (deck.json) angelegt"
 
-# Deckwerk als MCP-Server in Claude Code, Vibe und Codex (für alle Projekte; "$@" = Befehl und Argumente des Servers).
+# Deckwerk Pro als MCP-Server deckwerk-pro in Claude Code, Vibe und Codex (für alle Projekte; "$@" = Befehl und Argumente des Servers).
 # Vibe und Codex warten von sich aus nur kurz; Codex kann die Wartezeit nicht per `mcp add` setzen, daher in der config.toml.
 # Claude Code und Codex bekommen dazu den Skill mit dem Arbeitsablauf (gleiches SKILL.md-Format, wie die Einrichtung in ipc.ts)
-skill_to() { [ -f "$SKILL" ] && mkdir -p "$1/deckwerk" && cp "$SKILL" "$1/deckwerk/SKILL.md"; }
+skill_to() { [ -f "$SKILL" ] && mkdir -p "$1/deckwerk-pro" && cp "$SKILL" "$1/deckwerk-pro/SKILL.md"; }
 if command -v claude >/dev/null 2>&1; then
-  claude mcp remove -s user deckwerk >/dev/null 2>&1 || true
-  claude mcp add -s user deckwerk -- "$@" >/dev/null && { skill_to "$HOME/.claude/skills" || true; } && echo "→ In Claude Code eingerichtet, mit Skill (neue Sitzung starten)"
+  claude mcp remove -s user deckwerk-pro >/dev/null 2>&1 || true
+  claude mcp add -s user deckwerk-pro -- "$@" >/dev/null && { skill_to "$HOME/.claude/skills" || true; } && echo "→ In Claude Code eingerichtet, mit Skill (neue Sitzung starten)"
 fi
 vibe_add() { # --arg=… je Argument; mit Leerzeichen hielte Vibe „--mcp“ für eine eigene Option
   cmd=$1; shift; n=$#
   for a in "$@"; do set -- "$@" "--arg=$a"; done
   shift "$n"
-  vibe mcp add --transport stdio --command "$cmd" "$@" --startup-timeout-sec 90 --tool-timeout-sec 300 deckwerk >/dev/null
+  vibe mcp add --transport stdio --command "$cmd" "$@" --startup-timeout-sec 90 --tool-timeout-sec 300 deckwerk-pro >/dev/null
 }
 if command -v vibe >/dev/null 2>&1; then
-  vibe mcp remove deckwerk >/dev/null 2>&1 || true
+  vibe mcp remove deckwerk-pro >/dev/null 2>&1 || true
   vibe_add "$@" && echo "→ In Vibe eingerichtet"
 fi
 if command -v codex >/dev/null 2>&1; then
-  codex mcp remove deckwerk >/dev/null 2>&1 || true
-  codex mcp add deckwerk -- "$@" >/dev/null 2>&1 &&
-    sed -i '/^\[mcp_servers\.deckwerk\]$/a startup_timeout_sec = 90\ntool_timeout_sec = 300' "${CODEX_HOME:-$HOME/.codex}/config.toml" &&
+  codex mcp remove deckwerk-pro >/dev/null 2>&1 || true
+  codex mcp add deckwerk-pro -- "$@" >/dev/null 2>&1 &&
+    sed -i '/^\[mcp_servers\.deckwerk-pro\]$/a startup_timeout_sec = 90\ntool_timeout_sec = 300' "${CODEX_HOME:-$HOME/.codex}/config.toml" &&
     { skill_to "${CODEX_HOME:-$HOME/.codex}/skills" || true; } && echo "→ In Codex eingerichtet, mit Skill"
 fi
 
-echo "Fertig. Starten: Startmenü „Deckwerk“ oder Befehl „deckwerk“; aktualisieren: „deckwerk update“."
+echo "Fertig. Starten: Startmenü „Deckwerk Pro“ oder Befehl „deckwerk-pro“; aktualisieren: „deckwerk-pro update“."

@@ -1,6 +1,6 @@
 ---
-name: deckwerk
-description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
+name: deckwerk-pro
+description: Deckwerk Pro (Profi-Ausgabe von Deckwerk): Präsentationen mit Deckwerk Pro bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk-pro (create_deck, add_slides, …).
 ---
 
 # Deckwerk: Präsentationen, die man dem Chef zeigen kann
@@ -9,7 +9,7 @@ Deckwerk baut Folien aus einem festen Layout-Katalog. Deine Aufgabe sind Storyli
 
 ## 0. Voraussetzung
 
-Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__…`). Fehlen sie, ist Deckwerk nicht eingetragen. Dann sag dem Nutzer: in der Deckwerk-App Einstellungen (Zahnrad) → Agenten → „In Claude Code einrichten“ bzw. „In Codex einrichten“, danach eine neue Sitzung starten. Baue die Präsentation nicht stattdessen per Skript, HTML oder python-pptx nach.
+Die Werkzeuge kommen vom MCP-Server `deckwerk-pro` (in Claude Code `mcp__deckwerk-pro__…`). Fehlen sie, ist Deckwerk Pro nicht eingetragen. Dann sag dem Nutzer: in der App Deckwerk Pro Einstellungen (Zahnrad) → Agenten → „In Claude Code einrichten“ bzw. „In Codex einrichten“, danach eine neue Sitzung starten. Baue die Präsentation nicht stattdessen per Skript, HTML oder python-pptx nach.
 
 ## 1. Zuerst den Guide lesen
 
@@ -93,7 +93,7 @@ Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien al
 
 ## 8. Abschluss
 
-- `save_deck` speichert nach `~/Deckwerk/<titel>/deck.json`. Nenne den Pfad; der Nutzer öffnet die Datei in der Deckwerk-App (Doppelklick auf `deck.json`) und kann dort weiterarbeiten.
+- `save_deck` speichert nach `~/DeckwerkPro/<titel>/deck.json`. Nenne den Pfad; der Nutzer öffnet die Datei in der App Deckwerk Pro (Doppelklick auf `deck.json`) und kann dort weiterarbeiten.
 - Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `docx` (Word: Text bearbeitbar, Gestaltung als Hintergrundbild), `pdf`, `png`, `zip` (alle Bilder plus PDF in einer Datei, für Karussells) oder `md` (Handout). Pfade nennen; bei Nicht-16:9 tragen die Dateien das Format im Namen (`-4x5`, `-a4`).
 - Drucksachen für die Druckerei: `export_deck` mit `format: "print"` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm). A4-Decks skaliert `size` verlustfrei: a2/a3 = Plakat, a5 = Flyer, a6 = Postkarte oder Einladung; die Visitenkarte druckt in ihrer eigenen Größe. Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB; bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
 - Serien (Urkunden, Namensschilder, Einladungen für mehrere Personen): ein Exemplar mit `{{Spalte}}` in den Texten bauen und `export_deck` mit `rows` aufrufen (je Person ein Objekt, Schlüssel = Spaltennamen); je Zeile entsteht eine Datei in `serie-<format>`.

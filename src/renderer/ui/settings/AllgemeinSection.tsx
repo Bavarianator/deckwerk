@@ -1,6 +1,7 @@
 // Allgemein: Version, Speicherort, Rechtschreibprüfung, Datenschutz, Hinweis auf die Tastenkürzel.
 import { useEffect, useState } from 'react'
 import type { AppInfo, UpdateInfo } from '../../../preload'
+import { APP } from '../../../shared/app-id'
 import { Switch } from '../kit'
 import { Logo } from '../Logo'
 import { Befehl, Group, Head, MAC, Ok, Row, Spin, TERMINAL, useRun, type SectionProps } from './parts'
@@ -47,7 +48,7 @@ export function AllgemeinSection({ go }: SectionProps) {
           {!upd ? 'Deckwerk fragt nur auf Knopfdruck bei GitHub nach, nie von selbst.'
             : !upd.newer ? `Du hast die neueste Version (${upd.current}).`
             : upd.canInstall ? `Version ${upd.latest} ist da. Deckwerk ersetzt sich selbst und startet neu, deine Decks bleiben.`
-            : <>Version {upd.latest} ist da. Im Terminal aktualisierst du mit <code>deckwerk update</code>.</>}
+            : <>Version {upd.latest} ist da. Im Terminal aktualisierst du mit <code>{APP.id} update</code>.</>}
         </Row>}
         {err && <p className="error" role="alert">{err}</p>}
       </Group>

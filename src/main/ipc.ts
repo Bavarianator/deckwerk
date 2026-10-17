@@ -6,6 +6,7 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { APP } from '../shared/app-id'
 import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, profileOf, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, hasFlag, type Cli } from './claude-agent'
@@ -26,7 +27,7 @@ import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 import { deckJson, withDeckFonts } from './webfonts'
 
-const HOME = join(homedir(), 'Deckwerk')
+const HOME = join(homedir(), APP.home)
 
 // Versionen (Canva „Versionsverlauf“): vor dem Überschreiben den alten Stand nach <deck>/versions/<zeit>.json,
 // höchstens alle 10 min (force: immer), weil der Autosave alle paar Sekunden speichert; die ältesten ab 100 fallen weg.
@@ -57,7 +58,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const keyFile = join(app.getPath('userData'), 'api-key.bin')
   // Einrichtung erledigt: einmal pro Rechner, nicht pro Chromium-Profil. userData wechselt zwischen Entwicklung (deckwerk),
   // installierter App (Deckwerk) und jedem Lauf mit --user-data-dir; dort kam der Assistent sonst jedes Mal neu.
-  const setupFile = join(app.getPath('appData'), 'deckwerk', 'setup-done')
+  const setupFile = join(app.getPath('appData'), APP.id, 'setup-done')
   const setupDone = () => existsSync(setupFile) || existsSync(join(app.getPath('userData'), 'setup-done')) // alte Markierung im Profil
   let deck: Deck | null = null
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
@@ -91,8 +92,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   }
   loadImageSettings()
 
-  // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/deckwerk wie image-settings.bin; Lauf beim Start und 5 s nach dem Speichern
-  const syncFile = join(app.getPath('appData'), 'deckwerk', 'sync.bin')
+  // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/<APP.id> (image-settings.bin bleibt mit Deckwerk geteilt); Lauf beim Start und 5 s nach dem Speichern
+  const syncFile = join(app.getPath('appData'), APP.id, 'sync.bin')
   let syncCfg: SyncSettings | null = null
   try { if (existsSync(syncFile)) syncCfg = JSON.parse(safeStorage.decryptString(readFileSync(syncFile))) } catch (e) { console.warn('[sync] Zugang nicht lesbar:', e) }
   // Hat der Sync das offene Deck überschrieben, neu laden. ponytail: mit ungesicherten Änderungen gewinnt die lokale Fassung beim nächsten Speichern
@@ -398,7 +399,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (!src.startsWith('asset://')) throw new Error('Nur eigene Bilddateien lassen sich freistellen')
     const file = localAsset(decodeURIComponent(new URL(src).pathname))
     const { removeBackground } = await import('./bg-remove')
-    const png = await removeBackground(file, join(HOME, 'models'), (pct) => !win.isDestroyed() && win.webContents.send('bg:progress', pct))
+    const png = await removeBackground(file, join(homedir(), 'Deckwerk', 'models'), (pct) => !win.isDestroyed() && win.webContents.send('bg:progress', pct)) // Modelle teilt Pro mit Deckwerk
     await mkdir(assets, { recursive: true })
     const out = join(assets, `freigestellt-${Date.now()}.png`)
     await writeFile(out, png)
@@ -457,7 +458,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   }))
   ipcMain.handle('update:check', () => checkUpdate(app.getVersion()))
   ipcMain.handle('update:install', async () => {
-    if (!(await checkUpdate(app.getVersion())).canInstall) throw new Error('Diese Installation aktualisiert sich nicht selbst. Im Terminal: deckwerk update')
+    if (!(await checkUpdate(app.getVersion())).canInstall) throw new Error(`Diese Installation aktualisiert sich nicht selbst. Im Terminal: ${APP.id} update`)
     await installUpdate()
     // das alte Verzeichnis ist ersetzt: neu starten, auch wenn die Fenster noch Dateien daraus halten
     app.relaunch({ execPath: join(APP_DIR, 'AppRun'), args: process.argv.slice(1) })
@@ -627,10 +628,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     codex: join(process.env.CODEX_HOME ?? join(homedir(), '.codex'), 'config.toml'),
     vibe: join(process.env.VIBE_HOME ?? join(homedir(), '.vibe'), 'config.toml'),
   }
-  // Skill (skills/deckwerk/SKILL.md) für Claude Code und Codex, beide lesen dasselbe Format; Vibe kennt keine Skills.
+  // Skill (skills/<APP.id>/SKILL.md) für Claude Code und Codex, beide lesen dasselbe Format; Vibe kennt keine Skills.
   // Eingerichtet heißt dort: MCP-Eintrag und Skill in genau der Fassung dieser App (nach Updates erneut einrichten)
-  const skillFile = (cli: Cli) => cli === 'vibe' ? null : join(cli === 'claude' ? join(homedir(), '.claude') : dirname(config.codex), 'skills', 'deckwerk', 'SKILL.md')
-  const skill = () => readFileSync(join(app.getAppPath(), 'skills', 'deckwerk', 'SKILL.md'), 'utf8')
+  const skillFile = (cli: Cli) => cli === 'vibe' ? null : join(cli === 'claude' ? join(homedir(), '.claude') : dirname(config.codex), 'skills', APP.id, 'SKILL.md')
+  const skill = () => readFileSync(join(app.getAppPath(), 'skills', APP.id, 'SKILL.md'), 'utf8')
   const skillOk = (cli: Cli) => { const f = skillFile(cli); try { return !f || readFileSync(f, 'utf8') === skill() } catch { return false } }
   // Eingetragen heißt: ein deckwerk-Eintrag mit genau unserem Start-Befehl samt letztem Argument (ein alter Pfad zählt
   // nicht; beim AppImage ist der Befehl immer /bin/sh, der Pfad steht im letzten Argument)
@@ -638,10 +639,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     try {
       const text = readFileSync(config[cli], 'utf8')
       if (cli === 'claude') {
-        const e = JSON.parse(text).mcpServers?.deckwerk
+        const e = JSON.parse(text).mcpServers?.[APP.id]
         return e?.command === mcpCmd.command && JSON.stringify(e.args ?? []) === JSON.stringify(mcpCmd.args)
       }
-      const sec = tomlSection(text, cli === 'codex' ? '[mcp_servers.deckwerk]\n' : '[[mcp_servers]]\nname = "deckwerk"\n')
+      const sec = tomlSection(text, cli === 'codex' ? `[mcp_servers.${APP.id}]\n` : `[[mcp_servers]]\nname = "${APP.id}"\n`)
       return sec.includes(`command = ${JSON.stringify(mcpCmd.command)}`) && sec.includes(JSON.stringify(mcpCmd.args.at(-1)))
     } catch { return false } // keine Datei = nicht eingerichtet
   }
@@ -760,10 +761,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       execFile(bin, args, { timeout: 60_000 }, (e, _out, err) => (e ? fail(new Error(err.trim() || e.message)) : ok())))
     const { command, args } = mcpCmd
     const [remove, add] = {
-      claude: [['mcp', 'remove', '-s', 'user', 'deckwerk'], ['mcp', 'add', '-s', 'user', 'deckwerk', '--', command, ...args]],
-      codex: [['mcp', 'remove', 'deckwerk'], ['mcp', 'add', 'deckwerk', '--', command, ...args]],
+      claude: [['mcp', 'remove', '-s', 'user', APP.id], ['mcp', 'add', '-s', 'user', APP.id, '--', command, ...args]],
+      codex: [['mcp', 'remove', APP.id], ['mcp', 'add', APP.id, '--', command, ...args]],
       // --arg=--mcp: mit Leerzeichen hielte Vibe „--mcp“ für eine eigene Option
-      vibe: [['mcp', 'remove', 'deckwerk'], ['mcp', 'add', 'deckwerk', '--transport', 'stdio', '--command', command, ...args.map((a) => `--arg=${a}`),
+      vibe: [['mcp', 'remove', APP.id], ['mcp', 'add', APP.id, '--transport', 'stdio', '--command', command, ...args.map((a) => `--arg=${a}`),
         '--startup-timeout-sec', '90', '--tool-timeout-sec', '300']],
     }[cli]
     await run(remove).catch(() => {}) // alter Eintrag mit anderem Pfad
@@ -774,7 +775,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     // `codex mcp add` kann beides nicht setzen
     if (cli === 'codex') {
       const text = await readFile(config.codex, 'utf8')
-      const head = '[mcp_servers.deckwerk]\n'
+      const head = `[mcp_servers.${APP.id}]\n`
       if (!tomlSection(text, head).includes('startup_timeout_sec'))
         await writeFile(config.codex, text.replace(head, `${head}startup_timeout_sec = 90\ntool_timeout_sec = 300\n`))
     }

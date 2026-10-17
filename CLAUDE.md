@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Deckwerk Pro (Fork)
+
+- Dieses Repo ist Deckwerk Pro, ein Git-Fork von Deckwerk (Remote `upstream`). Deckwerk-Stände übernehmen: `git fetch upstream --tags && git merge vX.Y.Z`.
+- Die Identität (Name, Datenordner, appData-Ordner, MCP-Server und Skill, Update-Repo) steht gebündelt in `src/shared/app-id.ts` (`APP`). Die übrigen UI-Texte mit „Deckwerk“ bleiben, damit Merges konfliktarm bleiben.
+- Getrennt von Deckwerk: Datenordner `~/DeckwerkPro` (Decks, `assets/`, `out/`, `brand.json`, `hausstil.md`), `appData/deckwerk-pro/` (`setup-done`, `sync.bin`), Sync-Ziel `DeckwerkPro/`, MCP-Name und Skill `deckwerk-pro`, App-Ordner `~/.local/share/deckwerk-pro`, Befehl `deckwerk-pro`, Paket `de.deckwerk.pro`, Fenstertitel und PPTX-Autor.
+- Geteilt mit Deckwerk: Modelle und Caches unter `~/Deckwerk` (`models/`, `fonts/`, `assets/.video/`), in `appData/deckwerk/` die Dateien `image-settings.bin`, `phone-off`, `asr-model` und `spellcheck-off`, der Dateityp `application/x-deckwerk`. Der App-Chat nutzt intern weiter den MCP-Namen `deckwerk` (privat per `--strict-mcp-config`).
+- Pro-Funktionen und Roadmap: `PRO.md`.
+
 Deckwerk ist eine Electron-App (React-Oberfläche), in der eine KI Präsentationen aus einem festen Layout-Katalog baut. Die Engine misst jede Folie, passt Schriftgrößen an, prüft per Lint und exportiert PPTX, Word (DOCX), PDF, PNG und Markdown. Code, Kommentare, Doku und UI-Texte sind deutsch; neue Texte ebenso.
 
 ## Befehle
@@ -48,7 +56,7 @@ Snapshots tragen eine Markierungszeile mit Sequenznummer, weil `capturePage` son
 - Prompt: `src/main/guide-modules.ts` zerlegt `design-guide.md` (per `?raw`) und `buildCatalog()` in Module mit festen IDs (neue Überschrift → Eintrag in `HEADINGS`). Systemprompt ist der Kernprompt (~15k Zeichen, bei reinen Video-Aufträgen ~1k); den vollen Prompt (>128 KiB) nie als CLI-Argument übergeben (`spawn E2BIG`). Zum Gesprächsstart wählt `src/main/router.ts` die Module für die erste Nachricht: Haiku 5.5 (API oder `claude -p`), bei Codex und Vibe ihr kleinstes Modell, bei Fehlern `ruleRoute`. Danach lädt die KI per `read_guide` nach. Messlauf: `scripts/router-eval.ts --live [--via=codex|vibe]`.
 - `src/main/mcp.ts`: stdio-MCP-Server für externe Agenten (`electron . --mcp`), zusätzlich `get_deck`/`save_deck`/`open_deck`/`read_guide`. Claude Code kürzt MCP-Anweisungen nach rund 2 KB. Wichtige Regeln gehören deshalb auch in Tool-Beschreibungen und Tool-Ergebnisse.
 
-**Skill** (`skills/deckwerk/SKILL.md`): Arbeitsablauf für Claude Code und Codex. Die Einrichtung (`setup:mcp` in `ipc.ts`) und `scripts/install.sh` legen ihn unter `~/.claude/skills/` bzw. `~/.codex/skills/` ab; „eingerichtet“ gilt nur, wenn er inhaltsgleich ist. Er ist per `asarUnpack` lesbar für den Installer. Ändert sich der Ablauf (Tools, Guide), den Skill mitpflegen.
+**Skill** (`skills/deckwerk-pro/SKILL.md`): Arbeitsablauf für Claude Code und Codex. Die Einrichtung (`setup:mcp` in `ipc.ts`) und `scripts/install.sh` legen ihn unter `~/.claude/skills/` bzw. `~/.codex/skills/` ab; „eingerichtet“ gilt nur, wenn er inhaltsgleich ist. Er ist per `asarUnpack` lesbar für den Installer. Ändert sich der Ablauf (Tools, Guide), den Skill mitpflegen.
 
 Jedes ändernde Tool antwortet mit Autofit und Lint pro Folie; daran korrigiert sich die KI selbst. **Neues Tool → Anzahl in `scripts/agent-smoke.ts`, `mcp-smoke.ts` und `mcp-e2e.ts` anpassen.**
 
@@ -61,12 +69,12 @@ Jedes ändernde Tool antwortet mit Autofit und Lint pro Folie; daran korrigiert 
 - `asset://` und der PPTX-Export laden nur Dateien, deren Endung auf `MEDIA_EXT` (`src/shared/deck.ts`) passt. Neue Medientypen dort ergänzen.
 
 **Ablage und Einstellungen**:
-- Brand-Kit (Farben, Schriften, Logo) in `~/Deckwerk/brand.json`: `create_deck` wendet es an, solange `brand` nicht gesetzt ist (`defaultBrand()` in `tools.ts`); `DECKWERK_HOME` setzt es in Tests um.
-- Decks liegen unter `~/Deckwerk/<titel>/deck.json`, alte Stände in `versions/`. Bilder liegen in `~/Deckwerk/assets/`.
+- Brand-Kit (Farben, Schriften, Logo) in `~/DeckwerkPro/brand.json`: `create_deck` wendet es an, solange `brand` nicht gesetzt ist (`defaultBrand()` in `tools.ts`); `DECKWERK_HOME` setzt es in Tests um.
+- Decks liegen unter `~/DeckwerkPro/<titel>/deck.json`, alte Stände in `versions/`. Bilder liegen in `~/DeckwerkPro/assets/`.
 - In Tests setzt `DECKWERK_HOME` das Deck-Verzeichnis um.
 - Der Anthropic-Key liegt mit `safeStorage` verschlüsselt im userData.
-- Gemeinsame Einstellungen für App, Entwicklung und MCP-Prozess liegen unter `appData/deckwerk/`, weil sich das userData zwischen diesen Wegen unterscheidet. Dazu gehören `setup-done`, `image-settings.bin` (Bild-KI: Mammouth/OpenAI-Key, Anbieter, Modell) und `phone-off` (vorhanden = Android-Handy als Rechenhilfe aus; ohne Marker rechnet ein per adb verbundenes Handy Spracherkennung und Export, `src/main/phone.ts`; Selbsttest `scripts/check-phone.ts`).
-- Cloud-Sync (`src/main/sync.ts`, Electron-frei, läuft auch in der Android-Engine): WebDAV-Spiegel von `~/Deckwerk` ohne `versions/`, `out/`, `models/`, Punktdateien; Abgleich über `.sync-state.json`, Konflikt → neuere gewinnt, ältere deck.json nach `versions/`. Zugang in `appData/deckwerk/sync.bin`. Selbsttest `scripts/check-sync.ts`.
+- Gemeinsame Einstellungen für App, Entwicklung und MCP-Prozess liegen unter `appData/deckwerk-pro/` (`setup-done`, `sync.bin`), weil sich das userData zwischen diesen Wegen unterscheidet. Mit Deckwerk geteilt unter `appData/deckwerk/`: `image-settings.bin` (Bild-KI: Mammouth/OpenAI-Key, Anbieter, Modell) und `phone-off` (vorhanden = Android-Handy als Rechenhilfe aus; ohne Marker rechnet ein per adb verbundenes Handy Spracherkennung und Export, `src/main/phone.ts`; Selbsttest `scripts/check-phone.ts`).
+- Cloud-Sync (`src/main/sync.ts`, Electron-frei, läuft auch in der Android-Engine): WebDAV-Spiegel von `~/DeckwerkPro` (Ziel `DeckwerkPro/`) ohne `versions/`, `out/`, `models/`, Punktdateien; Abgleich über `.sync-state.json`, Konflikt → neuere gewinnt, ältere deck.json nach `versions/`. Zugang in `appData/deckwerk-pro/sync.bin`. Selbsttest `scripts/check-sync.ts`.
 - Weitere Schlüssel kommen aus der Umgebung: `UNSPLASH_ACCESS_KEY`, `MAMMOUTH_API_KEY`, `OPENAI_API_KEY`, `IMAGE_MODEL`.
 
 ## Gestaltungskurs

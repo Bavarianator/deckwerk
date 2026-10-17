@@ -1,7 +1,7 @@
 {
-  "name": "deckwerk",
-  "version": "0.2.5",
-  "description": "KI-Präsentationsstudio",
+  "name": "deckwerk-pro",
+  "version": "0.1.0",
+  "description": "KI-Präsentationsstudio für Profis",
   "license": "AGPL-3.0-only",
   "main": "out/main/index.js",
   "scripts": {
@@ -60,8 +60,8 @@
   "private": true,
   "author": "Deckwerk",
   "build": {
-    "appId": "de.deckwerk.app",
-    "productName": "Deckwerk",
+    "appId": "de.deckwerk.pro",
+    "productName": "Deckwerk Pro",
     "copyright": "Copyright © 2026 Bavarianator",
     "directories": {
       "output": "dist",
@@ -97,7 +97,7 @@
           ]
         }
       ],
-      "executableName": "deckwerk",
+      "executableName": "deckwerk-pro",
       "icon": "assets/icon.png",
       "category": "Office",
       "synopsis": "KI-Präsentationsstudio",
@@ -105,13 +105,13 @@
       "desktop": {
         "entry": {
           "MimeType": "application/x-deckwerk;",
-          "StartupWMClass": "deckwerk",
+          "StartupWMClass": "deckwerk-pro",
           "Keywords": "Präsentation;Folien;PowerPoint;PPTX;KI;Pitch;"
         }
       }
     },
     "appImage": {
-      "artifactName": "Deckwerk-${arch}.${ext}"
+      "artifactName": "DeckwerkPro-${arch}.${ext}"
     }
   }
 }

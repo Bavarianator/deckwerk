@@ -3,10 +3,11 @@
 import { spawn } from 'node:child_process'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { APP } from '../shared/app-id'
 
-const REPO = 'Bavarianator/deckwerk'
+const REPO = APP.repo
 /** Wohin install.sh die fertige App legt (DECKWERK_APP wie dort) */
-export const APP_DIR = process.env.DECKWERK_APP ?? join(homedir(), '.local/share/deckwerk')
+export const APP_DIR = process.env.DECKWERK_APP ?? join(homedir(), '.local/share', APP.id)
 export interface UpdateInfo { current: string; latest: string; newer: boolean; canInstall: boolean }
 
 /** Ist b neuer als a? Vergleicht die Zahlen von „0.1.6“ bzw. „v0.1.7“ */
@@ -19,6 +20,7 @@ export function isNewer(a: string, b: string): boolean {
 
 export async function checkUpdate(current: string, execPath = process.execPath): Promise<UpdateInfo> {
   const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, { signal: AbortSignal.timeout(15_000), headers: { Accept: 'application/vnd.github+json' } })
+  if (res.status === 404) return { current, latest: current, newer: false, canInstall: false } // noch kein Release
   if (!res.ok) throw new Error(`GitHub antwortet mit ${res.status}.`)
   const latest = String(((await res.json()) as { tag_name?: string }).tag_name ?? '').replace(/^v/, '')
   if (!latest) throw new Error('Keine Version im neuesten Release gefunden.')
@@ -29,7 +31,7 @@ export async function checkUpdate(current: string, execPath = process.execPath):
 /** install.sh aus master ausführen; bei Fehler die letzten Zeilen der Ausgabe als Meldung */
 export function installUpdate(): Promise<void> {
   return new Promise((ok, fail) => {
-    const p = spawn('sh', ['-c', `curl -fsSL https://raw.githubusercontent.com/${REPO}/master/scripts/install.sh | sh`], { stdio: ['ignore', 'pipe', 'pipe'] })
+    const p = spawn('sh', ['-c', `curl -fsSL https://raw.githubusercontent.com/${REPO}/HEAD/scripts/install.sh | sh`], { stdio: ['ignore', 'pipe', 'pipe'] })
     let log = ''
     for (const s of [p.stdout, p.stderr]) s.on('data', (d: Buffer) => { log = (log + d).slice(-2000) })
     p.on('error', fail)

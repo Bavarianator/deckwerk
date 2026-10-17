@@ -6,6 +6,7 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { APP } from '../shared/app-id'
 import { MEDIA_EXT, profileOf, VIDEO_FILE } from '../shared/deck'
 import type { createEngine } from './engine'
 import { setupSpellcheck } from './spellcheck'
@@ -55,7 +56,7 @@ async function frameSlot<T>(fn: () => Promise<T>): Promise<T> {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1600, height: 960, minWidth: 1200, minHeight: 760, backgroundColor: '#ffffff', title: 'Deckwerk',
+    width: 1600, height: 960, minWidth: 1200, minHeight: 760, backgroundColor: '#ffffff', title: APP.name,
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true },
   })
   win.removeMenu() // keine native Menüleiste (File/Edit/View) unter Linux/Windows; macOS behält sein App-Menü

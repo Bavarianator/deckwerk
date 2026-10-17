@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve, sep } from 'node:path'
+import { APP } from '../shared/app-id'
 
 export interface SyncSettings { url: string; user: string; pass: string }
 export interface SyncResult { up: number; down: number; deleted: number; conflicts: number; changed: string[] } // changed: lokal überschriebene oder gelöschte Dateien (absolut)
@@ -34,15 +35,15 @@ export function davBase(s: Pick<SyncSettings, 'url' | 'user'>): string {
   const file = u.protocol === 'file:'
   if (!file && (u.pathname === '/' || u.pathname === '')) u.pathname = `/remote.php/dav/files/${encodeURIComponent(s.user)}/`
   if (!u.pathname.endsWith('/')) u.pathname += '/'
-  return `${file ? `file://${u.host}` : u.origin}${u.pathname}Deckwerk/` // file: hat origin „null“; host nur bei Windows-Freigaben
+  return `${file ? `file://${u.host}` : u.origin}${u.pathname}${APP.home}/` // file: hat origin „null“; host nur bei Windows-Freigaben
 }
 
 // Deck-Pfade sind absolut; auf einem anderen Gerät liegt der Deckwerk-Ordner woanders → beim Lesen auf den lokalen umleiten
-export function localAsset(file: string, home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')): string {
+export function localAsset(file: string, home = process.env.DECKWERK_HOME ?? join(homedir(), APP.home)): string {
   if (existsSync(file)) return file
-  const i = file.lastIndexOf('/Deckwerk/')
+  const mark = `/${APP.home}/`, i = file.lastIndexOf(mark)
   if (i < 0) return file
-  const alt = resolve(home, file.slice(i + '/Deckwerk/'.length))
+  const alt = resolve(home, file.slice(i + mark.length))
   return alt.startsWith(resolve(home) + sep) && existsSync(alt) ? alt : file
 }
 
@@ -81,7 +82,7 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
     const ms = Math.round(120_000 + ((init.body?.length ?? init.size ?? 0) / 50_000) * 1000)
     const signal = typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(ms) : undefined
     const r = await fetchFn(base + enc(rel), { method, body: init.body as BodyInit | undefined, headers: { Authorization: auth, ...init.headers }, signal }).catch((e) => {
-      throw (e as Error)?.name === 'TimeoutError' ? new Error(`Cloud-Sync: Der Server antwortet nicht (${rel || 'Deckwerk'}). Der nächste Abgleich macht weiter.`) : e
+      throw (e as Error)?.name === 'TimeoutError' ? new Error(`Cloud-Sync: Der Server antwortet nicht (${rel || APP.home}). Der nächste Abgleich macht weiter.`) : e
     })
     if (r.status === 401) throw new Error('Cloud-Sync: Anmeldung abgelehnt. Nutzername und App-Passwort prüfen.')
     return r
@@ -101,7 +102,7 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
     if (r.status === 404 && !rel) {
       const m = await dav('MKCOL', '')
       if (m.status === 409) throw new Error('Cloud-Sync: Die WebDAV-Adresse gibt es auf dem Server nicht. Adresse prüfen.')
-      await must(m, 'Ordner Deckwerk anlegen')
+      await must(m, `Ordner ${APP.home} anlegen`)
       fresh = true
       return
     }
@@ -299,7 +300,7 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
 /** Verbindung prüfen, ohne etwas zu übertragen (Einstellungen → „Verbindung testen“) */
 export async function testSync(s: SyncSettings, fetchFn: typeof fetch = fetch): Promise<void> {
   const base = davBase(s)
-  const r = await fetchFn(base.replace(/Deckwerk\/$/, ''), { method: 'PROPFIND', headers: { Depth: '0', Authorization: `Basic ${btoa(unescape(encodeURIComponent(`${s.user}:${s.pass}`)))}` } })
+  const r = await fetchFn(base.slice(0, -`${APP.home}/`.length), { method: 'PROPFIND', headers: { Depth: '0', Authorization: `Basic ${btoa(unescape(encodeURIComponent(`${s.user}:${s.pass}`)))}` } })
   if (r.status === 401) throw new Error('Anmeldung abgelehnt. Nutzername und App-Passwort prüfen.')
   if (r.status !== 207 && !r.ok) throw new Error(`Server antwortet mit HTTP ${r.status}. Ist die WebDAV-Adresse richtig?`)
 }

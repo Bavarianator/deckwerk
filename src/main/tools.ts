@@ -11,6 +11,7 @@ import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
 import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions } from '../shared/deck'
+import { APP } from '../shared/app-id'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -45,10 +46,10 @@ export interface ToolContext {
   choice?(c: { question: string; options: { label: string; image: string }[] }): void // nur im App-Chat: Auswahl-Karten (image = PNG als data:-URL)
 }
 // Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt
-export const STYLE_FILE = join(homedir(), 'Deckwerk', 'hausstil.md')
+export const STYLE_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), APP.home), 'hausstil.md')
 export const houseStyle = () => { try { return readFileSync(STYLE_FILE, 'utf8').trim() } catch { return '' } }
 // Brand-Kit des Nutzers für jedes neue Deck (Farben, Schriften, Logo); DECKWERK_HOME: Tests
-export const BRAND_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'brand.json')
+export const BRAND_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), APP.home), 'brand.json')
 export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(BRAND_FILE, 'utf8'))) } catch { return undefined } }
 export const saveBrand = (b: BrandKit) => { mkdirSync(dirname(BRAND_FILE), { recursive: true }); writeFileSync(BRAND_FILE, JSON.stringify(b, null, 2)) }
 
@@ -125,7 +126,7 @@ export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schri
 const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}, Bauteile ${{ line: 'Linie', plain: 'frei', solid: 'Fläche' }[t.bauteile]}`
 // Zuletzt gebaute Decks, neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
 export function recentLooks(except?: string): { title: string; typ: LookTyp }[] {
-  const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
+  const home = process.env.DECKWERK_HOME ?? join(homedir(), APP.home)
   let dirs: string[]
   try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models'].includes(d)) } catch { return [] }
   const files = dirs.flatMap((d) => { const f = join(home, d, 'deck.json'); try { return [{ f, t: statSync(f).mtimeMs }] } catch { return [] } }).sort((a, b) => b.t - a.t)
@@ -504,7 +505,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         brief: z.object({ audience: z.string().max(120), goal: z.string().max(200), tone: z.string().max(60) }).optional(),
         theme: z.enum(THEME_IDS).default(THEME_IDS[0]).describe('Katalog-Theme; wird ignoriert, wenn customTheme gesetzt ist'),
         customTheme: themeSpec.optional().describe('Eigenes Design für genau dieses Deck (Standard). Vorgehen und Regeln im Design-Guide §6'),
-        brand: brand.nullable().optional().describe('Brand-Kit; weglassen = das gespeicherte Brand-Kit des Nutzers (~/Deckwerk/brand.json), falls es eines gibt; null = ohne Marke'),
+        brand: brand.nullable().optional().describe(`Brand-Kit; weglassen = das gespeicherte Brand-Kit des Nutzers (~/${APP.home}/brand.json), falls es eines gibt; null = ohne Marke`),
         transition: z.enum(TRANSITIONS).default('fade'),
         mode: z.enum(['click', 'auto']).default('click').describe('click = Vortrag (Builds per Klick), auto = Selbstlauf'),
         motion: z.enum(MOTIONS).optional().describe('Bewegungsstil wie Canva „Magic Animate“: none = keine Aufbauten, calm = nur Einblenden (Vorstand, Behörde), standard = Layout-Standard, lively = Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom (Pitch, Event)'),

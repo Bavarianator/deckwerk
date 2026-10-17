@@ -8,6 +8,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
+import { APP } from '../shared/app-id'
 import type { Deck } from '../shared/deck'
 import type { Engine } from './agent'
 import { corePrompt } from './guide-modules'
@@ -36,7 +37,7 @@ Kernregeln:
 - Stil (\`style\` in create_deck) nach Anlass wählen: mutig für Vortrag, Schule, Event, Kampagne; sachlich für Chef-Update, Antrag, Bericht. Neue Decks im Designtyp nicht wie die letzten (Modul abwechslung).`
 
 export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServer {
-  const home = opts.home ?? join(homedir(), 'Deckwerk')
+  const home = opts.home ?? join(homedir(), APP.home)
   let deck: Deck | null = opts.deck ?? null
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
   const outDir = () => (path ? dirname(path) : join(home, 'out'))
@@ -66,7 +67,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
     },
     {
       name: 'save_deck',
-      description: 'Deck als deck.json speichern (~/Deckwerk/<titel>/deck.json, danach dorthin; ein neues Deck per create_deck bekommt beim Speichern einen eigenen Ordner). Die App kann die Datei öffnen.',
+      description: `Deck als deck.json speichern (~/${APP.home}/<titel>/deck.json, danach dorthin; ein neues Deck per create_deck bekommt beim Speichern einen eigenen Ordner). Die App kann die Datei öffnen.`,
       inputSchema: z.object({ name: z.string().max(60).optional().describe('Ordnername statt Titel-Slug') }),
       async run(i: { name?: string }) {
         if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
@@ -78,7 +79,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
     {
       name: 'open_deck',
       description: 'Vorhandene deck.json laden und weiterbearbeiten.',
-      inputSchema: z.object({ path: z.string().describe('Pfad zur deck.json (absolut oder relativ zu ~/Deckwerk)') }),
+      inputSchema: z.object({ path: z.string().describe(`Pfad zur deck.json (absolut oder relativ zu ~/${APP.home})`) }),
       async run(i: { path: string }) {
         const file = resolve(home, i.path)
         const d = JSON.parse(await readFile(file, 'utf8'))

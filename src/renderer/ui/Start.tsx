@@ -6,7 +6,7 @@ import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } f
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Select } from './kit'
-import { Logo } from './Logo'
+import { Logo, Wordmark } from './Logo'
 import { CloudButton } from './settings/CloudSection'
 
 // Angehängte Dateien (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateinamen
@@ -205,7 +205,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   return (
     <div className="home">
       <header className="top">
-        <div className="home-brand"><Logo size={22} />Deckwerk</div>
+        <div className="home-brand"><Logo size={22} /><Wordmark /></div>
         <span />
         <div className="top-r">
           <button className="plain tint" onClick={onOpen}>Deck öffnen …</button>

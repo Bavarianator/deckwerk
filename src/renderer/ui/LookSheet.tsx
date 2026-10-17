@@ -2,6 +2,7 @@
 // Jede Wahl gilt sofort (Undo-fähig), „Abbrechen“ stellt den Stand beim Öffnen wieder her.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Sparkles, X } from 'lucide-react'
+import { APP } from '../../shared/app-id'
 import { MOTIONS, TRANSITIONS, sizeOf, type AnimSpeed, type BrandKit, type Deck, type Motion, type ThemeTune, type Transition } from '../../shared/deck'
 import { FONT_PAIRS, THEMES, resolveTheme, themeFromSpec } from '../../shared/themes'
 import { SlideView } from '../slide'
@@ -306,7 +307,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
           </div>
           <div className="look-group">
             <b>Brand-Kit</b>
-            <button className="pill" disabled={!brand} title="Marke dieses Decks für jedes neue Deck der KI speichern (~/Deckwerk/brand.json)"
+            <button className="pill" disabled={!brand} title={`Marke dieses Decks für jedes neue Deck der KI speichern (~/${APP.home}/brand.json)`}
               onClick={() => void window.api.setBrand(brand!).then(() => setSaved(brand!))}>Als Standard speichern</button>
             <button className="pill" disabled={!saved} title="Gespeicherte Marke auf dieses Deck anwenden"
               onClick={() => saved && patchDeck({ theme: { ...deck.theme, brand: saved } })}>Standard übernehmen</button>
