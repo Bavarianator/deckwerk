@@ -22,6 +22,8 @@ import { phoneDevice, phoneMarker } from './phone'
 import { asrModelFile, asrModelOf } from './sherpa'
 import { assetPath, createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
 import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
+import { linkArg, registerGemeinsam } from './gemeinsam'
+import { isShared } from './mitarbeit'
 import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 import { deckJson, withDeckFonts } from './webfonts'
@@ -142,6 +144,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     agent = null // neues Deck = neues Gespräch
     deck = d
     path = p
+    void gemeinsam?.opened(p) // geteiltes Deck: Live-Abgleich starten bzw. den des vorigen beenden
   }
   const outDir = () => (path ? dirname(path) : join(HOME, 'out'))
 
@@ -152,6 +155,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const f = i >= 0 ? argv[i + 1] : argv.slice(1).find((a) => !a.startsWith('-') && a.endsWith('.json'))
     return f ? resolve(cwd, f) : null
   }
+  let gemeinsam: ReturnType<typeof registerGemeinsam> | null = null // steht weiter unten, reset() und Startargumente brauchen es
   const first = deckArg(process.argv)
   if (first) {
     try {
@@ -162,6 +166,12 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     }
   }
   app.on('second-instance', async (_, argv, cwd) => {
+    const link = linkArg(argv) // deckwerk://teilen?d=… von der Website
+    if (link) {
+      try { await gemeinsam?.openLink(link); if (!win.isDestroyed()) win.webContents.send('deck:opened', state()) }
+      catch (e) { if (!win.isDestroyed()) win.webContents.send('link:error', e instanceof Error ? e.message : String(e)) }
+      return
+    }
     const f = deckArg(argv, cwd)
     if (!f) return
     try {
@@ -177,10 +187,13 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
 
   ipcMain.handle('state', state)
-  ipcMain.handle('deck:set', (_, d: Deck) => {
+  // ack: der Renderer hat einen fremden Stand des geteilten Decks eingearbeitet (gemeinsam.ts) – im selben Aufruf, damit
+  // kein späteres deck:set den bestätigten Stand überholt
+  ipcMain.handle('deck:set', async (_, d: Deck, ack?: { etag: string; konflikte: number }) => {
     deck = d
     dirty = true
     agent?.setDeck(d)
+    if (ack && typeof ack.etag === 'string') await gemeinsam?.ack({ etag: ack.etag, konflikte: Number(ack.konflikte) || 0 })
   })
   ipcMain.handle('deck:new', () => reset(null, null))
 
@@ -211,13 +224,13 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       const file = join(HOME, d.name, 'deck.json')
       try {
         const deck = readDeck(file)
-        return { path: file, title: deck.title, mtime: (await stat(file)).mtimeMs, deck }
+        return { path: file, title: deck.title, mtime: (await stat(file)).mtimeMs, deck, geteilt: isShared(join(HOME, d.name)) }
       } catch { return null }
     }))
     return found.filter((x) => x !== null).sort((a, b) => b.mtime - a.mtime).slice(0, limit)
   })
 
-  ipcMain.handle('deck:save', async () => {
+  const save = async () => {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
     path ??= join(freeDir(deck.title), 'deck.json')
     await snapshot(path)
@@ -226,9 +239,29 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     // atomar über eine Punktdatei (vom Sync ausgenommen): ein gleichzeitiger Cloud-Abgleich liest nie eine halbe deck.json
     await writeFile(`${dirname(path)}/.deck.json.part`, json)
     await rename(`${dirname(path)}/.deck.json.part`, path)
-    syncer.later()
     return path
+  }
+  ipcMain.handle('deck:save', async () => {
+    const p = await save()
+    syncer.later()
+    gemeinsam?.saved()
+    return p
   })
+  // Gemeinsam bearbeiten (Teilen per Link über die eigene Nextcloud): gemeinsam.ts
+  gemeinsam = registerGemeinsam(win, {
+    home: HOME,
+    getDeck: () => deck,
+    getPath: () => path,
+    saveNow: async () => { if (deck && path) await save() },
+    syncCfg: () => syncCfg,
+    freeDir,
+    openFile: async (f) => { flush(); reset(readDeck(f), f); return state() },
+  })
+  void gemeinsam.opened(path) // Deck aus den Startargumenten
+  win.on('closed', () => void gemeinsam?.stop())
+  const startLink = linkArg(process.argv)
+  if (startLink) gemeinsam.openLink(startLink).then(() => { if (!win.isDestroyed()) win.webContents.send('deck:opened', state()) },
+    (e) => { if (!win.isDestroyed()) win.webContents.send('link:error', e instanceof Error ? e.message : String(e)) })
 
   let videoExport = false // ein Video-Export belegt ffmpeg und Renderfenster: kein zweiter parallel
   ipcMain.handle('deck:export', async (e, format: ExportFormat, printIn?: PrintOptions) => {

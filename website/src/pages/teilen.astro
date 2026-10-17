@@ -1,0 +1,56 @@
+---
+// Ziel geteilter Links aus der App (#d=…). Liest das Fragment nur im Browser; nichts davon geht an den Server.
+import Seite from '../layouts/Seite.astro'
+import Kopf from '../components/Kopf.astro'
+import { base } from '../lib/seite'
+
+const laden = `${base}laden/`
+---
+
+<Seite titel="Geteilte Präsentation – Deckwerk" beschreibung="Eine Präsentation aus Deckwerk wurde mit dir geteilt." noindex>
+  <Kopf titel="Geteilte Präsentation." satz="Jemand hat eine Präsentation aus Deckwerk mit dir geteilt." />
+  <section class="abschnitt teilen">
+    <div class="wrap">
+      <div id="geteilt" hidden>
+        <p class="aktionen">
+          <a class="knopf" id="oeffnen" href="deckwerk://teilen">In Deckwerk öffnen</a>
+          <a class="pfeil" href={laden}>Deckwerk laden</a>
+        </p>
+        <p class="klein">Öffnet sich nichts? Kopiere diesen Link und füge ihn in Deckwerk auf der Startseite unter „Geteilten Link öffnen“ ein.</p>
+        <button type="button" id="kopieren" data-copy="">Link kopieren</button>
+      </div>
+      <p class="aktionen" id="kaputt" hidden><a class="knopf" href={laden}>Deckwerk laden</a></p>
+      <noscript>
+        <p class="klein">Diese Seite braucht JavaScript, um den geteilten Link zu lesen. Er bleibt dabei in deinem Browser.</p>
+        <p class="aktionen"><a class="knopf" href={laden}>Deckwerk laden</a></p>
+      </noscript>
+    </div>
+  </section>
+</Seite>
+
+<script>
+  import { lesen } from '../lib/teilen'
+
+  const f = lesen(location.hash)
+  const h1 = document.querySelector('.seitenkopf h1')!
+  const zeile = document.querySelector('.seitenkopf .unterzeile')!
+  const zeigen = (id: string) => (document.getElementById(id)!.hidden = false)
+  // Titel und Host stammen aus dem Link: nur als Text setzen
+  if (f) {
+    h1.textContent = f.n.trim() ? `„${f.n}“ wurde mit dir geteilt` : 'Eine Präsentation wurde mit dir geteilt'
+    zeile.textContent = `${f.r === 'edit' ? 'Du kannst mitarbeiten.' : 'Du kannst die Präsentation ansehen.'} Geteilt über ${f.host}`
+    // Eigene Schemata reichen Fragmente nicht zuverlässig durch, daher als Query
+    document.querySelector<HTMLAnchorElement>('#oeffnen')!.href = `deckwerk://teilen?d=${f.d}`
+    document.getElementById('kopieren')!.dataset.copy = location.href
+    zeigen('geteilt')
+  } else {
+    h1.textContent = 'Dieser Link ist unvollständig.'
+    zeile.textContent = 'Bitte die Person, die geteilt hat, um einen neuen Link.'
+    zeigen('kaputt')
+  }
+</script>
+
+<style>
+  .teilen { padding-top: clamp(3rem, 6vw, 4.5rem); text-align: center; }
+  .teilen .klein { max-width: 34rem; margin: 2.5rem auto 1rem; }
+</style>

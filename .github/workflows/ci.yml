@@ -24,6 +24,7 @@ jobs:
           E="npx esbuild --bundle --platform=node --log-level=warning"
           $E scripts/validate-examples.ts --format=esm --outfile=out/validate-examples.mjs && node out/validate-examples.mjs
           $E scripts/check-sync.ts --format=esm --outfile=out/check-sync.mjs && node out/check-sync.mjs
+          $E scripts/check-merge3.ts --format=esm --outfile=out/check-merge3.mjs && node out/check-merge3.mjs
           $E scripts/check-accounts.ts --format=esm --outfile=out/check-accounts.mjs && node out/check-accounts.mjs
           $E scripts/check-update.ts --format=esm --outfile=out/check-update.mjs && node out/check-update.mjs
           $E scripts/check-phone.ts --format=esm --outfile=out/check-phone.mjs && node out/check-phone.mjs

@@ -23,6 +23,9 @@ const JUNK = new Set(['desktop.ini', 'thumbs.db', 'icon\r'])
 // `\` trennt unter Windows Ordner: ein href wie x%5C..%5C..%5CAppData/… schriebe sonst außerhalb von ~/Deckwerk (auch hier beidseitig)
 const skip = (name: string) => name.startsWith('.') || name.includes('\\') || SKIP.has(name) || JUNK.has(name.toLowerCase())
 
+// Geteiltes Deck (mitarbeit.ts): diese Datei liegt im Deck-Ordner. Ohne Punkt, damit weitere Geräte sie mitbekommen
+export const SHARED_MARKER = 'mitarbeit.json'
+
 /** Ordner-Zugang (file:-Adresse, Groß- und Kleinschreibung egal) statt WebDAV-Server */
 export const isFolder = (url: string) => { try { return new URL(url.trim()).protocol === 'file:' } catch { return false } }
 
@@ -53,11 +56,11 @@ export const assetPath = (url: string) => decodeURIComponent(new URL(url).pathna
 const enc = (rel: string) => rel.split('/').map(encodeURIComponent).join('/')
 
 // ETags kommen je Server mit oder ohne Anführungszeichen bzw. W/-Präfix (PUT-Header und PROPFIND unterscheiden sich)
-const etagOf = (e: string | null | undefined) => (e ?? '').replace(/&quot;/g, '"').replace(/^W\//, '').replace(/"/g, '').trim()
+export const etagOf = (e: string | null | undefined) => (e ?? '').replace(/&quot;/g, '"').replace(/^W\//, '').replace(/"/g, '').trim()
 const unxml = (s: string) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&')
 
 // PROPFIND-Antwort ohne XML-Bibliothek: Namensraum-Präfixe sind je Server verschieden (d:, D:, keins)
-function parseMultistatus(xml: string, basePath: string) {
+export function parseMultistatus(xml: string, basePath: string) {
   const tag = (s: string, name: string) => s.match(new RegExp(`<(?:\\w+:)?${name}[^>]*>([\\s\\S]*?)</(?:\\w+:)?${name}>`))?.[1]?.trim() ?? ''
   const out: { rel: string; dir: boolean; remote: Remote }[] = []
   for (const part of xml.split(/<(?:\w+:)?response[\s>]/).slice(1)) {
@@ -217,10 +220,15 @@ export async function sync(home: string, s: SyncSettings, fetchFn: typeof fetch 
   type Op = 'keep' | 'same' | 'conflict' | 'up' | 'down' | 'rmLocal' | 'rmRemote' | 'forget'
   const plan: [string, Op][] = []
   const all = [...new Set([...local.keys(), ...remote.keys(), ...Object.keys(old)])]
-  const toCompare = all.filter((rel) => !old[rel] && local.get(rel)?.size === remote.get(rel)?.size && local.has(rel) && remote.has(rel)).length
+  // Geteilte Decks schreibt nur der Live-Abgleich (mitarbeit.ts: zusammenführen, If-Match). Hier nur Fehlendes holen (der Ordner
+  // auf weiteren Geräten), nie hochladen oder löschen: „neuere gewinnt“ überschriebe sonst die Arbeit der anderen
+  const shared = new Set(all.filter((rel) => rel.split('/').length === 2 && rel.endsWith(`/${SHARED_MARKER}`)).map((rel) => rel.split('/')[0]))
+  const isShared = (rel: string) => shared.has(rel.split('/')[0])
+  const toCompare = all.filter((rel) => !isShared(rel) && !old[rel] && local.get(rel)?.size === remote.get(rel)?.size && local.has(rel) && remote.has(rel)).length
   let compared = 0
   for (const rel of all) {
     const l = local.get(rel), r = remote.get(rel), o = old[rel]
+    if (isShared(rel)) { plan.push([rel, !l && r && !o ? 'down' : o && (l || r) ? 'keep' : 'forget']); continue }
     // zwei neue Dateien gleicher Größe (erster Abgleich, Neubeginn): Inhalt vergleichen, sonst ginge eine Fassung unbemerkt verloren
     if (l && r && !o && l.size === r.size) {
       onProgress?.(`Vergleicht ${++compared} von ${toCompare} Dateien`)

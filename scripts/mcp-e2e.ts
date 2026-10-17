@@ -39,7 +39,7 @@ let r = await call('add_slides', { slides: [
   { layout: 'closing', content: { title: 'Fertig', subtitle: 'Export prüfen' } },
 ] })
 lap('add_slides')
-assert.match(r.content[0].text!, /Folie 1 \(s[0-9a-f]{4}, cover\): OK/)
+assert.match(r.content[0].text!, /Folie 1 \(s-[0-9a-z]+, cover\): OK/)
 assert.match(r.content[0].text!, /Folie 2 .*: OK/)
 const deck = JSON.parse((await call('get_deck')).content[0].text!)
 assert.equal(deck.slides.length, 3)

@@ -61,7 +61,7 @@ let r = await call('add_slides', { slides: [{ layout: 'cover', content: { title:
 assert.equal(r.isError, true); assert.match(r.content[0].text!, /create_deck/)
 r = await call('create_deck', { title: 'MCP Test' }); assert.notEqual(r.isError, true)
 r = await call('add_slides', { slides: [{ layout: 'cover', content: { title: 'Okay' } }, { layout: 'closing', content: { title: 'Danke' } }] })
-assert.match(r.content[0].text!, /Folie 1 \(s[0-9a-f]{4}, cover\): OK/)
+assert.match(r.content[0].text!, /Folie 1 \(s-[0-9a-z]+, cover\): OK/)
 r = await call('add_slides', { slides: [{ layout: 'agenda', content: { title: 'Agenda', items: [] } }] })
 assert.equal(r.isError, true); assert.match(r.content[0].text!, /items/)
 r = await call('add_slides', { slides: [{ layout: 'nope', content: {} }] })

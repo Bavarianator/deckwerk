@@ -268,10 +268,11 @@ export const ICON_NAMES = Object.keys(icons).map((n) =>
   n.replace(/([A-Z])([A-Z][a-z])/g, '$1-$2').replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/([a-zA-Z])(\d)/g, '$1-$2').toLowerCase(),
 )
 
+// wie die Oberfläche (App.tsx): lang genug, dass zwei Menschen an einem geteilten Deck nie dieselbe ID erzeugen (mitarbeit.ts)
 export function newSlideId(deck: Deck): string {
   const used = new Set(deck.slides.map((s) => s.id))
   for (;;) {
-    const id = 's' + randomBytes(2).toString('hex')
+    const id = `s-${newId()}`
     if (!used.has(id)) return id
   }
 }

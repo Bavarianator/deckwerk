@@ -4,9 +4,10 @@ import '@fontsource-variable/inter'
 import '../styles/basis.css'
 import { FUSS, REPO, SEITEN, base, version } from '../lib/seite'
 
-interface Props { titel?: string; beschreibung?: string }
+interface Props { titel?: string; beschreibung?: string; noindex?: boolean }
 const {
   titel = 'Deckwerk – Präsentationen aus einem Satz',
+  noindex = false,
   beschreibung = 'Sag in einem Satz, was du zeigen willst: Deckwerk schreibt die Geschichte, gestaltet die Folien, prüft jede einzelne und liefert eine PowerPoint, die du weiterbearbeiten kannst. Kostenlos für Mac und Linux.',
 } = Astro.props
 const url = new URL(Astro.url.pathname, Astro.site)
@@ -20,6 +21,7 @@ const aktiv = (pfad: string) => Astro.url.pathname.endsWith(`/${pfad}`)
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{titel}</title>
     <meta name="description" content={beschreibung} />
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={url} />
     <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
     <meta name="theme-color" content="#f2f2f4" />
