@@ -425,6 +425,7 @@ export default function App() {
             onPresent={() => present(0)}
             onRestore={actions.onOpenPath}
             onVideo={videoMode || filmMode || deck?.film ? () => setSlidesView(false) : undefined} // zurück nach Deckvid bzw. in die Animations-Ansicht
+            videoLabel={filmMode || deck?.film ? 'Animations-Ansicht' : undefined}
           />
           {deck && view === 'grid' ? (
             <Overview

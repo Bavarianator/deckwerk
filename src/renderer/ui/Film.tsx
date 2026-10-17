@@ -142,6 +142,7 @@ export function Film(p: Props) {
           </section>
         )}
 
+        {/* ponytail: jede Szene misst sofort mit eigener SlideView + filmPrepare; ab ~40 Szenen erst bei Sichtbarkeit messen (IntersectionObserver) */}
         {deck && plan.length > 0 && (
           <nav className="fv-line" aria-label="Szenen" ref={line}>
             {plan.map((x, n) => (
