@@ -37,7 +37,7 @@ const mapTexts = (deck: Deck, fn: Fn): Deck => ({
   slides: deck.slides.map((s, i) => ({
     ...s,
     content: walk(s.content, (t, w) => fn(t, i, w), 'content'),
-    ...(s.items && { items: s.items.map((it) => (it.kind === 'text' && it.text ? { ...it, text: fn(it.text, i, `items.${it.id}`) } : it)) }),
+    ...(s.items && { items: s.items.map((it) => (it.kind === 'text' && it.text ? { ...it, text: fn(it.text, i, `items.${it.id}`) } : it.cells ? { ...it, cells: it.cells.map((r, y) => r.map((c, x) => fn(c, i, `items.${it.id}.cells.${y}.${x}`))) } : it)) }),
     ...(s.notes !== undefined && { notes: fn(s.notes, i, 'notes') }),
   })),
 })
