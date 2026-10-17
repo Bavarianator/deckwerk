@@ -170,6 +170,7 @@ export interface Item {
   // shape (fill auch Texthintergrund)
   shape?: ShapeId
   lineStart?: LineEnd; lineEnd?: LineEnd // Linienenden (Form line)
+  from?: string; to?: string // Konnektor (Form line): IDs der verbundenen Elemente, Lage berechnet connect()
   dash?: Dash // Strichart für Linie und Umriss
   fill?: string; fill2?: string // fill2 = Verlauf (nur Rechteck/Ellipse)
   gradAngle?: number // Winkel des Verlaufs in Grad (CSS-Sinn, Standard 135)
@@ -184,6 +185,8 @@ export interface Item {
   round?: boolean
   flipX?: boolean
   crop?: Crop // sichtbarer Ausschnitt des Bildes (Anteile 0..1); ohne = füllend (cover, mittig)
+  alt?: string // Bildbeschreibung für Screenreader (PPTX: Alternativtext)
+  link?: string // Klickziel: https://…, mailto: oder #N = Sprung zu Folie N (1-basiert)
   // video/audio: src; poster = Vorschaubild des Videos (asset://), wird beim Einfügen erzeugt
   poster?: string
   autoplay?: boolean; loop?: boolean; muted?: boolean
@@ -315,7 +318,7 @@ export interface Box { x: number; y: number; w: number; h: number }
 
 export interface Run { text: string; bold: boolean; italic: boolean; underline?: boolean; color: string; breakAfter?: boolean; link?: string; sizePx?: number; trackingPx?: number } // sizePx/trackingPx nur, wenn die Schrift vom Element abweicht (Einheit einer Kennzahl)
 
-interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim; animDir?: AnimDir; animSpeed?: AnimSpeed }
+interface Base { slot: string; box: Box; build?: number; rot?: number; anim?: ItemAnim; animDir?: AnimDir; animSpeed?: AnimSpeed; link?: string /* Klickziel freier Elemente (Item.link) */ }
 export interface TextEl extends Base {
   kind: 'text'
   font: 'head' | 'body'
@@ -350,6 +353,7 @@ export interface ImgEl extends Base {
   under?: boolean // Foto liegt unter Text (Vollbild): Überlappung erlaubt, Kontrast wird gegen das Overlay geprüft
   nat?: { w: number; h: number } // Pixelgröße der Bilddatei (vom Render-Host), für die Druckauflösung im Lint
   look?: 'duotone' | 'mono'
+  alt?: string // Alternativtext freier Bilder
   mask?: MaskId
   adjust?: Adjust
   alpha?: number

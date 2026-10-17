@@ -4,13 +4,14 @@ import assert from 'node:assert/strict'
 import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DeckAgent, buildSystemPrompt, toRunnable, type Engine, type VideoTools } from '../src/main/agent'
+import { DeckAgent, catalogThumbnails, corePrompt, firstTurn, summaryOf, toRunnable, type Engine, type VideoTools } from '../src/main/agent'
+import { modulesText, type Route } from '../src/main/guide-modules'
 import { z } from 'zod'
 import { assetUrl, buildTools, imageSettings, JOB_WAIT, jobList, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { lintDeck } from '../src/shared/lint'
 import { resolveTheme } from '../src/shared/themes'
-import { autoPick } from '../src/shared/models'
+import { autoPick, modelOf, pickAvailable } from '../src/shared/models'
 import { typeset } from '../src/shared/typo'
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
@@ -32,7 +33,7 @@ const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts): Ersatz und Hinweis statt Download
 
-assert.equal(tools.length, 23)
+assert.equal(tools.length, 24)
 // laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
 for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -63,7 +64,7 @@ assert.equal(webp('ffd8ffe000104a46494600010100000100010000ffdb00430003020203020
   const eq = (a: string, b: string) => { assert.equal(typeset(a), b); assert.equal(typeset(b), b, 'idempotent') }
   eq('Umsatz +8% seit "Q1"', `Umsatz +8${NB}% seit „Q1“`)
   eq("Wie geht's", 'Wie geht’s')
-  eq('Alpha - Beta', 'Alpha – Beta')
+  eq('Alpha - Beta', `Alpha${NB}– Beta`)
   eq('E-Mail und Video-Sprechstunde', 'E-Mail und Video-Sprechstunde'); eq('2024-05-01', '2024-05-01')
   eq('5 Mio. € und 3 km, 7 h', `5${NB}Mio.${NB}€ und 3${NB}km, 7${NB}h`)
   eq('z. B. Nr. 5', `z.${NB}B. Nr.${NB}5`)
@@ -74,13 +75,19 @@ assert.equal(webp('ffd8ffe000104a46494600010100000100010000ffdb00430003020203020
     eq(x, x)
   eq('von 8-10 Mio. € in 2-3 Jahren, 1,5-2 %', `von 8–10${NB}Mio.${NB}€ in 2–3 Jahren, 1,5–2${NB}%`)
   eq('Wachstum 2024-2026', 'Wachstum 2024–2026')
-  eq('Ergebnis (ok) - gut und "Ja" - nein', 'Ergebnis (ok) – gut und „Ja“ – nein')
+  eq('Ergebnis (ok) - gut und "Ja" - nein', `Ergebnis (ok)${NB}– gut und „Ja“${NB}– nein`)
   eq('Er sagte "Hallo" (und "tschüss") bei 12" Zoll', 'Er sagte „Hallo“ (und „tschüss“) bei 12" Zoll')
 }
+// Kurztext der Tool-Chips: ohne Bitte an die KI, Dateiname statt asset://-URL
+assert.equal(summaryOf('Transkription läuft noch (10 %). Rufe dasselbe Tool gleich noch einmal mit denselben Eingaben auf; die Arbeit läuft im Hintergrund weiter.\nmehr'), 'Transkription läuft noch (10 %).')
+assert.equal(summaryOf('Video: asset://local/home/u/Deckwerk/assets/.video/import/Mein%20Clip.mp4 (3:15:33, 1920×1080)'), 'Video: Mein Clip.mp4 (3:15:33, 1920×1080)')
 // Auto-Modellwahl: neues Deck und Umbauten gründlich, gezielte Änderungen schnell
-assert.equal(autoPick('Ein Pitch für unser Café', false).model, 'claude-opus-5-5')
-assert.equal(autoPick('Überarbeite alle Folien im Ton', true).model, 'claude-opus-5-5')
-assert.deepEqual(autoPick('Mach den Titel kürzer (Folie 3, Element title)', true), { model: 'claude-sonnet-5-5', effort: 'medium', why: 'Änderung' })
+assert.equal(autoPick('Ein Pitch für unser Café', false).model, 'opus')
+assert.equal(autoPick('Überarbeite alle Folien im Ton', true).model, 'opus')
+assert.deepEqual(autoPick('Mach den Titel kürzer (Folie 3, Element title)', true), { model: 'sonnet', effort: 'medium', why: 'Änderung' })
+// Modelle als Familien: eine Auswahl von früher mit Version zählt als ihre Familie
+assert.deepEqual([modelOf('claude-haiku-4-5').id, modelOf('fable').id, modelOf('gpt-5').id], ['haiku', 'fable', 'opus'])
+assert.equal(pickAvailable('claude-sonnet-5-5', { claude: true, vibe: [], codex: [] }), 'sonnet')
 const look = (name: string, bg: string, more = {}) => ({ name, bg, accent: '#C4552D', headFont: 'Fraunces', bodyFont: 'Manrope', radius: 4, decor: 'none', ...more })
 await fails(run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E')] }), /unterscheiden sich kaum/) // nur umgefärbt
 await fails(run('propose_looks', { looks: [look('Hell', '#F5F3EE'), look('Dunkel', '#12261E', { margin: 'generous' })] }), /unterscheiden sich kaum/) // ein neues Merkmal reicht nicht
@@ -260,6 +267,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   let hl = [{ start: 2832, end: 2892, score: 6.24, why: 'Chat ×4,2 · laut +9 dB' }, { start: 3723, end: 3783, score: 3, why: 'oft gesehen' }]
   const video: VideoTools = {
     probe: async () => ({ duration: 75, w: 1920, h: 1080 }),
+    asrDevice: async (lang) => (lang === 'ja' ? 'PC (Whisper)' : 'Handy (SM G986B)'),
     frames: async (_f, times) => times.map(() => PNG),
     transcribe: async (_f, onProgress, o) => {
       seen.push(o)
@@ -279,20 +287,27 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   let vd: Deck | null = null
   const T6 = Object.fromEntries(buildTools({ engine: { ...engine, video }, getDeck: () => vd, setDeck: (x) => { vd = x }, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
   const go = (name: string, input: unknown) => T6[name].run(T6[name].inputSchema.parse(input))
+  // ohne url: Videos auf dem PC, neueste zuerst; per Link geladene mit Titel und Dauer aus .meta.json, andere per probe
+  const imp = join(dir, '.video', 'import')
+  mkdirSync(imp, { recursive: true })
+  writeFileSync(join(imp, 'abc.mp4'), '')
+  writeFileSync(join(imp, 'abc.mp4.meta.json'), JSON.stringify({ title: 'Tag 7', duration: 11733 }))
+  utimesSync(file, new Date(2020, 0, 1), new Date(2020, 0, 1))
+  assert.match((await go('import_video', {})).text, /^\d+ Videos auf diesem PC, neueste zuerst:\nasset:\/\/local\/.*\/\.video\/import\/abc\.mp4 · „Tag 7“ · 3:15:33 · [\s\S]*\/talk\.mp4 · 0:01:15 · 1\.1\.2020\n[\s\S]*transcribe_video\.$/)
   JOB_WAIT.ms = 20
-  assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\)/)
+  assert.match((await go('transcribe_video', { video: assetUrl(file) })).text, /^Transkription läuft noch \(43 %\).*\nSpracherkennung: Handy \(SM G986B\)$/)
   assert.deepEqual(jobList().map(({ name, pct, done }) => ({ name, pct, done })), [{ name: 'transcribe', pct: 43, done: false }])
   finish()
   await new Promise((r) => setTimeout(r, 5))
   assert.equal(jobList()[0].done, true)
   const tr = await go('transcribe_video', { video: file }) // anderer Weg zur selben Datei: derselbe Job
-  assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente\n\[s0\] 0\.0–4\.2 Hallo zusammen\.\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
+  assert.match(tr.text, /^Video: asset:\/\/local\/.*\/talk\.mp4 · 1:15 · 1920×1080 · Sprache de · 2 Segmente · Spracherkennung: Handy \(SM G986B\)\n\[s0\] 0\.0–4\.2 Hallo zusammen\.\n\[s1\] 61\.2–66\.8 Der Kern\.\n\n.*video_frames/)
   assert.deepEqual(seen, [{ range: undefined, lang: undefined, speakers: undefined }])
   assert.deepEqual(jobList(), []) // abgeholt = vergessen
   // from/to bestimmen, was transkribiert wird (to höchstens bis zum Ende); Sprecher als S1, S2 …
   const win = await go('transcribe_video', { video: file, from: 60, to: 999, lang: 'de', speakers: true })
   assert.deepEqual(seen[1], { range: { from: 60, to: 75 }, lang: 'de', speakers: true })
-  assert.match(win.text, /· 2 Segmente\n\[s1\] S2 61\.2–66\.8 Der Kern\.\n\n/)
+  assert.match(win.text, /· 2 Segmente · Spracherkennung: Handy \(SM G986B\)\n\[s1\] S2 61\.2–66\.8 Der Kern\.\n\n/)
   await fails(go('transcribe_video', { video: file, from: 10, to: 5 }), /to muss nach from/)
   await fails(go('transcribe_video', { video: file, from: 80 }), /hinter dem Ende/)
   // Download per Link: läuft noch, dann Pfad, Dauer, Chat, Kapitel (höchstens 30) und nächster Schritt nach Länge
@@ -328,7 +343,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   const added = await go('add_slides', { slides: [{ layout: 'clip', content: { video: file, hook: 'Der Kern in 5 Sekunden', parts: [{ start: 61.2, end: 66.8 }] } }] })
   assert.equal(vd!.slides[0].content.video, assetUrl(file))
   // Clip-Prüfung in der Antwort: Länge statt Autofit, Meldung aus lintClip
-  assert.match(added.text, /^Folie 1 \(s[0-9a-f]{4}, clip\): OK · Länge 5,6 s · 1 Ausschnitt · Transkript ok · Übergang/)
+  assert.match(added.text, /^Folie 1 \(s[0-9a-f]{4}, clip\): OK · Länge 5,6 s · 1 Ausschnitt · Transkript ok · Folienwechsel none; im MP4 blenden die Schnitte über/)
   assert.match(added.text, /\n  - \[warn\] clip-laenge: Länge 5,6 s – für einen Short 20–90 s; verlängern/)
   // Hintergrundmusik: absoluter Pfad wird asset://, nur Audiodateien, null entfernt
   const mp3 = join(dir, 'music', 'ruhig.mp3')
@@ -345,7 +360,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   // mp4: Übergänge mit Abblende zählen (ausgeblendete Folien und morph nicht), fehlende Musik melden
   const s0 = vd!.slides[0]
   vd!.slides.push({ ...s0, id: 'f1', transition: 'fade' }, { ...s0, id: 'm1', transition: 'morph' }, { ...s0, id: 'h1', transition: 'fade', hidden: true }, { ...s0, id: 'n1', transition: 'none' })
-  assert.match((await go('export_deck', { format: 'mp4' })).text, /\n1 Übergang mit Abblende \(Folien-transition; none = harter Schnitt\)$/)
+  assert.match((await go('export_deck', { format: 'mp4' })).text, /\n1 Übergang mit Abblende \(Zwischentitel immer, sonst Folien-transition; innerhalb eines Clips blenden die Schnitte über: Jump-Cuts kurz, neue Momente 0,5 s\)$/)
   vd!.music = { src: assetUrl(join(dir, 'music', 'weg.mp3')) }
   assert.match((await go('export_deck', { format: 'clips' })).text, /deck\.clips\nMusik nicht gefunden – ohne Musik exportiert/)
   vd!.music = { src: assetUrl(mp3) }
@@ -432,10 +447,35 @@ assert.equal(events, 14, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   await T4.update_deck.run(T4.update_deck.inputSchema.parse({ style: 'mutig' })); assert.equal(d!.style, 'mutig')
 }
 
-const sys = buildSystemPrompt()
-assert.ok(sys.includes('# Design-Guide') && sys.includes('### kpi-grid') && sys.includes('"maxLength"'))
+// API-Weg: Kernprompt mit Index als Systemprompt, Layout-Schemas erst über den Router (erste Nachricht) oder read_guide
+const agent = new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} })
+const sys = agent.system
+assert.equal(sys, corePrompt(), 'DeckAgent nutzt den Kernprompt'); assert.ok(agent.fresh)
+assert.equal(sys, new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} }).system, 'Systemprompt stabil (Caching)')
+{ // API-Weg: neuestes Modell der Familie aus der Models-API, ohne Treffer der bekannte Stand
+  type Info = { id: string; created_at: string }
+  const a = new DeckAgent({ engine, apiKey: 'test', onEvent: () => {} }) as unknown as { client: unknown; resolve: (m: ReturnType<typeof modelOf>) => Promise<string> }
+  const list: Info[] = [{ id: 'claude-haiku-4-5-20251001', created_at: '2025-10-01T00:00:00Z' }, { id: 'claude-haiku-6', created_at: '2027-01-01T00:00:00Z' }, { id: 'claude-opus-5-5', created_at: '2026-09-01T00:00:00Z' }]
+  a.client = { models: { list: async function* () { yield* list } } }
+  assert.deepEqual([await a.resolve(modelOf('haiku')), await a.resolve(modelOf('opus')), await a.resolve(modelOf('fable'))], ['claude-haiku-6', 'claude-opus-5-5', 'claude-fable-5-1'])
+}
+assert.ok(sys.includes('# Design-Guide') && sys.includes('layout:kpi-grid'), 'Index im Kernprompt')
+assert.ok(!sys.includes('### kpi-grid') && !sys.includes('"maxLength"'), 'volles Layout-Schema nicht im Kernprompt')
 assert.match(sys, /## Zuletzt gebaute Decks \(nur für neue Decks[^\n]*\n(- .*\n)*- „Alt \d“: hell, Serif-Titel regular \(Fraunces\), Grund neutral, Bauteile line, Akzent #/)
-assert.equal(sys, buildSystemPrompt(), 'Systemprompt stabil (Caching)')
+// Erste Nachricht: Module des Routers vor dem Nutzertext, Vorschaubilder nur der gewählten Layouts; ohne Route nichts davon
+{
+  const route: Route = { modules: ['animation', 'layout:kpi-grid'], source: 'regel' }
+  const shots: string[] = []
+  const spy: Engine = { ...engine, renderPng: async (d, idx) => { shots.push(...d.slides.map((s) => s.layout)); return idx.map(() => PNG) } }
+  const thumbs = await catalogThumbnails(spy, [...route.modules, 'layout:gibts-nicht'])
+  assert.deepEqual(shots, ['kpi-grid'], 'Vorschaubilder nur der gewählten Layouts'); assert.equal(thumbs.length, 2)
+  const blocks = firstTurn('Baue ein Deck', route, thumbs).content as { type: string; text?: string; cache_control?: object }[]
+  assert.match(blocks[0].text!, /^<leitfaden>\nFür diesen Auftrag ausgewählt \(Router\): animation, layout:kpi-grid\. Weitere Module mit read_guide\.\n/)
+  assert.ok(modulesText(route.modules).includes('### kpi-grid') && blocks[0].text!.includes(modulesText(route.modules)))
+  assert.equal(blocks.filter((b) => b.type === 'image').length, 1)
+  assert.deepEqual(blocks.at(-1), { type: 'text', text: 'Baue ein Deck', cache_control: { type: 'ephemeral' } }, 'Breakpoint hinter dem ersten Turn')
+  assert.deepEqual(firstTurn('Baue ein Deck', undefined, []), { role: 'user', content: 'Baue ein Deck' }, 'ohne Route kein Leitfaden')
+}
 if (realHome === undefined) delete process.env.DECKWERK_HOME
 else process.env.DECKWERK_HOME = realHome
 console.log(`Tools OK · Systemprompt ${sys.length} Zeichen`)

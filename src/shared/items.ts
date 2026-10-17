@@ -36,6 +36,7 @@ export const itemSchema = z.object({
   lineHeight: z.number().min(0.7).max(3).optional(), spacing: z.number().min(-0.1).max(0.5).optional(),
   shape: z.enum(SHAPES).optional(),
   lineStart: z.enum(LINE_ENDS).optional(), lineEnd: z.enum(LINE_ENDS).optional().describe('Linienenden der Form line: arrow = offene Spitze, triangle = gefüllt, dot = Punkt'),
+  from: z.string().max(40).optional(), to: z.string().max(40).optional().describe('nur Form line: IDs zweier Elemente; die Linie verbindet sie und wandert beim Verschieben mit (Konnektor), x/y/w egal'),
   dash: z.enum(DASHES).optional().describe('Strichart von Linie oder Umriss'),
   fill: hex.optional(), fill2: hex.optional().describe('Verlauf zu dieser Farbe (Rechteck/Ellipse)'), gradAngle: z.number().min(0).max(360).optional().describe('Winkel des Verlaufs in Grad, Standard 135'),
   stroke: hex.optional(), strokeW: z.number().min(0).max(40).optional(),
@@ -44,6 +45,8 @@ export const itemSchema = z.object({
   look: z.enum(['natural', 'duotone', 'mono']).optional(), mask: z.enum(MASKS).optional().describe('Bildrahmen (Form)'),
   adjust: z.object({ bright: z.number().min(-100).max(100).optional(), contrast: z.number().min(-100).max(100).optional(), sat: z.number().min(-100).max(100).optional(), blur: z.number().min(0).max(100).optional() }).optional().describe('Bildanpassung in Prozent'), round: z.boolean().optional(), flipX: z.boolean().optional(),
   crop: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), w: z.number().min(0.01).max(1), h: z.number().min(0.01).max(1) }).optional().describe('Bildausschnitt in Anteilen; w/h des Elements sollte zum Ausschnitt passen'),
+  alt: z.string().max(250).optional().describe('Alternativtext: was das Bild zeigt (Screenreader, PPTX)'),
+  link: z.string().max(500).regex(/^(https?:\/\/|mailto:|#\d+$)/, 'Link: https://…, mailto: oder #N').optional().describe('Klickziel: https://… oder #N = Sprung zu Folie N'),
   poster: z.string().optional(), autoplay: z.boolean().optional(), loop: z.boolean().optional(), muted: z.boolean().optional(),
   icon: z.string().max(40).optional().describe('lucide-Name in kebab-case'),
   graphic: z.string().max(20).optional().describe('Deko-Grafik: squiggle, swoosh, scribble, arrow, burst, waves, sparkle, blob (siehe GRAPHICS)'),
@@ -85,6 +88,27 @@ export const newText = (p: keyof typeof TEXT_PRESETS): Item => {
 }
 export const newShape = (shape: Item['shape'], fill: string): Item =>
   shape === 'line' ? { ...at(400, 20), kind: 'shape', shape, stroke: fill, strokeW: 4 } : { ...at(280, 280), kind: 'shape', shape, fill }
+// Konnektor wie in Canva: Linie von Rand zu Rand zweier Elemente, 8 px Abstand. Linien drehen um ihre Mitte (CSS und PPTX).
+// ponytail: Drehung der verbundenen Elemente wird ignoriert (Rechteck-Rand); Text zählt mit gespeichertem h (beim Verbinden und Verschieben
+// aus dem DOM gesetzt); beim Ziehen springt die Linie erst beim Loslassen nach. Winkel-Konnektoren und Live-Nachführen erst bei Bedarf
+export const newConnector = (from: string, to: string, color: string): Item => ({ id: newId(), kind: 'shape', shape: 'line', x: 0, y: 0, w: 1, h: 20, stroke: color, strokeW: 3, lineEnd: 'arrow', from, to })
+export function connect(items: Item[]): Item[] {
+  const byId = new Map(items.map((it) => [it.id, it]))
+  return items.map((it) => {
+    const a = it.from && byId.get(it.from), b = it.to && byId.get(it.to)
+    if (it.shape !== 'line' || !a || !b) return it
+    const ca = [a.x + a.w / 2, a.y + a.h / 2], cb = [b.x + b.w / 2, b.y + b.h / 2]
+    const dx = cb[0] - ca[0], dy = cb[1] - ca[1], len = Math.hypot(dx, dy)
+    if (len < 1) return it
+    // Anteil der Strecke bis zum Rand eines Elements (+ Abstand)
+    const edge = (o: Item) => Math.min(dx ? o.w / 2 / Math.abs(dx) : Infinity, dy ? o.h / 2 / Math.abs(dy) : Infinity) + 8 / len
+    const t0 = edge(a), t1 = 1 - edge(b)
+    if (t1 <= t0) return it // Elemente überlappen: Lage behalten
+    const w = Math.round((t1 - t0) * len), mx = ca[0] + dx * (t0 + t1) / 2, my = ca[1] + dy * (t0 + t1) / 2
+    const rot = (Math.round(Math.atan2(dy, dx) * 1800 / Math.PI) / 10 + 360) % 360 // 0..360 wie PowerPoint
+    return { ...it, x: Math.round(mx - w / 2), y: Math.round(my - it.h / 2), w, rot: rot || undefined }
+  })
+}
 export const newIcon = (icon: string, color: string): Item => ({ ...at(160, 160), kind: 'icon', icon, color })
 export const newGraphic = (graphic: string, color: string): Item => ({ ...at(240, GRAPHICS[graphic]?.fill ? 240 : 120), kind: 'graphic', graphic, color })
 export const newQr = (): Item => ({ ...at(200, 200), kind: 'qr', text: 'https://example.com' })

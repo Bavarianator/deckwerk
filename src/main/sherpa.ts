@@ -5,13 +5,14 @@
 // sherpa läuft im Kindprozess sherpa-worker: Es bringt eine eigene libonnxruntime mit, die neben onnxruntime-node
 // (Freisteller, YuNet) im selben Prozess kollidieren kann, und das Modell (~1,3 GB RAM) blockiert so nie den Main-Prozess.
 // Ohne Electron, damit der Selbsttest unter Node läuft (scripts/check-sherpa.ts).
-import { fork, type ChildProcess } from 'node:child_process'
+import { execFileSync, fork, type ChildProcess } from 'node:child_process'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import type { Segment } from '../shared/video'
 import { download } from './download'
+import { ensurePhone } from './phone'
 
 export const PARAKEET_LANGS: readonly string[] = ['bg', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fi', 'fr', 'de', 'el', 'hu', 'it', 'lv', 'lt', 'mt', 'pl', 'pt', 'ro', 'sk', 'sl', 'es', 'sv', 'ru', 'uk']
 
@@ -66,13 +67,20 @@ export async function ensureModels(kind: Kind, modelsDir: string, onProgress: (p
 // 1,74/1,23 (CPU 1,10/1,16), Spitze 1,32 bzw. 1,37 GB VmHWM. Ohne Last geschätzt RTF 0,75 gegen ~0,57; Modell laden unter Last
 // 15–35 s. Die geteilte FPU kostet ~40 % mehr Rechenzeit, 2 Threads sind trotzdem schneller. Ausnahme: Bei Last ~10 und
 // nice 10 (check-sherpa) war 2 langsamer (RTF 4,5 gegen 3,3), weil ein verdrängter Thread den anderen warten lässt.
-const THREADS = 2
+// macOS: ein Thread je Leistungskern (Apple Silicon M1–M4 4, Pro/Max 6–12, höchstens 8), mit 2 blieb dort mindestens die
+// Hälfte der Leistungskerne ungenutzt. Effizienzkerne nicht mitzählen: ONNX wartet je Schicht auf den langsamsten
+// Thread. Intel-Macs ohne perflevel0: 4.
+let threadCount: number | undefined
+function defaultThreads(): number {
+  if (process.platform !== 'darwin') return 2
+  try { return Math.min(8, Number(execFileSync('/usr/sbin/sysctl', ['-n', 'hw.perflevel0.physicalcpu'], { encoding: 'utf8' })) || 4) } catch { return 4 }
+}
 const IDLE = 60_000 // danach endet der Worker und gibt das Modell (~1,3 GB) frei
 const STALL = 10 * 60_000 // so lange keine Nachricht bei offenem Auftrag: Worker hängt und blockierte sonst alle folgenden
 
 // Schutz vor dem OOM-Killer (wie transcribe.ts), bevor ein Modell in den Worker kommt: asr ~1,3 GB Spitze, tag/diar je < 0,1 GB.
 // MemAvailable statt os.freemem(): zählt den freigebbaren Datei-Cache mit. macOS lagert aus statt zu beenden, dort nicht sperren.
-const NEED_GB: Record<string, number> = { asr: 1.5, tag: 0.6, diar: 0.6 }
+const NEED_GB: Record<string, number> = { asr: 1.5, 'asr-phone': 0.3, tag: 0.6, diar: 0.6 } // asr-phone: nur Silero-VAD hier
 function memCheck(op: string) {
   if (process.platform !== 'linux') return
   let gb: number
@@ -163,9 +171,14 @@ export function stopWorker(): void {
 
 /** Transkript aus 16 kHz mono f32: Silero-VAD teilt in Sprachstücke, Parakeet erkennt sie. Segmente = Sätze mit echten
  *  Wortzeiten (s, + offset). onProgress 0–100 über die Erkennung; fehlende Modelle lädt ensureModels vorher ohne Fortschritt. */
-export async function asr(pcm: Float32Array, o: { models: string; offset?: number; onProgress?: (pct: number) => void }): Promise<Segment[]> {
+export async function asr(pcm: Float32Array, o: { models: string; offset?: number; onProgress?: (pct: number) => void; phone?: string }): Promise<Segment[]> {
   await ensureModels('asr', o.models)
-  const threads = Number(process.env.DECKWERK_SHERPA_THREADS) || THREADS // Stellschraube für Messungen
+  // phone: Seriennummer eines Handys (phone.ts), das erkennt; geht dort etwas schief, rechnet der PC wie ohne Handy
+  if (o.phone) try {
+    await ensurePhone(o.phone, o.models)
+    return await call<Segment[]>('asr-phone', { pcm, models: o.models, offset: o.offset ?? 0, threads: 1, phone: o.phone }, o.onProgress)
+  } catch (e) { console.warn('[sherpa] Handy nicht nutzbar, Erkennung auf dem PC:', (e as Error).message) }
+  const threads = Number(process.env.DECKWERK_SHERPA_THREADS) || (threadCount ??= defaultThreads()) // Stellschraube für Messungen
   return call<Segment[]>('asr', { pcm, models: o.models, offset: o.offset ?? 0, threads }, o.onProgress)
 }
 

@@ -16,8 +16,10 @@ function locate(ps: Part[], k: number, s: number) {
 
 /** Spielt die parts nacheinander (Schnittfassung), am Ende Pause und zurück auf den Anfang. t/duration in Clipzeit, src in Quellzeit.
  *  playSource spielt die Quelle ohne Sprünge (Schneiden: „Quelle“), part = Index des Ausschnitts an der Abspielposition (-1 = hinter allen). */
-export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[]) {
+export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[], onCut?: (gap: number) => void) {
   const [playing, setPlaying] = useState(false)
+  const cut = useRef(onCut) // echter Schnitt beim Abspielen (nicht nahtlos): Deckvid blendet dort über wie der Export
+  cut.current = onCut
   const [src, setSrc] = useState(parts[0]?.start ?? 0)
   const ps = useRef(parts)
   ps.current = parts
@@ -67,7 +69,7 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
       const k = idx.current, p = l[k], c = v.currentTime
       if (free.current || (p && c >= p.start - 0.1 && c < p.end)) setSrc(c) // Toleranz: nach dem Spulen meldet das Video evtl. knapp davor
       else if (p && c < p.start) go(p.start, k) // beim Abspielen in eine Lücke gespult
-      else if (p && l[k + 1]) go(l[k + 1].start, k + 1)
+      else if (p && l[k + 1]) { if (Math.abs(l[k + 1].start - p.end) >= 1e-3) cut.current?.(l[k + 1].start - p.end); go(l[k + 1].start, k + 1) }
       else { v.pause(); go(l[0]?.start ?? 0, 0); setPlaying(false); return } // Ende, auch wenn der laufende Ausschnitt gelöscht wurde (!p)
       raf = requestAnimationFrame(tick)
     }
@@ -93,7 +95,7 @@ export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, vid
   return (
     <div className={`clip-video${fit === 'blur' ? ' blur' : ''}`} style={{ aspectRatio: aspect }} onClick={onClick}>
       {fit === 'blur' && <div className="clip-video-bg" style={{ backgroundImage: `url("${url}?frame=${first ?? 0}")` }} />}
-      <video ref={videoRef} src={url} poster={first != null ? `${url}?frame=${first}` : undefined} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
+      <video ref={videoRef} src={url} crossOrigin="anonymous" /* asset:// antwortet mit CORS: so hört Web Audio den Ton (Musik-Ducking in Deckvid) */ poster={first != null ? `${url}?frame=${first}` : undefined} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
         onLoadedMetadata={(e) => {
           const v = e.currentTarget
           if (!v.videoWidth) onBad?.() // nur Ton oder Videospur unbekannt

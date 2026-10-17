@@ -101,7 +101,7 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
     else if ((k === 'i' || e.key === '[') && canStart) setEdge(sel, 'start', t)
     else if ((k === 'o' || e.key === ']') && canEnd) setEdge(sel, 'end', t)
     else if (k === 's') split()
-    else if (e.key === 'Delete' && !btn) remove()
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && !btn) remove()
     else return
     e.preventDefault()
   }

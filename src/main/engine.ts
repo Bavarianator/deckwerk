@@ -1,4 +1,4 @@
-import { nativeImage } from 'electron'
+import { app, nativeImage } from 'electron'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
@@ -16,6 +16,7 @@ import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
 import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
+import { phoneDevice, phoneMarker } from './phone'
 import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
 import { localAsset } from './sync'
 import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
@@ -85,6 +86,16 @@ export function createEngine(): Engine {
   type Chunk = { engine: 'parakeet' | 'whisper'; segments: Segment[] }
   let whisperOnly = false // sherpa grundsätzlich nicht nutzbar: Rest der Sitzung mit Whisper
   const wantFor = (lang?: string) => engineFor(lang, PARAKEET_LANGS, whisperOnly)
+  // Option „Spracherkennung auf dem Android-Handy“: je Aufruf neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
+  const videoRuns = new Map<string, { pct: number; listeners: Set<(pct: number) => void>; done: Promise<string[]> }>() // laufende Video-Exporte (exportDeck)
+  const phoneOn = () => existsSync(phoneMarker(app.getPath('appData')))
+  const phoneNow = async () => (phoneOn() ? phoneDevice() : null)
+  // wer rechnet (Spracherkennung, Video-Export): Handy oder PC mit Grund, für die Antworten der KI und die Arbeitsansicht
+  const device = async (task?: 'export') => {
+    const d = await phoneNow(), fault = task === 'export' && d ? (await import('./export-video')).phoneFault.reason : ''
+    if (fault) return `PC (Handy-Export gescheitert: ${fault})`
+    return d ? `Handy (${d.model}, CPU)` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
+  }
 
   // Ein Chunk: Parakeet (sherpa); Whisper nur für Sprachen außerhalb von Parakeet oder wenn sherpa nicht nutzbar ist
   async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
@@ -97,7 +108,8 @@ export function createEngine(): Engine {
     }
     if (want === 'whisper' || whisperOnly) return whisper()
     try {
-      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress }), k) }
+      const phone = (await phoneNow())?.serial
+      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone }), k) }
     } catch (e) {
       if ((e as { code?: string }).code !== 'SHERPA_UNAVAILABLE') throw e
       console.warn('[video] sherpa-onnx nicht nutzbar, Spracherkennung mit Whisper:', (e as Error).message)
@@ -257,18 +269,35 @@ export function createEngine(): Engine {
       const base = join(outDir, slug(deck.title) + formatSuffix(deck.size)) // Format im Namen: gleiche Titel in 4:5 und A4 überschreiben sich nicht
       // Video: Zuschnitt 5 %, dann fehlende Transkript-Chunks der Ausschnitte (je Chunk 5 %, höchstens bis 60 %), Rest der Export
       if (format === 'mp4' || format === 'clips') {
-        const report = onProgress ?? (() => {}), music = musicOf(deck), t = transcriptsOf(deck)
-        const run = (ready: Deck, pre: number) => import('./export-video').then((m) => m.exportVideo(ready, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), music))
-        if (!clipsOk(deck)) return run(deck, 0) // exportVideo meldet, was fehlt
-        const files = [...t.need.keys()], miss = await Promise.all(files.map((f) => chunkPlan(f, t.need.get(f)!).then((p) => p.missing.length, () => 0)))
-        const total = miss.reduce((a, b) => a + b, 0), pre = Math.min(60, 5 + 5 * total) // ponytail: Schätzung, ein Chunk (5 min Ton) wiegt so viel wie 5 % Export
-        const ready = await prepareClips(deck, (p) => report(Math.floor(p * 0.05)))
-        let done = 0
-        for (const [k, f] of files.entries()) {
-          await t.get(f, (p) => report(5 + Math.floor(((pre - 5) * (done + (miss[k] * p) / 100)) / (total || 1))))
-          done += miss[k]
+        // Dasselbe Video schon in Arbeit (Knopf „Exportieren“ und export_deck der KI): der zweite Auftrag hängt sich an, gleicher Fortschritt statt
+        // eines zweiten Durchgangs hinter dem ersten (12.10.: KI-Export stand 25 min bei 5 % in der Warteschlange und hätte danach alles neu gerechnet)
+        const key = createHash('sha1').update(JSON.stringify([deck, format, outDir])).digest('hex'), same = videoRuns.get(key)
+        if (same) {
+          if (onProgress) { same.listeners.add(onProgress); onProgress(same.pct) }
+          return same.done
         }
-        return run(ready, pre)
+        const entry = { pct: 0, listeners: new Set(onProgress ? [onProgress] : []), done: Promise.resolve<string[]>([]) }
+        videoRuns.set(key, entry)
+        const report = (p: number) => { entry.pct = p; entry.listeners.forEach((l) => l(p)) }
+        entry.done = (async () => {
+          const music = musicOf(deck), t = transcriptsOf(deck)
+          // Handy-Option: die Clip-Gruppen rechnet das Handy (phone-ffmpeg.ts), Standbilder und Endschritt der PC
+          const run = async (ready: Deck, pre: number) => {
+            const d = await phoneNow(), m = await import('./export-video')
+            return m.exportVideo(ready, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), { ...music, phone: d ? { serial: d.serial, models } : undefined })
+          }
+          if (!clipsOk(deck)) return run(deck, 0) // exportVideo meldet, was fehlt
+          const files = [...t.need.keys()], miss = await Promise.all(files.map((f) => chunkPlan(f, t.need.get(f)!).then((p) => p.missing.length, () => 0)))
+          const total = miss.reduce((a, b) => a + b, 0), pre = Math.min(60, 5 + 5 * total) // ponytail: Schätzung, ein Chunk (5 min Ton) wiegt so viel wie 5 % Export
+          const ready = await prepareClips(deck, (p) => report(Math.floor(p * 0.05)))
+          let done = 0
+          for (const [k, f] of files.entries()) {
+            await t.get(f, (p) => report(5 + Math.floor(((pre - 5) * (done + (miss[k] * p) / 100)) / (total || 1))))
+            done += miss[k]
+          }
+          return run(ready, pre)
+        })().finally(() => videoRuns.delete(key))
+        return entry.done
       }
       if (format === 'md') {
         await writeFile(`${base}.md`, handout(deck))
@@ -311,6 +340,8 @@ export function createEngine(): Engine {
       probe,
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
+      device,
+      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : device() },
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)

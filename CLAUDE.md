@@ -43,8 +43,9 @@ Snapshots tragen eine Markierungszeile mit Sequenznummer, weil `capturePage` son
 - Formate: `profileOf(deck)` (`deck.ts`) leitet aus der Größe `slides`/`social`/`doc` ab. Daran hängen die Lint-Grenzen (`PROFILE` in `lint.ts`) und der Schriftfaktor im Autofit (`measure.ts`). `Frame` setzt `prof-*`, `fmt-tall` und `fmt-narrow` am `.slide`; der Block „Formate“ am Ende von `slide.css` stapelt Spalten und setzt Bilder nach oben. Layouts mit `sizes` (Fließtext, Angebot) gelten nur in diesen Formaten, der Stresstest prüft sie dort.
 
 **KI-Werkzeuge** (`src/main/tools.ts`): `buildTools(ctx)` ist die einzige Definition. Sie ist SDK- und Electron-frei, damit die Smoke-Tests sie unter Node laufen lassen können. Drei Wege nutzen sie:
-- `DeckAgent` (`src/main/agent.ts`): Anthropic-API, Tool-Runner, Systemprompt = `src/main/design-guide.md` (per `?raw`) + `buildCatalog()` + Hausstil `~/Deckwerk/hausstil.md`.
+- `DeckAgent` (`src/main/agent.ts`): Anthropic-API, Tool-Runner.
 - `CliAgent` (`src/main/claude-agent.ts`): Chat über `claude -p`, `codex exec` oder `vibe -p` mit dem Login des Nutzers. Ein lokaler HTTP-MCP-Server mit Bearer-Token stellt die Tools bereit; Shell und Dateiwerkzeuge der CLIs sind gesperrt.
+- Prompt: `src/main/guide-modules.ts` zerlegt `design-guide.md` (per `?raw`) und `buildCatalog()` in Module mit festen IDs (neue Überschrift → Eintrag in `HEADINGS`). Systemprompt ist der Kernprompt (~15k Zeichen, bei reinen Video-Aufträgen ~1k); den vollen Prompt (>128 KiB) nie als CLI-Argument übergeben (`spawn E2BIG`). Zum Gesprächsstart wählt `src/main/router.ts` die Module für die erste Nachricht: Haiku 5.5 (API oder `claude -p`), bei Codex und Vibe ihr kleinstes Modell, bei Fehlern `ruleRoute`. Danach lädt die KI per `read_guide` nach. Messlauf: `scripts/router-eval.ts --live [--via=codex|vibe]`.
 - `src/main/mcp.ts`: stdio-MCP-Server für externe Agenten (`electron . --mcp`), zusätzlich `get_deck`/`save_deck`/`open_deck`/`read_guide`. Claude Code kürzt MCP-Anweisungen nach rund 2 KB. Wichtige Regeln gehören deshalb auch in Tool-Beschreibungen und Tool-Ergebnisse.
 
 **Skill** (`skills/deckwerk/SKILL.md`): Arbeitsablauf für Claude Code und Codex. Die Einrichtung (`setup:mcp` in `ipc.ts`) und `scripts/install.sh` legen ihn unter `~/.claude/skills/` bzw. `~/.codex/skills/` ab; „eingerichtet“ gilt nur, wenn er inhaltsgleich ist. Er ist per `asarUnpack` lesbar für den Installer. Ändert sich der Ablauf (Tools, Guide), den Skill mitpflegen.
@@ -64,7 +65,7 @@ Jedes ändernde Tool antwortet mit Autofit und Lint pro Folie; daran korrigiert 
 - Decks liegen unter `~/Deckwerk/<titel>/deck.json`, alte Stände in `versions/`. Bilder liegen in `~/Deckwerk/assets/`.
 - In Tests setzt `DECKWERK_HOME` das Deck-Verzeichnis um.
 - Der Anthropic-Key liegt mit `safeStorage` verschlüsselt im userData.
-- Gemeinsame Einstellungen für App, Entwicklung und MCP-Prozess liegen unter `appData/deckwerk/`, weil sich das userData zwischen diesen Wegen unterscheidet. Dazu gehören `setup-done` und `image-settings.bin` (Bild-KI: Mammouth/OpenAI-Key, Anbieter, Modell).
+- Gemeinsame Einstellungen für App, Entwicklung und MCP-Prozess liegen unter `appData/deckwerk/`, weil sich das userData zwischen diesen Wegen unterscheidet. Dazu gehören `setup-done`, `image-settings.bin` (Bild-KI: Mammouth/OpenAI-Key, Anbieter, Modell) und `phone-asr` (Spracherkennung auf dem Android-Handy per adb, `src/main/phone.ts`; Selbsttest `scripts/check-phone.ts`).
 - Cloud-Sync (`src/main/sync.ts`, Electron-frei, läuft auch in der Android-Engine): WebDAV-Spiegel von `~/Deckwerk` ohne `versions/`, `out/`, `models/`, Punktdateien; Abgleich über `.sync-state.json`, Konflikt → neuere gewinnt, ältere deck.json nach `versions/`. Zugang in `appData/deckwerk/sync.bin`. Selbsttest `scripts/check-sync.ts`.
 - Weitere Schlüssel kommen aus der Umgebung: `UNSPLASH_ACCESS_KEY`, `MAMMOUTH_API_KEY`, `OPENAI_API_KEY`, `IMAGE_MODEL`.
 

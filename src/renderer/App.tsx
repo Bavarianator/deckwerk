@@ -4,8 +4,9 @@ import '@fontsource-variable/inter'
 import './ui/app.css'
 import './ui/shell.css'
 import { FORMATS, profileOf, sizeOf, type Deck, type Size, type PrintOptions, type FormatId, type Item, type Slide } from '../shared/deck'
-import { newId, resizeDeck } from '../shared/items'
+import { connect, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, type LayoutId } from '../shared/layouts'
+import { placeholders } from '../shared/merge'
 import { THEMES } from '../shared/themes'
 import { AUTO, pickAvailable, type ChatModels } from '../shared/models'
 import type { Target } from './ui/AskBar'
@@ -109,7 +110,10 @@ export default function App() {
       else if (e.type === 'tool')
         setMsgs((m) => {
           if (e.status === 'start') return [...m, { kind: 'tool', name: e.name, status: 'start', summary: e.summary }]
-          const i = m.findLastIndex((x) => x.kind === 'tool' && x.name === e.name && x.status === 'start')
+          // der älteste offene Aufruf seit der letzten Nachricht (abgebrochene ältere bleiben auf start): bei parallelen gleichnamigen
+          // Tools (Transkription mehrerer Fenster) bleibt die angezeigte letzte Zeile offen, bis alle fertig sind
+          const from = m.findLastIndex((x) => x.kind === 'user')
+          const i = m.findIndex((x, k) => k > from && x.kind === 'tool' && x.name === e.name && x.status === 'start')
           return i < 0 ? m : m.with(i, { kind: 'tool', name: e.name, status: e.status, summary: e.summary })
         })
       else if (e.type === 'deck') setDoc((d) => ({ deck: e.deck, past: d.deck ? [...d.past, d.deck].slice(-100) : d.past, future: [] }))
@@ -168,7 +172,7 @@ export default function App() {
     commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === i ? { ...s, ...p } : s)) }), tag), [commit])
   // freie Elemente der angezeigten Folie
   const onItems = useCallback((fn: (items: Item[]) => Item[], tag?: string) =>
-    commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === index ? { ...s, items: fn(s.items ?? []) } : s)) }), tag), [commit, index])
+    commit((d) => ({ ...d, slides: d.slides.map((s, j) => (j === index ? { ...s, items: connect(fn(s.items ?? [])) } : s)) }), tag), [commit, index])
   const onEdit = useCallback((slot: string, text: string) => {
     if (slot.startsWith('items.')) {
       const id = slot.slice(6)
@@ -284,13 +288,19 @@ export default function App() {
       const video = format === 'mp4' || format === 'clips'
       if (video && videoBusy.current) throw new Error('Es läuft schon ein Video-Export. Warte, bis er fertig ist.')
       setStatus({ text: video ? 'Video wird gerendert …' : `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
-      const off = video ? api.onExportProgress((pct) => setStatus({ text: `Video wird gerendert … ${pct} %` })) : undefined
+      const phone = video ? await api.phoneStatus().catch(() => null) : null, where = phone?.on && phone.device ? ` auf dem Handy (${phone.device})` : ''
+      const off = video ? api.onExportProgress((pct) => setStatus({ text: `Video wird${where} gerendert … ${pct} %` })) : undefined
       videoBusy.current = video
       try {
         const files = await api.exportDeck(format, print)
         const first = files[0] ?? ''
         setStatus({ text: format === 'clips' && files.length > 1 ? `${files.length} Clips exportiert: ${first.replace(/\/[^/]*$/, '')}` : `Exportiert: ${first}` })
       } finally { off?.(); if (video) videoBusy.current = false }
+    }),
+    onSeries: () => guard(async () => {
+      setStatus({ text: 'Serienbrief: CSV wählen …' })
+      const r = await api.exportSeries('pdf')
+      setStatus(r ? { text: `Serienbrief: ${r.count} PDF in ${r.dir}` } : null)
     }),
   }
 
@@ -416,6 +426,8 @@ export default function App() {
             hasClip={hasClip}
             canPrint={!!deck && profileOf(deck) === 'doc'}
             onPrint={() => setPrinting(true)}
+            canSeries={!!deck && placeholders(deck).length > 0}
+            onSeries={actions.onSeries}
             onPresent={() => present(0)}
             onRestore={actions.onOpenPath}
             onVideo={videoMode ? () => setSlidesView(false) : undefined}

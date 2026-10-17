@@ -1,7 +1,7 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter ähnliche vorhandene Decks, die Formate als Papier (auch Video), Beispiele, „Leer beginnen“,
 // dann Suche und Filter über die zuletzt bearbeiteten Decks (auch per MCP gebaute) und die Vorlagen.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, Image as ImageIcon, Paperclip, Search, Settings, X } from 'lucide-react'
+import { ArrowUp, Award, Clapperboard, FileText, IdCard, Image as ImageIcon, Mail, Newspaper, Paperclip, Presentation, Search, Settings, Smartphone, SquareUser, X, type LucideIcon } from 'lucide-react'
 import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
@@ -59,13 +59,13 @@ const EXAMPLES: [string, string, string?][] = [
 // Video-Chips: Label, Wunsch im Feld, ask geht unsichtbar an die KI (Abläufe: Design-Guide §11)
 export const VIDEO_EXAMPLES: [string, string, string][] = [
   ['5 Shorts', 'Mach aus meinem Video 5 Shorts mit Hook und Untertiteln.',
-    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (ideal 55–75 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, style lebendig, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (ideal 55–75 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, style lebendig, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips. Fehlt ein Video oder Link: erst import_video ohne url (Videos auf diesem PC), sonst kurz danach fragen (Video anhängen oder Link einfügen).'],
   ['Ganzes Video kürzen', 'Kürze mein ganzes Video: Füllsätze, Versprecher und Abschweifungen raus.',
-    'Ablauf Fulltime (Guide §11, Ablauf 2): create_deck format 16:9, transition none. transcribe_video mit all: true über alles, Gestrichenes kurz nennen. Eine einzige clip-Folie mit allen behaltenen Ausschnitten als parts, pauses kurz, captions satz, kein Hook. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+    'Ablauf Fulltime (Guide §11, Ablauf 2): create_deck format 16:9, transition none. transcribe_video mit all: true über alles, Gestrichenes kurz nennen. Eine einzige clip-Folie mit allen behaltenen Ausschnitten als parts, pauses kurz, captions satz, kein Hook. Am Ende export_deck mit mp4. Fehlt ein Video oder Link: erst import_video ohne url (Videos auf diesem PC), sonst kurz danach fragen (Video anhängen oder Link einfügen).'],
   ['Highlights aus dem Stream', 'Finde die besten Momente in meinem Stream und mach daraus Shorts.',
-    'Ablauf Stream-Highlights (Guide §11, Ablauf 3): import_video bei Link, dann zuerst video_highlights. Nur die besten Fenster mit from/to transkribieren, nie den ganzen Stream. 5 Shorts im Format 9:16 wie im Ablauf Shorts; zusätzlich optional ein 16:9-Zusammenschnitt der Highlights. Am Ende export_deck mit clips (Zusammenschnitt: mp4). Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+    'Ablauf Stream-Highlights (Guide §11, Ablauf 3): import_video bei Link, dann zuerst video_highlights. Nur die besten Fenster mit from/to transkribieren, nie den ganzen Stream. 5 Shorts im Format 9:16 wie im Ablauf Shorts; zusätzlich optional ein 16:9-Zusammenschnitt der Highlights mit je einer clip-Folie pro Moment. Am Ende export_deck mit clips (Zusammenschnitt: mp4). Fehlt ein Video oder Link: erst import_video ohne url (Videos auf diesem PC), sonst kurz danach fragen (Video anhängen oder Link einfügen).'],
   ['Zusammenschnitt', 'Schneide meine Videos zu einem Zusammenschnitt zusammen.',
-    'Ablauf Kompilation (Guide §11, Ablauf 4): create_deck format 16:9, transition none. Je Quelle transcribe_video und eine clip-Folie, dazwischen kurze Zwischentitel (Layout section), transition fade nur sparsam an Zwischentiteln. Musik über find_music nur auf Wunsch, dezent. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+    'Ablauf Kompilation (Guide §11, Ablauf 4): create_deck format 16:9, transition none. Je Quelle transcribe_video und eine clip-Folie, dazwischen kurze Zwischentitel (Layout section), transition fade nur sparsam an Zwischentiteln. Musik über find_music nur auf Wunsch, dezent. Am Ende export_deck mit mp4. Fehlt ein Video oder Link: erst import_video ohne url (Videos auf diesem PC), sonst kurz danach fragen (Video anhängen oder Link einfügen).'],
 ]
 const LINK = /https?:\/\/[^\s<>"']+/g
 const linksOf = (text: string) => [...new Set((text.match(LINK) ?? []).map((u) => u.replace(/[.,;:!?)\]]+$/, '')))]
@@ -93,16 +93,16 @@ const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatI
 
 // Format-Regal unter dem Feld: die häufigsten Formate als Papier in ihrer Form (Maße in px), der Rest bleibt im Format-Menü.
 // id = FORMAT_CHOICES-id; „video“ schaltet in den Video-Modus
-const PAPERS: { id: string; name: string; w: number; h: number; mark?: 'img' | 'lines' | 'win' | 'play' }[] = [
-  { id: 'praesentation', name: 'Präsentation', w: 50, h: 28 },
-  { id: 'dokument', name: 'Dokument', w: 28, h: 40, mark: 'lines' },
-  { id: 'brief', name: 'Brief', w: 28, h: 40, mark: 'win' },
-  { id: 'flyer', name: 'Flyer', w: 28, h: 40, mark: 'img' },
-  { id: 'urkunde', name: 'Urkunde', w: 40, h: 28, mark: 'lines' },
-  { id: 'social', name: 'Social-Post', w: 32, h: 40, mark: 'img' },
-  { id: 'story', name: 'Story', w: 23, h: 40, mark: 'img' },
-  { id: 'visitenkarte', name: 'Visitenkarte', w: 22, h: 14 },
-  { id: 'video', name: 'Video', w: 50, h: 28, mark: 'play' },
+const PAPERS: { id: string; name: string; icon: LucideIcon }[] = [
+  { id: 'praesentation', name: 'Präsentation', icon: Presentation },
+  { id: 'dokument', name: 'Dokument', icon: FileText },
+  { id: 'brief', name: 'Brief', icon: Mail },
+  { id: 'flyer', name: 'Flyer', icon: Newspaper },
+  { id: 'urkunde', name: 'Urkunde', icon: Award },
+  { id: 'social', name: 'Social-Post', icon: SquareUser },
+  { id: 'story', name: 'Story', icon: Smartphone },
+  { id: 'visitenkarte', name: 'Visitenkarte', icon: IdCard },
+  { id: 'video', name: 'Video', icon: Clapperboard },
 ]
 const VIDEO_HINT = 'Shorts, gekürzte Fassung, Stream-Highlights oder Zusammenschnitt'
 
@@ -255,14 +255,11 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             ))}
           </div>
         )}
-        <div className="home-papers" role="group" aria-label="Format">
+        <div className="seg home-papers" role="group" aria-label="Format">
           {PAPERS.map((p) => {
             const on = p.id === 'video' ? video : !video && fmt === p.id
             return (
-              <button key={p.id} type="button" className="home-paper" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}>
-                <span><i className="home-sheet" data-mark={p.mark} style={{ width: p.w, height: p.h }} /></span>
-                <b>{p.name}</b>
-              </button>
+              <button key={p.id} type="button" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}><p.icon size={15} strokeWidth={1.75} />{p.name}</button>
             )
           })}
         </div>

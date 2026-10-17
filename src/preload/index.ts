@@ -94,7 +94,7 @@ const api = {
   /** Cache-Daten eines Videos (asset://-URL oder Pfad), rechnet nie; null = kein erlaubtes Video */
   videoCached: (src: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null } | null> => invoke('video:cached', src),
   /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
-  jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean }[]> => invoke('jobs:list'),
+  jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean; where?: string }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
   /** alle erzeugten Dateien (bei 'clips' mehrere) */
   exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
@@ -104,6 +104,8 @@ const api = {
     ipcRenderer.on('export:progress', h)
     return () => void ipcRenderer.off('export:progress', h)
   },
+  /** Serienbrief: CSV per Dialog wählen, je Zeile eine Datei; null = abgebrochen */
+  exportSeries: (format: 'pptx' | 'docx' | 'pdf' | 'png'): Promise<{ dir: string; count: number } | null> => invoke('deck:exportSeries', format),
   /** resolved, wenn der Agent fertig ist; Fortschritt kommt über onEvent */
   send: (text: string, model?: string): Promise<void> => invoke('agent:send', text, model),
   abort: (): Promise<void> => invoke('agent:abort'),
@@ -181,6 +183,9 @@ const api = {
   /** Rechtschreibprüfung (Deutsch/Englisch) an/aus; gilt sofort und bleibt gespeichert */
   spellcheck: (): Promise<boolean> => invoke('spellcheck:get'),
   setSpellcheck: (on: boolean): Promise<void> => invoke('spellcheck:set', on),
+  /** Spracherkennung auf dem Android-Handy (adb): Option und gerade verbundenes Gerät (Modellname) */
+  phoneStatus: (): Promise<{ on: boolean; device: string | null }> => invoke('phone:status'),
+  setPhone: (on: boolean): Promise<void> => invoke('phone:set', on),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
   setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
   setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),

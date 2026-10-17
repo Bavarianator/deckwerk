@@ -73,7 +73,7 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 - Der Chat unten im Editor nimmt Wünsche fürs ganze Deck entgegen. Er weiß immer, welche Folie du gerade ansiehst.
 - Ein Klick auf ein Element der Folie zeigt eine KI-Leiste. Dein Wunsch geht dann mit Folie, Element und Text an die KI.
 - Das Modell wählst du im Dropdown neben dem Eingabefeld. Es bestimmt auch, worüber der Chat läuft:
-  - **Claude:** Opus 5.5 (Standard), Fable 5.1, Sonnet 5 oder Haiku 4.5, über den API-Key oder Claude Code.
+  - **Claude:** Opus (Standard), Fable, Sonnet oder Haiku, jeweils das neueste Modell der Familie, über den API-Key oder Claude Code.
   - **Vibe:** die Modelle aus deiner Vibe-Einstellung.
   - **Codex:** die Modelle aus dessen Katalog.
 

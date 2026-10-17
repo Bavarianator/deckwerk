@@ -33,6 +33,8 @@ interface Props {
   hasClip: boolean // Deck mit Clip-Folie: Video-Export anbieten
   canPrint: boolean // A4-Deck: Eintrag „PDF für die Druckerei“
   onPrint: () => void
+  canSeries: boolean // Deck enthält {{Platzhalter}}
+  onSeries: () => void // Serienbrief aus CSV
   onPresent: () => void
   onRestore: (file: string) => void // Version aus dem Versionsverlauf über den Öffnen-Weg wiederherstellen
   onVideo?: () => void // Video-Deck: zurück in die Video-Ansicht (Deckvid)
@@ -101,6 +103,7 @@ export function TopBar(p: Props) {
               ))}
               <hr />
               {p.canPrint && <button role="menuitem" onClick={() => { setMenu(false); p.onPrint() }}>PDF für die Druckerei …</button>}
+              <button role="menuitem" disabled={!p.canSeries} title={p.canSeries ? 'Je CSV-Zeile ein PDF' : 'Erst {{Spalte}} in die Texte setzen, z. B. {{Name}}'} onClick={() => { setMenu(false); p.onSeries() }}>Serienbrief (CSV) …</button>
               <button role="menuitem" onClick={() => { setMenu(false); p.onFormats() }}>Anderes Format …</button>
               <button role="menuitem" className="versions-entry" disabled={!p.path} title={p.path ? undefined : 'Erst nach dem ersten Speichern'} onClick={() => { setMenu(false); setVersions(true) }}>Versionsverlauf …</button>
             </div>

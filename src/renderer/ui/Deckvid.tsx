@@ -1,12 +1,12 @@
 // Deckvid: Arbeitsansicht für Video-Decks (Folien im Layout clip). Fast alles läuft über die KI (Chat und Ein-Klick-Aufträge);
 // von Hand gibt es nur, was einfacher ist als ein Satz: abspielen, Feinschnitt, Entfernen, Export.
 import { Fragment, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, Settings, Share, Square, Undo2 } from 'lucide-react'
+import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, RotateCcw, RotateCw, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent } from '../../shared/video'
+import { CLIP_STYLES, DUCK, FX, STILL, cutFrames, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent } from '../../shared/video'
 import { loadFonts } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -64,10 +64,12 @@ function useKey(fn: (e: KeyboardEvent) => void) {
     return () => removeEventListener('keydown', h)
   }, [])
 }
-// Tasten der Ansicht nicht beim Tippen, nicht mit Modifikator und nicht, solange ein Dialog, Menü oder Dropdown offen ist (Feinschnitt fängt seine Tasten selbst ab)
-const keysFree = (e: KeyboardEvent) => {
+// Tasten der Ansicht nicht beim Tippen, nicht mit Modifikator und nicht, solange ein Dialog, Menü oder Dropdown offen ist (Feinschnitt fängt seine Tasten selbst ab).
+// emptyAsk: auch im leeren Chatfeld, dort steht der Cursor nach dem Senden (nur für die Leertaste, Buchstaben wären Text)
+const keysFree = (e: KeyboardEvent, emptyAsk = false) => {
   const t = e.target as HTMLElement
-  return !(e.ctrlKey || e.metaKey || e.altKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.closest('[role=menu], [role=listbox]')
+  const typing = t.isContentEditable || (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !(emptyAsk && t.matches('.dv-ask input') && !(t as HTMLInputElement).value))
+  return !(e.ctrlKey || e.metaKey || e.altKey || typing || t.closest('[role=menu], [role=listbox]')
     || document.querySelector('[aria-modal="true"], dialog[open], .kit-menu, [role=menu]'))
 }
 
@@ -358,10 +360,28 @@ interface StageProps {
 // Vorschau mit Detailspalte, Aufträge und Quell-Zeitleiste des gewählten Clips (Bereiche main und line im Grid). key = Folien-ID: ein anderer Clip startet frisch.
 function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, issues, fresh, busy, onSend, undo, onCut, onRemove, onContent }: StageProps) {
   const c = clip.content
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const player = useClipPlayer(videoRef, c.parts)
+  const videoRef = useRef<HTMLVideoElement>(null), fadeRef = useRef<HTMLCanvasElement>(null), musicRef = useRef<HTMLAudioElement>(null)
+  // Überblendung wie im Export (cutFrames: Jump-Cut kurz, neuer Moment länger): das letzte Bild vor dem Schnitt liegt über dem neuen und blendet aus
+  const dissolve = (gap: number) => {
+    const v = videoRef.current, cv = fadeRef.current
+    if (!v || !cv || !v.videoWidth) return
+    const st = getComputedStyle(v)
+    Object.assign(cv.style, { objectFit: st.objectFit, objectPosition: st.objectPosition, transform: st.transform })
+    cv.width = v.videoWidth; cv.height = v.videoHeight
+    cv.getContext('2d')?.drawImage(v, 0, 0)
+    cv.getAnimations().forEach((a) => a.cancel())
+    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: (cutFrames(gap) / 30) * 1000 })
+  }
+  const player = useClipPlayer(videoRef, c.parts, dissolve)
   const [bad, setBad] = useState(false) // Chromium spielt die Quelle nicht (HEVC, ProRes …)
-  useKey((e) => { if (e.key === ' ' && !e.repeat && keysFree(e) && !(e.target as Element).closest('button')) { e.preventDefault(); player.toggle() } })
+  const jump = (d: number) => player.seekClip(Math.max(0, Math.min(player.duration - 0.05, player.t + d)))
+  // Leertaste/K: Pause und Weiter, J/L: 10 s zurück/vor wie bei YouTube (←/→ wechseln den Clip)
+  useKey((e) => {
+    const k = e.key.toLowerCase()
+    if (e.repeat || (k === ' ' && (e.target as Element).closest('button'))) return // Leertaste auf einem Knopf löst ihn selbst aus
+    if (k === ' ' ? keysFree(e, true) : k === 'k' && keysFree(e)) { e.preventDefault(); player.toggle() }
+    else if ((k === 'j' || k === 'l') && keysFree(e)) { e.preventDefault(); jump(k === 'j' ? -10 : 10) }
+  })
 
   const mode = c.captions ?? 'wort' // Standard wie im Export
   // wie im Export: bei pauses kurz fallen Füllwörter weg, geschätzte Wortzeiten verteilen sich dann ohne sie
@@ -371,6 +391,42 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     return clipWords(t, c.parts, c.pauses === 'kurz' ? c.parts.flatMap((x) => fillerQuiet(t, x.start, x.end)) : [])
   }, [cached, c, mode])
   const cap = words && mode !== 'aus' ? captionAt(words, player.t, mode) : null
+  // Hintergrundmusik wie im MP4 (finish in export-video.ts, Werte aus DUCK): Schleife über das ganze Video ab der Zeit der Folien davor (Standbilder STILL),
+  // Ein-/Ausblende, Ducking per Sidechain auf dem echten Ton des Videos. ponytail: Pegel ohne loudnorm und ohne Ton „klar“; das Verhältnis Sprache/Musik stimmt
+  const music = deck?.music?.src ? clipUrl(deck.music.src) : null, vol = Math.min(1, Math.max(0, deck?.music?.volume ?? DUCK.volume))
+  const [before, videoLen] = useMemo(() => {
+    const vis = (deck?.slides ?? []).filter((s) => !s.hidden), k = vis.findIndex((s) => s.id === clip.id)
+    const len = (x: Slide) => (isClip(x) ? partsLength(x.content.parts) : STILL)
+    return [vis.slice(0, Math.max(0, k)).reduce((s, x) => s + len(x), 0), vis.reduce((s, x) => s + len(x), 0)]
+  }, [deck, clip.id])
+  const mix = useRef<{ ctx: AudioContext; an: AnalyserNode; gain: GainNode; buf: Float32Array<ArrayBuffer>; env: number; at: number; el?: HTMLAudioElement } | null>(null)
+  useEffect(() => {
+    const a = musicRef.current, v = videoRef.current
+    if (!a || !v) return
+    if (!mix.current) { // einmal je Clip: ein Medienelement lässt sich nur einmal an Web Audio hängen (crossOrigin, sonst käme nur Stille an)
+      const ctx = new AudioContext(), an = ctx.createAnalyser(), gain = ctx.createGain()
+      an.fftSize = 1024
+      ctx.createMediaElementSource(v).connect(an).connect(ctx.destination)
+      gain.connect(ctx.destination)
+      mix.current = { ctx, an, gain, buf: new Float32Array(an.fftSize), env: 0, at: 0 }
+    }
+    const m = mix.current
+    if (m.el !== a) { m.ctx.createMediaElementSource(a).connect(m.gain); m.el = a } // andere Musik = neues <audio> (key)
+    if (!player.playing) { a.pause(); m.at = 0; return }
+    void m.ctx.resume()
+    const pos = before + player.t, want = pos % (a.duration || Infinity)
+    if (a.paused || Math.abs(a.currentTime - want) > 0.5) a.currentTime = want
+    // wie sidechaincompress: Sprachpegel (RMS) mit Attack/Release geglättet, über der Schwelle im Verhältnis ratio leiser
+    m.an.getFloatTimeDomainData(m.buf)
+    const rms = Math.sqrt(m.buf.reduce((s, x) => s + x * x, 0) / m.buf.length), now = performance.now(), dt = m.at ? (now - m.at) / 1000 : 0
+    m.at = now
+    m.env += (rms - m.env) * (1 - Math.exp(-dt / ((rms > m.env ? DUCK.attackMs : DUCK.releaseMs) / 1000)))
+    const duck = m.env > DUCK.threshold ? (m.env / DUCK.threshold) ** (1 / DUCK.ratio - 1) : 1
+    const fade = Math.min(1, pos / DUCK.fadeIn, Math.max(0, (videoLen - pos) / DUCK.fadeOut))
+    m.gain.gain.setTargetAtTime(vol * duck * fade, m.ctx.currentTime, 0.01)
+    if (a.paused) void a.play().catch(() => {})
+  }, [player.playing, player.t, before, videoLen, vol, music])
+  useEffect(() => () => { void mix.current?.ctx.close() }, [])
   const curve = useMemo(() => cached?.signals?.loud.length ? loudCurve(cached.signals.loud) : undefined, [cached])
 
   const wide = size.w > size.h, m = Math.min(size.w, size.h)
@@ -391,7 +447,8 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     '--dv-sub': `${cq((m * (mode === 'satz' ? 0.055 : wide ? 0.065 : 0.075)) / face.win)}cqw`,
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
-    ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar, '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) }),
+    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part)), !!deck && isCompilation(deck)),
+    ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar }),
   } as CSSProperties
   const focus = c.parts.find((x) => player.src >= x.start && player.src < x.end)?.focus ?? c.parts[0].focus
   const to = cached?.duration || Math.max(...parts.map((x) => x.end))
@@ -431,15 +488,22 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                   {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
                   {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
                   {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
+                  <canvas ref={fadeRef} className="dv-fade" aria-hidden />
+                  {!player.playing && !bad && <span className="dv-play" aria-hidden><Play size={26} fill="currentColor" /></span>}
                   {bad && <p className="dv-bad">Die Vorschau kann dieses Video nicht abspielen (etwa HEVC oder ProRes). Exportieren geht trotzdem.</p>}
                 </ClipVideo>
               </div>
             </div>
             <div className="dv-transport">
+              <button className="plain" aria-label="10 s zurück (J)" title="10 s zurück (J)" onClick={() => jump(-10)}><RotateCcw size={16} /></button>
               <button className="round" aria-label={player.playing ? 'Pause (Leertaste)' : 'Abspielen (Leertaste)'} onClick={player.toggle}>
                 {player.playing ? <Pause size={15} fill="currentColor" /> : <Play size={15} fill="currentColor" />}
               </button>
+              <button className="plain" aria-label="10 s vor (L)" title="10 s vor (L)" onClick={() => jump(10)}><RotateCw size={16} /></button>
+              <input type="range" className="dv-seek" aria-label="Position im Clip" min={0} max={player.duration} step={0.1} value={Math.min(player.t, player.duration)} onChange={(e) => player.seekClip(+e.currentTarget.value)}
+                onPointerUp={(e) => e.currentTarget.blur()} /* danach greifen Leertaste, J, K, L wieder */ />
               <span>{mmss(player.t)} / {mmss(player.duration)}</span>
+              {music && <audio key={music} ref={musicRef} src={music} crossOrigin="anonymous" loop preload="auto" />}
               {mode !== 'aus' && cached && !cached.transcript && <span className="dv-note">Untertitel erscheinen, sobald die KI das Video abgehört hat.</span>}
             </div>
           </div>

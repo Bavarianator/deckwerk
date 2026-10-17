@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
-// KI-Agent: Tool-Runner-Loop (claude-opus-5, adaptive thinking, Streaming), Systemprompt aus
-// design-guide.md + Layout-Katalog (+ Thumbnails), Events an die UI. Läuft im Main-Prozess, der Key bleibt dort.
+// KI-Agent: Tool-Runner-Loop (claude-opus-5, adaptive thinking, Streaming), Systemprompt = Kernprompt (guide-modules.ts),
+// Module des Routers und Vorschaubilder ihrer Layouts in der ersten Nachricht, Events an die UI. Läuft im Main-Prozess, der Key bleibt dort.
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod'
 import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
@@ -10,8 +10,8 @@ import type { Part, Transcript, VideoInfo } from '../shared/video'
 import type { Highlight, Signals } from '../shared/highlights'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import { DEFAULT_MODEL, modelOf, type Effort } from '../shared/models'
-import guide from './design-guide.md?raw'
-import { buildCatalog, buildTools, houseStyle, mimeOf, recentLooks, type ToolDef, type ToolOutput } from './tools'
+import { corePrompt, leitfaden, type Route } from './guide-modules'
+import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
 export type ExportFormat = 'pptx' | 'docx' | 'pdf' | 'png' | 'md' | 'zip' | 'print' | 'mp4' | 'clips' // docx = Word, Text bearbeitbar auf Hintergrundbild; zip = PNG je Folie + PDF in einer Datei (Social-Karussell); print = PDF für die Druckerei (PrintOptions in deck.ts); mp4 = ganzes Deck als Video, clips = je Clip-Folie eine MP4 (export-video.ts)
@@ -29,6 +29,8 @@ export interface VideoTools {
   probe(file: string): Promise<VideoInfo>
   frames(file: string, times: number[]): Promise<Buffer[]> // JPEG je Zeitpunkt (s), 640 px breit
   transcribe(file: string, onProgress?: (pct: number) => void, o?: { range?: { from: number; to: number }; lang?: string; speakers?: boolean }): Promise<Transcript> // lokal: Parakeet (sherpa-onnx), Whisper nur für Sprachen außerhalb von Parakeet; in 5-min-Stücken gecacht; range = nur diesen Bereich (s), speakers = Sprechertrennung
+  device?(task?: 'export'): Promise<string> // wer rechnet; export: nach einem Ausstieg des Handys im laufenden Export „PC (Handy-Export gescheitert: …)“ (Handy-Option): „Handy (Modell, CPU)“ oder „PC (Grund)“, für export_deck und die Arbeitsansicht
+  asrDevice?(lang?: string): Promise<string> // wie device, Whisper aber immer auf dem PC: wer neue Stücke von transcribe_video erkennt
   highlights?(file: string, onProgress?: (pct: number) => void): Promise<Highlight[]> // Streams/lange Videos: stärkste Momente aus Lautheit, Chat, Ereignissen, Heatmap
   musicIn?(file: string, parts: Part[]): Promise<number[]> // Musik im Hintergrund je Quellsekunde 0..1, getaggt nur in den Sekunden der parts (Rest 0); Fehler → []
   cached?(file: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null }> // nur Cache lesen, nie rechnen; Fehler → null-Felder
@@ -52,34 +54,23 @@ export interface DeckAgentOptions {
   deck?: Deck
   assetDir?: string
   outDir?: string
-  thumbnails?: boolean // Katalog-Vorschaubilder in den ersten Turn (default true)
+  thumbnails?: boolean // Vorschaubilder der vom Router gewählten Layouts in den ersten Turn (default true)
   model?: string
   unsplashKey?: string // default UNSPLASH_ACCESS_KEY
 }
 
-const WORKFLOW = `## Arbeitsablauf
-1. Höchstens 2–3 Rückfragen (mit ask_user, falls vorhanden), sonst sinnvolle Defaults annehmen.
-2. Erst die Leitidee in einem Satz (Guide §2 „Die Idee“: Bild für das Ganze, Haken, ein mutiger Höhepunkt), dann die Storyline als Liste der Titel (Datenfolien als Aussage-Satz, Bühnenfolien kurz) (mit plan_storyline, falls vorhanden, sonst im Chat), dann create_deck und add_slides in Batches.
-3. QA-Schleife (max. 3 Runden): Fehler aus den Tool-Rückmeldungen und lint_deck beheben → render_overview kritisch prüfen (Rhythmus, Dichte, Konsistenz) → nachbessern.
-4. Animationen prüfen (ein Übergangstyp, maximal ein Build pro Folie, keine Animation auf Titeln), Speaker Notes ergänzen.
-5. Kurze Zusammenfassung; exportieren nur, wenn der Nutzer es wünscht.
-Antworte auf Deutsch, knapp.`
-
-export function buildSystemPrompt(): string {
-  const style = houseStyle(), recent = recentLooks()
-  return [guide.trim(), buildCatalog(), WORKFLOW, ...(style ? [`## Hausstil des Nutzers (gilt für jedes Deck, hat Vorrang vor dem Design-Guide)\n${style}`] : []),
-    ...(recent.length ? [`## Zuletzt gebaute Decks (nur für neue Decks: im Typ nicht wiederholen, Design-Guide §6 „Abwechslung“; bestehende Decks behalten ihr Design)\n${recent.map(({ title, typ: t }) => `- „${title}“: ${t.hell}, ${t.schrift}-Titel ${t.gewicht} (${t.font}), Grund ${t.grund}, Bauteile ${t.bauteile}, Akzent ${t.akzent}`).join('\n')}`] : [])].join('\n\n')
-}
+export { corePrompt } from './guide-modules'
 
 const img = (buf: Buffer): BetaContentBlockParam => ({ type: 'image', source: { type: 'base64', media_type: mimeOf(buf), data: buf.toString('base64') } })
 
-// Ein Beispiel-Deck (typ-Sample pro Layout) rendern → Bilder für den ersten User-Turn. Stabil → cachebar.
-async function catalogThumbnails(engine: Engine): Promise<BetaContentBlockParam[]> {
+// Beispiel-Deck (typ-Sample) der Layouts unter den Modulen (layout:<id>) rendern → Bilder für den ersten User-Turn
+export async function catalogThumbnails(engine: Engine, modules: string[]): Promise<BetaContentBlockParam[]> {
+  const want = modules.filter((m) => m.startsWith('layout:') && Object.hasOwn(LAYOUTS, m.slice(7))).map((m) => m.slice(7) as LayoutId)
   // Layouts mit sizes (A4-Dokumente, Flyer) im eigenen Format zeigen, sonst sieht die KI sie in 16:9; ein Deck je Format
   const fmt = (id: LayoutId): FormatId => (LAYOUTS[id] as { sizes?: FormatId[] }).sizes?.[0] ?? '16:9'
   const pngs = new Map<LayoutId, Buffer>()
-  for (const f of new Set(LAYOUT_IDS.map(fmt))) {
-    const ids = LAYOUT_IDS.filter((id) => fmt(id) === f)
+  for (const f of new Set(want.map(fmt))) {
+    const ids = want.filter((id) => fmt(id) === f)
     const deck: Deck = {
       title: 'Katalog', theme: { id: 'beratung' }, transition: 'none', mode: 'click', size: { w: FORMATS[f].w, h: FORMATS[f].h },
       slides: ids.map((id) => ({ id: `cat-${id}`, layout: id, content: LAYOUTS[id].samples.typ })),
@@ -87,8 +78,24 @@ async function catalogThumbnails(engine: Engine): Promise<BetaContentBlockParam[
     const out = await engine.renderPng(deck, ids.map((_, i) => i), 512)
     ids.forEach((id, i) => pngs.set(id, out[i]))
   }
-  return LAYOUT_IDS.flatMap((id) => [{ type: 'text', text: `Layout ${id}:` } as BetaContentBlockParam, img(pngs.get(id)!)])
+  return want.flatMap((id) => [{ type: 'text', text: `Layout ${id}:` } as BetaContentBlockParam, img(pngs.get(id)!)])
 }
+
+// Erste Nachricht: die vom Router gewählten Module und Vorschaubilder ihrer Layouts vor dem Nutzertext. Der ganze erste Turn
+// bleibt danach unverändert (append-only) → zweiter Cache-Breakpoint an seinem Ende. Ohne Route: Index im Kernprompt + read_guide.
+export function firstTurn(text: string, route: Route | undefined, thumbs: BetaContentBlockParam[]): BetaMessageParam {
+  const lead = leitfaden(route)
+  const blocks = [
+    ...(lead ? [{ type: 'text', text: lead }] : []),
+    ...(thumbs.length ? [...thumbs, { type: 'text', text: 'Vorschau der gewählten Layouts (typische Füllung, Theme beratung). Zeigt nur die Anordnung; Farbe, Schrift und Struktur kommen aus deinem eigenen Design. Nicht kommentieren.' }] : []),
+  ] as BetaContentBlockParam[]
+  if (!blocks.length) return { role: 'user', content: text }
+  return { role: 'user', content: [...blocks, { type: 'text', text, cache_control: { type: 'ephemeral' } }] }
+}
+
+// Kurztext eines Tool-Ergebnisses für Menschen: ohne die Bitte an die KI, es erneut aufzurufen, asset://-URLs als Dateiname
+export const summaryOf = (text: string) =>
+  text.split('\n')[0].replace(/\s*Rufe dasselbe Tool.*$/, '').replace(/asset:\/\/local\/\S*\/([^/\s]+)/g, (_, f: string) => decodeURIComponent(f)).slice(0, 120)
 
 // Tool-Status-Chips für die UI (auch für den Chat über Claude Code, claude-agent.ts)
 export function withEvents(t: ToolDef, emit: (e: AgentEvent) => void): ToolDef {
@@ -103,7 +110,7 @@ export function withEvents(t: ToolDef, emit: (e: AgentEvent) => void): ToolDef {
         emit({ type: 'tool', name: t.name, status: 'error', summary: (e as Error).message.split('\n')[0] })
         throw e
       }
-      emit({ type: 'tool', name: t.name, status: 'done', summary: out.text.split('\n')[0].slice(0, 120) })
+      emit({ type: 'tool', name: t.name, status: 'done', summary: summaryOf(out.text) })
       return out
     },
   }
@@ -133,9 +140,8 @@ export class DeckAgent {
   private history: BetaMessageParam[] = []
   private client: Anthropic
   private tools
-  private system = buildSystemPrompt()
+  system = corePrompt() // pro Gespräch fest → Prompt-Caching; reiner Video-Auftrag: schlanker Kernprompt ab der ersten Nachricht
   private ctl: AbortController | null = null
-  private thumbs: Promise<BetaContentBlockParam[]> | null = null
   private lock = { tail: Promise.resolve() as Promise<unknown> } // Deck-Tools nacheinander (toRunnable)
 
   constructor(private opts: DeckAgentOptions) {
@@ -155,35 +161,56 @@ export class DeckAgent {
     }).map((t) => toRunnable(t, opts.onEvent, this.lock))
   }
 
-  // Tool-Loop bis end_turn; History bleibt im Speicher.
-  async send(userText: string): Promise<void> {
+  // Neuestes Modell der Familie laut Models-API (Liste einmal je Gespräch), sonst der bekannte Stand
+  private models?: Promise<{ id: string; created_at: string }[]>
+  private async resolve(m: ReturnType<typeof modelOf>): Promise<string> {
+    this.models ??= (async () => {
+      const all = []
+      for await (const x of this.client.models.list({}, { timeout: 10_000 })) all.push(x)
+      return all
+    })().catch((e) => { console.warn('[agent] Modell-Liste nicht geladen:', (e as Error).message); return [] })
+    const newest = (await this.models).filter((x) => x.id.startsWith(`claude-${m.id}-`)).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+    return newest?.id ?? m.latest
+  }
+
+  // Noch keine Nachricht gesendet: dann soll der Aufrufer den Router fragen
+  get fresh(): boolean { return !this.history.length }
+
+  // Tool-Loop bis end_turn; History bleibt im Speicher. route zählt nur in der ersten Nachricht, danach lädt die KI per read_guide nach.
+  async send(userText: string, route?: Route): Promise<void> {
     const emit = this.opts.onEvent
-    if (!this.history.length) this.history.push(...(await this.firstTurnPrefix()))
-    this.history.push({ role: 'user', content: userText })
+    if (!this.fresh) this.history.push({ role: 'user', content: userText })
+    else {
+      const thumbs = route && this.opts.thumbnails !== false
+        ? await catalogThumbnails(this.opts.engine, route.modules).catch((e) => { console.warn('[agent] Vorschaubilder übersprungen:', (e as Error).message); return [] })
+        : []
+      if (route?.video) this.system = corePrompt(true)
+      this.history.push(firstTurn(userText, route, thumbs))
+    }
     this.ctl = new AbortController()
 
     const m = modelOf(this.model)
+    let model = await this.resolve(m)
     for (let attempt = 0; ; attempt++) {
       const runner = this.client.beta.messages.toolRunner(
         {
-          model: m.id,
+          model,
           max_tokens: 64000,
           stream: true,
           max_iterations: 80,
           betas: [...('fallback' in m ? ['server-side-fallback-2026-07-01'] : []), ...('updates' in m ? ['thinking-display-updates-2026-08-18'] : [])],
           ...('fallback' in m && { fallbacks: 'default' as const }),
-          // Opus 5.5 hat effort-Default medium, deshalb explizit setzen; Haiku 4.5 kennt weder adaptive noch effort
-          ...('legacyThinking' in m
-            ? { thinking: { type: 'enabled' as const, budget_tokens: 16000 } }
-            : { thinking: { type: 'adaptive' as const, ...('updates' in m && { display: 'updates' as const }) }, output_config: { effort: this.effort } }),
+          // Opus 5.5 und Haiku 5.5 haben effort-Default medium, deshalb explizit setzen
+          thinking: { type: 'adaptive' as const, ...('updates' in m && { display: 'updates' as const }) },
+          output_config: { effort: this.effort },
           system: [{ type: 'text', text: this.system, cache_control: { type: 'ephemeral' } }],
           // Web-Recherche (Canva „Web Research“) läuft serverseitig; Haiku bekommt nur die Basis-Suche
-          tools: [...this.tools, ...('legacyThinking' in m
+          tools: [...this.tools, ...('basicSearch' in m
             ? [{ type: 'web_search_20250305' as const, name: 'web_search' as const, max_uses: 5 }]
             : [{ type: 'web_search_20260209' as const, name: 'web_search' as const, max_uses: 5 }, { type: 'web_fetch_20260209' as const, name: 'web_fetch' as const, max_uses: 5 }])],
           messages: this.history,
         },
-        { signal: this.ctl.signal },
+        { signal: (this.ctl ??= new AbortController()).signal }, // finally leert ctl auch vor einem neuen Versuch
       )
       try {
         let last: Anthropic.Beta.BetaMessage | undefined
@@ -208,6 +235,9 @@ export class DeckAgent {
         return
       } catch (e) {
         if (e instanceof Anthropic.APIUserAbortError) { this.history = [...runner.params.messages]; emit({ type: 'done' }); return }
+        // ponytail: lehnt ein neueres Modell der Familie unsere Parameter ab (400), einmal mit dem bekannten Stand; bei
+        // Bedarf latest in MODELS nachziehen. Lief vorher schon ein Tool, läuft es erneut.
+        if (e instanceof Anthropic.BadRequestError && model !== m.latest && attempt < 1) { console.warn(`[agent] ${model} lehnt ab, nehme ${m.latest}:`, e.message); model = m.latest; continue }
         // eager_input_streaming: unparsbares Tool-JSON → Turn einmal neu anfordern (History ist unverändert)
         if (!(e instanceof Anthropic.APIError) && attempt < 1) continue
         emit({ type: 'error', message: e instanceof Error ? e.message : String(e) })
@@ -223,13 +253,4 @@ export class DeckAgent {
 
   // Deck aus der UI übernehmen (Text direkt bearbeitet, Undo) – die KI arbeitet danach mit diesem Stand.
   setDeck(deck: Deck): void { this.deck = deck }
-
-  private async firstTurnPrefix(): Promise<BetaMessageParam[]> {
-    if (this.opts.thumbnails === false) return []
-    this.thumbs ??= catalogThumbnails(this.opts.engine).catch((e) => { console.warn('[agent] Thumbnails übersprungen:', (e as Error).message); return [] })
-    const blocks = await this.thumbs
-    if (!blocks.length) return []
-    const tail = { type: 'text', text: 'Vorschau der Layouts (typische Füllung, Theme beratung). Zeigt nur die Anordnung; Farbe, Schrift und Struktur kommen aus deinem eigenen Design. Nicht kommentieren.', cache_control: { type: 'ephemeral' } } as BetaContentBlockParam
-    return [{ role: 'user', content: [...blocks, tail] }]
-  }
 }
