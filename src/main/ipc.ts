@@ -20,6 +20,7 @@ import { parseCsv } from '../shared/merge'
 import { assetUrl, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, mimeOf, NO_IMAGE_AI, saveBrand, exportSeries, type Orientation } from './tools'
 import { activeClient, brandFile, dataDir, listClients, setClient, styleFile } from './clients'
 import { readXlsxRange } from './xlsx-link'
+import { brandFromPotx } from './potx'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { phoneDevice, phoneMarker } from './phone'
@@ -461,6 +462,12 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
   ipcMain.handle('brand:get', () => defaultBrand() ?? null)
   ipcMain.handle('brand:set', (_e, b: BrandKit) => saveBrand(b))
+  // Deckwerk Pro: Firmenvorlage → Brand-Kit-Vorschlag; gespeichert wird erst nach der Übernahme in den Einstellungen
+  ipcMain.handle('brand:potx', async () => {
+    const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'PowerPoint-Vorlage', extensions: ['potx', 'pptx', 'thmx'] }] })
+    const file = r.filePaths[0]
+    return r.canceled || !file ? null : brandFromPotx(file)
+  })
   // Pfade des aktiven Kunden (clients.ts): Lesen fällt bei kaputtem Marker auf leer zurück, Schreiben meldet den Fehler
   ipcMain.handle('brand:clear', () => rm(brandFile(), { force: true }))
   ipcMain.handle('style:get', async () => { try { return await readFile(styleFile(), 'utf8') } catch { return '' } })

@@ -172,6 +172,8 @@ const api = {
   /** Brand-Kit des Nutzers (~/Deckwerk/brand.json), das jedes neue Deck per KI bekommt; null = keines gespeichert */
   getBrand: (): Promise<BrandKit | null> => invoke('brand:get'),
   setBrand: (b: BrandKit): Promise<void> => invoke('brand:set', b),
+  /** Deckwerk Pro: Firmenvorlage (.potx/.pptx/.thmx) wählen → Brand-Kit-Vorschlag (nicht gespeichert) und übersprungene Schriften; null = abgebrochen */
+  brandFromPotx: (): Promise<{ kit: BrandKit; skipped: string[] } | null> => invoke('brand:potx'),
   /** Standard-Brand-Kit löschen (brand.json); bestehende Decks behalten ihres */
   clearBrand: (): Promise<void> => invoke('brand:clear'),
   /** Deckwerk Pro: Kunden mit eigenem Brand-Kit und Hausstil; active = null heißt eigene Marke */

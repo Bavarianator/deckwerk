@@ -25,6 +25,20 @@ export function MarkeSection(_: SectionProps) {
     await run('brand', async () => { await window.api.clearBrand(); setKit(null) })
   }
 
+  const [skipped, setSkipped] = useState<string[]>([])
+  const fromPotx = () => run('brand', async () => {
+    const r = await window.api.brandFromPotx()
+    if (!r) return
+    // Logo, dunkles Logo und Lock bleiben; Schriften, die die Vorlage nicht setzt, ebenso
+    const base: BrandKit = kit ?? { primary: r.kit.primary }
+    const next: BrandKit = { ...base, ...r.kit }
+    setSkipped(r.skipped)
+    clearTimeout(timer.current)
+    pending.current = null
+    setKit(next)
+    await window.api.setBrand(next)
+  })
+
   const [haus, setHaus] = useState({ text: '', saved: '' })
   // Änderungen aus dem externen Editor übernehmen, solange hier nichts Ungespeichertes steht
   useEffect(() => {
@@ -97,6 +111,9 @@ export function MarkeSection(_: SectionProps) {
       )}
       {kit === undefined ? <p><Spin /> Wird geladen …</p> : kit === null ? (
         <Group label="Brand-Kit">
+          <Row title="Firmenvorlage" action={<button type="button" className="pill" disabled={!!busy} onClick={() => void fromPotx()}>{busy === 'brand' ? <><Spin />Lese …</> : 'Aus PowerPoint-Vorlage …'}</button>}>
+  {skipped.length ? <span className="error">Übersprungene Schriften (nicht im Katalog): {skipped.join(', ')}.</span> : 'Übernimmt Akzentfarben und Schriften aus einer .potx, .pptx oder .thmx. Das Logo bleibt.'}
+</Row>
           <Row ok={false} title="Noch kein Standard" action={<button className="pill tint" disabled={!!busy} onClick={() => save({ primary: '#4F52D9' })}>Mit Akzentfarbe anlegen</button>}>
             Im Look eines Decks legt „Als Standard speichern“ eins an. Oder fang hier mit einer Farbe an.
           </Row>
@@ -104,6 +121,9 @@ export function MarkeSection(_: SectionProps) {
       ) : (
         <>
           <Group label="Brand-Kit">
+            <Row title="Firmenvorlage" action={<button type="button" className="pill" disabled={!!busy} onClick={() => void fromPotx()}>{busy === 'brand' ? <><Spin />Lese …</> : 'Aus PowerPoint-Vorlage …'}</button>}>
+  {skipped.length ? <span className="error">Übersprungene Schriften (nicht im Katalog): {skipped.join(', ')}.</span> : 'Übernimmt Akzentfarben und Schriften aus einer .potx, .pptx oder .thmx. Das Logo bleibt.'}
+</Row>
             <Row title="Farben" action={<>
               <label className="swatch" style={{ background: kit.primary }} title="Primärfarbe">
                 <input type="color" aria-label="Primärfarbe" value={kit.primary} onChange={(e) => save({ ...kit, primary: e.target.value.toUpperCase() }, 400)} />
@@ -126,6 +146,9 @@ export function MarkeSection(_: SectionProps) {
             <Row title="Schriften">
               {`Überschriften: ${kit.headFont ?? 'wie im Theme'}. Text: ${kit.bodyFont ?? 'wie im Theme'}. Schriften wählst du im Look eines Decks.`}
             </Row>
+            <Row title="Marke sperren (Brand-Lock)" action={
+              <input type="checkbox" aria-label="Marke sperren (Brand-Lock)" checked={!!kit.lock} disabled={!!busy} onChange={(e) => save({ ...kit, lock: e.target.checked || undefined })} />
+            }>Die KI darf Farben, Schriften und Logo nicht ändern; Abweichungen zeigt die Prüfung als Fehler.</Row>
           </Group>
           <button type="button" className="plain" disabled={!!busy} onClick={() => void clear()}>Standard löschen</button>
         </>
