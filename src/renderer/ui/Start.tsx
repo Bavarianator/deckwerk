@@ -1,7 +1,8 @@
-// Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“, die zuletzt bearbeiteten Decks (auch per MCP gebaute) und Vorlagen.
-import { useEffect, useRef, useState } from 'react'
-import { ArrowUp, Image as ImageIcon, Paperclip, Settings, X } from 'lucide-react'
-import { FORMATS, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
+// Startbildschirm: eine Frage, ein Feld. Darunter ähnliche vorhandene Decks, die Formate als Papier (auch Video), Beispiele, „Leer beginnen“,
+// dann Suche und Filter über die zuletzt bearbeiteten Decks (auch per MCP gebaute) und die Vorlagen.
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowUp, Image as ImageIcon, Paperclip, Search, Settings, X } from 'lucide-react'
+import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Select } from './kit'
@@ -32,6 +33,18 @@ export function useSource() {
   }
   return { srcs, attach, remove: (name: string) => setSrcs((old) => old.filter((o) => o.name !== name)), clear: () => setSrcs([]), err }
 }
+// Datei-Chips der KI-Leisten (AskBar, Deckvid) samt Lesefehler
+export function SourceChips({ srcs, remove, err }: { srcs: Source[]; remove: (name: string) => void; err: string }) {
+  return <>
+    {srcs.map((s) => (
+      <span key={s.name} className="cap-token file" title={s.cut ? `${s.name} (zu lang, die KI bekommt den Anfang)` : s.name}>
+        {isImage(s.name) ? <ImageIcon size={11} /> : <Paperclip size={11} />}<span>{s.name}</span>
+        <button type="button" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={11} strokeWidth={2.6} /></button>
+      </span>
+    ))}
+    {err && <span className="cap-token error" role="alert" title={err}>{err}</span>}
+  </>
+}
 
 interface Recent { path: string; title: string; mtime: number; deck: Deck }
 
@@ -43,15 +56,69 @@ const EXAMPLES: [string, string, string?][] = [
   ['Flyer für ein Sommerfest', 'Gestalte einen Flyer (A4) für unser Sommerfest am 12. Juli ab 15 Uhr im Innenhof: Musik, Grill, Kinderprogramm – Anmeldung über unsere Webseite', 'flyer'],
 ]
 
+// Video-Chips: Label, Wunsch im Feld, ask geht unsichtbar an die KI (Abläufe: Design-Guide §11)
+export const VIDEO_EXAMPLES: [string, string, string][] = [
+  ['5 Shorts', 'Mach aus meinem Video 5 Shorts mit Hook und Untertiteln.',
+    'Ablauf Shorts (Guide §11, Ablauf 1): create_deck format 9:16, transition none. transcribe_video, die 5 stärksten Momente (20–60 s, Schnitte nur an Segmentgrenzen) vorab kurz mit Zeiten nennen. Je Short ein clip mit Hook (max. 70 Zeichen), captions wort, fit crop mit Zuschnitt aufs Gesicht (ohne focus). Am Ende export_deck mit clips. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+  ['Ganzes Video kürzen', 'Kürze mein ganzes Video: Füllsätze, Versprecher und Abschweifungen raus.',
+    'Ablauf Fulltime (Guide §11, Ablauf 2): create_deck format 16:9, transition none. transcribe_video über alles, Gestrichenes kurz nennen. Eine einzige clip-Folie mit allen behaltenen Ausschnitten als parts, pauses kurz, captions satz, kein Hook. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+  ['Highlights aus dem Stream', 'Finde die besten Momente in meinem Stream und mach daraus Shorts.',
+    'Ablauf Stream-Highlights (Guide §11, Ablauf 3): import_video bei Link, dann zuerst video_highlights. Nur die besten Fenster mit from/to transkribieren, nie den ganzen Stream. 5 Shorts im Format 9:16 wie im Ablauf Shorts; zusätzlich optional ein 16:9-Zusammenschnitt der Highlights. Am Ende export_deck mit clips (Zusammenschnitt: mp4). Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+  ['Zusammenschnitt', 'Schneide meine Videos zu einem Zusammenschnitt zusammen.',
+    'Ablauf Kompilation (Guide §11, Ablauf 4): create_deck format 16:9, transition none. Je Quelle transcribe_video und eine clip-Folie, dazwischen kurze Zwischentitel (Layout section), transition fade nur sparsam an Zwischentiteln. Musik über find_music nur auf Wunsch, dezent. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
+]
+const LINK = /https?:\/\/[^\s<>"']+/g
+const linksOf = (text: string) => [...new Set((text.match(LINK) ?? []).map((u) => u.replace(/[.,;:!?)\]]+$/, '')))]
+// Nur Video-Links schalten in den Video-Modus, ein Quellenlink für eine Präsentation nicht
+const VIDEO_HOST = /^https?:\/\/([^/?#]*\.)?(youtube\.com|youtu\.be|twitch\.tv|kick\.com|vimeo\.com)([/:?#]|$)/i
+const isVideoLink = (u: string) => VIDEO_HOST.test(u) || VIDEO_FILE.test(u.replace(/[?#].*/, ''))
+
 // Formatwahl neben dem Modell: ask geht unsichtbar an die KI, format gilt für „Leer beginnen“ (ohne = 16:9)
 const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatId; ask?: string }[] = [
   { id: 'auto', name: 'Automatisch', hint: 'Deckwerk wählt passend zu deinem Wunsch' },
   { id: 'praesentation', name: 'Präsentation', hint: '16:9 für Beamer und Bildschirm', ask: 'Format: Präsentation 16:9 (create_deck format 16:9).' },
   { id: 'flyer', name: 'Flyer', hint: 'A4 hoch, zum Drucken', format: 'a4', ask: 'Format: Flyer, A4 hoch (create_deck format a4, Layout flyer; Rückseite flyer-back nur auf Wunsch).' },
+  { id: 'plakat', name: 'Plakat', hint: 'Gedruckt als A3 oder A2', format: 'a4', ask: 'Format: Plakat, gestaltet auf A4 hoch und gedruckt als A2 oder A3 (create_deck format a4, Layout flyer; export_deck print mit size a2 oder a3).' },
   { id: 'dokument', name: 'Dokument', hint: 'A4 hoch: Handout, Bericht oder Angebot', format: 'a4', ask: 'Format: Dokument, A4 hoch, z. B. Handout, Bericht oder Angebot (create_deck format a4).' },
+  { id: 'brief', name: 'Brief', hint: 'A4 nach DIN 5008, für Fensterumschläge', format: 'a4', ask: 'Format: Geschäftsbrief nach DIN 5008, A4 hoch (create_deck format a4, Layout letter).' },
+  { id: 'bewerbung', name: 'Bewerbung', hint: 'Deckblatt, Anschreiben und Lebenslauf', format: 'a4', ask: 'Format: Bewerbung, A4 hoch, alles in einem Deck und Design: Deckblatt (Layout application-cover, nur auf Wunsch oder bei Mappen), Anschreiben (Layout letter nach DIN 5008, Anlagen in enclosures) und Lebenslauf (Layout cv) (create_deck format a4).' },
+  { id: 'lebenslauf', name: 'Lebenslauf', hint: 'A4 hoch, für die Bewerbung', format: 'a4', ask: 'Format: Lebenslauf, A4 hoch (create_deck format a4, Layout cv).' },
+  { id: 'einladung', name: 'Einladung', hint: 'Gedruckt als A5 oder Postkarte', format: 'a4', ask: 'Format: Einladung, gestaltet auf A4 hoch und gedruckt als A5 oder A6 (create_deck format a4, Layout invitation).' },
+  { id: 'urkunde', name: 'Urkunde', hint: 'A4 quer: Zertifikat, Teilnahme', format: 'a4-quer', ask: 'Format: Urkunde, A4 quer (create_deck format a4-quer, Layout certificate).' },
+  { id: 'speisekarte', name: 'Speisekarte', hint: 'A4 hoch, Gerichte mit Preisen', format: 'a4', ask: 'Format: Speisekarte, A4 hoch (create_deck format a4, Layout menu).' },
+  { id: 'visitenkarte', name: 'Visitenkarte', hint: '85 × 55 mm, Vorder- und Rückseite', format: 'visitenkarte', ask: 'Format: Visitenkarte 85 × 55 mm (create_deck format visitenkarte, Layout business-card: Seite 1 variant front, Seite 2 variant back).' },
   { id: 'social', name: 'Social-Post', hint: 'Karussell im Hochformat 4:5', format: '4:5', ask: 'Format: Social-Media-Karussell 4:5 (create_deck format 4:5).' },
   { id: 'story', name: 'Story', hint: 'Hochkant 9:16', format: '9:16', ask: 'Format: Story 9:16 (create_deck format 9:16).' },
 ]
+
+// Format-Regal unter dem Feld: die häufigsten Formate als Papier in ihrer Form (Maße in px), der Rest bleibt im Format-Menü.
+// id = FORMAT_CHOICES-id; „video“ schaltet in den Video-Modus
+const PAPERS: { id: string; name: string; w: number; h: number; mark?: 'img' | 'lines' | 'win' | 'play' }[] = [
+  { id: 'praesentation', name: 'Präsentation', w: 50, h: 28 },
+  { id: 'dokument', name: 'Dokument', w: 28, h: 40, mark: 'lines' },
+  { id: 'brief', name: 'Brief', w: 28, h: 40, mark: 'win' },
+  { id: 'flyer', name: 'Flyer', w: 28, h: 40, mark: 'img' },
+  { id: 'urkunde', name: 'Urkunde', w: 40, h: 28, mark: 'lines' },
+  { id: 'social', name: 'Social-Post', w: 32, h: 40, mark: 'img' },
+  { id: 'story', name: 'Story', w: 23, h: 40, mark: 'img' },
+  { id: 'visitenkarte', name: 'Visitenkarte', w: 22, h: 14 },
+  { id: 'video', name: 'Video', w: 50, h: 28, mark: 'play' },
+]
+const VIDEO_HINT = 'Shorts, gekürzte Fassung, Stream-Highlights oder Zusammenschnitt'
+
+// Filter über Decks und Vorlagen; Video = Deck mit Videoclip (wie hasClip in App.tsx)
+const KINDS = [['alle', 'Alle'], ['folien', 'Folien'], ['druck', 'Drucksachen'], ['social', 'Social'], ['video', 'Videos']] as const
+type Kind = (typeof KINDS)[number][0]
+const kindOf = (d: Deck): Kind => d.slides.some((s) => s.layout === 'clip') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
+
+// „Gibt es schon ähnlich“: grober Abgleich gleicher Wortanfänge (6 Zeichen) zwischen Wunsch und Titel/Folientiteln
+const STOP = new Set(['erstelle', 'gestalte', 'mache', 'bitte', 'einen', 'eine', 'einem', 'einer', 'unser', 'unsere', 'unseren', 'unserem', 'über',
+  'präsentation', 'folie', 'folien', 'seite', 'seiten', 'deck', 'etwa', 'zielgruppe', 'fokus', 'beim', 'drei', 'vier', 'fünf', 'zehn'])
+const words = (t: string) => (t.toLowerCase().match(/[\p{L}\d]+/gu) ?? []).filter((w) => w.length >= 4 && !/^\d+$/.test(w) && !STOP.has(w))
+const titlesOf = (d: Deck) => [d.title, ...d.slides.map((s) => s.content?.title)].filter((x): x is string => typeof x === 'string').join(' ')
+const hit = (w: string, hay: string[]) => hay.some((k) => k.startsWith(w.slice(0, 6)) || w.startsWith(k.slice(0, 6)))
+// Treffer im Decktitel zählen doppelt; ab 2 Punkten gilt ein Deck als ähnlich (ein einzelnes Wort auf irgendeiner Folie reicht nicht)
+const score = (wish: string[], x: { title: string[]; words: string[] }) => wish.reduce((n, w) => n + (hit(w, x.title) ? 2 : 0) + (hit(w, x.words) ? 1 : 0), 0)
 
 // A4 (Flyer, Fließtext) zählt Seiten, alles andere Folien
 const pages = (d: Deck) => {
@@ -73,10 +140,13 @@ interface Props {
   onOpen: () => void
   onOpenPath: (path: string) => void
   onKey: () => void
+  onVideo?: () => void // Video-Modus: nach erfolgreichem Absenden, damit die App die Video-Ansicht zeigt
 }
 
-export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey }: Props) {
+export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey, onVideo }: Props) {
   const [text, setText] = useState('')
+  const [video, setVideo] = useState(false)
+  const [vask, setVask] = useState<string>() // ask des gewählten Video-Chips
   const [fmt, setFmt] = useState('auto')
   const choice = FORMAT_CHOICES.find((f) => f.id === fmt)!
   const [recent, setRecent] = useState<Recent[]>([])
@@ -93,12 +163,43 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
     return () => window.removeEventListener('focus', load)
   }, [])
   const { srcs, attach, remove, clear, err } = useSource()
+  // Video oder Video-Link im Feld: automatisch in den Video-Modus (danach frei umschaltbar)
+  const hasVideo = srcs.some((s) => VIDEO_FILE.test(s.name)) || linksOf(text).some(isVideoLink)
+  useEffect(() => { if (hasVideo) { setVideo(true); setFmt('auto') } }, [hasVideo])
+  const mode = (v: boolean) => { setVideo(v); setVask(undefined); if (v) setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
+  // Papier anklicken wählt das Format, nochmal klicken nimmt die Wahl zurück; Video schaltet den Modus
+  const pick = (id: string) => {
+    if (id === 'video') return mode(!video)
+    mode(false)
+    setFmt(fmt === id && !video ? 'auto' : id)
+  }
+  const [query, setQuery] = useState('')
+  const [kind, setKind] = useState<Kind>('alle')
+  // Suchtext und Wörter je Deck einmal pro Liste statt bei jedem Tastendruck
+  const index = useMemo(() => {
+    const of = (d: Deck) => { const t = titlesOf(d); return { text: t.toLowerCase(), title: words(d.title), words: words(t), kind: kindOf(d) } }
+    return { recent: recent.map((r) => ({ r, ...of(r.deck) })), templates: templates.map((d) => ({ d, ...of(d) })) }
+  }, [recent, templates])
+  const wish = video ? [] : words(text)
+  // die drei ähnlichsten; bei Gleichstand bleibt die Reihenfolge (zuletzt bearbeitete Decks vor Vorlagen)
+  const like = !wish.length ? [] : [
+    ...index.recent.map((x) => ({ n: score(wish, x), key: x.r.path, deck: x.r.deck, what: 'Deck', open: () => onOpenPath(x.r.path) })),
+    ...index.templates.map((x) => ({ n: score(wish, x), key: x.d.title, deck: x.d, what: 'Vorlage', open: () => window.api.saveCopy(x.d).then(onOpenPath) })),
+  ].filter((m) => m.n >= 2).sort((a, b) => b.n - a.n).slice(0, 3)
+  const q = query.trim().toLowerCase()
+  const filtering = !!q || kind !== 'alle'
+  const fits = (x: { text: string; kind: Kind }) => (kind === 'alle' || x.kind === kind) && (!q || x.text.includes(q))
+  const shownRecent = index.recent.filter(fits).map((x) => x.r)
+  const shownTemplates = video ? [] : index.templates.filter(fits).map((x) => x.d)
   const submit = () => {
-    const ask = text.trim() || (!srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
+    const onlyVideos = video && srcs.length > 0 && srcs.every((s) => VIDEO_FILE.test(s.name))
+    const ask = text.trim() || (onlyVideos ? `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.` : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
       ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
       : 'Mach aus diesen Dateien eine Präsentation.')
-    const context = [choice.ask, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
-    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { setText(''); clear() }
+    const links = video ? linksOf(text).map((u) => `Link: ${u} – zuerst import_video`) : []
+    const context = [video ? vask : choice.ask, ...links, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
+    // onSubmit liefert false bei busy oder fehlendem Key: dann nicht in die Video-Ansicht wechseln
+    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { if (video) onVideo?.(); setText(''); setVask(undefined); clear() }
   }
 
   return (
@@ -114,8 +215,8 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
       </header>
 
       <main className="home-main">
-        <h1>Was möchtest du zeigen?</h1>
-        <p className="home-sub">Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.</p>
+        <h1>{video ? 'Was soll aus deinem Video werden?' : 'Was möchtest du zeigen?'}</h1>
+        <p className="home-sub">{video ? 'Deckwerk hört das Video ab, wählt die Momente, schneidet, untertitelt und exportiert.' : 'Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.'}</p>
         <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
@@ -124,37 +225,81 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             autoFocus
             rows={2}
             value={text}
-            aria-label="Worum geht es in deiner Präsentation?"
-            placeholder="Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum"
-            onChange={(e) => setText(e.target.value)}
+            aria-label={video ? 'Was soll aus deinem Video werden?' : 'Worum geht es in deiner Präsentation?'}
+            placeholder={video ? 'Video hierher ziehen oder Link einfügen – und sag kurz, was du brauchst' : 'Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum'}
+            onChange={(e) => { setText(e.target.value); setVask(undefined) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
           />
           <div className="home-field-bar">
             <div className="home-field-l">
               <ModelSelect value={model} onChange={onModel} />
-              <Select className="model-select ghost format-select" value={fmt} onChange={(e) => setFmt(e.target.value)} aria-label="Format" title="Format">
+              {!video && <Select className="model-select ghost format-select" value={fmt} onChange={(e) => setFmt(e.target.value)} aria-label="Format" title="Format">
                 {FORMAT_CHOICES.map((f) => <option key={f.id} value={f.id} data-hint={f.hint}>{f.name}</option>)}
-              </Select>
+              </Select>}
               {srcs.map((s) => (
                 <span key={s.name} className="pill" title={s.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>{isImage(s.name) ? <ImageIcon size={13} /> : <Paperclip size={13} />}{s.name}<button type="button" className="plain" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={13} /></button></span>
               ))}
-              <button type="button" className="plain" title="Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)" onClick={() => attach()}><Paperclip size={16} />Datei</button>
+              <button type="button" className="plain" title={video ? 'Video anhängen (oder hierher ziehen)' : 'Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)'} onClick={() => attach()}><Paperclip size={16} />Datei</button>
               {err && <span className="home-err error" role="alert">{err}</span>}
             </div>
-            <button type="submit" className="round" aria-label="Deck erstellen" disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            <button type="submit" className="round" aria-label={video ? 'Video-Auftrag senden' : 'Deck erstellen'} disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
           </div>
         </form>
-        <div className="home-chips">
-          {EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
+        {like.length > 0 && (
+          <div className="home-like">
+            Gibt es schon ähnlich:
+            {like.map((m) => (
+              <button key={m.key} type="button" className="pill" title={m.what === 'Deck' ? 'Deck öffnen' : 'Öffnet eine Kopie, die Vorlage bleibt unverändert'} onClick={m.open}>
+                <span className="home-like-thumb"><SlideView deck={m.deck} index={0} width={24} /></span>{m.deck.title}<small>{m.what}</small>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="home-papers" role="group" aria-label="Format">
+          {PAPERS.map((p) => {
+            const on = p.id === 'video' ? video : !video && fmt === p.id
+            return (
+              <button key={p.id} type="button" className="home-paper" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}>
+                <span><i className="home-sheet" data-mark={p.mark} style={{ width: p.w, height: p.h }} /></span>
+                <b>{p.name}</b>
+              </button>
+            )
+          })}
         </div>
-        <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>Leer beginnen und frei gestalten</button>
+        <div className="home-chips">
+          {video
+            ? VIDEO_EXAMPLES.map(([label, full, ask]) => <button key={label} className="pill" onClick={() => { setText(full); setVask(ask); ref.current?.focus() }}>{label}</button>)
+            : EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
+        </div>
+        <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>
+          {fmt === 'auto' ? 'Leer beginnen und frei gestalten' : `Leer beginnen: ${choice.name}`}
+        </button>
       </main>
 
-      {recent.length > 0 && (
+      {recent.length + templates.length > 0 && (
+        <div className="home-find">
+          <label>
+            <Search size={16} />
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Decks und Vorlagen durchsuchen" aria-label="Decks und Vorlagen durchsuchen" />
+          </label>
+          <div className="seg" role="group" aria-label="Art">
+            {KINDS.map(([id, name]) => <button key={id} type="button" aria-pressed={kind === id} onClick={() => setKind(id)}>{name}</button>)}
+          </div>
+        </div>
+      )}
+
+      {filtering && !shownRecent.length && !shownTemplates.length && (
+        <div className="home-none">
+          Nichts gefunden.
+          {q && <button type="button" className="pill tint" onClick={() => { setText(query.trim()); setQuery(''); ref.current?.focus() }}>Als Wunsch übernehmen</button>}
+        </div>
+      )}
+
+      {shownRecent.length > 0 && (
         <section className="home-recent" aria-label="Zuletzt">
-          <h2>Zuletzt</h2>
+          <h2>{filtering ? `Deine Decks · ${shownRecent.length}` : 'Zuletzt'}</h2>
           <div className="home-shelf">
-            {(all ? recent : recent.slice(0, 8)).map((r) => (
+            {(all || filtering ? shownRecent : shownRecent.slice(0, 8)).map((r) => (
               <button key={r.path} className="home-deck" onClick={() => onOpenPath(r.path)}>
                 <div className="home-deck-cover"><SlideView deck={r.deck} index={0} width={232} /></div>
                 <b>{r.title}</b>
@@ -162,15 +307,15 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
               </button>
             ))}
           </div>
-          {recent.length > 8 && <button className="plain tint home-more" onClick={() => setAll(!all)}>{all ? 'Weniger anzeigen' : `Alle anzeigen (${recent.length})`}</button>}
+          {!filtering && recent.length > 8 && <button className="plain tint home-more" onClick={() => setAll(!all)}>{all ? 'Weniger anzeigen' : `Alle anzeigen (${recent.length})`}</button>}
         </section>
       )}
 
-      {templates.length > 0 && (
+      {shownTemplates.length > 0 && (
         <section className="home-recent" aria-label="Vorlagen">
-          <h2>Mit einer Vorlage beginnen</h2>
+          <h2>{filtering ? `Vorlagen · ${shownTemplates.length}` : 'Mit einer Vorlage beginnen'}</h2>
           <div className="home-shelf">
-            {templates.map((d) => (
+            {shownTemplates.map((d) => (
               <button key={d.title} className="home-deck" title="Öffnet eine Kopie, die Vorlage bleibt unverändert" onClick={() => window.api.saveCopy(d).then(onOpenPath)}>
                 <div className="home-deck-cover"><SlideView deck={d} index={0} width={232} /></div>
                 <b>{d.title}</b>

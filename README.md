@@ -8,11 +8,12 @@ Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwe
 
 ## Was Deckwerk kann
 
-- **Aus einem Satz ein Deck.** Storyline nach dem Pyramidenprinzip, Action Titles, 29 Layouts, Diagramme und Animationen. Jede Folie wird gerendert und geprüft: Überlauf, Kontrast, Struktur, Eintönigkeit.
+- **Aus einem Satz ein Deck.** Storyline nach dem Pyramidenprinzip, Action Titles, 40 Layouts, Diagramme und Animationen. Jede Folie wird gerendert und geprüft: Überlauf, Kontrast, Struktur, Eintönigkeit.
 - **Quellmaterial nutzen.** PDF, Word, PowerPoint, Text, Markdown, CSV oder JSON anhängen, und die KI baut das Deck daraus. Auf Wunsch recherchiert sie im Web.
 - **Eigene Bilder und Logos.** Fotos, Screenshots und Logos (PNG, JPG, WebP, GIF, SVG) einfach mit anhängen, auch mehrere Dateien auf einmal. Abbildungen aus PDF, Word und PowerPoint kommen mit. Die KI sieht sich jedes Bild an, setzt Fotos auf die passende Folie und ein Logo auf Titel- und Schlussfolie.
+- **Video-Schnitt.** Die KI macht aus langen Videos Shorts mit Hook und Untertiteln, kürzt ganze Videos, findet die Höhepunkte stundenlanger Streams und baut Zusammenschnitte mit Zwischentiteln und Musik. Videos kommen als Anhang oder per Link (YouTube, Twitch, Kick).
 - **Frei gestalten.** Texte, Formen, Fotos, Icons, Diagramme, QR-Codes, Video und Audio. Dazu Gruppen, Zuschnitt, Freisteller, Ausrichten, Hilfslinien und das Umwandeln von Layout-Folien in freie Elemente.
-- **Ein Look für alles.** 11 Themes, eigene Designs von der KI, eigene Schriften, 8 Formate von 16:9 über Instagram bis A4 (Layouts, Schriftgrößen und Lint passen sich an), ein Brand-Kit für jedes neue Deck und ein Hausstil, den sich die KI dauerhaft merkt.
+- **Ein Look für alles.** 11 Themes, eigene Designs von der KI, eigene Schriften, 9 Formate von 16:9 über Instagram bis A4 und Visitenkarte (Layouts, Schriftgrößen und Lint passen sich an), ein Brand-Kit für jedes neue Deck und ein Hausstil, den sich die KI dauerhaft merkt.
 - **Präsentieren.** Referentenansicht mit Notizen, Uhr und Sprechzeit, Laserpointer und Stift, Handy als Fernbedienung.
 - **Export.** PowerPoint mit editierbaren Objekten, Animationen und eingebetteten Schriften, Word mit bearbeitbarem Text, dazu PDF, PNG, ein ZIP mit allen Bildern plus PDF (Karussell) und ein Handout als Markdown.
 - **Auch aus Claude Code.** Deckwerk ist ein MCP-Server: Decks lassen sich direkt aus dem Terminal bauen und bearbeiten.
@@ -84,6 +85,23 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 - **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/Deckwerk/assets`. Findet sie dort nichts Passendes und ist ein Unsplash-Key eingerichtet (Einstellungen → Bilder → Fotosuche oder `UNSPLASH_ACCESS_KEY`), sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
 - **KI-Bilder:** Die KI kann Bilder auch selbst erzeugen, mit `gpt-image-2` über [Mammouth](https://mammouth.ai) oder OpenAI, ohne Key auch über Codex mit deinem ChatGPT-Login (einmal `codex login`). Eingerichtet wird das unter Einstellungen → **Bilder**: Keys (verschlüsselt gespeichert), bevorzugter Anbieter und Modell, z. B. `gemini-3-pro-image-preview` bei Mammouth. Ohne Vorgabe nimmt die KI den ersten eingerichteten Anbieter in der Reihenfolge Mammouth, OpenAI, Codex; „mach das Bild mit Codex“ wählt gezielt. Alternativ gelten `MAMMOUTH_API_KEY`, `OPENAI_API_KEY` und `IMAGE_MODEL` aus der Umgebung. Die Bilder landen in `~/Deckwerk/assets`.
 
+### Video-Schnitt
+
+Häng ein Video an (MP4, MOV, M4V, WebM, MKV, OGV oder FLV) oder nenn einen Link, und schreib, was du brauchst. Den Schnitt bedient nur die KI, im Chat der App und über MCP in Claude Code, Codex und Vibe. Eine Folie im Layout „Videoclip“ ist ein Video aus Ausschnitten einer Quelle. Vier Abläufe:
+
+- **Shorts und Reels (9:16)**, etwa „Mach drei Shorts daraus“: Die KI transkribiert das Video und wählt die 3–5 stärksten Momente (packender Einstieg, ohne Vorwissen verständlich, ein Bogen bis zur Pointe, ein abgeschlossener Gedanke am Ende). Sie sieht sich Standbilder an und baut je Short eine Folie mit Hook und Untertiteln. Der Zuschnitt sucht das Gesicht, bei mehreren Personen folgt er dem, der spricht; Folien und Gesten am Rand zeigt sie ganz auf unscharfem Grund. Füllsätze schneidet sie heraus (Jump Cuts). Export: je Short eine MP4.
+- **Ganzes Video kürzen (16:9)**, etwa „Kürz den Vortrag auf das Wesentliche“: eine Folie mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), Versprecher und Abschweifungen fallen weg, Sprechpausen werden kürzer. Export als eine MP4.
+- **Highlights aus Streams (2–8 h)**: Die KI sucht zuerst die stärksten Momente aus Lautheit, Lachen und Jubel, Chat-Ausbrüchen und der „Meistgesehen“-Kurve von YouTube und transkribiert dann nur diese Fenster. Daraus werden Shorts, auf Wunsch zusätzlich ein Zusammenschnitt in 16:9.
+- **Zusammenschnitt aus mehreren Quellen (16:9)**: je Quelle eine Clip-Folie, dazwischen ruhige Zwischentitel mit Abblende, auf Wunsch leise Hintergrundmusik. Export als eine MP4.
+
+**Links:** Deckwerk lädt Videos über [yt-dlp](https://github.com/yt-dlp/yt-dlp) (YouTube, Twitch, Kick und viele andere Seiten) in bis zu 1080p, dazu Kapitel und bei Aufzeichnungen von Livestreams den Chat (Twitch über [TwitchDownloader](https://github.com/lay295/TwitchDownloader)). Laufende Livestreams gehen erst nach dem Ende. Lade nur Material, an dem du die Rechte hast oder das frei lizenziert ist.
+
+**Musik:** Die KI sucht freie Musik auf [Openverse](https://openverse.org), nur CC0, Public Domain und CC BY. Die Musik läuft leise unter dem ganzen Video und wird unter Sprache automatisch leiser. Den Nachweis schreibt die KI in die Notizen der letzten Folie; bei CC BY gehört er auch in die Beschreibung des fertigen Videos.
+
+**Lokal:** Das Video wird nicht kopiert, Deckwerk verweist nur auf die Datei (Downloads per Link landen in `~/Deckwerk/assets`). Die Spracherkennung läuft lokal: Parakeet-TDT-0.6B-v3 über sherpa-onnx für 25 europäische Sprachen, für andere Sprachen Whisper (die KI gibt dafür die Sprache an, etwa bei Japanisch, Türkisch oder Arabisch). Beim ersten Mal lädt Deckwerk das Modell (rund 670 MB) nach `~/Deckwerk/models`. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video; bei langen Videos transkribiert die KI deshalb nur die Stellen, die sie braucht. Der Export in 1080p läuft auf langsamen Rechnern mit rund 10 Bildern pro Sekunde, ein einstündiges Video braucht dort 2–3 Stunden. ffmpeg nimmt Deckwerk aus dem System, sonst lädt es ein statisches ffmpeg bei Bedarf nach.
+
+Die Kriterien für gute Momente und die Idee dahinter stammen von [BridgeClip](https://github.com/bridge-mind/bridgeclip) (MIT, © 2026 BridgeMind).
+
 ### Folien frei gestalten
 
 Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewähltes Element) und **Look** (Theme und Schriften) die Seitenleiste.
@@ -107,7 +125,7 @@ Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewäh
 - **Suchen & Ersetzen:** Strg+F sucht im ganzen Deck (Folientexte, freie Texte, Notizen, Titel), Strg+H ersetzt. Bild- und Linkadressen bleiben unberührt; Stellen, die danach zu lang oder leer für ihr Feld wären, überspringt Deckwerk.
 - **Rechtschreibprüfung:** Deutsch und Englisch, Vorschläge per Rechtsklick. Abschalten unter Einstellungen → Allgemein. Unter Linux und Windows lädt Deckwerk die Wörterbücher einmalig von einem Google-Server.
 - **Folien ausblenden:** Rechtsklick im Filmstreifen oder „Ausblenden“ in der Übersicht. Ausgeblendete Folien überspringt Deckwerk beim Präsentieren und im PDF-, Bild-, Word- und Handout-Export; in der PowerPoint-Datei sind sie enthalten, aber ausgeblendet.
-- **Formate:** „Exportieren“ → „Anderes Format …“ rechnet das Deck auf ein anderes Format um oder legt Kopien in weiteren Formaten an: 16:9, 4:3, Quadrat, 4:5, Story 9:16, A4 hoch oder quer, Link-Vorschau. Freie Elemente wandern mit, Layouts ordnen sich neu an: Hoch- und Quadratformate stapeln Bild und Text, Social-Formate setzen größere Schrift, A4 kleinere. Der Lint rechnet je Format mit eigenen Grenzen (Social bis 30, A4 bis 350 Wörter je Seite). Für A4 gibt es die Layouts „Fließtext“, „Angebot“, „Flyer“ (Foto oben, Vollbild oder typografisch, mit Handlungsaufforderung und QR-Code) und „Flyer-Rückseite“ (Programm, Eckdaten, eine Handlung mit QR-Code, Impressum). Der QR-Code braucht eine vollständige URL (`https://`, `mailto:`, `tel:`). Layouts mit festem Format erscheinen in den Folienvorlagen nur im passenden Format; auf dem Startbildschirm gibt es den Beispiel-Chip „Flyer für ein Sommerfest“, und die Vorlagen-Galerie enthält den Flyer. Der Lint warnt bei Fotos, die für den Druck zu klein sind (unter 250 ppi).
+- **Formate:** „Exportieren“ → „Anderes Format …“ rechnet das Deck auf ein anderes Format um oder legt Kopien in weiteren Formaten an: 16:9, 4:3, Quadrat, 4:5, Story 9:16, A4 hoch oder quer, Link-Vorschau, Visitenkarte (85 × 55 mm). Freie Elemente wandern mit, Layouts ordnen sich neu an: Hoch- und Quadratformate stapeln Bild und Text, Social-Formate setzen größere Schrift, A4 kleinere. Der Lint rechnet je Format mit eigenen Grenzen (Social bis 30, A4 bis 350 Wörter je Seite). Für A4 gibt es die Layouts „Fließtext“, „Angebot“, „Flyer“ (Foto oben, Vollbild oder typografisch, mit Handlungsaufforderung und QR-Code) und „Flyer-Rückseite“ (Programm, Eckdaten, eine Handlung mit QR-Code, Impressum). Der QR-Code braucht eine vollständige URL (`https://`, `mailto:`, `tel:`). Layouts mit festem Format erscheinen in den Folienvorlagen nur im passenden Format; auf dem Startbildschirm gibt es den Beispiel-Chip „Flyer für ein Sommerfest“, und die Vorlagen-Galerie enthält den Flyer. Weitere Drucksachen wie bei Canva: Brief nach DIN 5008 (Anschriftfeld für Fensterumschläge, Anlagen), Lebenslauf (mit Seitenspalte oder tabellarisch), Deckblatt für Bewerbungen, Einladung (gedruckt als A5 oder Postkarte), Speisekarte und Urkunde (A4 quer), dazu die Visitenkarte mit Vorder- und Rückseite. Auf dem Startbildschirm stehen sie unter „Format“, zusammen mit Plakat und Bewerbung (Deckblatt, Anschreiben und Lebenslauf in einem Deck). Der Lint warnt bei Fotos, die für den Druck zu klein sind (unter 250 ppi).
 
 ### Speichern und Versionen
 
@@ -140,7 +158,7 @@ Versionen, Exporte und das Freisteller-Modell bleiben lokal. Hast du dasselbe De
 
 **Exportieren** erzeugt PowerPoint, Word (eine Seite pro Folie: Text in bearbeitbaren Textfeldern mit eingebetteten Schriften, Fotos, Flächen und Diagramme als Hintergrundbild), PDF, PNG (eine Datei pro Folie), ein ZIP (alle Bilder plus PDF) oder ein Handout (Markdown mit Notizen). Bei Nicht-16:9 steht das Format im Dateinamen (`-4x5`, `-a4`). Die Dateien landen im Ordner des Decks.
 
-Bei A4-Decks gibt es zusätzlich „PDF für die Druckerei …“. Die Datei (`…-druck.pdf`) hat Endformat plus Beschnitt (Standard 3 mm, wählbar je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm), keine Schnittmarken; randabfallende Fotos laufen gespiegelt in den Beschnitt. Das Endformat A3, A4 oder A5 ist wählbar; A4-Seiten werden verlustfrei skaliert. Die Farben bleiben RGB: Die genannten Druckereien wandeln selbst nach CMYK, leuchtende Akzente werden dabei etwas matter (print24 verlangt CMYK). Bei großer Auflage lohnt ein Probedruck. Die Seitenzahl muss zur Bestellung passen (1 oder 2), lösche nicht gewählte Entwürfe vorher.
+Bei A4-Decks und Visitenkarten gibt es zusätzlich „PDF für die Druckerei …“. Die Datei (`…-druck.pdf`) hat Endformat plus Beschnitt (Standard 3 mm, wählbar je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm), keine Schnittmarken; randabfallende Fotos laufen gespiegelt in den Beschnitt. Bei A4-Decks ist das Endformat A2 bis A6 wählbar (A2 oder A3 als Plakat, A6 als Postkarte); A4-Seiten werden verlustfrei skaliert. Die Visitenkarte druckt in 85 × 55 mm. Die Farben bleiben RGB: Die genannten Druckereien wandeln selbst nach CMYK, leuchtende Akzente werden dabei etwas matter (print24 verlangt CMYK). Bei großer Auflage lohnt ein Probedruck. Die Seitenzahl muss zur Bestellung passen (1 oder 2), lösche nicht gewählte Entwürfe vorher.
 
 In der PowerPoint-Datei sind Texte, Formen, Bilder, Diagramme, Video und Audio native, editierbare Objekte. Animationen und Folienübergänge kommen mit, die Schriften der Premium-Themes sind eingebettet. PDF und PNG entsprechen der Vorschau pixelgenau.
 
@@ -198,7 +216,7 @@ Bei einer Quellcode-Installation nutzt der Server den vorhandenen Build und baut
 | `~/Deckwerk/assets/` | Eigene, eingefügte und freigestellte Bilder, geladene Fotos |
 | `~/Deckwerk/hausstil.md` | Hausstil für alle Decks |
 | `~/Deckwerk/brand.json` | Brand-Kit (Farben, Schriften, Logo) für neue Decks |
-| `~/Deckwerk/models/` | Modell für den Freisteller |
+| `~/Deckwerk/models/` | Modelle für Freisteller und Spracherkennung, bei Bedarf ffmpeg |
 | `~/Deckwerk/.sync-state.json` | Stand des letzten Cloud-Abgleichs |
 | `~/.config/deckwerk/` | Einstellungen und API-Key, verschlüsselt über den System-Schlüsselbund |
 
@@ -336,3 +354,5 @@ Randbedingungen:
 Deckwerk steht unter der GNU Affero General Public License v3.0 (siehe `LICENSE`). Wer Deckwerk verändert weitergibt oder als Dienst im Netz betreibt, muss den Quellcode der veränderten Fassung offenlegen.
 
 Mitgelieferte Schriften unter `assets/fonts/`: SIL Open Font License 1.1 (`OFL-*.txt`). Beispielfotos: Unsplash-Lizenz, Nachweise in `examples/assets/CREDITS.md` und `assets/samples/CREDITS.md`.
+
+Bei Bedarf nachgeladen (Video-Schnitt): Spracherkennung Parakeet-TDT-0.6B-v3 von NVIDIA (CC-BY-4.0) über sherpa-onnx (Apache-2.0), Gesichtserkennung YuNet (MIT), Download per Link über yt-dlp (Unlicense) und TwitchDownloader (MIT).

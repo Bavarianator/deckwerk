@@ -9,9 +9,9 @@ import { ChevronLeft, Keyboard, LayoutGrid, PanelLeft, Palette, Play, Plus, Rect
 export interface Status { text: string; error?: boolean }
 export type Panel = 'insert' | 'format' | null
 export type View = 'slide' | 'grid'
-type Format = 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md'
+type Format = 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'mp4' | 'clips'
 
-const FORMAT: Record<Format, string> = { pptx: 'PowerPoint (.pptx)', docx: 'Word (.docx)', pdf: 'PDF', png: 'Bilder (.png)', zip: 'Bilder + PDF (.zip)', md: 'Handout (.md)' }
+const FORMAT: Record<Format, string> = { pptx: 'PowerPoint (.pptx)', docx: 'Word (.docx)', pdf: 'PDF', png: 'Bilder (.png)', zip: 'Bilder + PDF (.zip)', md: 'Handout (.md)', mp4: 'Video (MP4)', clips: 'Clips (MP4 je Short)' }
 
 interface Props {
   title: string
@@ -30,10 +30,12 @@ interface Props {
   onLook: () => void
   onExport: (format: Format) => void
   onFormats: () => void // Sheet „Formate“ (Quadrat, Story, A4 …)
+  hasClip: boolean // Deck mit Clip-Folie: Video-Export anbieten
   canPrint: boolean // A4-Deck: Eintrag „PDF für die Druckerei“
   onPrint: () => void
   onPresent: () => void
   onRestore: (file: string) => void // Version aus dem Versionsverlauf über den Öffnen-Weg wiederherstellen
+  onVideo?: () => void // Video-Deck: zurück in die Video-Ansicht (Deckvid)
 }
 
 export function TopBar(p: Props) {
@@ -85,6 +87,7 @@ export function TopBar(p: Props) {
             <button className={`plain ${p.panel === 'format' ? 'on' : ''}`} aria-pressed={p.panel === 'format'} disabled={!p.hasDeck} onClick={() => toggle('format')}><SlidersHorizontal size={17} />Anpassen</button>
           </>
         )}
+        {p.onVideo && <button className="plain" onClick={p.onVideo}>Video-Ansicht</button>}
         <CloudButton />
         <button className="plain" title="Tastenkürzel (?)" aria-label="Tastenkürzel (?)" onClick={() => setKeys(true)}><Keyboard size={17} /></button>
         <button className="plain" title="Einstellungen" aria-label="Einstellungen" onClick={() => openSettings()}><Settings size={17} /></button>
@@ -93,7 +96,7 @@ export function TopBar(p: Props) {
           <button className="plain" disabled={!p.hasDeck} aria-expanded={menu} aria-haspopup="menu" onClick={() => setMenu(!menu)}><Share size={17} />Exportieren</button>
           {menu && (
             <div className="menu material" role="menu">
-              {(Object.keys(FORMAT) as Format[]).map((f) => (
+              {(Object.keys(FORMAT) as Format[]).filter((f) => p.hasClip || (f !== 'mp4' && f !== 'clips')).map((f) => (
                 <button key={f} role="menuitem" onClick={() => { setMenu(false); p.onExport(f) }}>{FORMAT[f]}</button>
               ))}
               <hr />

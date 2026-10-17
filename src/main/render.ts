@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron'
 import { join } from 'node:path'
-import { PRINT_SIZES, profileOf, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
+import { isA4, PRINT_SIZES, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
 import { setPrintBoxes } from './pdf-boxes'
 
 // Offscreen Chromium windows that render slides with the exact same React code as the app.
@@ -23,6 +23,9 @@ function host(mode: 'render' | 'print' | 'overview'): Promise<BrowserWindow> {
       if (process.env.ELECTRON_RENDERER_URL) await win.loadURL(`${process.env.ELECTRON_RENDERER_URL}#${mode}`)
       else await win.loadFile(join(__dirname, '../renderer/index.html'), { hash: mode })
       win.on('closed', () => hosts.delete(mode))
+      // Stirbt der Renderer (z. B. OOM bei wenig RAM neben der Spracherkennung), Seite neu laden statt das Fenster zu schließen:
+      // ohne Fenster beendet window-all-closed den MCP-Prozess. call() wartet danach wieder auf window.dw.
+      win.webContents.on('render-process-gone', () => { if (!win.isDestroyed()) win.webContents.reload() })
       return win
     })()
     hosts.set(mode, p)
@@ -41,7 +44,14 @@ function serial<T>(job: () => Promise<T>): Promise<T> {
 // Fehler aus dem Renderer kommen über executeJavaScript als leeres Objekt an; deshalb Meldung und Stack als Text zurückgeben.
 // window.dw entsteht erst, wenn das nachgeladene Bundle (boot.ts) den Host gerendert hat – bis dahin warten.
 const call = async <T>(win: BrowserWindow, js: string): Promise<T> => {
-  const r = await win.webContents.executeJavaScript(`(async () => { try { while (!window.dw) await new Promise((r) => setTimeout(r, 20)); return await ${js} } catch (e) { return { __dwError: String((e && (e.stack || e.message)) || e) } } })()`, true)
+  const wc = win.webContents
+  // executeJavaScript kehrt nach einem Renderer-Absturz nie zurück: dann abbrechen statt ewig zu warten
+  let gone = (_: unknown, d: { reason: string }) => {}
+  const r = await new Promise<unknown>((resolve, reject) => {
+    gone = (_, d) => reject(new Error(`Der Render-Prozess wurde beendet (${d.reason}), oft wegen knappen Arbeitsspeichers. Bitte noch einmal versuchen.`))
+    wc.once('render-process-gone', gone)
+    wc.executeJavaScript(`(async () => { try { while (!window.dw) await new Promise((r) => setTimeout(r, 20)); return await ${js} } catch (e) { return { __dwError: String((e && (e.stack || e.message)) || e) } } })()`, true).then(resolve, reject)
+  }).finally(() => { if (!wc.isDestroyed()) wc.off('render-process-gone', gone) }) as { __dwError?: string } | T
   if (r && typeof r === 'object' && '__dwError' in r) throw new Error(`Renderer: ${r.__dwError}`)
   return r as T
 }
@@ -120,7 +130,7 @@ export function renderPdf(deck: Deck): Promise<Buffer> {
 const PT = 72 / 25.4 // pt je mm
 export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buffer> {
   const { w, h } = sizeOf(deck)
-  const a4 = profileOf(deck) === 'doc' // A4 hoch oder quer
+  const a4 = isA4({ w, h }) // A4 hoch oder quer; die Visitenkarte druckt in ihrer eigenen Größe
   if (opts.size && !a4) throw new Error(`Druckformat ${opts.size.toUpperCase()} geht nur bei A4-Decks (hoch oder quer); dieses Deck ist ${w}×${h} px. Ohne Format wird es in seiner eigenen Größe gedruckt.`)
   const [pw, ph] = PRINT_SIZES[opts.size ?? 'a4']
   const [tw, th] = a4 ? (w > h ? [ph, pw] : [pw, ph]) : [(w * 25.4) / 96, (h * 25.4) / 96] // Endformat in mm
