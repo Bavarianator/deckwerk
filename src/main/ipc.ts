@@ -6,7 +6,8 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, profileOf, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
+import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, VOICES, profileOf, type BrandKit, type Deck, type FilmSettings, type PrintOptions, type VoiceId } from '../shared/deck'
+import { VOICE_SPEED } from '../shared/film'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, hasFlag, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
@@ -26,6 +27,7 @@ import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 import { deckJson, withDeckFonts } from './webfonts'
 import { recordArm, recordCancel, recordChunk, recordSources, recordStart, recordStop } from './record'
+import { synthesize } from './voice'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -427,6 +429,21 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   ipcMain.handle('record:chunk', (e, data: unknown) => recordChunk(e.sender, data))
   ipcMain.handle('record:stop', (e, cut: unknown) => recordStop(e.sender, cut === true))
   ipcMain.handle('record:cancel', (e) => recordCancel(e.sender))
+  // Sprecherstimme für den Player der Animations-Ansicht: Pfade wie der Film-Export (engine.ts), damit beide denselben Cache nutzen
+  ipcMain.handle('film:voice', async (_, text: unknown, film: unknown) => {
+    if (typeof text !== 'string') throw new Error('Ungültiger Sprechertext.')
+    if (text.length > 2000) throw new Error('Der Sprechertext ist zu lang (höchstens 2000 Zeichen je Szene).')
+    const f = (film && typeof film === 'object' ? film : {}) as FilmSettings
+    const voice: VoiceId = VOICES.includes(f.voice as VoiceId) ? f.voice! : 'de'
+    const speed = typeof f.speed === 'number' && Number.isFinite(f.speed) ? Math.min(VOICE_SPEED.max, Math.max(VOICE_SPEED.min, f.speed)) : undefined
+    const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
+    try {
+      const r = await synthesize(text, { voice, speed, models: join(home, 'models'), cacheDir: join(home, 'assets', '.voice') })
+      return { url: assetUrl(r.wav), timing: r.timing }
+    } catch (e) {
+      throw new Error(`Die Stimme ließ sich nicht erzeugen: ${e instanceof Error ? e.message : String(e)}`)
+    }
+  })
   // Quellmaterial (mehrere Dateien, auch Bilder); ohne Pfade per Dialog. null = abgebrochen
   ipcMain.handle('source:read', async (_, paths?: string[]) => {
     if (!paths?.length) {

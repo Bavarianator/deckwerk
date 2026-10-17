@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { BrandKit, CustomFont, Deck, PrintOptions, ThemeRef } from '../shared/deck'
+import type { BrandKit, CustomFont, Deck, FilmSettings, PrintOptions, ThemeRef } from '../shared/deck'
+import type { VoiceTiming } from '../shared/film'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
 import type { SyncStatus } from '../main/sync'
@@ -176,6 +177,8 @@ const api = {
     ipcRenderer.on('record:back', h)
     return () => void ipcRenderer.off('record:back', h)
   },
+  /** Sprecherstimme einer Szene (Animation): WAV als asset://-URL und echter Zeitplan; lädt beim ersten Mal die Stimme (~67 MB) */
+  filmVoice: (text: string, film?: FilmSettings): Promise<{ url: string; timing: VoiceTiming }> => invoke('film:voice', text, film),
   /** TTF wählen (Regular, optional Bold); Familienname aus der Datei; null = abgebrochen */
   pickFont: (): Promise<CustomFont | null> => invoke('font:pick'),
   /** Katalogschriften des Decks laden (Cache ~/Deckwerk/fonts, offline gebündelter Ersatz) → Theme mit fontFiles; notes z. B. „Newsreader geladen“ */
