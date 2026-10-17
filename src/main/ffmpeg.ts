@@ -100,7 +100,7 @@ export async function runFfmpeg(args: string[], o: { cwd?: string; duration?: nu
   } })
 }
 
-/** Dauer und Maße, wie das Video angezeigt wird (Drehung 90/270 tauscht w und h), dazu ob es Ton hat. Aus der stderr von `ffmpeg -i`, weil ffmpeg-static kein ffprobe mitbringt. */
+/** Dauer und Maße, wie das Video angezeigt wird (Drehung 90/270 tauscht w und h), dazu ob es Ton hat; reine Audiodatei: w = h = 0. Aus der stderr von `ffmpeg -i`, weil ffmpeg-static kein ffprobe mitbringt. */
 export async function probe(file: string): Promise<VideoInfo & { audio: boolean }> {
   const { err } = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-i', file]) // endet ohne Ausgabedatei immer mit Code 1
   const d = /Duration: (\d+):(\d+):([\d.]+)/.exec(err)
@@ -108,21 +108,24 @@ export async function probe(file: string): Promise<VideoInfo & { audio: boolean 
   const streams = err.split(/\n(?=\s*Stream #)/).filter((s) => /^\s*Stream #/.test(s))
   const video = streams.find((s) => / Video: /.test(s.split('\n')[0]) && !/attached pic/.test(s.split('\n')[0])) // Cover-Bild in Audiodateien zählt nicht
   const size = video && /, (\d{2,5})x(\d{2,5})[\s,]/.exec(video.split('\n')[0])
-  if (!size) throw new Error(`Keine Videospur in ${basename(file)}`)
+  const audio = streams.some((s) => / Audio: /.test(s.split('\n')[0]))
+  if (!size && !audio) throw new Error(`Weder Bild noch Ton in ${basename(file)}`)
   // ponytail: SAR ≠ 1 (anamorph, DV/DVD) bleibt gestaucht; Upgrade: Breite × SAR hier und scale=iw*sar:ih vor dem crop
-  const rot = Math.round(Number(/rotation of (-?[\d.]+)/i.exec(video)?.[1] ?? /rotate\s*:\s*(-?\d+)/.exec(video)?.[1] ?? 0))
-  const [w, h] = Math.abs(rot) % 180 === 90 ? [+size[2], +size[1]] : [+size[1], +size[2]]
+  const rot = Math.round(Number(/rotation of (-?[\d.]+)/i.exec(video ?? '')?.[1] ?? /rotate\s*:\s*(-?\d+)/.exec(video ?? '')?.[1] ?? 0))
+  const [w, h] = !size ? [0, 0] : Math.abs(rot) % 180 === 90 ? [+size[2], +size[1]] : [+size[1], +size[2]]
   // Dauer steht im Container der fremden Datei: riesige Werte sprengten die Arrays in loudness und der Chunk-Planung
   const duration = +d[1] * 3600 + +d[2] * 60 + +d[3]
   if (duration > 48 * 3600) throw new Error(`Video ist länger als 48 Stunden (${basename(file)}). So lange Videos kann Deckwerk nicht verarbeiten.`)
-  return { duration, w, h, audio: streams.some((s) => / Audio: /.test(s.split('\n')[0])) }
+  return { duration, w, h, audio }
 }
 
 /** Je Zeitpunkt (s) ein JPEG in width px Breite (Höhe proportional, gerade); -ss vor -i springt direkt hin. */
 export async function frames(file: string, times: number[], width = 640): Promise<Buffer[]> {
   const out: Buffer[] = []
   for (const t of times) {
-    const jpg = await ff(['-ss', String(Math.max(0, t)), '-i', file, '-frames:v', '1', '-vf', `scale=${Math.round(width)}:-2`, '-q:v', '4', '-f', 'image2pipe', '-c:v', 'mjpeg', 'pipe:1'])
+    const jpg = await ff(['-ss', String(Math.max(0, t)), '-i', file, '-frames:v', '1', '-vf', `scale=${Math.round(width)}:-2`, '-q:v', '4', '-f', 'image2pipe', '-c:v', 'mjpeg', 'pipe:1']).catch((e: Error) => {
+      throw /does not contain any stream|matches no streams|no video stream/i.test(e.message) ? new Error(`${basename(file)} hat kein Bild (reine Audiodatei).`) : e
+    })
     if (!jpg.length) throw new Error(`Kein Bild bei ${t} s in ${basename(file)} (Video zu kurz?)`)
     out.push(jpg)
   }
@@ -171,7 +174,7 @@ export async function pcm16k(file: string, from?: number, dur?: number): Promise
   return b.byteOffset % 4 ? new Float32Array(b.buffer.slice(b.byteOffset, b.byteOffset + k * 4)) : new Float32Array(b.buffer, b.byteOffset, k)
 }
 
-/** RMS-Pegel in dBFS je Sekunde über die ganze Tonspur (Stille → −100), Länge = Videodauer gerundet; ohne Tonspur −100. Braucht eine Videospur (probe). Dekodiert nur den Ton, die Werte kommen über stdout (ametadata) statt aus einer stderr-Flut. */
+/** RMS-Pegel in dBFS je Sekunde über die ganze Tonspur (Stille → −100), Länge = Dauer gerundet; ohne Tonspur −100. Geht auch mit reinen Audiodateien. Dekodiert nur den Ton, die Werte kommen über stdout (ametadata) statt aus einer stderr-Flut. */
 export async function loudness(file: string, onProgress?: (pct: number) => void): Promise<number[]> {
   const info = await probe(file)
   const n = Math.max(1, Math.round(info.duration)) // Resttrümmer < 0,5 s (Encoder-Padding, aac liefert gern etwas mehr) fallen weg
@@ -215,6 +218,7 @@ export async function contactSheet(file: string, parts: Part[], o: { size: { w: 
   const total = partsLength(parts)
   if (!parts.length || total <= 0) throw new Error('Kontaktabzug: keine Ausschnitte')
   const info = await probe(file)
+  if (!info.w) throw new Error(`Kein Kontaktabzug: ${basename(file)} hat kein Bild (reine Audiodatei).`)
   const at: number[] = [], times: number[] = [], ps: Part[] = []
   for (let i = 0; i < n; i++) {
     let c = ((i + 0.5) * total) / n // Clipzeit der Kachelmitte

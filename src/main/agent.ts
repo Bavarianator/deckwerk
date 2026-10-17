@@ -14,7 +14,7 @@ import { corePrompt, leitfaden, type Route } from './guide-modules'
 import { buildTools, mimeOf, type ToolDef, type ToolOutput } from './tools'
 
 // Vertrag zur Engine (implementiert in engine.ts). Alle Maße px auf der 1280x720-Folie.
-export type ExportFormat = 'pptx' | 'docx' | 'pdf' | 'png' | 'md' | 'zip' | 'print' | 'mp4' | 'clips' // docx = Word, Text bearbeitbar auf Hintergrundbild; zip = PNG je Folie + PDF in einer Datei (Social-Karussell); print = PDF für die Druckerei (PrintOptions in deck.ts); mp4 = ganzes Deck als Video, clips = je Clip-Folie eine MP4 (export-video.ts)
+export type ExportFormat = 'pptx' | 'docx' | 'pdf' | 'png' | 'md' | 'zip' | 'print' | 'mp4' | 'clips' | 'mp3' | 'm4a' // docx = Word, Text bearbeitbar auf Hintergrundbild; zip = PNG je Folie + PDF in einer Datei (Social-Karussell); print = PDF für die Druckerei (PrintOptions in deck.ts); mp4 = ganzes Deck als Video, clips = je Clip-Folie eine MP4 (export-video.ts); mp3/m4a = Podcast nur Ton mit Kapiteln (podcast.ts), aus deck.podcast oder den Clip-Folien
 export interface Engine {
   measure(deck: Deck, indices?: number[]): Promise<Measured[]> // Autofit + Messung, Reihenfolge wie indices
   renderPng(deck: Deck, indices: number[], width?: number): Promise<Buffer[]> // PNG pro Folie (default 1024 px breit)
@@ -26,7 +26,8 @@ export interface Engine {
 }
 // Video-Schnitt (ffmpeg.ts, transcribe.ts); file = absoluter Pfad einer Videodatei
 export interface VideoTools {
-  probe(file: string): Promise<VideoInfo>
+  probe(file: string): Promise<VideoInfo> // reine Audiodatei: w = h = 0
+  silences?(file: string, from: number, to: number, min: number): Promise<[number, number][]> // Stillen ab min s (silencedetect), Quellzeit
   frames(file: string, times: number[]): Promise<Buffer[]> // JPEG je Zeitpunkt (s), 640 px breit
   transcribe(file: string, onProgress?: (pct: number) => void, o?: { range?: { from: number; to: number }; lang?: string; speakers?: boolean }): Promise<Transcript> // lokal: Parakeet (sherpa-onnx), Whisper nur für Sprachen außerhalb von Parakeet; in 5-min-Stücken gecacht; range = nur diesen Bereich (s), speakers = Sprechertrennung
   device?(task?: 'export'): Promise<string> // wer rechnet; export: nach einem Ausstieg des Handys im laufenden Export „PC (Handy-Export gescheitert: …)“ (Handy-Option): „Handy (Modell, CPU)“ oder „PC (Grund)“, für export_deck und die Arbeitsansicht

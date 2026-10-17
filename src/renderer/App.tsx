@@ -63,6 +63,7 @@ export default function App() {
   const [story, setStory] = useState<StoryItem[] | null>(null) // geplante Storyline der KI (plan_storyline)
   const videoBusy = useRef(false) // läuft ein Video-Export? Zweiten gar nicht erst starten
   const [videoMode, setVideoMode] = useState(false) // über den Video-Modus des Starts begonnen: Deckvid schon vor der ersten Clip-Folie
+  const [podMode, setPodMode] = useState(false) // über den Podcast-Modus des Starts begonnen oder Deck mit deck.podcast: Deckvid als Podcast
   const [slidesView, setSlidesView] = useState(false) // Ausweg „Folien-Ansicht“: dieses Deck im normalen Editor
   const turnStart = useRef<Deck | null>(null)
   // automatisch sichern wie in Apple-Apps: jede Änderung nach kurzer Pause nach ~/Deckwerk/<titel>/deck.json
@@ -87,9 +88,11 @@ export default function App() {
   const deck = doc.deck
   const index = deck ? Math.max(0, Math.min(sel, deck.slides.length - 1)) : 0
   const hasClip = !!deck?.slides.some((s) => s.layout === 'clip')
-  const deckvid = (hasClip || videoMode) && !slidesView // Video-Decks: eigene, KI-zentrierte Ansicht
-  // einmal Video-Deck, immer Deckvid: Entfernen des letzten Clips springt nicht in den Editor
+  const hasPod = !!deck?.podcast
+  const deckvid = (hasClip || videoMode || hasPod || podMode) && !slidesView // Video- und Podcast-Decks: eigene, KI-zentrierte Ansicht
+  // einmal Video-Deck, immer Deckvid: Entfernen des letzten Clips springt nicht in den Editor; ebenso einmal Podcast
   useEffect(() => { if (hasClip && !videoMode) setVideoMode(true) }, [hasClip, videoMode])
+  useEffect(() => { if (hasPod && !podMode) setPodMode(true) }, [hasPod, podMode])
 
   useEffect(() => {
     api.state().then((s) => {
@@ -239,6 +242,7 @@ export default function App() {
     setStory(null)
     setTarget(null)
     setVideoMode(false)
+    setPodMode(false)
     setSlidesView(false)
     turnStart.current = null
   }
@@ -268,12 +272,14 @@ export default function App() {
       setSaved(true)
       setStatus({ text: `Gespeichert: ${p}` })
     }),
-    onExport: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions) => guard(async () => {
-      const video = format === 'mp4' || format === 'clips'
+    onExport: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips' | 'mp3' | 'm4a', print?: PrintOptions) => guard(async () => {
+      const sound = format === 'mp3' || format === 'm4a'
+      const video = format === 'mp4' || format === 'clips' || sound // Ton-Export belegt ffmpeg wie ein Video-Export
       if (video && videoBusy.current) throw new Error('Es läuft schon ein Video-Export. Warte, bis er fertig ist.')
-      setStatus({ text: video ? 'Video wird gerendert …' : `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
+      const work = sound ? 'Ton wird' : 'Video wird'
+      setStatus({ text: video ? `${work} gerendert …` : `Exportiere ${format === 'print' ? 'Druck-PDF' : format.toUpperCase()} …` })
       const phone = video ? await api.phoneStatus().catch(() => null) : null, where = phone?.on && phone.device ? ` auf dem Handy (${phone.device})` : ''
-      const off = video ? api.onExportProgress((pct) => setStatus({ text: `Video wird${where} gerendert … ${pct} %` })) : undefined
+      const off = video ? api.onExportProgress((pct) => setStatus({ text: `${work}${where} gerendert … ${pct} %` })) : undefined
       videoBusy.current = video
       try {
         const files = await api.exportDeck(format, print)
@@ -364,7 +370,7 @@ export default function App() {
     <div className="app">
       {home ? (
         <Start
-          onSubmit={send} onVideo={() => setVideoMode(true)} model={model} onModel={pickModel}
+          onSubmit={send} onVideo={(kind) => kind === 'podcast' ? setPodMode(true) : setVideoMode(true)} model={model} onModel={pickModel}
           onOpen={actions.onOpen} onOpenPath={actions.onOpenPath} onKey={() => openSettings()}
           onBlank={(size) => {
             // leer beginnen wie in Canva: eine leere Folie, alles Weitere von Hand oder per KI
@@ -387,6 +393,7 @@ export default function App() {
           exporting={videoBusy.current} // Ref genügt: Start, Fortschritt und Ende setzen den Status und rendern damit neu
           onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport} onSlides={() => setSlidesView(true)}
           patchSlide={patchSlide} delSlide={delSlide} canUndo={canUndoTurn} onUndo={undoTurn}
+          kind={hasPod || podMode ? 'podcast' : 'video'} onPodcast={(fn, tag) => commit((d) => (d.podcast ? { ...d, podcast: fn(d.podcast) } : d), tag)}
         />
       ) : (
         <>
@@ -414,7 +421,7 @@ export default function App() {
             onSeries={actions.onSeries}
             onPresent={() => present(0)}
             onRestore={actions.onOpenPath}
-            onVideo={videoMode ? () => setSlidesView(false) : undefined}
+            onVideo={videoMode || podMode ? () => setSlidesView(false) : undefined} podcast={hasPod || podMode}
           />
           {deck && view === 'grid' ? (
             <Overview

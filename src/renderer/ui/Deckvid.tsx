@@ -1,12 +1,13 @@
 // Deckvid: Arbeitsansicht für Video-Decks (Folien im Layout clip). Fast alles läuft über die KI (Chat und Ein-Klick-Aufträge);
 // von Hand gibt es nur, was einfacher ist als ein Satz: abspielen, Feinschnitt, Entfernen, Export.
-import { Fragment, memo, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { Fragment, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, RotateCcw, RotateCw, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { CLIP_STYLES, CUT, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipSpans, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type Look, type Overlay, type Part } from '../../shared/video'
+import { episodeSummary, type Episode } from '../../shared/podcast'
 import { SlideView, loadCustomFont } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -14,7 +15,10 @@ import { ClipCutter } from './ClipCutter'
 import { WorkSteps } from './DeckvidWork'
 import { ClipVideo, Strip, captionAt, clipUrl, useClipPlayer } from './clipPlayer'
 import { confirmDialog } from './kit'
-import { SourceChips, VIDEO_EXAMPLES, sourceContext, useSource } from './Start'
+import { PODCAST_EXAMPLES, SourceChips, VIDEO_EXAMPLES, sourceContext, useSource } from './Start'
+import { Hints, count, keysFree, useKey } from './deckvid-parts'
+import { PodcastStage } from './PodcastStage'
+import { Waveform, type Peaks, type WaveMark, type WaveSpan } from './Waveform'
 import { OpenSettings } from './settings/parts'
 import type { Status } from './TopBar'
 import './deckvid.css'
@@ -29,7 +33,6 @@ const labelOf = (s: Slide) => {
   return s.layout === 'section' ? `Zwischentitel${t ? `: ${t}` : ''}` : `Folie: ${t || (LAYOUTS[s.layout as LayoutId]?.name ?? s.layout)}`
 }
 const RANK = { error: 0, warn: 1, info: 2 }
-const count = (xs: ClipIssue[]) => xs.filter((x) => x.severity !== 'info').length // Infos zählen nicht
 const where = (s: ClipSlide, n: number) =>
   `Clip ${n} (Folie ${s.id}), Quelle ${s.content.video}, parts ${s.content.parts.map((p) => `${p.start}–${p.end}`).join(', ')}`
 
@@ -54,24 +57,6 @@ const loudCurve = (loud: number[]) => {
   return Array.from({ length: n }, (_, i) => Math.min(1, Math.max(0, (Math.max(...loud.slice(Math.floor(i * k), Math.max(Math.floor(i * k) + 1, Math.floor((i + 1) * k)))) + 60) / 60)))
 }
 
-// Fenster-Tasten über eine Ref: ein Listener für die ganze Lebenszeit, der Handler sieht trotzdem den aktuellen Stand
-function useKey(fn: (e: KeyboardEvent) => void) {
-  const ref = useRef(fn)
-  ref.current = fn
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => ref.current(e)
-    addEventListener('keydown', h)
-    return () => removeEventListener('keydown', h)
-  }, [])
-}
-// Tasten der Ansicht nicht beim Tippen, nicht mit Modifikator und nicht, solange ein Dialog, Menü oder Dropdown offen ist (Feinschnitt fängt seine Tasten selbst ab).
-// emptyAsk: auch im leeren Chatfeld, dort steht der Cursor nach dem Senden (nur für die Leertaste, Buchstaben wären Text)
-const keysFree = (e: KeyboardEvent, emptyAsk = false) => {
-  const t = e.target as HTMLElement
-  const typing = t.isContentEditable || (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && !(emptyAsk && t.matches('.dv-ask input') && !(t as HTMLInputElement).value))
-  return !(e.ctrlKey || e.metaKey || e.altKey || typing || t.closest('[role=menu], [role=listbox]')
-    || document.querySelector('[aria-modal="true"], dialog[open], .kit-menu, [role=menu]'))
-}
 
 interface Props {
   deck: Deck | null
@@ -87,8 +72,10 @@ interface Props {
   onAbort: () => void
   onSelect: (i: number) => void
   onHome: () => void
-  onExport: (format: 'mp4' | 'clips') => void
-  exporting: boolean // Video-Export läuft
+  onExport: (format: 'mp4' | 'clips' | 'mp3' | 'm4a') => void
+  exporting: boolean // Video- oder Ton-Export läuft
+  kind: 'video' | 'podcast' // podcast: deck.podcast statt Clip-Folien
+  onPodcast: (fn: (ep: Episode) => Episode, tag?: string) => void // auf den aktuellen Stand von deck.podcast
   onSlides: () => void // Ausweg in den normalen Folien-Editor
   patchSlide: (i: number, p: Partial<Slide>) => void
   delSlide: (i: number) => void
@@ -99,6 +86,8 @@ interface Props {
 // Der Player rendert je Bild neu; er sitzt in ClipStage, damit Liste und Chat dabei stillstehen
 export function Deckvid(p: Props) {
   const { deck, index, busy, onSend } = p
+  const pod = p.kind === 'podcast'
+  const ep = deck?.podcast
   const openSettings = useContext(OpenSettings)
   const size = sizeOf(deck)
   const wide = size.w > size.h // Querformat: ganzes Video statt Shorts
@@ -154,7 +143,7 @@ export function Deckvid(p: Props) {
   }, [slides, cache, size.w, size.h])
 
   useKey((e) => {
-    if (!keysFree(e) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !slides.length) return
+    if (pod || !keysFree(e) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !slides.length) return
     e.preventDefault()
     p.onSelect(Math.max(0, Math.min(slides.length - 1, index + (e.key === 'ArrowLeft' ? -1 : 1))))
   })
@@ -162,8 +151,8 @@ export function Deckvid(p: Props) {
   const names = srcs.length ? ` · ${srcs.map((s) => s.name).join(', ')}` : ''
   const withSrcs = (ctx?: string) => [ctx, srcs.length > 0 && sourceContext(srcs)].filter(Boolean).join('\n\n') || undefined
   const submit = () => {
-    const text = draft.trim() || (srcs.length ? 'Nutze diese Videos.' : '')
-    if (text && onSend(text + names, withSrcs(here))) { setDraft(''); clear() }
+    const text = draft.trim() || (srcs.length ? (pod ? 'Nutze diese Aufnahmen.' : 'Nutze diese Videos.') : '')
+    if (text && onSend(text + names, withSrcs(pod ? (ep ? `Podcast-Folge (deck.podcast): ${episodeSummary(ep)}` : undefined) : here))) { setDraft(''); clear() }
   }
   // Standardwert = Feld weglassen, wie die KI es schreibt
   const setClip = (x: Partial<ClipContent>) => {
@@ -186,18 +175,24 @@ export function Deckvid(p: Props) {
       <header className="top">
         <div className="top-l"><button className="plain tint" onClick={p.onHome}><ChevronLeft size={16} />Decks</button></div>
         <div className="top-title" title={p.path ?? undefined}>
-          <b>{deck?.title ?? 'Neues Video'}</b>
+          <b>{deck?.title ?? (pod ? 'Neue Folge' : 'Neues Video')}</b>
           {state && <span className={p.status?.error ? 'error' : undefined} role="status">— {state}</span>}
         </div>
         <div className="top-r">
-          <button className="plain" disabled={!deck} title="Alle Folien mit allen Werkzeugen bearbeiten" onClick={p.onSlides}>Folien-Ansicht</button>
+          {!pod && <button className="plain" disabled={!deck} title="Alle Folien mit allen Werkzeugen bearbeiten" onClick={p.onSlides}>Folien-Ansicht</button>}
           <button className="plain" title="Einstellungen" aria-label="Einstellungen" onClick={() => openSettings()}><Settings size={17} /></button>
           <div className="top-export" ref={box}>
-            <button className="pill tint" disabled={!clips.length || !idle} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Share size={14} />Exportieren</button>
+            <button className="pill tint" disabled={!(pod ? ep : clips.length) || !idle} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Share size={14} />Exportieren</button>
             {menu && (
               <div className="menu material" role="menu">
-                <button role="menuitem" onClick={() => { setMenu(false); p.onExport('clips') }}>Shorts einzeln (MP4)</button>
-                <button role="menuitem" onClick={() => { setMenu(false); p.onExport('mp4') }}>Ganzes Video (MP4)</button>
+                {pod ? <>
+                  <button role="menuitem" onClick={() => { setMenu(false); p.onExport('mp3') }}>MP3</button>
+                  <button role="menuitem" onClick={() => { setMenu(false); p.onExport('m4a') }}>M4A (mit Kapitelmarken)</button>
+                </> : <>
+                  <button role="menuitem" onClick={() => { setMenu(false); p.onExport('clips') }}>Shorts einzeln (MP4)</button>
+                  <button role="menuitem" onClick={() => { setMenu(false); p.onExport('mp4') }}>Ganzes Video (MP4)</button>
+                  <button role="menuitem" onClick={() => { setMenu(false); p.onExport('mp3') }}>Als Podcast (MP3)</button>
+                </>}
               </div>
             )}
           </div>
@@ -205,8 +200,8 @@ export function Deckvid(p: Props) {
         {pct && <i className="dv-progress" style={{ width: `${pct}%` }} aria-hidden />}
       </header>
 
-      <div className="dv">
-        <nav className="dv-list" aria-label="Clips" ref={list}>
+      <div className={pod ? 'dv pod' : 'dv'}>
+        {!pod && <nav className="dv-list" aria-label="Clips" ref={list}>
           {clips.length > 0 && <div className="dv-list-head"><b>{wide ? 'Ablauf' : 'Shorts'}</b><span>{clips.length} · {mmss(clips.reduce((t, s) => t + partsLength(s.content.parts), 0))}</span></div>}
           {slides.map((s, i) => s.hidden ? null : isClip(s) ? ( // ausgeblendet: nicht im Video (Folien als Einblendung, overlays.slide)
             <button key={s.id} className="dv-item" aria-current={i === index} onClick={() => p.onSelect(i)}>
@@ -219,9 +214,12 @@ export function Deckvid(p: Props) {
           {clips.length > 0 && !wide && (
             <button className="pill dv-more" disabled={busy} onClick={() => onSend('Mach weitere Shorts aus demselben Video: starke Stellen, die noch kein Clip nutzt.', `Vorhandene Clips: ${clips.map((s) => where(s, no(s))).join(' · ')}`)}>Weitere Shorts</button>
           )}
-        </nav>
+        </nav>}
 
-        {clip ? (
+        {pod && deck && ep ? (
+          <PodcastStage deck={{ ...deck, podcast: ep }} busy={busy} idle={idle} onSend={onSend} undo={undo}
+            onPodcast={p.onPodcast} />
+        ) : !pod && clip ? (
           <ClipStage key={clip.id} clip={clip} n={no(clip)} total={clips.length} here={here!} size={size} deck={deck} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
             parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)} cached={cache[clip.content.video] ?? null} issues={issues[clip.id] ?? []} fresh={!!fresh[clip.content.video]}
             busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()} onContent={setClip} />
@@ -230,13 +228,13 @@ export function Deckvid(p: Props) {
             <div className="dv-empty">
               {busy ? (
                 <WorkSteps msgs={p.msgs} busy={busy} />
-              ) : slide ? (
+              ) : slide && !pod ? (
                 <p>{labelOf(slide)} – steht im fertigen Video {STILL} Sekunden zwischen den Clips.</p>
               ) : (
                 <>
-                  <p>Häng ein Video an oder füg einen Link in den Chat ein und sag, was daraus werden soll.</p>
+                  <p>{pod ? 'Häng deine Aufnahme an (Audio oder Video) und sag, was daraus werden soll.' : 'Häng ein Video an oder füg einen Link in den Chat ein und sag, was daraus werden soll.'}</p>
                   <div>
-                    {VIDEO_EXAMPLES.map(([label, full, hint]) => (
+                    {(pod ? PODCAST_EXAMPLES : VIDEO_EXAMPLES).map(([label, full, hint]) => (
                       <button key={label} className="pill" onClick={() => { if (onSend(full + names, withSrcs(hint))) clear() }}>{label}</button>
                     ))}
                   </div>
@@ -249,7 +247,8 @@ export function Deckvid(p: Props) {
 
         <aside className="dv-chat" aria-label="KI">
           <ChatLog className="dv-log" msgs={p.msgs} busy={busy} onSend={onSend} />
-          {!p.msgs.length && clips.length > 0 && (
+          {!p.msgs.length && pod && ep && <p className="dv-hint">Die KI kennt deine Folge. Sag zum Beispiel: „Schneid die Begrüßung raus“ oder „Setz Kapitel“.</p>}
+          {!p.msgs.length && !pod && clips.length > 0 && (
             <p className="dv-hint">{wide ? 'Die KI kennt dein Video. Sag zum Beispiel: „Schneid die Begrüßung raus“ oder „Kürz das Video auf zehn Minuten“.' : 'Die KI kennt dein Video. Sag zum Beispiel: „Mach den zweiten Clip spannender“ oder „Noch zwei Shorts mit den lustigsten Stellen“.'}</p>
           )}
           <form className="dv-ask" onSubmit={(e) => { e.preventDefault(); submit() }}
@@ -258,7 +257,7 @@ export function Deckvid(p: Props) {
             {(srcs.length > 0 || err) && <div className="dv-files"><SourceChips srcs={srcs} remove={remove} err={err} /></div>}
             <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={busy ? 'Die KI arbeitet …' : 'Sag der KI, was sie ändern soll …'} aria-label="Wunsch an die KI" />
             <div className="dv-ask-bar">
-              <button type="button" className="plain" aria-label="Video anhängen" title="Video anhängen (oder hierher ziehen)" disabled={busy} onClick={() => attach()}><Paperclip size={16} /></button>
+              <button type="button" className="plain" aria-label={pod ? 'Aufnahme anhängen' : 'Video anhängen'} title={pod ? 'Audio oder Video anhängen (oder hierher ziehen)' : 'Video anhängen (oder hierher ziehen)'} disabled={busy} onClick={() => attach()}><Paperclip size={16} /></button>
               <ModelSelect value={p.model} onChange={p.onModel} />
               {busy
                 ? <button type="button" className="round stop" aria-label="Stoppen" onClick={p.onAbort}><Square size={12} fill="currentColor" /></button>
@@ -283,21 +282,6 @@ function Flag({ xs }: { xs?: ClipIssue[] }) {
   return <span className={`dv-flag${e ? ' err' : ''}`} role="img" aria-label={`${k} ${k === 1 ? 'Hinweis' : 'Hinweise'}${e ? `, davon ${e} Fehler` : ''}`}><i aria-hidden />{k}</span>
 }
 
-// Prüfhinweise des gewählten Clips: höchstens 4 sichtbar, Rest aufklappbar
-function Hints({ xs, busy, onFix }: { xs: ClipIssue[]; busy: boolean; // busy: KI arbeitet oder Cache noch nicht neu geladen
-   onFix: () => void }) {
-  const [all, setAll] = useState(false)
-  const shown = all ? xs : xs.slice(0, 4)
-  return (
-    <div className="dv-hints" role="group" aria-label="Prüfhinweise">
-      <ul>{shown.map((x, k) => <li key={k} className={x.severity}><span className="dv-sr">{x.severity === 'error' ? 'Fehler: ' : 'Hinweis: '}</span>{x.message}</li>)}</ul>
-      <div>
-        {xs.length > 4 && <button className="plain" aria-expanded={all} onClick={() => setAll(!all)}>{all ? 'Weniger' : `+ ${xs.length - 4} weitere`}</button>}
-        {count(xs) > 0 && <button className="pill" disabled={busy} onClick={onFix}>Von der KI beheben lassen</button>}
-      </div>
-    </div>
-  )
-}
 
 // Post-Text des Clips: Titelzeile hervorgehoben, lange Texte eingeklappt; Kopieren meldet sich per aria-live
 function Post({ text }: { text: string }) {
@@ -492,6 +476,27 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
   }, [player.playing, player.t, before, videoLen, vol, music])
   useEffect(() => () => { void mix.current?.ctx.close() }, [])
   const curve = useMemo(() => cached?.signals?.loud.length ? loudCurve(cached.signals.loud) : undefined, [cached])
+  // echte Wellenform der Quelle (Main rechnet und cacht sie); bis dahin oder ohne die grobe Lautheitskurve
+  const [peaks, setPeaks] = useState<Peaks | null>(null)
+  const [media, setMedia] = useState<HTMLVideoElement | null>(null)
+  useEffect(() => { setMedia(videoRef.current) }, [])
+  useEffect(() => {
+    let off = false
+    window.api.podcastPeaks(c.video).then((x) => { if (!off) setPeaks(x) }, () => {})
+    return () => { off = true }
+  }, [c.video])
+  // Soundeffekte: at ist Clipzeit, die Zeitleiste zeigt Quellzeit
+  const sfx = useMemo(() => (c.sfx ?? []).map((x): WaveMark => {
+    let at = x.at, s = c.parts[c.parts.length - 1].end
+    for (const q of c.parts) { if (at <= q.end - q.start) { s = q.start + at; break } at -= q.end - q.start }
+    return { at: s, kind: 'sfx', title: `Soundeffekt: ${decodeURIComponent(x.src.split('/').pop() ?? x.src)}` }
+  }), [c.sfx, c.parts])
+  // memo und feste Callbacks: der Player rendert je Bild neu, die Wellenform soll dabei stillstehen
+  const seekRef = useRef(player.seekSource)
+  seekRef.current = player.seekSource
+  const onWaveSeek = useCallback((x: number) => seekRef.current(x), [])
+  const waveSpans = useMemo(() => [...parts.map((x): WaveSpan => ({ start: x.start, end: x.end, kind: c.parts.includes(x) ? 'on' : 'part' })),
+    ...(cached?.highlights ?? []).map((h): WaveSpan => ({ start: h.start, end: h.end, kind: 'mark', title: h.why }))], [parts, c.parts, cached])
 
   const wide = size.w > size.h, m = Math.min(size.w, size.h)
   const live = c.style === 'lebendig' // ruhig/fehlend: keine Klasse, Darstellung wie bisher
@@ -650,9 +655,13 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
             {!!cached?.highlights.length && <span><i className="mark" aria-hidden />Highlight</span>}
           </span>
         </div>
-        <Strip from={0} to={to} parts={parts} on={(x) => c.parts.includes(x)} head={player.src} onSeek={player.seekSource} curve={curve}
-          marks={cached?.highlights.map((h) => ({ start: h.start, end: h.end, label: h.why }))} />
-        <div className="dv-scale" aria-hidden>{[0, 1, 2, 3, 4].map((k) => <span key={k}>{mmss((to * k) / 4)}</span>)}</div>
+        {peaks && media ? (
+          <Waveform peaks={peaks} media={media} onSeek={onWaveSeek} timeline height={56} label="Wellenform des ganzen Videos" marks={sfx} spans={waveSpans} />
+        ) : <>
+          <Strip from={0} to={to} parts={parts} on={(x) => c.parts.includes(x)} head={player.src} onSeek={player.seekSource} curve={curve}
+            marks={cached?.highlights.map((h) => ({ start: h.start, end: h.end, label: h.why }))} />
+          <div className="dv-scale" aria-hidden>{[0, 1, 2, 3, 4].map((k) => <span key={k}>{mmss((to * k) / 4)}</span>)}</div>
+        </>}
         {!!cached?.highlights.length && (
           <div className="dv-marks" role="group" aria-label="Highlights">
             {cached.highlights.map((h, k) => (

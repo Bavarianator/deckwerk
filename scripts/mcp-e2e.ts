@@ -31,7 +31,7 @@ const call = async (name: string, args: Record<string, unknown> = {}) => {
 const t0 = Date.now()
 const lap = (what: string) => console.log(`${String(Date.now() - t0).padStart(6)} ms  ${what}`)
 
-assert.equal((await client.listTools()).tools.length, 27)
+assert.equal((await client.listTools()).tools.length, 29)
 await call('create_deck', { title: 'E2E Test', theme: 'corporate', brand: { primary: '#0A7C66' } })
 let r = await call('add_slides', { slides: [
   { layout: 'cover', content: { eyebrow: 'E2E', title: 'Der MCP-Server rendert echte Folien', subtitle: 'Offscreen-Chromium im Electron-Main-Prozess' }, notes: 'Testfolie' },
@@ -126,5 +126,42 @@ const joined = r.content[0].text!.split('\n')[1]
 const [, h2, m2, s2] = spawnSync('ffmpeg', ['-i', joined]).stderr.toString().match(/Duration: (\d+):(\d+):([\d.]+)/)!
 const dur2 = +h2 * 3600 + +m2 * 60 + +s2 // 3 s + 4 s / 2 = 5 s, minus 0,5 s Blende, plus Polster
 assert.ok(dur2 > 4.3 && dur2 < 5 + 4 * PAD + 0.3, `Zusammenschnitt dauert ${dur2} s statt ~4,5–5 s`)
+const durOf = (f: string) => { const [, h, m, s] = spawnSync('ffmpeg', ['-i', f]).stderr.toString().match(/Duration: (\d+):(\d+):([\d.]+)/)!; return +h * 3600 + +m * 60 + +s }
+const exported = async (format: string) => {
+  for (let n = 0; ; n++) {
+    const x = await call('export_deck', { format })
+    if (!/läuft noch/.test(x.content[0].text!)) return x.content[0].text!
+    assert.ok(n < 5, `Export hängt: ${x.content[0].text}`)
+  }
+}
+const mp3In = (text: string) => { const f = text.split('\n').map((l) => l.trim()).find((l) => l.endsWith('.mp3')); assert.ok(f, `keine MP3 in: ${text}`); return f! }
+// „Als Podcast“: Video-Deck ohne deck.podcast → nur der Ton der Clip-Ausschnitte (Zusammenschnitt oben: 1–4 s und 5–9 s in Quellzeit, Tempo zählt nicht)
+const asPod = mp3In(await exported('mp3'))
+lap('export_deck mp3 (Als Podcast)')
+assert.ok(existsSync(asPod), `MP3 fehlt: ${asPod}`)
+assert.ok(Math.abs(durOf(asPod) - 7) < 0.6, `Als Podcast dauert ${durOf(asPod)} s statt ~7 s`)
+
+// Podcast: 12 s Ton mit 3 s Stille in der Mitte; Pausen kürzen, ein Schnitt von Hand, Kapitel, ein Soundeffekt
+const voice = join(home, 'folge.wav'), beep = join(home, 'piep.wav')
+execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', "sine=frequency=220:duration=12,volume='if(between(t,5,8),0,1)':eval=frame", voice])
+execFileSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=1500:duration=0.3', beep])
+r = await call('create_episode', { title: 'E2E Folge', tracks: [{ src: voice, name: 'Moderation' }] })
+assert.match(r.content[0].text!, /0:12/)
+for (let n = 0; ; n++) {
+  r = await call('edit_episode', { clean: { pauses: 0.6 } })
+  if (!/läuft noch/.test(r.content[0].text!)) break
+  assert.ok(n < 5, `Pausensuche hängt: ${r.content[0].text}`)
+}
+lap('edit_episode clean')
+assert.match(r.content[0].text!, /1 Paus/)
+await call('edit_episode', { cut: [{ start: 1, end: 2 }], chapters: [{ at: 0, title: 'Anfang' }, { at: 9, title: 'Schluss' }], sfx: [{ src: beep, at: 3 }] })
+const ep = JSON.parse((await call('get_deck')).content[0].text!).podcast
+assert.equal(ep.cuts.length, 2)
+const pod = mp3In(await exported('mp3'))
+lap('export_deck mp3')
+assert.ok(existsSync(pod), `MP3 fehlt: ${pod}`)
+assert.ok(Math.abs(durOf(pod) - (12 - 1 - 2.4)) < 0.3, `Folge dauert ${durOf(pod)} s statt ~8,6 s`)
+assert.match(spawnSync('ffmpeg', ['-i', pod]).stderr.toString(), /title\s*: Schluss/)
+assert.ok(existsSync(pod.replace(/\.mp3$/, '.chapters.json')))
 await client.close()
 console.log(`E2E OK · ${file} · ${mp4}`)

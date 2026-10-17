@@ -11,7 +11,7 @@ export interface Track { id: string; title: string; artist: string; duration: nu
 
 // Nur Lizenzen, die Musik unter Video erlauben: ND/SA/NC nie (Vertonung ist eine Bearbeitung, SA würde die Lizenz aufs Video übertragen)
 const LICENSE = { cc0: 'CC0', pdm: 'Public Domain Mark', by: 'CC BY' } as const
-const MIN_SECONDS = 30 // kürzere Treffer sind Jingles
+const MIN_SECONDS = 30 // kürzere Treffer sind Jingles und Soundeffekte (kurz)
 const MAX_MB = 50
 const API = 'https://api.openverse.org/v1/audio'
 const UA = { 'User-Agent': 'Deckwerk/0.1 (+https://github.com/Bavarianator/deckwerk)' }
@@ -28,10 +28,10 @@ export function extOf(h: Pick<Hit, 'url' | 'filetype'>): string | null {
   return AUDIO_EXT.includes(e) ? e : null
 }
 
-// Reine Filterfunktion (auch für fetchMusic mit den Detaildaten)
-export function usable(h: Hit): boolean {
+// Reine Filterfunktion (auch für fetchMusic mit den Detaildaten); kurz = Soundeffekte/Jingles unter 30 s statt Musikbetten
+export function usable(h: Hit, kurz = false): boolean {
   const sec = (h.duration ?? 0) / 1000
-  return Object.hasOwn(LICENSE, h.license) && !!h.url?.startsWith('https://') && !!extOf(h) && (sec === 0 || sec >= MIN_SECONDS)
+  return Object.hasOwn(LICENSE, h.license) && !!h.url?.startsWith('https://') && !!extOf(h) && (sec === 0 || (kurz ? sec < MIN_SECONDS : sec >= MIN_SECONDS))
 }
 
 const track = (h: Hit): Track => ({
@@ -46,9 +46,9 @@ async function api<T>(url: string): Promise<T> {
   return (await res.json()) as T
 }
 
-export async function findMusic(query: string, limit = 8): Promise<Track[]> {
-  const { results } = await api<{ results: Hit[] }>(`${API}/?q=${encodeURIComponent(query)}&category=music&license=cc0,pdm,by&page_size=${Math.min(Math.max(limit, 1) * 3, 20)}&mature=false`)
-  return results.filter(usable).slice(0, limit).map(track)
+export async function findMusic(query: string, limit = 8, kurz = false): Promise<Track[]> {
+  const { results } = await api<{ results: Hit[] }>(`${API}/?q=${encodeURIComponent(query)}&category=${kurz ? 'sound_effect,music' : 'music'}&license=cc0,pdm,by&page_size=${Math.min(Math.max(limit, 1) * 3, 20)}&mature=false`)
+  return results.filter((h) => usable(h, kurz)).slice(0, limit).map(track)
 }
 
 // Redirects von Hand: jeder Hop muss https und kein lokales Netz sein. Der Body ist auf MAX_MB begrenzt (zählt beim Streamen).
@@ -75,7 +75,7 @@ async function get(url: string): Promise<ReadableStream<Uint8Array>> {
 export async function fetchMusic(id: string, dir: string): Promise<{ file: string; credit: string; track: Track }> {
   if (!/^[\w-]{8,64}$/.test(id)) throw new Error('Ungültige Openverse-ID.')
   const h = await api<Hit>(`${API}/${id}/`) // Details selbst holen, der KI-Eingabe nicht trauen
-  if (!usable(h)) throw new Error('Dieser Titel ist nicht frei genug nutzbar (Lizenz, Format oder Länge).')
+  if (!usable(h) && !usable(h, true)) throw new Error('Dieser Titel ist nicht frei genug nutzbar (Lizenz oder Format).') // Länge egal: Musikbett wie Soundeffekt
   const t = track(h)
   const slug = t.title.normalize('NFKD').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 40) || 'musik'
   const file = join(dir, `${slug}-${id.replace(/\W/g, '').slice(0, 8)}.${extOf(h)}`)

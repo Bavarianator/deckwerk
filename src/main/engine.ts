@@ -14,7 +14,7 @@ import type { Engine } from './agent'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
-import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
+import { ffmpegBin, frames, loudness, pcm16k, probe, scenes, silences } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { phoneDevice, phoneMarker } from './phone'
 import { PARAKEET_LANGS, asr, asrModelOf, diarize, tag, type AsrModel } from './sherpa'
@@ -307,6 +307,7 @@ export function createEngine(): Engine {
         })().finally(() => videoRuns.delete(key))
         return entry.done
       }
+      if (format === 'mp3' || format === 'm4a') return (await import('./podcast')).renderEpisode(deck, format, base, onProgress)
       if (format === 'md') {
         await writeFile(`${base}.md`, handout(deck))
         return [`${base}.md`]
@@ -347,6 +348,7 @@ export function createEngine(): Engine {
     video: {
       probe,
       frames,
+      silences,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
       device,
       async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : `${await device()}, ${asrModel(lang) === 'de-schnell' ? 'Deutsch schnell' : 'Parakeet Ultra'}` },

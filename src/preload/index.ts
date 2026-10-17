@@ -93,12 +93,16 @@ const api = {
   save: (): Promise<string> => invoke('deck:save'),
   /** Cache-Daten eines Videos (asset://-URL oder Pfad), rechnet nie; null = kein erlaubtes Video */
   videoCached: (src: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null } | null> => invoke('video:cached', src),
+  /** Wellenform einer Video- oder Audiodatei (asset://-URL oder Pfad), vom Main gerechnet und gecacht: Betragsmaxima 0..1, rate Werte je Sekunde; null = keine erlaubte Datei */
+  podcastPeaks: (src: string): Promise<{ duration: number; rate: number; data: number[] } | null> => invoke('podcast:peaks', src),
+  /** Vorschau aller Podcast-Spuren ungeschnitten → asset://-URL */
+  podcastPreview: (deck: Deck): Promise<string> => invoke('podcast:preview', deck),
   /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
   jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean; where?: string }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
-  /** alle erzeugten Dateien (bei 'clips' mehrere) */
-  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
-  /** Fortschritt eines Video-Exports in % */
+  /** alle erzeugten Dateien (bei 'clips' mehrere); mp3/m4a = Podcast (nur Ton, mit Kapiteln) */
+  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips' | 'mp3' | 'm4a', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
+  /** Fortschritt eines Video- oder Ton-Exports in % */
   onExportProgress(cb: (pct: number) => void): () => void {
     const h = (_: unknown, pct: number) => cb(pct)
     ipcRenderer.on('export:progress', h)
