@@ -23,7 +23,7 @@ const itemKey = z.object({
 
 export const itemSchema = z.object({
   id: z.string().max(40).optional().describe('weglassen = neu; vorhandene ID = dieses Element ersetzen'),
-  kind: z.enum(['text', 'shape', 'image', 'icon', 'chart', 'video', 'audio', 'qr', 'graphic']).describe('qr: text = URL; graphic: handgezeichnete Deko (graphic = Name), Farbe über color'),
+  kind: z.enum(['text', 'shape', 'image', 'icon', 'chart', 'video', 'audio', 'qr', 'graphic', 'table']).describe('qr: text = URL; graphic: handgezeichnete Deko (graphic = Name), Farbe über color; table: cells, Schrift über size/color, Linien über stroke'),
   group: z.string().max(40).optional().describe('gleiche ID = Gruppe (zusammen verschieben/skalieren)'),
   x: z.number().min(-1280).max(2560), y: z.number().min(-720).max(1440),
   w: z.number().min(1).max(3000), h: z.number().min(0).max(3000).describe('Text: wird aus dem Inhalt berechnet, trotzdem angeben'),
@@ -67,6 +67,7 @@ export const itemSchema = z.object({
     series: z.array(z.object({ name: z.string(), values: z.array(z.number()) })).min(1).max(6),
     unit: z.string().max(12).optional(),
   }).optional(),
+  cells: z.array(z.array(z.string().max(200)).min(1).max(8)).min(1).max(16).optional().describe('nur table: Zeilen mit gleich vielen Zellen, erste Zeile = Kopfzeile; Zahlen stehen rechtsbündig. h ergibt sich aus dem Inhalt'),
 })
 
 // Handgezeichnete Deko wie Canvas Sticker-Grafiken: Pfade im 100×100-Raster, Farbe = currentColor.
@@ -130,6 +131,22 @@ export const newChart = (type: ChartSpec['type']): Item => ({
   ...at(640, 380), kind: 'chart',
   spec: { type, categories: ['Q1', 'Q2', 'Q3', 'Q4'], series: [{ name: 'Umsatz', values: [12, 18, 23, 31] }] },
 })
+
+export const newTable = (): Item => ({
+  ...at(720, 240), kind: 'table', size: 22,
+  cells: [['Posten', '2025', '2026'], ['Umsatz', '1,2 Mio €', '1,5 Mio €'], ['Kunden', '340', '410'], ['Team', '12', '15']],
+})
+// Zeilen gleich lang machen (fehlende Zellen leer), für Editor und Export
+export const squareCells = (c: string[][]) => {
+  const n = Math.max(1, ...c.map((r) => r.length))
+  return c.map((r) => Array.from({ length: n }, (_, i) => r[i] ?? ''))
+}
+// Tabellen-Text für den Tabellen-Editor: Zeilen = Zeilen, Trenner Tab oder ;
+export const cellsToCsv = (c: string[][]) => c.map((r) => r.join('; ')).join('\n')
+export const csvToCells = (csv: string): string[][] | null => {
+  const rows = csv.split('\n').filter((r) => r.trim()).map((r) => r.split(/\t|;/).map((x) => x.trim().slice(0, 200)))
+  return rows.length ? squareCells(rows).slice(0, 16).map((r) => r.slice(0, 8)) : null
+}
 
 // Tabellen-Text für den Diagramm-Editor: erste Zeile = Seriennamen, erste Spalte = Kategorien, Trenner Tab oder ;
 export const specToCsv = (s: ChartSpec) =>
@@ -231,6 +248,8 @@ export function elsToItems(els: El[]): Item[] {
         return [{ ...at, kind: 'image', src: `data:image/svg+xml;utf8,${encodeURIComponent(e.svg)}` }] // ponytail: seltener Rest, SVG-Bild
       case 'chart':
         return [{ ...at, kind: 'chart', spec: e.spec }]
+      case 'table':
+        return [{ ...at, kind: 'table', cells: e.cells, size: Math.round(e.sizePx), font: e.fontFace ?? e.font, color: e.color, stroke: e.line }]
       case 'media':
         return [{ ...at, kind: e.media, src: e.src, poster: e.poster }]
     }

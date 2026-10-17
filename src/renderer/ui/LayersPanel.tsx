@@ -2,7 +2,7 @@
 // über das Layout gezeichnet, das letzte Element liegt vorne. Klick wählt, Umschalt+Klick ergänzt, Ziehen bzw. Alt+Pfeil
 // ändert die Reihenfolge, das Schloss sperrt. Gruppen sind nur Markierungen (Item.group): Kopfzeile je zusammenhängendem Block.
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react'
-import { ChartColumn, Film, Group, Image, LayoutTemplate, Lock, LockOpen, Music, QrCode, Shapes, Smile, Spline, Type, type LucideIcon } from 'lucide-react'
+import { ChartColumn, Film, Group, Image, LayoutTemplate, Lock, LockOpen, Music, QrCode, Shapes, Smile, Spline, Table, Type, type LucideIcon } from 'lucide-react'
 import type { Deck, Item } from '../../shared/deck'
 import { GRAPHICS } from '../../shared/items'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
@@ -12,7 +12,7 @@ import './layers.css'
 
 const KIND: Record<Item['kind'], [LucideIcon, string]> = {
   text: [Type, 'Text'], shape: [Shapes, 'Form'], image: [Image, 'Bild'], icon: [Smile, 'Icon'], chart: [ChartColumn, 'Diagramm'],
-  video: [Film, 'Video'], audio: [Music, 'Audio'], qr: [QrCode, 'QR-Code'], graphic: [Spline, 'Grafik'],
+  video: [Film, 'Video'], audio: [Music, 'Audio'], qr: [QrCode, 'QR-Code'], graphic: [Spline, 'Grafik'], table: [Table, 'Tabelle'],
 }
 // Text: erste Zeile ohne **fett** und [Link](url)
 const nameOf = (it: Item) =>

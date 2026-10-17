@@ -12,7 +12,7 @@ import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM
 import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, isArt, cropFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
-import { localAsset } from './sync'
+import { assetPath, localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
 export interface Seg { file: string; dur: number; music?: [number, number, number][]; cues?: Cue[] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music), cues: Untertitel-Zeilen ab Seg-Anfang (fürs SRT)
@@ -409,7 +409,7 @@ export async function subFont(deck: Deck): Promise<SubFont> {
 
 // asset://local/<pfad> oder absoluter Pfad; auf einem anderen Gerät auf den lokalen Deckwerk-Ordner umleiten
 export function videoPath(src: string, slide: number, field = 'video') {
-  const p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src
+  const p = src.startsWith('asset://') ? assetPath(src) : src
   if (!isAbsolute(p)) throw new Error(`Folie ${slide}: „${field}“ muss ein asset://-Pfad oder ein absoluter Dateipfad sein.`)
   if (!MEDIA_EXT.test(p)) throw new Error(`Folie ${slide}: „${field}“ ist keine Mediendatei (${basename(p)}).`)
   return localAsset(p)

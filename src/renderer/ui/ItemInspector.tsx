@@ -1,13 +1,13 @@
 // Eigenschaften der gewählten freien Elemente: Position, Drehung, Deckkraft, Ebenen, Ausrichten, Animation und je Art
 // Schrift/Farbe, Füllung/Verlauf/Rahmen, Bildlook/Maske/Spiegeln, Icon, Diagrammdaten.
-import { useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 import {
   AlignCenter, AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignLeft, AlignRight,
   AlignStartHorizontal, AlignStartVertical, ArrowDown, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUp, ArrowUpToLine, Bold, ChevronDown, ChevronUp, Copy, FlipHorizontal,
-  ClipboardPaste, Crop, Eraser, Group, Italic, List, ListOrdered, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Spline, Trash2, Underline, Ungroup, type LucideIcon,
+  ClipboardPaste, Crop, Eraser, Group, Italic, List, ListOrdered, LoaderCircle, Lock, LockOpen, Paintbrush, Pipette, Spline, Trash2, Underline, Ungroup, X, type LucideIcon,
 } from 'lucide-react'
 import { ANIM_DIRS, DASHES, ITEM_ANIMS, animStartOf, type Adjust, type AnimDir, type AnimStart, type AnimSpeed, LINE_ENDS, MASKS, sizeOf, type Dash, type Deck, type Item, type ItemAnim, type LineEnd, type MaskId, TEXT_EFFECTS, type TextEffect } from '../../shared/deck'
-import { GRAPHICS, csvToSpec, specToCsv, itemSchema, newConnector } from '../../shared/items'
+import { GRAPHICS, cellsToCsv, csvToCells, csvToSpec, specToCsv, itemSchema, newConnector, squareCells } from '../../shared/items'
 import { duotoneOf, resolveTheme, withTone } from '../../shared/themes'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { adjustCss } from '../slide'
@@ -19,7 +19,7 @@ import { removeBackground } from './media'
 
 interface Props { deck: Deck; index: number; picked: string[]; onItems: (fn: (items: Item[]) => Item[], tag?: string) => void; pickImage: () => Promise<string | null> }
 
-const KIND: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio', qr: 'QR-Code', graphic: 'Grafik' }
+const KIND: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio', qr: 'QR-Code', graphic: 'Grafik', table: 'Tabelle' }
 const MASK_NAME: Record<MaskId, string> = { circle: 'Kreis', arch: 'Bogen', hexagon: 'Sechseck', diamond: 'Raute', octagon: 'Achteck', star: 'Stern', heart: 'Herz' }
 const EFFECT_NAME: Record<TextEffect, string> = { none: 'Ohne', shadow: 'Schatten', lift: 'Schweben', hollow: 'Kontur', neon: 'Neon' }
 const ADJUST_NAME = { bright: 'Helligkeit', contrast: 'Kontrast', sat: 'Sättigung', blur: 'Weichzeichnen' }
@@ -136,6 +136,46 @@ function ChartData({ it, set }: { it: Item; set: (p: Partial<Item>, tag?: string
   )
 }
 
+// Zeilen-/Spalten-Editor; Zeile 0 ist die Kopfzeile, Grenzen wie im Schema (1×1 bis 16×8)
+function TableData({ it, set }: { it: Item; set: (p: Partial<Item>, tag?: string) => void }) {
+  const cells = squareCells(it.cells?.length ? it.cells : [['']])
+  const [csv, setCsv] = useState(() => cellsToCsv(cells))
+  useEffect(() => setCsv(cellsToCsv(cells)), [it.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Tippen in Zellen fasst Undo-Schritte zusammen (tag), Zeilen/Spalten ändern ist je ein eigener Schritt
+  const put = (c: string[][], tag?: string) => { set({ cells: c }, tag); setCsv(cellsToCsv(c)) }
+  const rows = cells.length, cols = cells[0].length
+  return (
+    <>
+      <div className="field">
+        <span>Zellen (erste Zeile: Kopfzeile)</span>
+        <div className="tbl-edit" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr)) auto` }}>
+          {cells.map((row, r) => (
+            <Fragment key={r}>
+              {row.map((v, c) => (
+                <input key={c} type="text" value={v} maxLength={200} aria-label={`Zeile ${r + 1}, Spalte ${c + 1}`} style={r ? undefined : { fontWeight: 600 }}
+                  onChange={(e) => put(cells.map((x, i) => (i === r ? x.map((y, j) => (j === c ? e.target.value : y)) : x)), `cells-${it.id}`)} />
+              ))}
+              <Btn icon={X} label={`Zeile ${r + 1} entfernen`} disabled={rows < 2} onClick={() => put(cells.filter((_, i) => i !== r))} />
+            </Fragment>
+          ))}
+          {cells[0].map((_, c) => <Btn key={c} icon={X} label={`Spalte ${c + 1} entfernen`} disabled={cols < 2} onClick={() => put(cells.map((x) => x.filter((_, j) => j !== c)))} />)}
+        </div>
+      </div>
+      <div className="btn-row">
+        <button type="button" className="btn small" disabled={rows >= 16} onClick={() => put([...cells, cells[0].map(() => '')])}>+ Zeile</button>
+        <button type="button" className="btn small" disabled={cols >= 8} onClick={() => put(cells.map((x) => [...x, '']))}>+ Spalte</button>
+      </div>
+      <Field label="Als Text einfügen (aus Excel oder CSV; Tab oder ; trennt Zellen)">
+        <textarea rows={4} value={csv} spellCheck={false} className="mono" onChange={(e) => {
+          setCsv(e.target.value)
+          const c = csvToCells(e.target.value)
+          if (c) set({ cells: c }, `cells-${it.id}`)
+        }} />
+      </Field>
+    </>
+  )
+}
+
 // Freisteller: KI entfernt den Hintergrund (lokal, Modell lädt beim ersten Mal ~115 MB)
 function BgRemove({ it, set }: { it: Item; set: (p: Partial<Item>) => void }) {
   const [state, setState] = useState<{ busy: boolean; pct?: number; error?: string }>({ busy: false })
@@ -191,7 +231,7 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
           {chosen.length > 1 && !isGroup(items, picked) && <Btn icon={Group} label="Gruppieren (Strg+G)" onClick={() => onItems((l) => groupItems(l, picked))} />}
           {chosen.some((x) => x.group) && <Btn icon={Ungroup} label="Gruppierung aufheben (Strg+Umschalt+G)" onClick={() => onItems((l) => ungroupItems(l, picked))} />}
           {chosen.length === 2 && chosen.every((x) => x.shape !== 'line') && <Btn icon={Spline} label="Mit Linie verbinden (folgt beim Verschieben)" onClick={() => onItems((l) => [
-            ...l.map((x) => (x.kind === 'text' && picked.includes(x.id) ? { ...x, h: geoOf(x).h } : x)), // Texthöhe ergibt sich aus dem Inhalt: für connect() echte Höhe merken
+            ...l.map((x) => ((x.kind === 'text' || x.kind === 'table') && picked.includes(x.id) ? { ...x, h: geoOf(x).h } : x)), // Texthöhe ergibt sich aus dem Inhalt: für connect() echte Höhe merken
             newConnector(chosen[0].id, chosen[1].id, t.c.text)])} />}
           <Btn icon={locked ? Lock : LockOpen} label={locked ? 'Entsperren' : 'Sperren'} on={locked} onClick={() => set({ locked: !locked || undefined })} />
           <Btn icon={Copy} label="Duplizieren" onClick={() => onItems((l) => [...l, ...cloneItems(chosen)])} />
@@ -221,11 +261,11 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
             <Field label="X"><Num value={it.x} onChange={(x) => set({ x }, `x-${it.id}`)} /></Field>
             <Field label="Y"><Num value={it.y} onChange={(y) => set({ y }, `y-${it.id}`)} /></Field>
             <Field label="Breite"><Num value={it.w} min={1} onChange={(w) => set({ w }, `w-${it.id}`)} /></Field>
-            {it.kind !== 'text' && <Field label="Höhe"><Num value={it.h} min={1} onChange={(h) => set({ h }, `h-${it.id}`)} /></Field>}
+            {it.kind !== 'text' && it.kind !== 'table' && <Field label="Höhe"><Num value={it.h} min={1} onChange={(h) => set({ h }, `h-${it.id}`)} /></Field>}
           </div>
         )}
         <div className="field-row">
-          {it && it.kind !== 'chart' && <Field label="Drehung"><Num value={it.rot ?? 0} min={-180} max={180} suffix="°" onChange={(rot) => set({ rot: rot || undefined }, `rot-${it.id}`)} /></Field>}
+          {it && it.kind !== 'chart' && it.kind !== 'table' && <Field label="Drehung"><Num value={it.rot ?? 0} min={-180} max={180} suffix="°" onChange={(rot) => set({ rot: rot || undefined }, `rot-${it.id}`)} /></Field>}
           <Field label={`Deckkraft ${Math.round((chosen[0].opacity ?? 1) * 100)} %`}>
             <input type="range" min={5} max={100} value={Math.round((chosen[0].opacity ?? 1) * 100)} onChange={(e) => set({ opacity: +e.target.value >= 100 ? undefined : +e.target.value / 100 }, 'opacity')} />
           </Field>
@@ -440,6 +480,15 @@ export function ItemInspector({ deck, index, picked, onItems, pickImage }: Props
           <>
             <Field label="Farbe"><Color value={it.color ?? t.c.accent} onChange={(color, tag) => set({ color }, tag)} swatches={swatches} tag={`color-${it.id}`} /></Field>
             <Field label="Strichstärke"><Num value={it.strokeW ?? 1.75} min={0.5} max={4} step={0.25} onChange={(strokeW) => set({ strokeW }, `sw-${it.id}`)} /></Field>
+          </>
+        )}
+
+        {it?.kind === 'table' && (
+          <>
+            <TableData it={it} set={set} />
+            <Field label="Größe"><Num value={it.size ?? 22} min={8} max={120} suffix="px" onChange={(size) => set({ size }, `size-${it.id}`)} /></Field>
+            <Field label="Textfarbe"><Color value={it.color ?? t.c.text} onChange={(color, tag) => set({ color }, tag)} swatches={swatches} tag={`color-${it.id}`} /></Field>
+            <Field label="Linienfarbe"><Color value={it.stroke ?? t.c.border} onChange={(stroke, tag) => set({ stroke }, tag)} swatches={swatches} tag={`stroke-${it.id}`} /></Field>
           </>
         )}
 

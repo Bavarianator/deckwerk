@@ -34,7 +34,7 @@ export type RunOpts = {
 /** Ein Aufruf ohne Shell; stdout gesammelt (oder an onOut/onBin), von stderr nur das Ende */
 export function run(bin: string, args: string[], o: RunOpts = {}) {
   return new Promise<{ code: number | null; out: Buffer; err: string }>((resolve, reject) => {
-    const p = spawn(bin, args, { cwd: o.cwd, env: o.env, signal: o.signal, stdio: ['ignore', 'pipe', 'pipe'] })
+    const p = spawn(bin, args, { cwd: o.cwd, env: o.env, signal: o.signal, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
     // Hintergrundarbeit wie der Sprach-Worker (sherpa.ts): ein Export soll UI und Spracherkennung nicht aushungern
     if (p.pid) try { setPriority(p.pid, 10) } catch {}
     const out: Buffer[] = []

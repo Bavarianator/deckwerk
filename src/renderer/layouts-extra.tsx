@@ -590,7 +590,7 @@ function Clip({ c }: Props<'clip'>) {
   // Dunkler Grund wie im MP4 (Video unverfärbt, Hook hell): auf hellen Themes invertiert, damit Scrim, Hook-Farbe und Lint-Kontrast zusammenpassen
   const tone = theme.dark ? undefined : 'invert'
   const d = withTone(theme, tone).c.bg
-  const url = c.video.startsWith('/') ? assetOf(c.video) : c.video
+  const url = /^(\/|[A-Za-z]:[\\/])/.test(c.video) ? assetOf(c.video) : c.video // absoluter Pfad, auch C:\…
   const p0 = c.parts[0]
   const media = (
     <div className="clip-media">

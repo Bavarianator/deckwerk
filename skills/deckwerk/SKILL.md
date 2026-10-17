@@ -129,7 +129,7 @@ Will der Nutzer ein Erklärvideo, eine Produkt- oder Live-Demo, ein Tutorial ode
 
 - Themen-Titel („Marktanalyse“) statt einer Aussage.
 - Felder raten statt aus dem Katalog nehmen.
-- Freie Elemente (`items`) mit Koordinaten ohne Not; sie sind nur für Layout `blank` oder auf Wunsch des Nutzers da.
+- Freie Elemente (`items`) mit Koordinaten ohne Not; sie sind nur für Layout `blank` oder auf Wunsch des Nutzers da; Tabellen mit Titel besser als Layout `table`, eine freie Tabelle (`kind:'table'`, `cells`) nur auf `blank` oder auf Wunsch (höchstens ~6 × 4).
 - Zwei Botschaften auf einer Folie, weil „es noch draufpasst“.
 - Erfundene Zahlen ohne Hinweis; runde Zahlen ohne Quelle statt echter mit Quelle und Stand.
 - Alle Titel als gleich lange Satz-Zweizeiler; Executive Summary und KPI-Reihe als Pflichtteile statt nach Inhalt.

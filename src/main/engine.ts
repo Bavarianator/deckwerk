@@ -19,14 +19,14 @@ import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderFilm, renderOverview, renderPdf, renderPrintPdf, renderSlide, warm, type Rendered } from './render'
 import { phoneDevice, phoneMarker } from './phone'
 import { PARAKEET_LANGS, asr, asrModelOf, diarize, tag, type AsrModel } from './sherpa'
-import { localAsset } from './sync'
+import { assetPath, localAsset } from './sync'
 import { synthesize, voiceDirs } from './voice'
 import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
 
 // asset://local/<pfad> oder absoluter Pfad → lokale Datei, wie videoPath in export-video.ts; null = keine Mediendatei
 function mediaFile(src: unknown): string | null {
   try {
-    const p = typeof src === 'string' && src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src
+    const p = typeof src === 'string' && src.startsWith('asset://') ? assetPath(src) : src
     return typeof p === 'string' && isAbsolute(p) && MEDIA_EXT.test(p) ? localAsset(p) : null
   } catch { return null } // kaputte URL
 }

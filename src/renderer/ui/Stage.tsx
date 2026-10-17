@@ -30,7 +30,9 @@ const SLOT_NAMES: Record<string, string> = {
   title: 'Titel', subtitle: 'Untertitel', eyebrow: 'Dachzeile', text: 'Text', items: 'Liste', value: 'Wert', label: 'Beschriftung',
   chart: 'Diagramm', image: 'Bild', quote: 'Zitat', author: 'Autor', delta: 'Veränderung', note: 'Hinweis', takeaway: 'Kernaussage',
 }
-const KIND_NAMES: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio', qr: 'QR-Code', graphic: 'Grafik' }
+const KIND_NAMES: Record<Item['kind'], string> = { text: 'Text', shape: 'Form', image: 'Bild', icon: 'Icon', chart: 'Diagramm', video: 'Video', audio: 'Audio', qr: 'QR-Code', graphic: 'Grafik', table: 'Tabelle' }
+// Höhe ergibt sich aus dem Inhalt: beim Skalieren nur die Breite setzen
+const autoH = (it: Item) => it.kind === 'text' || it.kind === 'table'
 // „kpis.1.value“ → „kpis 2 · Wert“
 const slotName = (slot: string) => slot.split('.').map((p) => (/^\d+$/.test(p) ? String(+p + 1) : SLOT_NAMES[p] ?? p)).join(' ').replace(/ (?=\D)/g, ' · ')
 const tf = (rot: number, flip?: boolean) => [rot && `rotate(${rot}deg)`, flip && 'scaleX(-1)'].filter(Boolean).join(' ')
@@ -179,7 +181,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     const el = itemEl(id), it = byId(id)
     if (!el || !it) return
     Object.assign(el.style, { left: `${g.x}px`, top: `${g.y}px`, width: `${g.w}px`, transform: tf(g.rot, it.kind === 'image' && it.flipX) })
-    if (it.kind !== 'text') el.style.height = `${g.h}px`
+    if (!autoH(it)) el.style.height = `${g.h}px`
     if (fontSize) el.style.fontSize = `${fontSize}px`
   }
 
@@ -392,7 +394,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     onItems((list) => list.map((it) => {
       const g = next[it.id]
       if (!g) return it
-      const out: Item = { ...it, x: g.x, y: g.y, w: g.w, h: it.kind === 'text' && d.kind !== 'move' ? it.h : g.h, rot: g.rot || undefined }
+      const out: Item = { ...it, x: g.x, y: g.y, w: g.w, h: autoH(it) && d.kind !== 'move' ? it.h : g.h, rot: g.rot || undefined }
       if (d.kind === 'resize' && d.size && d.hx && d.hy) out.size = Math.max(6, Math.round(d.size * (g.w / d.g.w)))
       if (d.kind === 'gresize' && it.kind === 'text' && d.hx && d.hy) out.size = Math.max(6, Math.round((it.size ?? 32) * (g.w / d.start.get(it.id)!.w))) // Ecke: Schrift mit
       return out
@@ -614,7 +616,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
                 const g = geos[id], it = byId(id)
                 if (!g || !it) return null
                 const single = sel.length === 1 && !it.locked && !editing && !crop
-                const handles = it.kind === 'text' ? HANDLES.filter(([, hy], i) => hy === 0 || i % 2 === 0) : HANDLES
+                const handles = it.kind === 'table' ? HANDLES.filter(([, hy]) => hy === 0) : it.kind === 'text' ? HANDLES.filter(([, hy], i) => hy === 0 || i % 2 === 0) : HANDLES
                 return (
                   <div key={id} className={`item-sel ${it.locked ? 'locked' : ''} ${sel.length > 1 ? 'member' : ''}`} style={{ left: g.x * k, top: g.y * k, width: g.w * k, height: g.h * k, transform: g.rot ? `rotate(${g.rot}deg)` : undefined }}>
                     {single && handles.map(([hx, hy]) => (
@@ -622,9 +624,9 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
                         style={{ left: `${(hx + 1) * 50}%`, top: `${(hy + 1) * 50}%`, cursor: `${[['nwse', 'ns', 'nesw'], ['ew', '', 'ew'], ['nesw', 'ns', 'nwse']][hy + 1][hx + 1]}-resize` }}
                         onPointerDown={(e) => startHandle(e, 'resize', hx, hy)} />
                     ))}
-                    {single && it.kind !== 'chart' && <span className="item-rot" title="Drehen (Umschalt: 15°-Schritte)" onPointerDown={(e) => startHandle(e, 'rotate')} />}
+                    {single && it.kind !== 'chart' && it.kind !== 'table' && <span className="item-rot" title="Drehen (Umschalt: 15°-Schritte)" onPointerDown={(e) => startHandle(e, 'rotate')} />}
                     {single && drag.current?.kind === 'rotate' && <span className="item-badge">{g.rot}°</span>}
-                    {single && drag.current?.kind === 'resize' && <span className="item-badge">{g.w} × {it.kind === 'text' ? '…' : g.h}</span>}
+                    {single && drag.current?.kind === 'resize' && <span className="item-badge">{g.w} × {autoH(it) ? '…' : g.h}</span>}
                   </div>
                 )
               })}

@@ -27,11 +27,12 @@ jobs:
           $E scripts/check-accounts.ts --format=esm --outfile=out/check-accounts.mjs && node out/check-accounts.mjs
           $E scripts/check-update.ts --format=esm --outfile=out/check-update.mjs && node out/check-update.mjs
           $E scripts/check-phone.ts --format=esm --outfile=out/check-phone.mjs && node out/check-phone.mjs
+          $E scripts/check-paths.ts --format=cjs --external:electron --loader:.md=text --loader:.css=empty --outfile=out/check-paths.cjs && node out/check-paths.cjs
           for c in check-hidden check-find check-layers; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-brand.ts --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
           $E scripts/check-film.ts --format=esm --outfile=out/check-film.mjs && node out/check-film.mjs
           for c in check-guide-modules check-router check-cli-prompt; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
-          for c in check-recolor check-handout check-docx check-lint-profile check-pdf-boxes story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
+          for c in check-recolor check-table check-handout check-docx check-lint-profile check-pdf-boxes story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
           $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
           for c in check-looks check-webfonts check-theme-tokens; do $E scripts/$c.ts --format=esm --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-gradient.ts --loader:.css=empty --loader:.md=text --outfile=out/check-gradient.cjs && node out/check-gradient.cjs

@@ -10,7 +10,7 @@ import { MEDIA_EXT, profileOf, VIDEO_FILE } from '../shared/deck'
 import type { createEngine } from './engine'
 import { setupSpellcheck } from './spellcheck'
 import { guardMedia } from './record'
-import { localAsset } from './sync'
+import { assetPath, localAsset } from './sync'
 
 // Schwere Module (Engine, Agent, MCP, pptxgenjs, lucide …) erst nach dem Fenster laden: der Splash erscheint sofort,
 // und der Renderer lädt parallel zum Main-Prozess. Die Preload-Brücke wiederholt Aufrufe, bis registerIpc steht.
@@ -29,7 +29,7 @@ const argv0 = process.argv
 if (process.platform === 'linux' && app.isPackaged && process.env.WAYLAND_DISPLAY && !argv0.some((a) => a.startsWith('--ozone-platform'))
   && !['--mcp', '--render', '--check'].some((f) => argv0.includes(f))) {
   // eigener Prozess statt app.relaunch (greift so früh nicht); das neue AppImage hängt sich selbst ein
-  spawn(process.env.APPIMAGE ?? process.execPath, [...argv0.slice(1), '--ozone-platform=x11'], { detached: true, stdio: 'ignore' }).unref()
+  spawn(process.env.APPIMAGE ?? process.execPath, [...argv0.slice(1), '--ozone-platform=x11'], { detached: true, stdio: 'ignore', windowsHide: true }).unref()
   app.exit(0)
 }
 
@@ -93,7 +93,7 @@ async function renderCli(engine: ReturnType<typeof createEngine>, file: string, 
 app.whenReady().then(async () => {
   // CORS-Header, damit Canvas Pixel lesen darf (Video-Poster, Freisteller); stream + Range für Video/Audio
   protocol.handle('asset', async (req) => {
-    const file = localAsset(decodeURIComponent(new URL(req.url).pathname))
+    const file = localAsset(assetPath(req.url))
     if (!MEDIA_EXT.test(file)) return new Response(null, { status: 403 })
     // ?frame=<s> auf einer Videodatei: Standbild als JPEG (ffmpeg, gecacht). Die Clip-Folie braucht kein <video>, das im Offscreen-Fenster nach dem Spulen hängt.
     const frame = new URL(req.url).searchParams.get('frame')
