@@ -1,0 +1,94 @@
+{
+ "title": "Deckwerk – Animation",
+ "brief": {
+  "audience": "Teams, die Produkt-Demos und Erklärvideos selbst machen wollen",
+  "goal": "Zeigen, wie Deckwerk aus Szenen ein fertiges Video macht",
+  "tone": "klar, ruhig, konkret"
+ },
+ "theme": {
+  "id": "keynote"
+ },
+ "transition": "fade",
+ "mode": "click",
+ "film": {
+  "voice": "de",
+  "captions": "satz"
+ },
+ "slides": [
+  {
+   "id": "hook",
+   "layout": "statement",
+   "content": {
+    "text": "Ein Erklärvideo, **ohne eine Zeile Code**."
+   },
+   "voice": "Ein Erklärvideo in einer Minute? Ohne Schnittprogramm und ohne Code."
+  },
+  {
+   "id": "frames",
+   "layout": "big-number",
+   "content": {
+    "value": "30",
+    "label": "Bilder pro Sekunde, jedes einzeln gerendert",
+    "context": "Deckwerk spult jede Animation Bild für Bild, wie Remotion."
+   },
+   "voice": "Deckwerk rendert jede Szene Bild für Bild. [klick] Aufbauten, Zahlen und Kamerafahrten sitzen auf den Punkt.",
+   "camera": [
+    {
+     "step": 1,
+     "box": [0.04, 0.12, 0.6, 0.6]
+    }
+   ]
+  },
+  {
+   "id": "szene",
+   "layout": "code",
+   "content": {
+    "title": "Eine Szene ist eine Folie mit Sprechertext",
+    "code": "{\n  \"layout\": \"big-number\",\n  \"voice\": \"Drei Wochen statt drei Monaten. [klick] …\",\n  \"camera\": [{ \"step\": 1, \"box\": [0.1, 0.2, 0.5, 0.5] }]\n}",
+    "lang": "json",
+    "focus": "3",
+    "note": "[klick] startet den nächsten Takt. Die Stimme bestimmt das Timing."
+   },
+   "voice": "Jede Szene ist eine Folie mit Sprechertext. [klick] Der Marker startet den nächsten Aufbau, genau dort, wo er im Text steht."
+  },
+  {
+   "id": "terminal",
+   "layout": "code",
+   "variant": "terminal",
+   "content": {
+    "title": "Claude Code steuert dieselben Werkzeuge",
+    "code": "$ claude mcp add deckwerk -- deckwerk --mcp\nAdded stdio MCP server deckwerk\n$ claude \"Mach ein 45-Sekunden-Erklärvideo über unsere App\"",
+    "lang": "bash"
+   },
+   "voice": "Claude Code, Codex oder der Chat in der App nutzen dieselben Werkzeuge."
+  },
+  {
+   "id": "ansicht",
+   "layout": "screen",
+   "content": {
+    "title": "Abspielen, prüfen, exportieren",
+    "image": {
+     "src": "assets/animation-ansicht.jpg"
+    },
+    "frame": "fenster",
+    "caption": "Die Animations-Ansicht: Player, Szenen und Chat",
+    "cursor": [
+     { "x": 0.5, "y": 0.5, "step": 0 },
+     { "x": 0.024, "y": 0.84, "step": 1, "click": true },
+     { "x": 0.953, "y": 0.027, "step": 2, "click": true, "zoom": 2 }
+    ]
+   },
+   "voice": "In der Animations-Ansicht spielst du jede Szene ab. [klick] Sie läuft mit Stimme, Takt für Takt. [klick] Ein Klick auf Exportieren, und das Video liegt bereit."
+  },
+  {
+   "id": "schluss",
+   "layout": "closing",
+   "content": {
+    "title": "Dein nächstes Erklärvideo baut die KI",
+    "subtitle": "Lokal gerendert, mit eigener Stimme, als MP4 mit Untertiteln",
+    "contact": ["bavarianator.github.io/deckwerk"]
+   },
+   "voice": "Probier es mit deinem nächsten Erklärvideo."
+  }
+ ]
+}
