@@ -1,0 +1,11 @@
+{
+  "title": "Überblick Wachstum",
+  "theme": { "id": "beratung" },
+  "transition": "fade",
+  "slides": [
+    { "id": "s1", "layout": "cover", "variant": "left", "content": { "eyebrow": "Strategie 2027", "title": "Wie wir den Umsatz in 18 Monaten verdoppeln", "subtitle": "Wachstumsplan für die Geschäftsführung", "meta": "Oktober 2026" }, "notes": "Begrüßung" },
+    { "id": "s2", "layout": "bullets", "variant": "list", "content": { "eyebrow": "Warum jetzt", "title": "Drei Entwicklungen machen den Markt jetzt attraktiv", "items": [ { "text": "Regulierung schafft Nachfrage", "sub": "Ab 2027 wird digitale Dokumentation Pflicht" }, { "text": "Wettbewerb ist fragmentiert", "sub": "Kein Anbieter hat mehr als 8 % Marktanteil" }, { "text": "Kunden wollen Plattformen" } ] } },
+    { "id": "s3", "layout": "quote", "content": { "quote": "Noch nicht im Spike", "author": "Test" } },
+    { "id": "s4", "layout": "two-column", "content": { "title": "Die neue Plattform halbiert den manuellen Aufwand", "left": { "heading": "Heute", "points": ["6 Systeme, keine Schnittstellen", "Berichte per Excel"] }, "right": { "heading": "Mit Deckwerk", "points": ["Eine Plattform für alles", "Berichte in Echtzeit"] } }, "transition": "morph" }
+  ]
+}
