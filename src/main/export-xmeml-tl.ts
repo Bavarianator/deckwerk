@@ -2,11 +2,11 @@
 // Spuren: V1…Vn wie tl.tracks (Videospuren), dann je Videospur mit Ton ein Stereo-Paar (Ton der Clips, verlinkt mit dem Bild), dann je Audiospur ein Stereo-Paar.
 // Stereo wie Premiere: je Kanal eine Spur. Zeiten in der Spur je Clip aus round(at·fps) und round(clipEnd·fps), nie als Summe gerundeter Längen: kein Drift.
 // Rein, ohne ffmpeg und Electron. Grenzen: Quelle ohne fps gilt als 30 fps; jede Videoquelle gilt als mit Stereoton (info kennt kein audio);
-// Lautstärke (volume, keys), EQ, Farbe (grade), Zuschnitt (fit, focus), Bild-in-Bild (box), Einblendungen, Untertitel und captions kommen nicht mit;
+// Blenden (fade, xfade) als transitionitem (fade[0] entfällt bei eingehender, fade[1] bei ausgehender Überblendung: sie belegt die Kante), Lautstärke (volume, keys), EQ, Farbe (grade), Zuschnitt (fit, focus), Bild-in-Bild (box), Einblendungen, Untertitel und captions kommen nicht mit;
 // stummgeschaltete Clips verlieren ihren Ton-clipitem, ausgeblendete/stumme Spuren stehen mit enabled FALSE in der Datei.
 import { basename } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { clipEnd, speedOfClip, tlDuration, type TLClip, type TimelineContent } from '../shared/timeline'
+import { clipEnd, speedOfClip, tlDuration, xfades, type TLClip, type TimelineContent } from '../shared/timeline'
 
 type Info = { duration: number; w: number; h: number; fps?: number }
 
@@ -84,17 +84,35 @@ export function xmemlTimeline(tl: TimelineContent, opts: { name: string; fps: nu
     `<clipitem id="${x.id}"${x.track ? ' premiereChannelType="stereo"' : ''}><name>${esc(basename(x.c.src))}</name><enabled>TRUE</enabled>` +
     `<duration>${Math.round((x.info.duration * x.r.real) / x.sp)}</duration>${rate(x.r)}<start>${x.start}</start><end>${x.end}</end><in>${x.in}</in><out>${x.out}</out>` +
     `${fileEl(x)}${x.sp !== 1 ? remap(x.sp, !x.track) : ''}${x.track ? `<sourcetrack><mediatype>audio</mediatype><trackindex>${x.track}</trackindex></sourcetrack>` : ''}${x.group.map(link).join('')}</clipitem>`
+  // Blenden als transitionitem zwischen den clipitems (FCP7-Standard, Premiere und Resolve lesen das als Übergang).
+  // Überblendung: mittig (center) über dem Schnitt, a/b in Bildern. fade: Übergang am Clip-Rand (start-black/end-black) statt Opacity-Keyframes:
+  // gilt gleich für Bild und Ton, Keyframes würden pro Programm andere Filter-IDs brauchen. Die Lage der clipitems bleibt unberührt.
+  const trans = (a: number, b: number, align: string, audio: boolean) => a >= b ? '' :
+    `<transitionitem><start>${a}</start><end>${b}</end><alignment>${align}</alignment>${seq}<effect>` +
+    (audio ? '<name>Cross Fade (+3dB)</name><effectid>KGAudioTransition</effectid><effectcategory>Crossfade</effectcategory><effecttype>transition</effecttype><mediatype>audio</mediatype>'
+      : '<name>Cross Dissolve</name><effectid>Cross Dissolve</effectid><effectcategory>Dissolve</effectcategory><effecttype>transition</effecttype><mediatype>video</mediatype><wipecode>0</wipecode><wipeaccuracy>100</wipeaccuracy><startratio>0</startratio><endratio>1</endratio><reverse>FALSE</reverse>') +
+    '</effect></transitionitem>'
+  const seqOf = (list: Item[], audio: boolean): string[] => {
+    const xs = xfades({ clips: list.map((x) => x.c) })
+    return list.flatMap((x) => {
+      const into = xs.find((y) => y.to === x.c), out = xs.some((y) => y.from === x.c), [a, b] = x.c.fade ?? [0, 0]
+      // fade-Längen proportional auf die Clip-Länge kürzen: ein- und ausblenden berühren sich höchstens
+      const k = Math.min(1, (clipEnd(x.c) - x.c.at) / (a + b || 1)), fi = a * k, fo = b * k, mid = fr(x.c.at + fi)
+      return [into ? trans(fr(into.a), fr(into.b), 'center', audio) : fi > 0 ? trans(x.start, Math.min(x.end, mid), 'start-black', audio) : '',
+        clip(x), !out && fo > 0 ? trans(Math.max(x.start, mid, fr(clipEnd(x.c) - fo)), x.end, 'end-black', audio) : ''].filter(Boolean)
+    })
+  }
   const on = (b: boolean) => (b ? 'TRUE' : 'FALSE')
   const group = (k: number) => `<group><index>${k}</index><numchannels>1</numchannels><downmix>0</downmix><channel><index>${k}</index></channel></group>`
   return [
     '<?xml version="1.0" encoding="UTF-8"?>', '<!DOCTYPE xmeml>', '<xmeml version="5">', '<sequence id="sequence-1">',
     `<name>${esc(opts.name)}</name>`, `<duration>${fr(tlDuration(tl))}</duration>`, seq, '<media>', '<video>',
     `<format><samplecharacteristics>${seq}<width>${opts.w}</width><height>${opts.h}</height><anamorphic>FALSE</anamorphic><pixelaspectratio>square</pixelaspectratio><fielddominance>none</fielddominance></samplecharacteristics></format>`,
-    ...video.flatMap(({ t, items }) => ['<track>', ...items.map(clip), `<enabled>${on(!t.hide)}</enabled><locked>FALSE</locked></track>`]), '</video>',
+    ...video.flatMap(({ t, items }) => ['<track>', ...seqOf(items, false), `<enabled>${on(!t.hide)}</enabled><locked>FALSE</locked></track>`]), '</video>',
     '<audio>', '<numOutputChannels>2</numOutputChannels>', '<format><samplecharacteristics><depth>16</depth><samplerate>48000</samplerate></samplecharacteristics></format>',
     `<outputs>${group(1)}${group(2)}</outputs>`,
     ...pairs.flatMap((p) => ([1, 2] as const).flatMap((k) => [`<track currentExplodedTrackIndex="${k - 1}" totalExplodedTrackCount="2" premiereTrackType="Stereo">`,
-      ...(k === 1 ? p.l : p.r).map(clip), `<enabled>${on(p.enabled)}</enabled><locked>FALSE</locked><outputchannelindex>${k}</outputchannelindex></track>`])),
+      ...seqOf(k === 1 ? p.l : p.r, true), `<enabled>${on(p.enabled)}</enabled><locked>FALSE</locked><outputchannelindex>${k}</outputchannelindex></track>`])),
     '</audio>', '</media>',
     `<timecode>${seq}<string>00:00:00:00</string><frame>0</frame><displayformat>NDF</displayformat></timecode>`,
     ...[...(tl.markers ?? [])].sort((a, b) => a.t - b.t).map((m) => `<marker><comment></comment><name>${esc(m.name)}</name><in>${fr(m.t)}</in><out>-1</out></marker>`),

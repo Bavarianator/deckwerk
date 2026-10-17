@@ -63,6 +63,23 @@ assert.match(xml, /<pathurl>file:\/\/localhost\/home\/nutzer\/Videos\/Kunden%20&
 // Marker sortiert, escaped
 assert.ok(xml.indexOf('<name>Start</name><in>30</in>') < xml.indexOf('<name>Refrain &amp; Schluss</name><in>300</in>'), 'Marker sortiert')
 
+// Blenden: 1 s Überblendung bei 25 fps mittig über dem Schnitt; ohne direkten Vorgänger keine; fade am Rand
+const t25 = (clips: TLClip[]) => xmemlTimeline({ tracks: [{ id: 'v1', kind: 'video', clips }] }, { name: 'x', fps: 25, w: 1920, h: 1080, info })
+const c1 = { id: 'a', src: B, at: 0, in: 0, out: 4 }, c2 = { id: 'b', src: B, at: 4, in: 10, out: 14, xfade: 1 }
+const xf = t25([c1, c2]), tv = tracks(xf, 'video')[0]
+const tis = (t: string) => [...t.matchAll(/<transitionitem>([\s\S]*?)<\/transitionitem>/g)].map((m) => m[1])
+assert.deepEqual(tis(tv).map((b) => [num(b, 'start'), num(b, 'end')]), [[88, 113]], 'Video-Überblendung 3,5 s…4,5 s')
+assert.match(tis(tv)[0], /<alignment>center<\/alignment>[\s\S]*<name>Cross Dissolve<\/name>[\s\S]*<effecttype>transition<\/effecttype>/)
+assert.ok(tv.indexOf('<transitionitem>') > tv.indexOf('</clipitem>') && tv.indexOf('<transitionitem>') < tv.lastIndexOf('<clipitem'), 'zwischen den clipitems')
+assert.equal(tis(tracks(xf, 'audio')[0]).length, 1, 'Audio-Überblendung')
+assert.match(tis(tracks(xf, 'audio')[1])[0], /Cross Fade \(\+3dB\)/)
+assert.deepEqual(items(tv).map((x) => [x.start, x.end]), [[0, 100], [100, 200]], 'clipitems unverändert')
+assert.equal(tis(t25([c1, { ...c2, at: 5, xfade: 1 }])).length, 0, 'ohne direkten Vorgänger keine')
+const fd = tis(tracks(t25([{ ...c1, fade: [1, 2] }]), 'video')[0]).map((b) => [num(b, 'start'), num(b, 'end'), /start-black|end-black/.exec(b)?.[0]])
+assert.deepEqual(fd, [[0, 25, 'start-black'], [50, 100, 'end-black']], 'fade ein/aus')
+const fk = tis(tracks(t25([{ ...c1, out: 2, fade: [1, 2] }]), 'video')[0]).map((b) => [num(b, 'start'), num(b, 'end')])
+assert.deepEqual(fk, [[0, 17], [17, 50]], 'fade länger als Clip: proportional gekürzt, keine Überlappung')
+
 const dir = process.env.TMPDIR ?? tmpdir(), file = join(dir, 'check-xmeml-tl.xml')
 mkdirSync(dir, { recursive: true })
 writeFileSync(file, xml)
