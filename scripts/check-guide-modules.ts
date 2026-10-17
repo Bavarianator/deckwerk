@@ -65,6 +65,7 @@ for (const t of ['Räum meine Podcast-Folge auf: Pausen raus, dazu Kapitel.', 'S
   assert.deepEqual([vroute(t).modules, vroute(t).video], [['podcast'], true], t)
 assert.deepEqual(vroute('Kapitel umbenennen', { podcast: true }).modules, ['podcast'], 'Podcast-Deck')
 assert.ok(route('Präsentation über unseren Podcast, 8 Folien').has('geruest-praesentation'))
+assert.ok(!route('Instagram-Karussell zur neuen Folge').has('podcast'), 'Karussell zur Folge')
 const vcore = corePrompt(true)
 assert.ok(vcore.length < 5000 && vcore.includes('Video-Schnitt') && vcore.includes('read_guide({ topic: "video" })') && !vcore.includes('## 1. Grundregeln') && !vcore.includes('- layout:kpi-grid'), `Video-Kernprompt ${vcore.length}`)
 assert.equal(vcore, corePrompt(true), 'Video-Kernprompt stabil (Caching)')

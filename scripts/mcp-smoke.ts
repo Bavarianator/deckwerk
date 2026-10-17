@@ -45,7 +45,7 @@ const vg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'vi
 const pg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'podcast' } })) as { content: { text: string }[] }).content[0].text
 assert.ok(pg.startsWith('## 12. Podcast') && pg.includes('create_episode') && !pg.includes('## 11.') && pg.length < 20000, pg.slice(0, 200))
 // 21 000 statt 20 000: clip.sfx (Podcast-Zweig) kam dazu; read_guide gibt bis 30 000 Zeichen am Stück aus
-assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 21000, vg.slice(0, 200))
+assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 20000, `Video-Guide ${vg.length} Zeichen`)
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }
 const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<Res>

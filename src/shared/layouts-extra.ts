@@ -272,9 +272,9 @@ const clip = z.object({
   stabil: z.boolean().optional().describe('true = Verwackeln glätten (Handy aus der Hand, Gehen); nur im Export, kostet Zeit; nie bei Stativ oder Bildschirmaufnahme'),
   captionPos: z.enum(CAPTION_POS).optional().describe('Lage der Untertitel: unten (Standard), mitte, oben – wenn unten Wichtiges im Bild steht (Tafel, Formel, Produkt)'),
   post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
-  // knapp beschrieben: Modul video + layout:clip soll unter 21 000 Zeichen bleiben (mcp-smoke)
+  // knapp beschrieben: Modul video + layout:clip muss unter 20 000 Zeichen bleiben (mcp-smoke)
   sfx: z.array(z.object({ src: z.string().min(1), at: z.number().min(0), gain: z.number().min(-24).max(12).optional() })).max(30).optional()
-    .describe('Soundeffekte, sparsam (nur MP4): src Tondatei, at Sekunde im fertigen Clip, gain dB'),
+    .describe('Soundeffekte, sparsam: at = Sekunde im Clip, gain dB'),
 })
 
 // Bewerbung – Deckblatt (A4 hoch): oben Stelle und Unternehmen, unten Foto, Name und Kontakt, daneben der Inhalt der Mappe.

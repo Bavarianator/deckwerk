@@ -178,7 +178,7 @@ export function ruleRoute(input: RouteInput): Route {
   const video = VIDEO.test(t) || inDeck.includes('clip')
   const plain = !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t)
   // Reiner Podcast-Auftrag: nur Podcast-Schnitt, schlanker Kernprompt wie bei Video
-  if (plain && !inDeck.length && (input.podcast || (POD.test(t) && !POD_NOT.test(t))))
+  if (plain && !inDeck.length && (input.podcast || (POD.test(t) && !POD_NOT.test(t) && !kinds.has('social')))) // Karussell zur neuen Folge bleibt Social
     return { modules: [...PODCAST_MODULES], source: 'regel', reason: 'Regeln: Podcast', video: true }
   // Reiner Video-Auftrag: nur Video-Schnitt und clip (dazu Zwischentitel), kein Gerüst, keine Gestaltung
   if (video && plain && inDeck.every((id) => VIDEO_DECK.includes(id)))
