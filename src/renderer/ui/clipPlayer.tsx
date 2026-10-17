@@ -1,7 +1,7 @@
 // Abspiel-Bausteine für Clip-Folien, geteilt von Schneiden (ClipCutter) und Deckvid: Wiedergabe der Ausschnitte, Bild im Zielformat, Zeitleiste, Untertitel.
 // Keine Tastenkürzel hier, die entscheidet die Ansicht.
 import { useEffect, useRef, useState, type ReactNode, type RefObject, type PointerEvent as RPointerEvent } from 'react'
-import { cues, partsLength, type Cue, type Fit, type Part, type Word } from '../../shared/video'
+import { cues, partLen, partsLength, speedOf, type Cue, type Fit, type Part, type Word } from '../../shared/video'
 import { assetOf } from './itemOps'
 import './cutter.css'
 
@@ -16,7 +16,7 @@ function locate(ps: Part[], k: number, s: number) {
 
 /** Spielt die parts nacheinander (Schnittfassung), am Ende Pause und zurück auf den Anfang. t/duration in Clipzeit, src in Quellzeit.
  *  playSource spielt die Quelle ohne Sprünge (Schneiden: „Quelle“), part = Index des Ausschnitts an der Abspielposition (-1 = hinter allen). */
-export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[], onCut?: (gap: number) => void) {
+export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[], onCut?: (gap: number, next: Part) => void) {
   const [playing, setPlaying] = useState(false)
   const cut = useRef(onCut) // echter Schnitt beim Abspielen (nicht nahtlos): Deckvid blendet dort über wie der Export
   cut.current = onCut
@@ -28,10 +28,17 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
 
   const part = locate(parts, idx.current, src)
   const duration = partsLength(parts)
-  const t = part < 0 ? duration : partsLength(parts.slice(0, part)) + Math.min(Math.max(0, src - parts[part].start), parts[part].end - parts[part].start)
+  const t = part < 0 ? duration : partsLength(parts.slice(0, part)) + Math.min(Math.max(0, src - parts[part].start), parts[part].end - parts[part].start) / speedOf(parts[part])
 
+  // Tempo und Originalton des laufenden Ausschnitts; Quelle frei: unverändert. Lauter als 1 macht Deckvid über Web Audio (volume kann höchstens 1)
+  const tune = (v: HTMLVideoElement, k: number) => {
+    const p = free.current ? undefined : ps.current[k]
+    v.playbackRate = p ? speedOf(p) : 1
+    v.volume = Math.min(1, Math.max(0, p?.volume ?? 1))
+  }
   const go = (s: number, k: number) => {
     idx.current = k
+    if (video.current) tune(video.current, k)
     if (video.current) video.current.currentTime = s
     setSrc(s)
   }
@@ -44,19 +51,20 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
     if (k < 0) go(l[0].start, 0) // hinter dem Ende: von vorn
     else if (v.currentTime < l[k].start) go(l[k].start, k) // in einer Lücke: ab dem nächsten Ausschnitt
     else idx.current = k
+    tune(v, idx.current)
     start(v)
   }
-  const playSource = () => { const v = video.current; if (!v) return; free.current = true; start(v) }
+  const playSource = () => { const v = video.current; if (!v) return; free.current = true; tune(v, 0); start(v) }
   const pause = () => { const v = video.current; v?.pause(); setPlaying(false); if (v) setSrc(v.currentTime) }
   const seekSource = (s: number) => {
     const x = Math.max(0, Math.min(s, video.current?.duration || Infinity)) // duration ist NaN ohne Metadaten
     go(x, locate(ps.current, idx.current, x))
   }
   const seekClip = (c: number) => {
-    const l = ps.current, len = (p: Part) => p.end - p.start
+    const l = ps.current, len = partLen
     let k = 0, o = 0
     while (k < l.length - 1 && c >= o + len(l[k])) o += len(l[k++])
-    if (l[k]) go(l[k].start + Math.min(Math.max(0, c - o), len(l[k])), k)
+    if (l[k]) go(l[k].start + Math.min(Math.max(0, c - o), len(l[k])) * speedOf(l[k]), k)
   }
 
   // Abspielposition per rAF (timeupdate kommt nur ~4×/s); am Ende eines Ausschnitts zum nächsten springen
@@ -69,7 +77,7 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
       const k = idx.current, p = l[k], c = v.currentTime
       if (free.current || (p && c >= p.start - 0.1 && c < p.end)) setSrc(c) // Toleranz: nach dem Spulen meldet das Video evtl. knapp davor
       else if (p && c < p.start) go(p.start, k) // beim Abspielen in eine Lücke gespult
-      else if (p && l[k + 1]) { if (Math.abs(l[k + 1].start - p.end) >= 1e-3) cut.current?.(l[k + 1].start - p.end); go(l[k + 1].start, k + 1) }
+      else if (p && l[k + 1]) { if (Math.abs(l[k + 1].start - p.end) >= 1e-3) cut.current?.(l[k + 1].start - p.end, l[k + 1]); go(l[k + 1].start, k + 1) }
       else { v.pause(); go(l[0]?.start ?? 0, 0); setPlaying(false); return } // Ende, auch wenn der laufende Ausschnitt gelöscht wurde (!p)
       raf = requestAnimationFrame(tick)
     }

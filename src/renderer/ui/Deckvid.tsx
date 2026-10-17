@@ -6,7 +6,7 @@ import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
 import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
-import { CLIP_STYLES, DUCK, FX, STILL, cutFrames, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, isCompilation, type ClipContent } from '../../shared/video'
+import { CLIP_STYLES, CUT, DUCK, FX, OVERLAY_W, STILL, cutFrames, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent, type Part } from '../../shared/video'
 import { loadFonts } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
@@ -362,15 +362,16 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
   const c = clip.content
   const videoRef = useRef<HTMLVideoElement>(null), fadeRef = useRef<HTMLCanvasElement>(null), musicRef = useRef<HTMLAudioElement>(null)
   // Überblendung wie im Export (cutFrames: Jump-Cut kurz, neuer Moment länger): das letzte Bild vor dem Schnitt liegt über dem neuen und blendet aus
-  const dissolve = (gap: number) => {
+  // transition none = harter Schnitt; wipe, zoom … macht nur der Export (xfade), die Vorschau zeigt dafür diese Blende
+  const dissolve = (gap: number, next: Part) => {
     const v = videoRef.current, cv = fadeRef.current
-    if (!v || !cv || !v.videoWidth) return
+    if (!v || !cv || !v.videoWidth || next.transition === 'none') return
     const st = getComputedStyle(v)
     Object.assign(cv.style, { objectFit: st.objectFit, objectPosition: st.objectPosition, transform: st.transform })
     cv.width = v.videoWidth; cv.height = v.videoHeight
     cv.getContext('2d')?.drawImage(v, 0, 0)
     cv.getAnimations().forEach((a) => a.cancel())
-    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: (cutFrames(gap) / 30) * 1000 })
+    cv.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ((next.transition ? CUT.momentFrames : cutFrames(gap)) / 30) * 1000 }) // eigener Übergang: Länge wie im Export
   }
   const player = useClipPlayer(videoRef, c.parts, dissolve)
   const [bad, setBad] = useState(false) // Chromium spielt die Quelle nicht (HEVC, ProRes …)
@@ -399,20 +400,21 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     const len = (x: Slide) => (isClip(x) ? partsLength(x.content.parts) : STILL)
     return [vis.slice(0, Math.max(0, k)).reduce((s, x) => s + len(x), 0), vis.reduce((s, x) => s + len(x), 0)]
   }, [deck, clip.id])
-  const mix = useRef<{ ctx: AudioContext; an: AnalyserNode; gain: GainNode; buf: Float32Array<ArrayBuffer>; env: number; at: number; el?: HTMLAudioElement } | null>(null)
+  const mix = useRef<{ ctx: AudioContext; an: AnalyserNode; gain: GainNode; voice: GainNode; buf: Float32Array<ArrayBuffer>; env: number; at: number; base?: number; el?: HTMLAudioElement } | null>(null)
   useEffect(() => {
     const a = musicRef.current, v = videoRef.current
     if (!a || !v) return
     if (!mix.current) { // einmal je Clip: ein Medienelement lässt sich nur einmal an Web Audio hängen (crossOrigin, sonst käme nur Stille an)
-      const ctx = new AudioContext(), an = ctx.createAnalyser(), gain = ctx.createGain()
+      const ctx = new AudioContext(), an = ctx.createAnalyser(), gain = ctx.createGain(), voice = ctx.createGain()
       an.fftSize = 1024
-      ctx.createMediaElementSource(v).connect(an).connect(ctx.destination)
+      ctx.createMediaElementSource(v).connect(voice).connect(an).connect(ctx.destination) // voice: Originalton über 1 (bis 1 regelt useClipPlayer per video.volume)
       gain.connect(ctx.destination)
-      mix.current = { ctx, an, gain, buf: new Float32Array(an.fftSize), env: 0, at: 0 }
+      mix.current = { ctx, an, gain, voice, buf: new Float32Array(an.fftSize), env: 0, at: 0 }
     }
-    const m = mix.current
+    const m = mix.current, cur = c.parts[player.part]
+    m.voice.gain.setTargetAtTime(Math.max(1, Math.min(2, cur?.volume ?? 1)), m.ctx.currentTime, 0.01) // weich, ein Sprung am Schnitt klickt
     if (m.el !== a) { m.ctx.createMediaElementSource(a).connect(m.gain); m.el = a } // andere Musik = neues <audio> (key)
-    if (!player.playing) { a.pause(); m.at = 0; return }
+    if (!player.playing) { a.pause(); m.at = 0; m.base = undefined; return }
     void m.ctx.resume()
     const pos = before + player.t, want = pos % (a.duration || Infinity)
     if (a.paused || Math.abs(a.currentTime - want) > 0.5) a.currentTime = want
@@ -423,7 +425,10 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     m.env += (rms - m.env) * (1 - Math.exp(-dt / ((rms > m.env ? DUCK.attackMs : DUCK.releaseMs) / 1000)))
     const duck = m.env > DUCK.threshold ? (m.env / DUCK.threshold) ** (1 / DUCK.ratio - 1) : 1
     const fade = Math.min(1, pos / DUCK.fadeIn, Math.max(0, (videoLen - pos) / DUCK.fadeOut))
-    m.gain.gain.setTargetAtTime(vol * duck * fade, m.ctx.currentTime, 0.01)
+    // Grundpegel je Ausschnitt (part.music), weich (Zeitkonstante 0,15 s, nach ~0,5 s am Ziel wie die Rampe im Export)
+    const level = Math.min(1, Math.max(0, cur?.music ?? vol))
+    m.base = m.base === undefined ? level : m.base + (level - m.base) * (1 - Math.exp(-dt / 0.15))
+    m.gain.gain.setTargetAtTime(m.base * duck * fade, m.ctx.currentTime, 0.01)
     if (a.paused) void a.play().catch(() => {})
   }, [player.playing, player.t, before, videoLen, vol, music])
   useEffect(() => () => { void mix.current?.ctx.close() }, [])
@@ -447,13 +452,16 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     '--dv-sub': `${cq((m * (mode === 'satz' ? 0.055 : wide ? 0.065 : 0.075)) / face.win)}cqw`,
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
-    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part)), !!deck && isCompilation(deck)),
+    '--dv-ov': `${cq((m * 0.05) / face.win)}cqw`,
+    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))),
     ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar }),
   } as CSSProperties
   const focus = c.parts.find((x) => player.src >= x.start && player.src < x.end)?.focus ?? c.parts[0].focus
   const to = cached?.duration || Math.max(...parts.map((x) => x.end))
   const others = parts.length > c.parts.length // weitere Clips aus derselben Quelle
   const n1 = c.parts.length
+  // Einblendungen nur, wo ihre Quellzeit im Clip zu sehen ist (im laufenden Ausschnitt)
+  const at = c.parts[player.part], seen = !!at && player.src >= at.start && player.src < at.end
 
   // Hook von Hand: Enter/Blur speichert, Escape verwirft (skip, weil das Verlassen des Felds auch blur auslöst)
   const [edit, setEdit] = useState<string | null>(null)
@@ -487,6 +495,11 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                   onClick={player.toggle} onBad={() => setBad(true)}>
                   {c.hook && player.t < 4 && <p className="dv-hook" style={live ? { '--dv-hook-o': Math.min(1, ((Math.min(4, player.duration) - player.t) * 1000) / FX.hookFadeMs) } as CSSProperties : undefined}><span>{c.hook}</span></p>}
                   {cap && <p className="dv-sub">{cap.words.map((w, k) => <Fragment key={k}>{k > 0 && ' '}{k === cap.active && mode === 'wort' ? <em key={`${k}:${w}`}>{w}</em> : w}</Fragment>)}</p>}
+                  {c.overlays?.map((o, k) => (
+                    <div key={k} className={`dv-ov ${o.pos ?? 'unten'}`} style={{ opacity: seen && player.src >= o.start && player.src < o.end ? 1 : 0 }} aria-hidden>
+                      {o.image ? <img src={clipUrl(o.image)} alt="" style={{ width: `${OVERLAY_W[o.size ?? 'mittel'] * 100}cqw` }} /> : o.text}
+                    </div>
+                  ))}
                   {live && <i className="dv-bar" style={{ width: `${Math.min(100, (player.t / Math.max(0.001, player.duration)) * 100)}%` }} aria-hidden />}
                   <canvas ref={fadeRef} className="dv-fade" aria-hidden />
                   {!player.playing && !bad && <span className="dv-play" aria-hidden><Play size={26} fill="currentColor" /></span>}

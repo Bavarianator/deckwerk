@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Pause, Play, Plus, Scissors, Trash2 } from 'lucide-react'
 import type { Size } from '../../shared/deck'
-import { MAX_PARTS, partsLength, type ClipContent, type Part } from '../../shared/video'
+import { MAX_PARTS, partLen, partsLength, type ClipContent, type Part } from '../../shared/video'
 import { ClipVideo, Strip, useClipPlayer } from './clipPlayer'
 import { confirmDialog } from './kit'
 
@@ -154,7 +154,7 @@ export function ClipCutter({ content, size, disabled, onApply, onClose }: Props)
         <div className="cut-parts" role="group" aria-label="Ausschnitte in Abspielreihenfolge">
           {parts.map((x, i) => (
             <button key={i} className={i === sel ? 'on' : ''} onClick={() => { setSel(i); seek(x.start) }}>
-              <b>{i + 1}</b> {clock(x.start)}–{clock(x.end)} <span>{secs(x.end - x.start)}</span>
+              <b>{i + 1}</b> {clock(x.start)}–{clock(x.end)} <span>{secs(partLen(x))}</span>
             </button>
           ))}
         </div>

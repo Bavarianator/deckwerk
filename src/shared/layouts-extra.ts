@@ -4,7 +4,7 @@
 import { z } from 'zod'
 import type { LayoutDef } from './layouts'
 import { MASKS } from './deck'
-import { MAX_PARTS } from './video'
+import { CUT_TRANSITIONS, MAX_PARTS, OVERLAY_POS, SPEED } from './video'
 
 // Foto: dasselbe Objekt in allen Layouts. Ein einfacher String wird als { src } akzeptiert (ältere Decks).
 export const FOCI = ['center', 'top', 'bottom', 'left', 'right'] as const
@@ -232,15 +232,28 @@ const clip = z.object({
     start: z.number().min(0).describe('Sekunden im Quellvideo (aus transcribe_video)'),
     end: z.number().min(0),
     focus: z.number().min(0).max(1).optional().describe('horizontaler Bildmittelpunkt für den Zuschnitt, 0 = links, 1 = rechts (aus video_frames); Standard 0.5'),
+    speed: z.number().min(SPEED.min).max(SPEED.max).optional().describe('Tempo: 0.5 = Zeitlupe (halb so schnell), 2 = Zeitraffer; Ton läuft mit (ohne Tonhöhe zu ändern); Standard 1. Zeitlupe für den Höhepunkt einer Aktion, Zeitraffer für lange Abläufe ohne Sprache'),
+    volume: z.number().min(0).max(2).optional().describe('Lautstärke des Originaltons: 0 = stumm (nur Musik), 0.5 = leise, 1 = unverändert (Standard), bis 2 lauter'),
+    music: z.number().min(0).max(1).optional().describe('Pegel der Hintergrundmusik (deck.music) in diesem Ausschnitt: 0 = aus, 0.25 = dezent (Standard aus deck.music.volume), 0.8 = laut (z. B. mit volume 0 für eine Montage ohne Sprache); wechselt weich'),
+    transition: z.enum(CUT_TRANSITIONS).optional().describe('Übergang am Schnitt vor diesem Ausschnitt: fade, dissolve, push, wipe, circle, zoom, split, stack, color (über Schwarz), none = harter Schnitt; weglassen = automatische weiche Blende (Standard, meist richtig). Effekte sparsam: an Szenen- oder Ortswechseln, nicht an Jump-Cuts'),
   }).refine((p) => p.end > p.start + 0.2, 'end muss nach start liegen')).min(1).max(MAX_PARTS).describe(`Ausschnitte, nacheinander abgespielt (Jump Cuts), Schnitte an Satzgrenzen. Short: zusammen ideal 55–75 s; ganzes Video kürzen: alles Behaltene, bis ${MAX_PARTS} Ausschnitte; Highlight: der Moment mit Anlauf und Auflösung`),
   hook: z.string().max(70).optional().describe('Einstiegszeile oben in den ersten Sekunden: macht neugierig, ohne Clickbait'),
   captions: z.enum(['wort', 'satz', 'aus']).optional().describe('Untertitel aus dem Transkript (nur im MP4): wort = wenige Wörter, aktuelles Wort in Akzentfarbe (Standard); satz = ganze Zeilen; aus'),
   pauses: z.enum(['kurz', 'lassen']).optional().describe('Sprechpausen (nur im MP4): kurz = Pausen ab 0,6 s auf 0,3 s kürzen, der Clip wirkt zügiger; lassen = unverändert (Standard)'),
   fit: z.enum(['crop', 'blur']).optional().describe('Bild im Format: crop = Bild füllt das Format, Zuschnitt um focus (Standard); blur = ganzes Bild mittig auf unscharfem Grund, wenn Gesten oder Folien am Rand wichtig sind'),
   follow: z.enum(['sprecher']).optional().describe('sprecher = Zuschnitt folgt dem, der gerade spricht (Podcast, Gespräch); nur bei mehreren Personen im Bild'),
-  style: z.enum(['ruhig', 'lebendig']).optional().describe('Animation im Export: ruhig (Standard, ohne Animation; nur in Zusammenschnitten leichter Zoom-Wechsel an jedem zweiten Schnitt) oder lebendig (Wort-Pop, Hook mit Einblendung, Fortschrittsbalken, deutlicher Zoom-Wechsel an Schnitten) – lebendig für Shorts/Reels, ruhig für Vorträge und Fulltime'),
+  style: z.enum(['ruhig', 'lebendig']).optional().describe('Animation im Export: ruhig (Standard, ohne Animation und ohne Zoom) oder lebendig (Wort-Pop, Hook mit Einblendung, Fortschrittsbalken, leichter Zoom-Wechsel nur bei einem neuen Moment, nie an Jump-Cuts) – lebendig für Shorts/Reels, ruhig für Vorträge und Fulltime'),
   ton: z.enum(['klar', 'original']).optional().describe('Ton im Export: klar = Sprache aufbereiten (Hochpass, Entrauschen, Kompressor, De-Esser) für Talking Head, Podcast, Vortrag, Aufnahmen mit Rauschen oder Hall vom Handy/Webcam; original = unverändert (Standard). Nie klar bei Musik, Gesang oder Vorführungen, deren Geräusche zählen'),
   cover: z.number().min(0).optional().describe('Quellsekunde fürs Titelbild (Export: .jpg neben dem MP4): ausdrucksstarkes Gesicht oder der Kernmoment, aus dem Kontaktabzug; muss im Video liegen, nicht der erste Frame, kein Schwarzbild'),
+  overlays: z.array(z.object({
+    start: z.number().min(0).describe('Quellsekunde, ab der die Einblendung steht (wie parts)'),
+    end: z.number().min(0),
+    text: z.string().min(1).max(80).optional().describe('kurzer Text: Name/Ort (Bauchbinde), Zahl, Stichwort; nie das Gesagte wiederholen (dafür captions)'),
+    image: z.string().optional().describe('Bild: asset://-Pfad (Logo, Foto, Grafik aus dem Anhang oder find_images) oder absoluter Pfad'),
+    pos: z.enum(OVERLAY_POS).optional().describe('Lage: oben, mitte, unten (Standard; bei Untertiteln darüber), oben-links, oben-rechts'),
+    size: z.enum(['klein', 'mittel', 'gross']).optional().describe('Bildbreite: klein 25 %, mittel 40 % (Standard), gross 60 % der Videobreite; Text immer in einer festen Größe'),
+  }).refine((o) => o.end > o.start + 0.3, 'end muss nach start liegen').refine((o) => !!o.text !== !!o.image, 'genau eins von text oder image')).max(30).optional()
+    .describe('Einblendungen über dem Video (nur im MP4 und in der Vorschau): Text oder Bild für einen Quellbereich, blendet weich ein und aus; sichtbar nur dort, wo der Bereich im Clip vorkommt'),
   post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
 })
 

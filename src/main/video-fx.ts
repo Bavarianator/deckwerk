@@ -55,3 +55,26 @@ export function cropFilter(c: { x: number; y: number; w: number; h: number }, si
   // Fahrt mit exact=1: sonst rundet crop x bei yuv420p auf gerade px, langsame Fahrten ruckeln in 2-px-Stufen
   return `crop=${z.w}:${z.h}:${track?.keys.length ? `${trackX(z.w, track)}:${z.y}:exact=1` : `${z.x}:${z.y}`},scale=${size.w}:${size.h}`
 }
+
+/** Musikpegel über die Zeit als ffmpeg-Ausdruck in t (für volume=…:eval=frame): Grundpegel base, in den Spans [von, bis, pegel] deren Pegel.
+ *  An jeder Grenze eine lineare Rampe von ramp s, mittig auf der Grenze (kürzer, wenn die Nachbargrenze näher liegt); aneinanderstoßende Spans gehen direkt ineinander über. */
+export function levelExpr(base: number, spans: [number, number, number][], ramp = 0.5) {
+  const edges: [t: number, from: number, to: number][] = []
+  for (const [a, b, v] of [...spans].sort((x, y) => x[0] - y[0])) {
+    const l = edges[edges.length - 1]
+    if (l && a - l[0] < 1e-3) l[2] = v
+    else edges.push([a, base, v])
+    edges.push([b, v, base])
+  }
+  const pt = edges.filter(([, f, to]) => f !== to).flatMap(([t, f, to], k, es) => {
+    const h = Math.min(ramp / 2, k ? (t - es[k - 1][0]) / 2 : Infinity, k < es.length - 1 ? (es[k + 1][0] - t) / 2 : Infinity)
+    return [[t - h, f], [t + h, to]]
+  })
+  if (!pt.length) return `'${num(base)}'`
+  let e = num(pt[pt.length - 1][1])
+  for (let k = pt.length - 2; k >= 0; k--) {
+    const [ta, va] = pt[k], [tb, vb] = pt[k + 1]
+    if (tb > ta) e = `if(lt(t,${num(tb)}),${num(va)}+(${num((vb - va) / (tb - ta))})*max(0,t-${num(ta)}),${e})`
+  }
+  return `'${e}'`
+}

@@ -88,13 +88,13 @@ export function createEngine(): Engine {
   const wantFor = (lang?: string) => engineFor(lang, PARAKEET_LANGS, whisperOnly)
   // Option „Spracherkennung auf dem Android-Handy“: je Aufruf neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
   const videoRuns = new Map<string, { pct: number; listeners: Set<(pct: number) => void>; done: Promise<string[]> }>() // laufende Video-Exporte (exportDeck)
-  const phoneOn = () => existsSync(phoneMarker(app.getPath('appData')))
+  const phoneOn = () => !existsSync(phoneMarker(app.getPath('appData')))
   const phoneNow = async () => (phoneOn() ? phoneDevice() : null)
   // wer rechnet (Spracherkennung, Video-Export): Handy oder PC mit Grund, für die Antworten der KI und die Arbeitsansicht
   const device = async (task?: 'export') => {
     const d = await phoneNow(), fault = task === 'export' && d ? (await import('./export-video')).phoneFault.reason : ''
     if (fault) return `PC (Handy-Export gescheitert: ${fault})`
-    return d ? `Handy (${d.model}, CPU)` : phoneOn() ? 'PC (Handy-Option an, aber kein Handy per USB-Debugging verbunden)' : 'PC (Handy-Option in Einstellungen → Allgemein aus)'
+    return d ? `Handy (${d.model}, CPU)` : phoneOn() ? 'PC (kein Handy per USB-Debugging verbunden)' : 'PC (Handy in Einstellungen → Allgemein ausgeschaltet)'
   }
 
   // Ein Chunk: Parakeet (sherpa); Whisper nur für Sprachen außerhalb von Parakeet oder wenn sherpa nicht nutzbar ist

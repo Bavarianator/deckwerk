@@ -5,7 +5,23 @@ export interface Word { w: string; start: number; end: number }
 export interface Segment { start: number; end: number; text: string; words?: Word[]; speaker?: number } // words fehlen = aus text geschätzt; speaker aus der Sprechertrennung, 0-basiert
 export interface Transcript { duration: number; lang: string; segments: Segment[]; covered?: [number, number][] } // covered: transkribierte Bereiche (s), sortiert; fehlt = ganzes Video
 export interface VideoInfo { duration: number; w: number; h: number } // w/h so, wie das Video angezeigt wird (Drehung berücksichtigt)
-export interface Part { start: number; end: number; focus?: number; track?: [t: number, focus: number][] } // focus: horizontaler Bildmittelpunkt 0..1; track: Kamerafahrt als Stützpunkte (Quellsekunde, focus), setzt nur der Export (autoFocus), nie die KI
+// focus: horizontaler Bildmittelpunkt 0..1; track: Kamerafahrt als Stützpunkte (Quellsekunde, focus), setzt nur der Export (autoFocus), nie die KI
+// speed: Tempo (< 1 Zeitlupe, > 1 Zeitraffer, Ton per atempo); volume: Originalton (0 = stumm, Standard 1); music: Pegel der Hintergrundmusik in diesem
+// Ausschnitt (0–1, fehlt = deck.music.volume); transition: Übergang am Schnitt VOR diesem Ausschnitt (fehlt = weiche Blende nach cutFrames, none = hart)
+export interface Part { start: number; end: number; focus?: number; track?: [t: number, focus: number][]; speed?: number; volume?: number; music?: number; transition?: CutTransition }
+export const CUT_TRANSITIONS = ['none', 'fade', 'dissolve', 'push', 'wipe', 'circle', 'zoom', 'split', 'stack', 'color'] as const
+export type CutTransition = (typeof CUT_TRANSITIONS)[number]
+// Übergänge als ffmpeg-xfade, an Schnitten (part.transition) und im mp4 zwischen Folien (Folien-transition); none/morph = harter Schnitt.
+// Nur Typen, die auch das Rückfall-ffmpeg 6.1 kennt (coverleft gibt es erst ab 7.0)
+export const XFADE: Partial<Record<string, string>> = { fade: 'fade', dissolve: 'dissolve', push: 'slideleft', slide: 'slideleft', wipe: 'wipeleft', circle: 'circleopen', zoom: 'zoomin', split: 'horzopen', cover: 'smoothleft', stack: 'smoothleft', color: 'fadeblack' }
+/** Folienwechsel im mp4 (Export und Meldung von export_deck): blend = echte Überblendung, schwarz = über Schwarz, hart = Schnitt.
+ *  still = eine der beiden Folien hat kein Video (Zwischentitel): die blenden ohne Überblendung immer über Schwarz. */
+export const joinOf = (t: string, still: boolean): 'blend' | 'schwarz' | 'hart' => (t !== 'color' && XFADE[t] ? 'blend' : t === 'color' || still ? 'schwarz' : 'hart')
+// Einblendung über dem Video: Text oder Bild von start bis end (Quellsekunden wie parts; über Schnitte hinweg nur, wo die Quelle zu sehen ist)
+export const OVERLAY_POS = ['oben', 'mitte', 'unten', 'oben-links', 'oben-rechts'] as const
+export interface Overlay { start: number; end: number; text?: string; image?: string; pos?: (typeof OVERLAY_POS)[number]; size?: 'klein' | 'mittel' | 'gross' }
+export const OVERLAY_W = { klein: 0.25, mittel: 0.4, gross: 0.6 } // Bildbreite als Anteil der Videobreite, Standard mittel
+export const SPEED = { min: 0.25, max: 4 }
 export type Captions = 'wort' | 'satz' | 'aus'
 export type Pauses = 'kurz' | 'lassen'
 export type Fit = 'crop' | 'blur' // blur: ganzes Bild mittig auf unscharfem, abgedunkeltem Vollbild-Grund (Querformat in 9:16)
@@ -15,7 +31,7 @@ export type ClipStyle = 'ruhig' | 'lebendig'
 // cuts: harte Bildwechsel der Quelle (s); setzt nur der Export (prepareClips), nie die KI, nicht im Schema
 // ton: klar = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser) für Sprache aus Handy/Webcam; original = unverändert (Standard); bei Musik nie klar
 // cover: Quellsekunde fürs Titelbild (Export legt es als .jpg neben das MP4), post: Text zum Posten – Titel in der ersten Zeile, dann Beschreibung und Hashtags (.txt)
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original' }
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[] }
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
@@ -25,18 +41,13 @@ export const CLIP_STYLES: ClipStyle[] = ['ruhig', 'lebendig']
 export const FX = {
   pop: 1.08, popMs: 120, // gesprochenes Wort wächst kurz und geht zurück
   hookFadeMs: 200, // Hook blendet ein und aus
-  zoom: 1.08, // jeder zweite Ausschnitt (ungerader Index) enger: kaschiert Jump-Cuts
-  zoomRuhig: 1.06, // dasselbe leiser im Stil ruhig, nur in Zusammenschnitten (12.10.: harte Schnitte wirkten undynamisch); mit der Überblendung im Export ein weicher Zoom
+  zoom: 1.08, // lebendig: jeder zweite Moment enger (13.10.: Zoom an fast jedem Jump-Cut nervte, ruhig zoomt gar nicht mehr)
   bar: 0.006, // Fortschrittsbalken: Höhe als Anteil der Bildhöhe, Akzentfarbe, unten
 }
-// Zahl der echten Schnitte bis Ausschnitt i: nahtlose Übergänge (Quelle läuft weiter) zählen nicht
-export const cutIndex = (parts: Part[], i: number) => parts.slice(1, i + 1).filter((p, j) => Math.abs(parts[j].end - p.start) >= 1e-3).length
-// Zoom nach dem part-ten Schnitt (cutIndex): jeder zweite; lebendig immer, ruhig nur in Zusammenschnitten (compilation); bei fit blur setzen die Aufrufer 1
-export const zoomOf = (style: ClipStyle | undefined, part: number, compilation = false) =>
-  part % 2 === 1 ? (style === 'lebendig' ? FX.zoom : compilation ? FX.zoomRuhig : 1) : 1
-// Zusammenschnitt (Stream-Highlights, Kompilation): mehrere sichtbare Clip-Folien im Querformat. Fulltime, Vorträge, Bildschirmaufnahmen und Shorts nicht
-export const isCompilation = (deck: { size?: { w: number; h: number }; slides: { layout: string; hidden?: boolean }[] }) =>
-  deck.slides.filter((s) => s.layout === 'clip' && !s.hidden).length > 1 && (deck.size ?? { w: 1280, h: 720 }).w > (deck.size ?? { w: 1280, h: 720 }).h // Standard wie sizeOf
+// Zahl der Momentwechsel bis Ausschnitt i: nur Sprünge ab CUT.moment s (oder zurück) zählen, Jump-Cuts innerhalb eines Moments nicht
+export const cutIndex = (parts: Part[], i: number) => parts.slice(1, i + 1).filter((p, j) => cutFrames(p.start - parts[j].end) === CUT.momentFrames).length
+// Zoom nach dem part-ten Momentwechsel (cutIndex): jeder zweite, nur im Stil lebendig; bei fit blur setzen die Aufrufer 1
+export const zoomOf = (style: ClipStyle | undefined, part: number) => (part % 2 === 1 && style === 'lebendig' ? FX.zoom : 1)
 // Hintergrundmusik im MP4 (finish in export-video.ts) und im Deckvid-Player gleich: Lautstärke, Ein-/Ausblende (s) über das ganze Video und Ducking
 // unter der Sprache (Sidechain: Schwelle linear, Verhältnis, Attack/Release ms). Schwelle 0,006: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik ~11 dB
 export const DUCK = { volume: 0.25, fadeIn: 1, fadeOut: 2, threshold: 0.006, ratio: 8, attackMs: 20, releaseMs: 300 }
@@ -53,7 +64,26 @@ export const LONG_VIDEO = 600 // s: ab 10 min erst video_highlights, dann nur Fe
 // Füllwort, geprüft gegen ein einzelnes Wort (Word.w): ganzes Wort, Satzzeichen und Groß/klein egal
 export const FILLERS = /^[\p{P}\s]*(?:äh|ähm|öh|öhm|hm|hmm|mhm|uh|um|uhm|erm)[\p{P}\s]*$/iu
 
-export const partsLength = (parts: Part[]) => parts.reduce((s, p) => s + Math.max(0, p.end - p.start), 0)
+export const speedOf = (p: Part) => Math.min(SPEED.max, Math.max(SPEED.min, p.speed ?? 1))
+/** Länge eines parts im fertigen Clip (s): Quelllänge durch Tempo */
+export const partLen = (p: Part) => Math.max(0, p.end - p.start) / speedOf(p)
+export const partsLength = (parts: Part[]) => parts.reduce((s, p) => s + partLen(p), 0)
+
+/** Quellbereich a–b auf der Zeitachse des fertigen Clips: je part, der ihn schneidet, ein Stück (mit Tempo); aneinanderstoßende Stücke verbunden. */
+export function clipSpans(parts: Part[], a: number, b: number): [number, number][] {
+  const out: [number, number][] = []
+  let off = 0
+  for (const p of parts) {
+    const s = Math.max(a, p.start), e = Math.min(b, p.end), sp = speedOf(p)
+    if (e > s) {
+      const x = off + (s - p.start) / sp, y = off + (e - p.start) / sp, l = out[out.length - 1]
+      if (l && x - l[1] < 1e-3) l[1] = y
+      else out.push([x, y])
+    }
+    off += partLen(p)
+  }
+  return out
+}
 
 // start–end ohne die Stillen
 function speech(start: number, end: number, quiet: Quiet[]): Quiet[] {
@@ -131,9 +161,10 @@ export function clipWords(t: Transcript, parts: Part[], quiet: Quiet[] = []): Wo
     for (const w of all) {
       const mid = (w.start + w.end) / 2
       if (mid < p.start || mid >= p.end) continue
-      out.push({ w: w.w, start: offset + Math.max(0, w.start - p.start), end: offset + Math.min(p.end, w.end) - p.start })
+      const sp = speedOf(p)
+      out.push({ w: w.w, start: offset + Math.max(0, w.start - p.start) / sp, end: offset + (Math.min(p.end, w.end) - p.start) / sp })
     }
-    offset += Math.max(0, p.end - p.start)
+    offset += partLen(p)
   }
   return out
 }
@@ -227,5 +258,7 @@ if (typeof process !== 'undefined' && process.env.DW_VIDEO_SELFTEST) {
   if (fillerQuiet({ ...t, lang: 'en' }, 0, 10).length !== 3 || fillerQuiet(t, 1.6, 10).length !== 1) throw new Error('fillerQuiet en/Bereich')
   if (fillerQuiet({ ...t, lang: 'auto' }, 0, 10).length !== 2) throw new Error('fillerQuiet: „um“ bei unbekannter Sprache geschnitten')
   if (FILLERS.test('ähnlich') || FILLERS.test('Hummel') || !FILLERS.test('Ähm...')) throw new Error('FILLERS')
+  const sp = clipSpans([{ start: 0, end: 4 }, { start: 10, end: 14, speed: 2 }, { start: 14, end: 16 }], 2, 15)
+  if (JSON.stringify(sp) !== '[[2,7]]' || partsLength([{ start: 0, end: 2, speed: 0.5 }]) !== 4) throw new Error('clipSpans/Tempo ' + JSON.stringify(sp))
   console.log('video ok')
 }

@@ -24,7 +24,7 @@ for (let n = 0; adb('-s', serial, 'shell', 'ps -A -o ARGS').includes('sherpa-onn
 
 const home = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'deckwerk-phone-e2e-')), cfg = join(home, 'cfg')
 mkdirSync(join(cfg, 'deckwerk'), { recursive: true })
-writeFileSync(join(cfg, 'deckwerk', 'phone-asr'), '') // Option an (phoneMarker unter appData = XDG_CONFIG_HOME)
+// Handy rechnet ohne Marker (phoneMarker = aus) automatisch, sobald es verbunden ist
 const ff = join(homedir(), 'Deckwerk', 'models', 'android', 'ffmpeg') // vorhandenes Handy-ffmpeg statt 123 MB Download (E2E_DOWNLOAD=1: den Download mitprüfen)
 if (!process.env.E2E_DOWNLOAD && existsSync(ff)) { mkdirSync(join(home, 'models', 'android'), { recursive: true }); symlinkSync(ff, join(home, 'models', 'android', 'ffmpeg')) }
 

@@ -1,9 +1,9 @@
 // Clip-Lint (Layout clip): prüft Länge, Schnitte, Transkript, Überschneidungen und Musik, damit sich die KI beim Schneiden selbst korrigiert. Ohne Electron/Node, läuft in Main und Renderer.
 import type { Issue } from './lint'
 import { retakes } from './retakes'
-import { estimateWords, mmss, partsLength, type ClipContent, type Part, type Transcript, type Word } from './video'
+import { clipSpans, estimateWords, mmss, partLen, partsLength, speedOf, type ClipContent, type Part, type Transcript, type Word } from './video'
 
-export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[] } // music: je Quellsekunde 0..1 (Signals.music)
+export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[]; deckMusic?: boolean } // music: je Quellsekunde 0..1 (Signals.music); deckMusic: ob das Deck Hintergrundmusik hat (fehlt = unbekannt)
 // lintClip kennt die Folie nicht (slide/slideId setzt der Aufrufer); 'info' gibt es nur hier
 export type ClipIssue = Omit<Issue, 'slide' | 'slideId' | 'severity'> & { severity: Issue['severity'] | 'info' }
 
@@ -88,7 +88,7 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
   }
 
   const len = partsLength(use.map((u) => u.p))
-  const lenTxt = c.pauses === 'kurz' ? `Quellmaterial ${de(len)} s, ohne Pausen kürzer` : `Länge ${de(len)} s`
+  const lenTxt = c.pauses === 'kurz' ? `Länge ${de(len)} s vor dem Pausenkürzen` : `Länge ${de(len)} s`
   if (short && (len < 20 || len > 90)) add('warn', 'clip-laenge', `${lenTxt} – für einen Short 20–90 s; ${len > 90 ? 'kürzen' : 'verlängern'}`)
   else if (short && (len < 55 || len > 75)) add('info', 'clip-laenge', `${lenTxt} – ideal für einen Short 55–75 s`)
 
@@ -97,8 +97,8 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
     const runs: { i: number; len: number }[] = []
     use.forEach(({ p, i }, k) => {
       const prev = use[k - 1]
-      if (prev && Math.abs(prev.p.end - p.start) < 1e-3) runs[runs.length - 1].len += p.end - p.start
-      else runs.push({ i, len: p.end - p.start })
+      if (prev && Math.abs(prev.p.end - p.start) < 1e-3) runs[runs.length - 1].len += partLen(p)
+      else runs.push({ i, len: partLen(p) })
     })
     const fix = c.style === 'lebendig' ? 'teilen (Füllsatz raus)' : 'teilen (Füllsatz raus) oder style lebendig für Zoom-Wechsel'
     bundle('clip-ruhe', runs.filter((r) => r.len > CALM).map((r) => ({ msg: `${n(r.i)} läuft ${de(r.len)} s ohne Schnitt – ${fix}`, ex: `${r.i + 1} (${de(r.len)} s)` })),
@@ -140,6 +140,10 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
     })
     bundle('clip-satz', weak, `von ${use.length} Ausschnitten beginnen mitten im Gedanken`, 'Start früher legen, damit jeder für sich steht')
     bundle('clip-satz', open, `von ${use.length} Ausschnitten enden ohne Satzende`, 'Enden hinter das Satzende legen')
+    bundle('clip-tempo', use.filter(({ p }) => speedOf(p) !== 1 && c.captions !== 'aus'
+      && words.filter((w) => (w.start + w.end) / 2 >= p.start && (w.start + w.end) / 2 < p.end).length >= Math.max(3, p.end - p.start)) // ab ~1 Wort je Sekunde
+      .map(({ p, i }) => ({ msg: `${n(i)} läuft mit speed ${de(speedOf(p), 2)} über Sprache – Sprache in Zeitlupe/Zeitraffer klingt unnatürlich; meist nur bei Aktion ohne Sprache, sonst speed weglassen`, ex: `${i + 1} (speed ${de(speedOf(p), 2)})` })),
+      `von ${use.length} Ausschnitten laufen mit Tempo über Sprache`, 'Sprache in Zeitlupe/Zeitraffer klingt unnatürlich; speed nur bei Aktion ohne Sprache', 'info')
     bundle('clip-einstieg', quiet, `von ${use.length} Ausschnitten beginnen mit Stille`, 'Start auf das erste Wort legen')
 
     // Neuansatz: erster Anlauf läuft (über die Hälfte) mit, und der neue auch – dann hört man den Satz zweimal
@@ -182,6 +186,18 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
     if (secs.size >= 5) add('warn', 'clip-musik', `Musik im Hintergrund (${secs.size} s, u. a. bei ${mmss(first)}) – bei fremder Musik droht ein Copyright-Strike; Stelle meiden oder Musik prüfen`)
   }
 
+  // Effekte sparsam: Übergänge mit Bewegung nur an Orts- oder Szenenwechseln; vor dem ersten Ausschnitt gibt es keinen Schnitt
+  const cutsAt = use.filter((u, k) => k > 0 && Math.abs(use[k - 1].p.end - u.p.start) >= 1e-3) // nahtlose Anschlüsse sind kein Schnitt
+  const fancy = cutsAt.filter(({ p }) => p.transition && !['none', 'fade', 'dissolve'].includes(p.transition))
+  if (fancy.length >= 2 && fancy.length > cutsAt.length / 3) add('info', 'clip-uebergang', `${fancy.length} von ${cutsAt.length} Schnitten mit Effekt-Übergang (${[...new Set(fancy.map(({ p }) => p.transition))].join(', ')}) – sparsam einsetzen: nur an Orts- oder Szenenwechseln, sonst transition weglassen (automatische Blende)`)
+  if (info.deckMusic === false) bundle('clip-musik', use.filter(({ p }) => p.music != null).map(({ i }) => ({ msg: `${n(i)} setzt music, das Deck hat keine Hintergrundmusik – erst find_music und update_deck music, sonst music weglassen`, ex: `${i + 1}` })),
+    'Ausschnitte setzen music, das Deck hat keine Hintergrundmusik', 'erst find_music und update_deck music, sonst music weglassen')
+  const ov = c.overlays ?? [], ovN = (k: number) => `Einblendung ${k + 1}`
+  bundle('clip-einblendung', ov.flatMap((o, k) => clipSpans(use.map((u) => u.p), o.start, o.end).length ? [] : [{ msg: `${ovN(k)} (${de(o.start)}–${de(o.end)} s) liegt in keinem Ausschnitt und ist nie zu sehen – Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)`, ex: `${k + 1} (${de(o.start)}–${de(o.end)} s)` }]),
+    `von ${ov.length} Einblendungen liegen in keinem Ausschnitt`, 'Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)')
+  bundle('clip-einblendung', ov.flatMap((o, k) => (o.text && o.text.trim().length > 40 ? [{ msg: `${ovN(k)} hat ${o.text.trim().length} Zeichen – kürzer (höchstens 40: Name, Ort, Zahl)`, ex: `${k + 1}` }] : [])),
+    'Einblendungen über 40 Zeichen', 'kürzer (höchstens 40: Name, Ort, Zahl)', 'info')
+
   const hookWords = c.hook?.trim().split(/\s+/).filter(Boolean).length ?? 0
   if (short && !hookWords) add('info', 'clip-hook', 'Kein Hook – für Shorts eine Einstiegszeile setzen (3–9 Wörter)')
   if (hookWords > 9) add('info', 'clip-hook', `Hook hat ${hookWords} Wörter – kürzer (3–9 Wörter)`)
@@ -212,7 +228,8 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   eq(rules(lintClip({ ...ok, parts: [{ start: 69, end: 105 }] }, tall, { duration: 100, transcript: clean })).filter((r) => r.includes('ende')), ['warn:clip-ende'], 'end hinter Ende')
   const len = (end: number, size = tall) => rules(lintClip({ ...ok, parts: [{ start: 0, end }] }, size, { transcript: clean })).filter((r) => r.includes('laenge'))
   eq([len(12)[0], len(95)[0], len(21)[0], len(54)[0], len(95, wide)[0]], ['warn:clip-laenge', 'warn:clip-laenge', 'info:clip-laenge', 'info:clip-laenge', undefined], 'Länge')
-  eq(msgs(lintClip({ ...ok, pauses: 'kurz', parts: [{ start: 0, end: 96 }] }, tall, { transcript: clean }), 'clip-laenge'), ['Quellmaterial 96 s, ohne Pausen kürzer – für einen Short 20–90 s; kürzen'], 'Länge pauses kurz')
+  eq(msgs(lintClip({ ...ok, pauses: 'kurz', parts: [{ start: 0, end: 96 }] }, tall, { transcript: clean }), 'clip-laenge'), ['Länge 96 s vor dem Pausenkürzen – für einen Short 20–90 s; kürzen'], 'Länge pauses kurz')
+  eq([len(30), rules(lintClip({ ...ok, parts: [{ start: 0, end: 30, speed: 0.5 }] }, tall, { transcript: clean })).filter((r) => r.includes('laenge'))], [['info:clip-laenge'], []], 'Länge mit Tempo: 30 s Zeitlupe = 60 s')
   eq(rules(lintClip({ ...ok, hook: undefined }, tall, { transcript: clean })), ['info:clip-hook'], 'Hook fehlt')
   eq(rules(lintClip({ ...ok, hook: undefined }, wide, { transcript: clean })).includes('info:clip-hook'), false, 'Hook quer')
   eq(rules(lintClip({ ...ok, hook: 'eins zwei drei vier fünf sechs sieben acht neun zehn' }, tall, { transcript: clean })), ['info:clip-hook'], 'Hook lang')
@@ -293,5 +310,21 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   eq(ruhe([{ start: 0, end: 29.9 }], { style: 'lebendig' }), ['info:Ausschnitt 1 läuft 29,9 s ohne Schnitt – teilen (Füllsatz raus)'], 'Ruhe lebendig')
   eq([ruhe([{ start: 0, end: 8 }, { start: 9, end: 17 }]), ruhe([{ start: 0, end: 29.9 }], {}, wide)], [[], []], 'Ruhe 8 s, quer')
   eq(ruhe([{ start: 0, end: 11.9 }, { start: 12, end: 23.9 }]), ['info:2 von 2 Stücken laufen über 8 s ohne Schnitt: 1 (11,9 s), 2 (11,9 s) – teilen (Füllsatz raus) oder style lebendig für Zoom-Wechsel'], 'Ruhe gebündelt')
+
+  // Effekte: Tempo über Sprache, Effekt-Übergänge, Musikpegel ohne Deck-Musik, Einblendungen
+  eq(msgs(lintClip({ ...ok, parts: [{ start: 0, end: 5.9, speed: 0.5 }, ...ok.parts.slice(1)] }, tall, { transcript: clean }), 'clip-tempo'),
+    ['Ausschnitt 1 läuft mit speed 0,5 über Sprache – Sprache in Zeitlupe/Zeitraffer klingt unnatürlich; meist nur bei Aktion ohne Sprache, sonst speed weglassen'], 'Tempo über Sprache')
+  eq(msgs(lintClip({ ...ok, captions: 'aus', parts: [{ start: 0, end: 5.9, speed: 0.5 }, ...ok.parts.slice(1)] }, tall, { transcript: clean }), 'clip-tempo'), [], 'Tempo captions aus')
+  const fx = (ts: (Part['transition'])[]) => rules(lintClip({ ...ok, parts: ok.parts.map((p, j) => ({ ...p, transition: ts[j] })) }, tall, { transcript: clean })).filter((r) => r.includes('uebergang'))
+  eq([fx([undefined, 'wipe', 'zoom', 'push', 'split']), fx([undefined, 'wipe', 'zoom']), fx(['wipe', 'zoom', 'push', 'fade', 'dissolve', 'fade', 'fade', 'fade', 'fade', 'fade'])], [['info:clip-uebergang'], [], []], 'Übergänge sparsam')
+  // 8 parts, die ersten 3 nahtlos: 5 echte Schnitte, 2 mit Effekt (> 5/3; mit nahtlosen wären es 2 von 7)
+  const seam = [0, 5, 10, 16, 22, 28, 34, 40].map((st, j) => ({ start: st, end: j < 2 ? st + 5 : st + 5.5, transition: j === 1 ? 'wipe' as const : j === 3 ? 'zoom' as const : j === 4 ? 'push' as const : undefined }))
+  eq(rules(lintClip({ ...ok, parts: seam }, wide, { transcript: clean })).filter((r) => r.includes('uebergang')), ['info:clip-uebergang'], 'Übergänge ohne nahtlose')
+  const mus = { ...ok, parts: ok.parts.map((p, j) => (j === 2 ? { ...p, music: 0.8, volume: 0 } : p)) }
+  eq([msgs(lintClip(mus, tall, { transcript: clean, deckMusic: false }), 'clip-musik'), rules(lintClip(mus, tall, { transcript: clean, deckMusic: true })), rules(lintClip(mus, tall, { transcript: clean }))],
+    [['Ausschnitt 3 setzt music, das Deck hat keine Hintergrundmusik – erst find_music und update_deck music, sonst music weglassen'], [], []], 'Musikpegel ohne Deck-Musik')
+  eq(lintClip({ ...ok, overlays: [{ start: 1, end: 4, text: 'Anna, Hamburg' }, { start: 95, end: 98, image: 'asset://logo.png' }, { start: 2, end: 4, text: 'Ein sehr langer Text, der viel zu viel sagt' }] }, tall, { transcript: clean })
+    .map((x) => `${x.severity}:${x.message}`), ['warn:Einblendung 2 (95–98 s) liegt in keinem Ausschnitt und ist nie zu sehen – Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)',
+    'info:Einblendung 3 hat 43 Zeichen – kürzer (höchstens 40: Name, Ort, Zahl)'], 'Einblendungen')
   console.log('clip-lint ok')
 }
