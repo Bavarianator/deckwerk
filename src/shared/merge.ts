@@ -54,7 +54,10 @@ export function fillDeck(deck: Deck, row: Record<string, string>): Deck {
   for (const s of d.slides) {
     s.content = walk(s.content, f)
     if (s.notes) s.notes = f(s.notes)
-    for (const it of s.items ?? []) if (it.text) it.text = f(it.text)
+    for (const it of s.items ?? []) {
+      if (it.text) it.text = f(it.text)
+      if (it.cells) it.cells = it.cells.map((r) => r.map(f))
+    }
   }
   return d
 }
@@ -62,7 +65,7 @@ export function fillDeck(deck: Deck, row: Record<string, string>): Deck {
 /** Namen aller {{Platzhalter}} im Deck (gleiche Felder wie fillDeck) */
 export function placeholders(deck: Deck): string[] {
   const names = new Set<string>()
-  walk([deck.title, deck.slides.map((s) => [s.content, s.notes, s.items?.map((i) => i.text)])], (s) => {
+  walk([deck.title, deck.slides.map((s) => [s.content, s.notes, s.items?.map((i) => [i.text, i.cells])])], (s) => {
     for (const m of s.matchAll(PH)) names.add(m[1])
     return s
   })

@@ -1,9 +1,9 @@
 // Eine Suche über alles im Einfügen-Popover: Text, Formen, Icons (auch deutsche Begriffe), Grafiken, QR, Video/Audio, Diagramme, Folienvorlagen,
 // Fotos (eigene und Unsplash per Enter). Leeres Feld → das normale Elemente-Panel darunter.
 import { useMemo, useState, type ReactNode } from 'react'
-import { Film, icons, Music, QrCode as QrCodeIcon, Search, X } from 'lucide-react'
+import { Film, icons, Music, QrCode as QrCodeIcon, Search, Table, X } from 'lucide-react'
 import { SHAPES, type ChartSpec, type Deck, type Item } from '../../shared/deck'
-import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newQr, newShape, newText } from '../../shared/items'
+import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newQr, newShape, newTable, newText } from '../../shared/items'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { SHAPE_PATHS } from '../slide'
@@ -26,6 +26,7 @@ const DE: Record<string, string[]> = {
 // Medien-Kacheln des Panels mit zusätzlichen deutschen Suchbegriffen (Präfix-Treffer)
 const MEDIA: { id: string; name: string; terms: string }[] = [
   { id: 'qr', name: 'QR-Code', terms: 'qr code link adresse' },
+  { id: 'table', name: 'Tabelle', terms: 'tabelle table raster zeilen spalten' },
   { id: 'video', name: 'Video', terms: 'film clip mp4' },
   { id: 'audio', name: 'Audio', terms: 'ton musik sound mp3' },
 ]
@@ -103,9 +104,9 @@ export function InsertSearch({ deck, disabled, onAdd, onAddSlide, children }: Pr
             </div></section>
           )}
           {found.media.length > 0 && (
-            <section><h3>QR-Code, Video und Audio</h3><div className="el-grid">
-              {found.media.map((m) => tile(m.id, m.name, m.id === 'qr' ? newQr : () => pickMediaItem(m.id as 'video' | 'audio'),
-                m.id === 'qr' ? <QrCodeIcon size={20} /> : m.id === 'video' ? <Film size={20} /> : <Music size={20} />))}
+            <section><h3>QR-Code, Tabelle, Video und Audio</h3><div className="el-grid">
+              {found.media.map((m) => tile(m.id, m.name, m.id === 'qr' ? newQr : m.id === 'table' ? newTable : () => pickMediaItem(m.id as 'video' | 'audio'),
+                m.id === 'qr' ? <QrCodeIcon size={20} /> : m.id === 'table' ? <Table size={20} /> : m.id === 'video' ? <Film size={20} /> : <Music size={20} />))}
             </div></section>
           )}
           {found.charts.length > 0 && (
