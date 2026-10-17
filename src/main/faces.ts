@@ -8,7 +8,9 @@ import { join } from 'node:path'
 import type { InferenceSession } from 'onnxruntime-node'
 import { cropRect, type Part, type VideoInfo } from '../shared/video'
 import { download } from './download'
+import type { Phone } from './export-video'
 import { rawFrames } from './ffmpeg'
+import { phoneFrames } from './phone-ffmpeg'
 
 // fester Commit + Prüfsumme (wie bg-remove.ts): ein nachträglich verändertes Modell landet nie im nativen ONNX-Parser
 const MODEL_URL = 'https://huggingface.co/opencv/face_detection_yunet/resolve/3cc26e7f1014a5ee5d74a42acee58bafc9d0a310/face_detection_yunet_2023mar.onnx'
@@ -77,14 +79,35 @@ export async function detect(frame: Buffer, src: { w: number; h: number }): Prom
   return keep
 }
 
-/** Mittelpunkt des größten Gesichts je Bild, 0..1 der Videobreite; null = kein Gesicht. */
-export async function faceX(frames: Buffer[], src: { w: number; h: number }): Promise<(number | null)[]> {
+const biggest = (fs: Face[]) => fs.reduce<Face | null>((a, b) => (a && a.w * a.h >= b.w * b.h ? a : b), null)
+
+/** Tracking: dieselbe Person wie zuletzt (nächster Mittelpunkt, höchstens GAP der Bildbreite entfernt), sonst das größte Gesicht.
+ *  prev = letzter Mittelpunkt in px, null = neu wählen (Anfang, Szenenwechsel). */
+export function pickFace(faces: Face[], prev: number | null, w: number): Face | null {
+  const near = prev === null ? null : faces.reduce<Face | null>((a, b) => (a && Math.abs(centerX(a) - prev) <= Math.abs(centerX(b) - prev) ? a : b), null)
+  return near && Math.abs(centerX(near) - prev!) <= GAP * w ? near : biggest(faces)
+}
+
+/** Mittelpunkt der verfolgten Person je Bild (pickFace), 0..1 der Videobreite; null = kein Gesicht. reset[i]: vor Bild i liegt ein Szenenwechsel. */
+export async function faceX(frames: Buffer[], src: { w: number; h: number }, reset: boolean[] = []): Promise<(number | null)[]> {
   const out: (number | null)[] = []
-  for (const f of frames) { // nacheinander: eine Session, wenige Kerne
-    const big = (await detect(f, src)).reduce<Face | null>((a, b) => (a && a.w * a.h >= b.w * b.h ? a : b), null)
-    out.push(big && clamp01(centerX(big) / src.w))
+  let prev: number | null = null // bleibt über Bilder ohne Gesicht stehen: kurz verdeckt heißt nicht Personenwechsel
+  for (const [i, f] of frames.entries()) { // nacheinander: eine Session, wenige Kerne
+    if (reset[i]) prev = null
+    const face = pickFace(await detect(f, src), prev, src.w)
+    if (face) prev = centerX(face)
+    out.push(face && clamp01(centerX(face) / src.w))
   }
   return out
+}
+
+/** Standbilder für die Erkennung: auf dem Handy, wenn eins mitrechnet; scheitert es, für den Rest des Laufs der PC */
+async function frames(file: string, times: number[], phone?: Phone): Promise<Buffer[]> {
+  if (phone && !phone.failed) try { return await phoneFrames(phone.serial, phone.models, file, times) } catch (e) {
+    console.warn('[video] Standbilder auf dem Handy fehlgeschlagen, der PC rechnet weiter:', (e as Error).message)
+    phone.failed = true
+  }
+  return rawFrames(file, times)
 }
 
 // Stützpunkte nur, wo sich das Tempo ändert: weglassen, solange die Gerade vom letzten behaltenen Punkt alle Zwischenpunkte auf tol trifft
@@ -137,7 +160,7 @@ export function cameraPath(samples: { t: number; x: number | null }[], cuts: num
 /** Setzt focus nur bei parts ohne focus: Median über Bilder bei 25/50/75 % des parts. Kein Gesicht → focus bleibt leer (Mitte).
  *  Ab LONG s und mit size (Zuschnitt schmaler als die Quelle): ein Bild je STEP s, focus = Median, track = cameraPath, falls die
  *  Kamera fährt. cuts = harte Bildwechsel (Quellsekunden): dort springt der Zuschnitt. */
-export async function autoFocus(file: string, parts: Part[], info: VideoInfo, o: { cuts?: number[]; size?: { w: number; h: number } } = {}): Promise<Part[]> {
+export async function autoFocus(file: string, parts: Part[], info: VideoInfo, o: { cuts?: number[]; size?: { w: number; h: number }; phone?: Phone } = {}): Promise<Part[]> {
   const cropW = o.size ? cropRect(info, o.size).w / info.w : 1
   const out: Part[] = []
   for (const p of parts) {
@@ -145,13 +168,33 @@ export async function autoFocus(file: string, parts: Part[], info: VideoInfo, o:
     const len = p.end - p.start, n = len >= LONG && cropW < 1 ? Math.min(MAX_SAMPLES, Math.round(len / STEP)) : 0
     const times = (n ? Array.from({ length: n }, (_, i) => (i + 0.5) / n) : [0.25, 0.5, 0.75]).map((q) => Math.min(p.start + q * len, info.duration - 0.1))
     // kein Bild (Videospur kürzer als der Container): focus bleibt leer statt alle parts zu verwerfen
-    const fr = await rawFrames(file, times).catch(() => null)
-    const all = fr ? await faceX(fr, info) : [], xs = all.filter((x): x is number => x !== null)
+    const fr = await frames(file, times, o.phone).catch(() => null)
+    const reset = times.map((t, i) => i > 0 && (o.cuts ?? []).some((c) => c > times[i - 1] && c <= t))
+    const all = fr ? await faceX(fr, info, reset) : [], xs = all.filter((x): x is number => x !== null)
     if (!xs.length || xs.length < MIN_HIT * all.length) { out.push(p); continue }
     const track = n ? cameraPath(times.map((t, i) => ({ t, x: all[i] })), (o.cuts ?? []).filter((c) => c > p.start && c < p.end), cropW) : []
     out.push({ ...p, focus: round(median(xs)), ...(track.length > 1 && { track }) })
   }
   return out
+}
+
+// Facecam-Fenster aus dem Gesicht: Breite und Höhe als Vielfaches der Gesichtsbox, Mitte etwas unter dem Gesicht (Schultern).
+// ponytail: geschätzt, nicht der echte Overlay-Rand; Upgrade: Kanten des Kamera-Overlays suchen, falls der Ausschnitt oft daneben liegt
+const CAM_W = 3, CAM_H = 2.4, CAM_DOWN = 0.2
+
+/** Facecam im Stream: größtes Gesicht je Bild, Median der Boxen, aufgeweitet zum Kamerafenster [x, y, Breite, Höhe] als Anteile der Quelle.
+ *  null = in zu wenigen Bildern ein Gesicht. */
+export async function findCam(file: string, times: number[], info: VideoInfo, phone?: Phone): Promise<[number, number, number, number] | null> {
+  const boxes: Face[] = []
+  for (const f of await frames(file, times, phone)) {
+    const big = biggest(await detect(f, info))
+    if (big) boxes.push(big)
+  }
+  if (!boxes.length || boxes.length < MIN_HIT * times.length) return null
+  const [x, y, w, h] = (['x', 'y', 'w', 'h'] as const).map((k) => median(boxes.map((b) => b[k])))
+  const cw = Math.min(info.w, w * CAM_W), ch = Math.min(info.h, h * CAM_H)
+  const cx = Math.min(info.w - cw, Math.max(0, x + w / 2 - cw / 2)), cy = Math.min(info.h - ch, Math.max(0, y + h / 2 + CAM_DOWN * h - ch / 2))
+  return [cx / info.w, cy / info.h, cw / info.w, ch / info.h].map(round) as [number, number, number, number]
 }
 
 // Mittlere absolute Grauwertdifferenz zweier Bilder im Mund-Rechteck (Breite = Mundwinkel, Höhe halbe Mundbreite), in Bild-px.
@@ -172,7 +215,7 @@ function mouthMove(a: Buffer, b: Buffer, [x1, y1, x2, y2]: number[]) {
  *  Sprecher = Gesicht (x-Gruppe), dessen Mund sich in seinen Turns im Mittel am stärksten bewegt. Ohne Gesicht fehlt der Sprecher.
  *  ponytail: Mund-Grauwertdifferenz statt Lippen-Modell, Kopfbewegung zählt mit; Zuordnung gierig nach Wert statt ungarischer
  *  Methode. Upgrade: Lippen-Sync-Modell (z. B. TalkNet), falls Zuhörer mit viel Mimik den Sprecher übertrumpfen. */
-export async function speakerFaces(file: string, turns: { start: number; end: number; speaker: number }[], info: VideoInfo): Promise<Map<number, number>> {
+export async function speakerFaces(file: string, turns: { start: number; end: number; speaker: number }[], info: VideoInfo, phone?: Phone): Promise<Map<number, number>> {
   const k = S / Math.max(info.w, info.h)
   const obs: { x: number; move: number; speaker: number }[] = []
   // höchstens 6 Sprecher (meiste Redezeit): mehr Gesichter trennt die x-Gruppierung im 9:16-Zuschnitt ohnehin nicht sinnvoll
@@ -182,7 +225,7 @@ export async function speakerFaces(file: string, turns: { start: number; end: nu
     const longest = turns.filter((t) => t.speaker === speaker).sort((a, b) => b.end - b.start - (a.end - a.start)).slice(0, 6)
     for (const t of longest) {
       const mid = Math.min(Math.max((t.start + t.end) / 2, 0.1), info.duration - 0.2)
-      const fr = await rawFrames(file, [mid - 0.1, mid + 0.1]).catch(() => null) // Ton länger als Bild: Turn auslassen
+      const fr = await frames(file, [mid - 0.1, mid + 0.1], phone).catch(() => null) // Ton länger als Bild: Turn auslassen
       if (!fr) continue
       const [a, b] = fr
       const fb = await detect(b, info)

@@ -8,8 +8,8 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, VIDEO_FILE, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM, clipSpans, freezeOf, joinOf, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type Look, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, ovPos } from '../shared/video'
-import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, isArt, cropFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
+import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM, clipSpans, freezeOf, joinOf, cutFrames, clipWords, cropRect, splitRects, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type Look, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, ovPos } from '../shared/video'
+import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, isArt, cropFilter, splitFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
 import { clipMarks, xmeml, type Scene } from './export-xmeml'
@@ -152,7 +152,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos'] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos']; cam?: ClipContent['cam'] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image
 /** Jeder ffmpeg-Schritt des Exports: auf dem Handy, wenn eins mitrechnet (gleiche Parameter, damit -c:v copy beim Verbinden passt); scheitert es, rechnet der PC */
 const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
   if (!phone || phone.failed) return runFfmpeg(args, ro)
@@ -200,7 +200,9 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     return r.freeze && j < all.length - 1 ? { ...r, freeze: undefined } : r
   }))
   const parts = padParts(split.map((p, i) => (p.freeze && split[i + 1] && Math.abs(split[i + 1].start - p.end) < 1e-3 ? { ...p, freeze: undefined } : p)), info.duration, job.cuts), joined = seamless(parts), total = partsLength(parts), { size } = job
-  const blur = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // gleiches Seitenverhältnis: blur = crop
+  // gleiches Seitenverhältnis: blur und split = crop; split ohne erkannte Facecam (cam) zeigt das ganze Bild wie blur
+  const other = Math.abs(info.w / info.h - size.w / size.h) > 0.01, cam = job.fit === 'split' && other ? job.cam : undefined
+  const blur = (job.fit === 'blur' || (job.fit === 'split' && !cam)) && other
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2)) // Grund klein weichzeichnen, dann hochskalieren: billig und weich
   const captions = job.transcript && job.captions !== 'aus' ? job.captions : null
   const live = job.style === 'lebendig', look = await lookFilter(job)
@@ -243,10 +245,10 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
       // Standbild: F Frames des letzten bewegten Bilds halten, dazu der Vorlauf der Blende danach (die blendet aus dem Standbild, nicht aus der Quelle nach dem Ende)
       const fz = freezeOf(p), F = Math.round(fz * 30), h1 = hv[i + 1] ?? 0
       const end = F ? `trim=end_frame=${Math.max(1, frames - F - h1)},tpad=stop_mode=clone:stop=${frames - Math.max(1, frames - F - h1)}` : `trim=end_frame=${frames}`
-      const fit = blur
+      const fit = cam ? splitFilter(splitRects(info, size, cam, p.focus), size, i) : blur
         ? `split[b${i}][f${i}];[b${i}]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g${i}];` +
           `[f${i}]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h${i}];[g${i}][h${i}]overlay=(W-w)/2:(H-h)/2`
-        : cropFilter(c, size, (job.fit === 'blur' ? 1 : zoomOf(job.style, cutIndex(parts, k))) * pz, p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
+        : cropFilter(c, size, (job.fit === 'blur' || job.fit === 'split' ? 1 : zoomOf(job.style, cutIndex(parts, k))) * pz, p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
       // Ton ab p.start − a0: die Eingabe beginnt beim längeren Bild-Vorlauf (before)
       // Tempo nach dem Zuschnitt im Quellbereich, dann Lautstärke des Originaltons
       const vol = p.volume !== undefined && p.volume !== 1 ? `volume=${Math.min(2, Math.max(0, p.volume))},` : ''
@@ -326,7 +328,8 @@ export async function encodeCover(job: ClipJob, t: number | undefined, out: stri
   const focus = !tr?.length ? p.focus : k < 0 ? tr[tr.length - 1][1] : k === 0 ? tr[0][1] : tr[k - 1][1] + ((tr[k][1] - tr[k - 1][1]) * (at - tr[k - 1][0])) / (tr[k][0] - tr[k - 1][0])
   const { size } = job, hook = job.hook?.trim(), name = basename(out).replace(/\.\w+$/, ''), look = await lookFilter(job)
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2))
-  const fit = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01
+  const other = Math.abs(info.w / info.h - size.w / size.h) > 0.01, cam = job.fit === 'split' && other ? job.cam : undefined
+  const fit = cam ? splitFilter(splitRects(info, size, cam, focus), size) : (job.fit === 'blur' || job.fit === 'split') && other
     ? `split[b][f];[b]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g];` +
       `[f]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h];[g][h]overlay=(W-w)/2:(H-h)/2`
     : cropFilter(cropRect(info, size, focus), size)
@@ -520,7 +523,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
         const overlays = clip.overlays && await Promise.all(clip.overlays.map(async (x, j) => (x.image ? { ...x, image: videoPath(x.image, i + 1, 'image') }
           : x.video ? { ...x, video: videoPath(x.video, i + 1, 'video') } : x.slide ? { ...x, image: await slidePng(x.slide - 1, `einblendung-${n2(k + 1)}-${n2(j + 1)}.png`) } : x)))
-        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays, look: clip.look, stabil: clip.stabil, captionPos: clip.captionPos }
+        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays, look: clip.look, stabil: clip.stabil, captionPos: clip.captionPos, cam: clip.cam }
         segs = await clipSegs(job, name, dir, so, step(weights[k]))
         if (!first.cover && clip.cover !== undefined) first.cover = { job, t: clip.cover }
         first.post ??= clip.post?.trim() ? clip.post : undefined

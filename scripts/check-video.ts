@@ -10,7 +10,7 @@ import { LOOK_FILTER, autoLook, cropFilter, levelExpr, srt, zoomCrop } from '../
 import type { Deck } from '../src/shared/deck'
 import { lintClip } from '../src/shared/clip-lint'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
-import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Overlay, type Part, type Transcript } from '../src/shared/video'
+import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, splitRects, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Overlay, type Part, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -358,6 +358,21 @@ async function main() {
       near((await probe(fxSegs[0].file)).duration, fxSegs[0].dur, 0.1, 'lebendig: Länge')
       assert.ok(readFileSync(join(dir, 'fx-01.ass'), 'utf8').includes(',Bar,'), 'Balken auch ohne Untertitel')
       console.log('  Clip-Stil ok')
+      // fit split: Facecam oben rechts (Anteile), 40 % der Höhe; Spielbild darunter um focus; Ausgabe bleibt 180×320
+      const sr = splitRects({ w: 1280, h: 720 }, { w: 1080, h: 1920 }, [0.75, 0.05, 0.2, 0.3])
+      assert.equal(sr.top, 768)
+      assert.ok(sr.cam.x >= 960 && sr.cam.x + sr.cam.w <= 1216 && sr.cam.y >= 36 && sr.cam.y + sr.cam.h <= 252, JSON.stringify(sr.cam))
+      near(sr.cam.w / sr.cam.h, 1080 / 768, 0.02, 'Facecam im Seitenverhältnis des oberen Felds')
+      near(sr.game.w / sr.game.h, 1080 / 1152, 0.02, 'Spielbild im Seitenverhältnis des unteren Felds')
+      const edge = splitRects({ w: 1280, h: 720 }, { w: 1080, h: 1920 }, [0.95, 0.95, 0.5, 0.5]).cam
+      assert.ok(edge.x + edge.w <= 1280 && edge.y + edge.h <= 720, 'cam am Rand bleibt im Bild')
+      const spSegs = await clipSegs({ file: fxSrc, parts: [{ start: 0.3, end: 1.5 }, { start: 2, end: 3.5 }], captions: 'aus', transcript: null, size: { w: 180, h: 320 }, font: fxFont, accent: '#FF8800', fit: 'split', cam: [0.7, 0, 0.3, 0.4] }, 'split', dir, { preset: 'ultrafast' })
+      const spInfo = await probe(spSegs[0].file)
+      assert.deepEqual([spInfo.w, spInfo.h], [180, 320], 'split: Ausgabegröße')
+      near(spInfo.duration, spSegs[0].dur, 0.1, 'split: Länge')
+      await encodeCover({ file: fxSrc, parts: [{ start: 0.3, end: 1.5 }], captions: 'aus', transcript: null, size: { w: 180, h: 320 }, font: fxFont, accent: '#FF8800', fit: 'split', cam: [0.7, 0, 0.3, 0.4] }, 1, join(dir, 'split.jpg'), dir)
+      assert.deepEqual(await probe(join(dir, 'split.jpg')).then((m) => [m.w, m.h]), [180, 320], 'split: Titelbild')
+      console.log('  Facecam-Split ok')
     }
     if (process.env.DW_ONLY_FX) return
 

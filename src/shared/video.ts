@@ -44,7 +44,8 @@ export const ZOOM = { min: 1, max: 1.5 }
 export const FREEZE = { min: 0.3, max: 3 }
 export type Captions = 'wort' | 'satz' | 'aus'
 export type Pauses = 'kurz' | 'lassen'
-export type Fit = 'crop' | 'blur' // blur: ganzes Bild mittig auf unscharfem, abgedunkeltem Vollbild-Grund (Querformat in 9:16)
+export type Fit = 'crop' | 'blur' | 'split' // blur: ganzes Bild mittig auf unscharfem, abgedunkeltem Vollbild-Grund (Querformat in 9:16); split: Facecam (cam) oben, Spielbild unten (Streams)
+export const SPLIT_TOP = 0.4 // fit split: Anteil der Bildhöhe für die Facecam
 // follow: Zuschnitt folgt dem aktiven Sprecher (Podcast), die Engine teilt parts an Sprecherwechseln
 // style: ruhig (Standard) = ohne Animation; lebendig = Wort-Pop, Hook mit Einblendung und Balken, Fortschrittsbalken, Zoom-Wechsel an Schnitten
 export type ClipStyle = 'ruhig' | 'lebendig'
@@ -52,7 +53,7 @@ export type ClipStyle = 'ruhig' | 'lebendig'
 // ton: klar = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser) für Sprache aus Handy/Webcam; original = unverändert (Standard); bei Musik nie klar
 // cover: Quellsekunde fürs Titelbild (Export legt es als .jpg neben das MP4), post: Text zum Posten – Titel in der ersten Zeile, dann Beschreibung und Hashtags (.txt)
 // look: Farblook; stabil: Verwackeln glätten (deshake, nur Export); captionPos: Lage der Untertitel (oben/mitte, wenn unten Wichtiges steht)
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: (typeof CAPTION_POS)[number] }
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: (typeof CAPTION_POS)[number]; cam?: [number, number, number, number] } // cam: Facecam bei fit split, setzt prepareClips (nicht im Schema)
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
@@ -261,6 +262,14 @@ export function cropRect(src: { w: number; h: number }, out: { w: number; h: num
   }
   const h = Math.min(src.h, even(src.w / r))
   return { x: 0, y: Math.round((src.h - h) / 2), w: src.w, h }
+}
+
+/** fit split: Facecam-Fenster cam ([x, y, Breite, Höhe] als Anteile der Quelle) füllt oben top px, darunter das Spielbild um focus. Rechtecke in px der Quelle. */
+export function splitRects(src: { w: number; h: number }, out: { w: number; h: number }, cam: [number, number, number, number], focus = 0.5) {
+  const top = even(out.h * SPLIT_TOP)
+  const x = Math.round(Math.min(src.w - 2, Math.max(0, cam[0] * src.w))), y = Math.round(Math.min(src.h - 2, Math.max(0, cam[1] * src.h)))
+  const c = cropRect({ w: Math.min(src.w - x, even(cam[2] * src.w)), h: Math.min(src.h - y, even(cam[3] * src.h)) }, { w: out.w, h: top })
+  return { top, cam: { ...c, x: c.x + x, y: c.y + y }, game: cropRect(src, { w: out.w, h: out.h - top }, focus) }
 }
 
 /** Transkript für die KI: eine Zeile je Segment, „[s12] 61.2–66.8 Text“. */

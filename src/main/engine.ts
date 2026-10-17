@@ -15,7 +15,7 @@ import type { Engine } from './agent'
 import { dataDir } from './clients'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
-import { autoFocus, speakerFaces } from './faces'
+import { autoFocus, findCam, speakerFaces } from './faces'
 import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { phoneDevice, phoneMarker } from './phone'
@@ -173,13 +173,14 @@ export function createEngine(): Engine {
   // übrige parts ohne focus aufs Gesicht. Fehler kosten nur den Zuschnitt (Bildmitte) bzw. die Bildwechsel.
   async function prepareClips(deck: Deck, onProgress: (pct: number) => void): Promise<Deck> {
     const size = sizeOf(deck), slides = [...deck.slides], clips = slides.flatMap((s, i) => (s.layout === 'clip' ? [i] : []))
+    const d = clips.length ? await phoneNow() : null, phone = d ? { serial: d.serial, models } : undefined // Standbilder für Gesichter vom Handy
     for (const [n, i] of clips.entries()) {
       const c = slides[i].content as ClipContent, file = mediaFile(c.video)!
       const warn = (e: unknown) => console.warn(`[video] Folie ${i + 1}: Gesichts- oder Sprechererkennung fehlgeschlagen:`, (e as Error).message)
       try {
         const info = await probe(file)
         let parts = c.parts, cuts: number[] | undefined
-        const crop = c.fit !== 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // sonst ganzes Bild sichtbar, nichts zuzuschneiden
+        const other = Math.abs(info.w / info.h - size.w / size.h) > 0.01, crop = (c.fit ?? 'crop') === 'crop' && other // sonst ganzes Bild sichtbar, nichts zuzuschneiden
         // Blitzbilder gibt es auch bei blur und gleichem Seitenverhältnis: vor dem continue. Wortschutz nur mit gecachtem Transkript, nie neu transkribieren.
         // Mit Zuschnitt die ganzen parts (die Kamerafahrt springt an Wechseln), sonst nur Fenster um die Kanten: Fulltime dekodiert nicht die ganze Stunde
         try {
@@ -198,13 +199,20 @@ export function createEngine(): Engine {
           parts = r.parts, cuts = found
         } catch (e) { console.warn(`[video] Folie ${i + 1}: Bildwechsel nicht erkannt:`, (e as Error).message) }
         slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
+        // split ohne cam: Facecam aus bis zu 8 Bildern der parts; ohne Gesicht zeigt der Export das ganze Bild wie blur
+        if (c.fit === 'split' && !c.cam && other) try {
+          const times = parts.flatMap((p) => [0.25, 0.75].map((q) => Math.min(p.start + q * (p.end - p.start), info.duration - 0.1))).slice(0, 8)
+          const cam = await findCam(file, times, info, phone)
+          if (cam) slides[i] = { ...slides[i], content: { ...(slides[i].content as ClipContent), cam } }
+          else console.info(`[video] Folie ${i + 1}: keine Facecam gefunden, Bild ganz statt geteilt`)
+        } catch (e) { warn(e) }
         if (!crop) continue
         if (c.follow === 'sprecher') try {
           const from = Math.min(...parts.map((p) => p.start)), to = Math.max(...parts.map((p) => p.end))
           const turns = (await speakersOf(file, info.duration, parts.map((p): [number, number] => [p.start, p.end]))).filter((t) => t.end > from && t.start < to)
-          parts = followParts(parts, turns, await speakerFaces(file, turns, info))
+          parts = followParts(parts, turns, await speakerFaces(file, turns, info, phone))
         } catch (e) { warn(e) }
-        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info, { cuts, size }) // auch, wenn follow keine Sprecher-Gesichter fand
+        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info, { cuts, size, phone }) // auch, wenn follow keine Sprecher-Gesichter fand
         slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
       } catch (e) { warn(e) } finally { onProgress(Math.floor(((n + 1) / clips.length) * 100)) }
     }

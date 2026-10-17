@@ -1,6 +1,6 @@
 # Deckwerk Pro
 
-Deckwerk Pro ist die Ausgabe von Deckwerk für Profis: Beratungen und Konzerne, Agenturen, Video-Profis sowie Druck und Design. Das Repo ist ein Git-Fork von Deckwerk (Remote `upstream`) und steht wie Deckwerk unter AGPL-3.0-only. Pro läuft neben Deckwerk, mit eigenem Datenordner `~/DeckwerkPro`, eigenem MCP-Namen und Skill `deckwerk-pro`.
+Deckwerk Pro ist die Ausgabe von Deckwerk für Profis: Beratungen und Konzerne, Agenturen, Video-Profis, Streamer sowie Druck und Design. Das Repo ist ein Git-Fork von Deckwerk (Remote `upstream`) und steht wie Deckwerk unter AGPL-3.0-only. Pro läuft neben Deckwerk, mit eigenem Datenordner `~/DeckwerkPro`, eigenem MCP-Namen und Skill `deckwerk-pro`.
 
 Stand der Recherche: 17.10.2026. Die Belege stammen meist aus Anbieterseiten und Review-Portalen; Preise sind Größenordnungen.
 
@@ -36,6 +36,18 @@ Stand der Recherche: 17.10.2026. Die Belege stammen meist aus Anbieterseiten und
 
 Premiere liest kein FCPXML, nur das ältere Final-Cut-7-XML (xmeml). Das liest auch Resolve. Für OpenTimelineIO gibt es keine JS-Umsetzung.
 
+### Streamer
+| Bedarf | Beleg | Deckwerk heute |
+|---|---|---|
+| Facecam oben, Spielbild unten (9:16) | StreamLadder, Eklipse, Bytecap | `fit: split` mit erkannter Facecam |
+| Highlights aus Chat-Spitzen und Ton | Eklipse, Streamlabs AI Highlighter | Twitch-Chat und Signale; YouTube- und Kick-Chat fehlen |
+| Wort-für-Wort-Untertitel mit Hervorhebung | Submagic, Vizard | `captions: wort`, aktuelles Wort in Akzentfarbe |
+| Untertitel in mehreren Sprachen | Submagic, Vizard | fehlt |
+| Stream-Grafiken: Starting Soon, BRB, Panels, Thumbnails | Streamlabs, StreamElements | Folien-Engine kann es, kein Gerüst |
+| Ein Clip in 9:16, 1:1 und 16:9 auf einmal | Opus Clip | fehlt |
+| Direkt-Upload und Planung | StreamLadder (bezahlt) | bewusst nicht: OAuth je Plattform |
+| Live-Alerts und Overlays in OBS | Streamlabs, StreamElements | bewusst nicht: Live-Werkzeug |
+
 ### Druck und Design
 | Bedarf | Typischer Wert | Deckwerk heute |
 |---|---|---|
@@ -62,6 +74,9 @@ Ghostscript (AGPL) wandelt nach CMYK und schreibt PDF/X-4; die Lizenz passt zu P
 6. Video: Lautheits-Vorgaben, Export 4K/10 bit/ProRes, FCPXML für Final Cut.
 7. Druck: Gesamtfarbauftrag prüfen, Schnittmarken, PDF/X-1a.
 8. Freigabe-Workflow mit Kommentaren (baut auf `feat/gemeinsam-bearbeiten` in Deckwerk auf).
+9. Streamer: Stream-Paket (Starting Soon, BRB, Ending, Twitch-Panels 320×160, Thumbnail, Overlay-Rahmen als PNG) aus dem Brand-Kit.
+10. Streamer: YouTube-Live-Chat (yt-dlp `live_chat`) als Highlight-Signal, Kick prüfen.
+11. Streamer: übersetzte Untertitel, Stapel-Export eines Clips in mehrere Formate.
 
 ## Fork pflegen
 - Deckwerk-Stände kommen per `git fetch upstream --tags && git merge vX.Y.Z` (Release-Tags) oder einen Branch von `upstream`.
@@ -84,4 +99,5 @@ Ghostscript (AGPL) wandelt nach CMYK und schreibt PDF/X-4; die Lizenz passt zu P
 - Premiere und OTIO: https://community.adobe.com/t5/premiere-pro-beta-discussions/new-in-beta-otio-import-and-export/td-p/14937493
 - EBU R128: https://en.wikipedia.org/wiki/EBU_R_128
 - Druckdaten: https://de.druck.at/downloads/info-druckdatenerstellung-de.pdf · https://www.schur.com/media/wk3llmmk/reprorichtlinien-de.pdf
+- Streamer-Clips: https://eklipse.gg/compare/streamladder-alternatives/ · https://www.bytecap.io/usecases/streamers · https://streamlabs.com/content-hub/post/streamlabs-ai-game-highlighter · https://submagic.co/alternatives/vizard
 - Ghostscript: https://ghostscript.readthedocs.io/en/latest/VectorDevices.html · https://artifex.com/licensing

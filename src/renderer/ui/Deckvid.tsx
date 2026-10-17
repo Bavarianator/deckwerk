@@ -531,7 +531,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
     '--dv-ov': `${cq((m * 0.05) / face.win)}cqw`,
-    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) * (c.parts[player.part]?.zoom ?? 1), // Punch-in mal Stil-Zoom wie im Export
+    '--dv-zoom': c.fit === 'blur' || c.fit === 'split' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) * (c.parts[player.part]?.zoom ?? 1), // Punch-in mal Stil-Zoom wie im Export
     '--dv-look': LOOK_CSS[c.look ?? 'neutral'] || 'none',
     ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar }),
   } as CSSProperties
@@ -616,7 +616,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                 CLIP_STYLES.map((st) => [st, st === 'ruhig' ? 'Ruhig' : 'Lebendig', st === 'ruhig' ? 'Ohne Animation' : 'Wort-Pop, Hook-Einblendung, Fortschrittsbalken, Zoom an Schnitten']))}
               {opt('Pausen', c.pauses ?? 'lassen', (v) => onContent({ pauses: v === 'lassen' ? undefined : v }), [['lassen', 'Lassen'], ['kurz', 'Kürzen', 'Lange Pausen und Füllwörter fallen im Export weg']])}
               {opt('Bild', c.fit ?? 'crop', (v) => onContent({ fit: v === 'crop' ? undefined : v }),
-                [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund']])}
+                [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund'], ['split', 'Facecam', 'Stream: Kamera oben, Spiel unten (im Export)']])}
               {opt('Ton', c.ton ?? 'original', (v) => onContent({ ton: v === 'original' ? undefined : v }),
                 [['original', 'Original', 'Ton unverändert'], ['klar', 'Klar', 'Sprache aufbereiten: Rauschen weg, gleichmäßig laut (im Export). Nicht bei Musik']])}
               {opt('Look', c.look ?? 'neutral', (v) => onContent({ look: v === 'neutral' ? undefined : v }),

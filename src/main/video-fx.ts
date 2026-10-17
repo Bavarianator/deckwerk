@@ -56,6 +56,13 @@ export function cropFilter(c: { x: number; y: number; w: number; h: number }, si
   return `crop=${z.w}:${z.h}:${track?.keys.length ? `${trackX(z.w, track)}:${z.y}:exact=1` : `${z.x}:${z.y}`},scale=${size.w}:${size.h}`
 }
 
+/** ffmpeg-Filter für fit split: Facecam oben, Spielbild darunter, gestapelt; k macht die Labels im Graphen eindeutig. */
+export function splitFilter(r: { top: number; cam: Rect; game: Rect }, size: { w: number; h: number }, k: string | number = '') {
+  return `split[sc${k}][sg${k}];[sc${k}]crop=${r.cam.w}:${r.cam.h}:${r.cam.x}:${r.cam.y},scale=${size.w}:${r.top}[st${k}];` +
+    `[sg${k}]crop=${r.game.w}:${r.game.h}:${r.game.x}:${r.game.y},scale=${size.w}:${size.h - r.top}[sb${k}];[st${k}][sb${k}]vstack`
+}
+type Rect = { x: number; y: number; w: number; h: number }
+
 /** Musikpegel über die Zeit als ffmpeg-Ausdruck in t (für volume=…:eval=frame): Grundpegel base, in den Spans [von, bis, pegel] deren Pegel.
  *  An jeder Grenze eine lineare Rampe von ramp s, mittig auf der Grenze (kürzer, wenn die Nachbargrenze näher liegt); aneinanderstoßende Spans gehen direkt ineinander über. */
 export function levelExpr(base: number, spans: [number, number, number][], ramp = 0.5) {
