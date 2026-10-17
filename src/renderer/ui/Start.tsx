@@ -109,7 +109,7 @@ const VIDEO_HINT = 'Shorts, gekürzte Fassung, Stream-Highlights oder Zusammensc
 // Filter über Decks und Vorlagen; Video = Deck mit Videoclip (wie hasClip in App.tsx)
 const KINDS = [['alle', 'Alle'], ['folien', 'Folien'], ['druck', 'Drucksachen'], ['social', 'Social'], ['video', 'Videos']] as const
 type Kind = (typeof KINDS)[number][0]
-const kindOf = (d: Deck): Kind => d.slides.some((s) => s.layout === 'clip') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
+const kindOf = (d: Deck): Kind => d.slides.some((s) => s.layout === 'clip' || s.layout === 'schnitt') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
 
 // „Gibt es schon ähnlich“: grober Abgleich gleicher Wortanfänge (6 Zeichen) zwischen Wunsch und Titel/Folientiteln
 const STOP = new Set(['erstelle', 'gestalte', 'mache', 'bitte', 'einen', 'eine', 'einem', 'einer', 'unser', 'unsere', 'unseren', 'unserem', 'über',

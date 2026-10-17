@@ -3,6 +3,8 @@ import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl 
 import { FORMATS, itemClicks, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { LAYOUTS, buildOf } from './layouts'
 import { marginsOf, resolveTheme } from './themes'
+import { deliverOf, type TimelineContent } from './timeline'
+import { lintTimeline } from './timeline-edit'
 
 export interface Issue {
   slide: number // 0-based index
@@ -14,7 +16,7 @@ export interface Issue {
 }
 
 const MARGIN = 24 // no text closer to the slide edge than this
-export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank', 'clip'] // absichtlich luftig
+export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank', 'clip', 'schnitt'] // absichtlich luftig
 // Grenzen je Profil (aus der Foliengröße): Folien werden projiziert, Social-Posts aufs Handy skaliert, A4 gedruckt und gelesen.
 // Nur Folien haben Struktur-, Rhythmus- und Leere-Regeln; Karussells wiederholen Layouts mit Absicht, Dokumente sind dichter und ruhiger.
 const PROFILE = {
@@ -26,7 +28,7 @@ const SPARSE = 0.67 // Füllgrad des Satzspiegels, darunter wirkt eine Inhaltsfo
 const overlapArea = (a: Box, b: Box) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
 // Video-Deck: Clips folgen aufeinander, ohne Titel- und Schlussfolie, fade gezielt an Zwischentiteln – Folien-Regeln dazu passen nicht
-const isVideo = (deck: Deck) => deck.slides.some((s) => s.layout === 'clip')
+const isVideo = (deck: Deck) => deck.slides.some((s) => s.layout === 'clip' || s.layout === 'schnitt')
 const wordsOf = (t: TextEl) => t.runs.map((r) => r.text).join(' ').split(/\s+/).filter(Boolean)
 
 // ---------- KI-Merkmale im Text ----------
@@ -91,6 +93,10 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
   const parsed = def.schema.safeParse(s.content)
   if (!parsed.success)
     for (const e of parsed.error.issues) add('error', 'schema', `${e.path.join('.') || 'content'}: ${e.message}`, String(e.path[0] ?? ''))
+  else if (s.layout === 'schnitt') {
+    const tl = parsed.data as TimelineContent
+    for (const x of lintTimeline(tl, deliverOf(tl).fps)) add(x.level, 'schnitt', x.msg, x.clip)
+  }
 
   for (const o of m.fit.overflow) {
     const what = o.kind === 'lines' ? 'hat zu viele Zeilen' : o.kind === 'width' ? 'hat ein zu langes Wort' : `läuft um ${Math.round(o.overPx)} px über`
@@ -135,7 +141,8 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
   if (count > prof.words) add('warn', 'density', prof === PROFILE.slides
     ? `${count} Wörter auf der Folie – in 3 Sekunden nicht erfassbar (Ziel: unter 40). Kürzen, Rest in die Speaker Notes.`
     : `${count} Wörter auf der ${prof.unit} – zu viel für dieses Format (Ziel: unter ${prof.goal}). Kürzen oder auf eine weitere ${prof.unit} verteilen.`)
-  if (/"(src|image)":""/.test(JSON.stringify(s.content ?? {}))) add('warn', 'image', 'Kein Bild gesetzt – es wird ein Platzhalter angezeigt. Mit find_images ein Foto suchen oder eigenes Bild einsetzen.')
+  // schnitt: src sind Clip-Quellen, keine Fotos
+  if (s.layout !== 'schnitt' && /"(src|image)":""/.test(JSON.stringify(s.content ?? {}))) add('warn', 'image', 'Kein Bild gesetzt – es wird ein Platzhalter angezeigt. Mit find_images ein Foto suchen oder eigenes Bild einsetzen.')
   for (const it of s.items ?? []) if (it.kind === 'image' && !it.alt?.trim()) add('warn', 'alt-fehlt', 'Bild ohne Alternativtext – Screenreader lesen nichts vor. Alternativtext setzen (alt), z. B. was das Bild zeigt.', `items.${it.id}`)
   for (const it of s.items ?? []) {
     const n = it.link?.match(/^#(\d+)$/)
@@ -182,6 +189,10 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
 
 export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   const out = deck.slides.flatMap((_, i) => lintSlide(deck, i, measured[i]))
+  // Export und Vorschau behandeln ein Deck entweder als Clip-Folge oder als Timelines, nie gemischt
+  const tl = deck.slides.findIndex((x) => x.layout === 'schnitt')
+  if (tl >= 0 && deck.slides.some((x) => x.layout === 'clip'))
+    out.push({ slide: tl, slideId: deck.slides[tl].id, severity: 'error', rule: 'schnitt-mix', message: 'Timeline und Clip-Folien nicht im selben Deck mischen. Clips als Spuren in die Timeline übernehmen oder ein eigenes Deck anlegen.' })
   if (!PROFILE[profileOf(deck)].deckRules) return [...out, ...lintMotion(deck, measured)]
   const s = deck.slides
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: s[i].id, severity: 'warn', rule, message })

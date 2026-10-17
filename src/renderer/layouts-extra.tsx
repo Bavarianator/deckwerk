@@ -3,6 +3,8 @@
 import type { z } from 'zod'
 import { EXTRA_LAYOUTS } from '../shared/layouts-extra'
 import { withTone } from '../shared/themes'
+import { tlDuration } from '../shared/timeline'
+import { mmss } from '../shared/video'
 import { Header } from './layouts'
 import { assetOf } from './ui/itemOps'
 import { Backdrop, Box, Frame, Icon, Img, QrCode, T, onPhoto, photoOf, rgba, useSlide } from './slide'
@@ -607,6 +609,32 @@ function Clip({ c }: Props<'clip'>) {
   )
 }
 
+// Video-Timeline (Pro): Standbild am Anfang des ersten V1-Clips wie bei Clip; ohne Quelle ruhiger Platzhalter mit Länge und Spurzahl.
+// Schnitt und Vorschau leben in ui/timeline, den Export baut timeline-ffmpeg.ts.
+function Schnitt({ c }: Props<'schnitt'>) {
+  const { theme } = useSlide()
+  const tone = theme.dark ? undefined : 'invert' // dunkler Grund wie im Video, siehe Clip
+  const d = withTone(theme, tone).c.bg
+  const first = [...(c.tracks.find((t) => t.kind === 'video')?.clips ?? [])].sort((a, b) => a.at - b.at)[0]
+  const url = !first?.src ? '' : first.src.startsWith('/') ? assetOf(first.src) : first.src
+  const media = (
+    <div className="clip-media">
+      {url ? <div className="clip-still" style={{ backgroundImage: `url("${url}?frame=${first.in}")`, backgroundPosition: `${(first.focus ?? 0.5) * 100}% 50%` }} /> : <div className="clip-ph" style={{ background: d }} />}
+    </div>
+  )
+  const n = c.tracks.length
+  return (
+    <Frame tone={tone} media={media}>
+      {!url && (
+        <div className="tl-ph">
+          <T role="h1" slot="_tl.title">Timeline</T>
+          <T role="label" slot="_tl.info">{`${mmss(tlDuration(c))} · ${n} ${n === 1 ? 'Spur' : 'Spuren'}`}</T>
+        </div>
+      )}
+    </Frame>
+  )
+}
+
 // Urkunde (A4 quer): Art und Titel oben, Empfänger als Held darunter, Ort/Datum und Unterschriftsfelder unten in einem Spaltenraster.
 // Würde über Satzspiegel, Größe und Weißraum statt Zierrahmen oder Siegel; die einzigen Linien sind die zum Unterschreiben.
 function Certificate({ c }: Props<'certificate'>) {
@@ -873,6 +901,6 @@ function Menu({ c, v }: Props<'menu'>) {
 export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
-  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos, clip: Clip,
+  pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos, clip: Clip, schnitt: Schnitt,
   'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, cv: Cv, menu: Menu,
 }

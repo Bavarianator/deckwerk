@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { LayoutDef } from './layouts'
 import { MASKS } from './deck'
 import { CAPTION_POS, CUT_TRANSITIONS, FREEZE, MAX_MEDIA, MAX_PARTS, OVERLAY_ARTS, OVERLAY_POS, SPEED, VIDEO_LOOKS, ZOOM } from './video'
+import { timelineSchema } from './layouts-timeline'
 
 // Foto: dasselbe Objekt in allen Layouts. Ein einfacher String wird als { src } akzeptiert (ältere Decks).
 export const FOCI = ['center', 'top', 'bottom', 'left', 'right'] as const
@@ -859,6 +860,34 @@ export const EXTRA_LAYOUTS = {
       min: { video: '', parts: [{ start: 0, end: 4 }] },
       typ: { video: '', hook: 'Warum neun von zehn Pitches scheitern', parts: [{ start: 12.4, end: 21.8, focus: 0.5 }, { start: 40.1, end: 52 }, { start: 63, end: 70.5 }], captions: 'wort', cover: 45.2, post: 'Warum neun von zehn Pitches scheitern\nDer häufigste Fehler steckt in der ersten Minute. So vermeidest du ihn.\n#pitch #startup #gründen' },
       max: { video: '', hook: words(70), parts: rep(MAX_PARTS, (i) => ({ start: i * 10, end: i * 10 + 8, focus: 1 })), captions: 'satz', fit: 'blur', follow: 'sprecher', style: 'lebendig', ton: 'klar', cover: 5, post: words(2200) },
+    },
+  }),
+  schnitt: L({
+    id: 'schnitt', name: 'Video-Schnitt (Pro)',
+    when: 'Mehrspuriger Schnitt mit mehreren Quellen, Bild-in-Bild, Musik, Farbkorrektur, Ton-EQ und Ausgabe bis 4K/ProRes; eine Folie = eine Timeline, nicht mit clip-Folien mischen. Ablauf: read_guide § Timeline.',
+    sizes: ['9:16', '4:5', '1:1', '16:9'], schema: timelineSchema, defaultBuild: 'none', footer: false,
+    samples: {
+      min: { tracks: [{ id: 'v1', kind: 'video', clips: [{ id: 'c1', src: '', at: 0, in: 0, out: 4 }] }] },
+      typ: {
+        tracks: [
+          { id: 'v1', kind: 'video', clips: [{ id: 'c1', src: '', at: 0, in: 12, out: 24, grade: { gamma: [1.05, 1.05, 1.05], sat: 1.1, temp: 0.1 } }, { id: 'c2', src: '', at: 12, in: 3, out: 15 }] },
+          { id: 'v2', kind: 'video', clips: [{ id: 'c3', src: '', at: 4, in: 0, out: 8, box: [0.62, 0.06, 0.32] }] },
+          { id: 'a1', kind: 'audio', clips: [{ id: 'c4', src: '', at: 0, in: 0, out: 24, volume: 0.4, eq: { low: -3 } }] },
+        ],
+        overlays: [{ start: 1, end: 5, art: 'bauchbinde', text: 'Anna Berger', sub: 'Leitung Vertrieb' }],
+      },
+      max: {
+        tracks: [
+          { id: 'v1', kind: 'video', clips: rep(40, (i) => ({ id: `k${i}`, src: '', at: i * 6, in: i * 2, out: i * 2 + 6, grade: { lift: [-0.02, 0, 0.02] as [number, number, number], sat: 1.2 } })) },
+          { id: 'v2', kind: 'video', clips: rep(20, (i) => ({ id: `b${i}`, src: '', at: i * 12, in: 0, out: 5, box: [0.6, 0.05, 0.35] as [number, number, number] })) },
+          { id: 'a1', kind: 'audio', clips: rep(4, (i) => ({ id: `m${i}`, src: '', at: i * 60, in: 0, out: 60, volume: 0.5, keys: [[0, -6], [58, -20]] as [number, number][], eq: { low: -2, mid: 1, high: 2 } })) },
+          { id: 'a2', kind: 'audio', clips: rep(24, (i) => ({ id: `s${i}`, src: '', at: i * 10, in: i * 10, out: i * 10 + 9 })) },
+        ],
+        overlays: rep(20, (i) => ({ start: i * 12, end: i * 12 + 4, art: 'text' as const, text: words(120, i) })),
+        subs: rep(120, (i) => ({ start: i * 2, end: i * 2 + 1.8, text: words(200, i) })),
+        captions: 'satz', markers: rep(40, (i) => ({ t: i * 6, name: words(60, i) })),
+        deliver: { res: 2160, fps: 25, codec: 'prores', lufs: -16 },
+      },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>
