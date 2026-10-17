@@ -1,0 +1,16 @@
+[package]
+name = "dw-raster"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+kurbo.workspace = true
+vello_cpu = { version = "0.3", default-features = false, features = ["std", "png", "text", "u8_pipeline"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+skrifa = "0.42"

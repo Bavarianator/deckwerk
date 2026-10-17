@@ -1,0 +1,19 @@
+[package]
+name = "dw-pdf"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+kurbo.workspace = true
+krilla = { version = "0.8.2", default-features = false, features = ["raster-images"] }
+lcms2 = "6"
+lopdf = { version = "0.45", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+skrifa = "0.42"
+dw-raster = { path = "../dw-raster" }
