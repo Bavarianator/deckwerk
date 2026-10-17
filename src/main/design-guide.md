@@ -494,7 +494,7 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - Short: ideal 55–75 s, hart 20–90 s (`parts` zusammen), Shorts überlappen höchstens 5 s.
 - `hook` (Short): höchstens 70 Zeichen, löst nicht schon alles auf; kein Clickbait, keine Emojis.
 - `cover` (Short): Quellsekunde fürs Titelbild aus dem Kontaktabzug – Gesicht mit Ausdruck oder der Moment des Payoffs; nicht der erste Frame, kein Schwarz- oder Übergangsbild.
-- `post` (Short): Zeile 1 Titel wie bei YouTube (≤ 100 Zeichen), dann 1–2 Sätze, dann 3–5 passende Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten. Bei fremdem Material Link oder Quelle nennen. Export `clips` legt je Short Cover (.jpg) und Post-Text (.txt) neben das MP4; `mp4` nimmt Cover und Post der ersten Clip-Folie, die sie hat.
+- `post` (Short): Aufbau steht im Feld; bei fremdem Material Link oder Quelle nennen. `clips` legt je Short Cover (.jpg) und Post (.txt) neben das MP4, `mp4` nimmt die der ersten Clip-Folie.
 - `captions`: `wort` für Shorts (wenige Wörter, aktuelles Wort im Akzent), `satz` für ruhige und lange Videos, `aus` nur auf Wunsch.
 - `style`: `lebendig` für Shorts und Reels (Wort-Pop, Hook blendet mit Balken ein, Fortschrittsbalken, leichter Zoom-Wechsel nur bei einem neuen Moment, nie an Jump-Cuts), sonst weglassen (= ruhig, ohne Animation): Fulltime, Vorträge, Schulungen. Keine Sticker oder Emojis; Effekte nur wie unter **Effekte**.
 - Übergänge an Schnitten macht der Export selbst, meist nichts einstellen; nie behaupten, es gebe keine: Jump-Cuts innerhalb eines Moments (gekürzte Pausen, Füllwörter) blendet er kurz über (0,13 s), einen neuen Moment (Sprung ab 20 s in der Quelle) deutlich (0,5 s Bild, Ton kurz), jeder zweite Schnitt zoomt leicht (lebendig 8 %; ruhig 6 %, aber nur in Zusammenschnitten: mehrere Clip-Folien im Querformat).
@@ -502,7 +502,7 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - `ton` `klar` für Sprache aus Handy, Webcam oder Raum (nie bei Musik); `pauses` `kurz` für Talking Heads mit Denkpausen, `lassen` bei Musik und Vorführungen; `follow: "sprecher"` bei Gesprächen mit mehreren Personen im Bild.
 - Short-Spannung: nach ~8 s ohne Schnitt auflockern (Füllsatz raus oder `style` `lebendig`). Open Loop: eine im Hook aufgeworfene Frage erst gegen Ende auflösen, aber sicher auflösen. Loop-Ende: der letzte Satz darf in den Anfang zurückführen.
 - Zuschnitt: ohne `focus` sucht der Export das Gesicht; `focus` nur für Produkt oder Tafel. Ein 9:16-Ausschnitt zeigt aus einem Querformat etwa ein Drittel der Breite: `blur`, wenn der Rand wichtig ist.
-- Übergänge zwischen Folien: Im `mp4` überblendet die Folien-`transition` echt zur vorigen Folie (`fade`, `dissolve`, `push`, `slide`, `wipe` …, auch Clip ↔ Zwischentitel), `color` geht über Schwarz, `none` und `morph` sind harte Schnitte zwischen zwei Clip-Folien; Zwischentitel blenden bei `none`, `morph` und `color` über Schwarz. Video-Decks mit `transition: "none"` anlegen (Zwischentitel blenden trotzdem über Schwarz) und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips.
+- Übergänge zwischen Folien: Im `mp4` überblendet die Folien-`transition` echt zur vorigen Folie (auch Clip ↔ Zwischentitel), `color` über Schwarz; `none` und `morph` sind harte Schnitte, Zwischentitel blenden dann über Schwarz. Video-Decks mit `transition: "none"` anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt.
 - Musik nur auf Wunsch oder bei Kompilationen, dezent und instrumental. Unter Sprache macht der Export sie automatisch leiser. Den Nachweis (CC BY) aus `find_music` in `music.credit` und in die Notes der letzten Folie.
 - Zurückhaltend wie die Folien: keine Emojis, Sticker oder Effektschriften, Zwischentitel kurz und sachlich.
 
@@ -581,3 +581,26 @@ Eine Idee pro Szene, 4–10 s je Szene. Wer mehr zeigen will, macht eine zweite 
 - Motion-Grafik als Effekt-Parade: viele Elemente zugleich, ständig in Bewegung, `feder` überall.
 
 Zurückhaltung nach §6 gilt auch im Film: flach, eine Akzentfarbe, ein Übergangstyp, keine Effekt-Parade, keine Sticker und Texteffekte.
+
+## 13. Podcast
+
+Eine Episode hängt als `podcast` am Deck: 1–4 Tonspuren, die gemeinsam ab 0 laufen, dazu Schnitte, Kapitel, Intro, Outro und Soundeffekte. Folien braucht sie nicht. Zeiten stehen immer in Quellzeit (wie im Transkript); `edit_episode` zeigt die Kapitel zusätzlich in geschnittener Zeit. Lautheit (−16 LUFS), Sprachkette und Überblendungen macht die Engine.
+
+**Ablauf:**
+1. Audio aus dem Anhang (mp3, wav, m4a …; von Videos zählt der Ton) → `create_episode` mit `title` und `tracks` (je Mikrofon eine Spur mit `name`, sonst eine gemischte Spur).
+2. `transcribe_video` mit jeder Spur und `all: true` (je Spur ein Sprecher); `speakers: true` nur, wenn auf einer Spur mehrere sprechen.
+3. `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }`. Meldet es „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen. Ergebnis und Prüfung lesen, einzelne Stellen mit `cut`/`uncut` nachbessern.
+4. Kapitel aus den Themenwechseln (Transkript lesen, Stellen mit `search_transcript` finden): erstes bei 0, 3–8 je Stunde, Titel kurz und sachlich (2–5 Wörter). Kapitel an den Anfang eines Satzes legen.
+5. Intro, Outro und Soundeffekte nur auf Wunsch: `find_music` mit `kurz: true`, dann `edit_episode` mit `intro`, `outro` oder `sfx`. Den Nachweis (CC BY) in die Shownotes.
+6. `export_deck` mit `mp3` (oder `m4a`): Kapitelmarken in der Datei, `.chapters.json` daneben. Dem Nutzer Länge vorher und nachher und die Zahl der Schnitte je Grund nennen.
+
+Ein Video-Deck aus einer Quelle (Clip-Folien) exportiert `export_deck` mit `mp3` auch direkt „Als Podcast“; mehrere Quellen gehen nur über `create_episode`.
+
+**Regeln:**
+- Nie mitten im Satz oder Wort schneiden; Kanten von `cut` rasten an Wortgrenzen. Lint `schnitt-wort` sofort beheben.
+- Inhalt nicht umstellen und nichts Inhaltliches streichen, ohne dass der Nutzer es will. Bereinigen heißt: Pausen kürzen, Füllwörter und Versprecher raus.
+- Füllwörter nicht übertreiben: natürliche Sprache bleibt, ein „also“ als Satzanfang ist kein Fehler. Wirkt das Ergebnis gehetzt, `pauses` höher setzen (0.8–1.0).
+- Verworfene Anläufe (`retakes`) immer heraus, nur den letzten sauberen behalten.
+- Zurückhaltung bei Effekten wie bei den Folien: kein Effekt-Gewitter, höchstens ein kurzer Jingle als Intro/Outro und wenige Soundeffekte an Themenwechseln. Musik unter Sprache nur auf Wunsch, dezent (`update_deck` `music`).
+- `ton`: `klar` (Standard) für Sprache, `stark` bei Rauschen oder Hall, `original` bei Musik.
+- Spuren nicht lauter oder leiser drehen, außer eine ist deutlich aus dem Rahmen (`tracks` `gain` in dB); stumm (`mute`) nur für eine kaputte Spur.

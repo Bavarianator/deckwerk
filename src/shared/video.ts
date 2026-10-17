@@ -52,7 +52,7 @@ export type ClipStyle = 'ruhig' | 'lebendig'
 // ton: klar = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser) für Sprache aus Handy/Webcam; original = unverändert (Standard); bei Musik nie klar
 // cover: Quellsekunde fürs Titelbild (Export legt es als .jpg neben das MP4), post: Text zum Posten – Titel in der ersten Zeile, dann Beschreibung und Hashtags (.txt)
 // look: Farblook; stabil: Verwackeln glätten (deshake, nur Export); captionPos: Lage der Untertitel (oben/mitte, wenn unten Wichtiges steht)
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: (typeof CAPTION_POS)[number] }
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: (typeof CAPTION_POS)[number]; sfx?: { src: string; at: number; gain?: number }[] } // sfx: at = Sekunde im fertigen Clip, gain dB
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 

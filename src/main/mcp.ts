@@ -53,7 +53,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       unsplashKey: process.env.UNSPLASH_ACCESS_KEY, // ponytail: Wert beim Start; nach save_deck exportiert export_deck weiter nach ~/Deckwerk/out
     }).map((t) =>
       // Neues Deck = neuer Ordner: sonst überschreibt save_deck das zuvor gespeicherte Deck
-      t.name === 'create_deck' ? { ...t, run: async (i: unknown) => { const out = await t.run(i); path = null; return out } } : t,
+      t.name === 'create_deck' || t.name === 'create_episode' ? { ...t, run: async (i: unknown) => { const out = await t.run(i); path = null; return out } } : t,
     ),
     {
       name: 'get_deck',

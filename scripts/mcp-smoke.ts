@@ -42,7 +42,10 @@ assert.ok(parts.length > 1 && parts.every((p) => p.length <= 20000), `Teile: ${p
 assert.equal(parts.join('\n'), fullPrompt())
 // reine Video-Aufträge: nur §11 und der Katalog-Eintrag clip
 const vg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'video' } })) as { content: { text: string }[] }).content[0].text
-assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 20000, vg.slice(0, 200))
+const pg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'podcast' } })) as { content: { text: string }[] }).content[0].text
+assert.ok(pg.startsWith('## 13. Podcast') && pg.includes('create_episode') && !pg.includes('## 11.') && pg.length < 20000, pg.slice(0, 200))
+// 21 000 statt 20 000: clip.sfx (Podcast-Zweig) kam dazu; read_guide gibt bis 30 000 Zeichen am Stück aus
+assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 20000, `Video-Guide ${vg.length} Zeichen`)
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }
 const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<Res>
@@ -83,6 +86,8 @@ assert.deepEqual([film.film, film.slides[0].voice, film.slides[0].duration, film
 r = await call('render_slides', { ids: [film.slides[0].id], at: [0, 1] })
 assert.equal(r.isError, true); assert.match(r.content[0].text!, /Frames der Zeitachse gibt es nur/)
 r = await call('transcribe_video', { video: '/x/talk.mp4' }) // Mock-Engine ohne video
+assert.equal(r.isError, true); assert.match(r.content[0].text!, /nur in der Deckwerk-App und im MCP-Server/)
+r = await call('create_episode', { title: 'Folge', tracks: [{ src: '/x/folge.mp3' }] })
 assert.equal(r.isError, true); assert.match(r.content[0].text!, /nur in der Deckwerk-App und im MCP-Server/)
 await client.close()
 console.log(`MCP OK · ${names.length} Tools · ${home}`)

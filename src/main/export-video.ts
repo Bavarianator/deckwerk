@@ -3,6 +3,7 @@
 // Ablauf: Szenen als Zwischenstände (mkv, PCM-Ton), je Ausgabedatei ein Endschritt (concat-Demuxer, Video kopiert, Ton einmal AAC + loudnorm + Musik).
 // Electron-Teile (renderSlide, nativeImage, Schriften) lädt erst exportVideo: assSubs, clipSegs, encodeCover, finish und encodeClip laufen im Selbsttest unter Node.
 import { randomBytes } from 'node:crypto'
+import { existsSync } from 'node:fs'
 import { mkdir, readFile, readdir, rename, rm, stat, statfs, writeFile } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, VIDEO_FILE, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
@@ -32,19 +33,48 @@ const AUDIO = ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000']
 const FAST = ['-movflags', '+faststart']
 // Lautheit in zwei Durchgängen: messen, dann mit den Messwerten linear anwenden (exakt −14 LUFS, kein Pumpen); ohne Messung dynamisch in einem Durchgang.
 // Zeitstempel danach aus der Sample-Zahl: loudnorm (intern 192 kHz) verschiebt sie am Ende, die Tonspur wirkte bis 0,07 s länger als das Bild
-const NORM = 'loudnorm=I=-14:TP=-1.5:LRA=11'
-const LOUD = `${NORM},aresample=48000,asetpts=N/SR/TB`
+const norm = (i: number) => `loudnorm=I=${i}:TP=-1.5:LRA=11`
 // ton 'klar': Brummen/Trittschall unter 80 Hz weg; afftdn moderat (12 dB, folgt dem Rauschen), kräftiger klingt Sprache blechern; arnndn bräuchte eine Modelldatei.
 // Kompressor 3:1 ab −26 dBFS mit 15 ms Attack: gleicht leise und laute Sätze an, Silbenanfänge bleiben; ohne Makeup, die Lautheit setzt loudnorm. Dann Zischlaute dämpfen.
 // ponytail: feste Schwelle; Upgrade: relativ zum gemessenen Sprachpegel
 // afftdn verzögert um 1200 Samples (25 ms bei 48 kHz): hinten Stille anhängen, damit das Ende durchkommt, vorn die Verzögerung abschneiden – sonst läge der Ton je Gruppe hinter dem Bild
-const SPEECH = 'apad=pad_len=1200,highpass=f=80,afftdn=nr=12:nf=-40:tn=1,acompressor=threshold=0.05:ratio=3:attack=15:release=150,deesser,atrim=start_sample=1200,asetpts=N/SR/TB'
+export const SPEECH = 'apad=pad_len=1200,highpass=f=80,afftdn=nr=12:nf=-40:tn=1,acompressor=threshold=0.05:ratio=3:attack=15:release=150,deesser,atrim=start_sample=1200,asetpts=N/SR/TB'
 
 /** x264-Preset für einen ganzen Export (Gesamtlänge in s): 1080p mit veryfast läuft auf schwachen Rechnern mit ~10 fps, darum über 10 min superfast. */
 export const presetFor = (seconds: number) => (seconds > 600 ? 'superfast' : 'veryfast')
 
 const n2 = (i: number) => String(i).padStart(2, '0')
 const sec = (s: number) => s.toFixed(3)
+
+/** Soundeffekte in einen Ton mischen: main = Label des Tons, fx[j].input = Eingangsnummer der Effektdatei, at = Sekunde im Ton, gain in dB → Label out.
+ *  Je Effekt adelay (ms, beide Kanäle), Länge gibt main vor (amix duration=first, ohne Normalisieren). Ohne Effekte nur durchgereicht. */
+export function sfxGraph(main: string, fx: { input: number; at: number; gain?: number }[], out: string): string {
+  if (!fx.length) return `[${main}]anull[${out}]`
+  const g = fx.map((f, j) => { const ms = Math.max(0, Math.round(f.at * 1000)); return `[${f.input}:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${f.gain ?? 0}dB,adelay=${ms}|${ms}[fx${j}]` })
+  return `${g.join(';')};[${main}]${fx.map((_, j) => `[fx${j}]`).join('')}amix=inputs=${fx.length + 1}:normalize=0:duration=first[${out}]`
+}
+
+/** Musik unter den Ton legen: speech und music sind Labels, die Musik läuft endlos hinein (-stream_loop -1), dur = Länge des Tons (s) für die Abblende → Label out.
+ *  volume: Pegel 0–1 oder fertiger volume-Ausdruck (levelExpr …:eval=frame).
+ *  sidechaincompress endet mit dem ersten Eingang, der endet, und verwirft, was der andere noch hat: Musik darum endlos hinein, Länge gibt die Sprache vor.
+ *  Schwelle 0,006 statt 0,03: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik sonst kaum (gemessen 11 dB statt 1 dB). ponytail: feste Schwelle; Upgrade: relativ zum gemessenen Sprachpegel */
+export const duckMusic = (speech: string, music: string, volume: number | string | undefined, dur: number, out: string) =>
+  `[${speech}]asplit[mus_s][mus_k];[${music}]aformat=sample_rates=48000:channel_layouts=stereo,volume=${typeof volume === 'string' ? volume : Math.min(1, Math.max(0, volume ?? DUCK.volume))},afade=t=in:d=${DUCK.fadeIn}[mus_m];` +
+  `[mus_m][mus_k]sidechaincompress=threshold=${DUCK.threshold}:ratio=${DUCK.ratio}:attack=${DUCK.attackMs}:release=${DUCK.releaseMs},afade=t=out:st=${sec(Math.max(0, dur - DUCK.fadeOut))}:d=${DUCK.fadeOut}[mus_d];[mus_s][mus_d]amix=inputs=2:normalize=0:duration=first[${out}]`
+
+/** Lautheit auf i LUFS, zweiter Durchgang: Messlauf über args + graph(Messfilter), Ergebnis ist die Filterkette (mit führendem Komma) für graph im Endlauf.
+ *  Fällt die Messung aus oder ist alles still (-inf), dynamisch in einem Durchgang. Zeitstempel danach aus der Sample-Zahl: loudnorm (intern 192 kHz) verschiebt sie am Ende. */
+// onProgress: Messlauf zählt bis 50 % von dur; ohne Meldung stand die Anzeige bei 15 min Material minutenlang still (13.10., „hängt bei 83 %“)
+export async function measuredNorm(i: number, args: string[], graph: (loud: string) => string[], cwd: string, dur = 0, onProgress?: (pct: number) => void): Promise<string> {
+  const err = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-progress', 'pipe:1', ...args, ...graph(`,${norm(i)}:print_format=json`), '-map', '[a]', '-f', 'null', '-'], { cwd, onOut: (s) => {
+    if (onProgress && dur > 0) for (const m of s.matchAll(/out_time_us=(\d+)/g)) onProgress(Math.min(50, Math.floor(Number(m[1]) / 2e4 / dur)))
+  } })
+    .then((r) => (r.code === 0 ? r.err : ''), () => '')
+  const v = ['input_i', 'input_tp', 'input_lra', 'input_thresh', 'target_offset'].map((k) => Number(new RegExp(`"${k}" : "([^"]+)"`).exec(err)?.[1])) // "-inf" → NaN
+  return v.every(Number.isFinite)
+    ? `,${norm(i)}:measured_I=${v[0]}:measured_TP=${v[1]}:measured_LRA=${v[2]}:measured_thresh=${v[3]}:offset=${v[4]}:linear=true,aresample=48000,asetpts=N/SR/TB`
+    : `,${norm(i)},aresample=48000,asetpts=N/SR/TB`
+}
 
 // ASS-Zeit H:MM:SS.cc
 const at = (s: number) => {
@@ -151,7 +181,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
   if (n > MAX_PARTS) throw new Error(`${where}: Der Clip hat ${n} Ausschnitte, höchstens ${MAX_PARTS} gehen. Bitte zusammenfassen oder auf mehrere Clip-Folien verteilen.`)
 }
 
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos'] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos']; sfx?: { file: string; at: number; gain?: number }[] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image; sfx: file absolut, at = Sekunde im fertigen Clip
 /** Jeder ffmpeg-Schritt des Exports: auf dem Handy, wenn eins mitrechnet (gleiche Parameter, damit -c:v copy beim Verbinden passt); scheitert es, rechnet der PC */
 export const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
   if (!phone || phone.failed) return runFfmpeg(args, ro)
@@ -180,6 +210,7 @@ async function lookFilter(job: ClipJob): Promise<string> {
 export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOpts, onProgress?: (pct: number) => void): Promise<Seg[]> {
   checkParts(job.parts, basename(job.file))
   const info = await probe(job.file)
+  if (!info.w) throw new Error(`${basename(job.file)} hat kein Bild (reine Audiodatei): Ein Clip braucht ein Video.`)
   const late = job.parts.findIndex((p) => p.start >= info.duration - 0.2)
   if (late >= 0) throw new Error(`Ausschnitt ${late + 1} beginnt bei ${job.parts[late].start} s, das Video ist nur ${info.duration.toFixed(1)} s lang.`)
   // Pausen und Füllwörter kürzen vor padParts: an jedem Schnitt bleibt je Seite PAD stehen, ohne dass sich etwas doppelt. fillerQuiet nimmt nur echte Wortzeiten.
@@ -300,10 +331,14 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const vf = [subs && `ass=${id}.ass:fontsdir=fonts`, o.fadeIn && first && `fade=t=in:d=${FADE}`, o.fadeOut && last && `fade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
     // Sprachkette nach dem concat: Entrauschen lernt über die ganze Gruppe; vor den Szenen-Blenden, sonst höbe der Kompressor sie an
     const af = [job.ton === 'klar' && info.audio && SPEECH, o.fadeIn && first && `afade=t=in:d=${FADE}`, o.fadeOut && last && `afade=t=out:st=${sec(Math.max(0, dur - FADE))}:d=${FADE}`]
-    graph.push(`${cv}${vf.filter(Boolean).join(',') || 'null'}[v]`, `${ca}${af.filter(Boolean).join(',') || 'anull'}[a]`)
+    // Soundeffekte dieser Gruppe (at in Clipzeit ab done) als weitere Eingänge hinter Teilstücken und Einblendungen. ponytail: ein Effekt über das Gruppenende hinaus wird dort abgeschnitten
+    const fx = (job.sfx ?? []).filter((f) => f.at >= done && (f.at < done + dur || last))
+    graph.push(`${cv}${vf.filter(Boolean).join(',') || 'null'}[v]`, `${ca}${af.filter(Boolean).join(',') || 'anull'}[as]`,
+      sfxGraph('as', fx.map((f, j) => ({ input: ps.length + imgs.length + j, at: f.at - done, gain: f.gain })), 'a'))
     // je Ausschnitt mit Vorlauf für die Überblendung; 0,1 s Reserve, damit trim die Frames sicher bekommt (atrim schneidet den Ton genau)
     const inputs = [...ps.flatMap((p, i) => ['-ss', sec(p.start - ((hv[i] ?? 0) / 30) * sp[i]), '-t', sec(p.end - p.start + (((hv[i] ?? 0) + (hv[i + 1] ?? 0)) / 30) * sp[i] + 0.1 * Math.max(1, sp[i])), '-i', job.file]), // Reserve 0,1 s Clip-Zeit auch bei Zeitraffer
-      ...imgs.flatMap((x) => (x.video ? ['-ss', sec(x.vt), '-t', sec(x.b - x.a + 0.5), '-i', x.video] : kb(x) ? ['-i', x.image!] : ['-loop', '1', '-framerate', '30', '-t', sec(x.b), '-i', x.image!]))]
+      ...imgs.flatMap((x) => (x.video ? ['-ss', sec(x.vt), '-t', sec(x.b - x.a + 0.5), '-i', x.video] : kb(x) ? ['-i', x.image!] : ['-loop', '1', '-framerate', '30', '-t', sec(x.b), '-i', x.image!])),
+      ...fx.flatMap((f) => ['-i', f.file])]
     const file = join(dir, `${id}.mkv`)
     const args = [...inputs, '-filter_complex', graph.join(';'), '-map', '[v]', '-map', '[a]', ...video(o.preset), ...PCM, file]
     const ro = { cwd: dir, duration: dur, onProgress: onProgress && ((pct: number) => onProgress(Math.floor(((done + (dur * pct) / 100) / total) * 100))) }
@@ -350,32 +385,16 @@ export async function encodeStill(png: string, out: string, dir: string, o: SegO
 export async function finish(segs: Seg[], out: string, dir: string, o: { loudnorm?: boolean; music?: Music; onProgress?: (pct: number) => void; phone?: Phone } = {}) {
   const dur = segs.reduce((s, x) => s + x.dur, 0), list = `${basename(out)}.txt`
   await writeFile(join(dir, list), segs.map((s) => `file '${basename(s.file)}'`).join('\n'))
-  // sidechaincompress endet mit dem ersten Eingang, der endet, und verwirft, was der andere noch hat: Musik darum endlos hinein, Länge gibt die Sprache vor.
-  // Schwelle 0,006 statt 0,03: leise Handy-Sprache (−31 dBFS RMS) drückt die Musik sonst kaum (gemessen 11 dB statt 1 dB). ponytail: feste Schwelle; Upgrade: relativ zum gemessenen Sprachpegel
   // Musikpegel je Ausschnitt (Seg.music): Lautstärke als Ausdruck über die Zeit, sonst feste Zahl
   let off = 0
   const spans = segs.flatMap((x) => { const r = (x.music ?? []).map(([a, b, v]): [number, number, number] => [off + a, off + b, Math.min(1, Math.max(0, v))]); off += x.dur; return r })
   const vol = Math.min(1, Math.max(0, o.music?.volume ?? DUCK.volume))
-  const graph = (loud: string) => o.music
-    ? `[0:a]asplit[s][k];[1:a]aformat=sample_rates=48000:channel_layouts=stereo,volume=${spans.length ? `${levelExpr(vol, spans)}:eval=frame` : vol},afade=t=in:d=${DUCK.fadeIn}[m];` +
-      `[m][k]sidechaincompress=threshold=${DUCK.threshold}:ratio=${DUCK.ratio}:attack=${DUCK.attackMs}:release=${DUCK.releaseMs},afade=t=out:st=${sec(Math.max(0, dur - DUCK.fadeOut))}:d=${DUCK.fadeOut}[d];[s][d]amix=inputs=2:normalize=0:duration=first${loud}[a]`
-    : `[0:a]anull${loud}[a]`
+  const graph = (loud: string) => ['-filter_complex', o.music ? `${duckMusic('0:a', '1:a', spans.length ? `${levelExpr(vol, spans)}:eval=frame` : vol, dur, 'mx')};[mx]anull${loud}[a]` : `[0:a]anull${loud}[a]`]
   const music = o.music ? ['-stream_loop', '-1', '-i', resolve(o.music.file)] : []
   const input = ['-f', 'concat', '-safe', '0', '-i', list, ...music]
-  let loud = ''
-  if (o.loudnorm) {
-    // Messlauf nur über den Ton (schnell); fällt er aus oder ist alles still (-inf), bleibt es beim dynamischen Durchgang
-    // Messlauf zählt bis 50 %: ohne Meldung stand die Anzeige bei 15 min Material minutenlang still (13.10., „hängt bei 83 %“)
-    const err = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-progress', 'pipe:1', ...input, '-filter_complex', graph(`,${NORM}:print_format=json`), '-map', '[a]', '-f', 'null', '-'], { cwd: dir, onOut: (s) => {
-      for (const m of s.matchAll(/out_time_us=(\d+)/g)) o.onProgress?.(Math.min(50, Math.floor(Number(m[1]) / 2e4 / dur)))
-    } })
-      .then((r) => (r.code === 0 ? r.err : ''), () => '')
-    const v = ['input_i', 'input_tp', 'input_lra', 'input_thresh', 'target_offset'].map((k) => Number(new RegExp(`"${k}" : "([^"]+)"`).exec(err)?.[1])) // "-inf" → NaN
-    loud = v.every(Number.isFinite)
-      ? `,${NORM}:measured_I=${v[0]}:measured_TP=${v[1]}:measured_LRA=${v[2]}:measured_thresh=${v[3]}:offset=${v[4]}:linear=true,aresample=48000,asetpts=N/SR/TB`
-      : `,${LOUD}`
-  }
-  await ffx([...input, '-filter_complex', graph(loud), '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress && ((p) => o.onProgress!(o.loudnorm ? 50 + Math.floor(p / 2) : p)) }, o.phone)
+  // Messlauf nur über den Ton (schnell, auf dem PC)
+  const loud = o.loudnorm ? await measuredNorm(-14, input, graph, dir, dur, o.onProgress) : ''
+  await ffx([...input, ...graph(loud), '-map', '0:v', '-map', '[a]', '-c:v', 'copy', ...AUDIO, ...FAST, out], { cwd: dir, duration: dur, onProgress: o.onProgress && ((p) => o.onProgress!(o.loudnorm ? 50 + Math.floor(p / 2) : p)) }, o.phone)
 }
 
 /** Folienübergang im mp4: letzten Zwischenstand der Szene davor und ersten der Szene (beide in dir) per xfade (ffmpeg-Typ) und acrossfade zu einem neuen
@@ -407,17 +426,38 @@ export async function subFont(deck: Deck): Promise<SubFont> {
   return { name: 'Archivo', files: [await readFile(join(app.getAppPath(), 'assets/fonts/Archivo-Bold.ttf'))], bold: true }
 }
 
-// asset://local/<pfad> oder absoluter Pfad; auf einem anderen Gerät auf den lokalen Deckwerk-Ordner umleiten
-export function videoPath(src: string, slide: number, field = 'video') {
+/** asset://local/<pfad> oder absoluter Pfad → lokale Datei; auf einem anderen Gerät auf den lokalen Deckwerk-Ordner umleiten. what nennt das Feld in Fehlermeldungen. */
+export function mediaPath(src: string, what: string) {
   const p = src.startsWith('asset://') ? assetPath(src) : src
-  if (!isAbsolute(p)) throw new Error(`Folie ${slide}: „${field}“ muss ein asset://-Pfad oder ein absoluter Dateipfad sein.`)
-  if (!MEDIA_EXT.test(p)) throw new Error(`Folie ${slide}: „${field}“ ist keine Mediendatei (${basename(p)}).`)
+  if (!isAbsolute(p)) throw new Error(`${what} muss ein asset://-Pfad oder ein absoluter Dateipfad sein.`)
+  if (!MEDIA_EXT.test(p)) throw new Error(`${what} ist keine Mediendatei (${basename(p)}).`)
   return localAsset(p)
 }
+export const videoPath = (src: string, slide: number, field = 'video') => mediaPath(src, `Folie ${slide}: „${field}“`)
+const sfxOf = (clip: ClipContent, slide: number) => (clip.sfx ?? []).map((f) => {
+  const file = mediaPath(f.src, `Folie ${slide}: „sfx“`)
+  if (!existsSync(file)) throw new Error(`Folie ${slide}: Soundeffekt fehlt (${basename(file)}).`)
+  return { ...f, file }
+})
 
 const MAX_SECONDS = 6 * 3600 // Material je Export
 const STALE = 6 * 3600e3 // Job-Ordner älter als das (ms): Rest nach einem Absturz
 let queue: Promise<unknown> = Promise.resolve()
+
+/** Job-Ordner abgestürzter Exporte (prefix, älter als STALE) in parent wegräumen; mtime ändert sich mit jeder neuen Datei darin. Legt parent an. */
+export async function sweepStale(parent: string, prefix: string) {
+  await mkdir(parent, { recursive: true })
+  for (const e of await readdir(parent, { withFileTypes: true })) {
+    if (!e.isDirectory() || !e.name.startsWith(prefix)) continue
+    const p = join(parent, e.name), st = await stat(p).catch(() => null)
+    if (st && Date.now() - st.mtimeMs > STALE) await rm(p, { recursive: true, force: true })
+  }
+}
+
+/** Musik einmal 0,1 s anspielen: fehlende Datei oder Tonspur sonst erst nach dem Encoden („Stream specifier“). */
+export const checkMusic = (file: string) => runFfmpeg(['-v', 'error', '-i', resolve(file), '-map', '0:a:0', '-t', '0.1', '-f', 'null', '-']).catch((e: Error) => {
+  throw new Error(`Die Musikdatei ${file} ${/No such file/i.test(e.message) ? 'fehlt' : /matches no streams/i.test(e.message) ? 'hat keine Tonspur' : 'ist nicht lesbar'}.`)
+})
 
 /** Deck als Video: mp4 = alle Folien hintereinander in `${base}.mp4`, clips = je Clip-Folie `${base}-01.mp4` usw. Fortschritt 0–100 über alle Szenen.
  *  o.music: Hintergrundmusik (Pfad löst der Aufrufer auf), in jeder Ausgabedatei.
@@ -431,13 +471,7 @@ export function exportVideo(...a: Parameters<typeof exportOnce>): Promise<string
 async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', transcriptOf: (file: string) => Promise<Transcript | null>, onProgress: (pct: number) => void = () => {}, o: { music?: Music; phone?: Phone } = {}): Promise<string[]> {
   const base = resolve(target), parent = dirname(base)
   phoneFault.reason = ''
-  // Job-Ordner abgestürzter Exporte wegräumen (mtime ändert sich mit jeder neuen Datei darin)
-  await mkdir(parent, { recursive: true })
-  for (const e of await readdir(parent, { withFileTypes: true })) {
-    if (!e.isDirectory() || !e.name.startsWith('.video-tmp-')) continue
-    const p = join(parent, e.name), st = await stat(p).catch(() => null)
-    if (st && Date.now() - st.mtimeMs > STALE) await rm(p, { recursive: true, force: true })
-  }
+  await sweepStale(parent, '.video-tmp-')
   // Ausgeblendete Folien nie als Szene: der Aufrufer reicht sie mit, weil Clips sie als Einblendung (overlays.slide, Nummer in deck.slides) zeigen
   const scenes = deck.slides.map((s, i) => ({ i, clip: s.layout === 'clip' ? (s.content as ClipContent) : undefined })).filter((x) => !deck.slides[x.i].hidden && (format === 'mp4' || x.clip))
   if (!scenes.length) throw new Error('Keine Clip-Folie im Deck: Einzelne Clips entstehen nur aus Folien mit dem Layout „clip“.')
@@ -446,6 +480,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
     if (!clip) continue
     if (!clip.video) throw new Error(`Folie ${i + 1}: Im Clip fehlt das Video. Erst ein Video anhängen und unter „video“ eintragen.`)
     videoPath(clip.video, i + 1)
+    sfxOf(clip, i + 1)
     checkParts(clip.parts, `Folie ${i + 1}`)
     for (const x of clip.overlays ?? []) {
       if (x.video) {
@@ -465,10 +500,8 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
       if (!(await stat(img).catch(() => null))) throw new Error(`Folie ${i + 1}: Das Bild der Einblendung fehlt (${basename(img)}).`)
     }
   }
-  // Musik vorab einmal anspielen: probe() verlangt eine Videospur, und ffmpegs „Stream specifier [1:a]“ käme erst nach dem Encoden
-  if (o.music) await runFfmpeg(['-v', 'error', '-i', resolve(o.music.file), '-map', '0:a:0', '-t', '0.1', '-f', 'null', '-']).catch((e: Error) => {
-    throw new Error(`Die Musikdatei ${o.music!.file} ${/No such file/i.test(e.message) ? 'fehlt' : /matches no streams/i.test(e.message) ? 'hat keine Tonspur' : 'ist nicht lesbar'}.`)
-  })
+  // Musik vorab einmal anspielen: ffmpegs „Stream specifier [1:a]“ käme erst nach dem Encoden
+  if (o.music) await checkMusic(o.music.file)
   const size = outSize(sizeOf(deck)), accent = resolveTheme(deck.theme).c.accent
   // Gewichte für den Fortschritt: Länge je Szene, dazu je Ausgabedatei der Endschritt (Video wird nur kopiert)
   const weights = scenes.map(({ clip }) => (clip ? partsLength(clip.parts) : STILL))
@@ -515,7 +548,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
         const overlays = clip.overlays && await Promise.all(clip.overlays.map(async (x, j) => (x.image ? { ...x, image: videoPath(x.image, i + 1, 'image') }
           : x.video ? { ...x, video: videoPath(x.video, i + 1, 'video') } : x.slide ? { ...x, image: await slidePng(x.slide - 1, `einblendung-${n2(k + 1)}-${n2(j + 1)}.png`) } : x)))
-        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays, look: clip.look, stabil: clip.stabil, captionPos: clip.captionPos }
+        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays, look: clip.look, stabil: clip.stabil, captionPos: clip.captionPos, sfx: sfxOf(clip, i + 1) }
         segs = await clipSegs(job, name, dir, so, step(weights[k]))
         if (!first.cover && clip.cover !== undefined) first.cover = { job, t: clip.cover }
         first.post ??= clip.post?.trim() ? clip.post : undefined

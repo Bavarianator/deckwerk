@@ -6,7 +6,7 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, VOICES, profileOf, type BrandKit, type Deck, type FilmSettings, type PrintOptions, type VoiceId } from '../shared/deck'
+import { AUDIO_EXT, AUDIO_FILE, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, VOICES, profileOf, type BrandKit, type Deck, type FilmSettings, type PrintOptions, type VoiceId } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, hasFlag, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
@@ -27,6 +27,7 @@ import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, ty
 import { deckJson, withDeckFonts } from './webfonts'
 import { recordArm, recordCancel, recordChunk, recordSources, recordStart, recordStop } from './record'
 import { synthesize, voiceDirs } from './voice'
+import { peaks, previewMix } from './podcast'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -232,7 +233,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   let videoExport = false // ein Video-Export belegt ffmpeg und Renderfenster: kein zweiter parallel
   ipcMain.handle('deck:export', async (e, format: ExportFormat, printIn?: PrintOptions) => {
     if (!deck) throw new Error('Es gibt noch kein Deck zum Exportieren.')
-    const video = format === 'mp4' || format === 'clips'
+    const video = format === 'mp4' || format === 'clips' || format === 'mp3' || format === 'm4a' // Ton-Export rechnet ebenso lange mit ffmpeg
     if (video && videoExport) throw new Error('Es läuft schon ein Video-Export. Warte, bis er fertig ist.')
     // Vertrauensgrenze: print kommt aus dem Renderer, nur bekannte Größe und Beschnitt 0–5 mm durchlassen
     const size = typeof printIn?.size === 'string' && Object.hasOwn(PRINT_SIZES, printIn.size) ? printIn.size : undefined
@@ -290,7 +291,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
         : kind === 'codex' ? { kind: 'codex', bin: clis.codex!, model: smallModel((await (codexModels ??= listCodex(clis.codex!))).map((m) => m.id), /luna|mini|nano/, r!.model) }
         : { kind: 'vibe', bin: clis.vibe!, model: smallModel(vibeModels().map((m) => m.id), /small|mini|tiny/, r!.model), legacy: await hasFlag(clis.vibe!, '--legacy-harness') }
       emit({ type: 'tool', name: 'router', status: 'start' })
-      route = await routeTask({ text, profile: profileOf(deck), layoutsInDeck: deck?.slides.map((s) => s.layout) ?? [], hasDeck: !!deck?.slides.length }, via, { auto: isAuto })
+      route = await routeTask({ text, profile: profileOf(deck), layoutsInDeck: deck?.slides.map((s) => s.layout) ?? [], hasDeck: !!deck?.slides.length, podcast: !!deck?.podcast }, via, { auto: isAuto })
       const n = route.modules.length, who = ROUTER_NAME[via.kind]
       emit({ type: 'tool', name: 'router', status: 'done', summary: `${route.source === 'regel' ? 'Regeln' : who}: ${route.video ? 'Video, ' : ''}${n} ${n === 1 ? 'Modul' : 'Module'}${route.reason?.startsWith('Fallback') ? ` (${who} nicht erreichbar)` : ''}` })
       if (stop !== stops) return
@@ -406,13 +407,29 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     await writeFile(out, png)
     return assetUrl(out)
   })
-  // Nur Cache-Daten eines Videos (Signale, Highlights, Transkript, Dauer), rechnet nie; null = kein Video / nicht erlaubt
-  ipcMain.handle('video:cached', async (_, src: string) => {
+  // Pfad einer Video- oder Audiodatei aus asset://-URL oder absolutem Pfad; null = anderes oder ungültig (Vertrauensgrenze Renderer)
+  const mediaFile = (src: unknown) => {
     if (typeof src !== 'string') return null
     try {
       const file = src.startsWith('asset://') ? localAsset(assetPath(src)) : isAbsolute(src) ? resolve(src) : null
-      return file && VIDEO_FILE.test(file) ? ((await engine.video?.cached?.(file)) ?? null) : null
+      return file && (VIDEO_FILE.test(file) || AUDIO_FILE.test(file)) ? file : null
     } catch { return null }
+  }
+  // Nur Cache-Daten eines Videos oder einer Podcast-Spur (Signale, Highlights, Transkript, Dauer), rechnet nie; null = keine Mediendatei / nicht erlaubt
+  ipcMain.handle('video:cached', async (_, src: string) => {
+    const file = mediaFile(src)
+    return file ? ((await engine.video?.cached?.(file).catch(() => null)) ?? null) : null
+  })
+  // Wellenform (Betragsmaxima 0..1) einer Mediendatei; null = keine erlaubte Datei
+  ipcMain.handle('podcast:peaks', async (_, src: string) => {
+    const file = mediaFile(src)
+    return file ? peaks(file) : null
+  })
+  // Vorschau aller Spuren ungeschnitten → asset://-URL; Spuren nur mit Medienendung
+  ipcMain.handle('podcast:preview', async (_, d: Deck) => {
+    const tracks = d?.podcast?.tracks
+    if (!Array.isArray(tracks) || !tracks.length || !tracks.every((t) => mediaFile(t?.src))) throw new Error('Die Folge hat keine abspielbaren Spuren.')
+    return assetUrl(await previewMix(d))
   })
   ipcMain.handle('jobs:list', () => jobList())
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {
@@ -447,7 +464,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   // Quellmaterial (mehrere Dateien, auch Bilder); ohne Pfade per Dialog. null = abgebrochen
   ipcMain.handle('source:read', async (_, paths?: string[]) => {
     if (!paths?.length) {
-      const r = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Dokumente und Bilder', extensions: SOURCE_EXT }] })
+      const r = await dialog.showOpenDialog(win, { properties: ['openFile', 'multiSelections'], filters: [{ name: 'Dokumente, Bilder, Video und Audio', extensions: [...new Set([...SOURCE_EXT, ...AUDIO_EXT])] }] })
       if (r.canceled || !r.filePaths.length) return null
       paths = r.filePaths
     }
@@ -456,6 +473,9 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     for (const path of paths) {
       const name = path.split('/').pop()!
       try {
+        // Audio (Podcast-Spur): nur der Pfad für die KI; liest source-text.ts Audio selbst, gilt das
+        const ext = path.split('.').pop()?.toLowerCase() ?? ''
+        if (AUDIO_FILE.test(path) && !SOURCE_EXT.includes(ext)) { srcs.push({ name, text: `Audio: ${assetUrl(path)}. Als Podcast-Spur: create_episode, dann transcribe_video.`, cut: false }); continue }
         const text = (await sourceText(path, join(HOME, 'assets'))).trim()
         if (!text) throw new Error('In der Datei steht kein lesbarer Text (gescanntes PDF?).')
         // an der Zeilengrenze kürzen, damit keine „Bild: asset://…“-Zeile mitten im Pfad abreißt

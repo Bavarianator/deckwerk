@@ -1,8 +1,8 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter ähnliche vorhandene Decks, die Formate als Papier (auch Video), Beispiele, „Leer beginnen“,
 // dann Suche und Filter über die zuletzt bearbeiteten Decks (auch per MCP gebaute) und die Vorlagen.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, Award, Clapperboard, FileText, IdCard, Image as ImageIcon, Mail, MonitorPlay, Newspaper, Paperclip, Presentation, Search, Settings, Smartphone, SquareUser, X, type LucideIcon } from 'lucide-react'
-import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
+import { ArrowUp, Award, Clapperboard, FileText, IdCard, Image as ImageIcon, Mail, Mic, MonitorPlay, Newspaper, Paperclip, Presentation, Search, Settings, Smartphone, SquareUser, X, type LucideIcon } from 'lucide-react'
+import { AUDIO_FILE, FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Select } from './kit'
@@ -78,6 +78,17 @@ export const FILM_EXAMPLES: [string, string, string][] = [
   ['Kennzahlen-Video', 'Mach ein kurzes Video zu unseren Quartalszahlen: Umsatz +18 %, 1.240 neue Kunden, Kündigungsquote 2,1 %.',
     `${FILM_ASK} Zahlen mit big-number oder kpi-grid, sie zählen im Film hoch.`],
 ]
+// Podcast-Chips wie VIDEO_EXAMPLES
+export const PODCAST_EXAMPLES: [string, string, string][] = [
+  ['Folge aufräumen', 'Räum meine Podcast-Folge auf: lange Pausen, Füllwörter und Versprecher raus, dazu Kapitel.',
+    'Ablauf Podcast aufräumen: Fehlt die Aufnahme (Audio oder Video), frag zuerst kurz danach (Datei anhängen). create_episode mit der Aufnahme als Spur, transcribe_video über die ganze Spur, edit_episode clean mit pauses 0.6, fillers und retakes, dann Kapitel an den Themenwechseln setzen (kurze Titel, das erste bei 0:00). Am Ende export_deck mit mp3.'],
+  ['Interview mit zwei Spuren', 'Schneide mein Interview: zwei Spuren, eine pro Person.',
+    'Ablauf Interview: Fehlen die Spuren, frag zuerst kurz danach (je Person eine Datei). create_episode mit beiden Spuren (Namen der Personen als name), transcribe_video je Spur, edit_episode clean mit pauses 0.6, fillers und retakes (nie schneiden, während die andere Person spricht), Lautstärke der Spuren angleichen (gain), Kapitel setzen. Am Ende export_deck mit mp3.'],
+  ['Intro, Outro & Jingle', 'Gib meiner Folge ein kurzes Intro, ein Outro und einen Jingle.',
+    'Ablauf Jingles: Fehlt die Aufnahme, frag zuerst kurz danach. create_episode, falls es noch keine Folge gibt. find_music nach kurzen, dezenten Stücken (Intro und Outro höchstens 10–15 s), als intro und outro setzen; einen Jingle als Soundeffekt (sfx) nur an Kapitelanfängen und sparsam. Am Ende export_deck mit mp3.'],
+  ['Aus einem Video-Podcast', 'Mach aus meinem Video-Podcast eine Audio-Folge.',
+    'Ablauf Video-Podcast: Fehlt das Video oder ein Link, frag zuerst kurz danach (bei Link zuerst import_video). create_episode mit dem Video als Spur (nur der Ton zählt), transcribe_video, edit_episode clean mit pauses 0.6, fillers und retakes, Kapitel setzen. Am Ende export_deck mit mp3.'],
+]
 const LINK = /https?:\/\/[^\s<>"']+/g
 const linksOf = (text: string) => [...new Set((text.match(LINK) ?? []).map((u) => u.replace(/[.,;:!?)\]]+$/, '')))]
 // Nur Video-Links schalten in den Video-Modus, ein Quellenlink für eine Präsentation nicht
@@ -103,7 +114,7 @@ const FORMAT_CHOICES: { id: string; name: string; hint: string; format?: FormatI
 ]
 
 // Format-Regal unter dem Feld: die häufigsten Formate als Papier in ihrer Form (Maße in px), der Rest bleibt im Format-Menü.
-// id = FORMAT_CHOICES-id; „video“ schaltet in den Video-Modus
+// id = FORMAT_CHOICES-id; „video“ und „podcast“ schalten in den Video- bzw. Podcast-Modus
 const PAPERS: { id: string; name: string; icon: LucideIcon }[] = [
   { id: 'praesentation', name: 'Präsentation', icon: Presentation },
   { id: 'dokument', name: 'Dokument', icon: FileText },
@@ -115,14 +126,16 @@ const PAPERS: { id: string; name: string; icon: LucideIcon }[] = [
   { id: 'visitenkarte', name: 'Visitenkarte', icon: IdCard },
   { id: 'video', name: 'Video', icon: Clapperboard },
   { id: 'animation', name: 'Animation', icon: MonitorPlay },
+  { id: 'podcast', name: 'Podcast', icon: Mic },
 ]
 const VIDEO_HINT = 'Shorts, gekürzte Fassung, Stream-Highlights oder Zusammenschnitt'
 const FILM_HINT = 'Erklärvideos und Live-Demos, Szene für Szene'
+const PODCAST_HINT = 'Folge aufräumen: Pausen, Füllwörter, Versprecher, Kapitel, Intro und Outro'
 
 // Filter über Decks und Vorlagen; Video = Deck mit Videoclip (wie hasClip in App.tsx)
-const KINDS = [['alle', 'Alle'], ['folien', 'Folien'], ['druck', 'Drucksachen'], ['social', 'Social'], ['video', 'Videos']] as const
+const KINDS = [['alle', 'Alle'], ['folien', 'Folien'], ['druck', 'Drucksachen'], ['social', 'Social'], ['video', 'Videos'], ['podcast', 'Podcasts']] as const
 type Kind = (typeof KINDS)[number][0]
-const kindOf = (d: Deck): Kind => d.slides.some((s) => s.layout === 'clip') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
+const kindOf = (d: Deck): Kind => d.podcast ? 'podcast' : d.slides.some((s) => s.layout === 'clip') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
 
 // „Gibt es schon ähnlich“: grober Abgleich gleicher Wortanfänge (6 Zeichen) zwischen Wunsch und Titel/Folientiteln
 const STOP = new Set(['erstelle', 'gestalte', 'mache', 'bitte', 'einen', 'eine', 'einem', 'einer', 'unser', 'unsere', 'unseren', 'unserem', 'über',
@@ -153,15 +166,17 @@ interface Props {
   onOpen: () => void
   onOpenPath: (path: string) => void
   onKey: () => void
-  onVideo?: () => void // Video-Modus: nach erfolgreichem Absenden, damit die App die Video-Ansicht zeigt
+  onVideo?: (kind: 'video' | 'podcast') => void // Video- oder Podcast-Modus: nach erfolgreichem Absenden, damit die App Deckvid zeigt
   onFilm?: () => void // Animation: ebenso für die Animations-Ansicht
 }
 
 export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey, onVideo, onFilm }: Props) {
   const [text, setText] = useState('')
-  const [video, setVideo] = useState(false)
-  const [anim, setAnim] = useState(false) // Animation statt Präsentation oder Video
-  const [vask, setVask] = useState<string>() // ask des gewählten Video- oder Animations-Chips
+  const [medium, setMedium] = useState<'deck' | 'video' | 'podcast' | 'animation'>('deck')
+  const video = medium === 'video' || medium === 'podcast' // Video und Podcast: Medien statt Folien
+  const pod = medium === 'podcast'
+  const anim = medium === 'animation' // Animation statt Präsentation oder Video
+  const [vask, setVask] = useState<string>() // ask des gewählten Video-, Podcast- oder Animations-Chips
   const [fmt, setFmt] = useState('auto')
   const choice = FORMAT_CHOICES.find((f) => f.id === fmt)!
   const [recent, setRecent] = useState<Recent[]>([])
@@ -178,16 +193,19 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
     return () => window.removeEventListener('focus', load)
   }, [])
   const { srcs, attach, remove, clear, err } = useSource()
-  // Video oder Video-Link im Feld: automatisch in den Video-Modus (danach frei umschaltbar)
+  // Video oder Video-Link im Feld: automatisch in den Video-Modus, Audio in den Podcast-Modus (danach frei umschaltbar); Video im Podcast-Modus bleibt Podcast
   const hasVideo = srcs.some((s) => VIDEO_FILE.test(s.name)) || linksOf(text).some(isVideoLink)
-  useEffect(() => { if (hasVideo && !anim) { setVideo(true); setFmt('auto') } }, [hasVideo]) // Animation: Aufnahme als Material, bleibt Animation
-  const mode = (v: boolean, a = false) => { setVideo(v); setAnim(a); setVask(undefined); if (v || a) setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
-  // Papier anklicken wählt das Format, nochmal klicken nimmt die Wahl zurück; Video und Animation schalten den Modus
+  const hasAudio = srcs.some((s) => AUDIO_FILE.test(s.name))
+  useEffect(() => {
+    if (anim) return // Animation: Aufnahme als Material, bleibt Animation
+    if (hasAudio) { setMedium('podcast'); setFmt('auto') } else if (hasVideo) { setMedium((k) => (k === 'podcast' ? k : 'video')); setFmt('auto') }
+  }, [hasVideo, hasAudio])
+  const mode = (k: typeof medium) => { setMedium(k); setVask(undefined); if (k !== 'deck') setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
+  // Papier anklicken wählt das Format, nochmal klicken nimmt die Wahl zurück; Video, Podcast und Animation schalten den Modus
   const pick = (id: string) => {
-    if (id === 'video') return mode(!video)
-    if (id === 'animation') return mode(false, !anim)
-    mode(false)
-    setFmt(fmt === id && !video && !anim ? 'auto' : id)
+    if (id === 'video' || id === 'podcast' || id === 'animation') return mode(medium === id ? 'deck' : id)
+    mode('deck')
+    setFmt(fmt === id && medium === 'deck' ? 'auto' : id)
   }
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<Kind>('alle')
@@ -208,14 +226,14 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   const shownRecent = index.recent.filter(fits).map((x) => x.r)
   const shownTemplates = video || anim ? [] : index.templates.filter(fits).map((x) => x.d)
   const submit = () => {
-    const onlyVideos = video && srcs.length > 0 && srcs.every((s) => VIDEO_FILE.test(s.name))
-    const ask = text.trim() || (onlyVideos ? `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.` : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
+    const onlyMedia = video && srcs.length > 0 && srcs.every((s) => VIDEO_FILE.test(s.name) || AUDIO_FILE.test(s.name))
+    const ask = text.trim() || (onlyMedia ? (pod ? `Räum ${srcs.length === 1 ? 'diese Folge' : 'diese Aufnahmen'} auf und setz Kapitel.` : `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.`) : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
       ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
       : anim ? 'Mach aus diesen Dateien ein Erklärvideo.' : 'Mach aus diesen Dateien eine Präsentation.')
     const links = video ? linksOf(text).map((u) => `Link: ${u} – zuerst import_video`) : []
-    const context = [video ? vask : anim ? vask ?? FILM_ASK : choice.ask, ...links, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
+    const context = [video ? vask ?? (pod ? 'Podcast-Modus: die Folge entsteht als deck.podcast (create_episode, transcribe_video, edit_episode), nicht als Folien; am Ende export_deck mit mp3.' : undefined) : anim ? vask ?? FILM_ASK : choice.ask, ...links, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
     // onSubmit liefert false bei busy oder fehlendem Key: dann nicht in die Video-Ansicht wechseln
-    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { if (video) onVideo?.(); if (anim) onFilm?.(); setText(''); setVask(undefined); clear() }
+    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { if (video) onVideo?.(pod ? 'podcast' : 'video'); if (anim) onFilm?.(); setText(''); setVask(undefined); clear() }
   }
 
   return (
@@ -231,8 +249,9 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
       </header>
 
       <main className="home-main">
-        <h1>{video ? 'Was soll aus deinem Video werden?' : anim ? 'Was soll dein Video erklären?' : 'Was möchtest du zeigen?'}</h1>
-        <p className="home-sub">{video ? 'Deckwerk hört das Video ab, wählt die Momente, schneidet, untertitelt und exportiert.'
+        <h1>{pod ? 'Was soll aus deiner Aufnahme werden?' : video ? 'Was soll aus deinem Video werden?' : anim ? 'Was soll dein Video erklären?' : 'Was möchtest du zeigen?'}</h1>
+        <p className="home-sub">{pod ? 'Deckwerk hört die Folge ab, kürzt Pausen, Füllwörter und Versprecher, setzt Kapitel und exportiert MP3.'
+          : video ? 'Deckwerk hört das Video ab, wählt die Momente, schneidet, untertitelt und exportiert.'
           : anim ? 'Erklärvideos und Live-Demos, Szene für Szene. Deckwerk schreibt den Sprechertext, baut die Szenen und spricht sie ein.'
           : 'Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.'}</p>
         <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
@@ -243,8 +262,8 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             autoFocus
             rows={2}
             value={text}
-            aria-label={video ? 'Was soll aus deinem Video werden?' : anim ? 'Was soll dein Video erklären?' : 'Worum geht es in deiner Präsentation?'}
-            placeholder={video ? 'Video hierher ziehen oder Link einfügen – und sag kurz, was du brauchst'
+            aria-label={pod ? 'Was soll aus deiner Aufnahme werden?' : video ? 'Was soll aus deinem Video werden?' : anim ? 'Was soll dein Video erklären?' : 'Worum geht es in deiner Präsentation?'}
+            placeholder={pod ? 'Aufnahme hierher ziehen (Audio oder Video) – und sag kurz, was du brauchst' : video ? 'Video hierher ziehen oder Link einfügen – und sag kurz, was du brauchst'
               : anim ? 'Zum Beispiel: 60-Sekunden-Demo unserer App, mit Sprecherstimme' : 'Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum'}
             onChange={(e) => { setText(e.target.value); setVask(undefined) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
@@ -258,10 +277,10 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
               {srcs.map((s) => (
                 <span key={s.name} className="pill" title={s.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>{isImage(s.name) ? <ImageIcon size={13} /> : <Paperclip size={13} />}{s.name}<button type="button" className="plain" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={13} /></button></span>
               ))}
-              <button type="button" className="plain" title={video ? 'Video anhängen (oder hierher ziehen)' : 'Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)'} onClick={() => attach()}><Paperclip size={16} />Datei</button>
+              <button type="button" className="plain" title={pod ? 'Aufnahme anhängen: Audio oder Video (oder hierher ziehen)' : video ? 'Video anhängen (oder hierher ziehen)' : 'Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)'} onClick={() => attach()}><Paperclip size={16} />Datei</button>
               {err && <span className="home-err error" role="alert">{err}</span>}
             </div>
-            <button type="submit" className="round" aria-label={video ? 'Video-Auftrag senden' : anim ? 'Animation erstellen' : 'Deck erstellen'} disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            <button type="submit" className="round" aria-label={pod ? 'Podcast-Auftrag senden' : video ? 'Video-Auftrag senden' : anim ? 'Animation erstellen' : 'Deck erstellen'} disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
           </div>
         </form>
         {like.length > 0 && (
@@ -276,15 +295,15 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
         )}
         <div className="seg home-papers" role="group" aria-label="Format">
           {PAPERS.map((p) => {
-            const on = p.id === 'video' ? video : p.id === 'animation' ? anim : !video && !anim && fmt === p.id
+            const on = p.id === 'video' || p.id === 'podcast' || p.id === 'animation' ? medium === p.id : medium === 'deck' && fmt === p.id
             return (
-              <button key={p.id} type="button" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : p.id === 'animation' ? FILM_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}><p.icon size={15} strokeWidth={1.75} />{p.name}</button>
+              <button key={p.id} type="button" aria-pressed={on} title={p.id === 'video' ? VIDEO_HINT : p.id === 'podcast' ? PODCAST_HINT : p.id === 'animation' ? FILM_HINT : FORMAT_CHOICES.find((f) => f.id === p.id)?.hint} onClick={() => pick(p.id)}><p.icon size={15} strokeWidth={1.75} />{p.name}</button>
             )
           })}
         </div>
         <div className="home-chips">
           {video || anim
-            ? (video ? VIDEO_EXAMPLES : FILM_EXAMPLES).map(([label, full, ask]) => <button key={label} className="pill" onClick={() => { setText(full); setVask(ask); ref.current?.focus() }}>{label}</button>)
+            ? (pod ? PODCAST_EXAMPLES : video ? VIDEO_EXAMPLES : FILM_EXAMPLES).map(([label, full, ask]) => <button key={label} className="pill" onClick={() => { setText(full); setVask(ask); ref.current?.focus() }}>{label}</button>)
             : EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
         </div>
         <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>

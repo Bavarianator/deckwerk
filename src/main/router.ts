@@ -50,6 +50,7 @@ ${index}
 - Zahlen, Daten, Diagramme: inhalt-layout und die passenden Datenlayouts (chart, kpi-grid, table, big-number).
 - Texte ändern, übersetzen, kürzen, Notizen: text und deck-auftraege.
 - Reiner Video-Auftrag (Video schneiden oder kürzen, Short, Reel, Stream-Highlights, Zusammenschnitt, Untertitel, MP4): nur video und layout:clip, bei Zwischentiteln layout:section und layout:statement; kein Gerüst, keine Gestaltung, keine Storyline. Präsentation mit Video: das Übliche plus video und layout:clip.
+- Reiner Podcast-Auftrag (Aufnahme, Audio, Folge oder Episode schneiden, Pausen und Füllwörter raus, Kapitel, Intro/Outro, MP3): nur podcast; Reels oder Shorts aus einem Podcast sind Video.
 - reason: ein kurzer Satz auf Deutsch.
 ${auto
     ? '\n## Modell\nWähle auch model und effort: opus für neue Decks, Umbauten, Quellmaterial und anspruchsvolle Aufträge (effort high); sonnet für gezielte Änderungen an einem bestehenden Deck (effort medium, low für Tippfehler und Kleinigkeiten).'
@@ -172,8 +173,8 @@ function toRoute(raw: unknown, input: RouteInput, known: Set<string>, auto: bool
     ...(model && { model, ...(EFFORTS.includes(r.effort as Effort) && { effort: r.effort as Effort }) }),
     source,
     ...(typeof r.reason === 'string' && { reason: r.reason }),
-    // reiner Video-Auftrag: Video-Schnitt gewählt und kein Gerüst (auch nicht von den Regeln) → schlanker Kernprompt
-    ...(modules.includes('video') && !modules.some((id) => id.startsWith('geruest')) && { video: true as const }),
+    // reiner Video- oder Podcast-Auftrag: Schnitt gewählt und kein Gerüst (auch nicht von den Regeln) → schlanker Kernprompt
+    ...((modules.includes('video') || modules.includes('podcast')) && !modules.some((id) => id.startsWith('geruest')) && { video: true as const }),
   }
 }
 

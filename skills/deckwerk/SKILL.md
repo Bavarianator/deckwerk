@@ -1,6 +1,6 @@
 ---
 name: deckwerk
-description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren; dazu animierte Erklärvideos, Produkt- und Live-Demo-Videos, Tutorials und Kennzahlen-Videos aus Folien mit Sprecherstimme. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will, oder wenn jemand ein Erklärvideo, eine Demo oder ein animiertes Video mit Sprecher will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
+description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren; dazu Podcasts schneiden – Pausen, Füllwörter, Versprecher entfernen, Kapitel, Intro/Outro, Soundeffekte, als MP3; dazu animierte Erklärvideos, Produkt- und Live-Demo-Videos, Tutorials und Kennzahlen-Videos aus Folien mit Sprecherstimme. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will, oder einen Podcast schneiden will, oder wenn jemand ein Erklärvideo, eine Demo oder ein animiertes Video mit Sprecher will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
 ---
 
 # Deckwerk: Präsentationen, die man dem Chef zeigen kann
@@ -13,7 +13,7 @@ Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__�
 
 ## 1. Zuerst den Guide lesen
 
-Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler). Für reine Video-Aufträge genügt `read_guide({ topic: "video" })` (Video-Schnitt und das Layout `clip`).
+Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler). Für reine Video-Aufträge genügt `read_guide({ topic: "video" })` (Video-Schnitt und das Layout `clip`), für Podcasts `read_guide({ topic: "podcast" })` (Podcast-Schnitt).
 
 ## 2. Briefing und Material
 
@@ -124,6 +124,13 @@ Will der Nutzer ein Erklärvideo, eine Produkt- oder Live-Demo, ein Tutorial ode
 - **Motion-Grafik** (Ablauf, wachsende Zahl, Titel- oder Logo-Szene, Vorher–Nachher): Layout `blank` mit freien Elementen, Auftritt über `anim` (`draw` zeichnet Linien, Pfeile, Umrisse, Icons), Bewegung je Takt über `keys: [{ step, x?, y?, w?, h?, rot?, opacity?, fill?, ease? }]`, nur im Film. 1–3 bewegte Elemente je Takt, `ease` `feder` sparsam.
 - **Prüfen:** `render_slides` mit `at: [Sekunden]` an 2–3 Stellen je kritischer Szene, `lint_deck` (`film-…`: Sprechtext > 40 Wörter, `duration` kürzer als Stimme, Kamera, Tippen), dann `export_deck` `mp4` (Stimme, .srt, bei `captions` `satz` eingebrannt; Musik über `find_music`/`music`).
 - Zurückhaltend wie die Folien: ein Übergangstyp, keine Effekt-Parade.
+
+## 11. Podcast schneiden
+
+Will der Nutzer eine Aufnahme als Podcast schneiden, gilt Guide §13 „Podcast“. Die Episode braucht keine Folien.
+- **Ablauf:** Audio aus dem Anhang → `create_episode` (`title`, `tracks` 1–4, je Mikrofon eine Spur) → `transcribe_video` mit jeder Spur, `all: true` (je Spur ein Sprecher), `speakers: true` nur bei mehreren Sprechern auf einer Spur → `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }` („läuft noch“ = gleich noch einmal) → Kapitel aus den Themenwechseln (`search_transcript`; erstes bei 0, 3–8 je Stunde, kurze Titel) per `edit_episode` `chapters` → `export_deck` `mp3` (Kapitel in der Datei, `.chapters.json` daneben).
+- **Nachbessern:** `edit_episode` mit `cut`/`uncut` (Quellzeit, rastet an Wortgrenzen); ohne Eingaben zeigt es Zustand und Prüfung.
+- **Regeln:** nie mitten im Satz schneiden, Inhalt nicht umstellen, Füllwörter nicht übertreiben (natürliche Sprache bleibt). Intro, Outro und Soundeffekte nur auf Wunsch und sparsam (`find_music` mit `kurz: true`, dann `edit_episode` `intro`/`outro`/`sfx`). Die Lautheit macht die Engine.
 
 ## Häufige Fehler
 

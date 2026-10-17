@@ -8,9 +8,9 @@ import { buildCatalog, houseStyle, recentLooks } from './tools'
 
 export interface GuideModule { id: string; title: string; kurz: string; text: string; always?: true }
 // modules: Abschnitts- und layout:-IDs zusätzlich zum Kernprompt
-// video: reiner Video-Auftrag → schlanker Kernprompt (corePrompt(true)) für das ganze Gespräch
+// video: reiner Video- oder Podcast-Auftrag → schlanker Kernprompt (corePrompt(true)) für das ganze Gespräch
 export type Route = { modules: string[]; model?: string; effort?: 'low' | 'medium' | 'high'; source: 'haiku' | 'codex' | 'vibe' | 'regel'; reason?: string; video?: true }
-export type RouteInput = { text: string; profile: Profile; layoutsInDeck: string[]; hasDeck: boolean }
+export type RouteInput = { text: string; profile: Profile; layoutsInDeck: string[]; hasDeck: boolean; podcast?: boolean } // podcast: Deck hat deck.podcast
 
 const WORKFLOW = `## Arbeitsablauf
 1. Höchstens 2–3 Rückfragen (mit ask_user, falls vorhanden), sonst sinnvolle Defaults annehmen.
@@ -44,6 +44,7 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['fehler', '## 10. Häufige Fehler', 'Was oft schiefgeht.', true],
   ['video', '## 11. Video', 'Video-Schnitt: Shorts/Reels, Fulltime kürzen, Stream-Highlights, Kompilation; Bewertung, Hooks, Regeln für clip.'],
   ['film', '## 12. Animation (Film)', 'Film (Erklärvideo, Live-Demo, Produkt-/Kennzahlen-Video): film, Sprechtext mit [klick], Kamera, capture_page, screen_zooms, Gerüst, Ablauf.'],
+  ['podcast', '## 13. Podcast', 'Podcast-Schnitt: Episode (deck.podcast), Spuren, Pausen/Füllwörter/Versprecher, Kapitel, Intro/Outro, MP3-Export.'],
   ['katalog', '## Layout-Katalog', 'Layouts statt Koordinaten, freie Elemente (items).', true],
   ['katalog-themes', '## Themes', 'Katalog-Themes, Schriften mit Charakter und Schriftkatalog für headFont/bodyFont.'],
   ['katalog-ton', '## Folien-Ton und Dekor', 'tone pro Folie (normal, accent, invert) und Hintergrundmotive.'],
@@ -100,6 +101,7 @@ export function guideIndex(mods = guideModules()): string {
 
 const VIDEO_CORE = `# Deckwerk: Video-Schnitt
 Dieses Gespräch beginnt als Video-Auftrag. Du schneidest mit den Video-Tools (import_video, transcribe_video, video_highlights, search_transcript, video_frames, check_clip, find_music) und baust das Ergebnis als Deck aus clip-Folien, exportiert als MP4. Abläufe, Bewertung und Regeln stehen im Leitfaden der ersten Nachricht (Modul video, layout:clip); fehlt er, lade ihn mit read_guide({ topic: "video" }). Felder nie raten.
+Podcast-Aufträge (Modul podcast) laufen ohne Folien über create_episode, transcribe_video, edit_episode und export_deck mp3; fehlt der Leitfaden, lade ihn mit read_guide({ topic: "podcast" }).
 Will der Nutzer später Folien, eine Präsentation oder eine Drucksache, hol dir zuerst mit read_guide() den Index und lade die nötigen Module.
 Antworte auf Deutsch, knapp.`
 
@@ -139,6 +141,7 @@ export function guideParts(max = 20000): string[] {
 }
 
 export const VIDEO_MODULES = ['video', 'layout:clip'] // read_guide topic video
+export const PODCAST_MODULES = ['podcast'] // read_guide topic podcast
 
 // Regel-Router ohne KI (Rückfall für den Haiku-Router): Layouts nach Format, Abschnitte nach Stichwörtern; lieber ein Modul zu viel
 const SOCIAL_SKIP: LayoutId[] = ['agenda', 'section', 'table'] // Guide „Social-Karussell“: weglassen
@@ -162,6 +165,9 @@ const VIDEO = /video|\bclips?\b|\bshorts?\b|\breels?\b|\b(live)?streams?\b|zusam
 // Schnitt-Verb oder Quelle (Datei, Link, „aus meinem Video/Stream“): dann gewinnt der Videoschnitt. YouTube, Reels oder Shorts allein sind
 // beim Film nur das Ziel („Erklärvideo für YouTube“), keine Quelle
 const SCHNITT = /schneid|schnitt|kürzen|kürze\b|kürzt\b|\bcuts?\b|highlight|\.(mp4|mov|webm|mkv)\b|https?:|\baus (meinem|dem|der|einem|unserem) (video|stream|livestream|vod|aufnahme|mitschnitt)/
+// Podcast-Auftrag: Stichwörter oder angehängtes Audio; Reels, Shorts und Clips aus einem Podcast bleiben Video
+const POD = /podcast|\bepisode|\bfolge\b|audio|tonspur|\bspuren\b|\.(mp3|wav|m4a|aac|flac|ogg|opus)\b|\bmp3\b/
+const POD_NOT = /\bclips?\b|\bshorts?\b|\breels?\b|tiktok|\bmp4\b|highlight|zusammenschnitt/
 const FOLIEN = /\bdecks?\b|\bfolien?\b|\bseiten?\b/ // spricht der Auftrag von Folien oder Seiten, ist er kein reiner Video-Auftrag
 const VIDEO_DECK: string[] = ['clip', 'section', 'statement'] // Zwischentitel einer Kompilation
 const KINDS = {
@@ -176,8 +182,12 @@ export function ruleRoute(input: RouteInput): Route {
   // Format: Stichwörter, bei einem Deck auch sein Profil; ohne beides das übergebene Profil
   const kinds = new Set((Object.keys(KINDS) as (keyof typeof KINDS)[]).filter((k) => KINDS[k].test(t)))
   const video = VIDEO.test(t) || inDeck.includes('clip')
+  const plain = !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t)
+  // Reiner Podcast-Auftrag: nur Podcast-Schnitt, schlanker Kernprompt wie bei Video
+  if (plain && !inDeck.length && (input.podcast || (POD.test(t) && !POD_NOT.test(t) && !kinds.has('social')))) // Karussell zur neuen Folge bleibt Social
+    return { modules: [...PODCAST_MODULES], source: 'regel', reason: 'Regeln: Podcast', video: true }
   // Reiner Video-Auftrag: nur Video-Schnitt und clip (dazu Zwischentitel), kein Gerüst, keine Gestaltung
-  if (video && (!FILM.test(t) || SCHNITT.test(t)) && !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t) && inDeck.every((id) => VIDEO_DECK.includes(id)))
+  if (video && (!FILM.test(t) || SCHNITT.test(t)) && plain && inDeck.every((id) => VIDEO_DECK.includes(id)))
     return { modules: [...VIDEO_MODULES, ...VIDEO_DECK.slice(1).map((id) => `layout:${id}`)], source: 'regel', reason: 'Regeln: Video', video: true }
   if (input.hasDeck || !kinds.size) kinds.add(input.profile === 'doc' ? (inDeck.includes('business-card') ? 'karte' : 'a4') : input.profile)
   const layouts = new Set<LayoutId>(inDeck)
