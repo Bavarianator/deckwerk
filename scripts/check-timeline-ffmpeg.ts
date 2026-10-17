@@ -62,6 +62,45 @@ assert.deepEqual(img.slice(6, 14), ['-loop', '1', '-framerate', '30000/1001', '-
 assert.ok(Math.abs(20 * Math.log10(evalExpr(keyExpr([[0, -100], [1, 0]], { at: 0, in: 0 }, 0), 0)) + 60) < 1e-6, 'dB auf TL.db geklemmt')
 assert.ok(estimate(tl, DELIVER) > 0)
 
+// Blenden: V1 weiß mit fade [1, 0] (0–2 s), V2 ab 0,5 s, damit ein Abschnitt mitten in der Blende beginnt
+const white = join(dir, 'white.mp4'), red = join(dir, 'red.mp4')
+const ft: TimelineContent = { tracks: [
+  { id: 'v1', kind: 'video', clips: [{ id: 'w', src: white, at: 0, in: 0, out: 2, fade: [1, 0] }] },
+  { id: 'v2', kind: 'video', clips: [{ id: 'p', src: vid, at: 0.5, in: 0, out: 1.5, mute: true, box: [0.75, 0.75, 0.2] }] }, // Ecke: stört die Bildmitte nicht
+] }
+const fs = sections(ft)
+assert.deepEqual(fs.map((s) => [s.start, s.end]), [[0, 0.5], [0.5, 1], [1, 2]])
+const fg = (k: number) => { const a = videoArgs(fs[k], deliver, 16 / 9, () => null, () => null); return a[a.indexOf('-filter_complex') + 1] }
+assert.ok(fg(0).includes('format=rgba,setpts=PTS+0/TB,fade=t=in:d=1:alpha=1,setpts=PTS-STARTPTS'), fg(0))
+assert.ok(fg(1).includes('setpts=PTS+0.5/TB,fade=t=in:d=1:alpha=1'), 'Rampe 0,5 → 1 mitten in der Blende')
+assert.ok(!fg(2).includes('fade') && !fg(2).includes('rgba'), 'nach der Blende keine Rampe')
+assert.ok(audioArgs(fs[0]).join(' ').includes('volume=(0+(1)*t):eval=frame'))
+assert.ok(audioArgs(fs[1]).join(' ').includes('volume=(0.5+(1)*t):eval=frame'))
+assert.ok(!audioArgs(fs[2]).join(' ').includes('eval=frame'))
+const fp = videoArgs(fs[1], { ...deliver, codec: 'prores' }, 16 / 9, () => null, () => null)
+assert.ok(fp[fp.indexOf('-filter_complex') + 1].includes('format=gbrap10le,setpts'), '10 bit mit Alpha')
+// Überblendung weiß → rot über 1 s, mittig über dem Schnitt bei 2 s: Fenster 1,5–2,5
+const xt: TimelineContent = { tracks: [{ id: 'v1', kind: 'video', clips: [
+  { id: 'w', src: white, at: 0, in: 0, out: 2 }, { id: 'r', src: red, at: 2, in: 1, out: 3, xfade: 1 },
+] }] }
+const xs = sections(xt)
+assert.deepEqual(xs.map((s) => [s.start, s.end]), [[0, 1.5], [1.5, 2], [2, 2.5], [2.5, 4]])
+assert.deepEqual([ids(xs[1].video), ids(xs[1].audio), ids(xs[2].video), ids(xs[2].audio)], [['w', 'r'], ['w', 'r'], ['w', 'r'], ['w', 'r']])
+assert.deepEqual([xs[1].video.map((a) => a.src), xs[2].video.map((a) => a.src)], [[1.5, 0.5], [2, 1]])
+assert.deepEqual([ids(xs[0].video), ids(xs[3].video)], [['w'], ['r']])
+const xg = (k: number) => { const a = videoArgs(xs[k], deliver, 16 / 9, () => null, () => null); return a[a.indexOf('-filter_complex') + 1] }
+assert.ok(xg(2).includes('[1:v]') && /\[1:v\][^;]*setpts=PTS\+0\.5\/TB,fade=t=in:d=1:alpha=1/.test(xg(2)) && !/\[0:v\][^;]*fade/.test(xg(2)), 'to blendet ein, from bleibt deckend')
+const xa = audioArgs(xs[1]).join(' ')
+assert.ok(xa.includes('volume=(1+(-1)*t):eval=frame') && xa.includes('volume=(0+(1)*t):eval=frame'), 'Ton: from 1−k, to k')
+// to vor dem Quellanfang: Quelle auf 0 geklemmt, Ton setzt verspätet ein
+const early = sections({ tracks: [{ id: 'v1', kind: 'video', clips: [{ id: 'w', src: white, at: 0, in: 0, out: 2 }, { id: 'r', src: red, at: 2, in: 0.2, out: 3, xfade: 1 }] }] })
+assert.equal(early[1].audio[1].src, 0)
+assert.ok(audioArgs(early[1]).join(' ').includes('adelay=300:all=1'))
+// Fade-Ende 0,01 s neben einem fremden Schnitt: kein Abschnitt unter einem Bild; Blendpunkte aufs Bildraster
+const near = sections({ tracks: [{ id: 'v1', kind: 'video', clips: [{ id: 'w', src: white, at: 0, in: 0, out: 2, fade: [1.01, 0] }] }, { id: 'v2', kind: 'video', clips: [{ id: 'p', src: vid, at: 1, in: 0, out: 1 }] }] })
+assert.deepEqual(near.map((s) => [s.start, s.end]), [[0, 1], [1, 2]])
+assert.deepEqual(sections({ tracks: [{ id: 'v1', kind: 'video', clips: [{ id: 'w', src: white, at: 0, in: 0, out: 2, fade: [0.51, 0] }] }] }, 25).map((s) => s.end), [0.52, 2])
+
 // Echt mit ffmpeg, falls erreichbar: jeder Abschnitt hat die geplante Länge (±1 Bild)
 let bin: string | null = null
 try { bin = await ffmpegBin() } catch (e) { console.warn('check-timeline-ffmpeg: ffmpeg fehlt, echter Lauf übersprungen:', (e as Error).message) }
@@ -89,6 +128,20 @@ if (bin) {
   const pro = join(dir, 'pro.mov'), pd = { ...deliver, codec: 'prores' as const }
   await ff([...videoArgs(sections(tl)[1], pd, 16 / 9, () => lut, satFilter), ...encodeArgs(pd).args, pro])
   assert.match((await run(bin, ['-hide_banner', '-i', pro])).err, /yuv422p10le/)
+  // Blenden echt: Mittelwert der Bildmitte (rgb24) bei t im Abschnitt
+  await ff(['-f', 'lavfi', '-i', 'color=white:s=320x180:r=30:d=4', '-pix_fmt', 'yuv420p', white])
+  await ff(['-f', 'lavfi', '-i', 'color=red:s=320x180:r=30:d=4', '-pix_fmt', 'yuv420p', red])
+  const rgbAt = async (s: typeof fs[0], t: number) => {
+    const out = join(dir, 'blend.mp4')
+    await ff([...videoArgs(s, deliver, 16 / 9, () => null, () => null), ...encodeArgs(deliver).args, out])
+    const px = (await run(bin!, ['-hide_banner', '-nostdin', '-ss', String(t), '-i', out, '-frames:v', '1', '-vf', 'crop=200:200', '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1'])).out
+    assert.equal(px.length, 200 * 200 * 3)
+    return [0, 1, 2].map((ch) => { let m = 0; for (let i = ch; i < px.length; i += 3) m += px[i]; return m / (px.length / 3) / 255 })
+  }
+  const half = await rgbAt(fs[1], 0) // Abschnitt ab 0,5 s, mitten im Fade
+  assert.ok(half.every((v) => Math.abs(v - 0.5) < 0.08), `Fade bei 0,5 s: ${half}`)
+  const mix = await rgbAt(xs[2], 0)
+  assert.ok(mix[0] > 0.92 && Math.abs(mix[1] - 0.5) < 0.08 && Math.abs(mix[2] - 0.5) < 0.08, `Überblendung bei k = 0,5: ${mix}`)
   const silent = join(dir, 'still.wav')
   await ff([...audioArgs({ start: 0, end: 0.7, video: [], audio: [] }), '-c:a', 'pcm_s16le', silent])
   assert.ok(Math.abs((await dur(silent)) - 0.7) < 0.02)

@@ -1,5 +1,5 @@
 // Pro-Timeline → ffmpeg: baut Argumente je Abschnitt (zwischen zwei Schnittpunkten). Rein: startet kein ffmpeg, ohne Electron, damit Selbsttests es unter Node prüfen.
-import { clipEnd, cutPoints, EQ_HZ, TL, fpsArg, speedOfClip, srcAt, tlAt, tlDuration, type Active, type Deliver, type TimelineContent, type TLClip } from '../shared/timeline'
+import { clipEnd, cutPoints, deliverOf, EQ_HZ, TL, fadeGain, snapFrame, fpsArg, speedOfClip, srcAt, tlAt, tlDuration, xfadeAt, xfades, type Active, type Deliver, type TimelineContent, type TLClip } from '../shared/timeline'
 
 export interface Section { start: number; end: number; video: Active[]; audio: Active[] }
 
@@ -13,20 +13,36 @@ const atempo = (sp: number): string[] => (sp > 2 ? ['atempo=2', ...atempo(sp / 2
 const isImage = (src: string) => /\.(png|jpe?g|gif|webp|avif|bmp)$/i.test(src)
 const escOpt = (s: string) => s.replace(/[\\':]/g, '\\$&').replace(/[\\'[\],;]/g, '\\$&')
 
+// Knicke der Blenden: Fenster der Überblendungen und Fade-Grenzen (bei überlappenden Fades auch ihr Schnittpunkt), damit Rampen je Abschnitt linear sind
+function blendPoints(tl: Pick<TimelineContent, 'tracks'>): number[] {
+  return tl.tracks.flatMap((t) => [...xfades(t).flatMap((x) => [x.a, x.b]), ...t.clips.flatMap((c) => {
+    const [fi, fo] = c.fade ?? [0, 0], end = clipEnd(c), ps = [c.at + fi, end - fo]
+    if (fi > 0 && fo > 0) ps.push((c.at * fo + end * fi) / (fi + fo))
+    return ps.filter((p) => p > c.at && p < end)
+  })])
+}
+
 /** Abschnitte zwischen allen Schnittpunkten mit den aktiven Clips: video von unten nach oben (ohne ausgeblendete Spuren),
- *  audio = Clips der Audiospuren und Ton der Videoclips, jeweils ohne stumme Spuren und ohne mute am Clip. src = Quellsekunde bei start */
-export function sections(tl: Pick<TimelineContent, 'tracks'>): Section[] {
-  const ts = cutPoints(tl), out: Section[] = []
+ *  audio = Clips der Audiospuren und Ton der Videoclips, jeweils ohne stumme Spuren und ohne mute am Clip. src = Quellsekunde bei start.
+ *  Im Fenster einer Überblendung trägt die Spur from (unten) und to (darüber) bei */
+export function sections(tl: Pick<TimelineContent, 'tracks' | 'deliver'>, fps = tl.deliver ? deliverOf(tl).fps : 30): Section[] {
+  // Blendpunkte aufs Bildraster, nah an einem Schnitt verworfen: Abschnitte unter einem Bild gäben leere Segmente
+  const cuts = cutPoints(tl), bp = blendPoints(tl).map((p) => snapFrame(p, fps)).filter((p) => cuts.every((c) => Math.abs(c - p) >= 0.5 / fps)), out: Section[] = []
+  const ts = bp.length ? [...new Set([...cuts, ...bp].map((x) => Math.round(x * 1e4) / 1e4))].filter((x) => x >= 0 && x <= cuts[cuts.length - 1]).sort((a, b) => a - b) : cuts
   for (let k = 1; k < ts.length; k++) {
     const start = ts[k - 1], end = ts[k], mid = (start + end) / 2, sec: Section = { start, end, video: [], audio: [] }
     if (end - start < 1e-6) continue
     tl.tracks.forEach((track, index) => {
       // Mitte statt start: cutPoints rundet auf 1e-4, an der Kante könnte der Clip knapp fehlen
-      const clip = track.clips.findLast((c) => mid >= c.at && mid < clipEnd(c)) // wie activeAt: bei Überlappung gewinnt der spätere
-      if (!clip) return
-      const a: Active = { track, clip, index, src: srcAt(clip, start) }
-      if (track.kind === 'video' && !track.hide) sec.video.push(a)
-      if (!track.mute && !clip.mute && !isImage(clip.src)) sec.audio.push(a)
+      const x = xfadeAt(track, mid)
+      // to beginnt vor in: Quelle auf ≥ 0 geklemmt. ponytail: im Bild läuft to dann zu früh los (Ton wartet per adelay); tpad vorn, falls das stört
+      const clips = x ? [{ clip: x.from, src: srcAt(x.from, start) }, { clip: x.to, src: Math.max(0, srcAt(x.to, start)) }]
+        : track.clips.filter((c) => mid >= c.at && mid < clipEnd(c)).slice(-1).map((clip) => ({ clip, src: srcAt(clip, start) })) // wie activeAt: bei Überlappung gewinnt der spätere
+      for (const { clip, src } of clips) {
+        const a: Active = { track, clip, index, src }
+        if (track.kind === 'video' && !track.hide) sec.video.push(a)
+        if (!track.mute && !clip.mute && !isImage(clip.src)) sec.audio.push(a)
+      }
     })
     out.push(sec)
   }
@@ -49,6 +65,22 @@ function fitFilter(c: TLClip, w: number, h: number) {
   return `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}:clip(${num(c.focus ?? 0.5)}*iw-ow/2\\,0\\,iw-ow):(ih-oh)/2`
 }
 
+/** Blend-Rampen eines Clips im Abschnitt als [Wert bei start, Wert bei end]: fade und Überblendanteil (to: k, im Ton from: 1−k).
+ *  Zwischen zwei Schnittpunkten linear; Deckkraft bzw. Pegel = Produkt der Rampen */
+export function ramps(a: Active, sec: Pick<Section, 'start' | 'end'>, audio = false): [number, number][] {
+  const x = xfadeAt(a.track, (sec.start + sec.end) / 2), id = a.clip.id
+  const k = (t: number) => (x ? Math.max(0, Math.min(1, (t - x.a) / (x.b - x.a))) : 1)
+  const share = (t: number) => (x?.to.id === id ? k(t) : audio && x?.from.id === id ? 1 - k(t) : 1)
+  return [[fadeGain(a.clip, sec.start), fadeGain(a.clip, sec.end)], [share(sec.start), share(sec.end)]]
+}
+
+// Alpha-Rampe g0→g1 über len s mit fade (alpha). fade kennt nur start_time ≥ 0: PTS um den Vorlauf verschieben statt Bilder zu klonen
+function alphaRamp([g0, g1]: [number, number], len: number): string[] {
+  if (Math.abs(g1 - g0) < 1e-6) return g0 > 1 - 1e-6 ? [] : [`colorchannelmixer=aa=${num(g0)}`]
+  const d = len / Math.abs(g1 - g0), off = (g1 > g0 ? g0 : 1 - g0) * d
+  return [`setpts=PTS+${num(off)}/TB`, `fade=t=${g1 > g0 ? 'in' : 'out'}:d=${num(d)}:alpha=1`, 'setpts=PTS-STARTPTS']
+}
+
 /** ffmpeg-Argumente für die Bildspur eines Abschnitts (Eingänge, filter_complex, -map [vout]), ohne Codec und Ausgabedatei.
  *  Der Aufrufer hängt format=yuv420p bzw. encodeArgs an. lutPath/satFilter kommen aus grade.ts (cube1d, satFilter). */
 export function videoArgs(sec: Section, deliver: Deliver, aspect: number, lutPath: (clip: TLClip) => string | null, satFilter: (sat?: number) => string | null): string[] {
@@ -65,7 +97,9 @@ export function videoArgs(sec: Section, deliver: Deliver, aspect: number, lutPat
     const c = a.clip, box = c.box
     const [w, h] = box ? [even(box[2] * W), even(box[2] * H)] : [W, H]
     const lut = lutPath(c), sat = satFilter(c.grade?.sat)
-    const chain = [`setpts=(PTS-STARTPTS)/${num(isImage(c.src) ? 1 : speedOfClip(c))}`, `fps=${r}`, fitFilter(c, w, h), 'setsar=1', ...(lut || sat ? [`format=${rgb}`] : []), ...(lut ? [`lut1d=file=${escOpt(lut)}`] : []), ...(sat ? [sat] : [])]
+    const alpha = ramps(a, sec).flatMap((g) => alphaRamp(g, sec.end - sec.start))
+    const chain = [`setpts=(PTS-STARTPTS)/${num(isImage(c.src) ? 1 : speedOfClip(c))}`, `fps=${r}`, fitFilter(c, w, h), 'setsar=1', ...(lut || sat ? [`format=${rgb}`] : []), ...(lut ? [`lut1d=file=${escOpt(lut)}`] : []), ...(sat ? [sat] : []),
+      ...(alpha.length ? [`format=${rgb === 'rgb24' ? 'rgba' : 'gbrap10le'}`, ...alpha] : [])] // overlay nimmt das Alpha; V1 über Schwarz = Blende zu/aus Schwarz
     f.push(`[${i}:v]${chain.join(',')}[c${i}]`)
     const out = i === n - 1 ? '[vout]' : `[o${i}]`
     f.push(`${last}[c${i}]overlay=${box ? `${Math.round(box[0] * W)}:${Math.round(box[1] * H)}` : '0:0'}:eof_action=pass${yuv ? `:format=${yuv}` : ''}${out}`)
@@ -96,11 +130,16 @@ export function audioArgs(sec: Section, sampleRate = 48000): string[] {
   const args = aud.flatMap((a) => input(a, sec, ''))
   const f = aud.map((a, i) => {
     const c = a.clip, sp = speedOfClip(c), eq = c.eq ?? {}
-    const delay = Math.round(Math.max(0, c.at - sec.start) * 1000)
+    // ab der Quellsekunde src: to einer Überblendung mit auf 0 geklemmter Quelle setzt verspätet ein
+    const delay = Math.round(Math.max(0, tlAt(c, a.src) - sec.start) * 1000)
+    // Blenden linear in Amplitude, t = Sekunde im Abschnitt; ohne Kommas, also ohne Escapen
+    const rs = ramps(a, sec, true).filter(([g0, g1]) => g0 < 1 - 1e-6 || g1 < 1 - 1e-6), slope = (g0: number, g1: number) => num((g1 - g0) / (sec.end - sec.start))
+    const gain = rs.length ? rs.map(([g0, g1]) => `(${num(g0)}+(${slope(g0, g1)})*t)`).join('*') : '1'
     const chain = [
       `atrim=0:${num((sec.end - sec.start) * sp)}`, 'asetpts=PTS-STARTPTS', `aformat=sample_rates=${sampleRate}:channel_layouts=stereo`, ...atempo(sp),
       `volume=${num((c.volume ?? 1) * (a.track.volume ?? 1))}`,
       ...(c.keys?.length ? [`volume=${keyExpr(c.keys, c, sec.start)}:eval=frame`] : []),
+      ...(gain === '1' ? [] : [`volume=${gain}:eval=frame`]),
       ...(eq.low ? [`lowshelf=f=${EQ_HZ.low}:g=${num(eq.low)}`] : []),
       ...(eq.mid ? [`equalizer=f=${EQ_HZ.mid}:t=q:w=1:g=${num(eq.mid)}`] : []),
       ...(eq.high ? [`highshelf=f=${EQ_HZ.high}:g=${num(eq.high)}`] : []),
