@@ -1,0 +1,56 @@
+# Sprachmodelle umwandeln (scripts/convert-parakeet-ultra.py) und als Vorabversion-Release ablegen, aus dem die App sie lädt.
+# Vorabversion: releases/latest (Installer, Update-Prüfung) bleibt beim App-Release. Läuft bei Push auf modelle/*.
+name: Modelle
+on:
+  push:
+    branches: ['modelle/**']
+permissions:
+  contents: write
+defaults:
+  run:
+    shell: bash # mit pipefail: „| tee“ verschluckt sonst Fehler
+jobs:
+  parakeet-ultra:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      TAG: parakeet-ultra-1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Platz schaffen
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL && df -h /
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Abhängigkeiten
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install "nemo_toolkit[asr]" onnx==1.17.0 onnxruntime==1.20.1 safetensors huggingface_hub sherpa-onnx==1.13.8 soundfile
+      - name: Umwandeln
+        run: mkdir out && cd out && python ../scripts/convert-parakeet-ultra.py 2>&1 | tee convert.log
+      - name: Prüfen (sherpa-onnx 1.13.8, wie die App)
+        run: |
+          cd out
+          curl -fsSLO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/de.wav
+          curl -fsSLO https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/en.wav
+          python - <<'EOF' 2>&1 | tee -a convert.log
+          import sherpa_onnx, soundfile as sf
+          r = sherpa_onnx.OfflineRecognizer.from_transducer(encoder='encoder.int8.onnx', decoder='decoder.int8.onnx', joiner='joiner.int8.onnx',
+              tokens='tokens.txt', model_type='nemo_transducer', num_threads=4)
+          for w in ['de.wav', 'en.wav']:
+              a, sr = sf.read(w, dtype='float32')
+              s = r.create_stream(); s.accept_waveform(sr, a); r.decode_stream(s)
+              print(w, '|', s.result.text, '| Zeitstempel:', len(s.result.timestamps), 'Dauern:', len(s.result.durations))
+              assert len(s.result.text) > 10 and len(s.result.timestamps) == len(s.result.tokens)
+          EOF
+          sha256sum encoder.int8.onnx decoder.int8.onnx joiner.int8.onnx tokens.txt | tee SHA256SUMS
+          ls -l encoder.int8.onnx decoder.int8.onnx joiner.int8.onnx tokens.txt
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" --prerelease --target "$GITHUB_SHA" --title "Sprachmodell Parakeet Ultra (sherpa-onnx int8)" \
+            --notes "moondream/parakeet-ultra (CC-BY-4.0, Feinabstimmung von NVIDIA parakeet-tdt-0.6b-v3) im sherpa-onnx-Format für Deckwerk, umgewandelt mit scripts/convert-parakeet-ultra.py. Kein App-Release." \
+            encoder.int8.onnx decoder.int8.onnx joiner.int8.onnx tokens.txt SHA256SUMS convert.log

@@ -17,7 +17,7 @@ import { autoFocus, speakerFaces } from './faces'
 import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { phoneDevice, phoneMarker } from './phone'
-import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
+import { PARAKEET_LANGS, asr, asrModelOf, diarize, tag, type AsrModel } from './sherpa'
 import { localAsset } from './sync'
 import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
 
@@ -83,9 +83,12 @@ export function createEngine(): Engine {
   })
 
   class TagFailed extends Error { constructor(cause: unknown) { super('tag', { cause }) } } // Ereigniserkennung gescheitert, nicht der Rest
-  type Chunk = { engine: 'parakeet' | 'whisper'; segments: Segment[] }
+  type Chunk = { engine: 'parakeet' | 'whisper'; model?: 'de-schnell'; segments: Segment[] } // model: mit „Deutsch schnell“ erkannt (fehlt = Parakeet)
   let whisperOnly = false // sherpa grundsätzlich nicht nutzbar: Rest der Sitzung mit Whisper
   const wantFor = (lang?: string) => engineFor(lang, PARAKEET_LANGS, whisperOnly)
+  // „Deutsch schnell“ (Einstellung) nur für Deutsch: Ohne lang (Export-Untertitel, transcribe_video ohne lang, Transkript-lang „auto“)
+  // gilt Deutsch als Annahme, eine andere bekannte Sprache erkennt Parakeet
+  const asrModel = (lang?: string): AsrModel => ((!lang || /^de\b/i.test(lang)) && asrModelOf(app.getPath('appData')) === 'de-schnell' ? 'de-schnell' : 'parakeet')
   // Option „Spracherkennung auf dem Android-Handy“: je Aufruf neu nachsehen, ein abgestecktes Handy fällt so auf den PC zurück
   const videoRuns = new Map<string, { pct: number; listeners: Set<(pct: number) => void>; done: Promise<string[]> }>() // laufende Video-Exporte (exportDeck)
   const phoneOn = () => !existsSync(phoneMarker(app.getPath('appData')))
@@ -98,7 +101,7 @@ export function createEngine(): Engine {
   }
 
   // Ein Chunk: Parakeet (sherpa); Whisper nur für Sprachen außerhalb von Parakeet oder wenn sherpa nicht nutzbar ist
-  async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
+  async function recognize(file: string, k: number, duration: number, want: Chunk['engine'] | undefined, lang: string | undefined, onProgress: (pct: number) => void): Promise<Chunk> {
     const { from, dur } = chunkWindow(k, duration), pcm = await pcm16k(file, from, dur)
     const whisper = async (): Promise<Chunk> => {
       // transcribePcm erkennt die Sprache selbst, eine Vorgabe nimmt es nicht an
@@ -109,7 +112,8 @@ export function createEngine(): Engine {
     if (want === 'whisper' || whisperOnly) return whisper()
     try {
       const phone = (await phoneNow())?.serial
-      return { engine: 'parakeet', segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone }), k) }
+      const model = asrModel(lang)
+      return { engine: 'parakeet', ...(model === 'de-schnell' ? { model } : {}), segments: inChunk(await asr(pcm, { models, offset: from, onProgress, phone, model }), k) }
     } catch (e) {
       if ((e as { code?: string }).code !== 'SHERPA_UNAVAILABLE') throw e
       console.warn('[video] sherpa-onnx nicht nutzbar, Spracherkennung mit Whisper:', (e as Error).message)
@@ -125,7 +129,7 @@ export function createEngine(): Engine {
     const all = chunksIn([[0, duration]], duration) // 0 … n−1, Index = k
     const have = legacy ? [] : await Promise.all(all.map((k) => readJson<Chunk>(`${base}.t${k}.json`)))
     // fits fragt whisperOnly bei jedem Aufruf neu: fällt sherpa mitten im Lauf aus, passen schon gecachte Whisper-Chunks
-    const want = wantFor(lang), valid = (c: Chunk | null) => !!c && Array.isArray(c.segments), fits = (c: Chunk | null) => valid(c) && (!wantFor(lang) || c!.engine === wantFor(lang))
+    const want = wantFor(lang), valid = (c: Chunk | null) => !!c && Array.isArray(c.segments), fits = (c: Chunk | null) => valid(c) && (!wantFor(lang) || c!.engine === wantFor(lang)) && !(c!.model === 'de-schnell' && asrModel(lang) === 'parakeet') // zurück auf „Genau“: schnell Erkanntes neu rechnen, umgekehrt bleibt Parakeet
     const missing = legacy ? [] : chunksIn(ranges ?? [[0, duration]], duration).filter((k) => !fits(have[k]))
     return { duration, base, legacy, all, have, want, valid, fits, missing }
   }
@@ -154,7 +158,7 @@ export function createEngine(): Engine {
     let t = legacy
     if (!t) {
       for (const [i, k] of missing.entries())
-        have[k] = await cached(`${base}.t${k}.json`, () => recognize(file, k, duration, want, (p) => onProgress(Math.floor(((i + p / 100) / missing.length) * share))), fits)
+        have[k] = await cached(`${base}.t${k}.json`, () => recognize(file, k, duration, want, o.lang, (p) => onProgress(Math.floor(((i + p / 100) / missing.length) * share))), fits)
       const ok = all.filter((k) => valid(have[k])) // außerhalb von ranges zählt auch ein Chunk der anderen Erkennung
       t = { duration, lang: o.lang ?? 'auto', segments: mergeSegments(ok.flatMap((k) => have[k]!.segments)), covered: coveredOf(ok, duration) }
     }
@@ -271,7 +275,8 @@ export function createEngine(): Engine {
       if (format === 'mp4' || format === 'clips') {
         // Dasselbe Video schon in Arbeit (Knopf „Exportieren“ und export_deck der KI): der zweite Auftrag hängt sich an, gleicher Fortschritt statt
         // eines zweiten Durchgangs hinter dem ersten (12.10.: KI-Export stand 25 min bei 5 % in der Warteschlange und hätte danach alles neu gerechnet)
-        const key = createHash('sha1').update(JSON.stringify([deck, format, outDir])).digest('hex'), same = videoRuns.get(key)
+        // volles Deck hashen: ausgeblendete Folien stecken als Einblendung (overlays.slide) im Video
+        const key = createHash('sha1').update(JSON.stringify([all, format, outDir])).digest('hex'), same = videoRuns.get(key)
         if (same) {
           if (onProgress) { same.listeners.add(onProgress); onProgress(same.pct) }
           return same.done
@@ -284,7 +289,10 @@ export function createEngine(): Engine {
           // Handy-Option: die Clip-Gruppen rechnet das Handy (phone-ffmpeg.ts), Standbilder und Endschritt der PC
           const run = async (ready: Deck, pre: number) => {
             const d = await phoneNow(), m = await import('./export-video')
-            return m.exportVideo(ready, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), { ...music, phone: d ? { serial: d.serial, models } : undefined })
+            // Ausgeblendete Folien zurück an ihren Platz: Clips blenden sie ein (overlays.slide = Nummer in all.slides), als Szene lässt exportVideo sie weg
+            let k = 0
+            const full = { ...ready, slides: all.slides.map((s) => (s.hidden ? s : ready.slides[k++])) }
+            return m.exportVideo(full, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), { ...music, phone: d ? { serial: d.serial, models } : undefined })
           }
           if (!clipsOk(deck)) return run(deck, 0) // exportVideo meldet, was fehlt
           const files = [...t.need.keys()], miss = await Promise.all(files.map((f) => chunkPlan(f, t.need.get(f)!).then((p) => p.missing.length, () => 0)))
@@ -341,7 +349,7 @@ export function createEngine(): Engine {
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
       device,
-      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : device() },
+      async asrDevice(lang) { return wantFor(lang) === 'whisper' || whisperOnly ? 'PC (Whisper)' : `${await device()}, ${asrModel(lang) === 'de-schnell' ? 'Deutsch schnell' : 'Parakeet Ultra'}` },
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)

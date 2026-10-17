@@ -19,6 +19,7 @@ import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, j
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { phoneDevice, phoneMarker } from './phone'
+import { asrModelFile, asrModelOf } from './sherpa'
 import { createSyncer, isFolder, localAsset, testSync, type SyncSettings } from './sync'
 import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
 import { CLOUDS } from '../shared/clouds'
@@ -738,6 +739,13 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   ipcMain.handle('phone:set', async (_, on: unknown) => {
     if (on === true) await rm(phoneFile, { force: true })
     else await mkdir(dirname(phoneFile), { recursive: true }).then(() => writeFile(phoneFile, ''))
+  })
+  // Spracherkennungs-Modell (sherpa.ts): Datei mit „de-schnell“, fehlt = Parakeet
+  const asrFile = asrModelFile(app.getPath('appData'))
+  ipcMain.handle('asr:model', () => asrModelOf(app.getPath('appData')))
+  ipcMain.handle('asr:set-model', async (_, m: unknown) => {
+    if (m === 'de-schnell') await mkdir(dirname(asrFile), { recursive: true }).then(() => writeFile(asrFile, 'de-schnell'))
+    else await rm(asrFile, { force: true })
   })
   ipcMain.handle('chat:models', async (): Promise<ChatModels> => (detect(), {
     claude: hasApiKey() || !!clis.claude,

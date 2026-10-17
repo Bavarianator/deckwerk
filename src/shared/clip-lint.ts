@@ -3,13 +3,16 @@ import type { Issue } from './lint'
 import { retakes } from './retakes'
 import { clipSpans, estimateWords, mmss, partLen, partsLength, speedOf, type ClipContent, type Part, type Transcript, type Word } from './video'
 
-export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[]; deckMusic?: boolean } // music: je Quellsekunde 0..1 (Signals.music); deckMusic: ob das Deck Hintergrundmusik hat (fehlt = unbekannt)
+export interface ClipInfo { duration?: number | null; transcript?: Transcript | null; music?: number[]; deckMusic?: boolean; slides?: { layout: string; hidden?: boolean }[] } // music: je Quellsekunde 0..1 (Signals.music); deckMusic: ob das Deck Hintergrundmusik hat (fehlt = unbekannt)
+// slides: alle Folien des Decks (für overlays.slide); fehlt = Verweise nicht prüfen
 // lintClip kennt die Folie nicht (slide/slideId setzt der Aufrufer); 'info' gibt es nur hier
 export type ClipIssue = Omit<Issue, 'slide' | 'slideId' | 'severity'> & { severity: Issue['severity'] | 'info' }
 
 const TOL = 0.05 // s: Kante gilt erst so weit im Wort als Schnitt im Wort
 export const SNAP = 0.4 // s: so weit rastet der Export (snapParts) Kanten selbst auf die Wortgrenze
 const CALM = 8 // s: länger ohne sichtbaren Schnitt wirkt ein Short zäh
+const BROLL = 8 // s: länger verdeckt ein Cutaway (pos voll) den Sprecher zu lange
+const HOOK_S = 3 // s: so lange gehört ein Short mit Hook dem Gesicht
 // Musik-Wahrscheinlichkeit (CED) ab der eine Sekunde als Musik zählt. Gemessen (check-sherpa): Sprache allein ≤ 0,05, Musik −12 dB unter Sprache 0,09–0,3, Musik pur 0,35–0,77
 export const MUSIC = 0.15
 const SENTENCE_END = /[.!?…]["'»«“”‘’)\]]*$/
@@ -138,6 +141,12 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
       if ((short || k === use.length - 1) && !cut.has(i + 'end') && !SENTENCE_END.test(last.w.trim()))
         open.push({ msg: `${n(i)} endet ohne Satzende („…${ws.slice(-3).map((w) => w.w.trim()).join(' ')}“) – Ende hinter das Satzende legen`, ex: `${i + 1} (bis ${de(p.end)} s)` })
     })
+    // Standbild hält das letzte Bild bei stillem Ton: mitten im Satz bricht die Rede ab
+    bundle('clip-standbild', use.flatMap(({ p, i }) => {
+      if (!p.freeze) return []
+      const ws = words.filter((w) => (w.start + w.end) / 2 >= p.start && (w.start + w.end) / 2 < p.end), last = ws[ws.length - 1]
+      return inWord(words, p.end) || (last && !SENTENCE_END.test(last.w.trim())) ? [{ msg: `${n(i)} hält ein Standbild (freeze) mitten im Satz – nur am Satzende, Ende hinter das Satzende legen oder freeze weglassen`, ex: `${i + 1}` }] : []
+    }), 'Standbilder mitten im Satz', 'freeze nur am Satzende')
     bundle('clip-satz', weak, `von ${use.length} Ausschnitten beginnen mitten im Gedanken`, 'Start früher legen, damit jeder für sich steht')
     bundle('clip-satz', open, `von ${use.length} Ausschnitten enden ohne Satzende`, 'Enden hinter das Satzende legen')
     bundle('clip-tempo', use.filter(({ p }) => speedOf(p) !== 1 && c.captions !== 'aus'
@@ -195,8 +204,38 @@ export function lintClip(c: ClipContent, size: { w: number; h: number }, info: C
   const ov = c.overlays ?? [], ovN = (k: number) => `Einblendung ${k + 1}`
   bundle('clip-einblendung', ov.flatMap((o, k) => clipSpans(use.map((u) => u.p), o.start, o.end).length ? [] : [{ msg: `${ovN(k)} (${de(o.start)}–${de(o.end)} s) liegt in keinem Ausschnitt und ist nie zu sehen – Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)`, ex: `${k + 1} (${de(o.start)}–${de(o.end)} s)` }]),
     `von ${ov.length} Einblendungen liegen in keinem Ausschnitt`, 'Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)')
-  bundle('clip-einblendung', ov.flatMap((o, k) => (o.text && o.text.trim().length > 40 ? [{ msg: `${ovN(k)} hat ${o.text.trim().length} Zeichen – kürzer (höchstens 40: Name, Ort, Zahl)`, ex: `${k + 1}` }] : [])),
-    'Einblendungen über 40 Zeichen', 'kürzer (höchstens 40: Name, Ort, Zahl)', 'info')
+  bundle('clip-einblendung', ov.flatMap((o, k) => {
+    const l = Math.max(o.text?.trim().length ?? 0, o.sub?.trim().length ?? 0)
+    return l > 40 ? [{ msg: `${ovN(k)} hat ${l} Zeichen in einer Zeile – kürzer (höchstens 40: Name, Funktion, Ort, Zahl)`, ex: `${k + 1}` }] : []
+  }), 'Einblendungen über 40 Zeichen', 'kürzer (höchstens 40: Name, Funktion, Ort, Zahl)', 'info')
+  // Verpixeln liegt unter allem und darf mitlaufen; zwei sichtbare Einblendungen zugleich überladen das Bild
+  const shown = ov.map((o, k) => ({ o, k })).filter(({ o }) => o.art !== 'verpixeln')
+  bundle('clip-einblendung', shown.flatMap((a, j) => shown.slice(j + 1).flatMap((b) => (Math.min(a.o.end, b.o.end) - Math.max(a.o.start, b.o.start) > TOL
+    ? [{ msg: `${ovN(a.k)} und ${b.k + 1} stehen gleichzeitig – höchstens eine Einblendung zur Zeit, Zeiten trennen`, ex: `${a.k + 1}/${b.k + 1}` }] : []))),
+    'Paare von Einblendungen stehen gleichzeitig', 'höchstens eine Einblendung zur Zeit, Zeiten trennen')
+  const spans = (o: (typeof ov)[number]) => clipSpans(use.map((u) => u.p), o.start, o.end)
+  bundle('clip-einblendung', ov.flatMap((o, k) => {
+    const l = spans(o).reduce((s, [a, b]) => s + b - a, 0)
+    return o.pos === 'voll' && l > BROLL ? [{ msg: `${ovN(k)} (pos voll) verdeckt ${de(l)} s den Sprecher – B-Roll 2–6 s, höchstens ${BROLL} s`, ex: `${k + 1} (${de(l)} s)` }] : []
+  }), `Einblendungen mit pos voll länger als ${BROLL} s`, 'B-Roll 2–6 s', 'info')
+  if (c.hook?.trim()) bundle('clip-einblendung', ov.flatMap((o, k) => (o.pos === 'voll' && spans(o).some(([a]) => a < HOOK_S)
+    ? [{ msg: `${ovN(k)} (pos voll) steht in den ersten ${HOOK_S} s – dort hält das Gesicht mit dem Hook den Zuschauer, später einblenden`, ex: `${k + 1}` }] : [])),
+    `Einblendungen mit pos voll in den ersten ${HOOK_S} s`, 'dort hält das Gesicht mit dem Hook den Zuschauer, später einblenden')
+  if (info.slides) {
+    const sl = info.slides
+    bundle('clip-einblendung', ov.flatMap((o, k) => {
+      if (o.slide == null) return []
+      const s = sl[o.slide - 1]
+      return !s || s.layout === 'clip' ? [{ msg: `${ovN(k)}: Folie ${o.slide} ${s ? 'ist ein Clip' : 'gibt es nicht'} – Nummer einer ausgeblendeten Folie aus dem Katalog eintragen`, ex: `${k + 1} (Folie ${o.slide})` }] : []
+    }), 'Einblendungen verweisen auf keine passende Folie', 'Nummer einer ausgeblendeten Folie aus dem Katalog eintragen', 'error')
+    bundle('clip-einblendung', ov.flatMap((o, k) => (o.slide != null && sl[o.slide - 1] && sl[o.slide - 1].layout !== 'clip' && !sl[o.slide - 1].hidden
+      ? [{ msg: `${ovN(k)}: Folie ${o.slide} ist nicht ausgeblendet und läuft zusätzlich als eigene Folie – update_slide hidden: true`, ex: `${k + 1} (Folie ${o.slide})` }] : [])),
+      'eingeblendete Folien sind nicht ausgeblendet', 'update_slide hidden: true')
+  }
+  // Punch-in wirkt nur als Ausnahme: viele Stufen oder Zoom an den meisten Schnitten wirkt hektisch
+  const zoomed = use.filter(({ p }) => p.zoom && p.zoom !== 1), levels = new Set(zoomed.map(({ p }) => p.zoom))
+  if (levels.size > 2 || (zoomed.length >= 2 && zoomed.length > use.length / 2))
+    add('info', 'clip-zoom', `zoom an ${zoomed.length} von ${use.length} Ausschnitten, ${levels.size} ${levels.size === 1 ? 'Stufe' : 'Stufen'} – Punch-in nur an Pointen (1.1–1.2), höchstens zwei Stufen`)
 
   const hookWords = c.hook?.trim().split(/\s+/).filter(Boolean).length ?? 0
   if (short && !hookWords) add('info', 'clip-hook', 'Kein Hook – für Shorts eine Einstiegszeile setzen (3–9 Wörter)')
@@ -323,8 +362,25 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_LINT_SELFTEST) {
   const mus = { ...ok, parts: ok.parts.map((p, j) => (j === 2 ? { ...p, music: 0.8, volume: 0 } : p)) }
   eq([msgs(lintClip(mus, tall, { transcript: clean, deckMusic: false }), 'clip-musik'), rules(lintClip(mus, tall, { transcript: clean, deckMusic: true })), rules(lintClip(mus, tall, { transcript: clean }))],
     [['Ausschnitt 3 setzt music, das Deck hat keine Hintergrundmusik – erst find_music und update_deck music, sonst music weglassen'], [], []], 'Musikpegel ohne Deck-Musik')
-  eq(lintClip({ ...ok, overlays: [{ start: 1, end: 4, text: 'Anna, Hamburg' }, { start: 95, end: 98, image: 'asset://logo.png' }, { start: 2, end: 4, text: 'Ein sehr langer Text, der viel zu viel sagt' }] }, tall, { transcript: clean })
+  eq(lintClip({ ...ok, overlays: [{ start: 1, end: 4, text: 'Anna, Hamburg' }, { start: 95, end: 98, image: 'asset://logo.png' }, { start: 5, end: 5.8, text: 'Ein sehr langer Text, der viel zu viel sagt' }] }, tall, { transcript: clean })
     .map((x) => `${x.severity}:${x.message}`), ['warn:Einblendung 2 (95–98 s) liegt in keinem Ausschnitt und ist nie zu sehen – Zeiten in einen Ausschnitt legen (Quellsekunden wie parts)',
-    'info:Einblendung 3 hat 43 Zeichen – kürzer (höchstens 40: Name, Ort, Zahl)'], 'Einblendungen')
+    'info:Einblendung 3 hat 43 Zeichen in einer Zeile – kürzer (höchstens 40: Name, Funktion, Ort, Zahl)'], 'Einblendungen')
+  const ein = (ov: ClipContent['overlays'], o: Partial<ClipContent> = {}, inf: Partial<ClipInfo> = {}) => lintClip({ ...ok, ...o, overlays: ov }, tall, { transcript: clean, ...inf }).filter((x) => x.rule === 'clip-einblendung').map((x) => `${x.severity}:${x.message}`)
+  eq(ein([{ start: 1, end: 4, text: 'Anna' }, { start: 3, end: 5, image: 'asset://x.png' }, { start: 1, end: 5, art: 'verpixeln', box: [0, 0, 0.2, 0.2] }]),
+    ['warn:Einblendung 1 und 2 stehen gleichzeitig – höchstens eine Einblendung zur Zeit, Zeiten trennen'], 'gleichzeitig, verpixeln ausgenommen')
+  eq(ein([{ start: 6, end: 17, image: 'asset://x.png', pos: 'voll' }]), ['info:Einblendung 1 (pos voll) verdeckt 10,9 s den Sprecher – B-Roll 2–6 s, höchstens 8 s'], 'B-Roll zu lang')
+  eq([ein([{ start: 1, end: 4, video: 'asset://b.mp4', pos: 'voll' }]), ein([{ start: 1, end: 4, video: 'asset://b.mp4', pos: 'voll' }], { hook: undefined }), ein([{ start: 4, end: 7, video: 'asset://b.mp4', pos: 'voll' }])],
+    [['warn:Einblendung 1 (pos voll) steht in den ersten 3 s – dort hält das Gesicht mit dem Hook den Zuschauer, später einblenden'], [], []], 'B-Roll im Hook')
+  eq(ein([{ start: 1, end: 4, art: 'bauchbinde', text: 'Anna', sub: 'Leiterin der Abteilung für besondere Aufgaben' }]), ['info:Einblendung 1 hat 45 Zeichen in einer Zeile – kürzer (höchstens 40: Name, Funktion, Ort, Zahl)'], 'sub zu lang')
+  const deckSl = [{ layout: 'clip' }, { layout: 'kpi-grid', hidden: true }, { layout: 'chart' }]
+  eq([ein([{ start: 1, end: 3, slide: 2 }], {}, { slides: deckSl }), ein([{ start: 1, end: 3, slide: 1 }, { start: 6, end: 8, slide: 9 }], {}, { slides: deckSl }), ein([{ start: 1, end: 3, slide: 3 }], {}, { slides: deckSl }), ein([{ start: 1, end: 3, slide: 9 }])],
+    [[], ['error:2 Einblendungen verweisen auf keine passende Folie: 1 (Folie 1), 2 (Folie 9) – Nummer einer ausgeblendeten Folie aus dem Katalog eintragen'],
+      ['warn:Einblendung 1: Folie 3 ist nicht ausgeblendet und läuft zusätzlich als eigene Folie – update_slide hidden: true'], []], 'Folie einblenden')
+  const fz = (end: number) => msgs(lintClip({ ...ok, parts: [{ ...ok.parts[0], end, freeze: 1 }, ...ok.parts.slice(1)] }, tall, { transcript: clean }), 'clip-standbild')
+  eq([fz(5.9), fz(4.8), fz(5.3)], [[], ['Ausschnitt 1 hält ein Standbild (freeze) mitten im Satz – nur am Satzende, Ende hinter das Satzende legen oder freeze weglassen'],
+    ['Ausschnitt 1 hält ein Standbild (freeze) mitten im Satz – nur am Satzende, Ende hinter das Satzende legen oder freeze weglassen']], 'Standbild am Satzende')
+  const zm = (zs: (number | undefined)[]) => msgs(lintClip({ ...ok, parts: ok.parts.map((p, j) => ({ ...p, zoom: zs[j] })) }, tall, { transcript: clean }), 'clip-zoom')
+  eq([zm([undefined, 1.15, undefined, 1.2]), zm([1.1, 1.15, 1.2]), zm([1.1, 1.1, 1.1, 1.1, 1.1, 1.1])],
+    [[], ['zoom an 3 von 10 Ausschnitten, 3 Stufen – Punch-in nur an Pointen (1.1–1.2), höchstens zwei Stufen'], ['zoom an 6 von 10 Ausschnitten, 1 Stufe – Punch-in nur an Pointen (1.1–1.2), höchstens zwei Stufen']], 'Zoom-Übertreibung')
   console.log('clip-lint ok')
 }

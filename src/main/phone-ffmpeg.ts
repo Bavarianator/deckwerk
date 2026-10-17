@@ -4,7 +4,7 @@
 // libass rendert auf Android ohne fontconfig-Konfiguration: es meldet „Cannot load default config file“, nimmt die Schriften aus fontsdir aber trotzdem.
 import { execFile, spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { createReadStream, existsSync, statSync } from 'node:fs'
+import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs'
 import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
@@ -99,9 +99,8 @@ export async function phoneFfmpeg(serial: string, args: string[], o: { cwd: stri
     const s = statSync(a)
     return [a, `${SRC}/${createHash('sha1').update(`${a}|${s.size}|${s.mtimeMs}`).digest('hex')}${extname(a)}`]
   }))
-  // in den entfernten cwd: Eingänge unter cwd, genannte Untertitel, Schriften (fontsdir=fonts); fertige Szenen (*.mkv) nicht
-  const files = [...new Set([...inputs.filter((a) => inside(cwd, a)).map((a) => relative(cwd, a)), ...(args.join(' ').match(/[^\s=:,;'"[\]\\/]+\.ass\b/g) ?? []), 'fonts'])]
-    .filter((f) => existsSync(join(cwd, f)))
+  // in den entfernten cwd: alles im Arbeitsordner (Konkat-Liste, Szenen, Untertitel, Schriften fonts/); ein Schritt braucht oft mehr als seine Argumente
+  const files = [...new Set([...readdirSync(cwd).filter((f) => statSync(join(cwd, f)).isFile()), 'fonts'])].filter((f) => existsSync(join(cwd, f)))
   const remoteArgs = phoneArgs(args, cwd, remote, sources)
 
   const bin = await binary(o.models)
@@ -146,7 +145,8 @@ export async function phoneFfmpeg(serial: string, args: string[], o: { cwd: stri
       }
     } }).finally(() => clearTimeout(stall))
     if (r.code !== 0) throw new Error(`ffmpeg auf dem Handy fehlgeschlagen (Code ${r.code}):\n${r.err.trim().split('\n').slice(-15).join('\n')}`)
-    await adb(serial, 'pull', remoteArgs[remoteArgs.length - 1], args[args.length - 1])
+    const out = args[args.length - 1] // Messlauf (-f null -) hat keine Ausgabedatei
+    if (out !== '-' && isAbsolute(out)) await adb(serial, 'pull', remoteArgs[remoteArgs.length - 1], out)
   } finally {
     await rm(local, { recursive: true, force: true })
     await adb(serial, 'shell', `rm -rf ${quote(remote)}`).catch(() => {})

@@ -1,7 +1,7 @@
 // Abspiel-Bausteine für Clip-Folien, geteilt von Schneiden (ClipCutter) und Deckvid: Wiedergabe der Ausschnitte, Bild im Zielformat, Zeitleiste, Untertitel.
 // Keine Tastenkürzel hier, die entscheidet die Ansicht.
 import { useEffect, useRef, useState, type ReactNode, type RefObject, type PointerEvent as RPointerEvent } from 'react'
-import { cues, partLen, partsLength, speedOf, type Cue, type Fit, type Part, type Word } from '../../shared/video'
+import { cues, freezeOf, partLen, partsLength, speedOf, type Cue, type Fit, type Part, type Word } from '../../shared/video'
 import { assetOf } from './itemOps'
 import './cutter.css'
 
@@ -14,6 +14,25 @@ function locate(ps: Part[], k: number, s: number) {
   return hit >= 0 ? hit : ps.findIndex((p) => s < p.end)
 }
 
+// Clipzeit c → Ausschnitt k, Quellsekunde src und Sekunden im Standbild am Ende des Ausschnitts (hold, null = Video läuft)
+function sourceAt(l: Part[], c: number) {
+  let k = 0, o = 0
+  while (k < l.length - 1 && c >= o + partLen(l[k])) o += partLen(l[k++])
+  const p = l[k]
+  if (!p) return null
+  const x = Math.min(Math.max(0, c - o), partLen(p)), run = (p.end - p.start) / speedOf(p)
+  return x >= run && freezeOf(p) > 0 ? { k, src: p.end, hold: Math.min(x - run, freezeOf(p) - 1e-3) } : { k, src: p.start + Math.min(x, run) * speedOf(p), hold: null }
+}
+// Umkehrung: Clipzeit zu Ausschnitt k (-1 = hinter allen), Quellsekunde und Standbildzeit
+function clipAt(l: Part[], k: number, src: number, hold: number | null) {
+  const p = l[k]
+  if (!p) return partsLength(l)
+  return partsLength(l.slice(0, k)) + (hold !== null ? (p.end - p.start) / speedOf(p) + hold : Math.min(Math.max(0, src - p.start), p.end - p.start) / speedOf(p))
+}
+
+// Standbild fällig: Ausschnitt mit freeze ist am Ende angekommen, auch wenn das Video dort zu Ende ist (ended, paused = true)
+const holdDue = (p: Part | undefined, c: number, ended: boolean): p is Part => !!p && freezeOf(p) > 0 && (ended || c >= p.end)
+
 /** Spielt die parts nacheinander (Schnittfassung), am Ende Pause und zurück auf den Anfang. t/duration in Clipzeit, src in Quellzeit.
  *  playSource spielt die Quelle ohne Sprünge (Schneiden: „Quelle“), part = Index des Ausschnitts an der Abspielposition (-1 = hinter allen). */
 export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: Part[], onCut?: (gap: number, next: Part) => void) {
@@ -25,10 +44,15 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
   ps.current = parts
   const idx = useRef(0) // Ausschnitt der Wiedergabe; bei überlappenden parts nicht aus der Zeit ableitbar
   const free = useRef(false)
+  // Standbild (part.freeze): Video steht am Ende von idx, die Uhr läuft per performance.now() weiter; null = kein Standbild
+  const [hold, setHoldS] = useState<number | null>(null)
+  const held = useRef<number | null>(null), t0 = useRef(0)
+  const setHold = (h: number | null) => { held.current = h; setHoldS(h); if (h !== null) t0.current = performance.now() - h * 1000 }
 
-  const part = locate(parts, idx.current, src)
+  const fz = hold !== null && parts[idx.current] ? hold : null
+  const part = fz !== null ? idx.current : locate(parts, idx.current, src)
   const duration = partsLength(parts)
-  const t = part < 0 ? duration : partsLength(parts.slice(0, part)) + Math.min(Math.max(0, src - parts[part].start), parts[part].end - parts[part].start) / speedOf(parts[part])
+  const t = clipAt(parts, part, src, fz)
 
   // Tempo und Originalton des laufenden Ausschnitts; Quelle frei: unverändert. Lauter als 1 macht Deckvid über Web Audio (volume kann höchstens 1)
   const tune = (v: HTMLVideoElement, k: number) => {
@@ -37,16 +61,20 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
     v.volume = Math.min(1, Math.max(0, p?.volume ?? 1))
   }
   const go = (s: number, k: number) => {
+    const resume = held.current !== null && playing // aus dem Standbild heraus: Video läuft wieder
+    setHold(null)
     idx.current = k
     if (video.current) tune(video.current, k)
     if (video.current) video.current.currentTime = s
     setSrc(s)
+    if (resume && video.current?.paused) start(video.current)
   }
   const start = (v: HTMLVideoElement) => { v.play().catch(() => setPlaying(false)); setPlaying(true) }
   const play = () => {
     const v = video.current, l = ps.current
     if (!v || !l.length) return
     free.current = false
+    if (held.current !== null && l[idx.current]) { setHold(held.current); setPlaying(true); return } // im Standbild weiter: nur die Uhr
     const k = locate(l, idx.current, v.currentTime)
     if (k < 0) go(l[0].start, 0) // hinter dem Ende: von vorn
     else if (v.currentTime < l[k].start) go(l[k].start, k) // in einer Lücke: ab dem nächsten Ausschnitt
@@ -54,31 +82,48 @@ export function useClipPlayer(video: RefObject<HTMLVideoElement | null>, parts: 
     tune(v, idx.current)
     start(v)
   }
-  const playSource = () => { const v = video.current; if (!v) return; free.current = true; tune(v, 0); start(v) }
-  const pause = () => { const v = video.current; v?.pause(); setPlaying(false); if (v) setSrc(v.currentTime) }
+  const playSource = () => { const v = video.current; if (!v) return; free.current = true; setHold(null); tune(v, 0); start(v) }
+  const pause = () => { const v = video.current; v?.pause(); setPlaying(false); if (v && held.current === null) setSrc(v.currentTime) }
   const seekSource = (s: number) => {
     const x = Math.max(0, Math.min(s, video.current?.duration || Infinity)) // duration ist NaN ohne Metadaten
     go(x, locate(ps.current, idx.current, x))
   }
   const seekClip = (c: number) => {
-    const l = ps.current, len = partLen
-    let k = 0, o = 0
-    while (k < l.length - 1 && c >= o + len(l[k])) o += len(l[k++])
-    if (l[k]) go(l[k].start + Math.min(Math.max(0, c - o), len(l[k])) * speedOf(l[k]), k)
+    const x = sourceAt(ps.current, c)
+    if (!x) return
+    go(x.src, x.k)
+    if (x.hold !== null) { video.current?.pause(); setHold(x.hold) }
   }
 
   // Abspielposition per rAF (timeupdate kommt nur ~4×/s); am Ende eines Ausschnitts zum nächsten springen
   useEffect(() => {
     if (!playing) return
     let raf = 0
+    // zum nächsten Ausschnitt; hinter dem letzten Pause und zurück auf den Anfang (auch wenn der laufende gelöscht wurde)
+    const next = (v: HTMLVideoElement, l: Part[], k: number) => {
+      const p = l[k]
+      if (p && l[k + 1]) { if (Math.abs(l[k + 1].start - p.end) >= 1e-3) cut.current?.(l[k + 1].start - p.end, l[k + 1]); go(l[k + 1].start, k + 1); return true }
+      setHold(null); v.pause(); go(l[0]?.start ?? 0, 0); setPlaying(false); return false
+    }
     const tick = () => {
       const v = video.current, l = ps.current
+      if (v && held.current !== null && l[idx.current]) { // Standbild: Video steht, Uhr läuft
+        const h = (performance.now() - t0.current) / 1000
+        if (h < freezeOf(l[idx.current])) setHoldS((held.current = h))
+        else if (!next(v, l, idx.current)) return
+        raf = requestAnimationFrame(tick)
+        return
+      }
+      if (v && !free.current && holdDue(l[idx.current], v.currentTime, v.ended)) { // vor dem paused-Test: am Dateiende meldet das Video paused
+        v.pause(); setSrc(l[idx.current].end); setHold(0)
+        raf = requestAnimationFrame(tick)
+        return
+      }
       if (!v || v.paused) { setPlaying(false); if (v) setSrc(v.currentTime); return } // Videoende oder von außen angehalten
       const k = idx.current, p = l[k], c = v.currentTime
       if (free.current || (p && c >= p.start - 0.1 && c < p.end)) setSrc(c) // Toleranz: nach dem Spulen meldet das Video evtl. knapp davor
       else if (p && c < p.start) go(p.start, k) // beim Abspielen in eine Lücke gespult
-      else if (p && l[k + 1]) { if (Math.abs(l[k + 1].start - p.end) >= 1e-3) cut.current?.(l[k + 1].start - p.end, l[k + 1]); go(l[k + 1].start, k + 1) }
-      else { v.pause(); go(l[0]?.start ?? 0, 0); setPlaying(false); return } // Ende, auch wenn der laufende Ausschnitt gelöscht wurde (!p)
+      else if (!next(v, l, k)) return
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
@@ -201,5 +246,9 @@ if (typeof process !== 'undefined' && process.env.DW_CLIP_SELFTEST) {
   const un: Part[] = [{ start: 10, end: 20 }, { start: 0, end: 5 }] // Abspielreihenfolge ≠ Quellreihenfolge
   eq([locate(un, 0, 3), locate(un, 0, 12), locate(un, 1, 7), locate(un, 0, 25)], [1, 0, 0, -1], 'locate unsortiert')
   eq(locate([{ start: 0, end: 10 }, { start: 5, end: 15 }], 1, 7), 1, 'locate: laufender Ausschnitt bei Überlappung')
+  const fz: Part[] = [{ start: 0, end: 4, freeze: 1 }, { start: 10, end: 12, speed: 2 }] // Clip: 0–4 Video, 4–5 Standbild, 5–6 Zeitraffer
+  eq([sourceAt(fz, 2), sourceAt(fz, 4.5), sourceAt(fz, 5.5), sourceAt(fz, 9)], [{ k: 0, src: 2, hold: null }, { k: 0, src: 4, hold: 0.5 }, { k: 1, src: 11, hold: null }, { k: 1, src: 12, hold: null }], 'sourceAt mit freeze')
+  eq([holdDue(fz[0], 3, false), holdDue(fz[0], 4, false), holdDue(fz[0], 3.9, true), holdDue(fz[1], 12, true)], [false, true, true, false], 'holdDue (auch am Dateiende)')
+  eq([clipAt(fz, 0, 2, null), clipAt(fz, 0, 4, 0.5), clipAt(fz, 1, 11, null), clipAt(fz, -1, 0, null)], [2, 4.5, 5.5, 6], 'clipAt mit freeze')
   console.log('clipPlayer ok')
 }

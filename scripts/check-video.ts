@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, w
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, joinSegs, padParts, seamless, snapParts } from '../src/main/export-video'
-import { cropFilter, levelExpr, zoomCrop } from '../src/main/video-fx'
+import { LOOK_FILTER, autoLook, cropFilter, levelExpr, srt, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
 import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Part, type Transcript } from '../src/shared/video'
@@ -125,6 +125,90 @@ async function main() {
       console.log('  Effekte ok')
     }
     if (process.env.DW_ONLY_VFX) return
+
+    // Profi-Einblendungen und Clip-Optionen: Punch-in, Standbild, Bauchbinde/Titel/Zahl, Bild-in-Bild, voll, Verpixeln, Look, Stabilisieren, Untertitel oben, SRT
+    {
+      const tv = join(dir, 'pro.mkv'), size = { w: 180, h: 320 }, poster = resolve('examples/assets/test-video-poster.jpg'), rb = join(dir, 'pro-rb.mp4')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=640x360:rate=30:duration=4', '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=4', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-shortest', tv])
+      await runFfmpeg(['-f', 'lavfi', '-i', 'color=red:size=320x180:rate=30:duration=4', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', rb])
+      const font = { name: 'Archivo', files: [readFileSync(resolve('assets/fonts/Archivo-Bold.ttf'))], bold: true }
+      const job = { file: tv, captions: 'aus' as const, transcript: null, size, font, accent: '#FF8800' }
+      const seg1 = async (n: string, parts: Part[], x: object = {}) => (await clipSegs({ ...job, parts, ...x }, n, dir, { preset: 'ultrafast' }))[0]
+      const img = async (f: string, t: number) => (await rawFrames(f, [t], 320))[0] // BGR 320×320, Bild 180×320 links
+      const diff = (a: Buffer, b: Buffer, x0 = 0, y0 = 0, x1 = 180, y1 = 320) => { let q = 0; for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) for (let c = 0; c < 3; c++) q += Math.abs(a[(y * 320 + x) * 3 + c] - b[(y * 320 + x) * 3 + c]); return q / ((x1 - x0) * (y1 - y0) * 3) }
+      const parts: Part[] = [{ start: 0.5, end: 3 }], ohne = await seg1('pro-ohne', parts), o1 = await img(ohne.file, 1)
+      // Punch-in: anderes Bild, gleiche Länge
+      const zoom = await seg1('pro-zoom', [{ ...parts[0], zoom: 1.3 }])
+      { const dz = diff(await img(zoom.file, 1), o1); assert.ok(dz > 4, `zoom: Bild unverändert (${dz.toFixed(1)})`) }
+      near((await probe(zoom.file)).duration, ohne.dur, 0.05, 'zoom: Länge')
+      // Standbild: Länge = partsLength ± 1 Frame, Ton gleich lang, im Standbild steht das Bild und der Ton schweigt; Blende danach aus dem Standbild
+      const fzParts: Part[] = [{ start: 0.5, end: 2, freeze: 1 }, { start: 2.6, end: 3.6 }], fz = await seg1('pro-freeze', fzParts), padded = padParts(fzParts, 4)
+      near(fz.dur, partsLength(padded), 1e-6, 'freeze: gemeldete Länge')
+      near((await probe(fz.file)).duration, partsLength(padded), 1 / 30 + 0.01, 'freeze: Länge')
+      const fzPcm = await pcm16k(fz.file), fs = padded[0].end - padded[0].start
+      near(fzPcm.length / 16000, partsLength(padded), 1 / 30, 'freeze: Tonlänge')
+      assert.ok(diff(await img(fz.file, fs + 0.15), await img(fz.file, fs + 0.75)) < 2, 'freeze: Bild bewegt sich im Standbild')
+      assert.ok(diff(await img(fz.file, fs - 0.6), await img(fz.file, fs - 0.1)) > 5, 'freeze: Bild steht schon vorher')
+      // mit Kamerafahrt: der Zuschnitt schwenkt im Standbild nicht weiter
+      const fzt = await seg1('pro-freeze-track', [{ start: 0.5, end: 2, freeze: 1, track: [[0.5, 0.2], [3.5, 0.8]] }])
+      assert.ok(diff(await img(fzt.file, fs + 0.15), await img(fzt.file, fs + 0.75)) < 2, 'freeze+track: Ausschnitt fährt im Standbild weiter')
+      assert.ok(dbOf(fzPcm, fs + 0.15, fs + 0.8) < -60, `freeze: Ton im Standbild ${dbOf(fzPcm, fs + 0.15, fs + 0.8).toFixed(1)} dB`)
+      // Bauchbinde, Titel, Zahl in der ASS; Text-Einblendung wie bisher; Lagen unten-links/-rechts unten (über den Untertiteln)
+      const big = { w: 1080, h: 1920 }, base = { size: big, font: 'Archivo', bold: true, accent: '#FF8800', hookDur: 4, cues: [], mode: 'aus' as const }
+      const art = assSubs({ ...base, overlays: [{ start: 1, end: 3, art: 'bauchbinde', text: 'Anna Beispiel', sub: 'Leiterin Werkstatt', fade: [true, true] }, { start: 4, end: 6, art: 'titel', text: 'Kapitel 2', sub: 'Der Umbau', fade: [true, true] }, { start: 7, end: 9, art: 'zahl', text: '73 %', sub: 'weniger Ausschuss', fade: [true, false] }] })
+      const ev = art.split('\n').filter((l) => l.startsWith('Dialogue:'))
+      assert.ok(ev[0].includes('\\1a&H80&') && ev[0].includes('\\p1}m 0 0 l 1080 0 1080 1920 0 1920'), 'titel: Abdunklung zuerst ' + ev[0])
+      const bb = ev.find((l) => l.includes('Anna Beispiel'))!
+      assert.ok(/\\an7\\move\(\d+,\d+,86,\d+,0,400\)/.test(bb) && bb.includes('\\fs59}Anna Beispiel\\N{\\fs37\\b0}Leiterin Werkstatt'), bb)
+      assert.ok(ev.some((l) => l.includes('\\c&H0088FF&') && l.includes('\\move(') && l.includes('\\p1}m 0 0 l 76 0 76 6 0 6')), 'bauchbinde: Akzentlinie')
+      assert.ok(ev.some((l) => l.includes('\\an8\\pos(540,') && l.includes('\\fs130}73 %\\N{\\fs43\\b0}weniger Ausschuss') && l.includes('\\fad(200,0)')), 'zahl')
+      assert.ok(ev.some((l) => l.includes('\\fs86}Kapitel 2')), 'titel')
+      assert.ok(/^Style: Ov1,.*,1,86,86,(\d+),1$/m.test(assSubs({ ...base, overlays: [{ start: 0, end: 1, text: 'x', pos: 'unten-links' }] })), 'unten-links: unten')
+      // Untertitel oben: Alignment 8 unter dem Hook; mitte: 5
+      const capStyle = (captionPos?: 'oben' | 'mitte') => assSubs({ ...base, hook: 'Hook', captionPos }).split('\n').find((l) => l.startsWith('Style: Cap,'))!.split(',')
+      assert.deepEqual([capStyle('oben')[18], capStyle('mitte')[18], capStyle()[18]], ['8', '5', '2'], 'captionPos')
+      assert.ok(Number(capStyle('oben')[21]) > 0.12 * 1920 + 60, 'oben: unter der Hook-Zeile')
+      // SRT: fortlaufend nummeriert, Komma-Millisekunden
+      assert.equal(srt([{ start: 0.5, end: 2.25, words: [{ w: ' Hallo', start: 0.5, end: 1 }, { w: 'Welt', start: 1, end: 2.25 }] }, { start: 3661.001, end: 3662, words: [{ w: 'x', start: 0, end: 0 }] }]),
+        '1\n00:00:00,500 --> 00:00:02,250\nHallo Welt\n\n2\n01:01:01,001 --> 01:01:02,000\nx\n')
+      // Bild-in-Bild unten rechts über der Untertitelzone (rotes Video, y ≈ 125–186), Bild voll mit Zoom, Verpixeln der oberen Hälfte; außerhalb unverändert
+      const pip = await seg1('pro-pip', parts, { overlays: [{ start: 1, end: 3, video: rb, pos: 'unten-rechts', size: 'gross' }] })
+      const [p1, p2] = [await img(pip.file, 1.5), await img(pip.file, 0.2)]
+      const [q1, q2] = [await img(ohne.file, 1.5), await img(ohne.file, 0.2)]
+      assert.ok(diff(p1, q1, 80, 135, 170, 180) > 30 && diff(p2, q2, 80, 135, 170, 180) < 3 && diff(p1, q1, 0, 0, 180, 100) < 3, 'Bild-in-Bild unten rechts')
+      const voll = await seg1('pro-voll', parts, { overlays: [{ start: 1, end: 3, image: poster, pos: 'voll' }] })
+      const [v1, v2] = [await img(voll.file, 1.3), await img(voll.file, 2.3)]
+      assert.ok(diff(v1, o1) > 10 && diff(v1, v2) > 0.3 && diff(v1, v2) < 15, `voll: ${diff(v1, o1).toFixed(1)} zum Video, ${diff(v1, v2).toFixed(2)} Zoom`)
+      near((await probe(voll.file)).duration, ohne.dur, 0.05, 'voll: Länge')
+      // auf Rauschen (testsrc2 ist großteils einfarbig): verpixelt sind Nachbarpixel im Block gleich
+      const rausch = join(dir, 'pro-rausch.mkv')
+      await runFfmpeg(['-i', tv, '-vf', 'noise=alls=80:allf=t', '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '10', '-pix_fmt', 'yuv420p', '-c:a', 'copy', rausch])
+      const [x1, o1r] = [await img((await seg1('pro-pix', parts, { file: rausch, overlays: [{ start: 0.5, end: 3, art: 'verpixeln', box: [0, 0, 1, 0.5] }] })).file, 1), await img((await seg1('pro-pix0', parts, { file: rausch })).file, 1)]
+      // blockig: innerhalb der Blöcke gleiche Nachbarpixel (Anteil), unten wie ohne (Rauschen kodiert je Lauf etwas anders, darum kein Pixelvergleich)
+      const flatShare = (b: Buffer, y0: number, y1: number) => { let q = 0; for (let y = y0; y < y1; y++) for (let x = 0; x < 179; x++) if (Math.abs(b[(y * 320 + x) * 3 + 1] - b[(y * 320 + x + 1) * 3 + 1]) <= 2) q++; return q / ((y1 - y0) * 179) }
+      assert.ok(flatShare(x1, 0, 150) > flatShare(o1r, 0, 150) + 0.15 && Math.abs(flatShare(x1, 170, 320) - flatShare(o1r, 170, 320)) < 0.05, `verpixeln: gleiche Nachbarn oben ${flatShare(x1, 0, 150).toFixed(2)} statt ${flatShare(o1r, 0, 150).toFixed(2)}, unten ${flatShare(x1, 170, 320).toFixed(2)} statt ${flatShare(o1r, 170, 320).toFixed(2)}`)
+      // Look: sw ohne Farbe, auto hellt ein dunkles Bild auf; stabil läuft durch
+      const sw = await img((await seg1('pro-sw', parts, { look: 'sw' })).file, 1)
+      let chroma = 0
+      for (let k = 0; k < 180 * 320; k++) { const y = Math.floor(k / 180), x = k % 180, o = (y * 320 + x) * 3; chroma += Math.max(sw[o], sw[o + 1], sw[o + 2]) - Math.min(sw[o], sw[o + 1], sw[o + 2]) }
+      assert.ok(chroma / (180 * 320) < 3, `sw: Farbe ${(chroma / (180 * 320)).toFixed(1)}`)
+      assert.equal(autoLook({ avg: 115, low: 30, high: 200 }), '', 'gut belichtet: kein Filter')
+      assert.equal(autoLook({ avg: 50, low: 20, high: 100 }), 'eq=contrast=1.25:gamma=1.6')
+      assert.ok(Object.values(LOOK_FILTER).every((f) => !/drawtext|vidstab/.test(f)))
+      const dunkel = join(dir, 'pro-dunkel.mp4')
+      await runFfmpeg(['-i', tv, '-vf', 'eq=brightness=-0.3:contrast=0.6', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-f', 'matroska', dunkel])
+      const [d0, d1] = [await img((await seg1('pro-dunkel', parts, { file: dunkel })).file, 1), await img((await seg1('pro-auto', parts, { file: dunkel, look: 'auto' })).file, 1)]
+      assert.ok(luma(d1, 320, 0, 0, 180, 320) > luma(d0, 320, 0, 0, 180, 320) + 10, `auto hellt nicht auf: ${luma(d0, 320, 0, 0, 180, 320).toFixed(0)} → ${luma(d1, 320, 0, 0, 180, 320).toFixed(0)}`) // Gamma gedeckelt: sehr dunkle Quelle wird heller, nicht normal
+      near((await probe((await seg1('pro-stabil', parts, { stabil: true })).file)).duration, ohne.dur, 0.05, 'stabil: Länge')
+      // Titelbild übernimmt den Look
+      await encodeCover({ ...job, parts, look: 'sw' }, 1, join(dir, 'pro-cover.jpg'), dir)
+      // SRT-Zeilen je Seg (Satz-Häppchen, auch bei wort)
+      const tr: Transcript = { duration: 4, lang: 'de', segments: [{ start: 0.6, end: 2.8, text: 'eins zwei drei' }] }
+      const withSubs = await seg1('pro-srt', parts, { captions: 'wort', transcript: tr })
+      assert.equal(withSubs.cues?.length, 1, 'cues fürs SRT')
+      console.log('  Profi-Einblendungen ok')
+    }
+    if (process.env.DW_ONLY_PRO) return
 
     // Ton klar: Sprach-Ersatz (Klang-Bursts 0–1, 2–3 … s) über Rosa Rauschen; die Sprachkette senkt das Rauschen in den Pausen, original bleibt unverändert.
     // Lautheit in zwei Durchgängen: integriert −14 LUFS
@@ -526,6 +610,14 @@ async function main() {
     await assert.rejects(exportVideo(ovDeck, join(dir, 'x'), 'clips', async () => null), /Folie 1: Das Bild der Einblendung fehlt \(fehlt\.png\)\./)
     const svgDeck = { ...deck, slides: [{ layout: 'clip', content: { video: src, parts: [{ start: 1, end: 2 }], overlays: [{ start: 1, end: 2, image: join(dir, 'logo.svg') }] } }] } as unknown as Deck
     await assert.rejects(exportVideo(svgDeck, join(dir, 'x'), 'clips', async () => null), /Folie 1: Die Einblendung braucht ein Rasterbild .*logo\.svg/)
+    // Einblend-Folie: muss existieren, ausgeblendet und kein Clip sein; Einblend-Video: Videodatei, vorhanden
+    const ovClip = (o: object, more: object[] = []) => ({ ...deck, slides: [{ layout: 'clip', content: { video: src, parts: [{ start: 1, end: 2 }], overlays: [{ start: 1, end: 2, ...o }] } }, ...more] }) as unknown as Deck
+    await assert.rejects(exportVideo(ovClip({ slide: 3 }), join(dir, 'x'), 'clips', async () => null), /Folie 1: Die Einblendung zeigt Folie 3, das Deck hat nur 1 Folien\./)
+    await assert.rejects(exportVideo(ovClip({ slide: 2 }, [{ layout: 'statement', content: {} }]), join(dir, 'x'), 'clips', async () => null), /Folie 2 ist nicht ausgeblendet/)
+    await assert.rejects(exportVideo(ovClip({ slide: 1 }, []), join(dir, 'x'), 'clips', async () => null), /nicht ausgeblendet/)
+    await assert.rejects(exportVideo(ovClip({ slide: 2 }, [{ layout: 'clip', hidden: true, content: { video: src, parts: [{ start: 1, end: 2 }] } }]), join(dir, 'x'), 'clips', async () => null), /Folie 2 ist ein Clip/)
+    await assert.rejects(exportVideo(ovClip({ video: join(dir, 'fehlt.mp4') }), join(dir, 'x'), 'clips', async () => null), /Das Video der Einblendung fehlt \(fehlt\.mp4\)/)
+    await assert.rejects(exportVideo(ovClip({ video: grau }), join(dir, 'x'), 'clips', async () => null), /braucht eine Videodatei, nicht grau\.png/)
 
     // Obergrenzen vor dem Encoden: höchstens MAX_PARTS Ausschnitte (nahtlose Stücke zählen nicht extra), Material höchstens 6 h
     const clipDeck = (parts: { start: number; end: number }[]) => ({ ...deck, slides: [{ layout: 'clip', content: { video: src, parts } }] }) as unknown as Deck

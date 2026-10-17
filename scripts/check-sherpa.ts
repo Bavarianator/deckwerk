@@ -1,4 +1,5 @@
-// sherpa-onnx lokal, opt-in mit DW_NET=1 (lädt einmalig ~710 MB nach $DECKWERK_HOME/models bzw. ~/.cache/deckwerk-check/models, braucht ffmpeg): npx esbuild scripts/check-sherpa.ts --bundle --packages=external --platform=node --format=esm --outfile=node_modules/.cache/check-sherpa.mjs && npx esbuild src/main/sherpa-worker.ts --bundle --packages=external --platform=node --format=cjs --outfile=node_modules/.cache/sherpa-worker.cjs && DW_NET=1 node node_modules/.cache/check-sherpa.mjs
+// sherpa-onnx lokal, opt-in mit DW_NET=1 (lädt einmalig ~850 MB nach $DECKWERK_HOME/models bzw. ~/.cache/deckwerk-check/models, braucht ffmpeg): npx esbuild scripts/check-sherpa.ts --bundle --packages=external --platform=node --format=esm --outfile=node_modules/.cache/check-sherpa.mjs && npx esbuild src/main/sherpa-worker.ts --bundle --packages=external --platform=node --format=cjs --outfile=node_modules/.cache/sherpa-worker.cjs && DW_NET=1 node node_modules/.cache/check-sherpa.mjs
+// DW_PHONE=<adb-Seriennummer> prüft Parakeet Ultra und „Deutsch schnell“ zusätzlich auf dem Handy
 import { deepStrictEqual, ok } from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
@@ -6,7 +7,8 @@ import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { asr, diarize, ensureModels, stopWorker, tag } from '../src/main/sherpa'
+import { asr, diarize, ensureModels, stopWorker, tag, type AsrModel } from '../src/main/sherpa'
+import { ensurePhone, phoneDecode } from '../src/main/phone'
 import { sentences } from '../src/main/sherpa-worker'
 import { MUSIC } from '../src/shared/clip-lint'
 import type { Segment } from '../src/shared/video'
@@ -49,10 +51,10 @@ const worker = () => { // Spitzen-RSS (GB) und CPU-Zeit (s) des Worker-Kindproze
   return { peak: Number(/VmHWM:\s+(\d+)/.exec(readFileSync(`/proc/${pid}/status`, 'utf8'))?.[1]) / 1024 ** 2, cpu: (Number(stat[11]) + Number(stat[12])) / 100 }
 }
 
-async function run(pcm: Float32Array, label: string, offset = 0, fresh = false) {
+async function run(pcm: Float32Array, label: string, offset = 0, fresh = false, model?: AsrModel) {
   const pct: number[] = []
   const t0 = performance.now(), cpu0 = fresh ? 0 : worker().cpu // fresh: Worker startet erst in asr() (inkl. Modell laden)
-  const segs: Segment[] = await asr(pcm, { models, offset, onProgress: (p) => pct.push(p) })
+  const segs: Segment[] = await asr(pcm, { models, offset, model, onProgress: (p) => pct.push(p) })
   const secs = (performance.now() - t0) / 1000, dur = pcm.length / 16000, { peak, cpu } = worker()
   ok(pct.at(-1) === 100 && pct.every((p, i) => !i || p > pct[i - 1]), `Fortschritt nicht monoton bis 100: ${pct}`)
   const words = segs.flatMap((s) => s.words ?? [])
@@ -65,7 +67,7 @@ async function run(pcm: Float32Array, label: string, offset = 0, fresh = false) 
 }
 
 let last = -1
-await ensureModels('asr', models, (p) => { if (p >= last + 10) console.log(`Modelle ${(last = p)} %`) })
+await ensureModels('parakeet', models, (p) => { if (p >= last + 10) console.log(`Modelle ${(last = p)} %`) })
 
 // onnxruntime-node (Freisteller) im Elternprozess geladen: sherpa (eigene libonnxruntime) muss im Worker trotzdem laufen
 const ort = await import('onnxruntime-node')
@@ -83,7 +85,22 @@ for (const threads of ['1', '2']) {
   ok(/software/.test(b.text) && /\bfrei/.test(b.text), 'deutsches Stichwort nicht erkannt')
   rtf.push(`${threads} Thread(s): RTF ${b.rtf.toFixed(3)} (CPU-Zeit/Audio ${b.cpu.toFixed(3)}), Spitze ${b.peak.toFixed(2)} GB`)
 }
+// „Deutsch schnell“ (FastConformer-DE): dieselben Stichworte, Token-Zeitstempel ohne Dauer
+await ensureModels('de-schnell', models)
 stopWorker()
+const fc = await run(frei, 'Deutsch schnell inkl. Laden', 0, true, 'de-schnell')
+ok(/software/.test(fc.text) && /\bfrei/.test(fc.text), 'Deutsch schnell: Stichwort nicht erkannt')
+ok(!fc.segs.some((s) => / [.,!?]/.test(s.text)), 'Deutsch schnell: Satzzeichen als eigenes Wort')
+rtf.push(`Deutsch schnell: RTF ${fc.rtf.toFixed(3)} inkl. Laden, Spitze ${fc.peak.toFixed(2)} GB`)
+stopWorker()
+// Handy direkt (asr() fiele bei Fehlern still auf den PC zurück): Parakeet Ultra und FC-DE in ihre Unterordner von PHONE_DIR, je ein Lauf
+if (process.env.DW_PHONE) for (const [dir, name] of [['parakeet-ultra', 'Parakeet Ultra'], ['fc-de', 'Deutsch schnell']]) {
+  await ensurePhone(process.env.DW_PHONE, models, dir)
+  const t0 = performance.now(), [res] = await phoneDecode(process.env.DW_PHONE, dir, [frei])
+  const secs = (performance.now() - t0) / 1000
+  console.log(`Handy ${name}: ${secs.toFixed(1)} s für ${(frei.length / 16000).toFixed(1)} s, RTF ${(secs / (frei.length / 16000)).toFixed(3)}\n  ${res.text}`)
+  ok(/software/.test(norm(res.text)) && /\bfrei/.test(norm(res.text)) && res.tokens.length === res.timestamps.length, `Handy ${name}: Stichwort nicht erkannt`)
+}
 console.log(rtf.join('\n'))
 
 // Audio-Ereignisse: je Sekunde ein Wert; Lachen und Applaus ≥ 0,4, reine Sprache überwiegend < 0,2 und ohne Musik (clip-musik: ab 5 s ≥ MUSIC)

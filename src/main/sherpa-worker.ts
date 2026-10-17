@@ -24,8 +24,8 @@ const sherpa = (): Sherpa => (lib ??= require('sherpa-onnx-node')) // erst bei B
 const SR = 16000, WINDOW = 512, MAX = 30 * SR, GAP = 2 * SR
 
 let rec: { key: string; r: Promise<Recognizer> } | null = null
-function recognizer(models: string, threads: number): Promise<Recognizer> {
-  const key = `${models}|${threads}`, dir = join(models, 'parakeet-v3')
+function recognizer(models: string, model: string, threads: number): Promise<Recognizer> {
+  const key = `${models}|${model}|${threads}`, dir = join(models, model)
   if (rec?.key !== key) rec = {
     key,
     r: sherpa().OfflineRecognizer.createAsync({
@@ -51,7 +51,7 @@ function words(r: Result, t0: number, t1: number): Word[] {
     if (/^\s/.test(piece)) gap = true
     if (!t) return
     const last = out.at(-1)
-    if (gap || !last) out.push({ w: t, start, end })
+    if (!last || (gap && !/^[.,!?;:…]+$/.test(t))) out.push({ w: t, start, end }) // FC-DE schreibt Satzzeichen als eigenes „▁,“
     else { last.w += t; if (/[\p{L}\p{N}]/u.test(t)) last.end = Math.max(last.end, end) } // Satzzeichen verlängern das Wort nicht
     gap = false
   })
@@ -88,10 +88,11 @@ export function sentences(ws: Word[]): Segment[] {
   return out
 }
 
-// phone: Seriennummer eines Handys (phone.ts) – die Sprachstücke erkennt dann das Handy, alle in einem Lauf am Ende
-interface AsrArgs { pcm: Float32Array; models: string; offset: number; threads: number; phone?: string }
-async function asr({ pcm, models, offset, threads, phone }: AsrArgs, progress: (pct: number) => void): Promise<Segment[]> {
-  const r = phone ? null : await recognizer(models, threads), parts: [number, number][] = []
+// phone: Seriennummer eines Handys (phone.ts) – die Sprachstücke erkennt dann das Handy, alle in einem Lauf am Ende.
+// dir: Modellordner unter models (ASR_DIR in sherpa.ts)
+interface AsrArgs { pcm: Float32Array; models: string; offset: number; threads: number; phone?: string; dir: string }
+async function asr({ pcm, models, offset, threads, phone, dir }: AsrArgs, progress: (pct: number) => void): Promise<Segment[]> {
+  const r = phone ? null : await recognizer(models, dir, threads), parts: [number, number][] = []
   // Vorträge/Streams: Pausen ab 0,4 s sind Schnittstellen, einzelne Sprachstücke höchstens 20 s (danach sucht Silero die
   // nächste kurze Pause). Folgestücke mit Pausen bis 2 s erkennt Parakeet gemeinsam (bis 30 s): Einzeln setzte es an jeder
   // Pause einen Punkt („Ask not. What your country …“) und verlor den Satzzusammenhang.
@@ -121,7 +122,7 @@ async function asr({ pcm, models, offset, threads, phone }: AsrArgs, progress: (
   vad.flush()
   await drain()
   if (cur) await decode(cur)
-  const rs = phone ? await phoneDecode(phone, parts.map(([a, b]) => pcm.subarray(a, b)), (p) => progress(20 + Math.floor(p * 0.79))) : []
+  const rs = phone ? await phoneDecode(phone, dir, parts.map(([a, b]) => pcm.subarray(a, b)), (p) => progress(20 + Math.floor(p * 0.79))) : []
   rs.forEach((res, i) => out.push(...sentences(words(res, offset + parts[i][0] / SR, offset + parts[i][1] / SR))))
   progress(100)
   return out
