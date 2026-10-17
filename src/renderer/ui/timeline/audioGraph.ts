@@ -1,4 +1,4 @@
-// Web-Audio-Kette je Medienelement für die Timeline-Vorschau: Pegel, EQ und Pegel-Keyframes wie im Export
+// Web-Audio-Kette je Medienelement für die Timeline-Vorschau: Pegel, EQ, Pegel-Keyframes und Blenden wie im Export
 import { EQ_HZ, TL, tlAt, type TLClip } from '../../../shared/timeline'
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
@@ -26,25 +26,30 @@ export function gainAt(ramps: { t: number; gain: number }[], t: number): number 
   return a.gain * (b.gain / a.gain) ** ((t - a.t) / (b.t - a.t))
 }
 
-export interface Chain { apply(clip: TLClip, trackVolume: number, t0: number, now: number): void }
+// fades: Blend-Pegel als lineare Rampenpunkte (t relativ zu t0, gain 0..1), leer = 1
+export interface Chain { apply(clip: TLClip, trackVolume: number, t0: number, now: number, fades?: { t: number; gain: number }[]): void }
 // createMediaElementSource geht je Element nur einmal, deshalb Kette je Element merken
 const chains = new WeakMap<HTMLMediaElement, Chain>()
 
 export function chainFor(ctx: AudioContext, el: HTMLMediaElement, master: AudioNode): Chain {
   const hit = chains.get(el)
   if (hit) return hit
-  // vol: Lautstärke und Mute (darf 0 sein), keys: Keyframe-Rampen (immer > 0, exponentialRamp verträgt keine 0)
-  const vol = ctx.createGain(), keys = ctx.createGain(), low = ctx.createBiquadFilter(), mid = ctx.createBiquadFilter(), high = ctx.createBiquadFilter()
+  // vol: Lautstärke und Mute (darf 0 sein), keys: Keyframe-Rampen (immer > 0, exponentialRamp verträgt keine 0), fade: Blenden linear (darf 0 sein)
+  const vol = ctx.createGain(), keys = ctx.createGain(), fade = ctx.createGain(), low = ctx.createBiquadFilter(), mid = ctx.createBiquadFilter(), high = ctx.createBiquadFilter()
   low.type = 'lowshelf'; low.frequency.value = EQ_HZ.low
   mid.type = 'peaking'; mid.frequency.value = EQ_HZ.mid; mid.Q.value = 1
   high.type = 'highshelf'; high.frequency.value = EQ_HZ.high
-  ctx.createMediaElementSource(el).connect(vol).connect(keys).connect(low).connect(mid).connect(high).connect(master)
+  ctx.createMediaElementSource(el).connect(vol).connect(keys).connect(fade).connect(low).connect(mid).connect(high).connect(master)
   const chain: Chain = {
-    apply(clip, trackVolume, t0, now) {
+    apply(clip, trackVolume, t0, now, fades = []) {
       const eq = (v?: number) => clamp(v ?? 0, TL.eq.min, TL.eq.max)
       low.gain.value = eq(clip.eq?.low); mid.gain.value = eq(clip.eq?.mid); high.gain.value = eq(clip.eq?.high)
       const base = clip.mute ? 0 : clamp(clip.volume ?? 1, TL.volume.min, TL.volume.max) * trackVolume
       vol.gain.cancelScheduledValues(now); vol.gain.setValueAtTime(base, now)
+      const f = fade.gain
+      f.cancelScheduledValues(now)
+      if (!fades.length) f.setValueAtTime(1, now)
+      fades.forEach((r, i) => (i ? f.linearRampToValueAtTime(r.gain, now + r.t) : f.setValueAtTime(r.gain, now + r.t)))
       const g = keys.gain, ramps = keysToRamps(clip, t0)
       g.cancelScheduledValues(now)
       if (!ramps.length) { g.setValueAtTime(1, now); return }

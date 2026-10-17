@@ -1,5 +1,5 @@
 // Ziehen-Mathe der Pro-Timeline (rein, ohne DOM): px↔s, Kante unter dem Zeiger, Ziel-Spur, Ops aus einem Zieh-Vorgang, Lineal-Teilung, Waveform-Ausschnitt.
-import { clipEnd, clipLen, type TLClip, type TLTrack, type TimelineContent } from '../../../shared/timeline'
+import { TL, clipEnd, clipLen, snapFrame, type TLClip, type TLTrack, type TimelineContent } from '../../../shared/timeline'
 import { snap, snapTargets, type TLOp } from '../../../shared/timeline-edit'
 
 export const GRIP = 6 // px Kantenbreite für trim
@@ -34,18 +34,48 @@ export function dragOps(base: TimelineContent, d: Drag): TLOp[] {
   const tol = SNAP_PX / d.zoom
   const sn = (x: number) => (d.snapping ? snap(x, targets, tol) : x)
   if (d.mode === 'move') {
-    let at = Math.max(0, c.at + d.dt)
-    if (d.snapping) {
-      // Anfang oder Ende rastet ein, je nachdem was näher liegt
-      const len = clipLen(c), s = sn(at), e = sn(at + len)
-      const ds = Math.abs(s - at), de = Math.abs(e - at - len)
-      if (s !== at && (e === at + len || ds <= de)) at = s
-      else if (e !== at + len) at = Math.max(0, e - len)
-    }
+    const at = d.snapping ? snapSpan(Math.max(0, c.at + d.dt), clipLen(c), sn) : Math.max(0, c.at + d.dt)
     return [{ op: 'move', clip: c.id, at, ...(d.track && { track: d.track }) }]
   }
   const t = sn((d.mode === 'in' ? c.at : clipEnd(c)) + d.dt)
   return [{ op: 'trim', clip: c.id, edge: d.mode, t, ...(d.ripple && { ripple: true }) }]
+}
+
+/** Anfang oder Ende einer Spanne rastet ein, je nachdem was näher liegt; liefert den neuen Anfang (≥ 0) */
+function snapSpan(at: number, len: number, sn: (x: number) => number): number {
+  const s = sn(at), e = sn(at + len)
+  const ds = Math.abs(s - at), de = Math.abs(e - at - len)
+  if (s !== at && (e === at + len || ds <= de)) return s
+  if (e !== at + len) return Math.max(0, e - len)
+  return at
+}
+
+/** Blenden-Griff: dt = Versatz in s seit pointerdown; nach innen ziehen verlängert die Blende. Grenze 0..min(TL.fade.max, Clip-Länge) */
+export function fadeDrag(c: TLClip, edge: 'in' | 'out', dt: number): Extract<TLOp, { op: 'set' }> {
+  const [fi, fo] = c.fade ?? [0, 0]
+  const max = Math.min(TL.fade.max, clipLen(c))
+  const v = Math.round(Math.max(0, Math.min(max, (edge === 'in' ? fi + dt : fo - dt))) * 100) / 100
+  return { op: 'set', clip: c.id, patch: { fade: edge === 'in' ? [v, fo] : [fi, v] } }
+}
+
+export interface OvDrag { i: number; mode: DragMode; dt: number; snapping: boolean; zoom: number; t: number; fps: number }
+/** Text-Einblendung i verschieben (Mitte) oder trimmen (Kante), auf Bilder gerundet, Mindestlänge laut Schema (end > start + 0,3). Neuer Stand, base bleibt */
+export function ovDrag(base: TimelineContent, d: OvDrag): TimelineContent {
+  const o = base.overlays?.[d.i]
+  if (!o) return base
+  const targets = d.snapping ? snapTargets(base, undefined, [d.t]) : []
+  const sn = (x: number) => (d.snapping ? snap(x, targets, SNAP_PX / d.zoom) : x)
+  const min = (Math.floor(0.3 * d.fps) + 1) / d.fps // erstes Bild über 0,3 s
+  const f = (x: number) => snapFrame(x, d.fps)
+  let { start, end } = o
+  if (d.mode === 'move') {
+    start = f(snapSpan(Math.max(0, o.start + d.dt), o.end - o.start, sn))
+    end = start + f(o.end - o.start)
+  } else if (d.mode === 'in') start = Math.max(0, Math.min(f(sn(o.start + d.dt)), f(o.end) - min))
+  else end = Math.max(f(sn(o.end + d.dt)), f(o.start) + min)
+  const overlays = base.overlays!.slice()
+  overlays[d.i] = { ...o, start: f(start), end: f(end) }
+  return { ...base, overlays }
 }
 
 /** Lineal: große Teilung (beschriftet) und kleine Teilung in s, passend zu px/s. Kleine Teilung mind. ~8 px, Beschriftung mind. ~70 px */

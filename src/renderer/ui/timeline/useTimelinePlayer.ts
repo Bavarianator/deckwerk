@@ -1,15 +1,52 @@
-// Wiedergabe der Pro-Timeline: Uhr per rAF, je Spur ein Elementpaar (A spielt, B steht auf dem nächsten Clip), Ton über Web Audio (audioGraph)
+// Wiedergabe der Pro-Timeline: Uhr per rAF, je Spur ein Elementpaar (A spielt, B steht auf dem nächsten Clip bzw. spielt in der Überblendung das to), Ton über Web Audio (audioGraph)
 import { useEffect, useRef, useState } from 'react'
-import { activeAt, clipEnd, snapFrame, speedOfClip, tlDuration, type TLClip, type TLTrack, type TimelineContent } from '../../../shared/timeline'
+import { activeAt, clipEnd, fadeGain, snapFrame, speedOfClip, srcAt, tlDuration, xfades, type TLClip, type TLTrack, type TimelineContent, type XFade } from '../../../shared/timeline'
 import { chainFor } from './audioGraph'
 import { clipUrl } from '../clipPlayer'
 
 const DRIFT = 0.15 // s: darüber hart nachsetzen, darunter per Tempo nachregeln
 const NUDGE = 0.03 // höchstens ±3 % Tempo zum Nachregeln
+const DECODE = 3 // Videos, die beim Abspielen gleichzeitig laufen
+const FOLLOW = 250 // ms: so oft werden die übrigen Videospuren per currentTime nachgeführt
 
-/** Je sichtbarer/hörbarer Spur der Clip zur Zeit t und seine Quellsekunde (von unten nach oben) */
-export function plan(tl: Pick<TimelineContent, 'tracks'>, t: number): { track: number; clip: string; src: number }[] {
-  return activeAt(tl, t).filter((a) => !isStill(a.clip.src)).map((a) => ({ track: a.index, clip: a.clip.id, src: a.src }))
+/** Deckkraft (alpha) und Pegelfaktor (gain) eines Clips zur Zeit t, wie im Export: fade × Überblendung (to: k, Ton from: 1−k) */
+export function mixOf(c: TLClip, t: number, xs: XFade[]): { alpha: number; gain: number } {
+  const f = fadeGain(c, t)
+  let alpha = f, gain = f
+  for (const x of xs) {
+    if (t < x.a || t > x.b) continue // geschlossen: am Fensterende gilt der Grenzwert (from = 0), für die Ton-Rampen
+    const k = (t - x.a) / (x.b - x.a)
+    if (x.to.id === c.id) { alpha *= k; gain *= k } else if (x.from.id === c.id) gain *= 1 - k
+  }
+  return { alpha, gain }
+}
+
+export interface Mix { track: number; clip: TLClip; src: number; alpha: number; gain: number }
+/** Je sichtbarer/hörbarer Spur die Clips zur Zeit t (von unten nach oben); im Überblend-Fenster from und darüber to */
+export function mixAt(tl: Pick<TimelineContent, 'tracks'>, t: number, kind?: TLTrack['kind']): Mix[] {
+  const out: Mix[] = []
+  for (const a of activeAt(tl, t, kind)) {
+    const xs = xfades(a.track), x = xs.find((x) => t >= x.a && t < x.b)
+    // from läuft über out hinaus, to beginnt vor in (auf ≥ 0 geklemmt)
+    for (const c of x ? [x.from, x.to] : [a.clip]) out.push({ track: a.index, clip: c, src: Math.max(0, srcAt(c, t)), ...mixOf(c, t, xs) })
+  }
+  return out
+}
+
+/** Was der Player zur Zeit t abspielt: Spur, Clip, Quellsekunde, Deckkraft, Pegelfaktor (ohne Standbilder) */
+export function plan(tl: Pick<TimelineContent, 'tracks'>, t: number): { track: number; clip: string; src: number; alpha: number; gain: number }[] {
+  return mixAt(tl, t).filter((m) => !isStill(m.clip.src)).map((m) => ({ track: m.track, clip: m.clip.id, src: m.src, alpha: m.alpha, gain: m.gain }))
+}
+
+/** Blend-Pegel ab t0 als lineare Rampenpunkte (t relativ zu t0); zwischen den Knicken Zwischenpunkte, weil fade × k quadratisch verläuft */
+export function fadeRamps(c: TLClip, xs: XFade[], t0: number): { t: number; gain: number }[] {
+  const [fi, fo] = c.fade ?? [0, 0], end = clipEnd(c)
+  const mine = xs.filter((x) => x.from.id === c.id || x.to.id === c.id)
+  if (!fi && !fo && !mine.length) return []
+  const ks = [...new Set([c.at, c.at + fi, end - fo, end, ...mine.flatMap((x) => [x.a, x.b])])].filter((k) => k > t0).sort((a, b) => a - b)
+  const ts = [t0]
+  for (const k of ks) { const p = ts[ts.length - 1]; for (let i = 1; i <= 4; i++) ts.push(p + ((k - p) * i) / 4) }
+  return ts.map((t) => ({ t: t - t0, gain: mixOf(c, t, xs).gain }))
 }
 
 /** Standbild-Clip (Bild auf einer Videospur): zeigt der Viewer als <img>, der Player lässt ihn aus */
@@ -41,6 +78,8 @@ export interface TimelinePlayer {
   play(): void; pause(): void; toggle(): void; seek(t: number): void; step(frames: number): void
   videoFor(trackIndex: number): HTMLVideoElement | null
   master: AudioNode | null
+  /** Element der Spur, das gerade diesen Clip zeigt (A oder in der Überblendung B) */
+  elFor(trackIndex: number, clipId: string): HTMLVideoElement | null
 }
 
 export function useTimelinePlayer(tl: TimelineContent, fps: number): TimelinePlayer {
@@ -55,6 +94,8 @@ export function useTimelinePlayer(tl: TimelineContent, fps: number): TimelinePla
   const tRef = useRef(0), run = useRef(false), clock = useRef({ t: 0, at: 0 })
   const pairs = useRef(new Map<string, Pair>())
   const audio = useRef<{ ctx: AudioContext; master: GainNode } | null>(null)
+  const applied = useRef(new WeakMap<El, string>()) // Clip, dessen Bild und Ton-Kette das Element trägt
+  const followed = useRef(0)
 
   const pairFor = (track: TLTrack) => {
     let p = pairs.current.get(track.id)
@@ -68,43 +109,59 @@ export function useTimelinePlayer(tl: TimelineContent, fps: number): TimelinePla
   // Elemente auf Zeit t ausrichten; go = abspielen, sonst Standbild
   const sync = (time: number, go: boolean) => {
     const cur = tlRef.current, p = plan(cur, time), ax = audio.current, half = 0.5 / fpsRef.current
-    const vids = p.filter((x) => cur.tracks[x.track].kind === 'video')
-    // ponytail: höchstens 2 Videos dekodieren (unterste sichtbare + oberste); dazwischen stehen pausiert auf ihrem Bild, ihr Ton fehlt beim Abspielen
-    const decode = new Set([vids[0]?.track, vids[vids.length - 1]?.track])
+    const now = performance.now(), follow = now - followed.current >= FOLLOW
+    if (go && follow) followed.current = now
+    // ponytail: höchstens DECODE Videos dekodieren (unterste, dann von oben); die übrigen stehen pausiert und werden alle FOLLOW ms nachgeführt, ihr Ton fehlt beim Abspielen
+    const vids = p.flatMap((x, i) => (cur.tracks[x.track].kind === 'video' ? [i] : []))
+    const decode = new Set([vids[0], ...vids.slice(1).reverse()].slice(0, DECODE))
+    const byTrack = new Map<number, number[]>()
+    p.forEach((x, i) => byTrack.set(x.track, [...(byTrack.get(x.track) ?? []), i]))
     const seen = new Set<string>()
     let swapped = false
-    for (const x of p) {
-      const track = cur.tracks[x.track], clip = track.clips.find((c) => c.id === x.clip)!
-      const pair = pairFor(track)
+    for (const [ti, idx] of byTrack) {
+      const track = cur.tracks[ti], pair = pairFor(track), xs = xfades(track)
+      const clipOf = (i: number) => track.clips.find((c) => c.id === p[i].clip)!
       seen.add(track.id)
-      let fresh = false
-      if (pair.aClip !== clip.id) {
-        fresh = true
-        if (pair.bClip === clip.id) { // B steht schon auf diesem Clip: B wird A
+      if (pair.dirty) { applied.current.delete(pair.a); applied.current.delete(pair.b); pair.dirty = false }
+      const [i0, i1] = idx // A = Clip bzw. from der Überblendung, B = to
+      if (pair.aClip !== p[i0].clip) {
+        if (pair.bClip === p[i0].clip) { // B steht schon auf diesem Clip (bzw. war das to): B wird A
           ;[pair.a, pair.b] = [pair.b, pair.a]
           ;[pair.aClip, pair.bClip] = [pair.bClip, pair.aClip]
           swapped = true
-        } else { load(pair.a, clip, x.src); pair.aClip = clip.id }
-        pair.a.pause()
+        } else { pair.a.pause(); load(pair.a, clipOf(i0), p[i0].src); pair.aClip = p[i0].clip; applied.current.delete(pair.a) }
       }
-      const next = track.clips.filter((c) => c.at >= clipEnd(clip) - 1e-6 && c.id !== clip.id && !isStill(c.src)).sort((a, b) => a.at - b.at)[0]
-      if (next && pair.bClip !== next.id) { pair.b.pause(); load(pair.b, next, next.in); pair.bClip = next.id }
-      const el = pair.a
-      const d = x.src - el.currentTime
-      if (fresh && Math.abs(d) > half) el.currentTime = x.src
-      if ((fresh || pair.dirty) && ax) {
-        const vol = track.mute ? 0 : track.volume ?? 1 // wie im Export: Spur stumm = 0; clip.mute setzt chainFor auf 0, Quellen ohne Ton bleiben still
-        chainFor(ax.ctx, el, ax.master).apply(clip, vol, time, ax.ctx.currentTime)
-        pair.dirty = false
+      if (i1 !== undefined) {
+        if (pair.bClip !== p[i1].clip) { pair.b.pause(); load(pair.b, clipOf(i1), p[i1].src); pair.bClip = p[i1].clip; applied.current.delete(pair.b) }
+      } else {
+        if (!pair.b.paused) pair.b.pause() // war das from der Überblendung
+        const clip = clipOf(i0)
+        const next = track.clips.filter((c) => c.at >= clipEnd(clip) - 1e-6 && c.id !== clip.id && !isStill(c.src)).sort((a, b) => a.at - b.at)[0]
+        if (next && pair.bClip !== next.id) {
+          const xf = xs.find((x) => x.to.id === next.id) // mit Überblendung schon auf den Fensteranfang stellen
+          pair.b.pause(); load(pair.b, next, Math.max(0, xf ? srcAt(next, xf.a) : next.in)); pair.bClip = next.id; applied.current.delete(pair.b)
+        }
       }
-      if (!go || (track.kind === 'video' && !decode.has(x.track))) {
-        if (!el.paused) el.pause()
-        if (!go && Math.abs(d) > half) el.currentTime = x.src // Standbild genau auf das Bild
-        continue
+      for (const [el, i] of [[pair.a, i0], [pair.b, i1]] as const) {
+        if (i === undefined) continue
+        const x = p[i], clip = clipOf(i), d = x.src - el.currentTime
+        if (applied.current.get(el) !== clip.id) { // neu auf diesem Element: Bild setzen, Ton-Kette samt Blend-Rampen ab jetzt
+          applied.current.set(el, clip.id)
+          if (Math.abs(d) > half) el.currentTime = x.src
+          if (ax) {
+            const vol = track.mute ? 0 : track.volume ?? 1 // wie im Export: Spur stumm = 0; clip.mute setzt chainFor auf 0, Quellen ohne Ton bleiben still
+            chainFor(ax.ctx, el, ax.master).apply(clip, vol, time, ax.ctx.currentTime, fadeRamps(clip, xs, time))
+          }
+        }
+        if (!go || (track.kind === 'video' && !decode.has(i))) {
+          if (!el.paused) el.pause()
+          if ((!go || follow) && Math.abs(d) > half) el.currentTime = x.src // Standbild genau auf das Bild
+          continue
+        }
+        if (Math.abs(d) > DRIFT) el.currentTime = x.src
+        el.playbackRate = speedOfClip(clip) * (1 + Math.min(NUDGE, Math.max(-NUDGE, d)))
+        if (el.paused) el.play().catch(() => {})
       }
-      if (Math.abs(d) > DRIFT) el.currentTime = x.src
-      el.playbackRate = speedOfClip(clip) * (1 + Math.min(NUDGE, Math.max(-NUDGE, d)))
-      if (el.paused) el.play().catch(() => {})
     }
     const live = new Set(cur.tracks.map((tr) => tr.id))
     for (const [id, pair] of pairs.current) {
@@ -181,6 +238,10 @@ export function useTimelinePlayer(tl: TimelineContent, fps: number): TimelinePla
     videoFor: (i: number) => {
       const track = tl.tracks[i]
       return track?.kind === 'video' ? (pairFor(track).a as HTMLVideoElement) : null
+    },
+    elFor: (i: number, id: string) => {
+      const track = tl.tracks[i], p = track?.kind === 'video' ? pairs.current.get(track.id) : undefined
+      return ((p?.aClip === id ? p.a : p?.bClip === id ? p.b : null) as HTMLVideoElement | null)
     },
   }
 }

@@ -1,6 +1,6 @@
 // Pro-Timeline Ziehen-Mathe: npx esbuild scripts/check-timeline-drag.ts --bundle --platform=node --format=esm --outfile=${TMPDIR:-/tmp}/check-timeline-drag.mjs && node ${TMPDIR:-/tmp}/check-timeline-drag.mjs
 import assert from 'node:assert/strict'
-import { dragOps, fmtTick, modeAt, rows, ticks, trackAtRow, wave } from '../src/renderer/ui/timeline/drag'
+import { dragOps, fadeDrag, fmtTick, modeAt, ovDrag, rows, ticks, trackAtRow, wave } from '../src/renderer/ui/timeline/drag'
 import { applyOps } from '../src/shared/timeline-edit'
 import type { TimelineContent } from '../src/shared/timeline'
 
@@ -49,6 +49,33 @@ assert.equal(once.tracks[0].clips[1].at, 7)
 assert.equal(tl.tracks[0].clips[1].at, 6, 'Eingabe unverändert')
 // Überlappung wirft (UI behält dann den letzten gültigen Stand)
 assert.throws(() => applyOps(tl, dragOps(tl, { ...base, clip: c2, mode: 'move', dt: -4 })), /überlappt/)
+
+// Blenden-Griffe: nach innen ziehen, Grenze 0..min(TL.fade.max, Clip-Länge)
+assert.deepEqual(fadeDrag(c2, 'in', 1.5), { op: 'set', clip: 'c2', patch: { fade: [1.5, 0] } })
+assert.deepEqual(fadeDrag(c2, 'out', -1), { op: 'set', clip: 'c2', patch: { fade: [0, 1] } }, 'Ende: nach links = länger')
+assert.deepEqual(fadeDrag(c2, 'out', 2).patch, { fade: [0, 0] }, 'nicht unter 0')
+assert.deepEqual(fadeDrag(c2, 'in', 9).patch, { fade: [4, 0] }, 'höchstens Clip-Länge')
+const long = { id: 'x', src: 'l.mp4', at: 0, in: 0, out: 60, fade: [2, 3] as [number, number] }
+assert.deepEqual(fadeDrag(long, 'in', 30).patch, { fade: [10, 3] }, 'höchstens TL.fade.max')
+assert.deepEqual(fadeDrag(long, 'out', 0.5).patch, { fade: [2, 2.5] }, 'vom Stand bei pointerdown')
+assert.deepEqual(applyOps(tl, [fadeDrag(c2, 'in', 1)]).tracks[0].clips[1].fade, [1, 0])
+
+// Text-Einblendungen: verschieben, trimmen, Mindestlänge, Bilder, Einrasten
+const ot: TimelineContent = { ...tl, overlays: [{ start: 1, end: 3, text: 'Hallo' }, { start: 20, end: 22, text: 'B' }] }
+const ob = { i: 0, snapping: false, zoom: 100, t: 0, fps: 30 }
+assert.deepEqual(ovDrag(ot, { ...ob, mode: 'move', dt: 1.5 }).overlays![0], { start: 2.5, end: 4.5, text: 'Hallo' })
+assert.deepEqual(ovDrag(ot, { ...ob, mode: 'move', dt: -5 }).overlays![0], { start: 0, end: 2, text: 'Hallo' }, 'nicht vor 0')
+assert.equal(ovDrag(ot, { ...ob, mode: 'move', dt: 0.011 }).overlays![0].start, 1, 'auf Bilder gerundet')
+assert.equal(ovDrag(ot, { ...ob, mode: 'out', dt: 1 }).overlays![0].end, 4)
+assert.equal(ovDrag(ot, { ...ob, mode: 'in', dt: -0.5 }).overlays![0].start, 0.5)
+const shortIn = ovDrag(ot, { ...ob, mode: 'in', dt: 5 }).overlays![0], shortOut = ovDrag(ot, { ...ob, mode: 'out', dt: -5 }).overlays![0]
+assert.ok(shortIn.end > shortIn.start + 0.3 && shortIn.end === 3, JSON.stringify(shortIn))
+assert.ok(shortOut.end > shortOut.start + 0.3 && shortOut.start === 1, JSON.stringify(shortOut))
+assert.equal(ovDrag(ot, { ...ob, mode: 'in', dt: -5 }).overlays![0].start, 0, 'Anfang nicht vor 0')
+assert.deepEqual(ovDrag(ot, { ...ob, snapping: true, mode: 'move', dt: 2.96 }).overlays![0], { start: 4, end: 6, text: 'Hallo' }, 'Anfang 3.96 rastet am Ende von c1 (4)')
+assert.equal(ovDrag(ot, { ...ob, snapping: true, t: 5, mode: 'out', dt: 1.95 }).overlays![0].end, 5, 'Ende rastet am Abspielkopf')
+assert.equal(ot.overlays![0].start, 1, 'Eingabe unverändert')
+assert.equal(ovDrag(ot, { ...ob, i: 5, mode: 'move', dt: 1 }), ot, 'unbekannter Index: unverändert')
 
 // Lineal
 const z = ticks(100, 30)

@@ -49,8 +49,6 @@
 .tl-field input[type='range'] { width: 100%; accent-color: var(--accent); }
 .tl-field output { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--faint); }
 .tl-check { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-.tl-wheel details { padding-left: 12px; }
-.tl-wheel summary { font-size: 11px; color: var(--faint); cursor: pointer; }
 .tl-insp > button, .tl-keys > button, .tl-measure button { justify-self: start; height: 26px; padding: 0 8px; font-size: 12px; }
 .tl-keys { display: grid; gap: 4px; font-size: 12px; }
 .tl-keys > span { color: var(--muted); }
@@ -60,3 +58,21 @@
 .tl-measure p { margin: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
 .tl-hint { margin: 0; font-size: 12px; color: var(--faint); }
 .tl-measure .tl-err { color: var(--danger); }
+
+/* ---------- Seiten, Werkzeugleiste, Titel, Export ---------- */
+.tl-pages { display: flex; gap: 2px; border-bottom: 1px solid var(--border); }
+.tl-pages button { height: 30px; padding: 0 10px; font-size: 12.5px; color: var(--muted); border-bottom: 2px solid transparent; border-radius: 0; }
+.tl-pages button[aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
+.tl-page { display: flex; flex-direction: column; gap: 16px; }
+.tl-field > input[type='text'] { grid-column: 2 / 4; min-width: 0; height: 28px; }
+.tl-bar { position: relative; }
+.tl-bar button { height: 26px; padding: 0 8px; }
+.tl-bar button:disabled { opacity: 0.4; }
+.tl-bar-sep { width: 1px; height: 18px; margin: 0 6px; background: var(--border); }
+.tl-help { position: absolute; left: 10px; bottom: 100%; z-index: 5; padding: 10px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; }
+.tl-help dl { display: grid; gap: 3px; margin: 0; font-size: 12px; }
+.tl-help dl > div { display: grid; grid-template-columns: 110px auto; gap: 8px; }
+.tl-help dt { color: var(--muted); font-variant-numeric: tabular-nums; }
+.tl-help dd { margin: 0; }
+.tl-measure progress { width: 100%; height: 4px; accent-color: var(--accent); }
+.tl-file { overflow-wrap: anywhere; color: var(--muted); }

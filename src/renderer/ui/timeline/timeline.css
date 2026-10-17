@@ -48,3 +48,20 @@
 .tl-bar { display: flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 12px; }
 .tl-msg { margin-left: 12px; color: var(--danger); }
 .tl-scroll { flex: 1; min-height: 0; overflow: auto; }
+
+/* Spuren: Titel-Spur, Untertitel, Blenden, Überblendungen, Medien-Drop (Grundregeln der Spuren in timeline-panels.css) */
+.tl-row.tl-titles { height: 32px; }
+.tl-ovbar { background: rgb(22 22 26 / 0.07); }
+.tl-ovbar .tl-clip-name { top: 50%; transform: translateY(-50%); }
+.tl-row.tl-subs { height: 20px; }
+.tl-subs .tl-track-head b { font-weight: 500; }
+.tl-subbar { position: absolute; top: 4px; bottom: 4px; overflow: hidden; padding: 0 4px; border-left: 1px solid var(--border-strong); font-size: 10px; line-height: 12px; color: var(--muted); white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+.tl-fade { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.tl-fade path { fill: rgb(0 0 0 / 0.18); stroke: rgb(0 0 0 / 0.35); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.tl-fade-grip { position: absolute; top: 0; z-index: 1; width: 8px; height: 8px; margin-left: -4px; border-radius: 2px; background: var(--faint); opacity: 0; cursor: col-resize; }
+.tl-clip:hover .tl-fade-grip, .tl-clip.on .tl-fade-grip { opacity: 1; }
+.tl-clip.on .tl-fade-grip { background: var(--accent); }
+.tl-xf { position: absolute; bottom: 4px; z-index: 1; height: 8px; border-radius: 2px; background: var(--border-strong); pointer-events: none; }
+.tl-xf.on { background: var(--accent); }
+.tl-row.drop .tl-lane { background: rgb(22 22 26 / 0.04); }
+.tl-drop { position: absolute; top: 0; bottom: 0; z-index: 1; width: 0; border-left: 2px dashed var(--accent); pointer-events: none; }

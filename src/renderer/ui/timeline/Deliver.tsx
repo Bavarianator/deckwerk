@@ -1,4 +1,4 @@
-// Ausgabe der Pro-Timeline: Auflösung, Bildrate, Codec, Lautheitsziel; optional Lautheit messen und mit dem Ziel vergleichen
+// Ausgabe der Pro-Timeline: Auflösung, Bildrate, Codec, Lautheitsziel; optional Lautheit messen und mit dem Ziel vergleichen, exportieren
 import { useState } from 'react'
 import { CODECS, RESOLUTIONS, TL, deliverOf, type Codec, type Deliver as DeliverSpec, type TimelineContent } from '../../../shared/timeline'
 import { Select } from '../kit'
@@ -9,8 +9,10 @@ const LUFS: [number, string][] = [[-14, 'Streaming'], [-16, 'Podcast'], [-23, 'E
 const de = (v: number, d = 1) => (+v.toFixed(d)).toLocaleString('de-DE', { maximumFractionDigits: d }).replace('-', '−')
 
 type Res = { i: number; tp: number; lra: number }
+/** Exportlauf (hält der Editor): pct = null heißt, es läuft keiner */
+export type ExportRun = { pct: number | null; files: string[]; err: string | null }
 
-export function Deliver({ tl, onChange, onMeasure }: { tl: TimelineContent; onChange: (tl: TimelineContent) => void; onMeasure?: () => Promise<Res | null> }) {
+export function Deliver({ tl, onChange, onMeasure, exp, onExport }: { tl: TimelineContent; onChange: (tl: TimelineContent) => void; onMeasure?: () => Promise<Res | null>; exp?: ExportRun; onExport?: () => void }) {
   const d = deliverOf(tl)
   const [free, setFree] = useState(() => !LUFS.some(([v]) => v === d.lufs))
   const [res, setRes] = useState<Res | null>(null)
@@ -29,6 +31,7 @@ export function Deliver({ tl, onChange, onMeasure }: { tl: TimelineContent; onCh
     } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
   }
   const off = res ? res.i - d.lufs : 0
+  const pct = exp?.pct ?? null
 
   return (
     <section className="tl-deliver">
@@ -75,6 +78,14 @@ export function Deliver({ tl, onChange, onMeasure }: { tl: TimelineContent; onCh
           {res && <p>{`${de(res.i)} LUFS · TP ${de(res.tp)} dBTP · LRA ${de(res.lra)} LU`}</p>}
           {res && <p className="tl-hint">{Math.abs(off) < 0.5 ? 'Trifft das Ziel' : `${de(Math.abs(off))} LU ${off > 0 ? 'lauter' : 'leiser'} als das Ziel (${de(d.lufs)} LUFS)`}</p>}
           {err && <p className="tl-err" role="status">{err}</p>}
+        </div>
+      )}
+      {onExport && (
+        <div className="tl-measure">
+          <button className="plain" disabled={pct !== null} onClick={onExport}>{pct !== null ? `Exportiere … ${pct} %` : 'Exportieren'}</button>
+          {pct !== null && <progress max={100} value={pct} />}
+          {exp?.files.map((f) => <p key={f} className="tl-file" title={f}>{`Gespeichert: ${f}`}</p>)}
+          {exp?.err && <p className="tl-err" role="status">{exp.err}</p>}
         </div>
       )}
     </section>
