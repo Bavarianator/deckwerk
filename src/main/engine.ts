@@ -346,8 +346,9 @@ export function createEngine(): Engine {
       if (format === 'print') {
         // Name nach Druckformat: flyer-a5-druck.pdf, flyer-a4-quer-druck.pdf; ohne Format wie das Deck (flyer-a4-druck.pdf)
         const file = `${print?.size ? join(outDir, `${slug(deck.title)}-${print.size}${sizeOf(deck).w > sizeOf(deck).h ? '-quer' : ''}`) : base}-druck.pdf`
-        await writeFile(file, await renderPrintPdf(deck, print))
-        return [file]
+        const { pdf, warning } = await renderPrintPdf(deck, print)
+        await writeFile(file, pdf)
+        return Object.assign([file], warning ? { warnings: [warning] } : {})
       }
       if (format === 'zip') {
         const zip = new JSZip()

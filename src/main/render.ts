@@ -129,7 +129,7 @@ export function renderPdf(deck: Deck): Promise<Buffer> {
 // auf ganze pt; ragt die Seite auch nur um Bruchteile darüber hinaus, verkleinert es den ganzen Inhalt (bis auf 2/3). Deshalb Seite
 // in ganzen pt und Endformat = Seite − 2·Beschnitt: weicht höchstens 0,5 pt (0,18 mm) vom Nennmaß ab, der Beschnitt bleibt ringsum gleich.
 const PT = 72 / 25.4 // pt je mm
-export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buffer> {
+export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<{ pdf: Buffer; warning?: string }> {
   const { w, h } = sizeOf(deck)
   const a4 = isA4({ w, h }) // A4 hoch oder quer; die Visitenkarte druckt in ihrer eigenen Größe
   if (opts.size && !a4) throw new Error(`Druckformat ${opts.size.toUpperCase()} geht nur bei A4-Decks (hoch oder quer); dieses Deck ist ${w}×${h} px. Ohne Format wird es in seiner eigenen Größe gedruckt.`)
@@ -147,7 +147,7 @@ export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buf
     return setPrintBoxes(pdf, bleed)
   })
   // CMYK außerhalb von serial(): gs braucht die Render-Fenster nicht und hielte sonst das Rendern anderer Folien auf
-  return opts.cmyk ? rgb.then((pdf) => toPdfX4(pdf, join(app.getAppPath(), 'assets/icc/FOGRA39L_coated.icc'))) : rgb
+  return opts.cmyk ? rgb.then((pdf) => toPdfX4(pdf, join(app.getAppPath(), 'assets/icc/FOGRA39L_coated.icc'))) : rgb.then((pdf) => ({ pdf }))
 }
 
 export function renderOverview(deck: Deck): Promise<Buffer> {

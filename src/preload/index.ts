@@ -102,7 +102,7 @@ const api = {
   jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean; where?: string }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
   /** alle erzeugten Dateien (bei 'clips' mehrere) */
-  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
+  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips', print?: PrintOptions): Promise<string[] & { warnings?: string[] }> => invoke('deck:export', format, print),
   /** Fortschritt eines Video-Exports in % */
   onExportProgress(cb: (pct: number) => void): () => void {
     const h = (_: unknown, pct: number) => cb(pct)

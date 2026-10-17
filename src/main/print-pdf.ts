@@ -2,7 +2,7 @@
 // Erst ab 10.05 schreibt pdfwrite PDF/X-4 mit Transparenz (Chromium-PDFs haben Alpha); PDF/X-3 würde rastern.
 // TrimBox/BleedBox aus setPrintBoxes übernimmt gs unverändert. Electron-frei, Selbsttest scripts/check-print.ts.
 import { execFile } from 'node:child_process'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -35,8 +35,31 @@ const pdfxDef = (icc: string) => `%!
 [{Catalog} <</OutputIntents [ {OutputIntent_PDFX} ]>> /PUT pdfmark
 `
 
-/** RGB-Druck-PDF → PDF/X-4 in CMYK. icc = Pfad zu FOGRA39L_coated.icc; er darf im asar liegen, gs liest nur die Kopie im Job-Ordner. */
-export async function toPdfX4(pdf: Buffer, icc: string): Promise<Buffer> {
+/** Gesamtfarbauftrag (C+M+Y+K in %) einer PAM-Seite aus gs -sDEVICE=pamcmyk32: 99,9-%-Perzentil, damit einzelne Kantenpixel nicht zählen. */
+export function tacOfPam(pam: Buffer): number {
+  const end = pam.indexOf('ENDHDR\n')
+  if (end < 0) throw new Error('PAM ohne ENDHDR')
+  const head = pam.subarray(0, end).toString('latin1'), num = (k: string) => Number(new RegExp(`${k} (\\d+)`).exec(head)?.[1])
+  const n = num('WIDTH') * num('HEIGHT')
+  if (num('DEPTH') !== 4 || !n) throw new Error('PAM ist kein CMYK')
+  const px = pam.subarray(end + 7), hist = new Uint32Array(4 * 255 + 1)
+  if (px.length < n * 4) throw new Error('PAM abgeschnitten')
+  for (let i = 0; i < n * 4; i += 4) hist[px[i] + px[i + 1] + px[i + 2] + px[i + 3]]++
+  let s = 0
+  for (let acc = 0; s < hist.length - 1 && (acc += hist[s]) < n * 0.999; s++);
+  return Math.round((s / 255) * 100)
+}
+
+/** Warnung für Seiten über 300 % Gesamtfarbauftrag (übliche Grenze der Druckereien); tac[i] = Seite i+1. */
+export function tacWarning(tac: number[]): string | undefined {
+  const over = tac.map((t, i) => [i + 1, t]).filter(([, t]) => t > 300)
+  if (!over.length) return undefined
+  return `Gesamtfarbauftrag über 300 %: ${over.map(([p, t]) => `Seite ${p} (${t} %)`).join(', ')}. Tiefes Schwarz aus Fotos oder Farbflächen dunkler Themes; Druckerei fragen oder hellere Flächen.`
+}
+
+/** RGB-Druck-PDF → PDF/X-4 in CMYK. icc = Pfad zu FOGRA39L_coated.icc; er darf im asar liegen, gs liest nur die Kopie im Job-Ordner.
+ *  warning = Seiten mit zu hohem Gesamtfarbauftrag (tacWarning). */
+export async function toPdfX4(pdf: Buffer, icc: string): Promise<{ pdf: Buffer; warning?: string }> {
   const version = await exec('gs', ['--version'], { timeout: 10_000 }).then((r) => r.stdout, () => undefined)
   const bad = gsVersionError(version)
   if (bad) throw new Error(bad)
@@ -52,7 +75,15 @@ export async function toPdfX4(pdf: Buffer, icc: string): Promise<Buffer> {
         const why = e.killed ? 'nach 10 Minuten abgebrochen' : `${e.stderr ?? ''}\n${e.stdout ?? ''}`.trim().slice(-1500) || e.message
         throw new Error(`Ghostscript konnte das Druck-PDF nicht nach CMYK wandeln: ${why}`)
       })
-    return await readFile(at('out.pdf'))
+    // Messung bei 50 dpi reicht für Flächen; scheitert sie, bleibt das PDF gültig, nur ohne Warnung
+    const warning = await exec('gs', ['-q', '-dNOPAUSE', '-dBATCH', '-dSAFER', `--permit-file-read=${job}/`, '-sDEVICE=pamcmyk32', '-r50', `-o${at('page-%03d.pam')}`, at('out.pdf')], { timeout: 300_000 })
+      .then(async () => {
+        const tac: number[] = []
+        for (const f of (await readdir(job)).filter((f) => f.endsWith('.pam')).sort()) tac.push(tacOfPam(await readFile(at(f)))) // nacheinander: Plakate sind groß
+        return tacWarning(tac)
+      })
+      .catch((e) => { console.warn('Gesamtfarbauftrag nicht gemessen:', e); return undefined })
+    return { pdf: await readFile(at('out.pdf')), warning }
   } finally {
     await rm(job, { recursive: true, force: true })
   }

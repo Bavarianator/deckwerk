@@ -281,7 +281,7 @@ export default function App() {
       try {
         const files = await api.exportDeck(format, print)
         const first = files[0] ?? ''
-        setStatus({ text: format === 'clips' && files.length > 1 ? `${files.length} Clips exportiert: ${first.replace(/\/[^/]*$/, '')}` : `Exportiert: ${first}` })
+        setStatus({ text: format === 'clips' && files.length > 1 ? `${files.length} Clips exportiert: ${first.replace(/\/[^/]*$/, '')}` : [`Exportiert: ${first}`, ...(files.warnings ?? [])].join(' ') })
       } finally { off?.(); if (video) videoBusy.current = false }
     }),
     onSeries: () => guard(async () => {

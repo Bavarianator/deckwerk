@@ -53,7 +53,7 @@ chmodSync(join(dir, 'gs'), 0o755)
 
   const bleed = (3 * 72) / 25.4
   const out = join(dir, 'druck-x4.pdf')
-  writeFileSync(out, await toPdfX4(setPrintBoxes(Buffer.from(src, 'latin1'), bleed), ICC))
+  writeFileSync(out, (await toPdfX4(setPrintBoxes(Buffer.from(src, 'latin1'), bleed), ICC)).pdf)
   execFileSync('qpdf', ['--qdf', '--object-streams=disable', out, join(dir, 'qdf.pdf')])
   const q = readFileSync(join(dir, 'qdf.pdf'), 'latin1')
   assert.match(q, /\/GTS_PDFXVersion \(PDF\/X-4\)/)

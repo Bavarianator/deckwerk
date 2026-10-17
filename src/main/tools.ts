@@ -960,12 +960,16 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         // ein Ausstieg des Handys (phoneFault) gilt nur für den laufenden Export, nicht für einen neuen: dessen Start setzt den Grund erst zurück
         const where = video ? await ctx.engine.video?.device?.(jobs.has(key) ? 'export' : undefined).catch(() => undefined) : undefined
         const r = await job(key, async (onProgress) => {
-          const out: string[] = []
-          for (const [k, d] of decks.entries()) out.push(...(await ctx.engine.exportDeck(d, i.format, ctx.outDir, print, (p) => onProgress(Math.floor(((k + p / 100) / decks.length) * 100)))))
-          return out
+          const out: string[] = [], warnings: string[] = []
+          for (const [k, d] of decks.entries()) {
+            const files = await ctx.engine.exportDeck(d, i.format, ctx.outDir, print, (p) => onProgress(Math.floor(((k + p / 100) / decks.length) * 100)))
+            out.push(...files)
+            warnings.push(...(files.warnings ?? []))
+          }
+          return { files: out, warnings }
         }, where)
         if (!('value' in r)) return { text: [stillRunning('Export', r.pct), where && `Export rechnet: ${where} (scheitert das Handy, rechnet der PC weiter)`].filter(Boolean).join('\n') }
-        const notes: string[] = []
+        const notes = [...r.value.warnings]
         if (where) notes.push(`Gerechnet: ${(await ctx.engine.video?.device?.('export').catch(() => undefined)) ?? where}`) // nach dem Export neu: ein Ausstieg des Handys steht mit Grund da
         if (i.format === 'mp4') { // wie xf/fades in export-video.ts: XFADE außer color überblendet; color und Zwischentitel ohne Überblendung über Schwarz; sonst hart
           const shown = { ...deck, slides: visibleSlides(deck) }, still = (k: number) => shown.slides[k].layout !== 'clip' || shown.slides[k - 1].layout !== 'clip'
@@ -983,7 +987,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           notes.push(`Neben jeder MP4: Cover (.jpg${cs.some((c) => c.cover == null) ? ', ohne cover aus der Mitte des ersten Ausschnitts' : ''})${cs.some((c) => c.post?.trim()) ? ' und Post-Text (.txt) bei Shorts mit post' : ''}`)
         if (i.format === 'mp4' && cs.some((c) => c.cover != null || c.post?.trim()))
           notes.push('Neben der MP4: Cover (.jpg) und Post-Text (.txt, mit post) aus der ersten Clip-Folie mit cover/post')
-        return { text: [`Exportiert (${i.format}):`, ...r.value, ...notes].join('\n') }
+        return { text: [`Exportiert (${i.format}):`, ...r.value.files, ...notes].join('\n') }
       },
     }),
     tool({
