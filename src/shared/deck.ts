@@ -1,3 +1,4 @@
+import type { Episode } from './podcast'
 // pan, pop, words: Canva-Seitenanimationen (Schwenken, Pop, Wort für Wort)
 // photo: Canva „Foto-Zoom“ – randlose Fotos zoomen langsam, Text blendet ein
 export const BUILDS = ['none', 'fade', 'list', 'stagger', 'wipe', 'zoom-kpi', 'pan', 'pop', 'words', 'photo'] as const
@@ -253,6 +254,7 @@ export interface Deck {
   style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
   music?: { src: string; volume?: number; credit?: string } // Hintergrundmusik im Video-Export (mp4): asset://-Pfad, volume 0–1 (Standard 0,25), credit = Nachweis (CC-BY)
+  podcast?: Episode // Podcast-Schnitt (shared/podcast.ts): Spuren, Schnitte, Soundeffekte, Kapitel; Titel und deck.music gelten mit
   slides: Slide[]
 }
 // Folien, die präsentiert und exportiert werden (PDF, PNG, Word, Handout); ausgeblendete fehlen
