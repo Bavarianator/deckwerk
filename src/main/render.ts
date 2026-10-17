@@ -42,6 +42,9 @@ function host(mode: 'render' | 'print' | 'overview' | 'film', zoom = ZOOM): Prom
   return p
 }
 
+/** Legt den Render-Host an: im MCP-Prozess darf ein kurzlebiges Fenster (capture.ts) nicht das letzte sein, sonst beendet window-all-closed die App */
+export const warm = () => host('render').then(() => {})
+
 // One job at a time per process: the host windows hold a single slide state.
 let queue: Promise<unknown> = Promise.resolve()
 function serial<T>(job: () => Promise<T>): Promise<T> {

@@ -26,8 +26,8 @@ const FADE = 0.4 // Übergang aus/in Schwarz (s)
 // hinaus, die Mitte der Blende liegt auf der alten Naht, Länge und Untertitel bleiben gleich. Wo das nicht geht (Gruppengrenze, Bildwechsel, Videoende): Tonblende AFADE.
 const AFADE = 0.08
 // Alle Zwischenstände eines Exports mit denselben Video-Parametern, sonst passt -c:v copy beim Verbinden nicht
-const video = (preset: string) => ['-c:v', 'libx264', '-preset', preset, '-profile:v', 'high', '-crf', '20', '-pix_fmt', 'yuv420p', '-r', '30']
-const PCM = ['-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2'] // AAC in Zwischenständen verschöbe den Ton an jeder concat-Naht (Priming: Lücke oder Versatz)
+export const video = (preset: string) => ['-c:v', 'libx264', '-preset', preset, '-profile:v', 'high', '-crf', '20', '-pix_fmt', 'yuv420p', '-r', '30']
+export const PCM = ['-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2'] // AAC in Zwischenständen verschöbe den Ton an jeder concat-Naht (Priming: Lücke oder Versatz)
 const AUDIO = ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000']
 const FAST = ['-movflags', '+faststart']
 // Lautheit in zwei Durchgängen: messen, dann mit den Messwerten linear anwenden (exakt −14 LUFS, kein Pumpen); ohne Messung dynamisch in einem Durchgang.
@@ -396,7 +396,7 @@ export async function encodeClip(job: ClipJob, out: string, dir: string, onProgr
 }
 
 // Head-Schrift des Themes als TTF (Premium- oder eigene Schrift), sonst Archivo Bold aus dem App-Paket. Buffer statt Pfad: im asar kann ffmpeg nicht lesen.
-async function subFont(deck: Deck): Promise<SubFont> {
+export async function subFont(deck: Deck): Promise<SubFont> {
   const head = resolveTheme(deck.theme).head
   const f = (await import('./export-pptx')).fontsOf(deck).find((x) => x.family === head.pptx)
   if (f) return { name: f.family, files: [f.regular, ...(f.bold ? [f.bold] : [])], bold: !!f.bold }
@@ -405,7 +405,7 @@ async function subFont(deck: Deck): Promise<SubFont> {
 }
 
 // asset://local/<pfad> oder absoluter Pfad; auf einem anderen Gerät auf den lokalen Deckwerk-Ordner umleiten
-function videoPath(src: string, slide: number, field = 'video') {
+export function videoPath(src: string, slide: number, field = 'video') {
   const p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src
   if (!isAbsolute(p)) throw new Error(`Folie ${slide}: „${field}“ muss ein asset://-Pfad oder ein absoluter Dateipfad sein.`)
   if (!MEDIA_EXT.test(p)) throw new Error(`Folie ${slide}: „${field}“ ist keine Mediendatei (${basename(p)}).`)

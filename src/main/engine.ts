@@ -5,7 +5,8 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 import JSZip from 'jszip'
-import { MEDIA_EXT, formatSuffix, sizeOf, visibleSlides, type Deck, type Measured } from '../shared/deck'
+import { MEDIA_EXT, VIDEO_FILE, formatSuffix, sizeOf, visibleSlides, type Deck, type FilmSettings, type Measured, type Slide } from '../shared/deck'
+import { voiceChunks } from '../shared/film'
 import { handout } from '../shared/handout'
 import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
@@ -15,10 +16,11 @@ import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
 import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
-import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
+import { renderFilm, renderOverview, renderPdf, renderPrintPdf, renderSlide, warm, type Rendered } from './render'
 import { phoneDevice, phoneMarker } from './phone'
 import { PARAKEET_LANGS, asr, asrModelOf, diarize, tag, type AsrModel } from './sherpa'
 import { localAsset } from './sync'
+import { synthesize } from './voice'
 import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
 
 // asset://local/<pfad> oder absoluter Pfad → lokale Datei, wie videoPath in export-video.ts; null = keine Mediendatei
@@ -243,6 +245,10 @@ export function createEngine(): Engine {
     return {}
   }
 
+  // Sprechertext einer Szene (Feature Animation) → WAV + Zeitplan; Cache im Punktordner assets/.voice (nicht gesynct)
+  const voiceOf = (film: FilmSettings | undefined, s: Slide) => (voiceChunks(s.voice ?? '').flat().length // nur „[klick]“: Takte ohne Stimme
+    ? synthesize(s.voice!, { voice: film?.voice ?? 'de', speed: film?.speed, models, cacheDir: join(home, 'assets', '.voice') }) : Promise.resolve(undefined))
+
   return {
     measure,
     async renderPng(deck, indices, width = 1024) {
@@ -253,6 +259,30 @@ export function createEngine(): Engine {
         out.push(nativeImage.createFromBuffer(r.png!).resize({ width, quality: 'best' }).toPNG())
       }
       return out
+    },
+    // Vorschau-Frames einer Szene: dieselbe Zeitachse wie der Film-Export (Stimme echt synthetisiert), Zeiten auf die Szenenlänge geklemmt.
+    // Wie im Export nur sichtbare Folien (Überblendung davor hängt an der Nachbarszene); eine ausgeblendete Folie für sich im vollen Deck
+    async renderFrames(full, i, times, width = 1024) {
+      const s = full.slides[i]
+      if (!s) throw new Error(`Folie ${i + 1} gibt es nicht, das Deck hat ${full.slides.length} Folien.`)
+      const deck = s.hidden ? full : { ...full, slides: visibleSlides(full) }, index = deck.slides.indexOf(s)
+      const [{ planScene }, v] = await Promise.all([import('./export-film'), voiceOf(deck.film, s)])
+      const out: { t: number; png: Buffer }[] = []
+      await renderFilm(deck, index, { width, plan: (scene) => {
+        const p = planScene(deck, index, scene, v?.timing)
+        return { beats: p.beats, times: times.map((t) => Math.min(p.dur, Math.max(0, t))) }
+      } }, (t, img) => void out.push({ t, png: img.toPNG() }))
+      return out
+    },
+    async capturePage(url, o = {}) {
+      await warm() // Render-Host zuerst: schließt capture.ts das einzige Fenster, beendet window-all-closed den MCP-Prozess
+      return (await import('./capture')).capturePage(url, { ...o, outDir: join(home, 'assets') })
+    },
+    async screenZooms(file) {
+      const f = mediaFile(file)
+      if (!f || !VIDEO_FILE.test(f)) throw new Error(`video "${file}": asset://-Pfad oder absoluten Pfad einer Videodatei angeben.`)
+      if (!existsSync(f)) throw new Error(`Video nicht gefunden: ${f}`)
+      return (await import('./screen-activity')).screenZooms(f)
     },
     async renderOverview(deck) {
       const png = await renderOverview(deck)
@@ -286,6 +316,10 @@ export function createEngine(): Engine {
         const report = (p: number) => { entry.pct = p; entry.listeners.forEach((l) => l(p)) }
         entry.done = (async () => {
           const music = musicOf(deck), t = transcriptsOf(deck)
+          if (all.film) { // Animation: Szenen Frame für Frame (export-film.ts), ohne Clip-Vorbereitung und Handy
+            if (format === 'clips') throw new Error('Animationen exportieren als ein Video: Format mp4.')
+            return (await import('./export-film')).exportFilm(deck, base, { voiceOf: (s) => voiceOf(all.film, s), ...music, onProgress: report })
+          }
           // Handy-Option: die Clip-Gruppen rechnet das Handy (phone-ffmpeg.ts), Standbilder und Endschritt der PC
           const run = async (ready: Deck, pre: number) => {
             const d = await phoneNow(), m = await import('./export-video')
