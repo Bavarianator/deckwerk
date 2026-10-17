@@ -2,6 +2,7 @@ import { wcagContrast } from 'culori'
 import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl } from './deck'
 import { FORMATS, itemClicks, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { LAYOUTS, buildOf } from './layouts'
+import { lintFilm } from './film-lint'
 import { marginsOf, resolveTheme } from './themes'
 
 export interface Issue {
@@ -181,7 +182,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
 }
 
 export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
-  const out = deck.slides.flatMap((_, i) => lintSlide(deck, i, measured[i]))
+  const out = [...deck.slides.flatMap((_, i) => lintSlide(deck, i, measured[i])), ...(deck.film ? lintFilm(deck, measured) : [])]
   if (!PROFILE[profileOf(deck)].deckRules) return [...out, ...lintMotion(deck, measured)]
   const s = deck.slides
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: s[i].id, severity: 'warn', rule, message })

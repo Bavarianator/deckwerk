@@ -10,12 +10,14 @@ import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, VOICES, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type FilmSettings } from '../shared/deck'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
 import { FONT_CATALOG, type FontCat } from '../shared/font-catalog'
 import { lintClip, type ClipIssue } from '../shared/clip-lint'
+import { VOICE_SPEED } from '../shared/film'
+import { sceneEstimate } from '../shared/film-lint'
 import type { Issue } from '../shared/lint'
 import { axesOf, lintLooks, lintTheme, type ThemeIssue } from '../shared/theme-lint'
 import { highlights } from '../shared/highlights'
@@ -222,6 +224,27 @@ function checkFrame(layout: string, frame: FrameId | undefined, where: string) {
 
 const slideBg = z.object({ color: hexColor.optional(), image: z.string().optional().describe('asset://-Pfad'), gradient: z.tuple([hexColor, hexColor]).optional().describe('Verlauf von → nach'), angle: z.number().min(0).max(360).optional() }).describe('Eigener Folienhintergrund statt Theme')
 const withIds = (items: Item[] | undefined) => items?.map((it) => ({ ...it, id: it.id || newId() }))
+// Feature „Animation“ (Deck.film, src/shared/film.ts): Szenen-Felder je Folie und Film-Einstellungen des Decks
+const FILM_GUIDE = 'read_guide Modul film'
+const voiceText = z.string().max(1500).describe(`Nur Film-Decks: Sprechertext der Szene in ganzen Sätzen, höchstens ~40 Wörter; [klick] startet den nächsten Takt (Aufbau, Mauszeiger, Kamera) mit dem folgenden Satz. ${FILM_GUIDE}`)
+const sceneDuration = z.number().min(1).max(120).describe('Nur Film-Decks: Szenenlänge in s; weglassen = aus Stimme, Aufbau und Lesezeit (die Stimme wird nie abgeschnitten)')
+const share = z.number().min(0).max(1)
+const cameraMoves = z.array(z.object({
+  step: z.number().int().min(0).max(20).describe('Takt, mit dem die Kamera fährt (0 = Szenenbeginn)'),
+  box: z.tuple([share, share, z.number().min(0.1).max(1), z.number().min(0.1).max(1)]).refine(([x, y, w, h]) => x + w <= 1 + 1e-9 && y + h <= 1 + 1e-9, 'box: x + w und y + h höchstens 1')
+    .optional().describe('[x, y, w, h] als Anteile der Folie (0,0 = oben links): dieser Ausschnitt bleibt ganz sichtbar; weglassen = zurück zur ganzen Folie'),
+})).max(8).describe(`Nur Film-Decks: Kamerafahrt je Takt (0,8 s weich), sparsam: 1–2 Fahrten auf das, worüber die Stimme gerade spricht. ${FILM_GUIDE}`)
+const voiceId = z.enum(VOICES)
+const filmSpec = z.object({
+  voice: voiceId.optional().describe('Sprecherstimme, lokal erzeugt: de = Deutsch, en = Englisch; weglassen = ohne Stimme (Szenen laufen nach Aufbau und Lesezeit)'),
+  speed: z.number().optional().describe(`Sprechtempo ${VOICE_SPEED.min}–${VOICE_SPEED.max}, 1 = normal`),
+  captions: z.enum(['satz', 'aus']).optional().describe('satz = Untertitel ins Video eingebrannt, aus = nur .srt daneben (Standard)'),
+})
+const FILM_HINT = `Film statt Präsentation (Live-Demo, Erklärvideo): jede sichtbare Folie wird eine Szene mit Aufbau, Sprecherstimme (voice je Folie), Kamera und Demo-Layouts code/screen; export_deck mp4 rendert sie. ${FILM_GUIDE}`
+// Film-Einstellungen ohne leere Werte; das Tempo geklemmt wie in der Stimme
+const filmOf = (f: { voice?: (typeof VOICES)[number] | null; speed?: number; captions?: 'satz' | 'aus' }): FilmSettings => ({
+  ...(f.voice && { voice: f.voice }), ...(f.speed !== undefined && { speed: Math.min(VOICE_SPEED.max, Math.max(VOICE_SPEED.min, f.speed)) }), ...(f.captions && { captions: f.captions }),
+})
 const slideInput = z.object({
   layout: layoutId,
   variant: z.string().optional(),
@@ -234,6 +257,9 @@ const slideInput = z.object({
   notes: z.string().max(1500).optional().describe('Speaker Notes'),
   items: z.array(itemSchema).max(60).optional().describe('Freie Elemente über dem Layout (px auf 1280×720). Nur für Layout blank oder wenn der Nutzer frei gestalten will.'),
   bg: slideBg.optional(),
+  voice: voiceText.optional(),
+  duration: sceneDuration.optional(),
+  camera: cameraMoves.optional(),
 })
 
 // ponytail: PascalCase → kebab-case reicht für lucide-Namen (AArrowDown → a-arrow-down, Grid2x2 → grid-2x2)
@@ -250,7 +276,7 @@ export function newSlideId(deck: Deck): string {
 }
 
 // Feinsatz rekursiv über alle Strings; Quellen, Links und Symbolnamen bleiben unberührt
-const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus', 'video'])
+const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus', 'video', 'code']) // code: Quelltext („"“ → „„“ bräche ihn)
 const typesetDeep = (v: unknown, key?: string): unknown =>
   typeof v === 'string' ? (key && NO_TYPESET.has(key) ? v : typeset(v))
     : Array.isArray(v) ? v.map((x) => typesetDeep(x, key))
@@ -354,10 +380,17 @@ async function report(ctx: ToolContext, deck: Deck, indices: number[]): Promise<
       const errors = own.filter((x) => x.severity === 'error').length
       const over = m && !m.fit.ok ? ', Überlauf: ' + m.fit.overflow.map((o) => `${o.slot} +${Math.round(o.overPx)}px (${o.kind})`).join(', ') : ''
       const fit = clip ? clip.summary + over : m ? `Autofit head ${m.fit.head}/body ${m.fit.body}${over}` : 'nicht gemessen'
-      const head = `Folie ${i + 1} (${s.id}, ${s.layout})${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · ${fit}${m ? ` · ${motionOf(deck, i, m)}` : ''}`
+      const head = `Folie ${i + 1} (${s.id}, ${s.layout})${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · ${fit}${m ? ` · ${motionOf(deck, i, m)}` : ''}${deck.film ? `\n  ${sceneLine(deck, i, m)}` : ''}`
       return own.length ? `${head}\n${fmtIssues(own)}` : head
     })
     .join('\n')
+}
+
+// Zeitachse einer Szene in Worten (Film-Decks), geschätzt: die Stimme ist beim Bauen noch nicht synthetisiert
+function sceneLine(deck: Deck, i: number, m?: Measured): string {
+  if (deck.slides[i].hidden) return 'keine Szene (ausgeblendet)'
+  const e = sceneEstimate(deck, i, m), k = deck.slides.slice(0, i + 1).filter((s) => !s.hidden).length
+  return `Szene ${k}: ~${sec(e.dur)} s · ${e.voice ? `Stimme ~${sec(e.voice.total)} s` : 'ohne Stimme'} · ${e.beats} ${e.beats === 1 ? 'Takt' : 'Takte'}`
 }
 
 // Ablauf beim Präsentieren in Worten, damit die KI Animationen beurteilen kann, ohne sie zu sehen
@@ -498,7 +531,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
   return [
     tool({
       name: 'create_deck',
-      description: 'Neues Deck anlegen (ersetzt ein vorhandenes). Briefing, Theme oder Brand-Kit, Titel.',
+      description: 'Neues Deck anlegen (ersetzt ein vorhandenes). Briefing, Theme oder Brand-Kit, Titel; mit film ein Film (Erklärvideo, Live-Demo) statt einer Präsentation.',
       inputSchema: z.object({
         title: z.string().max(80),
         brief: z.object({ audience: z.string().max(120), goal: z.string().max(200), tone: z.string().max(60) }).optional(),
@@ -511,19 +544,20 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         style: deckStyle.optional(),
         format: format.optional().describe('Folienformat; weglassen = 16:9-Präsentation'),
         tune: tuneSpec.optional(),
+        film: filmSpec.optional().describe(FILM_HINT),
         override,
       }),
       async run(i) {
-        const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' }, tune: mergeTune(undefined, i.tune) }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
+        const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' }, tune: mergeTune(undefined, i.tune) }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }), ...(i.film && { film: filmOf(i.film) }) }
         const hints = deck.theme.custom ? checkTheme(lintFor({ ...deck.theme.custom, ...deck.theme.tune }, deck.theme.brand, i.override), 'customTheme') + shadowed(i.customTheme, deck.theme.tune) : ''
         const fonts = await put(deck, true)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
-        return { text: `${hints}${fonts}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `${hints}${fonts}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.film ? `, Film ${deck.film.voice ? `mit Stimme ${deck.film.voice}` : 'ohne Stimme'}` : ''}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
       name: 'update_deck',
-      description: 'Titel, Theme, Feinschliff (tune), Brand-Kit, Übergang, Modus, Briefing oder Hintergrundmusik (Video) des Decks ändern.',
+      description: 'Titel, Theme, Feinschliff (tune), Brand-Kit, Übergang, Modus, Briefing, Hintergrundmusik (Video) oder Film-Einstellungen (film) des Decks ändern.',
       inputSchema: z.object({
         title: z.string().max(80).optional(),
         brief: z.object({ audience: z.string().optional(), goal: z.string().optional(), tone: z.string().optional() }).optional(),
@@ -543,6 +577,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           credit: z.string().max(300).optional().describe('Nachweis aus find_music (bei CC BY Pflicht), zusätzlich in die Notes der letzten Folie'),
         }).nullable().optional().describe('Hintergrundmusik im Video-Export (mp4, clips), leise unter allem, weicht der Sprache automatisch; nur auf Wunsch oder bei Kompilationen. null = entfernen'),
         tune: tuneSpec.optional(),
+        film: filmSpec.extend({ voice: voiceId.nullable().optional().describe('de, en; null = ohne Stimme') }).nullable().optional()
+          .describe(`Film-Einstellungen setzen oder einzelne ändern (Rest bleibt); null = kein Film mehr (wieder Präsentation). ${FILM_GUIDE}`),
         override,
       }),
       async run(i) {
@@ -552,6 +588,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         // Lint-Stand vor dem Aufruf: alte Fehler (Decks von vor dem Theme-Lint) blockieren keine Korrekturen und keinen Feinschliff;
         // ein ganz neuer Entwurf erbt keine Altlast
         const before = (i.customTheme || i.tune) && deck.theme.custom && !fresh ? lintFor({ ...deck.theme.custom, ...deck.theme.tune }, deck.theme.brand) : []
+        if (i.film === null) delete deck.film
+        else if (i.film) deck.film = filmOf({ ...deck.film, ...i.film })
         if (i.music === null) delete deck.music
         else if (i.music) deck.music = { ...i.music, src: audioSrc(i.music.src) }
         if (i.title) deck.title = typeset(i.title)
@@ -578,7 +616,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const fonts = await put(deck)
         const look = i.theme || i.customTheme || i.tune || i.brand !== undefined || i.shuffle !== undefined || i.fonts !== undefined // Theme geändert → neue Vorschau
         return {
-          text: `${hints}${fonts}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: { ...deck.theme, fontFiles: undefined }, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt', music: deck.music })}${look ? `\n${PREVIEW_HINT}` : ''}`,
+          text: `${hints}${fonts}Deck aktualisiert: ${JSON.stringify({ title: deck.title, theme: { ...deck.theme, fontFiles: undefined }, transition: deck.transition, mode: deck.mode, style: deck.style ?? 'nicht gewählt', music: deck.music, film: deck.film })}${look ? `\n${PREVIEW_HINT}` : ''}`,
           images: look ? await themePreview(ctx, deck) : undefined,
         }
       },
@@ -594,6 +632,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const deck = needDeck(ctx)
         const fresh: Slide[] = i.slides.map((s, k) => ({
           id: '', layout: s.layout, variant: s.variant, build: s.build, transition: s.transition, tone: s.tone, decor: s.decor, frame: (checkFrame(s.layout, s.frame, `slides[${k}]`), s.frame), notes: s.notes && typeset(s.notes), items: withIds(s.items as Item[]), bg: s.bg,
+          voice: s.voice && typeset(s.voice), duration: s.duration, camera: s.camera,
           content: validateContent(s.layout, s.content, `slides[${k}]`),
         }))
         for (const s of fresh) { s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
@@ -606,7 +645,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'update_slide',
-      description: 'Eine Folie ändern: Inhalt (Patch, wird mit dem Bestand gemischt), Layout, Variante, Build, Notes, Ausblenden. Gibt Autofit und Lint zurück.',
+      description: 'Eine Folie ändern: Inhalt (Patch, wird mit dem Bestand gemischt), Layout, Variante, Build, Notes, Ausblenden, im Film Sprechertext, Dauer und Kamera. Gibt Autofit und Lint zurück.',
       inputSchema: z.object({
         id: z.string(),
         layout: layoutId.optional().describe('Layout wechseln; dann content vollständig mitgeben'),
@@ -621,6 +660,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         items: z.array(itemSchema).max(60).nullable().optional().describe('Ersetzt alle freien Elemente der Folie (vorhandene IDs mitgeben, um sie zu behalten); null = alle entfernen'),
         bg: slideBg.nullable().optional(),
         hidden: z.boolean().optional().describe('true = Folie ausblenden (fehlt beim Präsentieren und in PDF, PNG, Word, Handout; in PowerPoint versteckt), false = wieder einblenden'),
+        voice: voiceText.nullable().optional().describe('Nur Film-Decks: Sprechertext ersetzen, [klick] = nächster Takt; null = ohne Stimme'),
+        duration: sceneDuration.nullable().optional(),
+        camera: cameraMoves.nullable().optional(),
       }),
       async run(i) {
         const deck = needDeck(ctx)
@@ -641,6 +683,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.items !== undefined) s.items = withIds((i.items ?? undefined) as Item[] | undefined)
         if (i.bg !== undefined) s.bg = i.bg ?? undefined
         if (i.hidden !== undefined) s.hidden = i.hidden || undefined
+        if (i.voice !== undefined) s.voice = i.voice ? typeset(i.voice) : undefined
+        if (i.duration !== undefined) s.duration = i.duration ?? undefined
+        if (i.camera !== undefined) s.camera = i.camera ?? undefined
         const fonts = await put(deck)
         return { text: fonts + await report(ctx, deck, [idx]) }
       },
@@ -721,11 +766,22 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'render_slides',
-      description: 'PNG-Vorschau einzelner Folien (Standard 1024 px breit). Nur geänderte Folien anfordern, Bilder kosten Tokens.',
-      inputSchema: z.object({ ids: z.array(z.string()).min(1).max(8), width: z.number().int().min(320).max(1280).default(1024) }),
+      description: 'PNG-Vorschau einzelner Folien (Standard 1024 px breit). Nur geänderte Folien anfordern, Bilder kosten Tokens. Film-Decks: mit at (Sekunden ab Szenenbeginn) Frames der Zeitachse wie im MP4 (Takte, Stimme, Kamera, Mauszeiger, Tippen), um Timing und Kamera zu prüfen; läuft gerade ein Video-Export, warten die Frames auf ihn (eine Render-Warteschlange).',
+      inputSchema: z.object({
+        ids: z.array(z.string()).min(1).max(8), width: z.number().int().min(320).max(1280).default(1024),
+        at: z.array(z.number().min(0).max(600)).min(1).max(6).optional().describe('Zeitpunkte in s ab Szenenbeginn, z. B. [0, 3, 7]: je Zeitpunkt ein Frame, hinter dem Ende das letzte; mit at höchstens 2 ids'),
+      }),
       async run(i) {
         const deck = needDeck(ctx)
         const idx = i.ids.map((id) => indexOf(deck, id))
+        if (i.at) {
+          if (idx.length > 2) throw new Error('Mit at höchstens 2 ids (je Zeitpunkt ein Bild).')
+          if (!ctx.engine.renderFrames) throw new Error('Frames der Zeitachse gibt es nur in der Deckwerk-App und im MCP-Server.')
+          const lines: string[] = [], images: Buffer[] = []
+          for (const k of idx)
+            for (const f of await ctx.engine.renderFrames(deck, k, i.at, i.width)) { lines.push(`Folie ${k + 1} (${deck.slides[k].id}) bei ${sec(f.t)} s`); images.push(f.png) }
+          return { text: lines.join('\n'), images }
+        }
         const bufs = await ctx.engine.renderPng(deck, idx, i.width)
         return { text: idx.map((k) => `Folie ${k + 1} (${deck.slides[k].id}, ${deck.slides[k].layout})${hid(deck.slides[k])}`).join('\n'), images: bufs }
       },
@@ -873,7 +929,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien-transition fade, dissolve, push, slide, wipe, circle, zoom, split, cover, stack = echte Überblendung zwischen zwei Folien (auch Clip ↔ Zwischentitel), color = über Schwarz, none und morph = harter Schnitt zwischen zwei Clip-Folien (Zwischentitel blenden dann über Schwarz); Video-Decks mit transition none anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips (je Clip eine clip-Folie, fade oder dissolve); Schnitte innerhalb eines Clips blenden automatisch über: Jump-Cuts 0,13 s, ein neuer Moment (Sprung ab 20 s in der Quelle) 0,5 s, part.transition ändert das je Schnitt). Effekte je Ausschnitt (sparsam): speed (Zeitlupe/Zeitraffer, Ton ohne Tonhöhenänderung, Untertitel laufen mit), volume (Originalton, 0 = stumm), music (Musikpegel mit weichen Rampen, nur mit deck.music); zoom (Punch-in 1.1–1.2 an der Pointe), freeze (Standbild nur am Satzende); overlays = Text, Bauchbinde (einmal je Person beim ersten Auftritt), Titel, Zahl, Liste, Zitat, Markierung, Abspann (letzte 8 s), Bild, Video oder ausgeblendete Folie (Bild-in-Bild oder pos voll als B-Roll, 2–6 s) oder Verpixeln, höchstens eine zur Zeit; look (einer je Video, auto für flaue Handy-Aufnahmen), stabil (nur bei Verwackeln), captionPos. Keine Sticker oder Emojis. Untertitel kommen zusätzlich als .srt neben das MP4. Ist ein Android-Handy per USB-Debugging verbunden, rechnet es die Clips automatisch etwa fünfmal so schnell mit, der PC ist nur der Rückfall. fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>.',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien-transition fade, dissolve, push, slide, wipe, circle, zoom, split, cover, stack = echte Überblendung zwischen zwei Folien (auch Clip ↔ Zwischentitel), color = über Schwarz, none und morph = harter Schnitt zwischen zwei Clip-Folien (Zwischentitel blenden dann über Schwarz); Video-Decks mit transition none anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips (je Clip eine clip-Folie, fade oder dissolve); Schnitte innerhalb eines Clips blenden automatisch über: Jump-Cuts 0,13 s, ein neuer Moment (Sprung ab 20 s in der Quelle) 0,5 s, part.transition ändert das je Schnitt). Effekte je Ausschnitt (sparsam): speed (Zeitlupe/Zeitraffer, Ton ohne Tonhöhenänderung, Untertitel laufen mit), volume (Originalton, 0 = stumm), music (Musikpegel mit weichen Rampen, nur mit deck.music); zoom (Punch-in 1.1–1.2 an der Pointe), freeze (Standbild nur am Satzende); overlays = Text, Bauchbinde (einmal je Person beim ersten Auftritt), Titel, Zahl, Liste, Zitat, Markierung, Abspann (letzte 8 s), Bild, Video oder ausgeblendete Folie (Bild-in-Bild oder pos voll als B-Roll, 2–6 s) oder Verpixeln, höchstens eine zur Zeit; look (einer je Video, auto für flaue Handy-Aufnahmen), stabil (nur bei Verwackeln), captionPos. Keine Sticker oder Emojis. Untertitel kommen zusätzlich als .srt neben das MP4. Ist ein Android-Handy per USB-Debugging verbunden, rechnet es die Clips automatisch etwa fünfmal so schnell mit, der PC ist nur der Rückfall. fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>. Film-Decks (create_deck film): mp4 rendert jede sichtbare Folie als animierte Szene mit Stimme, Kamera und Untertiteln (film.captions); clips gibt es dort nicht.',
       inputSchema: z.object({
         format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks'),
@@ -1066,6 +1122,41 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const total = partsLength(c.parts) // Kachel k zeigt die Clipzeit (k + 0,5) · Länge / Anzahl, wie die Beschriftung im Bild
         const tiles = times.map((t, k) => `${k + 1}. ${(((k + 0.5) * total) / times.length).toFixed(1)} s = ${t.toFixed(1)} s`)
         return { text: [head, `Kontaktabzug 3×3, zeilenweise (Clipzeit = Quellzeit): ${tiles.join(', ')}`, CLIP_LOOK].join('\n'), images: [jpg] }
+      },
+    }),
+    tool({
+      name: 'capture_page',
+      description: `Website oder lokale Web-App (auch http://localhost:…) als Screenshot aufnehmen, für das Layout screen (Produkt-Demo, Erklärvideo). device handy = Mobil-Ansicht (dann screen frame handy). scroll = Stellen der Seite, je Stelle ein Bild. Nur Seiten, die der Nutzer zeigen will; keine Seiten mit Zugangsdaten. Rückgabe: asset://-Pfade für screen.image plus Vorschau. ${FILM_GUIDE}`,
+      inputSchema: z.object({
+        url: z.string().url().max(2000).describe('http(s)-Adresse der Seite'),
+        device: z.enum(['desktop', 'handy']).optional().describe('desktop = 1440×900 (Standard), handy = 390×844'),
+        scroll: z.array(share).min(1).max(12).optional().describe('Stellen 0..1 der Seitenhöhe (0 = oben, 1 = ganz unten), je Stelle ein Bild; weglassen = nur der obere Bildschirm'),
+      }),
+      async run(i) {
+        if (!ctx.engine.capturePage) throw new Error('Webseiten aufnehmen gibt es nur in der Deckwerk-App und im MCP-Server.')
+        const files = await ctx.engine.capturePage(i.url, { device: i.device, scroll: i.scroll })
+        const lines: string[] = [], images: Buffer[] = []
+        for (const file of files) {
+          const buf = readFileSync(file), d = dims(buf, file), src = assetUrl(file)
+          images.push(...(await preview(ctx, buf, src, d.w, d.h, 512)))
+          lines.push(`${src} — ${d.label}`)
+        }
+        return { text: [`${files.length} ${files.length === 1 ? 'Aufnahme' : 'Aufnahmen'} von ${i.url} (Reihenfolge wie die Vorschaubilder):`, ...lines, '',
+          `Weiter: Layout screen mit image = Pfad${i.device === 'handy' ? ', frame handy' : ', url = Adresse fürs Adressfeld'}; cursor-Ziele x/y als Anteile 0..1 des Bildes nach der Vorschau (0,0 = oben links), im Film fährt der Zeiger sie Takt für Takt an. ${FILM_GUIDE}`].join('\n'), images }
+      },
+    }),
+    tool({
+      name: 'screen_zooms',
+      readOnly: true,
+      description: `Zoom-Vorschläge für eine Bildschirmaufnahme (Layout screen mit video): wann und wo sich im Bild etwas tut (Klick, Eingabe, neuer Inhalt). Rückgabe: Liste für screen.zooms. Die Zeiten sind Sekunden in der Datei wie from/to, also unverändert übernehmen, auch wenn der Ausschnitt nicht bei 0 beginnt; nur Zooms zwischen from und to wirken. Ausdünnen: 2–4 an den wichtigen Stellen. ${FILM_GUIDE}`,
+      inputSchema: z.object({ video: videoInput }),
+      async run(i) {
+        if (!ctx.engine.screenZooms) throw new Error('Zoom-Vorschläge gibt es nur in der Deckwerk-App und im MCP-Server.')
+        const { file } = videoFile(ctx, i.video)
+        const r = await job(`zooms:${file}`, () => ctx.engine.screenZooms!(file))
+        if (!('value' in r)) return { text: stillRunning('Zoom-Suche', r.pct) }
+        if (!r.value.length) return { text: `In ${assetUrl(file)} gibt es keine deutliche Stelle für einen Zoom (kaum Bewegung oder nur Seitenwechsel). zooms weglassen oder nach video_frames selbst setzen.` }
+        return { text: `${r.value.length} ${r.value.length === 1 ? 'Zoom-Vorschlag' : 'Zoom-Vorschläge'} für ${assetUrl(file)} (start/end in Sekunden der Datei, x/y Zielpunkt 0..1, scale Vergrößerung):\n${JSON.stringify(r.value)}\nIn screen.zooms übernehmen (Zeiten unverändert, nur die zwischen from und to); prüfen mit render_slides at.` }
       },
     }),
     tool({
