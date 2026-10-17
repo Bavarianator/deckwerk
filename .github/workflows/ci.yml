@@ -39,7 +39,7 @@ jobs:
           $E scripts/check-free-text.ts --format=cjs --external:electron --loader:.css=empty --loader:.md=text --jsx=automatic --outfile=out/check-free-text.cjs && node out/check-free-text.cjs
           $E scripts/check-print.ts --outfile=out/check-print.cjs && node out/check-print.cjs
           for c in check-xlsx check-xmeml check-clients; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
-          for c in check-timeline check-timeline-edit check-timeline-convert check-scopes check-timeline-player check-timeline-drag check-layout-switch check-lint-panel check-video-tools check-theme-editor; do $E scripts/$c.ts --format=esm --loader:.css=empty --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
+          for c in check-timeline check-timeline-edit check-timeline-convert check-scopes check-timeline-player check-timeline-drag check-layout-switch check-lint-panel check-video-tools check-theme-editor check-color-wheel check-media check-mixer; do $E scripts/$c.ts --format=esm --loader:.css=empty --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           npm run check:theme-lint
       - name: Bildschirm und Chromium-Sandbox
         run: |
