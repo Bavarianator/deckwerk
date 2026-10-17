@@ -540,4 +540,7 @@ Das Layout `schnitt` (Pro) ist ein Mehrspur-Schnitt: eine Folie = eine Timeline 
 - Ausgabe (`deliver`): Standard 1080, 30 fps, h264, −14 LUFS. Lautheit nach Ziel: −14 Streaming und Social, −16 Podcast, −23 Rundfunk (EBU R128). ProRes/DNxHR nur für die Weiterverarbeitung im Schnittprogramm, 4K (2160) nur bei 4K-Material.
 - Untertitel: `subs_from_transcript` je Clip auf `v1` (vorher `transcribe_video` für `in`–`out`).
 
-**Grenzen:** Text-Einblendungen (`overlays`) erscheinen noch nicht im Bild, Untertitel nur als .srt; Bauchbinden und Titel deshalb nur auf Wunsch und mit Hinweis. Keine Blenden zwischen Clips, jeder Schnitt ist hart.
+- Blenden sparsam: harte Schnitte sind der Standard. `xfade` (s) am späteren Clip überblendet vom direkt anschließenden Vorgänger, mittig über dem Schnitt, 0,5–1 s, nur bei Zeit- oder Ortswechsel; beide Clips brauchen dafür Material über den Schnitt hinaus (Lint meldet fehlendes). `fade` [Anfang, Ende] in s blendet Bild und Ton ein bzw. aus: am Anfang und Ende des Videos 0,5–1 s, Musik am Ende 2–3 s.
+- Text-Einblendungen (`overlays`, Timeline-Sekunden) und Untertitel (`subs`) werden ins Bild gebrannt. Bauchbinde mit Name beim ersten Auftritt einer Person, sonst nur auf Wunsch; höchstens eine Einblendung gleichzeitig.
+
+**Grenzen:** Keine Keyframes für Lage und Größe (Bild-in-Bild steht fest), keine Effekte außer Farbe.

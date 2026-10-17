@@ -161,7 +161,7 @@ const VIDEO = /video|\bclips?\b|\bshorts?\b|\breels?\b|\b(live)?streams?\b|zusam
 const FOLIEN = /\bdecks?\b|\bfolien?\b|\bseiten?\b/ // spricht der Auftrag von Folien oder Seiten, ist er kein reiner Video-Auftrag
 const VIDEO_DECK: string[] = ['clip', 'section', 'statement', 'schnitt'] // Zwischentitel einer Kompilation, Pro-Timeline
 // Pro-Schnitt (Layout schnitt): Mehrspur, Bild-in-Bild, Farbe, Ausgabe. Nicht „Timeline“: so heißt auch das Zeitstrahl-Layout
-const SCHNITT = /mehrspur|videospur|tonspur|bild-in-bild|b-roll|farbkorrektur|color ?grading|prores|\b4k\b|\blufs\b/
+const SCHNITT = /mehrspur|videospur|tonspur|bild-in-bild|b-roll|farbkorrektur|color ?grading|prores|\b4k\b|\blufs\b|überblend|cross ?dissolve/
 const KINDS = {
   karte: /visitenkarte/,
   a4: /\ba4\b|druckerei|druckdatei|drucksache|\bdrucken\b|flyer|plakat|brief(?!ing)|angebot|kostenvoranschlag|infoblatt|one-pager|handzettel|lebenslauf|bewerbung|einladung|save the date|urkunde|zertifikat|bescheinigung|speisekarte|getränkekarte|mittagstisch/,

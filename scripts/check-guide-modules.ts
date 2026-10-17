@@ -58,6 +58,7 @@ assert.equal(vroute('Untertitel größer', { layoutsInDeck: ['clip', 'section'],
 assert.deepEqual(vroute('B-Roll über mein Video legen').modules, ['video', 'layout:clip', 'layout:section', 'layout:statement', 'timeline', 'layout:schnitt'])
 assert.deepEqual([vroute('Musik leiser', { layoutsInDeck: ['schnitt'], hasDeck: true }).video, vroute('Musik leiser', { layoutsInDeck: ['schnitt'], hasDeck: true }).modules.includes('layout:schnitt')], [true, true])
 assert.ok(!route('Folie mit Timeline der Meilensteine').has('timeline'))
+assert.ok(vroute('Weiche Überblendung zwischen den Szenen im Video').modules.includes('timeline'))
 r = route('Präsentation über unser Produkt mit eingebettetem Video')
 assert.ok(r.has('video') && r.has('layout:clip') && r.has('geruest-praesentation') && r.has('layout:cover'))
 assert.equal(vroute('Präsentation mit Video').video, undefined)
