@@ -438,7 +438,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const speed = typeof f.speed === 'number' && Number.isFinite(f.speed) ? Math.min(VOICE_SPEED.max, Math.max(VOICE_SPEED.min, f.speed)) : undefined
     const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
     try {
-      const r = await synthesize(text, { voice, speed, models: join(home, 'models'), cacheDir: join(home, 'assets', '.voice') })
+      const d = existsSync(phoneMarker(app.getPath('appData'))) ? null : await phoneDevice() // Handy spricht, wenn eingeschaltet und verbunden
+      const r = await synthesize(text, { voice, speed, models: join(home, 'models'), cacheDir: join(home, 'assets', '.voice'), phone: d ? { serial: d.serial } : undefined })
       return { url: assetUrl(r.wav), timing: r.timing }
     } catch (e) {
       throw new Error(`Die Stimme ließ sich nicht erzeugen: ${e instanceof Error ? e.message : String(e)}`)

@@ -245,9 +245,12 @@ export function createEngine(): Engine {
     return {}
   }
 
-  // Sprechertext einer Szene (Feature Animation) → WAV + Zeitplan; Cache im Punktordner assets/.voice (nicht gesynct)
-  const voiceOf = (film: FilmSettings | undefined, s: Slide) => (voiceChunks(s.voice ?? '').flat().length // nur „[klick]“: Takte ohne Stimme
-    ? synthesize(s.voice!, { voice: film?.voice ?? 'de', speed: film?.speed, models, cacheDir: join(home, 'assets', '.voice') }) : Promise.resolve(undefined))
+  // Sprechertext einer Szene (Feature Animation) → WAV + Zeitplan; Cache im Punktordner assets/.voice (nicht gesynct). Mit Handy spricht das Handy (Rückfall PC)
+  const voiceOf = async (film: FilmSettings | undefined, s: Slide) => {
+    if (!voiceChunks(s.voice ?? '').flat().length) return undefined // nur „[klick]“: Takte ohne Stimme
+    const d = await phoneNow()
+    return synthesize(s.voice!, { voice: film?.voice ?? 'de', speed: film?.speed, models, cacheDir: join(home, 'assets', '.voice'), phone: d ? { serial: d.serial } : undefined })
+  }
 
   return {
     measure,
