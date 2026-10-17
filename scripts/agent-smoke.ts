@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { assetUrl, buildTools, imageSettings, JOB_WAIT, jobList, lookTyp, recentLooks, webpSize, imageSize, type ToolDef } from '../src/main/tools'
 import type { Deck } from '../src/shared/deck'
 import { lintDeck } from '../src/shared/lint'
+import { LAYOUTS } from '../src/shared/layouts'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick, modelOf, pickAvailable } from '../src/shared/models'
 import { setClient } from '../src/main/clients'
@@ -34,7 +35,7 @@ const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts): Ersatz und Hinweis statt Download
 
-assert.equal(tools.length, 24)
+assert.equal(tools.length, 25)
 // laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
 for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -392,6 +393,19 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.match(mu.text, /\[warn\] clip-musik: Musik im Hintergrund \(10 s, u\. a\. bei 0:00\)[\s\S]*\nKein Kontaktabzug: Video nicht gefunden/); assert.doesNotMatch(mu.text, /Musik nicht geprüft/)
   await fails(go('check_clip', { slide: 'nope' }), /gibt es nicht/)
   assert.match((await go('lint_deck', {})).text, /^\d+ Fehler, \d+ Warnungen, \d+ Hinweise:[\s\S]*\[warn\] clip-laenge[\s\S]*\[hinweis\] clip-hook/)
+  // edit_timeline: split + grade → ein Clip mehr; Fehler nennt die Op und lässt die Folie unverändert; Untertitel aus dem Transkript in Timeline-Zeit
+  await go('create_deck', { title: 'Schnitt', brand: null })
+  await go('add_slides', { slides: [{ layout: 'schnitt', content: LAYOUTS.schnitt.samples.typ }] })
+  const ed = await go('edit_timeline', { slide: 1, ops: [{ op: 'split', clip: 'c1', t: 6 }, { op: 'set', clip: 'c2', patch: { grade: { temp: 0.5 } } }] })
+  assert.match(ed.text, /^Folie 1 \(s[0-9a-f]{4}, schnitt\): OK · Timeline 0:24 · Spuren: v1 \(Video, 3 Clips\), v2 \(Video, 1 Clip\), a1 \(Audio, 1 Clip\)/)
+  const tl = () => vd!.slides[0].content as { tracks: { clips: { id: string; src: string; grade?: unknown }[] }[]; subs?: unknown[] }
+  assert.deepEqual(tl().tracks[0].clips.find((c) => c.id === 'c2')!.grade, { temp: 0.5 })
+  await fails(go('edit_timeline', { slide: 1, ops: [{ op: 'lift', clip: 'c4' }, { op: 'split', clip: 'nope', t: 1 }] }), /^Op 2 \(split\): Clip nope nicht gefunden$/)
+  assert.equal(tl().tracks[2].clips.length, 1, 'Folie unverändert')
+  await fails(go('edit_timeline', { slide: 1, ops: [{ op: 'from_clips' }] }), /Op 1 \(from_clips\): keine sichtbaren clip-Folien/)
+  await go('edit_timeline', { slide: vd!.slides[0].id, ops: [{ op: 'set', clip: 'c3', patch: { src: file, in: 61, out: 67 } }, { op: 'subs_from_transcript', clip: 'c3' }, { op: 'deliver', lufs: -23 }] })
+  assert.equal(tl().tracks[1].clips[0].src, assetUrl(file))
+  assert.deepEqual(tl().subs, [{ start: 4.2, end: 9.8, text: 'Der Kern.' }])
 }
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)

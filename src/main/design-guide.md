@@ -517,3 +517,27 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - `speed`: Zeitlupe für den Höhepunkt einer Aktion, Zeitraffer für Abläufe ohne Sprache; nie über Sprache. Montage ohne Sprache: `volume: 0`, `music: 0.8` (nur mit `deck.music`).
 - `transition` je Ausschnitt meist weglassen (automatische Blende); `fade`/`dissolve` an Orts- oder Szenenwechseln.
 - Der Export legt die Untertitel auch als .srt neben das MP4.
+
+## 12. Timeline
+
+Das Layout `schnitt` (Pro) ist ein Mehrspur-Schnitt: eine Folie = eine Timeline mit Video- und Audiospuren, mehreren Quellen, Farbe, Ton und Ausgabe. Bearbeitet wird sie mit `edit_timeline` (Ops), nicht durch Neuschreiben des Inhalts.
+
+**Wann `schnitt` statt `clip`:** mehrere Quellen gleichzeitig im Bild, B-Roll oder Bild-in-Bild über dem Sprecher, Logo oder Bild über eine Strecke, Farbkorrektur je Clip, Musik oder Sprechertext auf eigener Spur, Ausgabe in 4K, ProRes/DNxHR oder mit Rundfunk-Lautheit. Für Shorts, Fulltime und Stream-Highlights bleibt `clip` der schnellere Weg. `schnitt`- und `clip`-Folien nie im selben Deck (Lint `schnitt-mix`).
+
+**Ablauf:**
+1. Material wie bei `clip`: `import_video`, `transcribe_video` (bei langen Quellen erst `video_highlights`), `search_transcript`, `video_frames`.
+2. `create_deck` im Format, dann `add_slides` mit `layout: "schnitt"` (Spuren und erste Clips) – oder, wenn schon clip-Folien gebaut sind, eine schnitt-Folie anlegen und `edit_timeline` mit `{ op: "from_clips" }`. Die Antwort nennt, was nicht übernommen wurde; die clip-Folien danach entfernen.
+3. `edit_timeline` mit Ops in kleinen Batches (bis ~10): `split`, `trim`, `move`, `lift`, `ripple_delete`, `add_clip`, `add_track`, `set` (grade, volume, keys, eq, box …), `marker`, `deliver`, `subs_from_transcript`.
+4. Nach jedem Batch die Rückmeldung lesen (Länge, Spuren, Lint) und Fehler sofort beheben.
+5. `export_deck` mit `mp4`; daneben entstehen Schnittliste (.xml) und Untertitel (.srt).
+
+**Regeln:**
+- Zeiten in Sekunden; die Engine rundet auf Bilder. `at` = Lage auf der Timeline, `in`/`out` = Sekunden im Quellvideo. Schnitte an Satzgrenzen aus dem Transkript, nie mitten im Wort.
+- Spuren von unten nach oben: `v1` trägt den durchgehenden Hauptstrang ohne Lücken (Lücke = Schwarzbild), höhere Videospuren liegen darüber. Je Spur keine Überlappung.
+- B-Roll auf `v2` ganzflächig (ohne `box`), 2–6 s, Ton meist `mute`. Bild-in-Bild, Bilder und Logos als Clip auf V2+ mit `box` [x, y, Breite] als Anteile, klein und in einer Ecke.
+- Musik auf eine eigene Audiospur, dezent (`volume` 0,2–0,4), unter Sprache mit `keys` absenken; Sprache bleibt vorn.
+- Farbe zurückhaltend und einheitlich, Presets bevorzugen: warm `{ temp: 0.5 }`, kühl `{ temp: -0.5 }`, kontrast `{ lift: [-0.057, -0.057, -0.057], gain: [1.06, 1.06, 1.06], sat: 1.15 }`, matt `{ lift: [0.064, 0.064, 0.064], gain: [0.94, 0.94, 0.94], sat: 0.85 }`, sw `{ lift: [-0.038, -0.038, -0.038], gain: [1.04, 1.04, 1.04], sat: 0 }`. Ein Look je Video; eigene Werte nur zum Angleichen verschiedener Kameras, in kleinen Schritten.
+- Ausgabe (`deliver`): Standard 1080, 30 fps, h264, −14 LUFS. Lautheit nach Ziel: −14 Streaming und Social, −16 Podcast, −23 Rundfunk (EBU R128). ProRes/DNxHR nur für die Weiterverarbeitung im Schnittprogramm, 4K (2160) nur bei 4K-Material.
+- Untertitel: `subs_from_transcript` je Clip auf `v1` (vorher `transcribe_video` für `in`–`out`).
+
+**Grenzen:** Text-Einblendungen (`overlays`) erscheinen noch nicht im Bild, Untertitel nur als .srt; Bauchbinden und Titel deshalb nur auf Wunsch und mit Hinweis. Keine Blenden zwischen Clips, jeder Schnitt ist hart.

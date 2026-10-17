@@ -34,7 +34,7 @@ const names = listed.map((t) => t.name).sort()
 // ohne readOnlyHint führt Claude Code Aufrufe nacheinander aus (4 KI-Bilder dauerten so über 6 min)
 assert.equal(listed.find((t) => t.name === 'generate_image')?.annotations?.readOnlyHint, true)
 assert.equal(listed.find((t) => t.name === 'add_slides')?.annotations?.readOnlyHint, undefined, 'Deck-Änderungen bleiben seriell')
-assert.equal(names.length, 27)
+assert.equal(names.length, 28)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 // read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
 const parts = guideParts()
@@ -43,6 +43,8 @@ assert.equal(parts.join('\n'), fullPrompt())
 // reine Video-Aufträge: nur §11 und der Katalog-Eintrag clip
 const vg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'video' } })) as { content: { text: string }[] }).content[0].text
 assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 20000, vg.slice(0, 200))
+const tg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'timeline' } })) as { content: { text: string }[] }).content[0].text
+assert.ok(tg.startsWith('## 12. Timeline') && tg.includes('\n### schnitt ') && tg.length < 20000, tg.slice(0, 200))
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }
 const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<Res>

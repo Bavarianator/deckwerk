@@ -49,6 +49,7 @@ ${index}
 - Zahlen, Daten, Diagramme: inhalt-layout und die passenden Datenlayouts (chart, kpi-grid, table, big-number).
 - Texte ändern, übersetzen, kürzen, Notizen: text und deck-auftraege.
 - Reiner Video-Auftrag (Video schneiden oder kürzen, Short, Reel, Stream-Highlights, Zusammenschnitt, Untertitel, MP4): nur video und layout:clip, bei Zwischentiteln layout:section und layout:statement; kein Gerüst, keine Gestaltung, keine Storyline. Präsentation mit Video: das Übliche plus video und layout:clip.
+- Pro-Schnitt (mehrere Spuren oder Quellen gleichzeitig, Bild-in-Bild, B-Roll, Farbkorrektur, Musik auf eigener Spur, 4K/ProRes, Rundfunk-Lautheit, Folie schnitt): video, timeline und layout:schnitt.
 - reason: ein kurzer Satz auf Deutsch.
 ${auto
     ? '\n## Modell\nWähle auch model und effort: opus für neue Decks, Umbauten, Quellmaterial und anspruchsvolle Aufträge (effort high); sonnet für gezielte Änderungen an einem bestehenden Deck (effort medium, low für Tippfehler und Kleinigkeiten).'

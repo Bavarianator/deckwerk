@@ -26,9 +26,13 @@ import { typeset } from '../shared/typo'
 import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
 import { LONG_VIDEO, joinOf, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
+import { CODECS, RESOLUTIONS, TL, clipEnd, deliverOf, snapFrame, tlAt, tlDuration, type Sub, type TimelineContent } from '../shared/timeline'
+import { applyOps, lintTimeline, type TLOp } from '../shared/timeline-edit'
+import { fromClips } from '../shared/timeline-from-clips'
+import { timelineSchema } from '../shared/layouts-timeline'
 import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
-import { guideIndex, guideModules, guideParts, VIDEO_MODULES } from './guide-modules'
+import { guideIndex, guideModules, guideParts, TIMELINE_MODULES, VIDEO_MODULES } from './guide-modules'
 import { contactSheet } from './ffmpeg'
 import { fetchMusic, findMusic } from './music'
 import { localAsset } from './sync'
@@ -290,6 +294,7 @@ export function validateContent(layout: string, content: unknown, where: string)
       if (typeof c.video === 'string' && isAbsolute(c.video)) c.video = assetUrl(c.video)
       for (const o of (c as Partial<ClipContent>).overlays ?? []) if (o.image && isAbsolute(o.image)) o.image = assetUrl(o.image)
     }
+    if (layout === 'schnitt') for (const t of (c as unknown as TimelineContent).tracks) for (const k of t.clips) if (isAbsolute(k.src)) k.src = assetUrl(k.src)
     return c
   }
   const { $schema: _, ...schema } = json as Record<string, unknown>
@@ -520,6 +525,24 @@ const OVERVIEW_NEXT = 'Weiter: die besten Fenster mit transcribe_video (from/to)
 const CLIP_LOOK = 'Prüfe: Gesicht im Bild, Hook passt zum Bild, keine schwarzen/eingefrorenen Bilder, Untertitelbereich frei.'
 const HIGHLIGHT_NEXT = 'Weiter (Guide § Video, Stream): 1. Für die besten 3–5 Fenster transcribe_video mit from/to; nur diese Bereiche werden transkribiert, gern 30 s Anlauf davor. 2. video_frames als Kontaktabzug, 4–8 Zeitpunkte je Kandidat über das Fenster verteilt. 3. Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil. 4. Shorts bauen (create_deck format 9:16, je Moment eine clip-Folie, ideal 55–75 s, hart 20–90 s), auf Wunsch zusätzlich ein Zusammenschnitt 16:9 (eine clip-Folie, alle Momente als parts in Reihenfolge, export_deck mp4). Soll ein langes Video entstehen: video_highlights mit minutes (Ziellänge) aufrufen.'
 const LONG_NEXT = 'Weiter (Guide § Video, Ablauf 5, langes Video): 1. Fenster mit transcribe_video from/to transkribieren (Score-stärkste zuerst), gern 30 s Anlauf. 2. Je Fenster den tragenden Teil wählen (ganze Gedanken, Neuansätze raus). 3. create_deck 16:9, transition none, **eine** clip-Folie mit allen Momenten als parts in zeitlicher Reihenfolge (bis 100; neue Momente blendet der Export selbst über), zusammen ~Ziellänge, pauses kurz, captions satz, kein Hook, style weglassen. 4. Exportdauer nennen, export_deck mp4. Keine Shorts, außer der Nutzer will sie.'
+
+// Ops für edit_timeline: Felder wie im Layout-Schema schnitt (ohne dessen Refinements, die partial/omit nicht erlauben); Gesamtprüfung danach
+const tlClipShape = z.object(timelineSchema.shape.tracks.element.shape.clips.element.shape)
+const tlT = z.number().min(0).describe('Timeline-Sekunde')
+const tlOp = z.discriminatedUnion('op', [
+  z.object({ op: z.literal('split'), clip: z.string(), t: tlT }),
+  z.object({ op: z.literal('trim'), clip: z.string(), edge: z.enum(['in', 'out']), t: tlT, ripple: z.boolean().optional().describe('true = spätere Clips der Spur rücken mit') }),
+  z.object({ op: z.literal('move'), clip: z.string(), at: tlT, track: z.string().optional().describe('andere Spur gleicher Art') }),
+  z.object({ op: z.literal('lift'), clip: z.string() }).describe('entfernen, Lücke bleibt'),
+  z.object({ op: z.literal('ripple_delete'), clip: z.string() }).describe('entfernen, Spätere rücken nach'),
+  z.object({ op: z.literal('add_clip'), track: z.string(), clip: tlClipShape.partial({ id: true }) }),
+  z.object({ op: z.literal('add_track'), kind: z.enum(['video', 'audio']) }).describe('neue Spur ganz oben'),
+  z.object({ op: z.literal('set'), clip: z.string(), patch: tlClipShape.omit({ id: true }).partial() }).describe('Felder eines Clips setzen (grade, volume, box, src …)'),
+  z.object({ op: z.literal('from_clips') }).describe('Inhalt durch alle sichtbaren clip-Folien des Decks ersetzen (hintereinander auf v1)'),
+  z.object({ op: z.literal('deliver'), res: z.literal(RESOLUTIONS).optional(), fps: z.number().min(TL.fps.min).max(TL.fps.max).optional(), codec: z.enum(CODECS).optional(), lufs: z.number().min(TL.lufs.min).max(TL.lufs.max).optional() }).describe('Ausgabe setzen'),
+  z.object({ op: z.literal('subs_from_transcript'), clip: z.string() }).describe('Untertitel aus dem Transkript der Clip-Quelle (in–out), ersetzt die Untertitel in der Clip-Zeit'),
+  z.object({ op: z.literal('marker'), t: tlT, name: z.string().max(60) }),
+])
 
 export function buildTools(ctx: ToolContext): ToolDef[] {
   // Speichern für Theme- und Folienänderungen: braucht das Deck andere Katalogschriften als vorher (Theme, freie Texte), lädt
@@ -847,10 +870,10 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       inputSchema: z.object({
         module: z.array(z.string().max(60)).max(60).optional().describe('Modul-IDs aus dem Index, z. B. "stil", "layout:chart"'),
         part: z.number().int().min(1).optional().describe('vollständiger Guide in Teilen: 1, 2, … (die Antwort nennt die Anzahl)'),
-        topic: z.enum(['video']).optional().describe('video = Video-Schnitt (Guide §11) und das Layout clip, kurz für module ["video", "layout:clip"]'),
+        topic: z.enum(['video', 'timeline']).optional().describe('video = Video-Schnitt (Guide §11) und das Layout clip, kurz für module ["video", "layout:clip"]; timeline = Pro-Schnitt (Guide §12) und das Layout schnitt'),
       }),
       async run(i) {
-        if (i.topic === 'video') i = { ...i, module: [...VIDEO_MODULES, ...(i.module ?? [])] }
+        if (i.topic) i = { ...i, module: [...(i.topic === 'video' ? VIDEO_MODULES : TIMELINE_MODULES), ...(i.module ?? [])] }
         if (i.module?.length) {
           const all = guideModules(), unknown = i.module.filter((id) => !all.some((m) => m.id === id))
           // Claude Code verwirft zu lange Tool-Ergebnisse: was nicht mehr passt, in einem weiteren Aufruf
@@ -1105,6 +1128,66 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const total = partsLength(c.parts) // Kachel k zeigt die Clipzeit (k + 0,5) · Länge / Anzahl, wie die Beschriftung im Bild
         const tiles = times.map((t, k) => `${k + 1}. ${(((k + 0.5) * total) / times.length).toFixed(1)} s = ${t.toFixed(1)} s`)
         return { text: [head, `Kontaktabzug 3×3, zeilenweise (Clipzeit = Quellzeit): ${tiles.join(', ')}`, CLIP_LOOK].join('\n'), images: [jpg] }
+      },
+    }),
+    tool({
+      name: 'edit_timeline',
+      description: 'Pro-Schnitt: Timeline einer schnitt-Folie mit Ops bearbeiten, in kleinen Batches (bis ~10 Ops). Regeln: Zeiten in Sekunden, auf Bilder gerundet; at = Lage auf der Timeline, in/out = Sekunden im Quellvideo; Spuren von unten nach oben (höhere Videospur liegt darüber); je Spur keine Überlappung; Bilder und Logos als Clip auf V2+ mit box [x, y, Breite]; Musik auf eigene Audiospur; grade zurückhaltend. Ops: split, trim, move, lift, ripple_delete, add_clip, add_track, set (Clip-Felder wie grade, volume, keys, eq, box, src), from_clips (übernimmt alle sichtbaren clip-Folien; schnitt- und clip-Folien gehören nicht in ein Deck, Lint schnitt-mix), deliver (res, fps, codec, lufs: −14 Streaming, −16 Podcast, −23 Rundfunk), subs_from_transcript (clip; Transkript vorher mit transcribe_video), marker. Bricht eine Op ab, bleibt die Folie unverändert („Op n: …“). Ablauf: read_guide topic timeline.',
+      inputSchema: z.object({
+        slide: z.union([z.string(), z.number().int().min(1)]).describe('ID oder Nummer (ab 1) der schnitt-Folie'),
+        ops: z.array(tlOp).min(1).max(50),
+      }),
+      async run(i) {
+        const deck = needDeck(ctx)
+        const idx = typeof i.slide === 'number' ? i.slide - 1 : indexOf(deck, i.slide), s = deck.slides[idx]
+        if (!s) throw new Error(`Folie ${i.slide} gibt es nicht (${deck.slides.length} Folien).`)
+        if (s.layout !== 'schnitt') throw new Error(`Folie ${i.slide} ist keine schnitt-Folie (${s.layout}). Erst add_slides mit layout schnitt.`)
+        const notes: string[] = []
+        let tl = structuredClone(s.content) as unknown as TimelineContent
+        for (const [k, o] of i.ops.entries()) {
+          const fps = deliverOf(tl).fps
+          try {
+            if (o.op === 'from_clips') {
+              const clips = visibleSlides(deck).filter((x) => x.layout === 'clip')
+              if (!clips.length) throw new Error('keine sichtbaren clip-Folien im Deck')
+              const r = fromClips(clips as unknown as { content: ClipContent }[], fps)
+              tl = { ...r.tl, ...(tl.deliver && { deliver: tl.deliver }) }
+              notes.push(`${clips.length} clip-Folien übernommen${r.dropped.length ? `; nicht übernommen: ${r.dropped.join(', ')}` : ''}. Die clip-Folien sind noch im Deck: Lint schnitt-mix meldet sie, nach Prüfung der Timeline ausblenden bzw. mit delete_slides entfernen.`)
+            } else if (o.op === 'deliver') {
+              const { op: _, ...d } = o
+              tl = { ...tl, deliver: { ...tl.deliver, ...d } }
+            } else if (o.op === 'marker') {
+              tl = { ...tl, markers: [...(tl.markers ?? []), { t: snapFrame(o.t, fps), name: o.name }].sort((a, b) => a.t - b.t) }
+            } else if (o.op === 'subs_from_transcript') {
+              const c = tl.tracks.flatMap((t) => t.clips).find((x) => x.id === o.clip)
+              if (!c) throw new Error(`Clip ${o.clip} nicht gefunden`)
+              const file = clipFile(c.src), tr = file ? (await ctx.engine.video?.cached?.(file))?.transcript : null
+              if (!tr) throw new Error(`Kein Transkript für ${c.src} – erst transcribe_video (from=${c.in} to=${c.out})`)
+              const a = c.at, e = clipEnd(c)
+              const subs: Sub[] = tr.segments.filter((x) => x.end > c.in && x.start < c.out && x.text.trim()).map((x) => ({
+                start: snapFrame(tlAt(c, Math.max(x.start, c.in)), fps), end: snapFrame(tlAt(c, Math.min(x.end, c.out)), fps), text: x.text.trim().slice(0, 200),
+              })).filter((x) => x.end > x.start)
+              tl = { ...tl, subs: [...(tl.subs ?? []).filter((x) => x.end <= a || x.start >= e), ...subs].sort((x, y) => x.start - y.start) }
+              notes.push(`${subs.length} Untertitel aus dem Transkript für Clip ${c.id}`)
+            } else tl = applyOps(tl, [o as TLOp], fps)
+          } catch (e) {
+            throw new Error(`Op ${k + 1} (${o.op}): ${(e as Error).message.replace(/^Op 1 \([^)]*\): /, '')}`)
+          }
+        }
+        const r = timelineSchema.safeParse(tl)
+        if (!r.success) throw new Error(`Timeline nach den Ops ungültig, Folie unverändert:\n${z.prettifyError(r.error)}`)
+        s.content = validateContent('schnitt', tl, `Folie ${s.id}`)
+        const fonts = await put(deck)
+        tl = s.content as unknown as TimelineContent
+        const tracks = tl.tracks.map((t) => `${t.id} (${t.kind === 'video' ? 'Video' : 'Audio'}, ${t.clips.length} ${t.clips.length === 1 ? 'Clip' : 'Clips'})`).join(', ')
+        // statt report(): Autofit sagt bei einer Timeline nichts, und die Regel schnitt im Deck-Lint ist lintTimeline (hier direkt, auch ohne Engine)
+        const own = lintTimeline(tl, deliverOf(tl).fps).map((x) => `  - [${x.level === 'error' ? 'error' : 'warn'}] schnitt: ${x.msg}`)
+        const rest = await ctx.engine.lint(deck).then((xs) => xs.filter((x) => x.slide === idx && x.rule !== 'schnitt'), () => [])
+        const errors = own.filter((x) => x.includes('[error]')).length + rest.filter((x) => x.severity === 'error').length
+        const mixed = deck.slides.some((x) => x.layout === 'clip' && !x.hidden) && !notes.some((n) => n.includes('schnitt-mix'))
+        return { text: [fonts + `Folie ${idx + 1} (${s.id}, schnitt)${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · Timeline ${mmss(tlDuration(tl))} · Spuren: ${tracks}`,
+          ...own, ...(rest.length ? [fmtIssues(rest)] : []), ...notes,
+          ...(mixed ? ['Hinweis: clip-Folien im Deck – schnitt und clip nicht mischen (Lint schnitt-mix): Timeline per from_clips füllen, dann die clip-Folien entfernen.'] : [])].join('\n') }
       },
     }),
     tool({

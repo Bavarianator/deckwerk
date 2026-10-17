@@ -10,6 +10,7 @@ import { handout } from '../shared/handout'
 import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
 import { MAX_PARTS, followParts, snapToScenes, type ClipContent, type Segment, type Transcript } from '../shared/video'
+import type { TimelineContent } from '../shared/timeline'
 import type { Engine } from './agent'
 import { dataDir } from './clients'
 import { buildDocx } from './export-docx'
@@ -295,6 +296,23 @@ export function createEngine(): Engine {
             let k = 0
             const full = { ...ready, slides: all.slides.map((s) => (s.hidden ? s : ready.slides[k++])) }
             return m.exportVideo(full, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), { ...music, phone: d ? { serial: d.serial, models } : undefined })
+          // Pro-Timeline: je sichtbare schnitt-Folie eine Datei (mehrere: -01, -02 …); Lautheit und Hinweise kennt export_deck nicht, nur Log
+          const cuts = deck.slides.filter((s) => s.layout === 'schnitt')
+          if (cuts.length) {
+            if (deck.slides.some((x) => x.layout === 'clip')) throw new Error('Timeline und Clip-Folien nicht im selben Deck mischen: Clips per edit_timeline from_clips übernehmen und die Clip-Folien ausblenden.')
+            const { exportTimeline } = await import('./export-timeline'), size = sizeOf(deck), out: string[] = []
+            const resolveSrc = (src: string) => { const f = mediaFile(src); if (!f) throw new Error(`Timeline: keine Mediendatei (${src})`); return f }
+            for (const [k, s] of cuts.entries()) {
+              const r = await exportTimeline(s.content as TimelineContent, {
+                out: cuts.length > 1 ? `${base}-${String(k + 1).padStart(2, '0')}` : base, aspect: size.w / size.h, resolve: resolveSrc,
+                onProgress: (f) => report(Math.floor(((k + f) / cuts.length) * 100)),
+                work: join(outDir, `.video-tmp-tl-${process.pid}-${Date.now().toString(36)}`), // wie export-video: nicht /tmp, alte Reste räumt es weg
+              })
+              console.info(`[video] Timeline ${k + 1}: ${r.lufs.before.toFixed(1)} → ${r.lufs.after.toFixed(1)} LUFS (Ziel ${r.lufs.target})`, ...r.warnings)
+              out.push(...r.files)
+            }
+            return out
+          }
           }
           if (!clipsOk(deck)) return run(deck, 0) // exportVideo meldet, was fehlt
           const files = [...t.need.keys()], miss = await Promise.all(files.map((f) => chunkPlan(f, t.need.get(f)!).then((p) => p.missing.length, () => 0)))

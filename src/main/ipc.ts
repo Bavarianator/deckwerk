@@ -1,5 +1,6 @@
 // IPC zwischen UI und Main: aktuelles Deck, Agent, Speichern/Öffnen, Export, API-Key.
 import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage, screen, shell } from 'electron'
+import { createHash } from 'node:crypto'
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
@@ -7,7 +8,7 @@ import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { APP } from '../shared/app-id'
-import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, profileOf, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
+import { AUDIO_EXT, MEDIA_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, profileOf, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, hasFlag, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
@@ -16,7 +17,7 @@ import { routeTask, type RouterVia } from './router'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { parseCsv } from '../shared/merge'
-import { assetUrl, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, exportSeries, type Orientation } from './tools'
+import { assetUrl, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, mimeOf, NO_IMAGE_AI, saveBrand, exportSeries, type Orientation } from './tools'
 import { activeClient, brandFile, dataDir, listClients, setClient, styleFile } from './clients'
 import { readXlsxRange } from './xlsx-link'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
@@ -55,6 +56,9 @@ async function restore(file: string): Promise<string> {
 }
 
 const ROUTER_NAME: Record<RouterVia['kind'], string> = { api: 'Haiku', claude: 'Haiku', codex: 'Codex', vibe: 'Vibe', none: 'Regeln' }
+
+// Werkzeuge, die das Pro-UI direkt aufrufen darf (tool:run); alles andere bleibt der KI vorbehalten
+const UI_TOOLS = ['import_video', 'transcribe_video', 'video_highlights', 'search_transcript', 'video_frames', 'check_clip', 'find_music', 'propose_looks', 'decorate_slide', 'lint_deck', 'edit_timeline']
 
 export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const keyFile = join(app.getPath('userData'), 'api-key.bin')
@@ -415,6 +419,17 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       return file && VIDEO_FILE.test(file) ? ((await engine.video?.cached?.(file)) ?? null) : null
     } catch { return null }
   })
+  // Wellenform einer Timeline-Quelle, Cache wie die Video-Caches der Engine (assets/.video/<sha1>); null = keine Mediendatei oder ohne Ton
+  ipcMain.handle('timeline:peaks', async (_, src: string) => {
+    if (typeof src !== 'string') return null
+    try {
+      const file = src.startsWith('asset://') ? localAsset(decodeURIComponent(new URL(src).pathname)) : isAbsolute(src) ? resolve(src) : null
+      if (!file || !MEDIA_EXT.test(file)) return null
+      const s = await stat(file)
+      const dir = join(dataDir(), 'assets', '.video', createHash('sha1').update(file + s.size + s.mtimeMs).digest('hex'))
+      return await (await import('./timeline-media')).cachedPeaks(file, dir)
+    } catch { return null }
+  })
   ipcMain.handle('jobs:list', () => jobList())
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {
     const extensions = kind === 'video' ? VIDEO_EXT : AUDIO_EXT
@@ -541,6 +556,25 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const out = await find.run({ query: query || undefined, source: 'auto', limit: 5, orientation: 'landscape' })
     const urls = out.text.match(/asset:\/\/local\S+/g) ?? []
     return { urls, note: urls.length ? undefined : out.text }
+  })
+  // Pro-UI: ausgewählte KI-Tools von Hand; Deck-Änderungen laufen wie beim Agenten (dirty, Agent, UI per deck:synced)
+  const running = new Map<string, Promise<unknown>>() // ein Lauf je Tool: Import und Transkription dauern Minuten
+  ipcMain.handle('tool:run', async (_, name: unknown, input: unknown) => {
+    if (typeof name !== 'string' || !UI_TOOLS.includes(name)) throw new Error(`Werkzeug nicht für die Oberfläche freigegeben: ${name}`)
+    if (running.has(name)) throw new Error(`${name} läuft schon. Bitte warten, bis der Lauf fertig ist.`)
+    const t = buildTools({
+      engine, getDeck: () => deck, assetDir: assets, outDir: outDir(), unsplashKey: process.env.UNSPLASH_ACCESS_KEY,
+      setDeck: (d) => { deck = d; dirty = true; agent?.setDeck(d); if (!win.isDestroyed()) win.webContents.send('deck:synced', d) },
+    }).find((x) => x.name === name)
+    if (!t) throw new Error(`Werkzeug nicht für die Oberfläche freigegeben: ${name}`) // z. B. edit_timeline noch nicht gebaut
+    const p = t.inputSchema.safeParse(input)
+    if (!p.success) throw new Error(`Ungültige Eingabe für ${name}: ${p.error.issues.slice(0, 5).map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`).join('; ')}`)
+    const job = t.run(p.data)
+    running.set(name, job)
+    try {
+      const out = await job
+      return { text: out.text, images: (out.images ?? []).map((b) => `data:${mimeOf(b)};base64,${b.toString('base64')}`) }
+    } finally { running.delete(name) }
   })
   // Einfügen-Panel (Canva „Magic Media“): dieselbe Bild-KI wie generate_image, Datei landet unter ~/Deckwerk/assets
   let generating = false

@@ -43,6 +43,7 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['deck-auftraege', '### Aufträge fürs ganze Deck', 'Übersetzen, Notizen, Kürzen, als Text zusammenfassen, Rechtschreibung.'],
   ['fehler', '## 10. Häufige Fehler', 'Was oft schiefgeht.', true],
   ['video', '## 11. Video', 'Video-Schnitt: Shorts/Reels, Fulltime kürzen, Stream-Highlights, Kompilation; Bewertung, Hooks, Regeln für clip.'],
+  ['timeline', '## 12. Timeline', 'Pro-Schnitt (Layout schnitt): mehrere Spuren und Quellen, B-Roll, Farbe, Musik, Ausgabe; Ablauf mit edit_timeline.'],
   ['katalog', '## Layout-Katalog', 'Layouts statt Koordinaten, freie Elemente (items).', true],
   ['katalog-themes', '## Themes', 'Katalog-Themes, Schriften mit Charakter und Schriftkatalog für headFont/bodyFont.'],
   ['katalog-ton', '## Folien-Ton und Dekor', 'tone pro Folie (normal, accent, invert) und Hintergrundmotive.'],
@@ -138,6 +139,7 @@ export function guideParts(max = 20000): string[] {
 }
 
 export const VIDEO_MODULES = ['video', 'layout:clip'] // read_guide topic video
+export const TIMELINE_MODULES = ['timeline', 'layout:schnitt'] // read_guide topic timeline; eigenes Thema, video liegt schon knapp unter 20 000 Zeichen
 
 // Regel-Router ohne KI (Rückfall für den Haiku-Router): Layouts nach Format, Abschnitte nach Stichwörtern; lieber ein Modul zu viel
 const SOCIAL_SKIP: LayoutId[] = ['agenda', 'section', 'table'] // Guide „Social-Karussell“: weglassen
@@ -157,7 +159,9 @@ const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
 // Eng gefasst: „Kick-off“, „Quartals-Highlights“, „Schnittstelle“, „Mainstream“ oder „Untertitel“ einer Folie sind kein Video.
 const VIDEO = /video|\bclips?\b|\bshorts?\b|\breels?\b|\b(live)?streams?\b|zusammenschnitt|youtube|twitch|kick\.com|\bmp4\b|podcast|transkri/
 const FOLIEN = /\bdecks?\b|\bfolien?\b|\bseiten?\b/ // spricht der Auftrag von Folien oder Seiten, ist er kein reiner Video-Auftrag
-const VIDEO_DECK: string[] = ['clip', 'section', 'statement'] // Zwischentitel einer Kompilation
+const VIDEO_DECK: string[] = ['clip', 'section', 'statement', 'schnitt'] // Zwischentitel einer Kompilation, Pro-Timeline
+// Pro-Schnitt (Layout schnitt): Mehrspur, Bild-in-Bild, Farbe, Ausgabe. Nicht „Timeline“: so heißt auch das Zeitstrahl-Layout
+const SCHNITT = /mehrspur|videospur|tonspur|bild-in-bild|b-roll|farbkorrektur|color ?grading|prores|\b4k\b|\blufs\b/
 const KINDS = {
   karte: /visitenkarte/,
   a4: /\ba4\b|druckerei|druckdatei|drucksache|\bdrucken\b|flyer|plakat|brief(?!ing)|angebot|kostenvoranschlag|infoblatt|one-pager|handzettel|lebenslauf|bewerbung|einladung|save the date|urkunde|zertifikat|bescheinigung|speisekarte|getränkekarte|mittagstisch/,
@@ -169,10 +173,11 @@ export function ruleRoute(input: RouteInput): Route {
   const t = input.text.toLowerCase(), inDeck = input.layoutsInDeck.filter((id): id is LayoutId => id in LAYOUTS)
   // Format: Stichwörter, bei einem Deck auch sein Profil; ohne beides das übergebene Profil
   const kinds = new Set((Object.keys(KINDS) as (keyof typeof KINDS)[]).filter((k) => KINDS[k].test(t)))
-  const video = VIDEO.test(t) || inDeck.includes('clip')
+  const pro = SCHNITT.test(t) || inDeck.includes('schnitt')
+  const video = VIDEO.test(t) || inDeck.includes('clip') || pro
   // Reiner Video-Auftrag: nur Video-Schnitt und clip (dazu Zwischentitel), kein Gerüst, keine Gestaltung
   if (video && !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t) && inDeck.every((id) => VIDEO_DECK.includes(id)))
-    return { modules: [...VIDEO_MODULES, ...VIDEO_DECK.slice(1).map((id) => `layout:${id}`)], source: 'regel', reason: 'Regeln: Video', video: true }
+    return { modules: [...VIDEO_MODULES, 'layout:section', 'layout:statement', ...(pro ? TIMELINE_MODULES : [])], source: 'regel', reason: 'Regeln: Video', video: true }
   if (input.hasDeck || !kinds.size) kinds.add(input.profile === 'doc' ? (inDeck.includes('business-card') ? 'karte' : 'a4') : input.profile)
   const layouts = new Set<LayoutId>(inDeck)
   const add = (ids: LayoutId[]) => ids.forEach((id) => layouts.add(id))
@@ -195,7 +200,7 @@ export function ruleRoute(input: RouteInput): Route {
   }
   const hits = KEYWORDS.filter(([, re]) => re.test(t))
   for (const [, , m] of hits) mods.push(...m)
-  if (video) mods.push(...VIDEO_MODULES) // z. B. Präsentation mit Video
+  if (video) mods.push(...VIDEO_MODULES, ...(pro ? TIMELINE_MODULES : [])) // z. B. Präsentation mit Video
   return {
     modules: [...new Set([...mods, ...[...layouts].map((id) => `layout:${id}`)])],
     source: 'regel',

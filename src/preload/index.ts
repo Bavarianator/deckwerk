@@ -94,6 +94,10 @@ const api = {
   save: (): Promise<string> => invoke('deck:save'),
   /** Cache-Daten eines Videos (asset://-URL oder Pfad), rechnet nie; null = kein erlaubtes Video */
   videoCached: (src: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null } | null> => invoke('video:cached', src),
+  /** Wellenform einer Timeline-Quelle (Spitzen 0–255, 100 je Sekunde); null = keine Mediendatei oder ohne Ton */
+  timelinePeaks: (src: string): Promise<Uint8Array | null> => invoke('timeline:peaks', src),
+  /** ausgewähltes KI-Tool direkt ausführen (Freigabeliste UI_TOOLS in ipc.ts); images = data:-URLs */
+  runTool: (name: string, input: unknown): Promise<{ text: string; images: string[] }> => invoke('tool:run', name, input),
   /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
   jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean; where?: string }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */

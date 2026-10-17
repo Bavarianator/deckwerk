@@ -191,8 +191,8 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   const out = deck.slides.flatMap((_, i) => lintSlide(deck, i, measured[i]))
   // Export und Vorschau behandeln ein Deck entweder als Clip-Folge oder als Timelines, nie gemischt
   const tl = deck.slides.findIndex((x) => x.layout === 'schnitt')
-  if (tl >= 0 && deck.slides.some((x) => x.layout === 'clip'))
-    out.push({ slide: tl, slideId: deck.slides[tl].id, severity: 'error', rule: 'schnitt-mix', message: 'Timeline und Clip-Folien nicht im selben Deck mischen. Clips als Spuren in die Timeline übernehmen oder ein eigenes Deck anlegen.' })
+  if (tl >= 0 && deck.slides.some((x) => x.layout === 'clip' && !x.hidden)) // ausgeblendete Clips exportiert keiner
+    out.push({ slide: tl, slideId: deck.slides[tl].id, severity: 'error', rule: 'schnitt-mix', message: 'Timeline und Clip-Folien nicht im selben Deck mischen. Clips per edit_timeline from_clips übernehmen und die Clip-Folien ausblenden, oder ein eigenes Deck anlegen.' })
   if (!PROFILE[profileOf(deck)].deckRules) return [...out, ...lintMotion(deck, measured)]
   const s = deck.slides
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: s[i].id, severity: 'warn', rule, message })
