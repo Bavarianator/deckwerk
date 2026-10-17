@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { ANIM_DIRS, DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
 import { fontInfo, suggestFont } from './font-catalog'
 import { FONT_NAMES } from './themes'
+import { chartLink } from './layouts'
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 // Schriftname: gebündelt (FONT_NAMES) oder aus dem Schriftkatalog (lädt die Engine bei Bedarf). String statt Enum: die Liste kostete
@@ -55,6 +56,7 @@ export const itemSchema = z.object({
     categories: z.array(z.string()).min(1).max(24),
     series: z.array(z.object({ name: z.string(), values: z.array(z.number()) })).min(1).max(6),
     unit: z.string().max(12).optional(),
+    link: chartLink,
   }).optional(),
   cells: z.array(z.array(z.string().max(200)).min(1).max(8)).min(1).max(16).optional().describe('nur table: Zeilen mit gleich vielen Zellen, erste Zeile = Kopfzeile; Zahlen stehen rechtsbündig. h ergibt sich aus dem Inhalt'),
 })

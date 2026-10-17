@@ -108,6 +108,12 @@ const kpiGrid = z.object({
   source,
 })
 
+// Deckwerk Pro: Excel-Verknüpfung (ChartLink in deck.ts), auch für freie Diagramme in items.ts
+export const chartLink = z.object({
+  file: z.string(),
+  sheet: z.string().optional(),
+  range: z.string().regex(/^\$?[A-Z]{1,3}\$?\d+:\$?[A-Z]{1,3}\$?\d+$/),
+}).optional().describe('Excel-Quelle (Deckwerk Pro); setzt die App, nie die KI')
 const chartSpec = z.object({
   type: z.enum(['bar', 'hbar', 'stacked', 'waterfall', 'line', 'donut']).describe(
     'bar: Vergleich weniger Werte · hbar: Ranking, absteigend sortiert, lange Namen · stacked: Zusammensetzung · ' +
@@ -118,6 +124,7 @@ const chartSpec = z.object({
   unit: z.string().max(8).optional(),
   highlight: z.string().max(24).optional().describe('Name der Kategorie oder Serie, die die Aussage des Titels trägt: nur sie bekommt Farbe, der Rest wird grau. Fast immer setzen.'),
   annotate: z.enum(['cagr', 'delta']).optional().describe('Automatisch berechnete Beschriftung vom ersten zum letzten Wert der Fokus-Serie: cagr = jährliche Wachstumsrate (Kategorien sind Jahre), delta = Veränderung absolut und relativ'),
+  link: chartLink,
 })
 const chart = z.object({
   eyebrow,
