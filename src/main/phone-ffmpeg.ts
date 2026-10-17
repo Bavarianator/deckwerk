@@ -67,7 +67,7 @@ export const stale = (cached: { path: string; t: number }[], used: string[], kee
 async function upload(serial: string, from: string, to: string, onBytes: (n: number) => void): Promise<void> {
   const part = `${to}.part`, size = statSync(from).size
   await adb(serial, 'shell', `rm -f ${quote(part)}`) // Rest eines abgebrochenen Laufs: seine Größe hielte die Wache sonst für Fortschritt
-  const p = spawn('adb', ['-s', serial, 'push', from, part], { stdio: ['ignore', 'ignore', 'pipe'] })
+  const p = spawn('adb', ['-s', serial, 'push', from, part], { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true })
   let err = '', n = 0, still = 0, stalled = false, done = false
   p.stderr.on('data', (c: Buffer) => { err = (err + c).slice(-2000) })
   const closed = new Promise<number | null>((ok, fail) => { p.on('error', fail); p.on('close', ok) })

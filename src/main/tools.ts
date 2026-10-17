@@ -523,7 +523,7 @@ const POD_NEXT = 'Weiter (Guide § Podcast): transcribe_video mit jeder Spur (al
 const ton = z.enum(['original', 'klar', 'stark']).describe('klar (Standard) = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser); stark = dazu kräftiger entrauschen (Lüfter, Raumhall); original = unverändert')
 // Spur einer Episode → Datei wie clipFile (Pfade fremder Geräte über localAsset)
 function trackPath(src: string): string {
-  const p = src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
+  const p = src.startsWith('asset:') ? assetPath(src) : src
   return isAbsolute(p) ? localAsset(p) : p
 }
 function podLint(ep: Episode, t: Transcript | null): string {

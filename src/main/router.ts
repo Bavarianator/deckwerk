@@ -86,7 +86,7 @@ let home: string | undefined
 const routerDir = () => (home ??= mkdtempSync(join(tmpdir(), 'deckwerk-router-')))
 const spawnRun = (name: string, bin: string, ms: number, env: NodeJS.ProcessEnv): Run => (args, stdin) =>
   new Promise((ok, fail) => {
-    const child = spawn(bin, args, { cwd: routerDir(), timeout: ms, killSignal: 'SIGKILL', stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, ...env } })
+    const child = spawn(bin, args, { cwd: routerDir(), timeout: ms, killSignal: 'SIGKILL', stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, env: { ...process.env, ...env } })
     let out = '', err = ''
     child.stdout.on('data', (d) => (out += d))
     child.stderr.on('data', (d) => (err = (err + d).slice(-2000)))
