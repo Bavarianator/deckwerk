@@ -1,8 +1,8 @@
-import { wcagContrast } from 'culori'
+import { differenceCiede2000, wcagContrast } from 'culori'
 import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl } from './deck'
 import { FORMATS, itemClicks, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { LAYOUTS, buildOf } from './layouts'
-import { marginsOf, resolveTheme } from './themes'
+import { FONTS, marginsOf, resolveTheme, type FontName } from './themes'
 import { deliverOf, type TimelineContent } from './timeline'
 import { lintTimeline } from './timeline-edit'
 
@@ -73,6 +73,24 @@ function bgOverPhoto(t: TextEl, photo: ImgEl, els: El[]): string {
   )
   return bgs.reduce((w, c) => (wcagContrast(t.runs[0]?.color ?? '#000000', c) < wcagContrast(t.runs[0]?.color ?? '#000000', w) ? c : w))
 }
+
+// ---------- Brand-Lock (Pro): Agenturen sperren die Kundenmarke, Abweichungen sind Fehler, damit die KI sich selbst korrigiert ----------
+// Erlaubt ist das Theme ohne Farbvariante und Schriftpaar (die meldet lintDeck selbst), plus die Markenfarben und -schriften.
+const deltaE = differenceCiede2000()
+function brandOf(deck: Deck) {
+  const b = deck.theme.brand
+  if (!b?.lock) return undefined
+  const t = resolveTheme({ ...deck.theme, shuffle: undefined, fonts: undefined })
+  const colors = [b.primary, b.secondary, ...Object.values(t.c).flat()].filter((x): x is string => typeof x === 'string')
+  const css = new Set([t.head.css, t.body.css])
+  const fonts = new Set(['head', 'body', b.headFont, b.bodyFont].filter(Boolean))
+  return {
+    color: (c: string) => colors.some((x) => deltaE(x, c) < 2), // ΔE < 2: kaum sichtbar, fängt Rundung und Schreibweise ab
+    font: (n: string) => fonts.has(n) || css.has(FONTS[n as FontName]?.css ?? n),
+  }
+}
+const BRAND_COLOR = (c: string) => `Marke gesperrt: Farbe ${c} ist keine Markenfarbe. Akzent, Text oder Markenfarbe nutzen.`
+const BRAND_FONT = (f: string) => `Marke gesperrt: Schrift ${f} gehört nicht zur Marke. head oder body nutzen.`
 
 export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
   const s = deck.slides[i]
@@ -184,6 +202,14 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
     if (EMOJI.test(t)) found.add('Emoji')
   }
   if (found.size) add('warn', 'ki-sprache', `Klingt generiert: ${[...found].join(', ')}. Stattdessen konkret werden (Zahl, Name, Beispiel aus dem Material) und in eigenen Worten sagen, was passiert.`)
+  const brand = brandOf(deck)
+  if (brand) {
+    for (const it of s.items ?? []) {
+      for (const c of [it.color, it.fill, it.fill2, it.stroke]) if (c && !brand.color(c)) add('error', 'marke', BRAND_COLOR(c), `items.${it.id}`)
+      if (it.font && !brand.font(it.font)) add('error', 'marke', BRAND_FONT(it.font), `items.${it.id}`)
+    }
+    for (const c of [s.bg?.color, ...(s.bg?.gradient ?? [])]) if (c && !brand.color(c)) add('error', 'marke', `${BRAND_COLOR(c)} Eigenen Folienhintergrund (bg) entfernen.`)
+  }
   return out
 }
 
@@ -193,6 +219,13 @@ export function lintDeck(deck: Deck, measured: Measured[]): Issue[] {
   const tl = deck.slides.findIndex((x) => x.layout === 'schnitt')
   if (tl >= 0 && deck.slides.some((x) => x.layout === 'clip' && !x.hidden)) // ausgeblendete Clips exportiert keiner
     out.push({ slide: tl, slideId: deck.slides[tl].id, severity: 'error', rule: 'schnitt-mix', message: 'Timeline und Clip-Folien nicht im selben Deck mischen. Clips per edit_timeline from_clips übernehmen und die Clip-Folien ausblenden, oder ein eigenes Deck anlegen.' })
+  const brand = brandOf(deck)
+  if (brand && deck.slides.length) {
+    const th = deck.theme, err = (message: string) => out.push({ slide: 0, slideId: deck.slides[0].id, severity: 'error', rule: 'marke', message })
+    if (th.shuffle) err('Marke gesperrt: Farbvariante (shuffle) weicht von der Marke ab. shuffle entfernen.')
+    for (const f of th.fonts ?? []) if (!brand.font(f)) err(`${BRAND_FONT(f)} Schriftpaar (fonts) entfernen.`)
+    if (th.custom && deltaE(th.custom.accent, th.brand!.primary) >= 2) err(`Marke gesperrt: Akzent ${th.custom.accent} im eigenen Theme ist nicht die Markenfarbe ${th.brand!.primary}. accent = Markenfarbe setzen.`)
+  }
   if (!PROFILE[profileOf(deck)].deckRules) return [...out, ...lintMotion(deck, measured)]
   const s = deck.slides
   const warn = (i: number, rule: string, message: string) => out.push({ slide: i, slideId: s[i].id, severity: 'warn', rule, message })

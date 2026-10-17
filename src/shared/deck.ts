@@ -39,6 +39,7 @@ export interface BrandKit {
   logoDark?: string // Logo für dunklen Grund (Theme dark); fehlt es, gilt logo
   headFont?: string // FontName aus src/shared/themes.ts
   bodyFont?: string // FontName für Fließtext
+  lock?: boolean // Brand-Lock (Pro): Abweichungen von Markenfarben und -schriften sind Lint-Fehler
 }
 
 // Eigenes Theme, das die KI pro Deck entwirft. Aus wenigen Vorgaben leitet resolveTheme die volle Palette ab
@@ -211,6 +212,7 @@ export const FORMATS = {
   'a4-quer': { name: 'A4 Querformat', w: 1123, h: 794 },
   'og': { name: 'Link-Vorschau 1200×630', w: 1200, h: 630 },
   'visitenkarte': { name: 'Visitenkarte 85×55 mm', w: 321, h: 208 }, // Druck: Endformat = Größe bei 96 dpi
+  'panel': { name: 'Twitch-Panel 320×160', w: 320, h: 160 }, // Stream-Paket (Pro); PNG kommt doppelt so groß
 } as const
 export type FormatId = keyof typeof FORMATS
 export interface Size { w: number; h: number }
