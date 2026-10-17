@@ -85,10 +85,11 @@ export function EditorScreen(p: Props) {
     return [...new Set([c.text, c.accent, c.accent2, c.muted])]
   }, [JSON.stringify(p.deck?.theme)]) // eslint-disable-line react-hooks/exhaustive-deps
   const patchItem = (id: string, q: Partial<Item>, tag?: string) => p.onItems((l) => l.map((it) => (it.id === id ? { ...it, ...q } : it)), tag)
-  const setSpec = (s: ChartSpec) => {
+  // own: eigener Undo-Schritt (Excel verknüpfen, aktualisieren, lösen), sonst verschmelzen Eingaben in der Tabelle
+  const setSpec = (s: ChartSpec, own?: boolean) => {
     if (!slide) return
-    if (item) patchItem(item.id, { spec: s }, `chart-${item.id}`)
-    else p.patchSlide(p.index, { content: { ...slide.content, chart: s } }, `chart-${slide.id}`)
+    if (item) patchItem(item.id, { spec: s }, own ? undefined : `chart-${item.id}`)
+    else p.patchSlide(p.index, { content: { ...slide.content, chart: s } }, own ? undefined : `chart-${slide.id}`)
   }
 
   return (
@@ -101,7 +102,7 @@ export function EditorScreen(p: Props) {
       <div className="work-center" onPointerDownCapture={(e) => { if ((e.target as HTMLElement).closest('.stage-canvas')) setDragging(true) }}>
         {spec && t?.rect && closed !== t.slot && !dragging && (
           <ChartEditor
-            spec={spec} rect={t.rect} busy={p.busy} onChange={setSpec} onClose={() => setClosed(t.slot ?? null)}
+            spec={spec} free={!!item} rect={t.rect} busy={p.busy} onChange={setSpec} onClose={() => setClosed(t.slot ?? null)}
             onCheck={() => p.onSend('Ich habe die Daten des Diagramms geändert. Passen Titel und Kernaussage noch dazu? Wenn nicht, passe sie an.', t.context)}
           />
         )}

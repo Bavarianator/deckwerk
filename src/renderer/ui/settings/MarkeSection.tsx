@@ -1,13 +1,14 @@
 // Marke: Standard-Brand-Kit (~/Deckwerk/brand.json), das jedes neue Deck der KI bekommt, und der Hausstil (~/Deckwerk/hausstil.md).
 import { useEffect, useRef, useState } from 'react'
 import type { BrandKit } from '../../../shared/deck'
-import { confirmDialog } from '../kit'
+import { Select, confirmDialog } from '../kit'
 import { Group, Head, Row, Spin, useRun, type SectionProps } from './parts'
 
 const fileName = (src: string) => decodeURIComponent(src).split('/').pop()
+const NEU = '\u0000neu' // Auswahl „Neuer Kunde …“, kann kein Kundenname sein
 
 export function MarkeSection(_: SectionProps) {
-  const { busy, err, run } = useRun<'brand' | 'style'>()
+  const { busy, err, run } = useRun<'brand' | 'style' | 'kunde'>()
   const [kit, setKit] = useState<BrandKit | null>() // undefined = lädt noch
   useEffect(() => { void window.api.getBrand().then(setKit) }, [])
   // Farbwähler feuern beim Ziehen laufend: erst nach Ruhe speichern, beim Schließen sofort
@@ -44,9 +45,49 @@ export function MarkeSection(_: SectionProps) {
   // erst speichern, sonst sähe der Editor den alten Stand und der Fokus-Reload griffe nicht
   const openEditor = () => run('style', async () => { if (haus.text !== haus.saved) await writeStyle(haus.text); await window.api.openStyle() })
 
+  // Deckwerk Pro: Kunden. getBrand/getStyle und ihre Gegenstücke arbeiten auf dem aktiven Kunden; vor dem Wechsel Offenes in den bisherigen schreiben
+  const [kunden, setKunden] = useState<{ list: string[]; active: string | null }>()
+  const [neu, setNeu] = useState<string | null>(null) // Namensfeld für „Neuer Kunde …“
+  useEffect(() => { void window.api.clients().then(setKunden) }, [])
+  const wechsel = (name: string | null) => run('kunde', async () => {
+    clearTimeout(timer.current)
+    const b = pending.current
+    pending.current = null
+    if (b) await window.api.setBrand(b)
+    const h = hausNow.current
+    if (h.text !== h.saved) await writeStyle(h.text)
+    await window.api.setClient(name)
+    const [k, brand, style] = await Promise.all([window.api.clients(), window.api.getBrand(), window.api.getStyle()])
+    setKunden(k)
+    setKit(brand)
+    setHaus({ text: style, saved: style })
+    setNeu(null)
+  })
+
   return (
     <>
       <Head title="Marke" sub="Farben und Logo, die die KI jedem neuen Deck mitgibt, und dein Hausstil. Bestehende Decks bleiben, wie sie sind." />
+      {kunden && (
+        <Group label="Kunde">
+          <Row title="Aktiver Kunde" action={
+            <Select value={neu === null ? kunden.active ?? '' : NEU} disabled={!!busy} aria-label="Kunde"
+              onChange={(e) => (e.target.value === NEU ? setNeu('') : void wechsel(e.target.value || null))}>
+              <option value="">Keiner (eigene Marke)</option>
+              {kunden.list.map((k) => <option key={k} value={k}>{k}</option>)}
+              <option value={NEU}>Neuer Kunde …</option>
+            </Select>
+          }>Neue Decks und die KI nutzen Marke und Hausstil des aktiven Kunden.</Row>
+          {neu !== null && (
+            <Row title="Neuer Kunde" action={<>
+              <button type="button" className="pill tint" disabled={!neu.trim() || !!busy} onClick={() => void wechsel(neu.trim())}>{busy === 'kunde' ? <><Spin />Lege an …</> : 'Anlegen'}</button>
+              <button type="button" className="plain" disabled={!!busy} onClick={() => setNeu(null)}>Abbrechen</button>
+            </>}>
+              <input type="text" className="settings-kunde" aria-label="Name des Kunden" placeholder="Zum Beispiel: Müller GmbH" maxLength={60} autoFocus value={neu}
+                onChange={(e) => setNeu(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && neu.trim()) void wechsel(neu.trim()) }} />
+            </Row>
+          )}
+        </Group>
+      )}
       {kit === undefined ? <p><Spin /> Wird geladen …</p> : kit === null ? (
         <Group label="Brand-Kit">
           <Row ok={false} title="Noch kein Standard" action={<button className="pill tint" disabled={!!busy} onClick={() => save({ primary: '#4F52D9' })}>Mit Akzentfarbe anlegen</button>}>

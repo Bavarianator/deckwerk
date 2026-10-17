@@ -13,6 +13,7 @@ import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { adjustCss } from '../slide'
 import { align, clip, cloneItems, copyStyle, distribute, groupItems, isGroup, pasteStyle, removeItems, reorder, ungroupItems, geoOf, type Align, type Order } from './itemOps'
 import { Select } from './kit'
+import { ExcelLink } from './ChartEditor'
 import { animateItem } from './PresentScreen'
 import { removeBackground } from './media'
 
@@ -125,13 +126,17 @@ function ChartData({ it, set }: { it: Item; set: (p: Partial<Item>, tag?: string
   const [csv, setCsv] = useState(() => specToCsv(it.spec!))
   useEffect(() => setCsv(specToCsv(it.spec!)), [it.id])
   return (
-    <Field label="Daten (erste Zeile: Reihen, erste Spalte: Kategorien)">
-      <textarea rows={6} value={csv} spellCheck={false} className="mono" onChange={(e) => {
-        setCsv(e.target.value)
-        const spec = csvToSpec(e.target.value, it.spec!)
-        if (spec) set({ spec }, `chart-${it.id}`)
-      }} />
-    </Field>
+    <>
+      <Field label="Daten (erste Zeile: Reihen, erste Spalte: Kategorien)">
+        <textarea rows={6} value={csv} spellCheck={false} className="mono" onChange={(e) => {
+          setCsv(e.target.value)
+          const spec = csvToSpec(e.target.value, it.spec!)
+          if (spec) set({ spec }, `chart-${it.id}`)
+        }} />
+      </Field>
+      {/* ohne tag: Verknüpfen, Aktualisieren und Lösen sind je ein eigener Undo-Schritt */}
+      <ExcelLink spec={it.spec!} busy={false} free onChange={(spec) => { set({ spec }); setCsv(specToCsv(spec)) }} />
+    </>
   )
 }
 
