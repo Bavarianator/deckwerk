@@ -134,7 +134,7 @@ function Host({ mode }: { mode: string }) {
       scene?.dispose()
       scene = null
       await fontsLoaded()
-      await loadCustomFont(deck)
+      await loadFonts(deck)
       flushSync(() => setState({ deck, index, n: ++loads }))
       await frames()
       const root = document.querySelector<HTMLElement>('.slide')!
