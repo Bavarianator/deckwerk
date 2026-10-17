@@ -7,8 +7,8 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { VoiceId } from '../shared/deck'
 import { VOICE_SPEED, voiceChunks, voiceTiming, type VoiceTiming } from '../shared/film'
-import { wav as wav16k } from './phone'
-import { TTS, tts } from './sherpa'
+import { phoneTts, wav as wav16k } from './phone'
+import { ensureVoice, TTS, tts } from './sherpa'
 
 // Abkürzungen buchstabiert espeak-ng (Phonemisierung in Piper) oder liest sie als Wort („Nr.“ → „Närr“, „ggf.“ → „gegen F“): ausschreiben.
 // Geprüft 17.10. per Rückweg Thorsten → FC-DE-Erkennung. Richtig ohne Hilfe: 42 %, 5 €, &, 1.234,5, 3,5 und „KI“ (Großbuchstaben-Wort
@@ -26,8 +26,9 @@ const SAY: Record<VoiceId, [RegExp, string][]> = {
 const say = (s: string, voice: VoiceId) => SAY[voice].reduce((t, [re, to]) => t.replace(re, to), s)
 const CACHE_V = 1 // erhöhen, wenn sich SAY oder das Zusammensetzen der Tonspur ändert: alte Cache-Einträge gelten dann nicht mehr
 
-/** Sprechertext → WAV (16 bit mono) und Zeitplan. Sätze aus voiceChunks (ohne [klick]), dazwischen die Pausen aus voiceTiming. */
-export async function synthesize(text: string, o: { voice: VoiceId; speed?: number; models: string; cacheDir: string; onProgress?: (pct: number) => void }): Promise<{ wav: string; timing: VoiceTiming }> {
+/** Sprechertext → WAV (16 bit mono) und Zeitplan. Sätze aus voiceChunks (ohne [klick]), dazwischen die Pausen aus voiceTiming.
+ *  phone.serial: ein Handy (phone.ts) spricht; geht dort etwas schief, rechnet der PC. */
+export async function synthesize(text: string, o: { voice: VoiceId; speed?: number; models: string; cacheDir: string; onProgress?: (pct: number) => void; phone?: { serial: string } }): Promise<{ wav: string; timing: VoiceTiming }> {
   const chunks = voiceChunks(text), sentences = chunks.flat()
   if (!sentences.length) throw new Error('Kein Sprechertext: Die Szene hat nichts, was die Stimme sprechen könnte.')
   const speed = Math.min(VOICE_SPEED.max, Math.max(VOICE_SPEED.min, o.speed ?? 1))
@@ -35,7 +36,15 @@ export async function synthesize(text: string, o: { voice: VoiceId; speed?: numb
   const wav = join(o.cacheDir, `${key}.wav`), json = join(o.cacheDir, `${key}.json`)
   if (existsSync(wav) && existsSync(json)) return { wav, timing: JSON.parse(await readFile(json, 'utf8')) }
 
-  const { samples, sampleRate: sr } = await tts(sentences.map((s) => say(s, o.voice)), { voice: o.voice, speed, models: o.models, onProgress: o.onProgress })
+  const said = sentences.map((s) => say(s, o.voice))
+  // Cache-Schlüssel ohne Rechenort: Handy und PC klingen gleich (Piper ist nicht bitgenau, die Dauer weicht um wenige Prozent ab)
+  let r: { samples: Float32Array[]; sampleRate: number } | undefined
+  if (o.phone) try {
+    await ensureVoice(o.voice, o.models, (p) => o.onProgress?.(Math.floor(p * 0.3))) // Fortschritt wie tts(): 0–30 Download
+    r = await phoneTts(o.phone.serial, o.models, o.voice, said, speed)
+    o.onProgress?.(100)
+  } catch (e) { console.warn('[voice] Handy nicht nutzbar, Stimme auf dem PC:', (e as Error).message) }
+  const { samples, sampleRate: sr } = r ?? await tts(said, { voice: o.voice, speed, models: o.models, onProgress: o.onProgress })
   let i = 0
   const durs = chunks.map((beat) => beat.map(() => samples[i++].length / sr))
   const timing = voiceTiming(chunks, durs)

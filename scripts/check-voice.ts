@@ -1,5 +1,5 @@
 // Sprecherstimme lokal (lädt einmalig je Stimme ~67 MB nach $DW_MODELS bzw. ~/.cache/deckwerk-check/models): npx esbuild scripts/check-voice.ts --bundle --packages=external --platform=node --format=esm --outfile=out/check-voice.mjs && npx esbuild src/main/sherpa-worker.ts --bundle --packages=external --platform=node --format=cjs --outfile=out/sherpa-worker.cjs && node out/check-voice.mjs
-// DW_VOICE_CACHE setzt den Cache-Ordner (wird zu Beginn geleert)
+// DW_VOICE_CACHE setzt den Cache-Ordner (wird zu Beginn geleert), DW_PHONE=<Seriennummer> spricht zusätzlich auf dem Handy (adb devices)
 import { ok, rejects } from 'node:assert'
 import { readFileSync, rmSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -14,15 +14,15 @@ const models = process.env.DW_MODELS ?? join(homedir(), '.cache', 'deckwerk-chec
 const cacheDir = process.env.DW_VOICE_CACHE ?? join(homedir(), '.cache', 'deckwerk-e2e', 'check-voice')
 rmSync(cacheDir, { recursive: true, force: true })
 
-async function run(voice: VoiceId, text: string, label: string) {
+async function run(voice: VoiceId, text: string, label: string, o: Partial<Parameters<typeof synthesize>[1]> = {}) {
   await ensureVoice(voice, models) // Download nicht mitmessen
-  const pcts: number[] = [], t0 = performance.now(), r = await synthesize(text, { voice, models, cacheDir, onProgress: (p) => pcts.push(p) })
+  const pcts: number[] = [], t0 = performance.now(), r = await synthesize(text, { voice, models, cacheDir, onProgress: (p) => pcts.push(p), ...o })
   const secs = (performance.now() - t0) / 1000, b = readFileSync(r.wav), sr = b.readUInt32LE(24), len = (b.length - 44) / 2 / sr
   ok(b.toString('latin1', 0, 4) === 'RIFF' && b.readUInt16LE(34) === 16, 'kein 16-bit-WAV')
   ok(pcts.at(-1) === 100 && pcts.every((p, i) => !i || p >= pcts[i - 1]), `Fortschritt ${pcts}`)
   ok(Math.abs(len - r.timing.total) <= 0.05, `WAV ${len.toFixed(2)} s, Zeitplan ${r.timing.total.toFixed(2)} s`)
   console.log(`${voice} ${label}: ${len.toFixed(2)} s Audio in ${secs.toFixed(2)} s, RTF ${(secs / len).toFixed(2)}, Takte ${r.timing.beats.map((x) => x.toFixed(2)).join(' ')}`)
-  return { ...r, len }
+  return { ...r, len, secs }
 }
 
 const de = 'Hallo Welt. Das ist ein Test. [klick] Zweiter Takt mit 42 % mehr Tempo.'
@@ -46,6 +46,24 @@ ok(again.wav === a.wav && again.timing.total === a.timing.total, 'Cache liefert 
 ok(ms < 300, `Cache-Treffer dauerte ${ms.toFixed(0)} ms`)
 console.log(`de aus dem Cache: ${ms.toFixed(0)} ms`)
 await run('de', 'Jetzt ist das Modell geladen, also zählt nur noch die Synthese.', 'Modell geladen')
+
+// Handy: Warnungen mitschneiden, sonst fiele ein stiller Rückfall auf den PC nicht auf
+async function warned<T>(f: () => Promise<T>): Promise<[T, string]> {
+  const warn = console.warn
+  let w = ''
+  console.warn = (...a: unknown[]) => { w += a.join(' ') }
+  try { return [await f(), w] } finally { console.warn = warn }
+}
+const near = (x: { len: number; timing: typeof a.timing }) => x.timing.beats.length === a.timing.beats.length && x.timing.cues.length === a.timing.cues.length && Math.abs(x.len / a.len - 1) <= 0.15
+const [fb, why] = await warned(() => run('de', de, 'Rückfall auf den PC', { cacheDir: join(cacheDir, 'rueckfall'), phone: { serial: 'kein-handy' } }))
+ok(/Handy nicht nutzbar/.test(why) && near(fb), `Rückfall: ${fb.len.toFixed(2)} s statt ${a.len.toFixed(2)} s, Warnung „${why}“`)
+const serial = process.env.DW_PHONE
+if (serial) {
+  const [p, w] = await warned(() => run('de', de, `Handy ${serial}`, { cacheDir: join(cacheDir, 'handy'), phone: { serial } }))
+  ok(!w, `Handy fiel auf den PC zurück: ${w}`)
+  ok(p.len > 1 && near(p), `Handy ${p.len.toFixed(2)} s, Takte ${p.timing.beats}, ${p.timing.cues.length} Sätze; PC ${a.len.toFixed(2)} s`)
+  console.log(`de gleicher Text: Handy ${p.secs.toFixed(2)} s, PC ${fb.secs.toFixed(2)} s (Modell geladen)`)
+}
 
 const e = await run('en', 'This is a short test.', 'mit Modell laden')
 ok(e.len > 0.5 && e.timing.cues.length === 1, 'englische Stimme')

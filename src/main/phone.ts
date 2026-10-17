@@ -3,15 +3,17 @@
 // PC (sherpa-worker.ts), erkannt werden sie dort in einem Programmlauf. Gemessen 12.10.: Galaxy S20+ RTF 0,18, AMD A4-9125
 // ~0,8. Scheitert das Handy, rechnet der PC (sherpa.ts). Ohne Electron, damit Worker und Selbsttest es nutzen können.
 import { execFile } from 'node:child_process'
-import { existsSync, readFileSync, statSync } from 'node:fs'
-import { mkdir, mkdtemp, readdir, rename, rm, writeFile } from 'node:fs/promises'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { promisify } from 'node:util'
+import type { VoiceId } from '../shared/deck'
 import { download, httpFetch } from './download'
 
 const exec = promisify(execFile)
-const adb = (serial: string, ...args: string[]) => exec('adb', ['-s', serial, ...args], { maxBuffer: 1 << 28, timeout: 30 * 60_000 })
+const adbIn = (ms: number, serial: string, ...args: string[]) => exec('adb', ['-s', serial, ...args], { maxBuffer: 1 << 28, timeout: ms })
+const adb = (serial: string, ...args: string[]) => adbIn(30 * 60_000, serial, ...args)
 export const PHONE_DIR = '/data/local/tmp/deckwerk'
 /** Marker unter appData/deckwerk (gemeinsam für App, Entwicklung und MCP-Server wie spellcheck-off): vorhanden = aus. Ohne Marker rechnet ein verbundenes Handy, der PC ist der Rückfall */
 export const phoneMarker = (appData: string) => join(appData, 'deckwerk', 'phone-off')
@@ -25,7 +27,8 @@ const TOP = 'sherpa-onnx-v1.13.8-android-aarch64-termux-shared'
 const SHERPA = [`https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/${TOP}.tar.bz2`, 'ad7bac42adc6295293fe6d36475936afb227cdc757cf293c02a706f6aca4e0a2']
 const LIBS = ['libsherpa-onnx-c-api.so', 'libsherpa-onnx-cxx-api.so', 'libonnxruntime.so']
 const TERMUX = 'https://packages.termux.dev/apt/termux-main/'
-const BUNDLE = ['sherpa-onnx-offline', ...LIBS, 'libc++_shared.so']
+const BINS = ['sherpa-onnx-offline', 'sherpa-onnx-offline-tts'] // Erkennung, Sprecherstimme (phoneTts)
+const BUNDLE = [...BINS, ...LIBS, 'libc++_shared.so']
 const ASR = ['encoder.int8.onnx', 'decoder.int8.onnx', 'joiner.int8.onnx', 'tokens.txt']
 // Modellordner auf dem Handy, relativ zu PHONE_DIR (bis v0.2.4 lag Parakeet v3 direkt darin, ensurePhone räumt es weg)
 const sub = (dir: string) => `${dir}/`
@@ -61,16 +64,20 @@ async function bundle(models: string): Promise<string> {
   const tmp = await mkdtemp(join(models, '.android-'))
   try {
     await download(SHERPA[0], SHERPA[1], join(tmp, 'sherpa.tar.bz2'))
-    await exec('tar', ['-xf', join(tmp, 'sherpa.tar.bz2'), '-C', tmp, `${TOP}/bin/sherpa-onnx-offline`, ...LIBS.map((l) => `${TOP}/lib/${l}`)])
-    const entry = (await (await httpFetch(`${TERMUX}dists/stable/main/binary-aarch64/Packages`)).text()).split('\n\n').find((e) => /^Package: libc\+\+$/m.test(e))
-    const deb = entry && /^Filename: (\S+)$/m.exec(entry)?.[1], sha = entry && /^SHA256: (\w+)$/m.exec(entry)?.[1]
-    if (!deb || !sha) throw new Error('libc++ nicht im Termux-Paketindex gefunden')
-    await download(TERMUX + deb, sha, join(tmp, 'libcxx.deb'))
-    await writeFile(join(tmp, 'data.tar.xz'), arMember(readFileSync(join(tmp, 'libcxx.deb')), 'data.tar'))
-    const so = './data/data/com.termux/files/usr/lib/libc++_shared.so'
-    await exec('tar', ['-xf', join(tmp, 'data.tar.xz'), '-C', tmp, so])
-    for (const [from, to] of [[`${TOP}/bin/sherpa-onnx-offline`, 'sherpa-onnx-offline'], ...LIBS.map((l) => [`${TOP}/lib/${l}`, l]), [so, 'libc++_shared.so']])
-      await rename(join(tmp, from), join(dir, to))
+    const from = [...BINS.map((b) => `${TOP}/bin/${b}`), ...LIBS.map((l) => `${TOP}/lib/${l}`)]
+    await exec('tar', ['-xf', join(tmp, 'sherpa.tar.bz2'), '-C', tmp, ...from])
+    // libc++ nur, wenn sie fehlt: Ein Bundle von vor sherpa-onnx-offline-tts behält seine (der Termux-Index hat inzwischen evtl. eine neuere)
+    if (!existsSync(join(dir, 'libc++_shared.so'))) {
+      const entry = (await (await httpFetch(`${TERMUX}dists/stable/main/binary-aarch64/Packages`)).text()).split('\n\n').find((e) => /^Package: libc\+\+$/m.test(e))
+      const deb = entry && /^Filename: (\S+)$/m.exec(entry)?.[1], sha = entry && /^SHA256: (\w+)$/m.exec(entry)?.[1]
+      if (!deb || !sha) throw new Error('libc++ nicht im Termux-Paketindex gefunden')
+      await download(TERMUX + deb, sha, join(tmp, 'libcxx.deb'))
+      await writeFile(join(tmp, 'data.tar.xz'), arMember(readFileSync(join(tmp, 'libcxx.deb')), 'data.tar'))
+      const so = './data/data/com.termux/files/usr/lib/libc++_shared.so'
+      await exec('tar', ['-xf', join(tmp, 'data.tar.xz'), '-C', tmp, so])
+      from.push(so)
+    }
+    for (const f of from) await rename(join(tmp, f), join(dir, basename(f))) // ersetzt Vorhandenes durch Gleiches (fester Release)
     return dir
   } finally {
     await rm(tmp, { recursive: true, force: true })
@@ -131,5 +138,54 @@ export async function phoneDecode(serial: string, model: string, parts: Float32A
     clearInterval(tick)
     await rm(local, { recursive: true, force: true })
     await adb(serial, 'shell', `rm -rf ${remote}`).catch(() => {})
+  }
+}
+
+// Ein Argument für die Shell des Handys wie quote in phone-ffmpeg.ts (ein Import von dort gäbe einen Kreis: es braucht PHONE_DIR)
+const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`
+// Gemessen 17.10. auf dem S20+: jeder Lauf lädt die Stimme neu (~1,2 s), daher 4 Läufe zugleich mit je 2 Threads (8 Sätze: 5 s statt 11 s nacheinander)
+const TTS_JOBS = 4
+const QUICK = 30_000 // Frist für kleine adb-Schritte: schläft das Handy oder hängt USB, rechnet bald der PC
+
+let speaking: Promise<unknown> = Promise.resolve()
+/** Sprecherstimme auf dem Handy statt im sherpa-Worker: je Satz mono f32 wie tts() in sherpa.ts, ein Programmlauf je Satz.
+ *  Die Stimme muss unter <models>/tts-<voice> liegen (ensureVoice); sie kommt beim ersten Mal nach PHONE_DIR/tts-<voice> (~80 MB).
+ *  Ein Aufruf zur Zeit je Prozess (Player-Vorschau und Export): parallel teilten sie sich nur die Kerne des Handys. */
+export function phoneTts(serial: string, models: string, voice: VoiceId, sentences: string[], speed: number): Promise<{ samples: Float32Array[]; sampleRate: number }> {
+  const run = speaking.then(() => speak(serial, models, voice, sentences, speed))
+  speaking = run.catch(() => {})
+  return run
+}
+
+async function speak(serial: string, models: string, voice: VoiceId, sentences: string[], speed: number): Promise<{ samples: Float32Array[]; sampleRate: number }> {
+  const v = `tts-${voice}`, onnx = readdirSync(join(models, v)).find((f) => f.endsWith('.onnx'))
+  if (!onnx) throw new Error(`Stimme ${voice} fehlt unter ${models}`)
+  const local = await mkdtemp(join(tmpdir(), 'deckwerk-tts-')), id = `tts-job-${basename(local).slice(-6)}`, job = `${PHONE_DIR}/${id}` // eigener Ordner je Aufruf: App und MCP-Server können gleichzeitig sprechen
+  try {
+    // zuerst: ohne Handy scheitert es hier, bevor das Bundle geladen wird. Reste abgebrochener Läufe (Handy abgesteckt) nach 12 h weg wie in phone-ffmpeg.ts
+    await adbIn(QUICK, serial, 'shell', `find ${PHONE_DIR} -mindepth 1 -maxdepth 1 -name 'tts-job-*' -mmin +720 -exec rm -rf {} + 2>/dev/null; mkdir -p ${job}`)
+    const dir = await bundle(models), up = [...BUNDLE.map((f) => join(dir, f)), join(models, v)]
+    const bytes = [...up, ...readdirSync(join(models, v), { recursive: true }).map((f) => join(models, v, String(f)))].reduce((n, f) => n + statSync(f).size, 0)
+    // --sync überträgt nur, was auf dem Handy fehlt oder abweicht (Größe, Zeitstempel): eine abgebrochene Übertragung wird wiederholt. Frist: mindestens 1 MB/s (WLAN-Debugging)
+    await adbIn(QUICK + Math.round(bytes / 1000), serial, 'push', '--sync', ...up, PHONE_DIR)
+    // -- vor dem Text: sonst hielte das Programm einen Satz wie „--x“ für eine Option (17.10. geprüft, „-“ allein ginge auch ohne)
+    const run = (s: string, k: number) => `LD_LIBRARY_PATH=. ./sherpa-onnx-offline-tts --vits-model=${v}/${onnx} --vits-tokens=${v}/tokens.txt --vits-data-dir=${v}/espeak-ng-data --num-threads=2 --speed=${speed} --output-filename=${job}/${k}.wav -- ${quote(s)} >/dev/null 2>&1 &${(k + 1) % TTS_JOBS ? '' : '\nwait'}`
+    await writeFile(join(local, 'tts.sh'), `cd ${PHONE_DIR} && chmod 755 sherpa-onnx-offline-tts || exit 1\n${sentences.map(run).join('\n')}\nwait\n`)
+    await adbIn(QUICK, serial, 'push', join(local, 'tts.sh'), `${job}/tts.sh`)
+    // Zeitgrenze statt Stillstands-Wache: die Läufe melden nichts; ein Satz braucht auf dem S20+ ~1,5 s
+    await adbIn(60_000 + sentences.length * 10_000, serial, 'shell', `sh ${job}/tts.sh`).catch((e) => {
+      throw new Error(e.killed ? 'Stimme auf dem Handy: keine Antwort in der Zeitgrenze' : `Stimme auf dem Handy fehlgeschlagen: ${e.message}`)
+    })
+    const done = (await adbIn(QUICK, serial, 'shell', `ls ${job}`)).stdout.split(/\s+/).filter((f) => f.endsWith('.wav')).length
+    if (done !== sentences.length) throw new Error(`Handy lieferte ${done} von ${sentences.length} Sätzen`)
+    await adbIn(QUICK, serial, 'pull', ...sentences.map((_, k) => `${job}/${k}.wav`), local)
+    const wavs = await Promise.all(sentences.map((_, k) => readFile(join(local, `${k}.wav`))))
+    // sherpa schreibt 16 bit mono mit festem 44-Byte-Kopf
+    if (wavs.some((b) => b.toString('latin1', 0, 4) !== 'RIFF' || b.readUInt16LE(34) !== 16 || b.toString('latin1', 36, 40) !== 'data')) throw new Error('Stimme vom Handy: unerwartetes WAV')
+    return { samples: wavs.map((b) => Float32Array.from({ length: (b.length - 44) / 2 }, (_, i) => b.readInt16LE(44 + i * 2) / 32768)), sampleRate: wavs[0].readUInt32LE(24) }
+  } finally {
+    await rm(local, { recursive: true, force: true })
+    // nach Frist oder Abbruch laufen Skript und sherpa weiter: alles mit dem Job-Ordner im Aufruf beenden ([/]: passt nicht auf diese Shell selbst)
+    await adbIn(QUICK, serial, 'shell', `pkill -f '${id}[/]'; rm -rf ${job}`).catch(() => {})
   }
 }
