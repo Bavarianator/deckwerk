@@ -632,7 +632,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const deck = needDeck(ctx)
         const fresh: Slide[] = i.slides.map((s, k) => ({
           id: '', layout: s.layout, variant: s.variant, build: s.build, transition: s.transition, tone: s.tone, decor: s.decor, frame: (checkFrame(s.layout, s.frame, `slides[${k}]`), s.frame), notes: s.notes && typeset(s.notes), items: withIds(s.items as Item[]), bg: s.bg,
-          voice: s.voice && typeset(s.voice), duration: s.duration, camera: s.camera,
+          voice: s.voice?.trim() ? typeset(s.voice) : undefined, duration: s.duration, camera: s.camera,
           content: validateContent(s.layout, s.content, `slides[${k}]`),
         }))
         for (const s of fresh) { s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
