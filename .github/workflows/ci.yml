@@ -39,12 +39,15 @@ jobs:
           $E scripts/check-free-text.ts --format=cjs --external:electron --loader:.css=empty --loader:.md=text --jsx=automatic --outfile=out/check-free-text.cjs && node out/check-free-text.cjs
           $E scripts/check-print.ts --outfile=out/check-print.cjs && node out/check-print.cjs
           for c in check-xlsx check-xmeml check-clients; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
+          for c in check-timeline check-timeline-edit check-timeline-convert check-scopes check-timeline-player check-timeline-drag check-layout-switch check-lint-panel check-video-tools check-theme-editor; do $E scripts/$c.ts --format=esm --loader:.css=empty --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           npm run check:theme-lint
       - name: Bildschirm und Chromium-Sandbox
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb ffmpeg libxml2-utils
           # Ubuntu 24.04 sperrt unprivilegierte User-Namespaces per AppArmor; die Sandbox braucht sie
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Pro-Timeline mit ffmpeg (Farbe, Graph, Wellenform, Lautheit, Export, Mehrspur-XML)
+        run: for c in check-grade check-timeline-ffmpeg check-timeline-media check-timeline-export check-xmeml-tl; do npx esbuild --bundle --platform=node --log-level=warning scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
       - name: Animationen im PPTX-XML (braucht xmllint)
         run: npx esbuild --bundle --platform=node --log-level=warning scripts/check-animations.ts --format=esm --outfile=out/check-animations.mjs && node out/check-animations.mjs
       - name: Rendern und Export (PPTX, PDF, PNG)
