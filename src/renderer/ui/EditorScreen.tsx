@@ -102,7 +102,7 @@ export function EditorScreen(p: Props) {
       <div className="work-center" onPointerDownCapture={(e) => { if ((e.target as HTMLElement).closest('.stage-canvas')) setDragging(true) }}>
         {spec && t?.rect && closed !== t.slot && !dragging && (
           <ChartEditor
-            spec={spec} free={!!item} rect={t.rect} busy={p.busy} onChange={setSpec} onClose={() => setClosed(t.slot ?? null)}
+            key={`${slide?.id}:${t.slot}`} spec={spec} free={!!item} rect={t.rect} busy={p.busy} onChange={setSpec} onClose={() => setClosed(t.slot ?? null)}
             onCheck={() => p.onSend('Ich habe die Daten des Diagramms geändert. Passen Titel und Kernaussage noch dazu? Wenn nicht, passe sie an.', t.context)}
           />
         )}

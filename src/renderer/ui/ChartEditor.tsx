@@ -1,6 +1,6 @@
 // Diagramm-Daten direkt an der Folie: Typ, Tabelle (Kategorien × Datenreihen), Hervorhebung, Einheit.
 // Werte mit Komma oder Punkt; „Aus Excel einfügen“ liest Tabulator-getrennten Text aus der Zwischenablage.
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Select } from './kit'
 import { LoaderCircle, RefreshCw, Sparkles, X } from 'lucide-react'
 import type { ChartLink, ChartSpec } from '../../shared/deck'
@@ -19,7 +19,9 @@ interface Props {
   onClose: () => void
 }
 
-export function ChartEditor({ spec, free, rect, busy, onChange, onCheck, onClose }: Props) {
+export function ChartEditor({ spec, free, rect, busy: busyProp, onChange, onCheck, onClose }: Props) {
+  const [linking, setLinking] = useState(false) // Excel wird gelesen: Tabelle sperren, das Ergebnis ersetzt sie gleich
+  const busy = busyProp || linking
   const box = useRef<HTMLElement>(null)
   const [pos, setPos] = useState({ left: 0, top: 0 })
   // rechts neben dem Diagramm, sonst über dessen rechten Rand; nie aus dem Fenster
@@ -77,7 +79,7 @@ export function ChartEditor({ spec, free, rect, busy, onChange, onCheck, onClose
           <button className="plain" disabled={busy} onClick={paste}>Aus Excel einfügen</button>
         </div>
       </div>
-      <ExcelLink spec={spec} busy={busy} free={free} onChange={(s) => onChange(s, true)} />
+      <ExcelLink spec={spec} busy={busyProp} free={free} onChange={(s) => onChange(s, true)} onWorking={setLinking} />
 
       <div className="chart-ed-row">
         <span>Hervorheben</span>
@@ -116,29 +118,47 @@ function overLimit(d: Data, free: boolean): string | null {
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
 const fileName = (f: string) => f.split(/[\\/]/).pop()
 
-export function ExcelLink({ spec, busy, free = false, onChange }: { spec: ChartSpec; busy: boolean; free?: boolean; onChange: (spec: ChartSpec) => void }) {
+// Je Diagramm eine eigene Instanz: Aufrufer setzen einen key (Folie + Slot bzw. Element-id), sonst hinge ein Formular am falschen Diagramm
+export function ExcelLink({ spec, busy, free = false, onChange, onWorking }: { spec: ChartSpec; busy: boolean; free?: boolean; onChange: (spec: ChartSpec) => void; onWorking?: (on: boolean) => void }) {
   const [form, setForm] = useState<ChartLink | null>(null) // Datei gewählt, Blatt und Bereich fehlen noch
   const [err, setErr] = useState('')
   const [warn, setWarn] = useState<string[]>([])
   const [working, setWorking] = useState(false)
   const off = busy || working
+  // Nach dem Lesen zählt der Stand von dann, nicht der vom Klick; ist die Instanz weg (anderes Diagramm, geschlossen), wird verworfen
+  const now = useRef({ spec, onChange })
+  now.current = { spec, onChange }
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  const linked = useRef<HTMLButtonElement>(null)
+  const focusLinked = useRef(false)
+  useEffect(() => { if (focusLinked.current && linked.current) { linked.current.focus(); focusLinked.current = false } })
+  const busyFor = (on: boolean) => { setWorking(on); onWorking?.(on) }
   // Fehler oder zu großer Bereich: nichts speichern, die bisherigen Werte bleiben
   const read = async (link: ChartLink) => {
-    setWorking(true)
+    busyFor(true)
     setErr('')
     setWarn([])
     try {
       const d = await window.api.xlsxRead(link)
+      if (!alive.current) return
       const bad = overLimit(d, free)
       if (bad) setErr(bad)
-      else { onChange({ ...spec, categories: d.categories, series: d.series, link }); setForm(null); setWarn(d.warnings) }
-    } catch (e) { setErr(errText(e)) }
-    setWorking(false)
+      else {
+        now.current.onChange({ ...now.current.spec, categories: d.categories, series: d.series, link })
+        focusLinked.current = !!form
+        setForm(null)
+        setWarn(d.warnings)
+      }
+    } catch (e) { if (alive.current) setErr(errText(e)) }
+    if (alive.current) busyFor(false)
   }
-  const pick = async () => { const file = await window.api.xlsxPick(); if (file) { setErr(''); setForm({ range: '', ...form, file }) } }
-  const submit = () => form?.range.trim() && void read({ file: form.file, sheet: form.sheet?.trim() || undefined, range: form.range.trim() })
+  const pick = async () => { const file = await window.api.xlsxPick(); if (file && alive.current) { setErr(''); setForm({ range: '', ...form, file }) } }
+  // Schema chartLink verlangt „A1:D5“: groß, ohne Leerzeichen
+  const range = (form?.range ?? '').replace(/\s+/g, '').toUpperCase()
+  const submit = () => form && range && void read({ file: form.file, sheet: form.sheet?.trim() || undefined, range })
   const notes = <>
-    {warn.map((w) => <p key={w} className="chart-link-note">{w}</p>)}
+    {warn.map((w) => <p key={w} className="chart-link-note" role="status">{w}</p>)}
     {err && <p className="chart-link-note error" role="alert">{err}</p>}
   </>
   const l = spec.link
@@ -152,7 +172,7 @@ export function ExcelLink({ spec, busy, free = false, onChange }: { spec: ChartS
       </div>
       <p className="chart-link-note">Erste Zeile: Kategorien. Erste Spalte: Namen der Datenreihen.</p>
       <span className="chart-link-acts">
-        <button className="pill tint" disabled={off || !form.range.trim()} onClick={submit}>{working && <LoaderCircle size={13} className="spin" />}Verknüpfen</button>
+        <button className="pill tint" disabled={off || !range} onClick={submit}>{working && <LoaderCircle size={13} className="spin" />}Verknüpfen</button>
         <button className="plain" disabled={working} onClick={() => { setForm(null); setErr('') }}>Abbrechen</button>
       </span>
       {notes}
@@ -162,7 +182,7 @@ export function ExcelLink({ spec, busy, free = false, onChange }: { spec: ChartS
     <div className="chart-link">
       <span className="chart-link-src" title={l.file}><b>{fileName(l.file)}</b><span>{l.sheet ? `${l.sheet} · ` : ''}{l.range}</span></span>
       <span className="chart-link-acts">
-        <button className="plain tint" disabled={off} onClick={() => void read(l)}>{working ? <LoaderCircle size={13} className="spin" /> : <RefreshCw size={13} />}Aktualisieren</button>
+        <button ref={linked} className="plain tint" disabled={off} onClick={() => void read(l)}>{working ? <LoaderCircle size={13} className="spin" /> : <RefreshCw size={13} />}Aktualisieren</button>
         <button className="plain" disabled={off} onClick={() => { onChange({ ...spec, link: undefined }); setErr(''); setWarn([]) }}>Verknüpfung lösen</button>
       </span>
       <p className="chart-link-note">„Aktualisieren“ ersetzt die Werte in der Tabelle durch die aus Excel.</p>

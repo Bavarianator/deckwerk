@@ -49,20 +49,26 @@ export function MarkeSection(_: SectionProps) {
   const [kunden, setKunden] = useState<{ list: string[]; active: string | null }>()
   const [neu, setNeu] = useState<string | null>(null) // Namensfeld für „Neuer Kunde …“
   useEffect(() => { void window.api.clients().then(setKunden) }, [])
+  // Anzeige immer vom aktiven Kunden; was nicht lädt, wird nicht gezeigt, damit nichts Altes in den neuen Kunden gespeichert wird
+  const reload = async () => {
+    const [k, brand, style] = await Promise.allSettled([window.api.clients(), window.api.getBrand(), window.api.getStyle()])
+    setKunden(k.status === 'fulfilled' ? k.value : undefined)
+    setKit(brand.status === 'fulfilled' ? brand.value : undefined)
+    setHaus(style.status === 'fulfilled' ? { text: style.value, saved: style.value } : { text: '', saved: '' })
+    return [k, brand, style].find((r) => r.status === 'rejected')?.reason as unknown
+  }
   const wechsel = (name: string | null) => run('kunde', async () => {
     clearTimeout(timer.current)
     const b = pending.current
-    pending.current = null
-    if (b) await window.api.setBrand(b)
+    if (b) { await window.api.setBrand(b); if (pending.current === b) pending.current = null } // wirft setBrand, bleibt die Änderung offen
     const h = hausNow.current
     if (h.text !== h.saved) await writeStyle(h.text)
-    await window.api.setClient(name)
-    const [k, brand, style] = await Promise.all([window.api.clients(), window.api.getBrand(), window.api.getStyle()])
-    setKunden(k)
-    setKit(brand)
-    setHaus({ text: style, saved: style })
-    setNeu(null)
+    let fail: unknown
+    try { await window.api.setClient(name); setNeu(null) } catch (e) { fail = e }
+    const bad = await reload() // auch nach einem Fehler: die Anzeige muss zum Stand auf der Platte passen
+    if (fail ?? bad) throw fail ?? bad
   })
+  const fehlt = kunden?.active && !kunden.list.includes(kunden.active) ? kunden.active : null // Marker zeigt auf einen Kunden ohne Ordner
 
   return (
     <>
@@ -76,7 +82,8 @@ export function MarkeSection(_: SectionProps) {
               {kunden.list.map((k) => <option key={k} value={k}>{k}</option>)}
               <option value={NEU}>Neuer Kunde …</option>
             </Select>
-          }>Neue Decks und die KI nutzen Marke und Hausstil des aktiven Kunden.</Row>
+          }>{fehlt ? <span className="error">Der aktive Kunde „{fehlt}“ fehlt im Kundenordner. Wähle einen Kunden oder „Keiner“.</span>
+            : 'Neue Decks und die KI nutzen Marke und Hausstil des aktiven Kunden.'}</Row>
           {neu !== null && (
             <Row title="Neuer Kunde" action={<>
               <button type="button" className="pill tint" disabled={!neu.trim() || !!busy} onClick={() => void wechsel(neu.trim())}>{busy === 'kunde' ? <><Spin />Lege an …</> : 'Anlegen'}</button>
