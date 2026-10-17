@@ -18,7 +18,7 @@ const ZOOM = { def: 60, step: 1.25, min: 4, max: 1200 } // px je Sekunde
 
 // Tasten nicht beim Tippen, nicht mit Modifikator (außer Shift) und nicht, solange ein Dialog oder Menü offen ist (wie Deckvid)
 const keysFree = (e: KeyboardEvent) => {
-  const t = e.target as HTMLElement
+  const t = e.target instanceof HTMLElement ? e.target : document.body // Ziel kann auch document/window sein
   const typing = t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)
   return !(e.ctrlKey || e.metaKey || e.altKey || typing || t.closest('[role=menu], [role=listbox]')
     || document.querySelector('[aria-modal="true"], dialog[open], .kit-menu, [role=menu]'))
