@@ -1,7 +1,7 @@
 // Startbildschirm: eine Frage, ein Feld. Darunter Beispiele, „Leer beginnen“, die zuletzt bearbeiteten Decks (auch per MCP gebaute) und Vorlagen.
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp, Image as ImageIcon, Paperclip, Settings, X } from 'lucide-react'
-import { FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
+import { AUDIO_FILE, FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, type Size } from '../../shared/deck'
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Select } from './kit'
@@ -66,6 +66,17 @@ export const VIDEO_EXAMPLES: [string, string, string][] = [
   ['Zusammenschnitt', 'Schneide meine Videos zu einem Zusammenschnitt zusammen.',
     'Ablauf Kompilation (Guide §11, Ablauf 4): create_deck format 16:9, transition none. Je Quelle transcribe_video und eine clip-Folie, dazwischen kurze Zwischentitel (Layout section), transition fade nur sparsam an Zwischentiteln. Musik über find_music nur auf Wunsch, dezent. Am Ende export_deck mit mp4. Fehlt ein Video oder Link, frag zuerst kurz danach (Video anhängen oder Link einfügen).'],
 ]
+// Podcast-Chips wie VIDEO_EXAMPLES
+export const PODCAST_EXAMPLES: [string, string, string][] = [
+  ['Folge aufräumen', 'Räum meine Podcast-Folge auf: lange Pausen, Füllwörter und Versprecher raus, dazu Kapitel.',
+    'Ablauf Podcast aufräumen: Fehlt die Aufnahme (Audio oder Video), frag zuerst kurz danach (Datei anhängen). create_episode mit der Aufnahme als Spur, transcribe_video über die ganze Spur, edit_episode clean mit pauses 0.6, fillers und retakes, dann Kapitel an den Themenwechseln setzen (kurze Titel, das erste bei 0:00). Am Ende export_deck mit mp3.'],
+  ['Interview mit zwei Spuren', 'Schneide mein Interview: zwei Spuren, eine pro Person.',
+    'Ablauf Interview: Fehlen die Spuren, frag zuerst kurz danach (je Person eine Datei). create_episode mit beiden Spuren (Namen der Personen als name), transcribe_video je Spur, edit_episode clean mit pauses 0.6, fillers und retakes (nie schneiden, während die andere Person spricht), Lautstärke der Spuren angleichen (gain), Kapitel setzen. Am Ende export_deck mit mp3.'],
+  ['Intro, Outro & Jingle', 'Gib meiner Folge ein kurzes Intro, ein Outro und einen Jingle.',
+    'Ablauf Jingles: Fehlt die Aufnahme, frag zuerst kurz danach. create_episode, falls es noch keine Folge gibt. find_music nach kurzen, dezenten Stücken (Intro und Outro höchstens 10–15 s), als intro und outro setzen; einen Jingle als Soundeffekt (sfx) nur an Kapitelanfängen und sparsam. Am Ende export_deck mit mp3.'],
+  ['Aus einem Video-Podcast', 'Mach aus meinem Video-Podcast eine Audio-Folge.',
+    'Ablauf Video-Podcast: Fehlt das Video oder ein Link, frag zuerst kurz danach (bei Link zuerst import_video). create_episode mit dem Video als Spur (nur der Ton zählt), transcribe_video, edit_episode clean mit pauses 0.6, fillers und retakes, Kapitel setzen. Am Ende export_deck mit mp3.'],
+]
 const LINK = /https?:\/\/[^\s<>"']+/g
 const linksOf = (text: string) => [...new Set((text.match(LINK) ?? []).map((u) => u.replace(/[.,;:!?)\]]+$/, '')))]
 // Nur Video-Links schalten in den Video-Modus, ein Quellenlink für eine Präsentation nicht
@@ -110,13 +121,15 @@ interface Props {
   onOpen: () => void
   onOpenPath: (path: string) => void
   onKey: () => void
-  onVideo?: () => void // Video-Modus: nach erfolgreichem Absenden, damit die App die Video-Ansicht zeigt
+  onVideo?: (kind: 'video' | 'podcast') => void // Video- oder Podcast-Modus: nach erfolgreichem Absenden, damit die App Deckvid zeigt
 }
 
 export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, onKey, onVideo }: Props) {
   const [text, setText] = useState('')
-  const [video, setVideo] = useState(false)
-  const [vask, setVask] = useState<string>() // ask des gewählten Video-Chips
+  const [kind, setKind] = useState<'deck' | 'video' | 'podcast'>('deck')
+  const video = kind !== 'deck' // Video und Podcast: Medien statt Folien
+  const pod = kind === 'podcast'
+  const [vask, setVask] = useState<string>() // ask des gewählten Video- oder Podcast-Chips
   const [fmt, setFmt] = useState('auto')
   const choice = FORMAT_CHOICES.find((f) => f.id === fmt)!
   const [recent, setRecent] = useState<Recent[]>([])
@@ -133,19 +146,22 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
     return () => window.removeEventListener('focus', load)
   }, [])
   const { srcs, attach, remove, clear, err } = useSource()
-  // Video oder Video-Link im Feld: automatisch in den Video-Modus (danach frei umschaltbar)
+  // Video oder Video-Link im Feld: automatisch in den Video-Modus, Audio in den Podcast-Modus (danach frei umschaltbar); Video im Podcast-Modus bleibt Podcast
   const hasVideo = srcs.some((s) => VIDEO_FILE.test(s.name)) || linksOf(text).some(isVideoLink)
-  useEffect(() => { if (hasVideo) { setVideo(true); setFmt('auto') } }, [hasVideo])
-  const mode = (v: boolean) => { setVideo(v); setVask(undefined); if (v) setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
+  const hasAudio = srcs.some((s) => AUDIO_FILE.test(s.name))
+  useEffect(() => {
+    if (hasAudio) { setKind('podcast'); setFmt('auto') } else if (hasVideo) { setKind((k) => (k === 'podcast' ? k : 'video')); setFmt('auto') }
+  }, [hasVideo, hasAudio])
+  const mode = (k: typeof kind) => { setKind(k); setVask(undefined); if (k !== 'deck') setFmt('auto') } // Format-Wahl gilt nur für Präsentationen
   const submit = () => {
-    const onlyVideos = video && srcs.length > 0 && srcs.every((s) => VIDEO_FILE.test(s.name))
-    const ask = text.trim() || (onlyVideos ? `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.` : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
+    const onlyMedia = video && srcs.length > 0 && srcs.every((s) => VIDEO_FILE.test(s.name) || AUDIO_FILE.test(s.name))
+    const ask = text.trim() || (onlyMedia ? (pod ? `Räum ${srcs.length === 1 ? 'diese Folge' : 'diese Aufnahmen'} auf und setz Kapitel.` : `Mach aus ${srcs.length === 1 ? 'diesem Video' : 'diesen Videos'} 5 Shorts.`) : !srcs.length ? '' : srcs.length === 1 && /\.pptx$/i.test(srcs[0].name)
       ? 'Übernimm diese PowerPoint als Deck: gleiche Folien in gleicher Reihenfolge, gleiche Aussagen, die eigenen Bilder, passende Layouts und ein stimmiges Design.'
       : 'Mach aus diesen Dateien eine Präsentation.')
     const links = video ? linksOf(text).map((u) => `Link: ${u} – zuerst import_video`) : []
-    const context = [video ? vask : choice.ask, ...links, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
+    const context = [video ? vask ?? (pod ? 'Podcast-Modus: die Folge entsteht als deck.podcast (create_episode, transcribe_video, edit_episode), nicht als Folien; am Ende export_deck mit mp3.' : undefined) : choice.ask, ...links, srcs.length ? sourceContext(srcs) : undefined].filter(Boolean).join('\n\n') || undefined
     // onSubmit liefert false bei busy oder fehlendem Key: dann nicht in die Video-Ansicht wechseln
-    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { if (video) onVideo?.(); setText(''); setVask(undefined); clear() }
+    if (onSubmit(srcs.length ? `${ask} · ${srcs.map((s) => s.name).join(', ')}` : ask, context)) { if (video) onVideo?.(pod ? 'podcast' : 'video'); setText(''); setVask(undefined); clear() }
   }
 
   return (
@@ -162,11 +178,12 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
 
       <main className="home-main">
         <div className="seg home-mode" role="group" aria-label="Modus">
-          <button type="button" aria-pressed={!video} onClick={() => mode(false)}>Präsentation</button>
-          <button type="button" aria-pressed={video} onClick={() => mode(true)}>Video</button>
+          <button type="button" aria-pressed={kind === 'deck'} onClick={() => mode('deck')}>Präsentation</button>
+          <button type="button" aria-pressed={kind === 'video'} onClick={() => mode('video')}>Video</button>
+          <button type="button" aria-pressed={pod} onClick={() => mode('podcast')}>Podcast</button>
         </div>
-        <h1>{video ? 'Was soll aus deinem Video werden?' : 'Was möchtest du zeigen?'}</h1>
-        <p className="home-sub">{video ? 'Deckwerk hört das Video ab, wählt die Momente, schneidet, untertitelt und exportiert.' : 'Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.'}</p>
+        <h1>{pod ? 'Was soll aus deiner Aufnahme werden?' : video ? 'Was soll aus deinem Video werden?' : 'Was möchtest du zeigen?'}</h1>
+        <p className="home-sub">{pod ? 'Deckwerk hört die Folge ab, kürzt Pausen, Füllwörter und Versprecher, setzt Kapitel und exportiert MP3.' : video ? 'Deckwerk hört das Video ab, wählt die Momente, schneidet, untertitelt und exportiert.' : 'Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.'}</p>
         <form className="home-field" onSubmit={(e) => { e.preventDefault(); submit() }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => { const f = [...e.dataTransfer.files]; if (f.length) { e.preventDefault(); attach(f.map(window.api.pathOf)) } }}>
@@ -175,8 +192,8 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
             autoFocus
             rows={2}
             value={text}
-            aria-label={video ? 'Was soll aus deinem Video werden?' : 'Worum geht es in deiner Präsentation?'}
-            placeholder={video ? 'Video hierher ziehen oder Link einfügen – und sag kurz, was du brauchst' : 'Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum'}
+            aria-label={pod ? 'Was soll aus deiner Aufnahme werden?' : video ? 'Was soll aus deinem Video werden?' : 'Worum geht es in deiner Präsentation?'}
+            placeholder={pod ? 'Aufnahme hierher ziehen (Audio oder Video) – und sag kurz, was du brauchst' : video ? 'Video hierher ziehen oder Link einfügen – und sag kurz, was du brauchst' : 'Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum'}
             onChange={(e) => { setText(e.target.value); setVask(undefined) }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
           />
@@ -189,15 +206,15 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
               {srcs.map((s) => (
                 <span key={s.name} className="pill" title={s.cut ? 'Zu lang, die KI bekommt den Anfang' : undefined}>{isImage(s.name) ? <ImageIcon size={13} /> : <Paperclip size={13} />}{s.name}<button type="button" className="plain" aria-label={`${s.name} entfernen`} onClick={() => remove(s.name)}><X size={13} /></button></span>
               ))}
-              <button type="button" className="plain" title={video ? 'Video anhängen (oder hierher ziehen)' : 'Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)'} onClick={() => attach()}><Paperclip size={16} />Datei</button>
+              <button type="button" className="plain" title={pod ? 'Aufnahme anhängen: Audio oder Video (oder hierher ziehen)' : video ? 'Video anhängen (oder hierher ziehen)' : 'Dateien anhängen: Text, Word, PowerPoint, PDF oder Bilder (oder hierher ziehen)'} onClick={() => attach()}><Paperclip size={16} />Datei</button>
               {err && <span className="home-err error" role="alert">{err}</span>}
             </div>
-            <button type="submit" className="round" aria-label={video ? 'Video-Auftrag senden' : 'Deck erstellen'} disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
+            <button type="submit" className="round" aria-label={pod ? 'Podcast-Auftrag senden' : video ? 'Video-Auftrag senden' : 'Deck erstellen'} disabled={!text.trim() && !srcs.length}><ArrowUp size={18} strokeWidth={2.4} /></button>
           </div>
         </form>
         <div className="home-chips">
           {video
-            ? VIDEO_EXAMPLES.map(([label, full, ask]) => <button key={label} className="pill" onClick={() => { setText(full); setVask(ask); ref.current?.focus() }}>{label}</button>)
+            ? (pod ? PODCAST_EXAMPLES : VIDEO_EXAMPLES).map(([label, full, ask]) => <button key={label} className="pill" onClick={() => { setText(full); setVask(ask); ref.current?.focus() }}>{label}</button>)
             : EXAMPLES.map(([label, full, f]) => <button key={label} className="pill" onClick={() => { setText(full); setFmt(f ?? 'auto'); ref.current?.focus() }}>{label}</button>)}
         </div>
         <button className="plain tint home-blank" onClick={() => onBlank(choice.format && { w: FORMATS[choice.format].w, h: FORMATS[choice.format].h })}>Leer beginnen und frei gestalten</button>

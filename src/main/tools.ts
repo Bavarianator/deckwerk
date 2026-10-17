@@ -22,7 +22,8 @@ import { overview, searchTranscript } from '../shared/transcript-search'
 import { typeset } from '../shared/typo'
 import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
-import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent } from '../shared/video'
+import { LONG_VIDEO, mmss, partsLength, transcriptLines, type ClipContent, type Transcript } from '../shared/video'
+import { autoCuts, editedLength, normCuts, episodeSchema, episodeSummary, lintEpisode, snapCut, toEdited, type Cut, type CutWhy, type Episode, type Span } from '../shared/podcast'
 import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat (der Mac-Fork patcht sie)
 import { contactSheet } from './ffmpeg'
@@ -427,37 +428,57 @@ async function job<T>(key: string, start: (onProgress: (pct: number) => void) =>
 }
 const stillRunning = (what: string, pct: number) => `${what} läuft noch (${pct} %). Rufe dasselbe Tool gleich noch einmal mit denselben Eingaben auf; die Arbeit läuft im Hintergrund weiter.`
 
-// Quellvideo der Video-Tools: asset://-URL oder absoluter Pfad → Datei. Nur Video-Endungen, die asset:// auch ausliefert (MEDIA_EXT).
+// Quelle der Video-Tools: asset://-URL oder absoluter Pfad → Datei. Nur Video- und Audio-Endungen (Podcast), die asset:// auch ausliefert (MEDIA_EXT).
 function videoFile(ctx: ToolContext, video: string): { file: string; v: VideoTools } {
   const v = ctx.engine.video
   if (!v) throw new Error('Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server.')
   const path = video.startsWith('asset:') ? decodeURIComponent(new URL(video).pathname) : video
   if (!isAbsolute(path)) throw new Error(`video "${video}": asset://-Pfad aus dem Anhang („Video: asset://…“) oder absoluten Dateipfad angeben.`)
   const file = resolve(path)
-  if (!VIDEO_FILE.test(file)) throw new Error(`${file} ist kein unterstütztes Video (${VIDEO_EXT.join(', ')}).`)
+  if (!VIDEO_FILE.test(file) && !AUDIO_FILE.test(file)) throw new Error(`${file} ist kein unterstütztes Video (${VIDEO_EXT.join(', ')}) und keine Audiodatei (${AUDIO_EXT.join(', ')}).`)
   if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Video nicht gefunden: ${file}`)
   return { file, v }
 }
 // Hintergrundmusik (deck.music): asset://-URL oder absoluter Pfad einer Audiodatei → asset://-URL wie clip.video
-function audioSrc(src: string): string {
+function audioSrc(src: string, what = 'music.src'): string {
   const path = src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
-  if (!isAbsolute(path)) throw new Error(`music.src "${src}": asset://-Pfad aus find_music oder absoluten Dateipfad angeben.`)
+  if (!isAbsolute(path)) throw new Error(`${what} "${src}": asset://-Pfad aus find_music oder absoluten Dateipfad angeben.`)
   const file = resolve(path)
-  if (!AUDIO_FILE.test(file)) throw new Error(`music.src: ${file} ist keine Audiodatei (${AUDIO_EXT.join(', ')}).`)
-  if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`Musik nicht gefunden: ${file}`)
+  if (!AUDIO_FILE.test(file)) throw new Error(`${what}: ${file} ist keine Audiodatei (${AUDIO_EXT.join(', ')}).`)
+  if (!statSync(file, { throwIfNoEntry: false })?.isFile()) throw new Error(`${what === 'music.src' ? 'Musik' : `${what}: Datei`} nicht gefunden: ${file}`)
   return assetUrl(file) // immer asset://local/…: die Engine erkennt nur diese Form
 }
 // wie musicOf in engine.ts: fehlt die Datei, entsteht das Video still ohne Musik
 function musicMissing(src: string): boolean {
   try { return !existsSync(localAsset(src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src)) } catch { return true } // kaputte URL
 }
-const videoInput = z.string().min(1).describe('Quellvideo: asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad')
+const videoInput = z.string().min(1).describe('Quellvideo oder Audiodatei (Podcast): asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad')
 const TRANSCRIPT_MAX = 30_000 // Zeichen je Antwort; der Rest seitenweise über from
 const hms = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 const VIDEO_NEXT = 'Weiter (Guide § Video), je nach Auftrag: Short 9:16 = 3–5 stärkste Momente, je ideal 55–75 s, hart 20–90 s, hook, captions wort, style lebendig. Ganzes Video kürzen (Fulltime) 16:9 = eine clip-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge, pauses kurz. Stream = nur die Highlight-Fenster, daraus Shorts, optional ein 16:9-Zusammenschnitt. Kompilation = je Quelle eine clip-Folie, Zwischentitel als section oder statement. Schnitte nur an Segmentgrenzen. Dann video_frames als Kontaktabzug, create_deck im Format (transition none), add_slides (je Short cover = Quellsekunde fürs Titelbild aus dem Kontaktabzug, post = Titel, 1–2 Sätze, 3–5 Hashtags), render_slides, export_deck clips (je Short eine MP4) oder mp4 (alles in einem Video).'
 const OVERVIEW_NEXT = 'Weiter: die besten Fenster mit transcribe_video (from/to) transkribieren, Stellen mit search_transcript finden, dann video_highlights ohne overview oder direkt Shorts bauen (Guide § Video).'
 const CLIP_LOOK = 'Prüfe: Gesicht im Bild, Hook passt zum Bild, keine schwarzen/eingefrorenen Bilder, Untertitelbereich frei.'
 const HIGHLIGHT_NEXT = 'Weiter (Guide § Video, Stream): 1. Für die besten 3–5 Fenster transcribe_video mit from/to; nur diese Bereiche werden transkribiert, gern 30 s Anlauf davor. 2. video_frames als Kontaktabzug, 4–8 Zeitpunkte je Kandidat über das Fenster verteilt. 3. Nur Momente behalten, die ohne Chat und Vorwissen tragen; der Score ist ein Hinweis, kein Urteil. 4. Shorts bauen (create_deck format 9:16, je Moment eine clip-Folie, ideal 55–75 s, hart 20–90 s), auf Wunsch zusätzlich ein Zusammenschnitt 16:9 (je Moment eine clip-Folie, export_deck mp4).'
+
+const POD_NEXT = 'Weiter (Guide § Podcast): transcribe_video mit der ersten Spur (all: true; speakers: true, wenn auf einer Spur mehrere sprechen), dann edit_episode mit clean { pauses: 0.6, fillers: true, retakes: true }, Kapitel aus den Themenwechseln (search_transcript), export_deck mp3.'
+const ton = z.enum(['original', 'klar', 'stark']).describe('klar (Standard) = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser); stark = dazu kräftiger entrauschen (Lüfter, Raumhall); original = unverändert')
+// Spur einer Episode → Datei wie clipFile (Pfade fremder Geräte über localAsset)
+function trackPath(src: string): string {
+  const p = src.startsWith('asset:') ? decodeURIComponent(new URL(src).pathname) : src
+  return isAbsolute(p) ? localAsset(p) : p
+}
+function podLint(ep: Episode, t: Transcript | null): string {
+  const xs = lintEpisode(ep, t)
+  return xs.length ? `Prüfung:\n${xs.map((x) => `  - [${x.level === 'info' ? 'hinweis' : x.level}] ${x.rule}: ${x.msg}${x.at === undefined ? '' : ` (${hms(x.at)})`}`).join('\n')}` : 'Prüfung ohne Befund'
+}
+// Pause der Episode = alle hörbaren Spuren still (Schnittmenge der Stillen je Spur)
+function intersect(a: Span[], b: Span[]): Span[] {
+  const out: Span[] = []
+  for (const [s1, e1] of a) for (const [s2, e2] of b) { const s = Math.max(s1, s2), e = Math.min(e1, e2); if (e > s) out.push([s, e]) }
+  return out
+}
+// Schnitt c ohne den Bereich a–b (uncut): fällt weg, wird gekürzt oder zerfällt in zwei
+const minus = (c: Cut, a: number, b: number): Cut[] => (b <= c.start || a >= c.end ? [c] : [...(a > c.start ? [{ ...c, end: a }] : []), ...(b < c.end ? [{ ...c, start: b }] : [])])
 
 export function buildTools(ctx: ToolContext): ToolDef[] {
   // Speichern für Theme- und Folienänderungen: braucht das Deck andere Katalogschriften als vorher (Theme, freie Texte), lädt
@@ -818,16 +839,21 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien mit transition außer none und morph blenden über Schwarz ab und auf, deshalb Video-Decks mit transition none anlegen und fade nur gezielt setzen). fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>.',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien mit transition außer none und morph blenden über Schwarz ab und auf, deshalb Video-Decks mit transition none anlegen und fade nur gezielt setzen). fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). mp3/m4a = Podcast nur Ton, auf −16 LUFS gebracht, mit Kapitelmarken (dazu .chapters.json daneben): aus der Episode (create_episode/edit_episode) oder bei Video-Decks aus den Clip-Folien („Als Podcast“, nur eine Quelle). Video- und Podcast-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>.',
       inputSchema: z.object({
-        format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4']),
+        format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4', 'mp3', 'm4a']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks'),
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
         rows: z.array(z.record(z.string(), z.string())).min(1).max(500).optional().describe('Serienbrief: je Zeile eine Datei, {{Spalte}} im Deck wird ersetzt'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
-        if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
+        const audio = i.format === 'mp3' || i.format === 'm4a'
+        if (audio && !deck.podcast) { // wie die Engine: ohne Episode aus den Clip-Folien, dann nur aus einer Quelle
+          const srcs = new Set(visibleSlides(deck).filter((s) => s.layout === 'clip').map((s) => (s.content as ClipContent).video))
+          if (!srcs.size) throw new Error('Kein Podcast im Deck: erst create_episode mit den Tonspuren (oder ein Video-Deck mit clip-Folien).')
+          if (srcs.size > 1) throw new Error(`Als Podcast geht ein Video-Deck nur mit einer Quelle, hier sind es ${srcs.size}. Stattdessen create_episode mit den Tonspuren.`)
+        } else if (!deck.slides.length && !(audio && deck.podcast)) throw new Error('Das Deck hat noch keine Folien.')
         const print = { size: i.size, bleed: i.bleed }
         if (i.rows) return { text: `Exportiert (${i.format}):\n${(await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print)).join('\n')}` }
         const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
@@ -839,7 +865,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           const n = shown.slides.filter((_, k) => !['none', 'morph'].includes(transitionOf(shown, k))).length
           notes.push(`${n} ${n === 1 ? 'Übergang' : 'Übergänge'} mit Abblende (Folien-transition; none = harter Schnitt)`)
         }
-        if ((i.format === 'mp4' || i.format === 'clips') && deck.music?.src && musicMissing(deck.music.src))
+        if ((i.format === 'mp4' || i.format === 'clips' || audio) && deck.music?.src && musicMissing(deck.music.src))
           notes.push('Musik nicht gefunden – ohne Musik exportiert, Nachweis aus den Notes entfernen')
         // wie export-video.ts: clips = je Short immer ein Cover, .txt nur mit post; mp4 = aus der ersten Clip-Folie mit cover/post
         const cs = visibleSlides(deck).filter((s) => s.layout === 'clip').map((s) => s.content as ClipContent)
@@ -847,6 +873,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           notes.push(`Neben jeder MP4: Cover (.jpg${cs.some((c) => c.cover == null) ? ', ohne cover aus der Mitte des ersten Ausschnitts' : ''})${cs.some((c) => c.post?.trim()) ? ' und Post-Text (.txt) bei Shorts mit post' : ''}`)
         if (i.format === 'mp4' && cs.some((c) => c.cover != null || c.post?.trim()))
           notes.push('Neben der MP4: Cover (.jpg) und Post-Text (.txt, mit post) aus der ersten Clip-Folie mit cover/post')
+        if (audio && deck.podcast?.chapters?.length) notes.push(`Kapitel: ${deck.podcast.chapters.length} Marken in der Datei, dazu .chapters.json daneben (Podcast-Hoster)`)
         return { text: [`Exportiert (${i.format}):`, ...r.value, ...notes].join('\n') }
       },
     }),
@@ -899,7 +926,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     tool({
       name: 'transcribe_video',
       readOnly: true,
-      description: 'Transkribiert ein Video lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze, Abschweifungen und die unter dem Transkript gelisteten Neuansätze (verworfene Anläufe) über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
+      description: 'Transkribiert ein Video oder Audio (Podcast: mp3, wav, m4a …) lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper) und liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime-Schnitt), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze, Abschweifungen und die unter dem Transkript gelisteten Neuansätze (verworfene Anläufe) über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.',
       inputSchema: z.object({
         video: videoInput,
         from: z.number().min(0).optional().describe('Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)'),
@@ -933,10 +960,10 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           if ((size += all[k].length + 1) > TRANSCRIPT_MAX) { more = `… weiter mit from=${s.start.toFixed(1)}${i.to === undefined ? '' : ` und to=${i.to}`}`; shownEnd = s.start; break }
           lines.push(all[k])
         }
-        const head = `Video: ${assetUrl(file)} · ${mmss(info.duration)} · ${info.w}×${info.h} · Sprache ${t.lang} · ${t.segments.length} Segmente`
+        const head = `Video: ${assetUrl(file)} · ${mmss(info.duration)} · ${info.w ? `${info.w}×${info.h}` : 'Audio'} · Sprache ${t.lang} · ${t.segments.length} Segmente`
         const rt = retakes(t).filter((x) => x.drop[1] > from && x.drop[0] < shownEnd)
         const retake = rt.length ? ['', 'Neuansätze (verworfene Anläufe – herausschneiden):', ...rt.slice(0, 20).map((x) => `${x.drop[0].toFixed(1)}–${x.drop[1].toFixed(1)} „${x.text}“ → neu ab ${x.keep.toFixed(1)}`), ...(rt.length > 20 ? [`… und ${rt.length - 20} weitere`] : [])] : []
-        return { text: [head, ...lines, ...(lines.length ? [] : ['(keine Sprache in diesem Bereich)']), ...(more ? [more] : []), ...retake, '', VIDEO_NEXT].join('\n') }
+        return { text: [head, ...lines, ...(lines.length ? [] : ['(keine Sprache in diesem Bereich)']), ...(more ? [more] : []), ...retake, '', info.w ? VIDEO_NEXT : POD_NEXT].join('\n') }
       },
     }),
     tool({
@@ -968,6 +995,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run(i) {
         const { file, v } = videoFile(ctx, i.video)
         const info = await v.probe(file)
+        if (AUDIO_FILE.test(file) || !info.w) throw new Error(`${assetUrl(file)} ist eine Audiodatei ohne Bild: Standbilder gibt es nur von Videos.`)
         const times = i.times.map((t) => Math.min(t, Math.max(0, info.duration - 0.1))) // genau am Ende liefert ffmpeg kein Bild
         const images = await v.frames(file, times)
         const share = Math.round(100 * Math.min(1, (info.h * 9) / 16 / info.w))
@@ -991,6 +1019,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const fresh = file && partsLength(c.parts) <= LONG_VIDEO ? await ctx.engine.video.musicIn?.(file, c.parts).catch(() => []) : undefined
         const { issues, summary, music } = (await clipChecks(ctx, deck, [idx], fresh?.length ? fresh : undefined)).get(idx)!
         const head = `Folie ${idx + 1} (${s.id}, clip)${hid(s)}: ${summary}${issues.length ? `\n${fmtIssues(issues)}` : ' · Prüfung ohne Befund'}${music ? '' : '\nMusik nicht geprüft'}`
+        if (typeof c.video === 'string' && AUDIO_FILE.test(c.video)) return { text: `${head}\nKein Kontaktabzug: ${c.video} ist eine Audiodatei ohne Bild – für Ton allein create_episode statt einer clip-Folie.` }
         if (!file || !statSync(file, { throwIfNoEntry: false })?.isFile())
           return { text: `${head}\nKein Kontaktabzug: ${file ? `Video nicht gefunden (${file})` : 'kein Video gesetzt'} – video mit update_slide setzen (asset://-Pfad aus dem Anhang).` }
         const { jpg, times } = await contactSheet(file, c.parts, { size: sizeOf(deck), fit: c.fit })
@@ -1000,20 +1029,126 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       },
     }),
     tool({
+      name: 'create_episode',
+      description: 'Neue Podcast-Episode anlegen (ersetzt das aktuelle Deck, ohne Folien): 1–4 Tonspuren, die gemeinsam ab 0 laufen (je Mikrofon eine Spur oder eine gemischte Aufnahme; Audio oder Video, vom Video zählt der Ton). title = Episodentitel. Danach transcribe_video mit der ersten Spur, edit_episode zum Schneiden und für Kapitel, export_deck mp3. Ablauf: read_guide topic podcast.',
+      inputSchema: z.object({
+        title: z.string().max(80),
+        tracks: z.array(z.object({ src: videoInput, name: z.string().max(40).optional().describe('Sprecher oder Spur, z. B. „Anna“') })).min(1).max(4),
+        ton: ton.optional(),
+      }),
+      async run(i) {
+        const files = i.tracks.map((t) => videoFile(ctx, t.src))
+        const v = files[0].v
+        const lens = await Promise.all(files.map(({ file }) => v.probe(file).then((x) => x.duration)))
+        const duration = Math.max(...lens)
+        if (!(duration > 0)) throw new Error('Die Spuren haben keine messbare Länge.')
+        const podcast: Episode = { duration, tracks: i.tracks.map((t, k) => ({ src: assetUrl(files[k].file), ...(t.name && { name: t.name }) })), cuts: [], ton: i.ton ?? 'klar' }
+        const deck: Deck = { title: typeset(i.title), theme: { id: THEME_IDS[0], brand: defaultBrand() }, transition: 'none', mode: 'click', slides: [], podcast }
+        const fonts = await put(deck, true)
+        const t = (await v.cached?.(files[0].file).catch(() => undefined))?.transcript ?? null
+        const uneven = duration - Math.min(...lens) > 2 ? `Hinweis: Die Spuren sind unterschiedlich lang (${lens.map(hms).join(', ')}). Alle laufen ab 0 gleichzeitig; beginnt eine Aufnahme später, sie vorher passend zuschneiden.\n` : ''
+        return { text: [`${fonts}${uneven}Episode "${deck.title}" angelegt.`, episodeSummary(podcast), podLint(podcast, t), '', POD_NEXT].join('\n') }
+      },
+    }),
+    tool({
+      name: 'edit_episode',
+      description: 'Podcast-Episode des Decks schneiden und einrichten; alle Eingaben optional, ohne Eingaben = Zustand zeigen. Zeiten in Quellzeit (wie im Transkript). clean bereinigt automatisch (Pausen, Füllwörter, Versprecher) und rechnet dabei nur die angegebenen Gründe neu (fillers: false nimmt die Füllwort-Schnitte zurück), alle anderen Schnitte bleiben; cut/uncut schneiden von Hand; chapters ersetzt die Kapitel. Nie mitten im Satz schneiden, Inhalt nicht umstellen. Die Pausensuche läuft im Hintergrund: meldet das Tool „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen. Ablauf: read_guide topic podcast.',
+      inputSchema: z.object({
+        clean: z.object({
+          pauses: z.union([z.number().min(0.3).max(5), z.literal(false)]).optional().describe('längere Pausen auf diese Länge in s kürzen, üblich 0.6; false = Pausen wieder ungekürzt'),
+          fillers: z.boolean().optional().describe('Füllwörter (äh, ähm …) herausschneiden; braucht das Transkript der ersten Spur'),
+          retakes: z.boolean().optional().describe('Versprecher und verworfene Neuansätze herausschneiden; braucht das Transkript'),
+        }).optional(),
+        cut: z.array(z.object({ start: z.number().min(0), end: z.number().min(0) })).max(200).optional().describe('Bereiche herausschneiden; Kanten in einem Wort rasten auf dessen Rand'),
+        uncut: z.array(z.object({ start: z.number().min(0), end: z.number().min(0) })).max(200).optional().describe('Bereiche wiederherstellen: überlappende Schnitte fallen weg oder werden gekürzt'),
+        sfx: z.array(z.object({ src: z.string().min(1), at: z.number().min(0).describe('Quellsekunde'), gain: z.number().min(-24).max(12).optional().describe('dB') })).max(200).optional().describe('Soundeffekte (ersetzt die Liste, [] = keine): Datei aus find_music kurz; sparsam, nur auf Wunsch'),
+        intro: z.string().min(1).nullable().optional().describe('Jingle vor der Sprache (find_music kurz), null = entfernen'),
+        outro: z.string().min(1).nullable().optional().describe('Jingle nach der Sprache, null = entfernen'),
+        chapters: z.array(z.object({ at: z.number().min(0).describe('Quellsekunde'), title: z.string().min(1).max(80) })).max(100).optional().describe('Kapitel (ersetzt die Liste): erstes bei 0, 3–8 je Stunde, Titel kurz'),
+        ton: ton.optional(),
+        tracks: z.array(z.object({ index: z.number().int().min(0).max(3).describe('0 = erste Spur'), name: z.string().max(40).optional(), gain: z.number().min(-12).max(12).optional().describe('dB'), mute: z.boolean().optional() })).max(4).optional(),
+      }),
+      async run(i) {
+        const deck = needDeck(ctx)
+        if (!deck.podcast) throw new Error('Das Deck hat keine Podcast-Episode – erst create_episode.')
+        const old = deck.podcast, ep: Episode = structuredClone(old)
+        const v = ctx.engine.video
+        const t = (await v?.cached?.(trackPath(ep.tracks[0].src)).catch(() => undefined))?.transcript ?? null
+        const words = t?.segments.flatMap((s) => s.words ?? []) ?? []
+        const notes: string[] = []
+        const span = (r: { start: number; end: number }, what: string) => { if (r.end <= r.start) throw new Error(`${what}: end (${r.end}) muss nach start (${r.start}) liegen.`) }
+        for (const x of i.tracks ?? []) {
+          const tr = ep.tracks[x.index]
+          if (!tr) throw new Error(`tracks: Spur ${x.index} gibt es nicht (Spuren 0–${ep.tracks.length - 1}).`)
+          if (x.name !== undefined) tr.name = x.name || undefined
+          if (x.gain !== undefined) tr.gain = x.gain || undefined
+          if (x.mute !== undefined) tr.mute = x.mute || undefined
+        }
+        if (i.ton) ep.ton = i.ton
+        for (const k of ['intro', 'outro'] as const) {
+          const src = i[k]
+          if (src === null) delete ep[k]
+          else if (src) ep[k] = audioSrc(src, k)
+        }
+        const late = [...(i.sfx ?? []), ...(i.chapters ?? [])].find((x) => x.at > ep.duration)
+        if (late) throw new Error(`at ${late.at} liegt hinter dem Ende der Episode (${ep.duration.toFixed(1)} s).`)
+        if (i.sfx) { if (i.sfx.length) ep.sfx = i.sfx.map((x) => ({ ...x, src: audioSrc(x.src, 'sfx.src') })); else delete ep.sfx }
+        if (i.chapters) { if (i.chapters.length) ep.chapters = [...i.chapters].sort((a, b) => a.at - b.at); else delete ep.chapters }
+        for (const r of i.uncut ?? []) { span(r, 'uncut'); ep.cuts = ep.cuts.flatMap((c) => minus(c, r.start, r.end)) }
+        for (const r of i.cut ?? []) { span(r, 'cut'); ep.cuts.push(snapCut({ start: r.start, end: r.end, why: 'hand' }, words)) }
+        if (i.clean) {
+          const o = { ...i.clean, pauses: i.clean.pauses || undefined }, given = i.clean
+          if (!v) throw new Error('Podcast-Schnitt gibt es nur in der Deckwerk-App und im MCP-Server.')
+          if (!['pauses', 'fillers', 'retakes'].some((k) => k in given)) throw new Error('clean: pauses, fillers oder retakes angeben.')
+          if ((o.fillers || o.retakes) && !t) throw new Error('Für Füllwörter und Versprecher fehlt das Transkript der ersten Spur – erst transcribe_video mit dieser Spur (all: true).')
+          let quiet: Span[] = []
+          if (o.pauses !== undefined) {
+            if (!v.silences) throw new Error('Die Pausensuche fehlt in dieser Deckwerk-Version.')
+            const heard = ep.tracks.filter((x) => !x.mute)
+            const files = (heard.length ? heard : ep.tracks).map((x) => videoFile(ctx, trackPath(x.src)).file)
+            const r = await job(`pausen:${JSON.stringify([files, o.pauses, ep.duration])}`, async (onProgress) => {
+              const per: Span[][] = []
+              for (const [k, f] of files.entries()) { per.push(await v.silences!(f, 0, ep.duration, o.pauses!)); onProgress((100 * (k + 1)) / files.length) }
+              return per
+            })
+            if (!('value' in r)) return { text: stillRunning('Pausensuche', r.pct) }
+            quiet = r.value.reduce(intersect).filter(([a, b]) => b - a >= o.pauses!)
+          }
+          // nur die angegebenen Gründe neu rechnen: „Füllwörter raus“ allein lässt gekürzte Pausen stehen
+          const redo: Partial<Record<CutWhy, boolean>> = { pause: 'pauses' in given, fuell: 'fillers' in given, versprecher: 'retakes' in given }
+          ep.cuts = normCuts([...autoCuts(ep, t, quiet, o), ...ep.cuts.filter((c) => c.why && c.why !== 'hand' && !redo[c.why])], ep.duration)
+          const n = (w: CutWhy) => ep.cuts.filter((c) => c.why === w).length
+          notes.push(`Bereinigt: ${n('pause')} Pausen gekürzt, ${n('fuell')} Füllwörter, ${n('versprecher')} Versprecher`)
+        }
+        const ok = episodeSchema.safeParse(ep)
+        if (!ok.success) throw new Error(`Episode ungültig: ${z.prettifyError(ok.error)}`)
+        const changed = JSON.stringify(ep) !== JSON.stringify(old)
+        if (changed) ctx.setDeck({ ...deck, podcast: ep })
+        const clock = editedLength(ep.cuts, ep.duration) >= 3600 ? hms : mmss
+        const chapters = (ep.chapters ?? []).map((c) => `  ${clock(toEdited(c.at, ep.cuts, ep.duration))} ${c.title}`)
+        return { text: [
+          changed ? 'Episode geändert.' : 'Episode (unverändert):', ...notes,
+          episodeSummary(ep), chapters.length ? `Kapitel (geschnittene Zeit):\n${chapters.join('\n')}` : 'Kapitel: keine', podLint(ep, t),
+        ].join('\n') }
+      },
+    }),
+    tool({
       name: 'find_music',
-      description: 'Freie Hintergrundmusik für Video-Exporte suchen und laden (Openverse: nur CC0, Public Domain und CC BY). Nur auf Wunsch des Nutzers oder bei Kompilationen; dezent und instrumental, nie laut unter Sprache (das Ducking unter Sprache macht der Export). query = suchen, id = Titel aus der Trefferliste laden. Danach update_deck mit music: { src, credit }; den Nachweis zusätzlich in die Notes der letzten Folie.',
+      description: 'Freie Hintergrundmusik für Video-Exporte und Podcasts suchen und laden (Openverse: nur CC0, Public Domain und CC BY). Nur auf Wunsch des Nutzers oder bei Kompilationen; dezent und instrumental, nie laut unter Sprache (das Ducking unter Sprache macht der Export). query = suchen, id = Titel aus der Trefferliste laden. Danach update_deck mit music: { src, credit }; den Nachweis zusätzlich in die Notes der letzten Folie. kurz = Soundeffekte und Jingles unter 30 s statt Musikbetten, für Podcast-Intro/-Outro und Effekte (edit_episode intro, outro, sfx); Nachweis dann in die Shownotes.',
       inputSchema: z.object({
         query: z.string().min(2).max(80).optional().describe('englische Suchbegriffe: Stimmung, Genre, Instrument, z. B. "calm piano instrumental"'),
         id: z.string().max(64).optional().describe('Openverse-ID aus der Trefferliste: lädt diesen Titel'),
+        kurz: z.boolean().optional().describe('true = Soundeffekte und Jingles unter 30 s (Podcast-Intro/-Outro, Effekte) statt Musikbetten'),
       }),
       async run(i) {
         if (i.id) {
-          const { file, credit } = await fetchMusic(i.id, join(ctx.assetDir, 'music'))
+          const { file, credit, track } = await fetchMusic(i.id, join(ctx.assetDir, 'music'))
+          if (track.duration && track.duration < 30) return { text: `Kurzer Klang geladen: ${assetUrl(file)}\nNachweis: ${credit}\nWeiter: edit_episode mit intro oder outro (Jingle) bzw. sfx: [{ src, at }] (Effekt an Quellsekunde at); den Nachweis in die Shownotes.` }
           return { text: `Musik geladen. Weiter: update_deck mit music: ${JSON.stringify({ src: assetUrl(file), credit })} (volume weglassen = 0,25); den Nachweis zusätzlich in die Notes der letzten Folie.` }
         }
         if (!i.query) throw new Error('query (suchen) oder id (Titel aus der Trefferliste laden) angeben.')
-        const hits = await findMusic(i.query)
-        if (!hits.length) return { text: `Keine freie Musik zu "${i.query}". Andere englische Begriffe versuchen (Stimmung, Genre, "instrumental").` }
+        const hits = await findMusic(i.query, 8, i.kurz)
+        if (!hits.length) return { text: `Keine freie${i.kurz ? 'n kurzen Klänge' : ' Musik'} zu "${i.query}". Andere englische Begriffe versuchen (Stimmung, Genre, "instrumental").` }
         const line = (t: (typeof hits)[number]) => [t.id, `„${t.title}“ – ${t.artist}`, t.duration ? mmss(t.duration) : 'Länge unbekannt', LICENSE[t.license], t.tags.join(', ')].filter(Boolean).join(' · ')
         return { text: `${hits.length} freie Titel (Openverse), zum Laden find_music mit id:\n${hits.map(line).join('\n')}` }
       },

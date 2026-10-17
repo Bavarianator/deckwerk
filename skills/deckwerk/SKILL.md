@@ -1,6 +1,6 @@
 ---
 name: deckwerk
-description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
+description: Präsentationen mit Deckwerk bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren; dazu Podcasts schneiden – Pausen, Füllwörter, Versprecher entfernen, Kapitel, Intro/Outro, Soundeffekte, als MP3. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen oder einen Podcast schneiden will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk (create_deck, add_slides, …).
 ---
 
 # Deckwerk: Präsentationen, die man dem Chef zeigen kann
@@ -13,7 +13,7 @@ Die Werkzeuge kommen vom MCP-Server `deckwerk` (in Claude Code `mcp__deckwerk__�
 
 ## 1. Zuerst den Guide lesen
 
-Rufe `read_guide` mit `part` 1, 2, … auf, bis die Antwort „Teil n von n“ meldet. Er enthält den Design-Guide und den Layout-Katalog mit allen Feldnamen. Ohne ihn rätst du Felder (Schemafehler) und Gestaltung. Einmal pro Sitzung genügt. Für reine Video-Aufträge genügt `read_guide` mit `topic: "video"`.
+Rufe `read_guide` mit `part` 1, 2, … auf, bis die Antwort „Teil n von n“ meldet. Er enthält den Design-Guide und den Layout-Katalog mit allen Feldnamen. Ohne ihn rätst du Felder (Schemafehler) und Gestaltung. Einmal pro Sitzung genügt. Für reine Video-Aufträge genügt `read_guide` mit `topic: "video"`, für Podcasts `topic: "podcast"`.
 
 ## 2. Briefing und Material
 
@@ -111,6 +111,13 @@ Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights ode
 - **Ganzes Video kürzen (16:9):** `transcribe_video` mit `all: true` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), Neuansätze herausschneiden, `pauses` `kurz`, `ton` `klar` bei Sprache (nie bei Musik), `captions` `satz` oder `aus` → `export_deck` `mp4`.
 - **Stream (2–8 h) und Videos über 10 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
 - **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` nur dort; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
+
+## 10. Podcast schneiden
+
+Will der Nutzer eine Aufnahme als Podcast schneiden, gilt Guide §12 „Podcast“. Die Episode braucht keine Folien.
+- **Ablauf:** Audio aus dem Anhang → `create_episode` (`title`, `tracks` 1–4, je Mikrofon eine Spur) → `transcribe_video` mit der ersten Spur, `all: true`, `speakers: true` bei mehreren Sprechern auf einer Spur → `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }` („läuft noch“ = gleich noch einmal) → Kapitel aus den Themenwechseln (`search_transcript`; erstes bei 0, 3–8 je Stunde, kurze Titel) per `edit_episode` `chapters` → `export_deck` `mp3` (Kapitel in der Datei, `.chapters.json` daneben).
+- **Nachbessern:** `edit_episode` mit `cut`/`uncut` (Quellzeit, rastet an Wortgrenzen); ohne Eingaben zeigt es Zustand und Prüfung.
+- **Regeln:** nie mitten im Satz schneiden, Inhalt nicht umstellen, Füllwörter nicht übertreiben (natürliche Sprache bleibt). Intro, Outro und Soundeffekte nur auf Wunsch und sparsam (`find_music` mit `kurz: true`, dann `edit_episode` `intro`/`outro`/`sfx`). Die Lautheit macht die Engine.
 
 ## Häufige Fehler
 

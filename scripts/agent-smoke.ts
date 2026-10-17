@@ -32,7 +32,7 @@ const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts): Ersatz und Hinweis statt Download
 
-assert.equal(tools.length, 23)
+assert.equal(tools.length, 25)
 // laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
 for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -251,6 +251,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   writeFileSync(file, '')
   await fails(run('transcribe_video', { video: file }), /^Video-Funktionen gibt es nur in der Deckwerk-App und im MCP-Server/)
   await fails(run('import_video', { url: 'https://example.com/v' }), /nur in der Deckwerk-App/)
+  await fails(run('create_episode', { title: 'Folge', tracks: [{ src: file }] }), /nur in der Deckwerk-App/)
   await fails(run('find_music', {}), /query \(suchen\) oder id/)
   await fails(run('find_music', { id: '../x' }), /Ungültige Openverse-ID/) // vor jedem Netzzugriff
   let finish = () => {}, loaded = () => {}
@@ -259,7 +260,8 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   const segs = [{ start: 0, end: 4.2, text: ' Hallo zusammen.' }, { start: 61.2, end: 66.8, text: 'Der Kern.' }]
   let hl = [{ start: 2832, end: 2892, score: 6.24, why: 'Chat ×4,2 · laut +9 dB' }, { start: 3723, end: 3783, score: 3, why: 'oft gesehen' }]
   const video: VideoTools = {
-    probe: async () => ({ duration: 75, w: 1920, h: 1080 }),
+    probe: async (f) => ({ duration: 75, ...(f.endsWith('.mp3') ? { w: 0, h: 0 } : { w: 1920, h: 1080 }) }), // Audio: w = h = 0
+    silences: async () => [[10, 12], [70, 71]],
     frames: async (_f, times) => times.map(() => PNG),
     transcribe: async (_f, onProgress, o) => {
       seen.push(o)
@@ -370,6 +372,32 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.match(mu.text, /\[warn\] clip-musik: Musik im Hintergrund \(10 s, u\. a\. bei 0:00\)[\s\S]*\nKein Kontaktabzug: Video nicht gefunden/); assert.doesNotMatch(mu.text, /Musik nicht geprüft/)
   await fails(go('check_clip', { slide: 'nope' }), /gibt es nicht/)
   assert.match((await go('lint_deck', {})).text, /^\d+ Fehler, \d+ Warnungen, \d+ Hinweise:[\s\S]*\[warn\] clip-laenge[\s\S]*\[hinweis\] clip-hook/)
+  // Podcast: Audio als Quelle der Video-Tools, Episode anlegen, schneiden, Kapitel, Export mp3
+  const pod = join(dir, 'folge.mp3')
+  writeFileSync(pod, '')
+  const pt = await go('transcribe_video', { video: pod })
+  assert.match(pt.text, /^Video: asset:.*folge\.mp3 · 1:15 · Audio · Sprache de/); assert.match(pt.text, /edit_episode/)
+  await fails(go('video_frames', { video: pod, times: [1] }), /Audiodatei ohne Bild/)
+  await fails(go('edit_episode', {}), /keine Podcast-Episode/)
+  const ce = await go('create_episode', { title: 'Folge 1', tracks: [{ src: pod, name: 'Anna' }] })
+  assert.match(ce.text, /Episode "Folge 1" angelegt\.\nLänge 1:15[\s\S]*Weiter \(Guide § Podcast\)/)
+  assert.deepEqual(vd!.podcast, { duration: 75, tracks: [{ src: assetUrl(pod), name: 'Anna' }], cuts: [], ton: 'klar' })
+  assert.equal(vd!.slides.length, 0); assert.equal(vd!.transition, 'none')
+  const before = vd
+  assert.match((await go('edit_episode', {})).text, /^Episode \(unverändert\):\nLänge 1:15/)
+  assert.equal(vd, before, 'ohne Eingaben kein setDeck')
+  const ed = await go('edit_episode', { cut: [{ start: 1, end: 2 }], chapters: [{ at: 30, title: 'Teil 2' }, { at: 0, title: 'Start' }] })
+  assert.match(ed.text, /^Episode geändert\.[\s\S]*Kapitel \(geschnittene Zeit\):\n  0:00 Start\n  0:29 Teil 2/)
+  assert.deepEqual(vd!.podcast!.cuts, [{ start: 1, end: 2, why: 'hand' }])
+  await go('edit_episode', { uncut: [{ start: 1.5, end: 3 }] })
+  assert.deepEqual(vd!.podcast!.cuts, [{ start: 1, end: 1.5, why: 'hand' }])
+  await fails(go('edit_episode', { cut: [{ start: 5, end: 4 }] }), /muss nach start/)
+  await fails(go('edit_episode', { tracks: [{ index: 2, gain: 3 }] }), /Spur 2 gibt es nicht/)
+  const cl = await go('edit_episode', { clean: { pauses: 0.6 } })
+  assert.match(cl.text, /Bereinigt: 2 Pausen gekürzt, 0 Füllwörter, 0 Versprecher/)
+  assert.deepEqual(vd!.podcast!.cuts.map((c) => c.why), ['hand', 'pause', 'pause'])
+  assert.match((await go('edit_episode', { clean: { pauses: 0.6, fillers: true, retakes: true } })).text, /^Episode \(unverändert\):\nBereinigt: 2 Pausen/) // Mock-Transkript ohne Wortzeiten
+  assert.match((await go('export_deck', { format: 'mp3' })).text, /deck\.mp3\nKapitel: 2 Marken/)
 }
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)

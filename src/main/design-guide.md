@@ -492,3 +492,26 @@ Eine Folie im Layout `clip` ist ein Video aus Ausschnitten einer Quelle. Die Eng
 - Übergänge: Im `mp4` blendet jede Folie mit Übergang über Schwarz ab und auf, `none` und `morph` bleiben harte Schnitte. Video-Decks deshalb mit `transition: "none"` anlegen und `transition: "fade"` nur gezielt an Zwischentiteln setzen.
 - Musik nur auf Wunsch oder bei Kompilationen, dezent und instrumental. Unter Sprache macht der Export sie automatisch leiser. Den Nachweis (CC BY) aus `find_music` in `music.credit` und in die Notes der letzten Folie.
 - Zurückhaltend wie die Folien: keine Emojis, Sticker oder Effektschriften, Zwischentitel kurz und sachlich.
+
+## 12. Podcast
+
+Eine Episode hängt als `podcast` am Deck: 1–4 Tonspuren, die gemeinsam ab 0 laufen, dazu Schnitte, Kapitel, Intro, Outro und Soundeffekte. Folien braucht sie nicht. Zeiten stehen immer in Quellzeit (wie im Transkript); `edit_episode` zeigt die Kapitel zusätzlich in geschnittener Zeit. Lautheit (−16 LUFS), Sprachkette und Überblendungen macht die Engine.
+
+**Ablauf:**
+1. Audio aus dem Anhang (mp3, wav, m4a …; von Videos zählt der Ton) → `create_episode` mit `title` und `tracks` (je Mikrofon eine Spur mit `name`, sonst eine gemischte Spur).
+2. `transcribe_video` mit der ersten Spur und `all: true`; `speakers: true`, wenn auf einer Spur mehrere sprechen.
+3. `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }`. Meldet es „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen. Ergebnis und Prüfung lesen, einzelne Stellen mit `cut`/`uncut` nachbessern.
+4. Kapitel aus den Themenwechseln (Transkript lesen, Stellen mit `search_transcript` finden): erstes bei 0, 3–8 je Stunde, Titel kurz und sachlich (2–5 Wörter). Kapitel an den Anfang eines Satzes legen.
+5. Intro, Outro und Soundeffekte nur auf Wunsch: `find_music` mit `kurz: true`, dann `edit_episode` mit `intro`, `outro` oder `sfx`. Den Nachweis (CC BY) in die Shownotes.
+6. `export_deck` mit `mp3` (oder `m4a`): Kapitelmarken in der Datei, `.chapters.json` daneben. Dem Nutzer Länge vorher und nachher und die Zahl der Schnitte je Grund nennen.
+
+Ein Video-Deck aus einer Quelle (Clip-Folien) exportiert `export_deck` mit `mp3` auch direkt „Als Podcast“; mehrere Quellen gehen nur über `create_episode`.
+
+**Regeln:**
+- Nie mitten im Satz oder Wort schneiden; Kanten von `cut` rasten an Wortgrenzen. Lint `schnitt-wort` sofort beheben.
+- Inhalt nicht umstellen und nichts Inhaltliches streichen, ohne dass der Nutzer es will. Bereinigen heißt: Pausen kürzen, Füllwörter und Versprecher raus.
+- Füllwörter nicht übertreiben: natürliche Sprache bleibt, ein „also“ als Satzanfang ist kein Fehler. Wirkt das Ergebnis gehetzt, `pauses` höher setzen (0.8–1.0).
+- Verworfene Anläufe (`retakes`) immer heraus, nur den letzten sauberen behalten.
+- Zurückhaltung bei Effekten wie bei den Folien: kein Effekt-Gewitter, höchstens ein kurzer Jingle als Intro/Outro und wenige Soundeffekte an Themenwechseln. Musik unter Sprache nur auf Wunsch, dezent (`update_deck` `music`).
+- `ton`: `klar` (Standard) für Sprache, `stark` bei Rauschen oder Hall, `original` bei Musik.
+- Spuren nicht lauter oder leiser drehen, außer eine ist deutlich aus dem Rahmen (`tracks` `gain` in dB); stumm (`mute`) nur für eine kaputte Spur.

@@ -29,14 +29,15 @@ export function guideParts(max = 20000): string[] {
   return parts
 }
 
-// Reine Video-Aufträge: nur Guide §11 und der Katalog-Eintrag clip statt aller Teile
-export function videoGuide(): string {
+// Reine Video- bzw. Podcast-Aufträge: nur Guide §11 und der Katalog-Eintrag clip bzw. nur §12 statt aller Teile
+export function videoGuide(topic: 'video' | 'podcast' = 'video'): string {
   const p = buildSystemPrompt()
   const block = (head: string, ends: string[]) => {
     const a = p.indexOf(`\n${head}`)
     if (a < 0) return ''
     return p.slice(a + 1, Math.min(...ends.map((e) => p.indexOf(e, a + 1)).filter((x) => x > 0), p.length)).trim()
   }
+  if (topic === 'podcast') return block('## 12. ', ['\n## '])
   return `${block('## 11. ', ['\n## '])}\n\n${block('### clip ', ['\n### ', '\n## '])}`
 }
 
@@ -73,17 +74,17 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
       unsplashKey: process.env.UNSPLASH_ACCESS_KEY, // ponytail: Wert beim Start; nach save_deck exportiert export_deck weiter nach ~/Deckwerk/out
     }).map((t) =>
       // Neues Deck = neuer Ordner: sonst überschreibt save_deck das zuvor gespeicherte Deck
-      t.name === 'create_deck' ? { ...t, run: async (i: unknown) => { const out = await t.run(i); path = null; return out } } : t,
+      t.name === 'create_deck' || t.name === 'create_episode' ? { ...t, run: async (i: unknown) => { const out = await t.run(i); path = null; return out } } : t,
     ),
     {
       name: 'read_guide',
-      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen. Für reine Video-Aufträge genügt topic video.',
+      description: 'Vollständiger Design-Guide (Storyline, Layout-Wahl, Gestaltung, Text, Animation) und Layout-Katalog mit allen Feldnamen je Layout, in Teilen. Zu Beginn alle Teile lesen, wenn die Server-Anweisungen gekürzt ankommen. Für reine Video-Aufträge genügt topic video, für Podcasts topic podcast.',
       inputSchema: z.object({
         part: z.number().int().min(1).default(1).describe('Teil 1, 2, … – die Antwort nennt die Anzahl'),
-        topic: z.enum(['video']).optional().describe('video = nur Guide §11 (Video-Schnitt) und das Layout clip, in einem Teil'),
+        topic: z.enum(['video', 'podcast']).optional().describe('video = nur Guide §11 (Video-Schnitt) und das Layout clip, podcast = nur Guide §12 (Podcast-Schnitt), je in einem Teil'),
       }),
-      async run(i: { part: number; topic?: 'video' }) {
-        if (i.topic === 'video') return { text: videoGuide() }
+      async run(i: { part: number; topic?: 'video' | 'podcast' }) {
+        if (i.topic) return { text: videoGuide(i.topic) }
         const parts = guideParts()
         const k = Math.min(i.part, parts.length)
         return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }

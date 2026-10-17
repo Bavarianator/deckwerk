@@ -14,7 +14,7 @@ import type { Engine } from './agent'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
-import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
+import { ffmpegBin, frames, loudness, pcm16k, probe, scenes, silences } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
 import { localAsset } from './sync'
@@ -270,6 +270,7 @@ export function createEngine(): Engine {
         }
         return run(ready, pre)
       }
+      if (format === 'mp3' || format === 'm4a') return (await import('./podcast')).renderEpisode(deck, format, base, onProgress)
       if (format === 'md') {
         await writeFile(`${base}.md`, handout(deck))
         return [`${base}.md`]
@@ -310,6 +311,7 @@ export function createEngine(): Engine {
     video: {
       probe,
       frames,
+      silences,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
       // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
