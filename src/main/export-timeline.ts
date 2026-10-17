@@ -26,15 +26,21 @@ async function info(file: string): Promise<Info> {
   }
 }
 
-// Akzent für liste/markierung u. ä., solange die Timeline kein Theme kennt
+// Schrift und Akzent der Titel: vom Aufrufer aus dem Deck-Theme (engine.ts), sonst Archivo Bold und ein neutraler Akzent
+export interface TitleStyle { name: string; files: Buffer[]; bold: boolean; accent: string }
 const ACCENT = '#E8B04B'
 
-// Archivo Bold wie subFont in export-video.ts; App-Pfad aus Electron, unter Node (Selbsttest) das Projekt. Ohne Datei nimmt libass eine Systemschrift.
-async function font(dir: string) {
-  const app = await import('electron').then((m) => m.app).catch(() => undefined)
-  const f = await readFile(join(app?.getAppPath?.() ?? process.cwd(), 'assets/fonts/Archivo-Bold.ttf')).catch(() => null)
+// Schriftdateien nach <work>/fonts (fontsdir); ohne mitgegebene Dateien Archivo Bold aus der App (unter Node: aus dem Projekt). Fehlt sie: Warnung, libass nimmt eine Systemschrift
+async function font(dir: string, style: TitleStyle | undefined, warnings: string[]) {
+  let files = style?.files ?? []
+  if (!files.length) {
+    const app = await import('electron').then((m) => m.app).catch(() => undefined)
+    const f = await readFile(join(app?.getAppPath?.() ?? process.cwd(), 'assets/fonts/Archivo-Bold.ttf')).catch(() => null)
+    if (f) files = [f]
+    else warnings.push('Schrift für Titel nicht gefunden, eingebrannt mit einer Systemschrift.')
+  }
   await mkdir(join(dir, 'fonts'), { recursive: true })
-  if (f) await writeFile(join(dir, 'fonts', 'font-0.ttf'), f)
+  for (const [k, f] of files.entries()) await writeFile(join(dir, 'fonts', `font-${k}.ttf`), f)
 }
 
 // Quellen auflösen und prüfen: Kopie mit aufgelösten Pfaden; Clips aus Quellen ohne Ton gelten als stumm (audioArgs nimmt Ton an)
@@ -75,7 +81,7 @@ export async function measureTimeline(tl: TimelineContent, opts: { resolve: (src
   }
 }
 
-export async function exportTimeline(tl: TimelineContent, opts: { out: string; aspect: number; resolve: (src: string) => string; onProgress?: (f: number, msg?: string) => void; work: string }): Promise<{ files: string[]; lufs: { before: number; after: number; target: number }; warnings: string[] }> {
+export async function exportTimeline(tl: TimelineContent, opts: { out: string; aspect: number; resolve: (src: string) => string; onProgress?: (f: number, msg?: string) => void; work: string; style?: TitleStyle }): Promise<{ files: string[]; lufs: { before: number; after: number; target: number }; warnings: string[] }> {
   const deliver = deliverOf(tl), warnings: string[] = [], { w, h } = size(deliver, opts.aspect), enc = encodeArgs(deliver)
   const progress = opts.onProgress ?? (() => {})
   const dur = tlDuration(tl)
@@ -124,7 +130,7 @@ export async function exportTimeline(tl: TimelineContent, opts: { out: string; a
     const ovs = (tl.overlays ?? []).filter((x) => x.text?.trim() || x.items?.length || (x.art === 'markierung' && x.box) || (x.art === 'verpixeln' && x.box))
     // ponytail: Untertitel immer als Zeile (satz), 'wort' bräuchte Wortzeiten in tl.subs
     const subs = tl.captions === 'aus' ? [] : tl.subs ?? []
-    if (ovs.some((x) => x.art !== 'verpixeln') || subs.length) await font(work)
+    if (ovs.some((x) => x.art !== 'verpixeln') || subs.length) await font(work, opts.style, warnings)
     const pix = enc.args[enc.args.indexOf('-pix_fmt') + 1]
     let done = 0
     for (const [i, s] of secs.entries()) {
@@ -144,7 +150,7 @@ export async function exportTimeline(tl: TimelineContent, opts: { out: string; a
       })
       let ass = ''
       if (texts.length || cues.length) {
-        await writeFile(join(work, `s-${n3(i)}.ass`), assSubs({ size: { w, h }, font: 'Archivo', bold: true, accent: ACCENT, hookDur: 0, cues, mode: cues.length ? 'satz' : 'aus', ...(texts.length ? { overlays: texts } : {}) }))
+        await writeFile(join(work, `s-${n3(i)}.ass`), assSubs({ size: { w, h }, font: opts.style?.name ?? 'Archivo', bold: opts.style?.bold ?? true, accent: opts.style?.accent ?? ACCENT, hookDur: 0, cues, mode: cues.length ? 'satz' : 'aus', ...(texts.length ? { overlays: texts } : {}) }))
         ass = `ass=s-${n3(i)}.ass:fontsdir=fonts,` // relativ zu cwd = work: kein Pfad-Escaping im Filter
       }
       const fi = a.indexOf('-filter_complex')

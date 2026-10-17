@@ -401,7 +401,7 @@ export async function encodeClip(job: ClipJob, out: string, dir: string, onProgr
 }
 
 // Head-Schrift des Themes als TTF (Premium- oder eigene Schrift), sonst Archivo Bold aus dem App-Paket. Buffer statt Pfad: im asar kann ffmpeg nicht lesen.
-async function subFont(deck: Deck): Promise<SubFont> {
+export async function subFont(deck: Deck): Promise<SubFont> {
   const head = resolveTheme(deck.theme).head
   const f = (await import('./export-pptx')).fontsOf(deck).find((x) => x.family === head.pptx)
   if (f) return { name: f.family, files: [f.regular, ...(f.bold ? [f.bold] : [])], bold: !!f.bold }

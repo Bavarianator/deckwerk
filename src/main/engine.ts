@@ -11,6 +11,7 @@ import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
 import { MAX_PARTS, followParts, snapToScenes, type ClipContent, type Segment, type Transcript } from '../shared/video'
 import type { TimelineContent } from '../shared/timeline'
+import { resolveTheme } from '../shared/themes'
 import type { Engine } from './agent'
 import { dataDir } from './clients'
 import { buildDocx } from './export-docx'
@@ -301,12 +302,15 @@ export function createEngine(): Engine {
           if (cuts.length) {
             if (deck.slides.some((x) => x.layout === 'clip')) throw new Error('Timeline und Clip-Folien nicht im selben Deck mischen: Clips per edit_timeline from_clips übernehmen und die Clip-Folien ausblenden.')
             const { exportTimeline } = await import('./export-timeline'), size = sizeOf(deck), out: string[] = []
+            // Titel und Untertitel in Schrift und Akzent des Deck-Themes, wie beim Clip-Export
+            const style = { ...(await (await import('./export-video')).subFont(deck)), accent: resolveTheme(deck.theme).c.accent }
             const resolveSrc = (src: string) => { const f = mediaFile(src); if (!f) throw new Error(`Timeline: keine Mediendatei (${src})`); return f }
             for (const [k, s] of cuts.entries()) {
               const r = await exportTimeline(s.content as TimelineContent, {
                 out: cuts.length > 1 ? `${base}-${String(k + 1).padStart(2, '0')}` : base, aspect: size.w / size.h, resolve: resolveSrc,
                 onProgress: (f) => report(Math.floor(((k + f) / cuts.length) * 100)),
                 work: join(outDir, `.video-tmp-tl-${process.pid}-${Date.now().toString(36)}`), // wie export-video: nicht /tmp, alte Reste räumt es weg
+                style,
               })
               console.info(`[video] Timeline ${k + 1}: ${r.lufs.before.toFixed(1)} → ${r.lufs.after.toFixed(1)} LUFS (Ziel ${r.lufs.target})`, ...r.warnings)
               out.push(...r.files)
