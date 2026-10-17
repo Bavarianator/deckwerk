@@ -1,3 +1,24 @@
+# Deckwerk Pro
+
+Fork von Deckwerk für Profis (Details und Abgrenzung: [PRO.md](PRO.md)). Deckwerk Pro läuft neben Deckwerk: eigener Datenordner `~/DeckwerkPro`, eigener MCP-Server und Skill `deckwerk-pro`. Modelle (`~/Deckwerk/models`) und Bild-KI-Schlüssel teilen sich beide Apps.
+
+- **Druck-PDF in CMYK:** Im Druckdialog entsteht ein PDF/X-4 in CMYK (FOGRA39); das braucht Ghostscript ab 10.05.
+- **Premiere/Resolve-XML:** Neben jedem Clip-MP4 liegt automatisch eine Final-Cut-7-XML. Premiere importiert sie über „Datei → Importieren“, DaVinci Resolve über „Timeline importieren“.
+- **Excel-Verknüpfung:** Diagramme lassen sich mit einem Excel-Bereich verknüpfen und bei Änderungen aktualisieren.
+- **Kunden-Arbeitsbereiche:** Brand-Kit und Hausstil je Kunde (Einstellungen → Marke).
+
+Verträglichkeit: Ein Pro-Deck mit Excel-Link lässt sich in Deckwerk öffnen. KI-Änderungen an solchen Diagrammen scheitern dort aber am unbekannten Feld `link`.
+
+Installation, solange es keine Releases gibt, aus dem Quellcode (Git und Node.js 22 oder neuer):
+
+```sh
+git clone https://github.com/Bavarianator/deckwerk-pro.git ~/deckwerk-pro && ~/deckwerk-pro/scripts/install.sh
+```
+
+Der Rest dieser Anleitung beschreibt Deckwerk; Pfade und Namen gelten für Pro mit den Pro-Namen.
+
+---
+
 # Deckwerk
 
 KI-Präsentationsstudio für den Desktop. Ein Satz genügt: Deckwerk schreibt die Storyline, baut die Folien, prüft jede einzelne als Bild und exportiert nach PowerPoint (editierbar), PDF und PNG. Danach gestaltest du frei weiter wie in Canva, per Chat oder direkt auf der Folie.
@@ -23,35 +44,35 @@ Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwe
 Deckwerk läuft unter Linux (x86_64) und unter Windows in WSL. Für macOS gibt es eine eigene Fassung: [deckwerk-macos](https://github.com/Bavarianator/deckwerk-macos). Auf dem Mac leitet der Befehl unten automatisch dorthin weiter.
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-pro/HEAD/scripts/install.sh | sh
 ```
 
-Der Installer lädt die fertige App aus dem neuesten Release nach `~/.local/share/deckwerk`. Git und Node.js brauchst du dafür nicht. Er legt einen Startmenü-Eintrag an und öffnet `deck.json`-Dateien per Doppelklick mit Deckwerk. Sind Claude Code, Codex oder Vibe installiert, trägt er Deckwerk dort als MCP-Server ein.
+Der Installer lädt die fertige App aus dem neuesten Release nach `~/.local/share/deckwerk-pro`. Git und Node.js brauchst du dafür nicht. Er legt einen Startmenü-Eintrag an und öffnet `deck.json`-Dateien per Doppelklick mit Deckwerk. Sind Claude Code, Codex oder Vibe installiert, trägt er Deckwerk dort als MCP-Server ein.
 
-**Aktualisieren:** `deckwerk update` im Terminal (der Installer legt den Befehl `deckwerk` nach `~/.local/bin`) oder in Deckwerk unter Einstellungen → Allgemein → „Nach Updates suchen“. Beides führt den Installationsbefehl erneut aus: holt den neuesten Release und ersetzt die App; deine Decks und Einstellungen bleiben. Deckwerk fragt nie von selbst nach Updates.
+**Aktualisieren:** `deckwerk-pro update` im Terminal (der Installer legt den Befehl `deckwerk-pro` nach `~/.local/bin`) oder in Deckwerk unter Einstellungen → Allgemein → „Nach Updates suchen“. Beides führt den Installationsbefehl erneut aus: holt den neuesten Release und ersetzt die App; deine Decks und Einstellungen bleiben. Deckwerk fragt nie von selbst nach Updates.
 
 **Entfernen:**
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/uninstall.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-pro/HEAD/scripts/uninstall.sh | sh
 ```
 
-Das Skript entfernt die App, den Startmenü-Eintrag, die Dateizuordnung und die Einträge in Claude Code, Vibe und Codex. Deine Decks unter `~/Deckwerk` bleiben erhalten.
+Das Skript entfernt die App, den Startmenü-Eintrag, die Dateizuordnung und die Einträge in Claude Code, Vibe und Codex. Deine Decks unter `~/DeckwerkPro` bleiben erhalten.
 
 <details>
 <summary>Andere Wege: AppImage, aus dem Quellcode, wget</summary>
 
-**AppImage:** `Deckwerk-x86_64.AppImage` aus den [Releases](https://github.com/Bavarianator/deckwerk/releases/latest) laden, ausführbar machen und starten. Das braucht FUSE 2 (`libfuse2`). Der Installer oben braucht es nicht, weil er das AppImage entpackt.
+**AppImage:** `DeckwerkPro-x86_64.AppImage` aus den [Releases](https://github.com/Bavarianator/deckwerk-pro/releases/latest) laden, ausführbar machen und starten. Das braucht FUSE 2 (`libfuse2`). Der Installer oben braucht es nicht, weil er das AppImage entpackt.
 
 **Aus dem Quellcode** (Git und Node.js 22 oder neuer):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | DECKWERK_SOURCE=1 sh
+curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-pro/HEAD/scripts/install.sh | DECKWERK_SOURCE=1 sh
 ```
 
-Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_DIR`, anderer Stand: `DECKWERK_REF=master`), installiert die Abhängigkeiten und baut. Ein erneuter Aufruf aktualisiert auf den neuesten Release. Ein Checkout auf einem Zweig wird dabei nur vorgespult, nie umgestellt. Aus einem eigenen Checkout: `./scripts/install.sh`; entfernen mit `~/deckwerk/scripts/uninstall.sh`. Startest du eine Quellcode-Installation über das Startmenü, baut sie nach einem Update selbst neu (etwa eine Minute).
+Das klont den neuesten Release-Tag nach `~/deckwerk-pro` (anderer Ordner: `DECKWERK_DIR`, anderer Stand: `DECKWERK_REF=main`), installiert die Abhängigkeiten und baut. Ein erneuter Aufruf aktualisiert auf den neuesten Release. Ein Checkout auf einem Zweig wird dabei nur vorgespult, nie umgestellt. Aus einem eigenen Checkout: `./scripts/install.sh`; entfernen mit `~/deckwerk-pro/scripts/uninstall.sh`. Startest du eine Quellcode-Installation über das Startmenü, baut sie nach einem Update selbst neu (etwa eine Minute).
 
-**Mit wget:** `wget -qO- https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh`
+**Mit wget:** `wget -qO- https://raw.githubusercontent.com/Bavarianator/deckwerk-pro/HEAD/scripts/install.sh | sh`
 
 **Sandbox:** Erlaubt das System keine User-Namespaces (etwa Ubuntu 24.04 mit AppArmor-Sperre), startet Deckwerk ohne Chromium-Sandbox, statt gar nicht. Wer das nicht möchte, gibt die Namespaces frei (`sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0`) oder richtet ein AppArmor-Profil ein.
 
@@ -63,7 +84,7 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 2. Beim ersten Start führt dich die Einrichtung durch den KI-Zugang. Sie findet Claude Code, Codex und Vibe von selbst. Ist eines davon installiert und angemeldet, brauchst du nichts einzutragen: Der Chat nutzt dessen Login, bei mehreren wählst du per Klick. Ohne Zugang zeigt sie die Wege Schritt für Schritt: Claude-Abo (Claude Code per nativem Installer), ChatGPT-Abo (Codex), Mistral-Schlüssel (Vibe) oder Anthropic-API-Key. Ein frisch installiertes CLI erkennt sie von selbst, „Anmelden“ öffnet den Login von Claude Code bzw. Codex im Browser, ohne Terminal. Einen Key prüft Deckwerk vor dem Speichern bei Anthropic, alternativ geht `ANTHROPIC_API_KEY`. Ein eingetragener Key hat Vorrang.
 
    Alles Weitere steht in den **Einstellungen** (Zahnrad oben rechts, auf dem Startbildschirm und im Editor): KI-Zugang (An- und Abmelden je Konto, Schlüssel, Modell), Cloud, Bilder (KI-Bilder und Unsplash-Fotosuche), Marke (Standard-Brand-Kit und Hausstil), Agenten (Deckwerk mit einem Klick in alle gefundenen CLIs eintragen, Verbindung testen) und Allgemein (Version, Speicherort, Datenschutz).
-3. Beschreibe auf dem Startbildschirm in einem Satz, was du zeigen willst, zum Beispiel „Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum“. Über „Datei“ (oder per Ziehen ins Feld) hängst du Quellmaterial und eigene Bilder an, auch mehrere Dateien. Die Bilder landen in `~/Deckwerk/assets/`, Abbildungen aus Dokumenten unter `assets/import-<name>/`. Für Abbildungen aus PDFs braucht Deckwerk `pdfimages` aus demselben Poppler-Paket wie `pdftotext`.
+3. Beschreibe auf dem Startbildschirm in einem Satz, was du zeigen willst, zum Beispiel „Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum“. Über „Datei“ (oder per Ziehen ins Feld) hängst du Quellmaterial und eigene Bilder an, auch mehrere Dateien. Die Bilder landen in `~/DeckwerkPro/assets/`, Abbildungen aus Dokumenten unter `assets/import-<name>/`. Für Abbildungen aus PDFs braucht Deckwerk `pdfimages` aus demselben Poppler-Paket wie `pdftotext`.
 4. Oder beginne mit einer Vorlage (du bearbeitest eine Kopie) oder mit „Leer beginnen und frei gestalten“.
 
 ## Bedienung
@@ -80,10 +101,10 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
   Angeboten wird nur, was installiert ist. Steht das gespeicherte Modell nicht mehr zur Verfügung, nimmt Deckwerk das erste verfügbare. Die Wahl gilt ab der nächsten Nachricht und bleibt gespeichert. Wechselst du den Anbieter, beginnt ein neues Gespräch; das Deck bleibt. Vibe und Codex antworten spürbar langsamer als Claude.
 - Unter den Notizen schreibt „Schreiben lassen“ die Sprechernotizen, „Überarbeiten“ verbessert vorhandene. Daneben steht die geschätzte Sprechzeit.
 - **✦ in der KI-Leiste:** Aufträge fürs ganze Deck mit einem Klick: übersetzen (9 Sprachen), Sprechernotizen für alle Folien, auf 5–15 Folien kürzen, als E-Mail, Newsletter oder Blogartikel zusammenfassen (Antwort im Chat, das Deck bleibt) und Rechtschreibung prüfen. Ist ein Element gewählt, auch ein Textfeld des Layouts, stehen oben dessen Text-Aktionen: kürzer, ausführlicher, einfacher, förmlicher, lockerer, korrigieren, übersetzen. Bei freien Textelementen gibt es dieselben Aktionen in der Objektleiste unter „Umschreiben“. „Rückgängig“ in der Blase nimmt die ganze KI-Runde zurück.
-- **Brand-Kit:** Im Look-Dialog „Als Standard speichern“ legt Farben, Schriften und Logo (auch eines für dunklen Grund) in `~/Deckwerk/brand.json` ab. Jedes Deck, das die KI neu anlegt, bekommt die Marke automatisch, das Logo steht auf Titel- und Schlussfolie, bei A4 auf Seite 1 (kein Wasserzeichen auf jeder Folie); „Standard übernehmen“ wendet sie auf ein bestehendes Deck an.
-- **Hausstil:** Sag „merk dir …“, und die KI trägt die Vorliebe in `~/Deckwerk/hausstil.md` ein. Die Datei gilt für jedes künftige Deck und lässt sich von Hand bearbeiten.
-- **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/Deckwerk/assets`. Findet sie dort nichts Passendes und ist ein Unsplash-Key eingerichtet (Einstellungen → Bilder → Fotosuche oder `UNSPLASH_ACCESS_KEY`), sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
-- **KI-Bilder:** Die KI kann Bilder auch selbst erzeugen, mit `gpt-image-2` über [Mammouth](https://mammouth.ai) oder OpenAI, ohne Key auch über Codex mit deinem ChatGPT-Login (einmal `codex login`). Eingerichtet wird das unter Einstellungen → **Bilder**: Keys (verschlüsselt gespeichert), bevorzugter Anbieter und Modell, z. B. `gemini-3-pro-image-preview` bei Mammouth. Ohne Vorgabe nimmt die KI den ersten eingerichteten Anbieter in der Reihenfolge Mammouth, OpenAI, Codex; „mach das Bild mit Codex“ wählt gezielt. Alternativ gelten `MAMMOUTH_API_KEY`, `OPENAI_API_KEY` und `IMAGE_MODEL` aus der Umgebung. Die Bilder landen in `~/Deckwerk/assets`.
+- **Brand-Kit:** Im Look-Dialog „Als Standard speichern“ legt Farben, Schriften und Logo (auch eines für dunklen Grund) in `~/DeckwerkPro/brand.json` ab. Jedes Deck, das die KI neu anlegt, bekommt die Marke automatisch, das Logo steht auf Titel- und Schlussfolie, bei A4 auf Seite 1 (kein Wasserzeichen auf jeder Folie); „Standard übernehmen“ wendet sie auf ein bestehendes Deck an.
+- **Hausstil:** Sag „merk dir …“, und die KI trägt die Vorliebe in `~/DeckwerkPro/hausstil.md` ein. Die Datei gilt für jedes künftige Deck und lässt sich von Hand bearbeiten.
+- **Fotos:** Die KI nutzt zuerst deine Bilder aus `~/DeckwerkPro/assets`. Findet sie dort nichts Passendes und ist ein Unsplash-Key eingerichtet (Einstellungen → Bilder → Fotosuche oder `UNSPLASH_ACCESS_KEY`), sucht sie auf Unsplash und übernimmt den Bildnachweis in die Notizen.
+- **KI-Bilder:** Die KI kann Bilder auch selbst erzeugen, mit `gpt-image-2` über [Mammouth](https://mammouth.ai) oder OpenAI, ohne Key auch über Codex mit deinem ChatGPT-Login (einmal `codex login`). Eingerichtet wird das unter Einstellungen → **Bilder**: Keys (verschlüsselt gespeichert), bevorzugter Anbieter und Modell, z. B. `gemini-3-pro-image-preview` bei Mammouth. Ohne Vorgabe nimmt die KI den ersten eingerichteten Anbieter in der Reihenfolge Mammouth, OpenAI, Codex; „mach das Bild mit Codex“ wählt gezielt. Alternativ gelten `MAMMOUTH_API_KEY`, `OPENAI_API_KEY` und `IMAGE_MODEL` aus der Umgebung. Die Bilder landen in `~/DeckwerkPro/assets`.
 
 ### Video-Schnitt
 
@@ -98,7 +119,7 @@ Häng ein Video an (MP4, MOV, M4V, WebM, MKV, OGV oder FLV) oder nenn einen Link
 
 **Musik:** Die KI sucht freie Musik auf [Openverse](https://openverse.org), nur CC0, Public Domain und CC BY. Die Musik läuft leise unter dem ganzen Video und wird unter Sprache automatisch leiser. Den Nachweis schreibt die KI in die Notizen der letzten Folie; bei CC BY gehört er auch in die Beschreibung des fertigen Videos.
 
-**Lokal:** Das Video wird nicht kopiert, Deckwerk verweist nur auf die Datei (Downloads per Link landen in `~/Deckwerk/assets`). Die Spracherkennung läuft lokal: Parakeet-TDT-0.6B-v3 über sherpa-onnx für 25 europäische Sprachen, für andere Sprachen Whisper (die KI gibt dafür die Sprache an, etwa bei Japanisch, Türkisch oder Arabisch). Beim ersten Mal lädt Deckwerk das Modell (rund 670 MB) nach `~/Deckwerk/models`. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video; bei langen Videos transkribiert die KI deshalb nur die Stellen, die sie braucht. Der Export in 1080p läuft auf langsamen Rechnern mit rund 10 Bildern pro Sekunde, ein einstündiges Video braucht dort 2–3 Stunden. ffmpeg nimmt Deckwerk aus dem System, sonst lädt es ein statisches ffmpeg bei Bedarf nach.
+**Lokal:** Das Video wird nicht kopiert, Deckwerk verweist nur auf die Datei (Downloads per Link landen in `~/DeckwerkPro/assets`). Die Spracherkennung läuft lokal: Parakeet-TDT-0.6B-v3 über sherpa-onnx für 25 europäische Sprachen, für andere Sprachen Whisper (die KI gibt dafür die Sprache an, etwa bei Japanisch, Türkisch oder Arabisch). Beim ersten Mal lädt Deckwerk das Modell (rund 670 MB) nach `~/Deckwerk/models`. Die Erkennung dauert auf schnellen Rechnern etwa die halbe Videolänge, auf langsamen auch länger als das Video; bei langen Videos transkribiert die KI deshalb nur die Stellen, die sie braucht. Der Export in 1080p läuft auf langsamen Rechnern mit rund 10 Bildern pro Sekunde, ein einstündiges Video braucht dort 2–3 Stunden. ffmpeg nimmt Deckwerk aus dem System, sonst lädt es ein statisches ffmpeg bei Bedarf nach.
 
 Die Kriterien für gute Momente und die Idee dahinter stammen von [BridgeClip](https://github.com/bridge-mind/bridgeclip) (MIT, © 2026 BridgeMind).
 
@@ -110,7 +131,7 @@ Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewäh
 - **Skalieren und drehen:** 8 Griffe skalieren, der runde Griff dreht (Umschalt: in 15°-Schritten). Doppelklick oder Enter bearbeitet Text.
 - **Elemente:**
   - Text-Presets, 8 Formen, Icon-Suche, Fotos (Upload, Suche, Zwischenablage, Drag & Drop), Diagramme mit Datentabelle, QR-Codes, Video und Audio.
-  - „Bild erzeugen“: Beschreibung eingeben, Quer, Hoch oder Quadrat wählen, die KI-Bild-Funktion aus Einstellungen → Bilder erzeugt es. „Deine Bilder“ zeigt die neuesten Bilder aus `~/Deckwerk/assets` zum Wiederverwenden.
+  - „Bild erzeugen“: Beschreibung eingeben, Quer, Hoch oder Quadrat wählen, die KI-Bild-Funktion aus Einstellungen → Bilder erzeugt es. „Deine Bilder“ zeigt die neuesten Bilder aus `~/DeckwerkPro/assets` zum Wiederverwenden.
   - Aus dem Layout-Katalog lassen sich fertige Folien einfügen.
 - **Bilder:**
   - Doppelklick schneidet zu.
@@ -129,7 +150,7 @@ Oben rechts öffnen **Einfügen** (Elemente), **Anpassen** (Folie oder ausgewäh
 
 ### Speichern und Versionen
 
-Deckwerk speichert automatisch. Jede Änderung, ob von dir oder von der KI, landet nach 1,5 Sekunden in `~/Deckwerk/<titel>/deck.json`. Schließt du das Fenster oder öffnest ein anderes Deck, sichert Deckwerk offene Änderungen vorher, auch einen Text, den du gerade tippst.
+Deckwerk speichert automatisch. Jede Änderung, ob von dir oder von der KI, landet nach 1,5 Sekunden in `~/DeckwerkPro/<titel>/deck.json`. Schließt du das Fenster oder öffnest ein anderes Deck, sichert Deckwerk offene Änderungen vorher, auch einen Text, den du gerade tippst.
 
 Höchstens alle 10 Minuten legt Deckwerk den vorigen Stand unter `<deck>/versions/` ab, pro Deck bis zu 100 Versionen. „Exportieren“ → „Versionsverlauf …“ zeigt sie nach Tagen sortiert mit Vorschau der Folien; „Diese Version wiederherstellen“ macht sie wieder zum Deck, und der bisherige Stand wandert selbst in die Versionen.
 
@@ -141,7 +162,7 @@ Unter Einstellungen → Cloud (oder per Klick auf die Wolke in der Kopfleiste) w
 
 - **Im Browser anmelden:** Nextcloud (nur die Adresse) und MagentaCLOUD. Deckwerk bekommt dabei ein eigenes App-Passwort und sieht dein Passwort nie.
 - **Über die App auf diesem Rechner:** Dropbox, OneDrive, Google Drive und iCloud Drive haben kein WebDAV. Deckwerk legt dann den Ordner `Deckwerk` in deren Sync-Ordner (wird meist von selbst gefunden), die App des Dienstes lädt ihn hoch.
-- **Mit Nutzername und Passwort:** GMX, WEB.DE, STRATO und IONOS HiDrive, pCloud, Koofr, Infomaniak kDrive, Hetzner Storage Box, ownCloud und Synology. Die Adresse ist hinterlegt, ein Link führt zur Anleitung für das App-Passwort. Jeder andere WebDAV-Dienst geht mit eigener Adresse. Deckwerk spiegelt dann `~/Deckwerk` in den Ordner `Deckwerk/` deiner Cloud: beim Start, 5 Sekunden nach jedem Speichern, beim Zurückkehren ins Fenster und über „Jetzt abgleichen“. Die Wolke zeigt den Zustand: abgeglichen, läuft gerade, Fehler oder noch nicht eingerichtet. Die Android-App gleicht mit demselben Ordner ab.
+- **Mit Nutzername und Passwort:** GMX, WEB.DE, STRATO und IONOS HiDrive, pCloud, Koofr, Infomaniak kDrive, Hetzner Storage Box, ownCloud und Synology. Die Adresse ist hinterlegt, ein Link führt zur Anleitung für das App-Passwort. Jeder andere WebDAV-Dienst geht mit eigener Adresse. Deckwerk spiegelt dann `~/DeckwerkPro` in den Ordner `DeckwerkPro/` deiner Cloud: beim Start, 5 Sekunden nach jedem Speichern, beim Zurückkehren ins Fenster und über „Jetzt abgleichen“. Die Wolke zeigt den Zustand: abgeglichen, läuft gerade, Fehler oder noch nicht eingerichtet. Die Android-App von Deckwerk gleicht mit `Deckwerk/` ab, nicht mit Pro.
 
 Versionen, Exporte und das Freisteller-Modell bleiben lokal. Hast du dasselbe Deck auf zwei Geräten geändert, gewinnt die neuere Fassung. Die ältere landet in `versions/` und lässt sich von dort wiederherstellen. Gelöschte Dateien werden auch auf den anderen Geräten gelöscht.
 
@@ -189,21 +210,21 @@ In der PowerPoint-Datei sind Texte, Formen, Bilder, Diagramme, Video und Audio n
 Der Installer trägt Deckwerk als MCP-Server in Claude Code ein, für alle Projekte. Die Einrichtung in der App kann das ebenfalls, für jedes gefundene CLI mit einem Klick. Von Hand geht das so:
 
 ```sh
-claude mcp add -s user deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp
+claude mcp add -s user deckwerk-pro -- ~/deckwerk-pro/scripts/deckwerk.sh --mcp
 ```
 
 Sind Vibe oder Codex installiert, trägt der Installer Deckwerk dort ebenfalls ein. Von Hand:
 
 ```sh
-vibe mcp add --transport stdio --command ~/deckwerk/scripts/deckwerk.sh --arg=--mcp --startup-timeout-sec 90 --tool-timeout-sec 300 deckwerk
-codex mcp add deckwerk -- ~/deckwerk/scripts/deckwerk.sh --mcp   # danach in ~/.codex/config.toml unter [mcp_servers.deckwerk]: startup_timeout_sec = 90
+vibe mcp add --transport stdio --command ~/deckwerk-pro/scripts/deckwerk.sh --arg=--mcp --startup-timeout-sec 90 --tool-timeout-sec 300 deckwerk-pro
+codex mcp add deckwerk-pro -- ~/deckwerk-pro/scripts/deckwerk.sh --mcp   # danach in ~/.codex/config.toml unter [mcp_servers.deckwerk-pro]: startup_timeout_sec = 90
 ```
 
 Vibe und Codex starten den Server ohne Bildschirm. Deckwerk rendert dann headless, deshalb dauert der erste Aufruf etwas länger.
 
 Claude Code und Codex bekommen dazu den Skill `deckwerk-pro` (`skills/deckwerk-pro/SKILL.md`, abgelegt unter `~/.claude/skills/` bzw. `~/.codex/skills/`). Er bringt dem Agenten den Arbeitsablauf bei: Guide lesen, Briefing und Quellmaterial, Storyline, Look, Bildplan, Folien in Etappen mit Korrekturen nach dem Lint, Prüfrunden, Speichern und Export. Der Agent lädt ihn von selbst, sobald du eine Präsentation willst. Nach einem Update zeigt die Einrichtung den Schritt wieder als offen; ein Klick erneuert den Skill.
 
-Claude Code bekommt dieselben Werkzeuge wie der Chat in der App: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen, Fotos und Icons suchen, rendern und exportieren. Dazu kommen `get_deck`, `save_deck` und `open_deck`. Layout-Katalog und Design-Guide stehen in den Server-Anweisungen. Decks landen unter `~/Deckwerk/<titel>/deck.json`; die Umgebungsvariable `DECKWERK_HOME` wählt einen anderen Ordner.
+Claude Code bekommt dieselben Werkzeuge wie der Chat in der App: Deck anlegen, Folien bauen und prüfen, Looks vorschlagen, Fotos und Icons suchen, rendern und exportieren. Dazu kommen `get_deck`, `save_deck` und `open_deck`. Layout-Katalog und Design-Guide stehen in den Server-Anweisungen. Decks landen unter `~/DeckwerkPro/<titel>/deck.json`; die Umgebungsvariable `DECKWERK_HOME` wählt einen anderen Ordner.
 
 Bei einer Quellcode-Installation nutzt der Server den vorhandenen Build und baut nicht neu, weil Claude Code nur 30 Sekunden auf ihn wartet. Nach einem Update dort deshalb einmal die App starten oder `npm run build` ausführen. Die fertige App braucht das nicht.
 
@@ -211,14 +232,15 @@ Bei einer Quellcode-Installation nutzt der Server den vorhandenen Build und baut
 
 | Pfad | Inhalt |
 |---|---|
-| `~/Deckwerk/<titel>/deck.json` | Deine Decks; Exporte landen daneben |
-| `~/Deckwerk/<titel>/versions/` | Frühere Stände eines Decks |
-| `~/Deckwerk/assets/` | Eigene, eingefügte und freigestellte Bilder, geladene Fotos |
-| `~/Deckwerk/hausstil.md` | Hausstil für alle Decks |
-| `~/Deckwerk/brand.json` | Brand-Kit (Farben, Schriften, Logo) für neue Decks |
+| `~/DeckwerkPro/<titel>/deck.json` | Deine Decks; Exporte landen daneben |
+| `~/DeckwerkPro/<titel>/versions/` | Frühere Stände eines Decks |
+| `~/DeckwerkPro/assets/` | Eigene, eingefügte und freigestellte Bilder, geladene Fotos |
+| `~/DeckwerkPro/hausstil.md` | Hausstil für alle Decks |
+| `~/DeckwerkPro/brand.json` | Brand-Kit (Farben, Schriften, Logo) für neue Decks |
 | `~/Deckwerk/models/` | Modelle für Freisteller und Spracherkennung, bei Bedarf ffmpeg |
-| `~/Deckwerk/.sync-state.json` | Stand des letzten Cloud-Abgleichs |
-| `~/.config/deckwerk/` | Einstellungen und API-Key, verschlüsselt über den System-Schlüsselbund |
+| `~/DeckwerkPro/.sync-state.json` | Stand des letzten Cloud-Abgleichs |
+| `~/.config/deckwerk-pro/` | Einstellungen, API-Key (verschlüsselt über den System-Schlüsselbund), Einrichtung und Cloud-Zugang |
+| `~/.config/deckwerk/` | mit Deckwerk geteilt: Bild-KI-Schlüssel, Rechtschreibung, Handy, Spracherkennungs-Modell |
 
 ## Datenschutz und Sicherheit
 
@@ -255,7 +277,7 @@ Unter Wayland hängt Chromiums PDF-Druck, deshalb starten alle Skripte Electron 
 |---|---|
 | `npm run render examples/pitch.json` | Deck rendern → `exports/<slug>.pptx`, `.docx`, `.pdf`, `.zip`, `<slug>/NN.png` und Lint-Report |
 | `npm run check:layouts` | Stresstest: jedes Layout × Variante × Beispiel × Theme (dauert rund eine Stunde) |
-| `npm run dist:linux` | AppImage bauen → `dist/Deckwerk-x86_64.AppImage` |
+| `npm run dist:linux` | AppImage bauen → `dist/DeckwerkPro-x86_64.AppImage` |
 | `npm run smoke` | KI-Werkzeuge und MCP-Server gegen eine Mock-Engine (ohne Electron, ohne API-Key) |
 | `npm run mcp:e2e` | MCP-Server Ende-zu-Ende gegen die echte Engine; `E2E_HEADLESS=1` ohne Bildschirm wie Vibe und Codex, `E2E_APP=<AppRun>` gegen das Paket |
 | `npm run smoke:claude` | App-Chat über Claude Code gegen eine Mock-Engine, samt Sperre für Shell und Dateien (braucht den Login, vier kleine Anfragen). `DECKWERK_CLI=vibe` oder `codex` testet die anderen CLIs |

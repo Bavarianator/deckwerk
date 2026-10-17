@@ -1,5 +1,5 @@
 # Tag v* → AppImage bauen, ohne Bildschirm als MCP-Server prüfen und an den Release hängen. Der feste Dateiname ohne
-# Version ist Absicht: install.sh lädt …/releases/latest/download/Deckwerk-x86_64.AppImage.
+# Version ist Absicht: install.sh lädt …/releases/latest/download/DeckwerkPro-x86_64.AppImage.
 name: Release
 on:
   push:
@@ -21,17 +21,17 @@ jobs:
       - run: npm ci
       - run: npm run dist:linux
       - name: Paketgröße (fängt versehentlich mitgepackte Bibliotheken, z. B. CUDA von onnxruntime)
-        run: test "$(stat -c%s dist/Deckwerk-x86_64.AppImage)" -lt 250000000
+        run: test "$(stat -c%s dist/DeckwerkPro-x86_64.AppImage)" -lt 250000000
       - name: Paket prüfen (MCP ohne Bildschirm)
         run: |
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg # Testvideo für den Video-Schritt in mcp-e2e
-          (cd dist && ./Deckwerk-x86_64.AppImage --appimage-extract >/dev/null)
+          (cd dist && ./DeckwerkPro-x86_64.AppImage --appimage-extract >/dev/null)
           npx esbuild scripts/mcp-e2e.ts --bundle --packages=external --platform=node --format=esm --outfile=out/mcp-e2e.mjs --log-level=warning
           E2E_HEADLESS=1 E2E_APP="$PWD/dist/squashfs-root/AppRun" node out/mcp-e2e.mjs
       - name: An den Release hängen
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Deckwerk ${GITHUB_REF_NAME#v}" --generate-notes
-          gh release upload "$GITHUB_REF_NAME" dist/Deckwerk-x86_64.AppImage --clobber
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "Deckwerk Pro ${GITHUB_REF_NAME#v}" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" dist/DeckwerkPro-x86_64.AppImage --clobber

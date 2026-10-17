@@ -1,9 +1,9 @@
-# Prüft jeden Push auf master und jeden Pull Request: Typen, Smoke-Tests, Rendern und Export, MCP-Server (mit und ohne
+# Prüft jeden Push auf main und jeden Pull Request: Typen, Smoke-Tests, Rendern und Export, MCP-Server (mit und ohne
 # Bildschirm), das AppImage und den Installer mit dieser fertigen App.
 name: CI
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run smoke
+      - name: Werkzeuge für Druck- und XML-Tests (Ghostscript des Runners ist älter als 10.05, check-print prüft dann nur den Fehlerpfad)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ghostscript qpdf poppler-utils libxml2-utils
       - name: Selbsttests
         run: |
           E="npx esbuild --bundle --platform=node --log-level=warning"
@@ -35,6 +37,8 @@ jobs:
           for c in check-looks check-webfonts check-theme-tokens; do $E scripts/$c.ts --format=esm --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-gradient.ts --loader:.css=empty --loader:.md=text --outfile=out/check-gradient.cjs && node out/check-gradient.cjs
           $E scripts/check-free-text.ts --format=cjs --external:electron --loader:.css=empty --loader:.md=text --jsx=automatic --outfile=out/check-free-text.cjs && node out/check-free-text.cjs
+          $E scripts/check-print.ts --outfile=out/check-print.cjs && node out/check-print.cjs
+          for c in check-xlsx check-xmeml check-clients; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           npm run check:theme-lint
       - name: Bildschirm und Chromium-Sandbox
         run: |
@@ -52,10 +56,10 @@ jobs:
       - name: AppImage bauen
         run: npx electron-builder --linux --publish never
       - name: Paketgröße (fängt versehentlich mitgepackte Bibliotheken, z. B. CUDA von onnxruntime)
-        run: test "$(stat -c%s dist/Deckwerk-x86_64.AppImage)" -lt 250000000
+        run: test "$(stat -c%s dist/DeckwerkPro-x86_64.AppImage)" -lt 250000000
       - name: Installer mit dem AppImage, danach MCP aus der installierten App
         run: |
-          cat scripts/install.sh | HOME="$RUNNER_TEMP/home" DECKWERK_APPIMAGE="$PWD/dist/Deckwerk-x86_64.AppImage" sh
-          E2E_HEADLESS=1 E2E_APP="$RUNNER_TEMP/home/.local/share/deckwerk/AppRun" node out/mcp-e2e.mjs
+          cat scripts/install.sh | HOME="$RUNNER_TEMP/home" DECKWERK_APPIMAGE="$PWD/dist/DeckwerkPro-x86_64.AppImage" sh
+          E2E_HEADLESS=1 E2E_APP="$RUNNER_TEMP/home/.local/share/deckwerk-pro/AppRun" node out/mcp-e2e.mjs
           cat scripts/uninstall.sh | HOME="$RUNNER_TEMP/home" sh
-          test ! -e "$RUNNER_TEMP/home/.local/share/deckwerk"
+          test ! -e "$RUNNER_TEMP/home/.local/share/deckwerk-pro"
