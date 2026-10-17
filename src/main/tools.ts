@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type ChartSpec } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, formatSuffix, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type ChartSpec } from '../shared/deck'
 import { APP } from '../shared/app-id'
 import { activeClient, brandFile, dataDir, styleFile } from './clients'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
@@ -108,6 +108,7 @@ const brand = z.object({
   logoDark: z.string().optional().describe('Logo für dunklen Grund; fehlt es, gilt logo'),
   headFont: fontName.optional().describe('Headline-Schrift; Office: Arial, Calibri, Georgia; alle übrigen werden eingebettet, siehe customTheme.headFont'),
   bodyFont: fontName.optional().describe('Schrift für Fließtext'),
+  lock: z.boolean().optional().describe('Brand-Lock; setzt nur der Nutzer in den Einstellungen, nie selbst setzen'),
 })
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil, beim Anlegen immer setzen (Design-Guide §6 „Stil des Decks“). Nach Anlass: mutig für Vortrag, Schule/Unterricht, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social; sachlich für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot. Steht im Kontext „Deck-Stil: …“ oder wünscht der Nutzer einen Stil, gilt der. mutig = kräftige Farbgründe, Plakat-Typo, mehr Farbflächen, markante Bilder.')
@@ -574,6 +575,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         override,
       }),
       async run(i) {
+        if (i.brand !== undefined && defaultBrand()?.lock) throw new Error('Die Marke des Nutzers ist gesperrt (Brand-Lock). brand weglassen, dann gilt sie.')
         const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' }, tune: mergeTune(undefined, i.tune) }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }) }
         const hints = deck.theme.custom ? checkTheme(lintFor({ ...deck.theme.custom, ...deck.theme.tune }, deck.theme.brand, i.override), 'customTheme') + shadowed(i.customTheme, deck.theme.tune) : ''
         const fonts = await put(deck, true)
@@ -607,6 +609,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       }),
       async run(i) {
         const deck = needDeck(ctx)
+        if (i.brand !== undefined && deck.theme.brand?.lock) throw new Error('Die Marke ist gesperrt (Brand-Lock). Farben, Schriften und Logo ändert nur der Nutzer in den Einstellungen.')
         // Neues eigenes Design (keins vorher oder neuer Name): Bauteile line; Korrekturen an einem alten Design behalten seine Bauteile
         const fresh = !deck.theme.custom || (!!i.customTheme?.name && i.customTheme.name !== deck.theme.custom.name)
         // Lint-Stand vor dem Aufruf: alte Fehler (Decks von vor dem Theme-Lint) blockieren keine Korrekturen und keinen Feinschliff;
@@ -941,16 +944,26 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
         cmyk: z.boolean().optional().describe('nur print: PDF/X-4 in CMYK (FOGRA39) für Druckereien, die CMYK verlangen; braucht Ghostscript ab 10.05'),
         rows: z.array(z.record(z.string(), z.string())).min(1).max(500).optional().describe('Serienbrief: je Zeile eine Datei, {{Spalte}} im Deck wird ersetzt'),
+        formats: z.array(z.enum(['9:16', '1:1', '4:5', '16:9'])).min(1).max(4).optional().describe('nur clips und mp4, Stapel-Export: dasselbe Video zusätzlich in diesen Formaten (Dateien mit Format im Namen); Fokus aufs Gesicht wird je Format neu berechnet, Deck bleibt unverändert'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
         const print = { size: i.size, bleed: i.bleed, cmyk: i.cmyk }
         if (i.rows) return { text: `Exportiert (${i.format}):\n${(await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print)).join('\n')}` }
-        const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
+        const video = i.format === 'mp4' || i.format === 'clips'
+        if (i.formats && !video) throw new Error('formats gibt es nur für clips und mp4.')
+        // Stapel-Export: Kopien in weiteren Formaten, ungespeichert; das eigene Format nicht doppelt. Auto-Fokus rechnet prepareClips je Kopie neu
+        const extra = [...new Set(i.formats ?? [])].map((f) => ({ w: FORMATS[f].w, h: FORMATS[f].h })).filter((sz) => formatSuffix(sz) !== formatSuffix(deck.size))
+        const decks = [deck, ...extra.map((size) => ({ ...structuredClone(deck), size }))]
+        const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck, extra])).digest('hex')}` // geändertes Deck = neuer Export
         // ein Ausstieg des Handys (phoneFault) gilt nur für den laufenden Export, nicht für einen neuen: dessen Start setzt den Grund erst zurück
-        const where = i.format === 'mp4' || i.format === 'clips' ? await ctx.engine.video?.device?.(jobs.has(key) ? 'export' : undefined).catch(() => undefined) : undefined
-        const r = await job(key, (onProgress) => ctx.engine.exportDeck(deck, i.format, ctx.outDir, print, onProgress), where)
+        const where = video ? await ctx.engine.video?.device?.(jobs.has(key) ? 'export' : undefined).catch(() => undefined) : undefined
+        const r = await job(key, async (onProgress) => {
+          const out: string[] = []
+          for (const [k, d] of decks.entries()) out.push(...(await ctx.engine.exportDeck(d, i.format, ctx.outDir, print, (p) => onProgress(Math.floor(((k + p / 100) / decks.length) * 100)))))
+          return out
+        }, where)
         if (!('value' in r)) return { text: [stillRunning('Export', r.pct), where && `Export rechnet: ${where} (scheitert das Handy, rechnet der PC weiter)`].filter(Boolean).join('\n') }
         const notes: string[] = []
         if (where) notes.push(`Gerechnet: ${(await ctx.engine.video?.device?.('export').catch(() => undefined)) ?? where}`) // nach dem Export neu: ein Ausstieg des Handys steht mit Grund da
@@ -960,7 +973,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           const x = ts.filter(({ t, still }) => joinOf(t, still) === 'blend').length, b = ts.filter(({ t, still }) => joinOf(t, still) === 'schwarz').length
           notes.push(`Folienwechsel: ${x} mit Überblendung, ${b} über Schwarz, ${ts.length - x - b} harte Schnitte (Folien-transition; innerhalb eines Clips blenden die Schnitte automatisch über, part.transition je Schnitt)`)
         }
-        if ((i.format === 'mp4' || i.format === 'clips') && deck.music?.src && musicMissing(deck.music.src))
+        if (extra.length && deck.slides.some((s) => s.layout === 'clip' && (s.content as ClipContent).overlays?.some((o) => o.slide !== undefined)))
+          notes.push('Eingeblendete Folien (overlays slide) sind im Deck-Format gestaltet und werden in den anderen Formaten gestreckt; dort besser Text-Einblendungen nutzen')
+        if (video && deck.music?.src && musicMissing(deck.music.src))
           notes.push('Musik nicht gefunden – ohne Musik exportiert, Nachweis aus den Notes entfernen')
         // wie export-video.ts: clips = je Short immer ein Cover, .txt nur mit post; mp4 = aus der ersten Clip-Folie mit cover/post
         const cs = visibleSlides(deck).filter((s) => s.layout === 'clip').map((s) => s.content as ClipContent)
