@@ -38,7 +38,8 @@ for (const t of ['Erklärvideo schneiden aus Aufnahme.mp4', 'Schneide die Demo a
 }
 assert.ok(!route('Pitch mit Demo-Folie').has('film'))
 for (const t of ['Folien animieren', 'Animation auf Folie 3', 'Übergang einstellen']) { const a = route(t); assert.ok(a.has('animation') && !a.has('film'), t) }
-for (const t of ['Erklärvideo mit Stimme über unsere App', 'Live-Demo unserer Website als Video']) assert.ok(route(t).has('film'), t)
+for (const t of ['Erklärvideo mit Stimme über unsere App', 'Live-Demo unserer Website als Video', 'Erklärvideo für YouTube', 'Erklärvideo als Reel, 30 s', 'Live-Demo als Short', 'Tutorial, kürzer als 60 s']) assert.ok(route(t).has('film'), t)
+assert.ok(route('Tutorial-Clips aus meinem Stream').has('video') && !route('Tutorial-Clips aus meinem Stream').has('film'))
 let r = route('Mach mir eine Visitenkarte für unser Büro')
 assert.ok(r.has('layout:business-card') && r.has('geruest-visitenkarte') && !r.has('layout:cover') && !r.has('layout:doc-text'))
 assert.ok(route('Bitte die Folien dezent animieren', { layoutsInDeck: ['cover'], hasDeck: true }).has('animation'))

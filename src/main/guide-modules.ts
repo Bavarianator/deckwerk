@@ -159,7 +159,9 @@ const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
 // Video-Auftrag: Stichwörter, ein angehängtes Video oder clip-Folien im Deck. Shorts, Reels und TikTok sind Video, kein Karussell.
 // Eng gefasst: „Kick-off“, „Quartals-Highlights“, „Schnittstelle“, „Mainstream“ oder „Untertitel“ einer Folie sind kein Video.
 const VIDEO = /video|\bclips?\b|\bshorts?\b|\breels?\b|\b(live)?streams?\b|zusammenschnitt|youtube|twitch|kick\.com|\bmp4\b|podcast|transkri/
-const SCHNITT = /schneid|schnitt|kürz|\bcuts?\b|highlight|\bshorts?\b|\breels?\b|\bclips?\b|\.(mp4|mov|webm|mkv)\b|https?:|stream|twitch|youtube/ // Schnitt-Verb oder Quelle: dann gewinnt der Videoschnitt
+// Schnitt-Verb oder Quelle (Datei, Link, „aus meinem Video/Stream“): dann gewinnt der Videoschnitt. YouTube, Reels oder Shorts allein sind
+// beim Film nur das Ziel („Erklärvideo für YouTube“), keine Quelle
+const SCHNITT = /schneid|schnitt|kürzen|kürze\b|kürzt\b|\bcuts?\b|highlight|\.(mp4|mov|webm|mkv)\b|https?:|\baus (meinem|dem|der|einem|unserem) (video|stream|livestream|vod|aufnahme|mitschnitt)/
 const FOLIEN = /\bdecks?\b|\bfolien?\b|\bseiten?\b/ // spricht der Auftrag von Folien oder Seiten, ist er kein reiner Video-Auftrag
 const VIDEO_DECK: string[] = ['clip', 'section', 'statement'] // Zwischentitel einer Kompilation
 const KINDS = {
