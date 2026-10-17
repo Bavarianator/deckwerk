@@ -16,7 +16,8 @@ eq(resolveTheme({ id: light.id, brand }).body, FONTS.Georgia)
 
 // brand.json im (Test-)Home: create_deck ohne brand nimmt sie, brand: null lässt sie weg
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-brand-'))
-const { buildTools, defaultBrand, saveBrand, BRAND_FILE } = await import('../src/main/tools')
+const { buildTools, defaultBrand, saveBrand } = await import('../src/main/tools')
+const { brandFile, setClient } = await import('../src/main/clients')
 eq(defaultBrand(), undefined)
 let deck: Deck | null = null
 const engine = { measure: async () => [], renderPng: async () => [], renderOverview: async () => Buffer.alloc(0), lint: async () => [], exportDeck: async () => [] }
@@ -32,8 +33,18 @@ await create({ title: 'ausdrücklich ohne', brand: null })
 eq(deck!.theme.brand, undefined)
 await create({ title: 'eigene Marke', brand: { primary: '#AABBCC' } })
 eq(deck!.theme.brand, { primary: '#AABBCC' })
-writeFileSync(BRAND_FILE, '{kaputt')
+writeFileSync(brandFile(), '{kaputt')
 eq(defaultBrand(), undefined) // kaputte Datei bricht create_deck nicht
+// Kunde aktiv: saveBrand schreibt nach kunden/<Name>/brand.json, defaultBrand und create_deck lesen von dort; ohne Kunde wieder die eigene
+saveBrand({ primary: '#112233' })
+setClient('Acme')
+eq(defaultBrand(), undefined) // kein Rückfall auf die eigene Marke
+saveBrand({ primary: '#AA0000' })
+eq(JSON.parse(readFileSync(join(process.env.DECKWERK_HOME, 'kunden', 'Acme', 'brand.json'), 'utf8')), { primary: '#AA0000' })
+await create({ title: 'für Acme' })
+eq(deck!.theme.brand, { primary: '#AA0000' })
+setClient(null)
+eq(defaultBrand(), { primary: '#112233' })
 ok(true)
 // Schriften: Familienname lesbar (PowerPoint/Word ordnen eingebettete Schriften darüber zu), fontFamilyOf lässt die Datei unverändert
 const { fontFamilyOf } = await import('../src/main/embed-fonts')

@@ -1,10 +1,11 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { BrandKit, CustomFont, Deck, PrintOptions, ThemeRef } from '../shared/deck'
+import type { BrandKit, ChartLink, CustomFont, Deck, PrintOptions, ThemeRef } from '../shared/deck'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
 import type { SyncStatus } from '../main/sync'
 import type { Signals, Highlight } from '../shared/highlights'
 import type { Transcript } from '../shared/video'
+import type { XlsxRange } from '../main/xlsx-link'
 
 export type { SyncStatus }
 
@@ -169,6 +170,13 @@ const api = {
   setBrand: (b: BrandKit): Promise<void> => invoke('brand:set', b),
   /** Standard-Brand-Kit löschen (brand.json); bestehende Decks behalten ihres */
   clearBrand: (): Promise<void> => invoke('brand:clear'),
+  /** Deckwerk Pro: Kunden mit eigenem Brand-Kit und Hausstil; active = null heißt eigene Marke */
+  clients: (): Promise<{ list: string[]; active: string | null }> => invoke('kunden:list'),
+  /** Kunden aktiv setzen (legt ihn bei Bedarf an), null = eigene Marke; wirft bei ungültigem Namen mit Meldung */
+  setClient: (name: string | null): Promise<void> => invoke('kunden:set', name),
+  /** Deckwerk Pro: .xlsx wählen → absoluter Pfad oder null; xlsxRead liest den verknüpften Bereich (Fehler mit Meldung) */
+  xlsxPick: (): Promise<string | null> => invoke('xlsx:pick'),
+  xlsxRead: (link: ChartLink): Promise<XlsxRange> => invoke('xlsx:read', link),
   /** ~/Deckwerk/hausstil.md im Standard-Editor öffnen (legt sie bei Bedarf an) */
   openStyle: (): Promise<void> => invoke('style:open'),
   /** Hausstil lesen ('' = keiner) und ganz ersetzen */
@@ -191,7 +199,8 @@ const api = {
   setAsrModel: (m: 'parakeet' | 'de-schnell'): Promise<void> => invoke('asr:set-model', m),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
   setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
-  setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),
+  /** Rückgabe: Hinweis für die Rückmeldung, wenn dabei Deckwerk (MCP „deckwerk“, Skill) ersetzt wurde, sonst null */
+  setupMcp: (cli: ChatCli): Promise<string | null> => invoke('setup:mcp', cli),
   /** Einträge fürs Modell-Dropdown: Claude, Vibe, Codex (je nachdem, was installiert ist) */
   chatModels: (): Promise<ChatModels> => invoke('chat:models'),
   /** Einrichtung abgeschlossen oder übersprungen: erscheint nicht mehr von selbst */

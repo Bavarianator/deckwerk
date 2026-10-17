@@ -12,6 +12,7 @@ import { converter } from 'culori'
 import { icons } from 'lucide-react'
 import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions } from '../shared/deck'
 import { APP } from '../shared/app-id'
+import { brandFile, dataDir, styleFile } from './clients'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -45,13 +46,13 @@ export interface ToolContext {
   storyline?(slides: { title: string; layout: string }[]): void // nur im App-Chat: geplante Folien für die Entstehen-Ansicht
   choice?(c: { question: string; options: { label: string; image: string }[] }): void // nur im App-Chat: Auswahl-Karten (image = PNG als data:-URL)
 }
-// Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt
-export const STYLE_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), APP.home), 'hausstil.md')
-export const houseStyle = () => { try { return readFileSync(STYLE_FILE, 'utf8').trim() } catch { return '' } }
+// Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt.
+// Pfade je Aufruf (clients.ts): Der aktive Kunde kann wechseln, während App oder MCP-Prozess laufen.
+// Lesen fällt bei kaputtem Kunden-Marker still auf nichts zurück; Schreiben wirft, damit nie die Agenturdatei überschrieben wird.
+export const houseStyle = () => { try { return readFileSync(styleFile(), 'utf8').trim() } catch { return '' } }
 // Brand-Kit des Nutzers für jedes neue Deck (Farben, Schriften, Logo); DECKWERK_HOME: Tests
-export const BRAND_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), APP.home), 'brand.json')
-export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(BRAND_FILE, 'utf8'))) } catch { return undefined } }
-export const saveBrand = (b: BrandKit) => { mkdirSync(dirname(BRAND_FILE), { recursive: true }); writeFileSync(BRAND_FILE, JSON.stringify(b, null, 2)) }
+export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(brandFile(), 'utf8'))) } catch { return undefined } }
+export const saveBrand = (b: BrandKit) => { const f = brandFile(); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, JSON.stringify(b, null, 2)) }
 
 export interface ToolOutput { text: string; images?: Buffer[] } // PNG oder JPEG, siehe mimeOf
 export const mimeOf = (b: Buffer): 'image/png' | 'image/jpeg' => (b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : 'image/png')
@@ -126,9 +127,9 @@ export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schri
 const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}, Bauteile ${{ line: 'Linie', plain: 'frei', solid: 'Fläche' }[t.bauteile]}`
 // Zuletzt gebaute Decks, neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
 export function recentLooks(except?: string): { title: string; typ: LookTyp }[] {
-  const home = process.env.DECKWERK_HOME ?? join(homedir(), APP.home)
+  const home = dataDir()
   let dirs: string[]
-  try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models'].includes(d)) } catch { return [] }
+  try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models', 'kunden'].includes(d)) } catch { return [] }
   const files = dirs.flatMap((d) => { const f = join(home, d, 'deck.json'); try { return [{ f, t: statSync(f).mtimeMs }] } catch { return [] } }).sort((a, b) => b.t - a.t)
   const out: { title: string; typ: LookTyp }[] = []
   for (const { f } of files.slice(0, 12)) { // begrenzt: mit Brand-Kit zählt kein Deck, sonst würde jede deck.json gelesen
@@ -252,8 +253,10 @@ export function newSlideId(deck: Deck): string {
 
 // Feinsatz rekursiv über alle Strings; Quellen, Links und Symbolnamen bleiben unberührt
 const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus', 'video'])
+// ganz unberührt, auch Objekte (Excel-Link unter link: Pfad und Blatt)
 const typesetDeep = (v: unknown, key?: string): unknown =>
-  typeof v === 'string' ? (key && NO_TYPESET.has(key) ? v : typeset(v))
+  key && NO_TYPESET.has(key) ? v
+    : typeof v === 'string' ? typeset(v)
     : Array.isArray(v) ? v.map((x) => typesetDeep(x, key))
     : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typesetDeep(x, k)]))
     : v
@@ -874,17 +877,18 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien-transition fade, dissolve, push, slide, wipe, circle, zoom, split, cover, stack = echte Überblendung zwischen zwei Folien (auch Clip ↔ Zwischentitel), color = über Schwarz, none und morph = harter Schnitt zwischen zwei Clip-Folien (Zwischentitel blenden dann über Schwarz); Video-Decks mit transition none anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips (je Clip eine clip-Folie, fade oder dissolve); Schnitte innerhalb eines Clips blenden automatisch über: Jump-Cuts 0,13 s, ein neuer Moment (Sprung ab 20 s in der Quelle) 0,5 s, part.transition ändert das je Schnitt). Effekte je Ausschnitt (sparsam): speed (Zeitlupe/Zeitraffer, Ton ohne Tonhöhenänderung, Untertitel laufen mit), volume (Originalton, 0 = stumm), music (Musikpegel mit weichen Rampen, nur mit deck.music); zoom (Punch-in 1.1–1.2 an der Pointe), freeze (Standbild nur am Satzende); overlays = Text, Bauchbinde (einmal je Person beim ersten Auftritt), Titel, Zahl, Liste, Zitat, Markierung, Abspann (letzte 8 s), Bild, Video oder ausgeblendete Folie (Bild-in-Bild oder pos voll als B-Roll, 2–6 s) oder Verpixeln, höchstens eine zur Zeit; look (einer je Video, auto für flaue Handy-Aufnahmen), stabil (nur bei Verwackeln), captionPos. Keine Sticker oder Emojis. Untertitel kommen zusätzlich als .srt neben das MP4. Ist ein Android-Handy per USB-Debugging verbunden, rechnet es die Clips automatisch etwa fünfmal so schnell mit, der PC ist nur der Rückfall. fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>.',
+      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK; mit cmyk PDF/X-4 in CMYK, wenn die Druckerei CMYK verlangt (z. B. print24) – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien-transition fade, dissolve, push, slide, wipe, circle, zoom, split, cover, stack = echte Überblendung zwischen zwei Folien (auch Clip ↔ Zwischentitel), color = über Schwarz, none und morph = harter Schnitt zwischen zwei Clip-Folien (Zwischentitel blenden dann über Schwarz); Video-Decks mit transition none anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips (je Clip eine clip-Folie, fade oder dissolve); Schnitte innerhalb eines Clips blenden automatisch über: Jump-Cuts 0,13 s, ein neuer Moment (Sprung ab 20 s in der Quelle) 0,5 s, part.transition ändert das je Schnitt). Effekte je Ausschnitt (sparsam): speed (Zeitlupe/Zeitraffer, Ton ohne Tonhöhenänderung, Untertitel laufen mit), volume (Originalton, 0 = stumm), music (Musikpegel mit weichen Rampen, nur mit deck.music); zoom (Punch-in 1.1–1.2 an der Pointe), freeze (Standbild nur am Satzende); overlays = Text, Bauchbinde (einmal je Person beim ersten Auftritt), Titel, Zahl, Liste, Zitat, Markierung, Abspann (letzte 8 s), Bild, Video oder ausgeblendete Folie (Bild-in-Bild oder pos voll als B-Roll, 2–6 s) oder Verpixeln, höchstens eine zur Zeit; look (einer je Video, auto für flaue Handy-Aufnahmen), stabil (nur bei Verwackeln), captionPos. Keine Sticker oder Emojis. Untertitel kommen zusätzlich als .srt neben das MP4. Ist ein Android-Handy per USB-Debugging verbunden, rechnet es die Clips automatisch etwa fünfmal so schnell mit, der PC ist nur der Rückfall. fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). Video-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>.',
       inputSchema: z.object({
         format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks'),
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
+        cmyk: z.boolean().optional().describe('nur print: PDF/X-4 in CMYK (FOGRA39) für Druckereien, die CMYK verlangen; braucht Ghostscript ab 10.05'),
         rows: z.array(z.record(z.string(), z.string())).min(1).max(500).optional().describe('Serienbrief: je Zeile eine Datei, {{Spalte}} im Deck wird ersetzt'),
       }),
       async run(i) {
         const deck = needDeck(ctx)
         if (!deck.slides.length) throw new Error('Das Deck hat noch keine Folien.')
-        const print = { size: i.size, bleed: i.bleed }
+        const print = { size: i.size, bleed: i.bleed, cmyk: i.cmyk }
         if (i.rows) return { text: `Exportiert (${i.format}):\n${(await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print)).join('\n')}` }
         const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
         // ein Ausstieg des Handys (phoneFault) gilt nur für den laufenden Export, nicht für einen neuen: dessen Start setzt den Grund erst zurück
@@ -1093,10 +1097,11 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       description: 'Dauerhafte Vorliebe des Nutzers in den Hausstil schreiben; gilt für alle künftigen Decks (Tonfall, Anrede, Farben, Dinge, die er nicht will). Nur bei ausdrücklichem Wunsch („merk dir …“, „immer …“, „nie …“) oder wenn er dieselbe Korrektur zum zweiten Mal verlangt. Ein kurzer Satz pro Aufruf.',
       inputSchema: z.object({ note: z.string().min(3).max(200) }),
       async run(i) {
+        const f = styleFile() // zuerst: wirft bei kaputtem Kunden-Marker, statt in den Hausstil der Agentur zu schreiben
         if (houseStyle().includes(i.note.trim())) return { text: 'Steht schon im Hausstil.' }
-        mkdirSync(dirname(STYLE_FILE), { recursive: true })
-        appendFileSync(STYLE_FILE, `- ${i.note.trim()}\n`)
-        return { text: `Gemerkt (${STYLE_FILE}). Gilt ab jetzt für jedes Deck; sag dem Nutzer kurz Bescheid.` }
+        mkdirSync(dirname(f), { recursive: true })
+        appendFileSync(f, `- ${i.note.trim()}\n`)
+        return { text: `Gemerkt (${f}). Gilt ab jetzt für jedes Deck; sag dem Nutzer kurz Bescheid.` }
       },
     }),
     ...(ctx.storyline ? [tool({

@@ -16,7 +16,9 @@ import { routeTask, type RouterVia } from './router'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { parseCsv } from '../shared/merge'
-import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, exportSeries, type Orientation } from './tools'
+import { assetUrl, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, exportSeries, type Orientation } from './tools'
+import { activeClient, brandFile, listClients, setClient, styleFile } from './clients'
+import { readXlsxRange } from './xlsx-link'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { phoneDevice, phoneMarker } from './phone'
@@ -236,7 +238,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     // Vertrauensgrenze: print kommt aus dem Renderer, nur bekannte Größe und Beschnitt 0–5 mm durchlassen
     const size = typeof printIn?.size === 'string' && Object.hasOwn(PRINT_SIZES, printIn.size) ? printIn.size : undefined
     const bleed = typeof printIn?.bleed === 'number' && Number.isFinite(printIn.bleed) ? Math.min(5, Math.max(0, printIn.bleed)) : undefined
-    const print: PrintOptions = { size, bleed }
+    const print: PrintOptions = { size, bleed, cmyk: printIn?.cmyk === true }
     await mkdir(outDir(), { recursive: true })
     let last = -1
     const onProgress = (pct: number) => {
@@ -444,13 +446,34 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
   ipcMain.handle('brand:get', () => defaultBrand() ?? null)
   ipcMain.handle('brand:set', (_e, b: BrandKit) => saveBrand(b))
-  ipcMain.handle('brand:clear', () => rm(BRAND_FILE, { force: true }))
-  ipcMain.handle('style:get', () => readFile(STYLE_FILE, 'utf8').catch(() => ''))
+  // Pfade des aktiven Kunden (clients.ts): Lesen fällt bei kaputtem Marker auf leer zurück, Schreiben meldet den Fehler
+  ipcMain.handle('brand:clear', () => rm(brandFile(), { force: true }))
+  ipcMain.handle('style:get', async () => { try { return await readFile(styleFile(), 'utf8') } catch { return '' } })
   ipcMain.handle('style:set', async (_, text: unknown) => {
     if (typeof text !== 'string') throw new Error('Ungültiger Hausstil.')
     if (text.length > 20_000) throw new Error('Der Hausstil ist zu lang (höchstens 20 000 Zeichen).')
-    await mkdir(dirname(STYLE_FILE), { recursive: true })
-    await writeFile(STYLE_FILE, text)
+    const f = styleFile()
+    await mkdir(dirname(f), { recursive: true })
+    await writeFile(f, text)
+  })
+  // Deckwerk Pro: Kunden (Brand-Kit und Hausstil je Kunde); clientName prüft den Namen und wirft mit Meldung
+  ipcMain.handle('kunden:list', () => ({ list: listClients(), active: activeClient() }))
+  ipcMain.handle('kunden:set', (_, name: unknown) => {
+    if (name !== null && typeof name !== 'string') throw new Error('Ungültiger Kundenname.')
+    setClient(name)
+  })
+  // Deckwerk Pro: Excel-Link. Vertrauensgrenze: link kommt aus dem Renderer (auch aus fremden deck.json), nur eine absolute .xlsx lesen
+  ipcMain.handle('xlsx:pick', async () => {
+    const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Excel-Arbeitsmappe', extensions: ['xlsx'] }] })
+    const file = r.filePaths[0]
+    return r.canceled || !file ? null : file
+  })
+  ipcMain.handle('xlsx:read', (_, link: unknown) => {
+    const { file, sheet, range } = (link && typeof link === 'object' ? link : {}) as Record<string, unknown>
+    if (typeof file !== 'string' || !isAbsolute(file) || !/\.xlsx$/i.test(file)) throw new Error('Die Verknüpfung braucht den vollständigen Pfad einer .xlsx-Datei.')
+    if (sheet !== undefined && (typeof sheet !== 'string' || sheet.length > 31)) throw new Error('Ungültiger Blattname (höchstens 31 Zeichen).')
+    if (typeof range !== 'string' || range.length > 20) throw new Error('Ungültiger Bereich, erwartet wird z. B. „A1:D5“.')
+    return readXlsxRange({ file, sheet, range })
   })
   ipcMain.handle('app:info', () => ({
     version: app.getVersion(), electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node,
@@ -470,9 +493,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (err) throw new Error(err)
   })
   ipcMain.handle('style:open', async () => {
-    await mkdir(HOME, { recursive: true })
-    if (!existsSync(STYLE_FILE)) await writeFile(STYLE_FILE, '# Hausstil\n\n<!-- Gilt für jedes Deck. Eine Vorliebe pro Zeile; die KI ergänzt hier, wenn du „merk dir …“ sagst. -->\n')
-    const err = await shell.openPath(STYLE_FILE)
+    const f = styleFile()
+    await mkdir(dirname(f), { recursive: true })
+    if (!existsSync(f)) await writeFile(f, '# Hausstil\n\n<!-- Gilt für jedes Deck. Eine Vorliebe pro Zeile; die KI ergänzt hier, wenn du „merk dir …“ sagst. -->\n')
+    const err = await shell.openPath(f)
     if (err) throw new Error(err)
   })
   // Katalogschriften für ein Deck laden (offline: Ersatz) → Theme mit fontFiles; die UI übernimmt es nach einer Schriftwahl
@@ -646,6 +670,24 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       return sec.includes(`command = ${JSON.stringify(mcpCmd.command)}`) && sec.includes(JSON.stringify(mcpCmd.args.at(-1)))
     } catch { return false } // keine Datei = nicht eingerichtet
   }
+  // Pro ersetzt Deckwerk in den Agenten (Nutzerentscheidung): beim Einrichten dessen MCP-Eintrag „deckwerk“ und Skill entfernen.
+  // Nur exakt dieser Name; den Skill-Ordner nur, wenn sein Frontmatter name: deckwerk trägt (nie etwas anderes löschen).
+  const OLD = 'deckwerk'
+  const hasOld = (cli: Cli) => {
+    try {
+      const text = readFileSync(config[cli], 'utf8')
+      return cli === 'claude' ? !!JSON.parse(text).mcpServers?.[OLD] : text.includes(cli === 'codex' ? `[mcp_servers.${OLD}]\n` : `[[mcp_servers]]\nname = "${OLD}"\n`)
+    } catch { return false }
+  }
+  const dropOldSkill = async (cli: Cli): Promise<boolean> => {
+    const f = skillFile(cli)
+    if (!f) return false
+    const dir = join(dirname(dirname(f)), OLD)
+    const head = /^---\r?\n([\s\S]*?)\r?\n---/.exec(await readFile(join(dir, 'SKILL.md'), 'utf8'))?.[1] ?? ''
+    if (!/^name:[ \t]*(["']?)deckwerk\1[ \t]*\r?$/m.test(head)) return false
+    await rm(dir, { recursive: true, force: true }) // ein Symlink verschwindet allein, sein Ziel bleibt
+    return true
+  }
   const cliArg = (cli: unknown): Cli => {
     if (!CLIS.includes(cli as Cli)) throw new Error(`Unbekanntes Werkzeug: ${String(cli)}`)
     return cli as Cli
@@ -760,14 +802,18 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const run = (args: string[]) => new Promise<void>((ok, fail) =>
       execFile(bin, args, { timeout: 60_000 }, (e, _out, err) => (e ? fail(new Error(err.trim() || e.message)) : ok())))
     const { command, args } = mcpCmd
-    const [remove, add] = {
-      claude: [['mcp', 'remove', '-s', 'user', APP.id], ['mcp', 'add', '-s', 'user', APP.id, '--', command, ...args]],
-      codex: [['mcp', 'remove', APP.id], ['mcp', 'add', APP.id, '--', command, ...args]],
+    const remove = (id: string) => (cli === 'claude' ? ['mcp', 'remove', '-s', 'user', id] : ['mcp', 'remove', id])
+    const add = {
+      claude: ['mcp', 'add', '-s', 'user', APP.id, '--', command, ...args],
+      codex: ['mcp', 'add', APP.id, '--', command, ...args],
       // --arg=--mcp: mit Leerzeichen hielte Vibe „--mcp“ für eine eigene Option
-      vibe: [['mcp', 'remove', APP.id], ['mcp', 'add', APP.id, '--transport', 'stdio', '--command', command, ...args.map((a) => `--arg=${a}`),
-        '--startup-timeout-sec', '90', '--tool-timeout-sec', '300']],
+      vibe: ['mcp', 'add', APP.id, '--transport', 'stdio', '--command', command, ...args.map((a) => `--arg=${a}`),
+        '--startup-timeout-sec', '90', '--tool-timeout-sec', '300'],
     }[cli]
-    await run(remove).catch(() => {}) // alter Eintrag mit anderem Pfad
+    const had = hasOld(cli)
+    await run(remove(OLD)).catch(() => {}) // Fehler beim Abmelden von Deckwerk verhindern das Einrichten nicht
+    const skillGone = await dropOldSkill(cli).catch(() => false)
+    await run(remove(APP.id)).catch(() => {}) // alter Eintrag mit anderem Pfad
     await run(add)
     const f = skillFile(cli)
     if (f) { await mkdir(dirname(f), { recursive: true }); await writeFile(f, skill()) }
@@ -779,6 +825,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       if (!tomlSection(text, head).includes('startup_timeout_sec'))
         await writeFile(config.codex, text.replace(head, `${head}startup_timeout_sec = 90\ntool_timeout_sec = 300\n`))
     }
+    return had || skillGone ? `Deckwerk ist in ${CLI_NAME[cli]} jetzt durch Deckwerk Pro ersetzt; die Deckwerk-App bleibt installiert.` : null
   })
   // Verbindung testen wie Claude Code: Server per stdio starten, initialize + tools/list, Anzahl der Werkzeuge zurück
   ipcMain.handle('setup:mcpTest', () => new Promise<number>((ok, fail) => {
