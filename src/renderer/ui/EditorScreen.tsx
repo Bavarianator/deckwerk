@@ -11,6 +11,8 @@ import type { Msg } from './Chat'
 import { Elements } from './Elements'
 import { Filmstrip } from './Filmstrip'
 import { InsertSearch } from './InsertSearch'
+import { AccentPicker } from './AccentPicker'
+import { LintPanel } from './LintPanel'
 import { Inspector } from './Inspector'
 import { ObjectBar } from './ObjectBar'
 import { Stage } from './Stage'
@@ -124,6 +126,8 @@ export function EditorScreen(p: Props) {
               <button type="button" className="plain tint" disabled={p.busy} onClick={() => p.onSend(`Schreibe die Sprechernotizen für Folie ${p.index + 1} neu: was ich dazu sage, 30–60 Sekunden, frei gesprochen, ohne den Folientext zu wiederholen. Ändere nur notes.`)}>
                 <Sparkles size={13} />{slide.notes?.trim() ? 'Überarbeiten' : 'Schreiben lassen'}
               </button>
+              <AccentPicker slideId={slide.id} disabled={p.busy} />
+              <LintPanel order={p.deck!.slides.map((s) => s.id).join()} disabled={p.busy} onSelect={p.onSelect} />
             </div>
             <textarea
               id="slide-notes"

@@ -20,6 +20,7 @@ import { Logo, Wordmark } from './ui/Logo'
 import { FormatSheet } from './ui/FormatSheet'
 import { PrintSheet } from './ui/PrintSheet'
 import { LookSheet } from './ui/LookSheet'
+import { DeckSheet } from './ui/DeckSheet'
 import { PresentScreen } from './ui/PresentScreen'
 import { SetupSheet } from './ui/SetupSheet'
 import { Settings } from './ui/settings/Settings'
@@ -53,6 +54,7 @@ export default function App() {
   const [nav, setNav] = useState(true) // Folienübersicht links
   const [panel, setPanel] = useState<Panel>(null) // rechts: Einfügen oder Anpassen
   const [look, setLook] = useState(false)
+  const [deckSheet, setDeckSheet] = useState(false) // Sheet „Deck“: Titel, Briefing, Musik
   const [setup, setSetup] = useState<boolean | string>(false) // Einrichtung: nur beim ersten Start von selbst (state().setupDone); Text = Schritt, mit dem sie aufgeht
   const [settings, setSettings] = useState<SectionId | null>(null) // Einstellungen: Zahnrad, Wolke, Key-Dialog, „Alle Einstellungen“ im Assistenten
   const [formats, setFormats] = useState(false)
@@ -86,7 +88,7 @@ export default function App() {
   useEffect(() => { if (choices && pickAvailable(model, choices) !== model) pickModel(pickAvailable(model, choices)) }, [choices])
   const deck = doc.deck
   const index = deck ? Math.max(0, Math.min(sel, deck.slides.length - 1)) : 0
-  const hasClip = !!deck?.slides.some((s) => s.layout === 'clip')
+  const hasClip = !!deck?.slides.some((s) => s.layout === 'clip' || s.layout === 'schnitt')
   const deckvid = (hasClip || videoMode) && !slidesView // Video-Decks: eigene, KI-zentrierte Ansicht
   // einmal Video-Deck, immer Deckvid: Entfernen des letzten Clips springt nicht in den Editor
   useEffect(() => { if (hasClip && !videoMode) setVideoMode(true) }, [hasClip, videoMode])
@@ -182,10 +184,10 @@ export default function App() {
   }, [commit, index, deck, onItems])
   useEffect(() => setPicked([]), [index])
   // Folien anlegen (Vorlage aus dem Layout-Katalog oder leer), duplizieren, löschen
-  const addSlide = useCallback((layout: LayoutId = 'blank', at = index + 1) => {
+  const addSlide = useCallback((layout: LayoutId = 'blank', at = index + 1, content?: unknown) => {
     commit((d) => {
       const slides = [...d.slides]
-      slides.splice(at, 0, { id: `s-${newId()}`, layout, content: structuredClone(LAYOUTS[layout].samples.typ) })
+      slides.splice(at, 0, { id: `s-${newId()}`, layout, content: content ?? structuredClone(LAYOUTS[layout].samples.typ) })
       return { ...d, slides }
     })
     setSel(at)
@@ -246,7 +248,8 @@ export default function App() {
   // Cloud-Sync brachte eine neuere Fassung: nur das Deck tauschen, Chat und Auswahl bleiben
   useEffect(() => api.onDeckSynced((d) => {
     skipSave.current = true
-    setDoc(fresh(d))
+    // Tool-Läufe aus der UI und Schrift-Nachladen kommen auch hier an: Historie behalten, alter Stand wird ein Undo-Schritt
+    setDoc((x) => ({ deck: d, past: x.deck ? [...x.past, x.deck].slice(-100) : x.past, future: [] }))
     setSel((i) => Math.min(i, Math.max(0, d.slides.length - 1)))
   }), [])
   const actions = {
@@ -385,8 +388,9 @@ export default function App() {
         <Deckvid
           deck={deck} index={index} msgs={msgs} busy={busy} status={status} saved={saved} path={path} model={model} onModel={pickModel}
           exporting={videoBusy.current} // Ref genügt: Start, Fortschritt und Ende setzen den Status und rendern damit neu
-          onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport} onSlides={() => setSlidesView(true)}
+          onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport} onSlides={() => setSlidesView(true)} onDeckSheet={() => setDeckSheet(true)}
           patchSlide={patchSlide} delSlide={delSlide} canUndo={canUndoTurn} onUndo={undoTurn}
+          newTimeline={() => addSlide('schnitt', deck?.slides.length ?? 0, { tracks: [{ id: 'v1', kind: 'video', clips: [] }, { id: 'a1', kind: 'audio', clips: [] }] })}
         />
       ) : (
         <>
@@ -405,6 +409,7 @@ export default function App() {
             onAddSlide={() => addSlide('blank', deck?.slides.length ?? 0)}
             onHome={actions.onNew}
             onLook={openLook}
+            onDeck={() => { setPicked([]); setDeckSheet(true) }}
             onExport={actions.onExport}
             onFormats={() => { setPicked([]); setFormats(true) }}
             hasClip={hasClip}
@@ -462,6 +467,7 @@ export default function App() {
       {printing && deck && <PrintSheet deck={deck} onExport={(o) => actions.onExport('print', o)} onClose={() => setPrinting(false)} />}
       {formats && deck && <FormatSheet deck={deck} index={index} onApply={(id) => commit((d) => resizeDeck(d, id))} onCopies={saveCopies} onClose={() => setFormats(false)} />}
       {look && deck && <LookSheet deck={deck} busy={busy} patchDeck={patchDeck} pickImage={api.pickImage} onAsk={(t) => send(t)} onClose={() => setLook(false)} />}
+      {deckSheet && deck && <DeckSheet deck={deck} onDeck={(p, final) => patchDeck(p, final ? undefined : `deck-${Object.keys(p).join()}`)} onClose={() => { setDeckSheet(false); setDoc((d) => ({ ...d, tag: undefined })) }} />}
       {setup && <SetupSheet model={model} onModel={pickModel} start={typeof setup === 'string' ? setup : undefined} onKeySaved={reloadAccess} onClose={() => { setSetup(false); reloadAccess() }} />}
       {settings && <Settings section={settings} model={model} onModel={pickModel} onChanged={reloadAccess} onClose={() => { setSettings(null); reloadAccess() }} />}
       {askKey && (
