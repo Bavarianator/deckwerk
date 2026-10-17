@@ -52,6 +52,7 @@ const ITEM_MOTION: Record<Exclude<ItemAnim, 'none'>, { kf: Keyframe[]; ms: numbe
   // steigt hinter einer gedachten Linie (der eigenen Unterkante) auf: Ausschnitt bleibt auf der Endposition stehen
   baseline: { kf: [{ translate: '0 100%', clipPath: 'inset(-100% 0 100% 0)' }, { translate: '0 0', clipPath: 'inset(0 0 0 0)' }], ms: 600 },
   wipe: { kf: KF.wipe, ms: 500 },
+  draw: { kf: KF.wipe, ms: 800 },
   typewriter: { kf: [{ opacity: 0 }, { opacity: 1 }], ms: 1 },
   ascend: { kf: [{ opacity: 0, translate: '0 .5em' }, { opacity: 1, translate: '0 0' }], ms: 400 },
   breathe: { kf: [{ scale: '1' }, { scale: '1.04' }], ms: 1200 },
