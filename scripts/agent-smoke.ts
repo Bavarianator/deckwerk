@@ -437,10 +437,25 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.equal(fr.images!.length, 2); assert.equal(fr.text, `Folie 1 (${a1.id}) bei 0 s\nFolie 1 (${a1.id}) bei 1,5 s`)
   await fails(go('render_slides', { ids: [a1.id, a2.id, a1.id], at: [0] }), /höchstens 2 ids/)
   await fails(run('render_slides', { ids: [b.id], at: [0] }), /^Frames der Zeitachse gibt es nur in der Deckwerk-App/)
+  // Motion-Grafik: keys und draw überstehen das Tool-Schema, keys zählen als Takte; Lint meldet späte Takte, Abgang und Unruhe
+  const box = (id: string, x: number, keys: unknown[]) => ({ id, kind: 'shape', shape: 'rect', x, y: 500, w: 100, h: 100, keys })
+  const mg = await go('add_slides', { slides: [{ layout: 'blank', content: {}, voice: 'Erst der Weg. [klick] Dann das Ziel.', items: [
+    { id: 'pfeil', kind: 'shape', shape: 'line', x: 100, y: 300, w: 400, h: 20, stroke: '#ffffff', anim: 'draw', keys: [{ step: 1, x: 600, ease: 'feder', ms: 600 }] },
+    box('weg', 100, [{ step: 1, x: 1300 }, { step: 4, y: 0 }]), ...[0, 1, 2, 3].map((k) => box(`b${k}`, 250 + k * 150, [{ step: 1, h: 150, fill: '#ff0000' }])),
+  ] }] })
+  const mgs = fd!.slides.at(-1)!
+  assert.equal(mgs.items![0].anim, 'draw'); assert.deepEqual(mgs.items![0].keys, [{ step: 1, x: 600, ease: 'feder', ms: 600 }])
+  assert.match(mg.text, /Szene 5: ~[\d,]+ s · Stimme ~[\d,]+ s · 5 Takte/)
+  assert.match(mg.text, /\[warn\] film-bewegung @items\.weg: Element weg liegt ab Takt 1 ganz außerhalb der Folie \(1280×720 px/)
+  assert.match(mg.text, /\[warn\] film-bewegung: keys von weg in Takt 2 oder später, die Szene hat nur 2 Takte/)
+  assert.match(mg.text, /\[warn\] film-unruhe: Hinweis: In Takt 1 bewegen sich 6 Elemente/); assert.doesNotMatch(mg.text, /In Takt 4 bewegen/)
+  await fails(go('add_slides', { slides: [{ layout: 'blank', content: {}, items: [box('x', 0, [{ step: 1, opacity: 2 }])] }] }), /opacity/)
+  await fails(go('add_slides', { slides: [{ layout: 'blank', content: {}, items: [box('x', 0, [{ step: 1, ease: 'huepf' }])] }] }), /ease/)
   // update_deck: einzelne Werte ändern, Stimme weg, kein Film mehr
   await go('update_deck', { film: { captions: 'satz' } }); assert.deepEqual(fd!.film, { voice: 'de', speed: 1.3, captions: 'satz' })
   await go('update_deck', { film: { voice: null } }); assert.deepEqual(fd!.film, { speed: 1.3, captions: 'satz' })
   await go('update_deck', { film: null }); assert.equal(fd!.film, undefined)
+  assert.match((await go('update_slide', { id: mgs.id })).text, /\n {2}Hinweis: keys wirken nur im Film/)
   // capture_page: asset://-Pfade plus Vorschau; screen_zooms: Liste für screen.zooms
   const cap = await go('capture_page', { url: 'http://localhost:5173/', device: 'handy', scroll: [0, 1] })
   assert.match(cap.text, new RegExp(`^1 Aufnahme von http://localhost:5173/ .*\\n${assetUrl(shot)} — 1×1 px, quadratisch\\n\\nWeiter: Layout screen mit image = Pfad, frame handy`)); assert.equal(cap.images!.length, 1)

@@ -1,8 +1,8 @@
-// Film-Lint (Deck.film, Feature „Animation“): Sprechtext, Szenenlänge, Kamera, Tippen und Bildschirm-Zoom, damit sich die KI beim Bauen
+// Film-Lint (Deck.film, Feature „Animation“): Sprechtext, Szenenlänge, Kamera, Motion-Grafik (keys), Tippen und Bildschirm-Zoom, damit sich die KI beim Bauen
 // eines Films selbst korrigiert. Nur Warnungen: Die Zeiten sind Schätzungen (film.ts), die Stimme ist beim Bauen noch nicht synthetisiert.
 // Ohne Electron/Node, läuft in Main und Renderer. Nutzer: lintDeck (lint.ts) und report() in tools.ts (Zeitachse je Szene).
 import type { Deck, Measured, Slide } from './deck'
-import { itemClicks } from './deck'
+import { itemClicks, sizeOf } from './deck'
 import { BEAT_MARK, estimateVoice, sceneTimeline, TAIL, type ScreenZoom, type VoiceTiming } from './film'
 import { buildOf } from './layouts'
 import { CODE_MAX, codeLines } from './layouts-demo'
@@ -12,7 +12,7 @@ export const TYPE_SEC = 0.045 // je Zeichen beim Tippen (GAP.typewriter in rende
 const FADE = 0.5 // Einblenden einer Code-Zeile (ITEM_MOTION.fade)
 // ponytail: Aufbaudauer je Takt geschätzt; genau kennt sie erst filmPrepare im Renderer. Upgrade: Schrittdauern aus measure() mitliefern
 const STEP_SEC = 0.6
-const MAX = { words: 40, voice: 25, typing: 8, box: 0.25 } // Wörter bzw. s Sprechtext je Szene, s Tippen, kleinste Kamera-Box (über 4× Vergrößerung)
+const MAX = { words: 40, voice: 25, typing: 8, box: 0.25, movers: 4 } // Wörter bzw. s Sprechtext je Szene, s Tippen, kleinste Kamera-Box (über 4× Vergrößerung), bewegte Elemente je Takt
 const de = (x: number) => String(+x.toFixed(1)).replace('.', ',')
 
 /** Aufbau des Layouts code wie in renderer/layouts-demo.tsx: Zeilen nacheinander, getippt je Zeichen 45 ms, sonst eingeblendet */
@@ -32,8 +32,8 @@ export function codeReveal(s: Slide): { typing: number; total: number } {
 export interface SceneEstimate {
   dur: number // geschätzte Szenenlänge in s
   voice?: VoiceTiming // geschätzter Zeitplan der Stimme (fehlt = kein Sprechtext)
-  beats: number // Takte der Szene samt Kamera-Takten
-  content: number // Takte aus Sprechtext ([klick]), Aufbau, Klick-Elementen und Mauszeiger, ohne Kamera
+  beats: number // Takte der Szene samt Kamera- und keys-Takten
+  content: number // Takte aus Sprechtext ([klick]), Aufbau, Klick-Elementen und Mauszeiger, ohne Kamera und keys
   typing: number // s Tippen (Layout code)
 }
 /** Geschätzte Zeitachse der Szene i (wie sceneTimeline im Export, Aufbaudauer je Takt geschätzt). m = Messung der Folie (Aufbau-Gruppen, Wörter) */
@@ -45,7 +45,7 @@ export function sceneEstimate(deck: Deck, i: number, m?: Measured): SceneEstimat
   const clicks = 1 + (buildOf(deck, i) === 'list' ? groups : 0) + itemClicks(s)
   const cursor = s.layout === 'screen' ? ((s.content?.cursor ?? []) as { step?: number }[]).reduce((n, c, k) => Math.max(n, (c.step ?? k + 1) + 1), 0) : 0
   const content = Math.max(voice?.beats.length ?? 0, clicks, cursor)
-  const beats = Math.max(content, ...(s.camera ?? []).map((c) => c.step + 1))
+  const beats = Math.max(content, ...(s.camera ?? []).map((c) => c.step + 1), ...(s.items ?? []).flatMap((it) => it.keys ?? []).map((k) => k.step + 1))
   const code = codeReveal(s)
   const steps = Array.from({ length: beats }, (_, k) => (k === 0 ? Math.max(STEP_SEC, code.total) : STEP_SEC))
   const words = m ? m.els.flatMap((e) => (e.kind === 'text' ? e.runs.map((r) => r.text) : [])).join(' ').split(/\s+/).filter(Boolean).length : 0
@@ -78,6 +78,25 @@ export function lintFilm(deck: Deck, measured: Measured[] = []): Issue[] {
       if (v && c.step >= e.content)
         warn(i, 'film-kamera', `Kamera in Takt ${c.step}, die Szene hat nur ${e.content} ${e.content === 1 ? 'Takt' : 'Takte'} (0–${e.content - 1} aus [klick], Aufbau und Mauszeiger): Die Fahrt käme erst nach der Stimme. [klick] an der Stelle in den Sprechertext setzen oder step verkleinern.`)
     }
+    // Motion-Grafik: Stand je Takt = voriger Stand plus Key (fehlende Werte bleiben); Takte wie bei der Kamera
+    const late: string[] = [], movers = new Map<number, number>(), { w: W, h: H } = sizeOf(deck)
+    for (const it of s.items ?? []) {
+      if (!it.keys?.length) continue
+      let b = { x: it.x, y: it.y, w: it.w, h: it.h }, gone = false
+      for (const k of [...it.keys].sort((p, q) => p.step - q.step)) {
+        b = { x: k.x ?? b.x, y: k.y ?? b.y, w: k.w ?? b.w, h: k.h ?? b.h }
+        if (!gone && (b.x + b.w <= 0 || b.y + b.h <= 0 || b.x >= W || b.y >= H)) {
+          gone = true
+          warn(i, 'film-bewegung', `Element ${it.id} liegt ab Takt ${k.step} ganz außerhalb der Folie (${W}×${H} px; keys in px wie x/y/w/h). Gewollter Abgang? Dann lieber opacity 0.`, `items.${it.id}`)
+        }
+      }
+      for (const step of new Set(it.keys.map((k) => k.step))) movers.set(step, (movers.get(step) ?? 0) + 1)
+      if (v && it.keys.some((k) => k.step >= e.content)) late.push(it.id)
+    }
+    if (late.length)
+      warn(i, 'film-bewegung', `keys von ${late.join(', ')} in Takt ${e.content} oder später, die Szene hat nur ${e.content} ${e.content === 1 ? 'Takt' : 'Takte'} (0–${e.content - 1} aus [klick], Aufbau und Mauszeiger): Die Bewegung käme erst nach der Stimme. [klick] an der Stelle in den Sprechertext setzen oder step verkleinern.`)
+    for (const [step, n] of movers) if (n > MAX.movers)
+      warn(i, 'film-unruhe', `Hinweis: In Takt ${step} bewegen sich ${n} Elemente zugleich – unruhig. 1–3 je Takt, die Bewegung erzählt etwas (Pfeil zeigt den Weg, Balken wächst); den Rest stehen lassen oder einen Takt später.`)
     if (e.typing > MAX.typing)
       warn(i, 'film-tippen', `Tippen dauert ~${de(e.typing)} s (${Math.round(e.typing / TYPE_SEC)} Zeichen × 45 ms) – höchstens ~${MAX.typing} s. Code kürzen${s.variant === 'terminal' ? ', weniger oder kürzere Befehle' : ' oder reveal zeilen'}.`, 'code')
     const c = s.content as { video?: unknown; from?: number; to?: number; zooms?: ScreenZoom[] }

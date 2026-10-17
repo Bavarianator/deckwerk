@@ -395,7 +395,7 @@ Animation lenkt den Blick. Sie ist keine Dekoration.
 
 Jedes Layout hat einen sinnvollen Default. Weiche nur mit Grund davon ab. `pan`, `pop` und `words` sind lebhafter: höchstens 2–3 Folien pro Deck, `words` nie auf Folien mit mehr als ~15 Wörtern.
 
-**Element-Animationen wie in Canva** (`anim` an freien Elementen in `items`, je ein Klick): `fade` Einblenden, `float` Aufsteigen, `pan` Schwenken, `drift` Treiben (langsam von links), `pop` Pop, `zoom` Zoomen, `tumble` Purzeln (dreht sich hinein), `stomp` Stampfen (fällt groß herein), `baseline` Grundlinie (steigt hinter einer Kante auf), `wipe` Wischen; nur für Text `typewriter` Schreibmaschine (Buchstabe für Buchstabe) und `ascend` Wort für Wort; `breathe` Atmen pulsiert dauerhaft ab Folienbeginn und kostet keinen Klick (für den einen Call-to-Action). `animDir` (right, left, up, down) gibt bei `float`, `pan`, `drift`, `wipe` die Bewegungsrichtung vor, `animSpeed` (slow, fast) das Tempo. Alle laufen auch in PowerPoint; Purzeln wird dort zum Zoom. Nur auf Wunsch oder bei Pitch/Event, nie mehrere verschiedene auf einer Folie.
+**Element-Animationen wie in Canva** (`anim` an freien Elementen in `items`, je ein Klick): `fade` Einblenden, `float` Aufsteigen, `pan` Schwenken, `drift` Treiben (langsam von links), `pop` Pop, `zoom` Zoomen, `tumble` Purzeln (dreht sich hinein), `stomp` Stampfen (fällt groß herein), `baseline` Grundlinie (steigt hinter einer Kante auf), `wipe` Wischen, `draw` Zeichnen (Linie, Pfeil, Umriss oder Icon zeichnet sich, in PowerPoint Wischen); nur für Text `typewriter` Schreibmaschine (Buchstabe für Buchstabe) und `ascend` Wort für Wort; `breathe` Atmen pulsiert dauerhaft ab Folienbeginn und kostet keinen Klick (für den einen Call-to-Action). `animDir` (right, left, up, down) gibt bei `float`, `pan`, `drift`, `wipe` die Bewegungsrichtung vor, `animSpeed` (slow, fast) das Tempo. Alle laufen auch in PowerPoint; Purzeln wird dort zum Zoom. Nur auf Wunsch oder bei Pitch/Event, nie mehrere verschiedene auf einer Folie.
 
 **Bewegungsstil (`motion`, wie Canva „Magic Animate“):** Statt jede Folie einzeln zu setzen, wählt `create_deck`/`update_deck` den Stil fürs ganze Deck: `none` (keine Aufbauten, nur Übergänge), `calm` (alles nur einblenden: Vorstand, Behörde, Finanzen), `standard` (Layout-Defaults), `lively` (Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom, auch Titelfolien blenden ein: Pitch, Event, Marketing). Der Nutzer stellt dasselbe im Look unter „Animation“ ein. Ein `build` auf einer Folie überschreibt den Stil.
 
@@ -542,7 +542,19 @@ Eine Idee pro Szene, 4–10 s je Szene. Wer mehr zeigen will, macht eine zweite 
 
 **Kamera (`camera: [{ step, box: [x,y,w,h] }]`):** `box` in Anteilen der Folie (0–1). Zu Beginn von Takt `step` fährt die Kamera in 0,8 s auf die Box; ohne `box` zurück auf die ganze Folie. Nur auf das, was die Stimme gerade sagt, höchstens 1–2 Fahrten je Szene, nicht hin und her. Am Szenenende nicht zurückfahren, die nächste Szene beginnt ohnehin frisch.
 
-**Im Film:** Zahlen in `big-number` und `kpi-grid` zählen hoch. `code` tippt bzw. baut Zeile für Zeile auf. Freie Elemente nutzen `anim`, `animStart`, `animDelay`. Übergänge zwischen Szenen sind Überblendungen; `morph` wird zur Überblendung, `none` ist ein harter Schnitt (für Takt und Hook-Wechsel, sonst `fade`). Musik wie beim Video: `deck.music`, `find_music`, dezent und instrumental.
+**Im Film:** Zahlen in `big-number` und `kpi-grid` zählen hoch, Diagramme wachsen auf, `**markierte**` Wörter ziehen einen Unterstrich in der Akzentfarbe auf. `code` tippt bzw. baut Zeile für Zeile auf. Freie Elemente nutzen `anim`, `animStart`, `animDelay`. Übergänge zwischen Szenen sind Überblendungen; `morph` wird zur Überblendung, `none` ist ein harter Schnitt (für Takt und Hook-Wechsel, sonst `fade`). Musik wie beim Video: `deck.music`, `find_music`, dezent und instrumental.
+
+**Motion-Grafik (`keys`):** Freie Elemente bewegen sich je Takt. Für einen Prozess oder Weg, eine Zahl, die wächst, eine Titel- oder Logo-Szene, Vorher–Nachher; alles andere mit Layouts.
+- Aufbau: Layout `blank` mit freien Elementen (Form, Text, Icon, Linie oder Konnektor, Diagramm). `anim` ist der Auftritt (`draw` für Linien, Pfeile, Umrisse, Icons; `pop` oder `float` für Text), `keys` die Bewegung danach.
+- `keys: [{ step, x?, y?, w?, h?, rot?, opacity?, fill?, color?, ease?, ms? }]`: Zu Beginn von Takt `step` gleitet das Element in `ms` (Standard 800) auf diese Werte, Fehlendes bleibt. px wie `x`/`y`/`w`/`h` des Elements, `rot` in Grad, `opacity` 0–1. `ease` `weich` (Standard), `linear` oder `feder` (federt leicht über das Ziel): `feder` sparsam, für die eine Zahl oder einen Aufprall.
+- Takte wie bei der Kamera: `[klick]` im Sprechertext dorthin, wo sich etwas bewegen soll. Nur im Film; Präsentation und PowerPoint zeigen den Stand ohne `keys`, der soll als ruhige Folie taugen.
+- 1–3 bewegte Elemente je Takt, jede Bewegung erzählt etwas (der Pfeil zeigt den Weg, der Balken wächst). Dazwischen ruhige Pausen, kein Dauerschweben, kein Hin und Her. Lint: `film-bewegung` (Takt nach der Stimme, Element verlässt die Folie), `film-unruhe`.
+
+```json
+{ "layout": "blank", "content": {}, "voice": "Ein Antrag dauert heute drei Wochen. [klick] Mit uns drei Tage.", "items": [
+  { "id": "balken", "kind": "shape", "shape": "rect", "x": 120, "y": 320, "w": 960, "h": 64, "fill": "#b8b8b8", "keys": [{ "step": 1, "w": 140, "fill": "#e4572e" }] },
+  { "id": "pfeil", "kind": "shape", "shape": "line", "lineEnd": "arrow", "x": 120, "y": 420, "w": 140, "h": 20, "stroke": "#e4572e", "strokeW": 4, "anim": "draw" } ] }
+```
 
 **Live-Demo:**
 - Website oder lokale Web-App: `capture_page { url, device?, scroll? }` nimmt sie auf (PNG in die Assets), dann Layout `screen` mit `image`, `frame`, `url`. `cursor: [{ x, y, step?, click?, zoom? }]` (Bildanteile) führt den Zeiger Takt für Takt zu den Klickpunkten, `zoom` vergrößert dort. Nur für Screenshots.
@@ -565,5 +577,6 @@ Eine Idee pro Szene, 4–10 s je Szene. Wer mehr zeigen will, macht eine zweite 
 - `cursor` bei Aufnahmen, `zooms` bei Screenshots; Zeiten von `zooms` in Folien- statt Videosekunden.
 - Szenen über 10 s ohne neuen Inhalt; fünf Ideen in einer Szene.
 - Tippen langer Texte (Lint `film-…`): kürzen oder `reveal` `zeilen`.
+- Motion-Grafik als Effekt-Parade: viele Elemente zugleich, ständig in Bewegung, `feder` überall.
 
 Zurückhaltung nach §6 gilt auch im Film: flach, eine Akzentfarbe, ein Übergangstyp, keine Effekt-Parade, keine Sticker und Texteffekte.

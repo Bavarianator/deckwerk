@@ -380,7 +380,7 @@ async function report(ctx: ToolContext, deck: Deck, indices: number[]): Promise<
       const errors = own.filter((x) => x.severity === 'error').length
       const over = m && !m.fit.ok ? ', Überlauf: ' + m.fit.overflow.map((o) => `${o.slot} +${Math.round(o.overPx)}px (${o.kind})`).join(', ') : ''
       const fit = clip ? clip.summary + over : m ? `Autofit head ${m.fit.head}/body ${m.fit.body}${over}` : 'nicht gemessen'
-      const head = `Folie ${i + 1} (${s.id}, ${s.layout})${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · ${fit}${m ? ` · ${motionOf(deck, i, m)}` : ''}${deck.film ? `\n  ${sceneLine(deck, i, m)}` : ''}`
+      const head = `Folie ${i + 1} (${s.id}, ${s.layout})${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · ${fit}${m ? ` · ${motionOf(deck, i, m)}` : ''}${deck.film ? `\n  ${sceneLine(deck, i, m)}` : s.items?.some((it) => it.keys?.length) ? '\n  Hinweis: keys wirken nur im Film (update_deck film); Präsentation und PowerPoint zeigen die Grundlage.' : ''}`
       return own.length ? `${head}\n${fmtIssues(own)}` : head
     })
     .join('\n')

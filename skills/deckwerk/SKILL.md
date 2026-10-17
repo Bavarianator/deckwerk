@@ -121,6 +121,7 @@ Will der Nutzer ein Erklärvideo, eine Produkt- oder Live-Demo, ein Tutorial ode
 - **Idee und Texte zuerst:** Leitidee, dann Titel und Sprechtext je Szene im Chat. Szene: `voice` (1–2 kurze gesprochene Sätze, Titel ≠ Sprechtext, `[klick]` startet den nächsten Aufbauschritt), `duration` nur wenn nötig, `camera: [{ step, box: [x,y,w,h] }]` (Anteile; 1–2 Fahrten, nur auf das Gesagte).
 - **Demo:** Website oder lokale App per `capture_page` → Layout `screen` mit `cursor`/`zoom` auf den Klickpunkt. Bildschirmaufnahme macht der Nutzer in der App („Bildschirm aufnehmen“, Animations-Ansicht); mit dem Pfad `screen_zooms` → `screen`-Szenen mit `video` + `from`/`to` und `zooms`.
 - **Code:** Layout `code` (Variante `terminal`), `focus` statt Riesenblöcke, mehrere kurze Szenen.
+- **Motion-Grafik** (Ablauf, wachsende Zahl, Titel- oder Logo-Szene, Vorher–Nachher): Layout `blank` mit freien Elementen, Auftritt über `anim` (`draw` zeichnet Linien, Pfeile, Umrisse, Icons), Bewegung je Takt über `keys: [{ step, x?, y?, w?, h?, rot?, opacity?, fill?, ease? }]`, nur im Film. 1–3 bewegte Elemente je Takt, `ease` `feder` sparsam.
 - **Prüfen:** `render_slides` mit `at: [Sekunden]` an 2–3 Stellen je kritischer Szene, `lint_deck` (`film-…`: Sprechtext > 40 Wörter, `duration` kürzer als Stimme, Kamera, Tippen), dann `export_deck` `mp4` (Stimme, .srt, bei `captions` `satz` eingebrannt; Musik über `find_music`/`music`).
 - Zurückhaltend wie die Folien: ein Übergangstyp, keine Effekt-Parade.
 
