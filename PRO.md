@@ -10,20 +10,20 @@ Stand der Recherche: 17.10.2026. Die Belege stammen meist aus Anbieterseiten und
 | Bedarf | Beleg | Deckwerk heute |
 |---|---|---|
 | Diagramme mit Excel-Verknüpfung und Aktualisieren | think-cell, UpSlide, Macabacus (Excel-Link ab Professional) | Diagramme nativ, Daten nur per Hand oder CSV |
-| Wasserfall, Mekko, Gantt | think-cell; Office Timeline für Gantt | Wasserfall ja; Mekko, Gantt fehlen |
+| Wasserfall, Mekko, Gantt | think-cell; Office Timeline für Gantt | Wasserfall ja; Gantt als Layout `gantt` (Balken als PPTX-Formen); Mekko fehlt |
 | Fußnoten, Quellen, Deck-Prüfung | Macabacus Deck Check | Feld `source` an Datenlayouts, keine nummerierten Fußnoten |
 | Agenda und Tracker | Beratungsstandard | Agenda mit aktivem Kapitel, kein Tracker auf jeder Folie |
-| Eigene .potx-Vorlage | Microsoft; Gamma kann Master nicht erzwingen | fehlt (Export ohne SlideMaster) |
+| Eigene .potx-Vorlage | Microsoft; Gamma kann Master nicht erzwingen | Import von Farben und Schriften aus .potx/.pptx/.thmx ins Brand-Kit; Export ohne SlideMaster |
 | Datenschutz: lokal, kein Training mit Kundendaten, SSO | Gamma Business, UpSlide SOC 2 | lokal und offline; SSO entfällt |
 
 ### Agenturen
 | Bedarf | Beleg | Deckwerk heute |
 |---|---|---|
 | Brand-Kit je Kunde | Beautiful.ai Team, Canva Teams | ein globales `brand.json` und `hausstil.md` |
-| Erzwungene Markenregeln (Locked Themes) | Beautiful.ai, Canva Brand Controls | Theme-Lint, keine Sperre |
+| Erzwungene Markenregeln (Locked Themes) | Beautiful.ai, Canva Brand Controls | Brand-Lock: KI darf die Marke nicht ändern, fremde Farben und Schriften sind Lint-Fehler |
 | Folienbibliothek | UpSlide Content Library | fehlt |
 | Freigabe mit Kommentaren, Rollen, Versionen | Frame.io, Beautiful.ai | Versionen ja; Kommentare bewusst draußen |
-| Stapel-Export für viele Plattformen | Opus Clip Business | Serienbrief, Clips einzeln |
+| Stapel-Export für viele Plattformen | Opus Clip Business | Serienbrief; Clips per `formats` in 9:16, 1:1, 4:5 und 16:9 |
 
 ### Video-Profis
 | Bedarf | Beleg | Deckwerk heute |
@@ -40,11 +40,11 @@ Premiere liest kein FCPXML, nur das ältere Final-Cut-7-XML (xmeml). Das liest a
 | Bedarf | Beleg | Deckwerk heute |
 |---|---|---|
 | Facecam oben, Spielbild unten (9:16) | StreamLadder, Eklipse, Bytecap | `fit: split` mit erkannter Facecam |
-| Highlights aus Chat-Spitzen und Ton | Eklipse, Streamlabs AI Highlighter | Twitch-Chat und Signale; YouTube- und Kick-Chat fehlen |
+| Highlights aus Chat-Spitzen und Ton | Eklipse, Streamlabs AI Highlighter | Twitch-Chat und YouTube-Live-Chat-Replay (yt-dlp `live_chat`) als Signal; Kick-Chat fehlt |
 | Wort-für-Wort-Untertitel mit Hervorhebung | Submagic, Vizard | `captions: wort`, aktuelles Wort in Akzentfarbe |
 | Untertitel in mehreren Sprachen | Submagic, Vizard | fehlt |
-| Stream-Grafiken: Starting Soon, BRB, Panels, Thumbnails | Streamlabs, StreamElements | Folien-Engine kann es, kein Gerüst |
-| Ein Clip in 9:16, 1:1 und 16:9 auf einmal | Opus Clip | fehlt |
+| Stream-Grafiken: Starting Soon, BRB, Panels, Thumbnails | Streamlabs, StreamElements | Layouts `stream-screen` (Start, Pause, Ende) und `panel` (Format 320×160), Gerüst `geruest-stream`, Export als PNG |
+| Ein Clip in 9:16, 1:1 und 16:9 auf einmal | Opus Clip | `export_deck` mit `formats` |
 | Direkt-Upload und Planung | StreamLadder (bezahlt) | bewusst nicht: OAuth je Plattform |
 | Live-Alerts und Overlays in OBS | Streamlabs, StreamElements | bewusst nicht: Live-Werkzeug |
 
@@ -55,7 +55,7 @@ Premiere liest kein FCPXML, nur das ältere Final-Cut-7-XML (xmeml). Das liest a
 | CMYK, Profil ISO Coated v2 (FOGRA39) oder PSO Coated v3 (FOGRA51) | Druckerei-Datenblätter | RGB |
 | Beschnitt 2–3 mm, Sicherheitsabstand 3 mm | WIRmachenDRUCK, druck.at | Beschnitt, TrimBox/BleedBox vorhanden |
 | 300 dpi | druck.at | Lint `print-res` |
-| Gesamtfarbauftrag ≤ 300 % | schur.com | nicht geprüft |
+| Gesamtfarbauftrag ≤ 300 % | schur.com | CMYK-Export misst je Seite und warnt über 300 % |
 
 Ghostscript (AGPL) wandelt nach CMYK und schreibt PDF/X-4; die Lizenz passt zu Pro. Fertige Linux-Binaries zum Nachladen gibt es nicht, Pro nutzt deshalb das installierte `gs` (ab 10.05, wegen PDF/X-4 mit Transparenz).
 
@@ -65,18 +65,24 @@ Ghostscript (AGPL) wandelt nach CMYK und schreibt PDF/X-4; die Lizenz passt zu P
 3. **Premiere/Resolve-XML:** Neben jedem Clip-MP4 liegt eine `.xml` (xmeml v5) mit den Schnitten, Tempo und Standbildern.
 4. **Druck in CMYK:** Druck-PDF wahlweise als PDF/X-4 in CMYK mit FOGRA39.
 
+## Zweite Version (0.2)
+1. **Brand-Lock:** Kundenmarke in den Einstellungen sperren; die KI kann sie nicht ändern, Abweichungen meldet der Lint als Fehler.
+2. **Firmenvorlage:** Farben und Schriften aus .potx/.pptx/.thmx ins Brand-Kit übernehmen.
+3. **Gantt:** Layout `gantt` mit Perioden, Balken, Meilensteinen und Heute-Linie.
+4. **Stream-Paket:** Starting Soon, Pause, Ende, Twitch-Panels, Thumbnail und Offline-Banner aus dem Brand-Kit.
+5. **Stapel-Export:** ein Clip-Deck in bis zu vier Formaten auf einmal, Fokus je Format neu.
+6. **Druck:** Gesamtfarbauftrag im PDF/X-4 prüfen.
+
 ## Roadmap
-1. Gantt und Mekko als native Diagramme.
-2. Brand-Lock: Kundenmarke sperren, Abweichungen als Lint-Fehler.
-3. Folienbibliothek je Kunde, Folien per Klick übernehmen.
-4. Import eigener .potx-Vorlagen (Farben, Schriften, Raster).
-5. Fußnoten mit Nummern und Quellenverzeichnis, Tracker auf jeder Folie.
-6. Video: Lautheits-Vorgaben, Export 4K/10 bit/ProRes, FCPXML für Final Cut.
-7. Druck: Gesamtfarbauftrag prüfen, Schnittmarken, PDF/X-1a.
-8. Freigabe-Workflow mit Kommentaren (baut auf `feat/gemeinsam-bearbeiten` in Deckwerk auf).
-9. Streamer: Stream-Paket (Starting Soon, BRB, Ending, Twitch-Panels 320×160, Thumbnail, Overlay-Rahmen als PNG) aus dem Brand-Kit.
-10. Streamer: YouTube-Live-Chat (yt-dlp `live_chat`) als Highlight-Signal, Kick prüfen.
-11. Streamer: übersetzte Untertitel, Stapel-Export eines Clips in mehrere Formate.
+1. Mekko als natives Diagramm.
+2. Folienbibliothek je Kunde, Folien per Klick übernehmen.
+3. .potx als SlideMaster im PPTX-Export, Logo aus der Vorlage.
+4. Fußnoten mit Nummern und Quellenverzeichnis, Tracker auf jeder Folie.
+5. Video: FCPXML für Final Cut.
+6. Druck: Schnittmarken, PDF/X-1a.
+7. Freigabe-Workflow mit Kommentaren (baut auf `feat/gemeinsam-bearbeiten` in Deckwerk auf).
+8. Streamer: Kick-Chat, Overlay-Rahmen als PNG mit Transparenz.
+9. Streamer: übersetzte Untertitel.
 
 ## Fork pflegen
 - Deckwerk-Stände kommen per `git fetch upstream --tags && git merge vX.Y.Z` (Release-Tags) oder einen Branch von `upstream`.
