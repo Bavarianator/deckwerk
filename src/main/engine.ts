@@ -288,14 +288,6 @@ export function createEngine(): Engine {
         videoRuns.set(key, entry)
         const report = (p: number) => { entry.pct = p; entry.listeners.forEach((l) => l(p)) }
         entry.done = (async () => {
-          const music = musicOf(deck), t = transcriptsOf(deck)
-          // Handy-Option: die Clip-Gruppen rechnet das Handy (phone-ffmpeg.ts), Standbilder und Endschritt der PC
-          const run = async (ready: Deck, pre: number) => {
-            const d = await phoneNow(), m = await import('./export-video')
-            // Ausgeblendete Folien zurück an ihren Platz: Clips blenden sie ein (overlays.slide = Nummer in all.slides), als Szene lässt exportVideo sie weg
-            let k = 0
-            const full = { ...ready, slides: all.slides.map((s) => (s.hidden ? s : ready.slides[k++])) }
-            return m.exportVideo(full, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), { ...music, phone: d ? { serial: d.serial, models } : undefined })
           // Pro-Timeline: je sichtbare schnitt-Folie eine Datei (mehrere: -01, -02 …); Lautheit und Hinweise kennt export_deck nicht, nur Log
           const cuts = deck.slides.filter((s) => s.layout === 'schnitt')
           if (cuts.length) {
@@ -313,6 +305,14 @@ export function createEngine(): Engine {
             }
             return out
           }
+          const music = musicOf(deck), t = transcriptsOf(deck)
+          // Handy-Option: die Clip-Gruppen rechnet das Handy (phone-ffmpeg.ts), Standbilder und Endschritt der PC
+          const run = async (ready: Deck, pre: number) => {
+            const d = await phoneNow(), m = await import('./export-video')
+            // Ausgeblendete Folien zurück an ihren Platz: Clips blenden sie ein (overlays.slide = Nummer in all.slides), als Szene lässt exportVideo sie weg
+            let k = 0
+            const full = { ...ready, slides: all.slides.map((s) => (s.hidden ? s : ready.slides[k++])) }
+            return m.exportVideo(full, base, format, (f) => t.get(f), (p) => report(pre + Math.floor((p * (100 - pre)) / 100)), { ...music, phone: d ? { serial: d.serial, models } : undefined })
           }
           if (!clipsOk(deck)) return run(deck, 0) // exportVideo meldet, was fehlt
           const files = [...t.need.keys()], miss = await Promise.all(files.map((f) => chunkPlan(f, t.need.get(f)!).then((p) => p.missing.length, () => 0)))
