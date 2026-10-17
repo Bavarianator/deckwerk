@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { BuildPreset, Deck, FormatId, FrameId, Slide, Tone } from './deck'
 import { EXTRA_LAYOUTS, FOCI, LOOKS, photo } from './layouts-extra' // Foto-Schema liegt dort, weil beide Kataloge es brauchen
 export { FOCI, LOOKS, photo }
+import { PRO_LAYOUTS } from './layouts-pro'
 
 // Layout catalog without React: schemas + knowledge for the AI + samples.
 // Components live in src/renderer/layouts.tsx (same ids). Samples feed three things:
@@ -382,6 +383,7 @@ export const LAYOUTS = {
     },
   }),
   ...EXTRA_LAYOUTS,
+  ...PRO_LAYOUTS,
 } satisfies Record<string, LayoutDef<any>>
 
 export type LayoutId = keyof typeof LAYOUTS

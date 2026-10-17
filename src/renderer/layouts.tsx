@@ -5,6 +5,7 @@ import { Backdrop, Box, ChartBox, Frame, Icon, Img, QrCode, T, onPhoto, photoOf,
 import { annotation } from '../shared/charts'
 import { sizeOf } from '../shared/deck'
 import { EXTRA_COMPONENTS } from './layouts-extra'
+import { PRO_COMPONENTS } from './layouts-pro'
 
 type C<K extends keyof typeof LAYOUTS> = z.infer<(typeof LAYOUTS)[K]['schema']>
 type Props<K extends keyof typeof LAYOUTS> = { c: C<K>; v?: string }
@@ -481,4 +482,5 @@ export const COMPONENTS: Record<string, (p: { c: any; v?: string }) => ReactNode
   gallery: Gallery,
   quote: Quote,
   ...EXTRA_COMPONENTS,
+  ...PRO_COMPONENTS,
 }
