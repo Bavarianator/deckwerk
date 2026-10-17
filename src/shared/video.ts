@@ -4,7 +4,7 @@
 export interface Word { w: string; start: number; end: number }
 export interface Segment { start: number; end: number; text: string; words?: Word[]; speaker?: number } // words fehlen = aus text geschätzt; speaker aus der Sprechertrennung, 0-basiert
 export interface Transcript { duration: number; lang: string; segments: Segment[]; covered?: [number, number][] } // covered: transkribierte Bereiche (s), sortiert; fehlt = ganzes Video
-export interface VideoInfo { duration: number; w: number; h: number } // w/h so, wie das Video angezeigt wird (Drehung berücksichtigt)
+export interface VideoInfo { duration: number; w: number; h: number; fps?: number } // w/h so, wie das Video angezeigt wird (Drehung berücksichtigt); fps: Bildrate der Quelle (fehlt = unbekannt)
 // focus: horizontaler Bildmittelpunkt 0..1; track: Kamerafahrt als Stützpunkte (Quellsekunde, focus), setzt nur der Export (autoFocus), nie die KI
 // speed: Tempo (< 1 Zeitlupe, > 1 Zeitraffer, Ton per atempo); volume: Originalton (0 = stumm, Standard 1); music: Pegel der Hintergrundmusik in diesem
 // Ausschnitt (0–1, fehlt = deck.music.volume); transition: Übergang am Schnitt VOR diesem Ausschnitt (fehlt = weiche Blende nach cutFrames, none = hart)
