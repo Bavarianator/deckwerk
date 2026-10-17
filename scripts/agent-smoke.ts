@@ -33,7 +33,7 @@ const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts): Ersatz und Hinweis statt Download
 
-assert.equal(tools.length, 26)
+assert.equal(tools.length, 28)
 // laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
 for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig

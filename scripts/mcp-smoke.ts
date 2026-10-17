@@ -34,7 +34,7 @@ const names = listed.map((t) => t.name).sort()
 // ohne readOnlyHint führt Claude Code Aufrufe nacheinander aus (4 KI-Bilder dauerten so über 6 min)
 assert.equal(listed.find((t) => t.name === 'generate_image')?.annotations?.readOnlyHint, true)
 assert.equal(listed.find((t) => t.name === 'add_slides')?.annotations?.readOnlyHint, undefined, 'Deck-Änderungen bleiben seriell')
-assert.equal(names.length, 29)
+assert.equal(names.length, 31)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 // read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
 const parts = guideParts()
