@@ -1,7 +1,7 @@
 // Smoke-Test für Tools + Systemprompt ohne API (Mock-Engine). Mit --live und ANTHROPIC_API_KEY zusätzlich ein echter Agent-Turn.
 // Aufruf: npx esbuild scripts/agent-smoke.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/agent-smoke.mjs && node out/agent-smoke.mjs [--live]
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DeckAgent, catalogThumbnails, corePrompt, firstTurn, summaryOf, toRunnable, type Engine, type VideoTools } from '../src/main/agent'
@@ -12,6 +12,7 @@ import type { Deck } from '../src/shared/deck'
 import { lintDeck } from '../src/shared/lint'
 import { resolveTheme } from '../src/shared/themes'
 import { autoPick, modelOf, pickAvailable } from '../src/shared/models'
+import { setClient } from '../src/main/clients'
 import { typeset } from '../src/shared/typo'
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
@@ -451,6 +452,52 @@ assert.equal(events, 14, 'setDeck nur bei echten Änderungen') // 6 + 3 aus dem 
   put('nacht', json('Nacht', look('Nacht', '#12261E', { headFont: 'Inter', elements: 'line' })))
   await fails(T4.propose_looks.run(T4.propose_looks.inputSchema.parse({ looks: [look('Papier', '#FFFFFF', { titleWeight: 'regular', titleSize: 'large', rule: 'over' }), look('Nachtblau', '#12261E', { headFont: 'Inter' })] })), /Alle Looks gleichen im Typ/)
   await T4.update_deck.run(T4.update_deck.inputSchema.parse({ style: 'mutig' })); assert.equal(d!.style, 'mutig')
+}
+
+// Excel-Link (Deckwerk Pro) setzt nur die App: update_slide behält ihn, auch wenn die KI das Diagramm ersetzt; link aus KI-Eingaben fällt weg
+{
+  const link = { file: '/home/u/Zahlen.xlsx', range: 'A1:C3' }, fremd = { file: '/etc/x.xlsx', range: 'A1:B2' }
+  const spec = { type: 'bar', categories: ['A', 'B'], series: [{ name: 'X', values: [1, 2] }] }
+  const box = { kind: 'chart', x: 0, y: 0, w: 400, h: 300 }
+  let d: Deck | null = { title: 'L', theme: { id: 'midnight' }, transition: 'fade', mode: 'click', slides: [{ id: 'c1', layout: 'chart', content: { title: 'Umsatz wächst', chart: { ...spec, link } }, items: [{ id: 'k1', ...box, spec: { ...spec, link } } as never] }] }
+  const TL = Object.fromEntries(buildTools({ engine, getDeck: () => d, setDeck: (x) => { d = x }, assetDir: '/nonexistent', outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  const go = (name: string, input: unknown) => TL[name].run(TL[name].inputSchema.parse(input))
+  const changed = await go('update_slide', { id: 'c1', content: { chart: { ...spec, series: [{ name: 'X', values: [3, 4] }] } } })
+  assert.deepEqual(d!.slides[0].content.chart.link, link); assert.deepEqual(d!.slides[0].content.chart.series[0].values, [3, 4])
+  assert.match(changed.text, /^Diagramm ist mit Excel verknüpft \(Zahlen\.xlsx\); „Aktualisieren“ in der App überschreibt die Werte aus der Datei\.\n/)
+  assert.doesNotMatch((await go('update_slide', { id: 'c1', content: { title: 'Umsatz wächst weiter' } })).text, /verknüpft/, 'Werte gleich: kein Hinweis')
+  assert.deepEqual(d!.slides[0].content.chart.link, link); assert.deepEqual(d!.slides[0].items![0].spec!.link, link, 'items unberührt')
+  await go('update_slide', { id: 'c1', content: { chart: { ...spec, series: [{ name: 'X', values: [3, 4] }], link: fremd } } })
+  assert.deepEqual(d!.slides[0].content.chart.link, link, 'link der KI verworfen')
+  // freies Diagramm: spec.link des Elements mit derselben id bleibt, ein neues Element bekommt keinen
+  await go('update_slide', { id: 'c1', items: [{ id: 'k1', ...box, spec: { ...spec, link: fremd } }, { id: 'k2', ...box, spec: { ...spec, link: fremd } }] })
+  assert.deepEqual(d!.slides[0].items![0].spec!.link, link); assert.equal(d!.slides[0].items![1].spec!.link, undefined)
+  await go('add_slides', { slides: [{ layout: 'chart', content: { title: 'Kosten sinken', chart: { ...spec, link: fremd } }, items: [{ ...box, spec: { ...spec, link: fremd } }] }] })
+  assert.equal(d!.slides[1].content.chart.link, undefined); assert.equal(d!.slides[1].items![0].spec!.link, undefined)
+}
+// Kunde aktiv: create_deck nennt ihn und den jetzt geltenden Hausstil (Systemprompt und MCP-Anweisungen tragen den vom Gesprächsbeginn); read_guide ebenso
+{
+  let d: Deck | null = null
+  const TC = Object.fromEntries(buildTools({ engine, getDeck: () => d, setDeck: (x) => { d = x }, assetDir: '/nonexistent', outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  const go = (name: string, input: unknown) => TC[name].run(TC[name].inputSchema.parse(input))
+  const make = () => go('create_deck', { title: 'Für den Kunden', theme: 'midnight', brand: null })
+  assert.doesNotMatch((await make()).text, /Kunde: |Kein Kunde/, 'ohne Kunde damals und jetzt unverändert')
+  setClient('Acme')
+  assert.match((await make()).text, /\nKunde: Acme\. Hausstil des Kunden: keiner; ein Hausstil aus der Einleitung gilt nicht\.$/)
+  assert.match((await go('read_guide', { module: ['hausstil'] })).text, /Unbekannte Module: hausstil[^\n]*\n\nKunde: Acme\. Hausstil des Kunden: keiner/)
+  writeFileSync(join(process.env.DECKWERK_HOME!, 'kunden', 'Acme', 'hausstil.md'), '- Immer Sie-Form\n')
+  assert.match((await make()).text, /\nKunde: Acme\. Hausstil des Kunden \(ersetzt den Hausstil aus der Einleitung\):\n- Immer Sie-Form$/)
+  assert.match((await go('read_guide', { module: ['hausstil'] })).text, /- Immer Sie-Form\n\nKunde: Acme\. Hausstil des Kunden: der oben stehende; er ersetzt den Hausstil aus der Einleitung\.$/)
+  assert.doesNotMatch((await go('read_guide', { module: ['stil'] })).text, /Kunde: |Kein Kunde/, 'ohne Hausstil im Ergebnis kein Hinweis')
+  // Gespräch mit Kunde begonnen, dann zurück auf keinen Kunden: Hausstil der Agentur statt dem des Kunden aus der Einleitung
+  let d2: Deck | null = null
+  const TA = Object.fromEntries(buildTools({ engine, getDeck: () => d2, setDeck: (x) => { d2 = x }, assetDir: '/nonexistent', outDir: '/tmp/out' }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  setClient(null)
+  writeFileSync(join(process.env.DECKWERK_HOME!, 'hausstil.md'), '- Du-Form\n')
+  assert.match((await TA.create_deck.run(TA.create_deck.inputSchema.parse({ title: 'Eigen', theme: 'midnight', brand: null }))).text, /\nKein Kunde aktiv – eigener Hausstil \(ersetzt den Hausstil aus der Einleitung\):\n- Du-Form$/)
+  assert.match((await TA.read_guide.run(TA.read_guide.inputSchema.parse({ module: ['hausstil'] }))).text, /- Du-Form\n\nKein Kunde aktiv – eigener Hausstil: der oben stehende/)
+  assert.doesNotMatch((await make()).text, /Kunde: |Kein Kunde/, 'ohne Kunde beim Start und jetzt: wie bisher')
+  rmSync(join(process.env.DECKWERK_HOME!, 'hausstil.md'))
 }
 
 // API-Weg: Kernprompt mit Index als Systemprompt, Layout-Schemas erst über den Router (erste Nachricht) oder read_guide

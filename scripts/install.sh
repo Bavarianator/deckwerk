@@ -141,19 +141,23 @@ echo "→ Startmenü-Eintrag und Dateizuordnung (deck.json) angelegt"
 # Vibe und Codex warten von sich aus nur kurz; Codex kann die Wartezeit nicht per `mcp add` setzen, daher in der config.toml.
 # Claude Code und Codex bekommen dazu den Skill mit dem Arbeitsablauf (gleiches SKILL.md-Format, wie die Einrichtung in ipc.ts)
 skill_to() { [ -f "$SKILL" ] && mkdir -p "$1/deckwerk-pro" && cp "$SKILL" "$1/deckwerk-pro/SKILL.md"; }
-# Pro ersetzt Deckwerk in den Agenten (wie setup:mcp in ipc.ts): MCP-Eintrag „deckwerk“ austragen und dessen Skill-Ordner
-# löschen, aber nur, wenn sein Frontmatter genau name: deckwerk trägt. Die Deckwerk-App bleibt; Fehler hier halten nichts auf.
+# Pro ersetzt Deckwerk in den Agenten (wie setup:mcp in ipc.ts): erst nach erfolgreicher Anmeldung von deckwerk-pro den
+# MCP-Eintrag „deckwerk“ austragen und dessen Skill-Ordner löschen, aber nur, wenn sein Frontmatter genau name: deckwerk trägt.
+# Scheitert die Anmeldung, bleibt Deckwerk nutzbar. Die Deckwerk-App bleibt; Fehler hier halten nichts auf.
 drop_skill() {
   [ -f "$1/deckwerk/SKILL.md" ] && sed -n '1{/^---/!q;};2,/^---/p' "$1/deckwerk/SKILL.md" |
     grep -Eq "^name:[[:space:]]*(deckwerk|\"deckwerk\"|'deckwerk')[[:space:]]*\$" && rm -rf "$1/deckwerk"
 }
 replaced() { echo "  Deckwerk ist in $1 jetzt durch Deckwerk Pro ersetzt; die Deckwerk-App bleibt installiert."; }
 if command -v claude >/dev/null 2>&1; then
-  R=; claude mcp remove -s user deckwerk >/dev/null 2>&1 && R=1
-  drop_skill "$HOME/.claude/skills" && R=1
   claude mcp remove -s user deckwerk-pro >/dev/null 2>&1 || true
-  claude mcp add -s user deckwerk-pro -- "$@" >/dev/null && { skill_to "$HOME/.claude/skills" || true; } && echo "→ In Claude Code eingerichtet, mit Skill (neue Sitzung starten)" &&
-    { [ -z "$R" ] || replaced "Claude Code"; }
+  if claude mcp add -s user deckwerk-pro -- "$@" >/dev/null; then
+    R=; claude mcp remove -s user deckwerk >/dev/null 2>&1 && R=1
+    drop_skill "$HOME/.claude/skills" && R=1
+    skill_to "$HOME/.claude/skills" || true
+    echo "→ In Claude Code eingerichtet, mit Skill (neue Sitzung starten)"
+    [ -z "$R" ] || replaced "Claude Code"
+  fi
 fi
 vibe_add() { # --arg=… je Argument; mit Leerzeichen hielte Vibe „--mcp“ für eine eigene Option
   cmd=$1; shift; n=$#
@@ -163,19 +167,23 @@ vibe_add() { # --arg=… je Argument; mit Leerzeichen hielte Vibe „--mcp“ f�
 }
 if command -v vibe >/dev/null 2>&1; then
   # vibe/codex mcp remove enden auch ohne Eintrag mit 0: ob es ihn gab, steht nur in der config.toml
-  R=; grep -qx 'name = "deckwerk"' "${VIBE_HOME:-$HOME/.vibe}/config.toml" 2>/dev/null && R=1
-  vibe mcp remove deckwerk >/dev/null 2>&1 || true
   vibe mcp remove deckwerk-pro >/dev/null 2>&1 || true
-  vibe_add "$@" && echo "→ In Vibe eingerichtet" && { [ -z "$R" ] || replaced Vibe; }
+  if vibe_add "$@"; then
+    R=; grep -qx 'name = "deckwerk"' "${VIBE_HOME:-$HOME/.vibe}/config.toml" 2>/dev/null && R=1
+    vibe mcp remove deckwerk >/dev/null 2>&1 || true
+    echo "→ In Vibe eingerichtet"
+    [ -z "$R" ] || replaced Vibe
+  fi
 fi
 if command -v codex >/dev/null 2>&1; then
-  R=; grep -qx '\[mcp_servers\.deckwerk\]' "${CODEX_HOME:-$HOME/.codex}/config.toml" 2>/dev/null && R=1
-  codex mcp remove deckwerk >/dev/null 2>&1 || true
-  drop_skill "${CODEX_HOME:-$HOME/.codex}/skills" && R=1
   codex mcp remove deckwerk-pro >/dev/null 2>&1 || true
-  codex mcp add deckwerk-pro -- "$@" >/dev/null 2>&1 &&
+  if codex mcp add deckwerk-pro -- "$@" >/dev/null 2>&1; then
+    R=; grep -qx '\[mcp_servers\.deckwerk\]' "${CODEX_HOME:-$HOME/.codex}/config.toml" 2>/dev/null && R=1
+    codex mcp remove deckwerk >/dev/null 2>&1 || true
+    drop_skill "${CODEX_HOME:-$HOME/.codex}/skills" && R=1
     sed -i '/^\[mcp_servers\.deckwerk-pro\]$/a startup_timeout_sec = 90\ntool_timeout_sec = 300' "${CODEX_HOME:-$HOME/.codex}/config.toml" &&
-    { skill_to "${CODEX_HOME:-$HOME/.codex}/skills" || true; } && echo "→ In Codex eingerichtet, mit Skill" && { [ -z "$R" ] || replaced Codex; }
+      { skill_to "${CODEX_HOME:-$HOME/.codex}/skills" || true; } && echo "→ In Codex eingerichtet, mit Skill" && { [ -z "$R" ] || replaced Codex; }
+  fi
 fi
 
 echo "Fertig. Starten: Startmenü „Deckwerk Pro“ oder Befehl „deckwerk-pro“; aktualisieren: „deckwerk-pro update“."

@@ -12,10 +12,10 @@ import { delimiter, join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { APP } from '../shared/app-id'
 import type { Deck } from '../shared/deck'
 import { DEFAULT_MODEL, type Effort } from '../shared/models'
 import { withEvents, type DeckAgentOptions } from './agent'
+import { dataDir } from './clients'
 import { corePrompt, leitfaden, type Route } from './guide-modules'
 import { serveTools } from './mcp'
 import { buildTools, type ToolDef } from './tools'
@@ -139,8 +139,8 @@ export class CliAgent {
       engine: opts.engine,
       getDeck: () => this.deck,
       setDeck: (deck) => { this.deck = deck; opts.onEvent({ type: 'deck', deck }) },
-      assetDir: opts.assetDir ?? join(homedir(), APP.home, 'assets'),
-      outDir: opts.outDir ?? join(homedir(), APP.home, 'out'),
+      assetDir: opts.assetDir ?? join(dataDir(), 'assets'),
+      outDir: opts.outDir ?? join(dataDir(), 'out'),
       unsplashKey: opts.unsplashKey ?? process.env.UNSPLASH_ACCESS_KEY,
       ask: (q) => opts.onEvent({ type: 'ask', ...q }),
       storyline: (slides) => opts.onEvent({ type: 'storyline', slides }),
@@ -158,7 +158,7 @@ export class CliAgent {
     try {
       const m = await serve()
       current = this.tools
-      const cwd = join(homedir(), APP.home) // Sitzungen tauchen im jeweiligen CLI unter ~/<APP.home> auf
+      const cwd = dataDir() // Sitzungen tauchen im jeweiligen CLI unter ~/<APP.home> auf
       mkdirSync(cwd, { recursive: true })
       if (!this.session) this.video = !!route?.video
       const run = invocation(this.cli, m, this.session, this.model, userText, this.cli === 'vibe' && (await hasFlag(this.bin, '--legacy-harness')), this.effort, route, this.video)

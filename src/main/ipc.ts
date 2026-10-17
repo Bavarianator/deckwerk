@@ -17,7 +17,7 @@ import { setRemoteState, startRemote, stopRemote, type RemoteState } from './rem
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { parseCsv } from '../shared/merge'
 import { assetUrl, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, exportSeries, type Orientation } from './tools'
-import { activeClient, brandFile, listClients, setClient, styleFile } from './clients'
+import { activeClient, brandFile, dataDir, listClients, setClient, styleFile } from './clients'
 import { readXlsxRange } from './xlsx-link'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
@@ -29,7 +29,7 @@ import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 import { deckJson, withDeckFonts } from './webfonts'
 
-const HOME = join(homedir(), APP.home)
+const HOME = dataDir() // DECKWERK_HOME: isolierte Tests schreiben nie ins echte ~/DeckwerkPro
 
 // Versionen (Canva „Versionsverlauf“): vor dem Überschreiben den alten Stand nach <deck>/versions/<zeit>.json,
 // höchstens alle 10 min (force: immer), weil der Autosave alle paar Sekunden speichert; die ältesten ab 100 fallen weg.
@@ -94,7 +94,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   }
   loadImageSettings()
 
-  // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/<APP.id> (image-settings.bin bleibt mit Deckwerk geteilt); Lauf beim Start und 5 s nach dem Speichern
+  // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/<APP.id> wie alle Einstellungen (mit Deckwerk geteilt sind nur die Modelle unter ~/Deckwerk/models); Lauf beim Start und 5 s nach dem Speichern
   const syncFile = join(app.getPath('appData'), APP.id, 'sync.bin')
   let syncCfg: SyncSettings | null = null
   try { if (existsSync(syncFile)) syncCfg = JSON.parse(safeStorage.decryptString(readFileSync(syncFile))) } catch (e) { console.warn('[sync] Zugang nicht lesbar:', e) }
@@ -471,6 +471,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   ipcMain.handle('xlsx:read', (_, link: unknown) => {
     const { file, sheet, range } = (link && typeof link === 'object' ? link : {}) as Record<string, unknown>
     if (typeof file !== 'string' || !isAbsolute(file) || !/\.xlsx$/i.test(file)) throw new Error('Die Verknüpfung braucht den vollständigen Pfad einer .xlsx-Datei.')
+    // UNC-/Netzpfad (\\host\share, //host/share): ein fremdes Deck soll unter Windows keinen SMB-Zugriff auslösen
+    if (/^[\\/]{2}/.test(file)) throw new Error('Excel-Dateien auf Netzlaufwerken (\\\\Server\\Freigabe) liest die Verknüpfung nicht; die Datei lokal ablegen.')
     if (sheet !== undefined && (typeof sheet !== 'string' || sheet.length > 31)) throw new Error('Ungültiger Blattname (höchstens 31 Zeichen).')
     if (typeof range !== 'string' || range.length > 20) throw new Error('Ungültiger Bereich, erwartet wird z. B. „A1:D5“.')
     return readXlsxRange({ file, sheet, range })
@@ -810,11 +812,12 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       vibe: ['mcp', 'add', APP.id, '--transport', 'stdio', '--command', command, ...args.map((a) => `--arg=${a}`),
         '--startup-timeout-sec', '90', '--tool-timeout-sec', '300'],
     }[cli]
+    await run(remove(APP.id)).catch(() => {}) // alter Eintrag mit anderem Pfad
+    await run(add)
+    // Deckwerk erst abmelden, wenn Pro angemeldet ist: scheitert das, bleibt Deckwerk nutzbar
     const had = hasOld(cli)
     await run(remove(OLD)).catch(() => {}) // Fehler beim Abmelden von Deckwerk verhindern das Einrichten nicht
     const skillGone = await dropOldSkill(cli).catch(() => false)
-    await run(remove(APP.id)).catch(() => {}) // alter Eintrag mit anderem Pfad
-    await run(add)
     const f = skillFile(cli)
     if (f) { await mkdir(dirname(f), { recursive: true }); await writeFile(f, skill()) }
     // Electron braucht zum Starten länger als die 10 s, die Codex wartet, und Rendern länger als dessen Tool-Timeout;

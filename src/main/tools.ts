@@ -5,14 +5,14 @@ import { createHash, randomBytes } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { mkdir, readdir, rename, rm } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type ChartSpec } from '../shared/deck'
 import { APP } from '../shared/app-id'
-import { brandFile, dataDir, styleFile } from './clients'
+import { activeClient, brandFile, dataDir, styleFile } from './clients'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -53,6 +53,21 @@ export const houseStyle = () => { try { return readFileSync(styleFile(), 'utf8')
 // Brand-Kit des Nutzers für jedes neue Deck (Farben, Schriften, Logo); DECKWERK_HOME: Tests
 export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(brandFile(), 'utf8'))) } catch { return undefined } }
 export const saveBrand = (b: BrandKit) => { const f = brandFile(); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, JSON.stringify(b, null, 2)) }
+// Systemprompt und MCP-Anweisungen tragen den Hausstil vom Gesprächsbeginn (start = damals aktiver Kunde); seitdem kann der Nutzer
+// den Kunden gewechselt haben, auch zurück auf keinen. create_deck und read_guide nennen deshalb den jetzt geltenden Hausstil,
+// sobald ein Kunde im Spiel ist; ohne Kunde damals und jetzt ''. full = Hausstil mitliefern, sonst nur der Hinweis.
+const STYLE_MAX = 4000
+function clientStyle(start: string | null, full = true): string {
+  const c = activeClient()
+  if (!c && !start) return ''
+  const label = c ? `Kunde: ${c}. Hausstil des Kunden` : 'Kein Kunde aktiv – eigener Hausstil', s = houseStyle()
+  if (!s) return `\n${label}: keiner; ein Hausstil aus der Einleitung gilt nicht.`
+  if (!full) return `\n${label}: der oben stehende; er ersetzt den Hausstil aus der Einleitung.`
+  const cut = s.length > STYLE_MAX ? `${s.slice(0, STYLE_MAX).trimEnd()}… (gekürzt, vollständig: read_guide module ["hausstil"])` : s
+  return `\n${label} (ersetzt den Hausstil aus der Einleitung):\n${cut}`
+}
+const HOUSE_HEAD = '## Hausstil des Nutzers' // Überschrift des Moduls hausstil (guide-modules.ts extras)
+const withClient = (start: string | null, text: string, asked = false) => { const n = (asked || text.includes(HOUSE_HEAD)) && clientStyle(start, false); return n ? `${text}\n${n}` : text }
 
 export interface ToolOutput { text: string; images?: Buffer[] } // PNG oder JPEG, siehe mimeOf
 export const mimeOf = (b: Buffer): 'image/png' | 'image/jpeg' => (b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : 'image/png')
@@ -300,6 +315,23 @@ function strayKeys(s: JsonSchema, v: unknown, path: string): string[] {
   return []
 }
 
+// Excel-Link (Deckwerk Pro) setzt nur die App: link aus KI-Eingaben verwerfen, den Bestand behalten (content.chart der Folie,
+// spec freier Elemente mit derselben id). Hinweis, wenn die KI verknüpfte Werte geändert hat, sonst ''.
+function keepLinks(s: Slide, old?: Slide): string {
+  const notes: string[] = []
+  const keep = (now: ChartSpec | undefined, was: ChartSpec | undefined) => {
+    if (!now || now === was) return // unverändert übernommen (items ohne Änderung)
+    delete now.link
+    if (!was?.link) return
+    now.link = was.link
+    if (JSON.stringify([now.categories, now.series]) !== JSON.stringify([was.categories, was.series]))
+      notes.push(`Diagramm ist mit Excel verknüpft (${basename(was.link.file)}); „Aktualisieren“ in der App überschreibt die Werte aus der Datei.`)
+  }
+  keep(s.content?.chart, old?.content?.chart)
+  for (const it of s.items ?? []) keep(it.spec, old?.items?.find((o) => o.id === it.id)?.spec)
+  return notes.map((n) => `${n}\n`).join('')
+}
+
 // Markiert ausgeblendete Folien in jeder Auflistung für die KI
 const hid = (s: Slide | undefined) => (s?.hidden ? ' (ausgeblendet)' : '')
 
@@ -492,6 +524,7 @@ const LONG_NEXT = 'Weiter (Guide § Video, Ablauf 5, langes Video): 1. Fenster m
 export function buildTools(ctx: ToolContext): ToolDef[] {
   // Speichern für Theme- und Folienänderungen: braucht das Deck andere Katalogschriften als vorher (Theme, freie Texte), lädt
   // withDeckFonts sie (offline: Ersatz) und trägt fontFiles ein. Liefert den Hinweis fürs Ergebnis, sonst ''.
+  const start = activeClient() // entsteht mit dem Prompt (agent.ts, claude-agent.ts, mcp.ts)
   const put = async (deck: Deck, fresh = false): Promise<string> => {
     const prev = ctx.getDeck()
     let notes: string[] = []
@@ -522,7 +555,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         const hints = deck.theme.custom ? checkTheme(lintFor({ ...deck.theme.custom, ...deck.theme.tune }, deck.theme.brand, i.override), 'customTheme') + shadowed(i.customTheme, deck.theme.tune) : ''
         const fonts = await put(deck, true)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
-        return { text: `${hints}${fonts}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `${hints}${fonts}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}${clientStyle(start)}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -600,7 +633,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           id: '', layout: s.layout, variant: s.variant, build: s.build, transition: s.transition, tone: s.tone, decor: s.decor, frame: (checkFrame(s.layout, s.frame, `slides[${k}]`), s.frame), notes: s.notes && typeset(s.notes), items: withIds(s.items as Item[]), bg: s.bg,
           content: validateContent(s.layout, s.content, `slides[${k}]`),
         }))
-        for (const s of fresh) { s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
+        for (const s of fresh) { keepLinks(s); s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
         deck.slides.splice(-fresh.length, fresh.length)
         const at = Math.min(i.at ?? deck.slides.length, deck.slides.length)
         deck.slides.splice(at, 0, ...fresh)
@@ -629,7 +662,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run(i) {
         const deck = needDeck(ctx)
         const idx = indexOf(deck, i.id)
-        const s = deck.slides[idx]
+        const s = deck.slides[idx], old = { ...s }
         const layout = i.layout ?? s.layout
         const merged = i.layout && i.layout !== s.layout ? (i.content ?? {}) : { ...s.content, ...i.content }
         checkFrame(layout, i.frame === undefined ? s.frame : (i.frame ?? undefined), `Folie ${i.id}`) // vor jeder Änderung
@@ -645,8 +678,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.items !== undefined) s.items = withIds((i.items ?? undefined) as Item[] | undefined)
         if (i.bg !== undefined) s.bg = i.bg ?? undefined
         if (i.hidden !== undefined) s.hidden = i.hidden || undefined
+        const linked = keepLinks(s, old)
         const fonts = await put(deck)
-        return { text: fonts + await report(ctx, deck, [idx]) }
+        return { text: fonts + linked + await report(ctx, deck, [idx]) }
       },
     }),
     tool({
@@ -826,11 +860,11 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
             if (text && text.length + m.text.length > 30000) rest.push(m.id)
             else text += (text ? '\n\n' : '') + m.text
           }
-          return { text: [text, rest.length && `Nicht mehr in dieser Antwort, bitte erneut anfordern: ${rest.join(', ')}`, unknown.length && `Unbekannte Module: ${unknown.join(', ')} (Index: read_guide ohne Eingabe)`].filter(Boolean).join('\n\n') }
+          return { text: withClient(start, [text, rest.length && `Nicht mehr in dieser Antwort, bitte erneut anfordern: ${rest.join(', ')}`, unknown.length && `Unbekannte Module: ${unknown.join(', ')} (Index: read_guide ohne Eingabe)`].filter(Boolean).join('\n\n'), i.module.includes('hausstil')) }
         }
         if (i.part) {
           const parts = guideParts(), k = Math.min(i.part, parts.length)
-          return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }
+          return { text: withClient(start, `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}`) }
         }
         return { text: guideIndex() }
       },

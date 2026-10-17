@@ -42,7 +42,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
   const outDir = () => (path ? dirname(path) : join(home, 'out'))
 
-  const server = new McpServer({ name: 'deckwerk', version: '0.1.0' }, { instructions: `${INTRO}\n\n${corePrompt()}` })
+  const server = new McpServer({ name: APP.id, version: '0.1.0' }, { instructions: `${INTRO}\n\n${corePrompt()}` })
 
   const tools: ToolDef[] = [
     ...buildTools({
