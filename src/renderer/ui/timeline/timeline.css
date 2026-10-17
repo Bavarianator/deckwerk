@@ -1,0 +1,50 @@
+/* Pro-Timeline: Vorschau + Inspector/Scopes oben, Lineal und Spuren unten. Panels (Tracks, Ruler, Inspector, Deliver) in timeline-panels.css */
+.tl-editor {
+  display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr) minmax(180px, 40%);
+  grid-template-areas: 'main side' 'lanes lanes'; height: 100%; min-height: 0; background: var(--bg); color: var(--text);
+}
+.tl-main { grid-area: main; display: flex; justify-content: center; min-width: 0; min-height: 0; padding: 12px 20px; overflow: auto; }
+.tl-side { grid-area: side; display: flex; flex-direction: column; gap: 16px; min-height: 0; padding: 12px 14px; overflow-y: auto; border-left: 1px solid var(--border); }
+
+/* Vorschau */
+.tl-viewer { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; max-width: 960px; }
+.tl-screen { position: relative; width: 100%; overflow: hidden; border-radius: 8px; background: #16161a; cursor: pointer; container-type: inline-size; }
+.tl-layer { position: absolute; inset: 0; }
+.tl-layer.tl-box { inset: auto; }
+.tl-layer.tl-on.tl-box { outline: 1px solid var(--accent); }
+.tl-slot, .tl-layer img { position: absolute; inset: 0; }
+.tl-layer video, .tl-layer img { display: block; width: 100%; height: 100%; }
+.tl-defs { position: absolute; width: 0; height: 0; }
+
+/* Text-Ebene: ruhig, ohne Animation */
+.tl-ov { position: absolute; display: flex; flex-direction: column; gap: 0.4em; max-width: 80%; color: #fff; font-size: 3.2cqw; line-height: 1.25; text-shadow: 0 1px 3px rgb(0 0 0 / 0.6); pointer-events: none; }
+.tl-ov b { font-size: 1.4em; font-weight: 700; }
+.tl-ov-oben { top: 7%; left: 50%; transform: translateX(-50%); text-align: center; }
+.tl-ov-mitte { top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.tl-ov-unten { bottom: 14%; left: 50%; transform: translateX(-50%); text-align: center; }
+.tl-ov-oben-links { top: 7%; left: 6%; }
+.tl-ov-oben-rechts { top: 7%; right: 6%; text-align: right; }
+.tl-ov-unten-links { bottom: 14%; left: 6%; }
+.tl-ov-unten-rechts { bottom: 14%; right: 6%; text-align: right; }
+.tl-ov-voll { inset: 6%; max-width: none; justify-content: center; }
+.tl-sub { position: absolute; left: 8%; right: 8%; bottom: 5%; margin: 0; color: #fff; font-size: 3cqw; line-height: 1.3; text-align: center; text-shadow: 0 1px 3px rgb(0 0 0 / 0.7); pointer-events: none; }
+
+/* Transport */
+.tl-transport { display: flex; align-items: center; gap: 8px; }
+.tl-tc { margin-left: 8px; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+
+/* rechte Spalte */
+.tl-scopes { display: flex; flex-direction: column; gap: 8px; }
+.tl-scopes canvas { width: 100%; height: auto; }
+.tl-seg { display: flex; gap: 4px; font-size: 12px; }
+.tl-seg button[aria-pressed='true'], .tl-bar button[aria-pressed='true'] { color: var(--accent); }
+.tl-lint { margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
+.tl-lint li { padding: 3px 0; }
+.tl-lint .tl-err { color: var(--danger); }
+.tl-lint li:has(+ li) { border-bottom: 1px solid var(--border); }
+
+/* Spuren unten */
+.tl-lanes { grid-area: lanes; display: flex; flex-direction: column; min-width: 0; min-height: 0; border-top: 1px solid var(--border); }
+.tl-bar { display: flex; align-items: center; gap: 4px; padding: 4px 10px; font-size: 12px; }
+.tl-msg { margin-left: 12px; color: var(--danger); }
+.tl-scroll { flex: 1; min-height: 0; overflow: auto; }
