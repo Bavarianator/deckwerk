@@ -7,7 +7,7 @@ import { lintClip, type ClipIssue } from '../../shared/clip-lint'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
 import { resolveTheme } from '../../shared/themes'
 import { CLIP_STYLES, FX, STILL, clipWords, fillerQuiet, mmss, partsLength, zoomOf, cutIndex, type ClipContent } from '../../shared/video'
-import { loadCustomFont } from '../slide'
+import { loadFonts } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
 import { ClipCutter } from './ClipCutter'
@@ -331,7 +331,7 @@ function useSubFace(deck: Deck | null) {
   useEffect(() => {
     let off = false
     void (async () => {
-      if (deck) await loadCustomFont(deck)
+      if (deck) await loadFonts(deck)
       const font = `${bold ? 700 : 400} 100px "${css}"`
       await document.fonts.load(font)
       const g = document.createElement('canvas').getContext('2d')!
