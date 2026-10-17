@@ -15,13 +15,13 @@ export const TOOL: Record<string, string> = {
   plan_storyline: 'Storyline planen', propose_looks: 'Looks entwerfen', create_deck: 'Deck anlegen', update_deck: 'Deck ändern', add_slides: 'Folien bauen', update_slide: 'Folie ändern',
   reorder_slides: 'Folien sortieren', delete_slides: 'Folien löschen', render_slides: 'Folien ansehen',
   render_overview: 'Übersicht prüfen', lint_deck: 'Qualität prüfen', search_icons: 'Icons suchen',
-  find_images: 'Bilder suchen', transcribe_video: 'Video transkribieren', video_frames: 'Video ansehen', import_video: 'Video laden', video_highlights: 'Highlights suchen', find_music: 'Musik suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
+  find_images: 'Bilder suchen', transcribe_video: 'Video transkribieren', video_frames: 'Video ansehen', import_video: 'Video laden', video_highlights: 'Highlights suchen', find_music: 'Musik suchen', check_clip: 'Clip prüfen', search_transcript: 'Im Video suchen', export_deck: 'Exportieren', remember: 'Im Hausstil merken', web_search: 'Im Web suchen', web_fetch: 'Webseite lesen',
   cli_run: 'Denkt nach', // Vibe/Codex laufen (claude-agent.ts)
   auto_model: 'Modell gewählt', // Auto: welches Modell Deckwerk für diesen Auftrag nimmt
 }
 
 // Lange Video-Tools und ihr Job im Main (window.api.jobs, name = Schlüssel vor „:“): der Chip zeigt den Fortschritt
-const JOB: Record<string, string> = { import_video: 'import', video_highlights: 'highlights', transcribe_video: 'transcribe', export_deck: 'export' }
+export const JOB: Record<string, string> = { import_video: 'import', video_highlights: 'highlights', transcribe_video: 'transcribe', export_deck: 'export' }
 
 // Was das Modell-Dropdown anbietet (App lädt es aus Main); null = noch nicht geladen, dann nur Claude
 export const ChatChoices = createContext<ChatModels | null>(null)

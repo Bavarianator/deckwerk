@@ -1,13 +1,15 @@
 // Video-Schnitt unter Node (ffmpeg, Zuschnitt, Untertitel, Clip-Szene): npx esbuild scripts/check-video.ts --bundle --platform=node --format=esm --external:./render --external:./export-pptx --external:electron --outfile=${TMPDIR:-/tmp}/check-video.mjs && DECKWERK_HOME=${TMPDIR:-/tmp}/check-video-home node ${TMPDIR:-/tmp}/check-video.mjs
 // Die externen Pfade sind die Electron-Teile, die export-video.ts erst in exportVideo lädt. Ohne ffmpeg im PATH wird ffmpeg-static geladen (~30 MB).
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { assSubs, clipSegs, encodeClip, encodeStill, exportVideo, finish, padParts, seamless } from '../src/main/export-video'
+import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, padParts, seamless, snapParts } from '../src/main/export-video'
+import { cropFilter, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
-import { ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, silences } from '../src/main/ffmpeg'
-import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, tighten, type Transcript } from '../src/shared/video'
+import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
+import { MIN_PAUSE, PAD, STILL, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -32,6 +34,184 @@ async function main() {
   const dir = mkdtempSync(join(base, 'check-video-'))
   try {
     console.log('ffmpeg:', await ffmpegBin())
+
+    // Titelbild: Standbild in Ausgabegröße, Hook eingebrannt (ruhig und lebendig, ohne Einblendung), ohne Hook kein Text; Zeit außerhalb des Videos wird begrenzt
+    {
+      const grau = join(dir, 'cover-src.mp4'), size = { w: 360, h: 640 } // kleiner scheitert boxblur (Chroma-Radius)
+      await runFfmpeg(['-f', 'lavfi', '-i', 'color=c=gray:size=1280x720:rate=30:duration=2', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', grau])
+      const job = { file: grau, parts: [{ start: 0.2, end: 1.8, focus: 0.3 }], captions: 'aus' as const, transcript: null, size, font: { name: 'Archivo', files: [readFileSync(resolve('assets/fonts/Archivo-Bold.ttf'))], bold: true }, accent: '#FF8800' }
+      // Grauwerte der oberen 40 % (Hook sitzt oben links): Spannweite
+      const spread = async (f: string) => {
+        const { out } = await run(await ffmpegBin(), ['-i', f, '-f', 'rawvideo', '-pix_fmt', 'gray', 'pipe:1'])
+        assert.equal(out.length, size.w * size.h, 'Ausgabegröße')
+        const top = out.subarray(0, size.w * Math.round(size.h * 0.4))
+        return Math.max(...top) - Math.min(...top)
+      }
+      for (const [n, x, t] of [['ohne', {}, 99], ['ruhig', { hook: 'Hook hier' }, 1], ['lebendig', { hook: 'Hook hier', style: 'lebendig' as const }, undefined], ['blur', { hook: 'Hook', fit: 'blur' as const }, 0.5]] as const) {
+        const jpg = join(dir, `cover-${n}.jpg`)
+        await encodeCover({ ...job, ...x }, t, jpg, dir)
+        const sp = await spread(jpg) // prüft auch die Größe (probe verlangt eine Dauer, ein JPEG hat keine)
+        if (n === 'ohne') assert.ok(sp < 12, `ohne Hook Text im Bild (Spannweite ${sp})`)
+        else if (n !== 'blur') assert.ok(sp > 100, `${n}: Hook fehlt (Spannweite ${sp})`)
+      }
+      console.log('  Titelbild ok')
+    }
+    if (process.env.DW_ONLY_COVER) return
+
+    // Ton klar: Sprach-Ersatz (Klang-Bursts 0–1, 2–3 … s) über Rosa Rauschen; die Sprachkette senkt das Rauschen in den Pausen, original bleibt unverändert.
+    // Lautheit in zwei Durchgängen: integriert −14 LUFS
+    {
+      const src = join(dir, 'ton-src.mkv'), size = { w: 320, h: 180 }
+      await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=10', '-f', 'lavfi', '-i', "aevalsrc='if(lt(mod(t,2),1),0.05*(sin(2*PI*180*t)+0.5*sin(2*PI*360*t)+0.3*sin(2*PI*1200*t))*(0.6+0.4*sin(2*PI*4*t)),0)':s=48000:d=10",
+        '-f', 'lavfi', '-i', 'anoisesrc=c=pink:a=0.01:r=48000:d=10', '-filter_complex', '[1:a][2:a]amix=inputs=2:normalize=0[a]', '-map', '0:v', '-map', '[a]', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-ac', '2', src])
+      const job = { file: src, parts: [{ start: 0, end: 10 }], captions: 'aus' as const, transcript: null, size, font: { name: 'Archivo', files: [], bold: true }, accent: '#FF8800' }
+      const seg = async (n: string, ton?: 'klar' | 'original') => (await clipSegs({ ...job, ton }, `ton-${n}`, dir, { preset: 'ultrafast' }))[0]
+      const [ohne, orig, klar] = [await seg('ohne'), await seg('original', 'original'), await seg('klar', 'klar')]
+      const [po, pk] = [await pcm16k(orig.file), await pcm16k(klar.file)]
+      assert.ok(Buffer.from((await pcm16k(ohne.file)).buffer).equals(Buffer.from(po.buffer)), 'ton original weicht von ohne ton ab')
+      near((await probe(klar.file)).duration, (await probe(orig.file)).duration, 0.02, 'Länge mit ton klar')
+      // Versatz: afftdn verzögert um 25 ms, die Kette gleicht das aus. Sauberer 300-Hz-Burst ab 2 s (ohne Rauschen, damit der Schwellwert nicht an der Pegeländerung hängt): Anfang gleich (≤ 1 ms)
+      const burst = join(dir, 'ton-burst.mkv')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=4', '-f', 'lavfi', '-i', "aevalsrc='if(gte(t,2),0.3*sin(2*PI*300*(t-2)),0)':s=48000:d=4", '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'pcm_s16le', '-ac', '2', burst])
+      const onset = async (ton?: 'klar') => {
+        const p = await pcm16k((await clipSegs({ ...job, file: burst, parts: [{ start: 0, end: 4 }], ton }, `burst-${ton ?? 'orig'}`, dir, { preset: 'ultrafast' }))[0].file)
+        return p.findIndex((x) => Math.abs(x) > 0.02) / 16000
+      }
+      const [ao, ak] = [await onset(), await onset('klar')]
+      console.log(`  Burst-Anfang: original ${ao.toFixed(4)} s, klar ${ak.toFixed(4)} s`)
+      near(ak, ao, 0.001, 'Versatz mit ton klar')
+      const pause = (p: Float32Array) => Math.max(...[1.3, 3.3, 5.3, 7.3].map((t) => dbOf(p, t, t + 0.5))), rede = (p: Float32Array) => dbOf(p, 4.2, 4.8)
+      console.log(`  Ton klar: Rauschen in Pausen ${pause(po).toFixed(1)} → ${pause(pk).toFixed(1)} dB, Sprache ${rede(po).toFixed(1)} → ${rede(pk).toFixed(1)} dB`)
+      assert.ok(pause(pk) <= pause(po) - 4, 'ton klar senkt das Rauschen in Pausen kaum')
+      assert.ok(rede(pk) >= rede(po) - 3, 'ton klar dämpft die Sprache zu stark')
+      const mp4 = join(dir, 'ton-klar.mp4')
+      await finish([klar], mp4, dir, { loudnorm: true })
+      const { err } = await run(await ffmpegBin(), ['-hide_banner', '-nostats', '-i', mp4, '-af', 'ebur128', '-f', 'null', '-'])
+      const lufs = Number([...err.matchAll(/\bI:\s+(-?[\d.]+) LUFS/g)].at(-1)?.[1])
+      console.log(`  Lautheit (2 Durchgänge): ${lufs} LUFS`)
+      near(lufs, -14, 1, 'integrierte Lautheit')
+    }
+    if (process.env.DW_ONLY_TON) return
+
+    // Szenengrenzen: harte Bildwechsel finden (scdet), Kanten knapp davor/dahinter darauflegen, Polster nie darüber – sonst blitzt die Nachbarszene auf
+    {
+      const lavfi = async (out: string, ins: string[], graph?: string) => runFfmpeg([...ins.flatMap((i) => ['-f', 'lavfi', '-i', i]), ...(graph ? ['-filter_complex', graph] : []), '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', out])
+      const hart = join(dir, 'hart.mp4'), hart2 = join(dir, 'hart2.mp4'), ruhig = join(dir, 'ruhig.mp4'), wackel = join(dir, 'wackel.mp4')
+      await lavfi(hart, ['color=red:size=320x180:rate=30:duration=2', 'testsrc2=size=320x180:rate=30:duration=2', 'color=blue:size=320x180:rate=30:duration=2'], '[0:v][1:v][2:v]concat=n=3:v=1:a=0')
+      // Schnitt zwischen ähnlichen Bildern (zwei Ausschnitte desselben Musters), schwächster gemessener Fall
+      await lavfi(hart2, ['testsrc2=size=1280x720:rate=30:duration=2,crop=640:360:300:200', 'testsrc2=size=1280x720:rate=30:duration=2,crop=640:360:380:240'], '[0:v][1:v]concat=n=2:v=1:a=0')
+      await lavfi(ruhig, ['testsrc=size=320x180:rate=30:duration=6'])
+      await lavfi(wackel, ["testsrc2=size=1280x720:rate=30:duration=4,crop=640:360:x='300+80*sin(t*25)':y='200+50*cos(t*19)'"]) // heftige Handkamera
+      const cuts = await scenes(hart, 0.5, 5.5)
+      assert.equal(cuts.length, 2, `Bildwechsel ${cuts}`)
+      near(cuts[0], 2, 1 / 30, 'Wechsel rot → Testbild')
+      near(cuts[1], 4, 1 / 30, 'Wechsel Testbild → blau')
+      const sim = await scenes(hart2, 0, 4)
+      assert.equal(sim.length, 1, `ähnliche Bilder ${sim}`)
+      near(sim[0], 2, 1 / 30, 'Wechsel zwischen ähnlichen Bildern')
+      assert.deepEqual(await scenes(ruhig, 0, 6), [], 'ruhiges Video')
+      assert.deepEqual(await scenes(wackel, 0, 4), [], 'Wackeln ist kein Bildwechsel')
+
+      // snapToScenes: Start bis 0,3 s vor, Ende bis 0,3 s nach dem Wechsel; focus bleibt
+      assert.deepEqual(snapToScenes([{ start: 1.8, end: 3, focus: 0.3 }, { start: 3.5, end: 4.2 }], [2, 4]), { parts: [{ start: 2, end: 3, focus: 0.3 }, { start: 3.5, end: 4 }], moved: 2 })
+      assert.equal(snapToScenes([{ start: 1.6, end: 3 }], [2]).moved, 0, 'weiter als 0,3 s: bleibt')
+      const word = (start: number, end: number): Transcript => ({ duration: 6, lang: 'de', segments: [{ start, end, text: 'x', words: [{ w: ' x', start, end }] }] })
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], word(1.85, 2.3)).moved, 0, 'Wechsel mitten im Wort')
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], word(1.82, 1.95)).moved, 0, 'Wort fiele weg')
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], word(2.5, 2.9)).moved, 1, 'Wort hinter dem Wechsel stört nicht')
+      assert.equal(snapToScenes([{ start: 1.8, end: 3 }], [2], { duration: 6, lang: 'de', segments: [{ start: 1.8, end: 2.5, text: 'geschätzt' }] }).moved, 1, 'ohne echte Wortzeiten verschieben')
+      assert.equal(snapToScenes([{ start: 0, end: 2.1 }, { start: 2.1, end: 5 }], [1.9, 2.2]).moved, 0, 'nahtlos: nie anfassen')
+      assert.equal(snapToScenes([{ start: 1.8, end: 2.3 }], [2]).moved, 0, 'Teil fiele unter 0,5 s')
+
+      // padParts: Polster endet am Wechsel
+      assert.deepEqual(padParts([{ start: 2, end: 4 }], 12, [2, 4.1]).map((p) => [p.start, p.end]), [[2, 4.1]])
+      assert.deepEqual(padParts([{ start: 2, end: 4 }], 12, [1.9, 4.2]).map((p) => [p.start, p.end]), [[1.9, 4 + PAD]])
+
+      // Ganze Kette im Export: ohne cuts blitzen rot und blau auf, mit cuts kein einziges einfarbiges Bild
+      const flat = async (file: string) => {
+        const { out } = await run(await ffmpegBin(), ['-i', file, '-vf', 'scale=8:8', '-pix_fmt', 'rgb24', '-f', 'rawvideo', 'pipe:1'])
+        let n = 0
+        for (let f = 0; f + 192 <= out.length; f += 192) if (out.subarray(f, f + 192).every((v, k) => Math.abs(v - out[f + (k % 3)]) < 12)) n++
+        return n
+      }
+      const job = { file: hart, hook: undefined, captions: 'aus' as const, transcript: null, size: { w: 320, h: 180 }, font: { name: 'Archivo', files: [], bold: true }, accent: '#FF8800' }
+      const raw = [{ start: 1.8, end: 4.2 }], snapped = snapToScenes(raw, cuts)
+      assert.ok((await flat((await clipSegs({ ...job, parts: raw }, 'blitz', dir, { preset: 'ultrafast' }))[0].file)) > 0, 'Gegenprobe: ohne cuts blitzt es')
+      const clean = await clipSegs({ ...job, parts: snapped.parts, cuts }, 'sauber', dir, { preset: 'ultrafast' })
+      assert.equal(await flat(clean[0].file), 0, 'Blitzbild im Export')
+      near(clean[0].dur, 2, 0.05, 'Länge zwischen den Wechseln')
+      console.log(`  Szenengrenzen ok (Wechsel ${cuts.map((c) => c.toFixed(3))}, ähnlich ${sim.map((c) => c.toFixed(3))})`)
+    }
+    if (process.env.DW_ONLY_SCENES) return
+
+    // Schnitte nie mitten im Wort: Start vor das Wort, Ende hinter das Wort (höchstens 0,4 s); ohne echte Wortzeiten unverändert
+    const sw = (w: string, start: number, end: number) => ({ w, start, end })
+    const snapTr: Transcript = { duration: 12, lang: 'de', segments: [{ start: 1, end: 5, text: 'a b c', words: [sw(' eins', 1, 1.8), sw(' zwei', 1.9, 2.6), sw(' drei', 4, 4.6)] }] }
+    const sn = snapParts([{ start: 1.3, end: 4.3, focus: 0.3 }, { start: 8, end: 9 }], snapTr)
+    assert.equal(sn.moved, 2)
+    assert.deepEqual(sn.parts, [{ start: 1, end: 4.6, focus: 0.3 }, { start: 8, end: 9 }])
+    assert.equal(snapParts([{ start: 2.3, end: 4.3 }], snapTr).parts[0].start, 1.9)
+    assert.deepEqual(snapParts([{ start: 1.5, end: 4.3 }], null), { parts: [{ start: 1.5, end: 4.3 }], moved: 0 })
+    assert.equal(snapParts([{ start: 1.5, end: 4.3 }], { duration: 12, lang: 'de', segments: [{ start: 1, end: 5, text: 'eins zwei drei' }] }).moved, 0, 'ohne words geschätzt: unverändert')
+    if (process.env.DW_ONLY_SNAP) return
+
+    // Clip-Stil: ruhig (ohne style) Byte für Byte wie vor 'lebendig', lebendig mit Pop, Hook-Einblendung, Balken je Gruppe, Zoom an jedem zweiten Schnitt
+    {
+      const ws = clipWords({ duration: 12, lang: 'de', segments: [{ start: 1, end: 4, text: 'eins zwei drei' }, { start: 6, end: 8, text: 'vier fünf' }] }, [{ start: 1, end: 4 }, { start: 6, end: 8 }])
+      const sub = (mode: 'wort' | 'satz', x: object = {}) => assSubs({ size: { w: 1080, h: 1920 }, font: 'Archivo', bold: true, accent: '#FF8800', hook: 'Warum das klappt', hookDur: 4, cues: cues(ws, mode), mode, ...x })
+      const sha = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 16)
+      assert.equal(sha(sub('wort')), '43d26050f6b4cc6c', 'ruhig/wort unverändert')
+      assert.equal(sha(sub('satz')), '3265eea221f79b63', 'ruhig/satz unverändert')
+      assert.equal(sub('wort', { style: 'ruhig', bar: { off: 0, dur: 5, total: 5 } }), sub('wort'), 'style ruhig = ohne style')
+      const live = sub('wort', { style: 'lebendig', bar: { off: 5, dur: 5, total: 20 } })
+      assert.ok(live.includes('{\\c&H0088FF&\\fscx108\\fscy108\\t(0,120,\\fscx100\\fscy100)}zwei{\\r}'), live)
+      assert.equal(live.match(/\\t\(0,120,/g)?.length, 5, 'Pop je Wortzustand')
+      assert.ok(live.includes(',HookBox,,0,0,0,,{\\fad(200,200)}Warum das klappt'), live)
+      assert.ok(/^Style: HookBox,Archivo,\d+,&H00FFFFFF,&H00FFFFFF,&H59000000,&H80000000,-1,0,0,0,100,100,0,0,3,13,0,/m.test(live), live)
+      const bars = live.match(/^Dialogue: .*,Bar,.*$/gm) ?? []
+      assert.equal(bars.length, 1, 'ein Balken je Gruppe')
+      assert.ok(bars[0].includes('0:00:00.00,0:00:05.00') && bars[0].includes('\\pos(0,1908)\\clip(0,0,270,1920)\\t(\\clip(0,0,540,1920))\\p1}m 0 0 l 1080 0 1080 12 0 12'), bars[0])
+      assert.ok(!sub('satz', { style: 'lebendig' }).includes('\\fscx108'), 'satz ohne Pop')
+      // Zuschnitt: part 0 wie bisher, part 1 um 1,08 enger um denselben Mittelpunkt
+      const c = cropRect({ w: 1280, h: 720 }, { w: 1080, h: 1920 }, 0.5)
+      assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf('lebendig', 0)), 'crop=406:720:437:0,scale=1080:1920')
+      assert.equal(cropFilter(c, { w: 1080, h: 1920 }, zoomOf(undefined, 1)), 'crop=406:720:437:0,scale=1080:1920')
+      const z = zoomCrop(c, zoomOf('lebendig', 1))
+      // Zoom wechselt nur an echten Schnitten: nahtlos anschließende parts (follow) behalten den Zoom
+      assert.deepEqual([0, 1, 2, 3].map((i) => cutIndex([{ start: 0, end: 2 }, { start: 2, end: 4 }, { start: 6, end: 8 }, { start: 9, end: 10 }], i)), [0, 0, 1, 2])
+      assert.ok(z.w < c.w && z.h < c.h && Math.abs(z.x + z.w / 2 - (c.x + c.w / 2)) <= 1 && Math.abs(z.y + z.h / 2 - (c.y + c.h / 2)) <= 1, JSON.stringify(z))
+      // ffmpeg nimmt Filtergraph und ASS an: 4-s-Quelle, zwei parts, Hook, Balken
+      const fxSrc = join(dir, 'fx.mp4')
+      await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=30:duration=4', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', fxSrc])
+      const fxFont = { name: 'Archivo', files: [readFileSync(resolve('assets/fonts/Archivo-Bold.ttf'))], bold: true }
+      const fxSegs = await clipSegs({ file: fxSrc, parts: [{ start: 0.3, end: 1.5 }, { start: 2, end: 3.5 }], hook: 'Hook', captions: 'aus', transcript: null, size: { w: 180, h: 320 }, font: fxFont, accent: '#FF8800', style: 'lebendig' }, 'fx', dir, { preset: 'ultrafast' })
+      near((await probe(fxSegs[0].file)).duration, fxSegs[0].dur, 0.1, 'lebendig: Länge')
+      assert.ok(readFileSync(join(dir, 'fx-01.ass'), 'utf8').includes(',Bar,'), 'Balken auch ohne Untertitel')
+      console.log('  Clip-Stil ok')
+    }
+    if (process.env.DW_ONLY_FX) return
+
+    // Kontaktabzug: 9:16 aus 16:9, zwei parts, 3×3 Kacheln
+    const sheetSrc = join(dir, 'abzug.mp4')
+    await runFfmpeg(['-f', 'lavfi', '-i', 'testsrc2=size=1280x720:rate=30:duration=12', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', sheetSrc])
+    const tSheet = Date.now()
+    const sheetParts = [{ start: 1, end: 4 }, { start: 8, end: 11.95, focus: 0.3 }]
+    for (const fit of ['crop', 'blur'] as const) {
+      const sheet = await contactSheet(sheetSrc, sheetParts, { size: { w: 1080, h: 1920 }, fit })
+      const jpg = join(dir, `abzug-${fit}.jpg`)
+      writeFileSync(jpg, sheet.jpg)
+      const meta = await probe(jpg).catch(() => null) // Standbild: Dauer egal, Maße zählen
+      assert.ok(meta, 'Kontaktabzug lesbar')
+      near(meta!.w, 720, 2, 'Kontaktabzug Breite')
+      near(meta!.h, 3 * ((240 * 16) / 9), 2, 'Kontaktabzug Höhe')
+      assert.equal(sheet.times.length, 9)
+      sheet.times.forEach((t, i) => {
+        assert.ok(i === 0 || t > sheet.times[i - 1], 'times monoton')
+        assert.ok(sheetParts.some((p) => t >= p.start && t <= p.end + 1e-6), `Zeit ${t} in einem part`)
+      })
+    }
+    console.log(`  Kontaktabzug ok (${Date.now() - tSheet} ms für 2 × 9 Kacheln)`)
+    if (process.env.DW_ONLY_SHEET) return
 
     // Testvideo: 12 s, 1280×720, Sinuston; dazu eine gedrehte Kopie (Handy hochkant)
     const src = join(dir, 'quelle.mp4'), rot = join(dir, 'gedreht.mp4')

@@ -89,10 +89,11 @@ interface VideoProps {
  *  still: Sekunde, die vor dem ersten Abspielen steht; bei blur stabil halten, jeder neue Wert lässt den Main per ffmpeg ein Standbild ziehen. onBad: Chromium spielt den Codec nicht (HEVC, ProRes …) oder es gibt keine Videospur. */
 export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, videoRef, children, onBad, onMeta, onClick }: VideoProps) {
   const url = clipUrl(video)
+  const [first] = useState(still) // Standbild nur vom ersten Wert: der Cutter reicht still live durch, jeder neue Wert startete ffmpeg
   return (
     <div className={`clip-video${fit === 'blur' ? ' blur' : ''}`} style={{ aspectRatio: aspect }} onClick={onClick}>
-      {fit === 'blur' && <div className="clip-video-bg" style={{ backgroundImage: `url("${url}?frame=${still ?? 0}")` }} />}
-      <video ref={videoRef} src={url} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
+      {fit === 'blur' && <div className="clip-video-bg" style={{ backgroundImage: `url("${url}?frame=${first ?? 0}")` }} />}
+      <video ref={videoRef} src={url} poster={first != null ? `${url}?frame=${first}` : undefined} preload="auto" playsInline style={fit === 'crop' ? { objectPosition: `${focus * 100}% 50%` } : undefined}
         onLoadedMetadata={(e) => {
           const v = e.currentTarget
           if (!v.videoWidth) onBad?.() // nur Ton oder Videospur unbekannt
@@ -108,12 +109,13 @@ export function ClipVideo({ video, aspect, focus = 0.5, fit = 'crop', still, vid
 interface StripProps {
   from: number; to: number; parts: Part[]; label?: string; head?: number; onSeek?(s: number): void
   marks?: { start: number; end: number; label: string }[]; curve?: number[] // curve: gleichmäßig über from..to verteilt, 0..1
+  on?(x: Part): boolean // ohne Griffe hervorgehoben (Deckvid: Ausschnitte des gewählten Clips)
   handles?: { sel: number; onSel(i: number): void; onEdge?(edge: 'start' | 'end', s: number): void; onDragEnd?(): void }
 }
 
 // Zeitleiste von from bis to: Klicken/Ziehen setzt die Abspielposition, Griffe (nur mit onEdge) verschieben Anfang und Ende des gewählten Ausschnitts.
 // Dahinter dezent die Lautheit (curve) und nummerierte Marken (Highlights).
-export function Strip({ from, to, parts, label, head, onSeek, marks, curve, handles: h }: StripProps) {
+export function Strip({ from, to, parts, label, head, onSeek, marks, curve, on, handles: h }: StripProps) {
   const ref = useRef<HTMLDivElement>(null)
   const span = Math.max(0.001, to - from)
   const pct = (s: number) => `${((Math.max(from, Math.min(to, s)) - from) / span) * 100}%`
@@ -145,7 +147,7 @@ export function Strip({ from, to, parts, label, head, onSeek, marks, curve, hand
           <div key={i} className="cut-mark" style={box(m)} title={m.label}><span>{i + 1}</span></div>
         ))}
         {parts.map((x, i) => shown(x) && (
-          <div key={i} className={`cut-part${h && i === h.sel ? ' on' : ''}`} style={box(x)}>
+          <div key={i} className={`cut-part${(h ? i === h.sel : on?.(x)) ? ' on' : ''}`} style={box(x)}>
             <span>{i + 1}</span>
             {h?.onEdge && i === h.sel && <>
               <i className="cut-grip l" aria-hidden onPointerDown={drag((s) => h.onEdge!('start', s), false)} />

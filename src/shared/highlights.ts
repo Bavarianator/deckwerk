@@ -2,7 +2,7 @@
 // Verfahren angelehnt an HotClip und die Literatur zu Twitch-Highlights (Chat-Ausbrüche, verzögerte Reaktion):
 // robuster z-Wert je Signal gegen gleitenden Median/MAD, gewichtete Summe, Spitzen → Fenster → Top-n ohne Überlappung.
 
-export interface Signals { loud: number[]; chat?: number[]; events?: number[]; heat?: number[] } // je Sekunde: RMS dBFS (−100 = still), Chat-Gewicht (Nachrichten, Emotes zählen doppelt), Ereignis-Wahrscheinlichkeit 0..1 (Lachen/Jubel/Schreien/Applaus), YouTube-Heatmap 0..1
+export interface Signals { loud: number[]; chat?: number[]; events?: number[]; heat?: number[]; music?: number[] } // je Sekunde: RMS dBFS (−100 = still), Chat-Gewicht (Nachrichten, Emotes zählen doppelt), Ereignis-Wahrscheinlichkeit 0..1 (Lachen/Jubel/Schreien/Applaus), YouTube-Heatmap 0..1, Musik-Wahrscheinlichkeit 0..1 (für den Clip-Lint, nicht für Highlights)
 export interface Highlight { start: number; end: number; score: number; why: string } // why kurz deutsch, z. B. „Chat ×4,2 · Lachen/Jubel · laut +9 dB · oft gesehen“
 
 const BLOCK = 60, BLOCKS = 10 // Median je 60-s-Block, gleitend über 10 Blöcke = 10 min
@@ -50,7 +50,7 @@ const de = (n: number) => n.toFixed(1).replace('.', ',')
 
 /** Die n stärksten Momente: Fenster von len s um die Spitze (60 % davor, 40 % danach), mindestens gap s auseinander, zeitlich sortiert. */
 export function highlights(s: Signals, o: { len?: number; n?: number; gap?: number } = {}): Highlight[] {
-  const { len = 60, n = 8, gap = 30 } = o
+  const { len = 90, n = 8, gap = 30 } = o // len: Fenster für ein Reel von gut einer Minute samt Anlauf
   const dur = s.loud.length
   const fill = (x: number[]) => Array.from({ length: dur }, (_, i) => (Number.isFinite(x[i]) ? x[i] : 0)) // NaN vergiftete sonst alle Präfixsummen
   const clamp = (z: number) => Math.min(Z_MAX, Math.max(0, z))

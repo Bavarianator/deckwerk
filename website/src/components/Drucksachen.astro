@@ -1,0 +1,53 @@
+---
+// Drucksachen wie bei Canva; Spaltenbreite = Seitenverhältnis, damit eine Reihe gleich hoch steht.
+// Die Visitenkarte steht vorn und hinten übereinander, zusammen etwa so hoch wie eine A4-Seite.
+import { Image } from 'astro:assets'
+import { bild } from '../lib/seite'
+
+const reihen: { fr: number; name: string; ids: string[] }[][] = [
+  [
+    { fr: 0.707, name: 'Bewerbung: Deckblatt', ids: ['druck-bewerbung-1'] },
+    { fr: 0.707, name: 'Anschreiben nach DIN 5008', ids: ['druck-bewerbung-2'] },
+    { fr: 0.707, name: 'Lebenslauf', ids: ['druck-bewerbung-3'] },
+    { fr: 1.414, name: 'Urkunde', ids: ['druck-urkunde-1'] },
+  ],
+  [
+    { fr: 0.707, name: 'Einladung', ids: ['druck-einladung-1'] },
+    { fr: 0.707, name: 'Speisekarte', ids: ['druck-speisekarte-1'] },
+    { fr: 0.75, name: 'Visitenkarte', ids: ['druck-visitenkarte-1', 'druck-visitenkarte-2'] },
+  ],
+]
+---
+
+<section class="abschnitt" id="drucksachen">
+  <div class="wrap">
+    <header class="abschnitt-kopf">
+      <h2>Auch auf Papier.</h2>
+      <p class="unterzeile">Bewerbung, Brief, Urkunde, Einladung, Speisekarte und Visitenkarte. Druckfertig mit Beschnitt, Text bearbeitbar in Word.</p>
+    </header>
+    {
+      reihen.map((reihe) => (
+        <div class="druck" style={`grid-template-columns: ${reihe.map((s) => `${s.fr}fr`).join(' ')}`}>
+          {reihe.map((s) => (
+            <figure data-zeigen>
+              <div class="druck-stapel">
+                {s.ids.map((id) => (
+                  <Image {...bild(id, '(max-width: 760px) 50vw, 320px')} class="folie" />
+                ))}
+              </div>
+              <figcaption>{s.name}</figcaption>
+            </figure>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style is:global>
+  .druck { display: grid; gap: clamp(1rem, 2.5vw, 2rem); align-items: end; }
+  .druck + .druck { margin-top: clamp(1.5rem, 3vw, 2.5rem); }
+  .druck-stapel { display: grid; gap: 0.75rem; }
+  .druck figcaption { margin-top: 0.9rem; font-size: 0.875rem; color: var(--muted); text-align: center; }
+  @media (max-width: 760px) { .druck { grid-template-columns: 1fr 1fr !important; } }
+</style>

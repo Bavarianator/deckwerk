@@ -9,12 +9,12 @@ import { MEDIA_EXT, formatSuffix, sizeOf, visibleSlides, type Deck, type Measure
 import { handout } from '../shared/handout'
 import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
-import { MAX_PARTS, followParts, type ClipContent, type Segment, type Transcript } from '../shared/video'
+import { MAX_PARTS, followParts, snapToScenes, type ClipContent, type Segment, type Transcript } from '../shared/video'
 import type { Engine } from './agent'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
 import { autoFocus, speakerFaces } from './faces'
-import { ffmpegBin, frames, loudness, pcm16k, probe } from './ffmpeg'
+import { ffmpegBin, frames, loudness, pcm16k, probe, scenes } from './ffmpeg'
 import { renderOverview, renderPdf, renderPrintPdf, renderSlide, type Rendered } from './render'
 import { PARAKEET_LANGS, asr, diarize, tag } from './sherpa'
 import { localAsset } from './sync'
@@ -46,7 +46,7 @@ export function createEngine(): Engine {
   }
 
   // Video-Caches je Datei (Pfad, Größe, Änderungszeit) im Punktordner, der nicht gesynct wird: <key>.t<k>.json je Transkript-Chunk,
-  // .d<k>.json je Sprecher-Stück, .e<s>.json je Ereignis-Chunk, .signals.json; <key>.transcript.json ist der alte Ganzdatei-Cache (Whisper)
+  // .d<k>.json je Sprecher-Stück, .em<s>.json je Ereignis-/Musik-Chunk, .signals.json; <key>.transcript.json ist der alte Ganzdatei-Cache (Whisper)
   const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), models = join(home, 'models')
   const baseOf = async (file: string) => {
     const s = await stat(file)
@@ -150,8 +150,8 @@ export function createEngine(): Engine {
     return t
   }
 
-  // Zuschnitt vor dem Video-Export, auf einer Kopie: follow 'sprecher' → parts je Sprecher, übrige parts ohne focus aufs Gesicht.
-  // Fehler kosten nur den Zuschnitt (Bildmitte).
+  // Zuschnitt vor dem Video-Export, auf einer Kopie: Kanten knapp an harten Bildwechseln auf den Wechsel (cuts), follow 'sprecher' → parts je Sprecher,
+  // übrige parts ohne focus aufs Gesicht. Fehler kosten nur den Zuschnitt (Bildmitte) bzw. die Bildwechsel.
   async function prepareClips(deck: Deck, onProgress: (pct: number) => void): Promise<Deck> {
     const size = sizeOf(deck), slides = [...deck.slides], clips = slides.flatMap((s, i) => (s.layout === 'clip' ? [i] : []))
     for (const [n, i] of clips.entries()) {
@@ -159,15 +159,34 @@ export function createEngine(): Engine {
       const warn = (e: unknown) => console.warn(`[video] Folie ${i + 1}: Gesichts- oder Sprechererkennung fehlgeschlagen:`, (e as Error).message)
       try {
         const info = await probe(file)
-        if (c.fit === 'blur' || Math.abs(info.w / info.h - size.w / size.h) <= 0.01) continue // ganzes Bild sichtbar, nichts zuzuschneiden
-        let parts = c.parts
+        let parts = c.parts, cuts: number[] | undefined
+        const crop = c.fit !== 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // sonst ganzes Bild sichtbar, nichts zuzuschneiden
+        // Blitzbilder gibt es auch bei blur und gleichem Seitenverhältnis: vor dem continue. Wortschutz nur mit gecachtem Transkript, nie neu transkribieren.
+        // Mit Zuschnitt die ganzen parts (die Kamerafahrt springt an Wechseln), sonst nur Fenster um die Kanten: Fulltime dekodiert nicht die ganze Stunde
+        try {
+          const spans: [number, number][] = []
+          const around = crop ? parts.map((p): [number, number] => [p.start, p.end]) : parts.flatMap((p): [number, number][] => [[p.start, p.start], [p.end, p.end]])
+          for (const [s0, e0] of around.sort((x, y) => x[0] - y[0])) {
+            const a = Math.max(0, s0 - 0.5), b = Math.min(info.duration, e0 + 0.5), l = spans[spans.length - 1]
+            if (l && a <= l[1]) l[1] = Math.max(l[1], b)
+            else spans.push([a, b])
+          }
+          const found: number[] = []
+          for (const [a, b] of spans) found.push(...(await scenes(file, a, b)))
+          const tr = await chunkPlan(file, spans).then((pl) => (pl.missing.length ? null : transcript(file, spans, {}))).catch(() => null)
+          const r = snapToScenes(parts, found, tr)
+          if (r.moved) console.info(`[video] Folie ${i + 1}: ${r.moved} Schnittkante(n) auf einen Bildwechsel gelegt`)
+          parts = r.parts, cuts = found
+        } catch (e) { console.warn(`[video] Folie ${i + 1}: Bildwechsel nicht erkannt:`, (e as Error).message) }
+        slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
+        if (!crop) continue
         if (c.follow === 'sprecher') try {
           const from = Math.min(...parts.map((p) => p.start)), to = Math.max(...parts.map((p) => p.end))
           const turns = (await speakersOf(file, info.duration, parts.map((p): [number, number] => [p.start, p.end]))).filter((t) => t.end > from && t.start < to)
           parts = followParts(parts, turns, await speakerFaces(file, turns, info))
         } catch (e) { warn(e) }
-        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info) // auch, wenn follow keine Sprecher-Gesichter fand
-        slides[i] = { ...slides[i], content: { ...c, parts } }
+        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info, { cuts, size }) // auch, wenn follow keine Sprecher-Gesichter fand
+        slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
       } catch (e) { warn(e) } finally { onProgress(Math.floor(((n + 1) / clips.length) * 100)) }
     }
     return { ...deck, slides }
@@ -292,50 +311,77 @@ export function createEngine(): Engine {
       probe,
       frames,
       transcribe: (file, onProgress, o = {}) => transcript(file, o.range ? [[o.range.from, o.range.to]] : null, o, onProgress),
-      // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse den Rest
+      // Signale je Sekunde (gecacht), daraus die Highlights; Fortschritt: Lautheit ~15 %, Ereignisse und Musik den Rest
       async highlights(file, onProgress = () => {}) {
         const base = await baseOf(file)
         let s = await readJson<Signals>(`${base}.signals.json`)
-        if (!s) {
+        if (!Array.isArray(s?.music)) { // signals.json von vor der Musikerkennung: neu rechnen, Lautheit bleibt
           const { duration } = await probe(file)
-          const loud = await loudness(file, (p) => onProgress(Math.floor(p * 0.15)))
-          // Ereignisse (Lachen, Jubel, Applaus, Schreien) nur an lauten Stellen; Chunks ohne solche bleiben 0 und werden nicht dekodiert
+          const loud = s?.loud ?? await loudness(file, (p) => onProgress(Math.floor(p * 0.15)))
+          // Ein Tagger-Durchlauf über alle Sekunden mit Ton (über −50 dBFS): Musik liegt oft leise unter der Sprache, und CED liefert
+          // je Fenster alle Klassen, ein zweiter Durchlauf nur für Ereignisse an lauten Stellen rechnete dieselben Fenster doppelt.
+          // Ereignisse zählen weiter nur an lauten Stellen (hot), damit die Highlights gleich gewichten. Stille bleibt 0, Chunks ohne Ton werden nicht dekodiert.
           let tagFailed = false
-          const events = new Array<number>(loud.length).fill(0), hot = loudRanges(loud), work: { a: number; len: number; only: [number, number][] }[] = []
+          const events = new Array<number>(loud.length).fill(0), music = events.slice(), hot = new Uint8Array(loud.length), sound: [number, number][] = []
+          for (const [x, y] of loudRanges(loud)) hot.fill(1, x, y)
+          loud.forEach((v, i) => { if (v > -50) { const l = sound.at(-1); if (l?.[1] === i) l[1] = i + 1; else sound.push([i, i + 1]) } })
+          const work: { a: number; len: number; only: [number, number][] }[] = []
           for (let a = 0; a < duration; a += CHUNK) {
             const len = Math.min(CHUNK, duration - a)
-            const only = hot.filter(([x, y]) => y > a && x < a + len).map(([x, y]): [number, number] => [Math.max(0, x - a), Math.min(len, y - a)])
+            const only = sound.filter(([x, y]) => y > a && x < a + len).map(([x, y]): [number, number] => [Math.max(0, x - a), Math.min(len, y - a)])
             if (only.length) work.push({ a, len, only })
           }
+          type Tags = { events: number[]; music: number[] }
           for (const [i, { a, len, only }] of work.entries()) { // je Chunk gespeichert: 8-h-Streams machen nach einem Abbruch weiter
-            let r: number[]
+            let r: Tags
             try {
-              r = await cached(`${base}.e${a}.json`, async () => {
-                // tag kennt kein only: nur die lauten Abschnitte einzeln taggen (slice: ein subarray schickte den ganzen Puffer an den Worker)
-                const pcm = await pcm16k(file, a, len), out = new Array<number>(Math.ceil(len)).fill(0)
+              r = await cached<Tags>(`${base}.em${a}.json`, async () => {
+                // tag kennt kein only: nur die Abschnitte mit Ton einzeln taggen (slice: ein subarray schickte den ganzen Puffer an den Worker)
+                const pcm = await pcm16k(file, a, len), n = Math.ceil(len), out: Tags = { events: new Array<number>(n).fill(0), music: new Array<number>(n).fill(0) }
                 for (const [x, y] of only) {
-                  try { (await tag(pcm.slice(x * 16000, y * 16000), { models })).forEach((v, j) => { if (x + j < out.length) out[x + j] = v }) }
-                  catch (e) { throw new TagFailed(e) }
+                  let t: Tags
+                  try { t = await tag(pcm.slice(x * 16000, y * 16000), { models }) } catch (e) { throw new TagFailed(e) }
+                  t.events.forEach((v, j) => { if (x + j < n) { out.events[x + j] = v; out.music[x + j] = t.music[j] } })
                 }
                 return out
-              }, Array.isArray)
+              }, (c) => Array.isArray(c.events) && Array.isArray(c.music))
             } catch (e) { // Lautheit, Chat und Heatmap reichen für Highlights: dieser Chunk bleibt 0 und wird nicht gecacht, auch signals.json nicht (später nachholen)
               if (!(e instanceof TagFailed)) throw e
-              if (!tagFailed) console.warn('[video] Ereigniserkennung fehlgeschlagen, Highlights ohne Ereignisse:', (e.cause as Error)?.message ?? e.cause)
+              if (!tagFailed) console.warn('[video] Ereignis- und Musikerkennung fehlgeschlagen, Highlights ohne Ereignisse:', (e.cause as Error)?.message ?? e.cause)
               tagFailed = true
-              r = []
+              r = { events: [], music: [] }
             }
             onProgress(15 + Math.floor(((i + 1) / work.length) * 85))
-            r.forEach((v, j) => { if (a + j < events.length) events[a + j] = v })
+            r.events.forEach((v, j) => { if (a + j < events.length) { events[a + j] = hot[a + j] ? v : 0; music[a + j] = r.music[j] ?? 0 } })
           }
+          if (tagFailed && s) return highlights(s) // alte signals.json hat vollständige Ereignisse, nur keine Musik
           // Chat und Heatmap legt importUrl neben das Video
           const meta = await readJson<{ chat?: unknown; heat?: unknown }>(`${file}.meta.json`)
           // meta.chat nur aus dem Ordner des Videos lesen (die Datei kommt von der Platte, kein beliebiger Pfad)
           const chat = typeof meta?.chat === 'string' && dirname(resolve(meta.chat)) === dirname(resolve(file)) ? await readJson<unknown>(meta.chat) : null
-          s = { loud, events, ...(Array.isArray(chat) && { chat: chatPerSecond(chat, loud.length) }), ...(Array.isArray(meta?.heat) && { heat: meta.heat as number[] }) }
+          s = { loud, events, music, ...(Array.isArray(chat) && { chat: chatPerSecond(chat, loud.length) }), ...(Array.isArray(meta?.heat) && { heat: meta.heat as number[] }) }
           if (!tagFailed) await save(`${base}.signals.json`, s)
         }
         return highlights(s)
+      },
+      // check_clip: Musik nur in den Sekunden der parts taggen, ohne die ganze Highlight-Suche; Stücke höchstens CHUNK lang (RAM)
+      async musicIn(file, parts) {
+        try {
+          const { duration } = await probe(file), music = new Array<number>(Math.ceil(duration)).fill(0)
+          for (const p of parts) {
+            if (!(p.end > p.start)) continue // auch NaN
+            // ab voller Sekunde: Wert j des Taggers gilt dann genau für Quellsekunde a + j
+            for (let a = Math.max(0, Math.floor(p.start)), end = Math.min(Math.ceil(p.end), duration); a < end; a += CHUNK) {
+              const len = Math.min(CHUNK, end - a)
+              const t = await step(`music:${file}:${a}:${len}`, async () => tag(await pcm16k(file, a, len), { models }))
+              t.music.forEach((v, j) => { if (a + j < music.length) music[a + j] = v })
+            }
+          }
+          return music
+        } catch (e) {
+          console.warn('[video] Musikprüfung fehlgeschlagen:', (e as Error).message)
+          return []
+        }
       },
       async cached(file) {
         const none = { signals: null, highlights: [], transcript: null, duration: null }

@@ -355,4 +355,4 @@ Deckwerk steht unter der GNU Affero General Public License v3.0 (siehe `LICENSE`
 
 Mitgelieferte Schriften unter `assets/fonts/`: SIL Open Font License 1.1 (`OFL-*.txt`). Beispielfotos: Unsplash-Lizenz, Nachweise in `examples/assets/CREDITS.md` und `assets/samples/CREDITS.md`.
 
-Bei Bedarf nachgeladen (Video-Schnitt): Spracherkennung Parakeet-TDT-0.6B-v3 von NVIDIA (CC-BY-4.0) über sherpa-onnx (Apache-2.0), Gesichtserkennung YuNet (MIT), Download per Link über yt-dlp (Unlicense) und TwitchDownloader (MIT).
+Bei Bedarf nachgeladen (Video-Schnitt): Spracherkennung Parakeet-TDT-0.6B-v3 von NVIDIA (CC-BY-4.0) über sherpa-onnx (Apache-2.0), Gesichtserkennung YuNet (MIT), Download per Link über yt-dlp (Unlicense) und TwitchDownloader (MIT). Die Kriterien für die Auswahl von Shorts sind angelehnt an OpenShorts (MIT), SupoClip und HotClip (AGPL-3.0) sowie video-use (MIT).
