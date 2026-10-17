@@ -1,6 +1,6 @@
 // IPC zwischen UI und Main: aktuelles Deck, Agent, Speichern/Öffnen, Export, API-Key.
 import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage, screen, shell } from 'electron'
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
@@ -17,6 +17,8 @@ import { routeTask, type RouterVia } from './router'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { parseCsv } from '../shared/merge'
+import { timelineSchema } from '../shared/layouts-timeline'
+import type { TimelineContent } from '../shared/timeline'
 import { assetUrl, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, mimeOf, NO_IMAGE_AI, saveBrand, exportSeries, type Orientation } from './tools'
 import { activeClient, brandFile, dataDir, listClients, setClient, styleFile } from './clients'
 import { readXlsxRange } from './xlsx-link'
@@ -430,6 +432,26 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       const dir = join(dataDir(), 'assets', '.video', createHash('sha1').update(file + s.size + s.mtimeMs).digest('hex'))
       return await (await import('./timeline-media')).cachedPeaks(file, dir)
     } catch { return null }
+  })
+  // Lautheit des Timeline-Mixes (EBU R128); Quellen wie mediaFile im Export: nur eigene Mediendateien. null = keine gültige Timeline
+  let measuring = false // ffmpeg-Messung ist teuer: höchstens eine gleichzeitig
+  ipcMain.handle('timeline:loudness', async (_, input: unknown) => {
+    const r = timelineSchema.safeParse(input)
+    if (!r.success) return null
+    if (measuring) throw new Error('Eine Lautheitsmessung läuft schon.')
+    measuring = true
+    const resolveSrc = (src: string) => {
+      let p: string | null = null
+      try { p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src } catch { /* kaputte URL */ }
+      if (!p || !isAbsolute(p) || !MEDIA_EXT.test(p)) throw new Error(`Timeline: keine Mediendatei (${basename(src)})`)
+      return localAsset(p)
+    }
+    const work = join(HOME, 'out', `.loudness-tmp-${randomUUID()}`) // wie der Export: nicht /tmp
+    try {
+      return await (await import('./export-timeline')).measureTimeline(r.data as TimelineContent, { resolve: resolveSrc, work })
+    } catch (e) {
+      throw new Error(`Lautheit messen fehlgeschlagen: ${(e as Error).message}`)
+    } finally { measuring = false; await rm(work, { recursive: true, force: true }) }
   })
   ipcMain.handle('jobs:list', () => jobList())
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {

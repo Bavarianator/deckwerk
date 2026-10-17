@@ -96,6 +96,8 @@ const api = {
   videoCached: (src: string): Promise<{ signals: Signals | null; highlights: Highlight[]; transcript: Transcript | null; duration: number | null } | null> => invoke('video:cached', src),
   /** Wellenform einer Timeline-Quelle (Spitzen 0–255, 100 je Sekunde); null = keine Mediendatei oder ohne Ton */
   timelinePeaks: (src: string): Promise<Uint8Array | null> => invoke('timeline:peaks', src),
+  /** Lautheit des Timeline-Mixes: integriert (LUFS), True Peak (dBTP), Lautheitsbereich (LU); null = ungültige Timeline */
+  timelineLoudness: (tl: unknown): Promise<{ i: number; tp: number; lra: number } | null> => invoke('timeline:loudness', tl),
   /** ausgewähltes KI-Tool direkt ausführen (Freigabeliste UI_TOOLS in ipc.ts); images = data:-URLs */
   runTool: (name: string, input: unknown): Promise<{ text: string; images: string[] }> => invoke('tool:run', name, input),
   /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
