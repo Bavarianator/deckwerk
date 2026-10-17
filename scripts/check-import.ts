@@ -5,13 +5,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ffmpegBin, probe, run } from '../src/main/ffmpeg'
-import { twitchBin, twitchChat, twitchVodId } from '../src/main/twitch-chat'
+import { twitchBin, twitchChat, twitchEntries, twitchVodId } from '../src/main/twitch-chat'
 import { chatTimes, chatWeight, checkUrl, heatPerSecond, importUrl, leftover, runTool, slimEnv } from '../src/main/ytdlp'
 
 // Eine Chat-Zeile wie in <id>.live_chat.json; live: Offset auf oberster Ebene (Mitschnitt eines laufenden Streams)
 const chatLine = (ms: string, item: object, live = false) =>
   JSON.stringify(live ? { replayChatItemAction: { actions: [{ addChatItemAction: { item } }] }, videoOffsetTimeMsec: ms, isLive: true } : { replayChatItemAction: { actions: [{ addChatItemAction: { item } }], videoOffsetTimeMsec: ms } })
-const text = (...runs: object[]) => ({ liveChatTextMessageRenderer: { message: { runs } } })
+const text = (...runs: object[]) => ({ liveChatTextMessageRenderer: { message: { runs }, authorName: { simpleText: 'Anna' } } })
 
 async function main() {
   const base = process.env.TMPDIR ?? tmpdir()
@@ -26,8 +26,13 @@ async function main() {
       chatLine('13000', { liveChatTickerSponsorItemRenderer: {} }), // keine Nachricht
       chatLine('15000', text({ text: 'hallo' }), true),
     ].join('\n')
-    assert.deepEqual(chatTimes(jsonl), [{ t: 12.345, w: 2 }, { t: 15, w: 1 }])
+    assert.deepEqual(chatTimes(jsonl), [{ t: 12.345, w: 2, n: 'Anna', x: 'das war :KEKW:' }, { t: 15, w: 1, n: 'Anna', x: 'hallo' }], 'Name und Text')
     assert.deepEqual(chatTimes(chatLine('20000', { liveChatPaidMessageRenderer: { purchaseAmountText: { simpleText: '5 €' } } })), [{ t: 20, w: 3 }], 'Super Chat')
+    assert.deepEqual(twitchEntries({ comments: [
+      { content_offset_seconds: 5, commenter: { display_name: 'Bob', name: 'bob' }, message: { body: ' KEKW ', user_color: '#FF4500' } },
+      { content_offset_seconds: 6, commenter: { name: 'eve' }, message: { body: 'x'.repeat(300), bits_spent: 100, user_color: null } },
+      { content_offset_seconds: -1, message: { body: 'vor Start' } },
+    ] }), [{ t: 5, w: 2, n: 'Bob', c: '#FF4500', x: 'KEKW' }, { t: 6, w: 3, n: 'eve', x: 'x'.repeat(200) }], 'Twitch-Mapping')
     assert.equal(chatWeight('KEKW'), 2)
     assert.equal(chatWeight('hallo'), 1)
     assert.equal(chatWeight('???'), 2)
