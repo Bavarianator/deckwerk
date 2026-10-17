@@ -30,6 +30,7 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['geruest-social', '### Social-Karussell', 'Instagram-Karussell und Story (4:5, 1:1, 9:16): Folge, Textmenge, passende Layouts.'],
   ['geruest-a4', '### A4-Dokumente', 'A4 und Druck: Infoblatt, Angebot, Flyer, Brief, Bewerbung, Lebenslauf, Einladung, Urkunde, Speisekarte, Druckdatei.'],
   ['geruest-visitenkarte', '### Visitenkarte', 'Visitenkarte 85 × 55 mm: Vorder- und Rückseite, Kontaktdaten, Druck.'],
+  ['geruest-stream', '### Stream-Paket', 'Stream-Grafiken: Starting Soon, BRB, Ending, YouTube-Thumbnail, Offline-Banner, Twitch-Panels, PNG-Export.'],
   ['inhalt-layout', '## 4. Inhalt', 'Welches Layout zu welcher Form der Aussage passt.'],
   ['rhythmus', '## 5. Rhythmus', 'Dichte und luftige Folien im Wechsel, Wiederholungen vermeiden.'],
   ['gestaltung', '## 6. Gestaltung', 'Eigenes Design (customTheme): Charakter, Farbe, Grund, Schriftpaar, Struktur, Feinschliff, Theme-Lint, erprobte Richtungen, propose_looks.'],
@@ -154,6 +155,7 @@ const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
   ['storyline', /storyline|aufbau|gliederung|idee|geschichte|dramaturgie|reihenfolge|roter faden/, ['storyline', 'geruest', 'rhythmus']],
   ['rhythmus', /rhythmus|abwechslung|eintönig|langweilig|luftig|überladen/, ['rhythmus', 'inhalt-layout']],
   ['bewerbung', /bewerbung|lebenslauf|anschreiben|\bcv\b/, ['geruest-a4', 'layout:application-cover', 'layout:letter', 'layout:cv']],
+  ['gantt', /gantt|projektplan|zeitplan mit phasen/, ['layout:gantt']],
 ]
 // Video-Auftrag: Stichwörter, ein angehängtes Video oder clip-Folien im Deck. Shorts, Reels und TikTok sind Video, kein Karussell.
 // Eng gefasst: „Kick-off“, „Quartals-Highlights“, „Schnittstelle“, „Mainstream“ oder „Untertitel“ einer Folie sind kein Video.
@@ -164,6 +166,7 @@ const VIDEO_DECK: string[] = ['clip', 'section', 'statement', 'schnitt'] // Zwis
 const SCHNITT = /mehrspur|videospur|tonspur|bild-in-bild|b-roll|farbkorrektur|color ?grading|prores|\b4k\b|\blufs\b|überblend|cross ?dissolve/
 const KINDS = {
   karte: /visitenkarte/,
+  stream: /starting soon|\bbrb\b|be right back|obs-?szenen?|twitch.?panels?|panels? (für|fuer) (twitch|stream|kanal)|youtube.?thumbnails?|offline-?banner|stream-?(paket|grafik|bildschirm|screen|banner|szene)/, // eng: „Panel-Diskussion“, „OBS-Video“, „Reel-Thumbnail“ sind kein Stream-Paket
   a4: /\ba4\b|druckerei|druckdatei|drucksache|\bdrucken\b|flyer|plakat|brief(?!ing)|angebot|kostenvoranschlag|infoblatt|one-pager|handzettel|lebenslauf|bewerbung|einladung|save the date|urkunde|zertifikat|bescheinigung|speisekarte|getränkekarte|mittagstisch/,
   social: /instagram|karussell|carousel|social|\bstory\b|stories|linkedin|tiktok|\bpost(s|ing)?\b|1:1|4:5|9:16/,
   slides: /präsentation|vortrag|pitch|keynote|powerpoint|pptx|slides|16:9/,
@@ -176,8 +179,9 @@ export function ruleRoute(input: RouteInput): Route {
   const pro = SCHNITT.test(t) || inDeck.includes('schnitt')
   const video = VIDEO.test(t) || inDeck.includes('clip') || pro
   // Reiner Video-Auftrag: nur Video-Schnitt und clip (dazu Zwischentitel), kein Gerüst, keine Gestaltung
-  if (video && !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t) && inDeck.every((id) => VIDEO_DECK.includes(id)))
+  if (video && !kinds.has('slides') && !kinds.has('stream') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t) && inDeck.every((id) => VIDEO_DECK.includes(id)))
     return { modules: [...VIDEO_MODULES, 'layout:section', 'layout:statement', ...(pro ? TIMELINE_MODULES : [])], source: 'regel', reason: 'Regeln: Video', video: true }
+  if (inDeck.includes('stream-screen') || inDeck.includes('panel')) kinds.add('stream')
   if (input.hasDeck || !kinds.size) kinds.add(input.profile === 'doc' ? (inDeck.includes('business-card') ? 'karte' : 'a4') : input.profile)
   const layouts = new Set<LayoutId>(inDeck)
   const add = (ids: LayoutId[]) => ids.forEach((id) => layouts.add(id))
@@ -185,12 +189,14 @@ export function ruleRoute(input: RouteInput): Route {
   if (kinds.has('social')) add(LAYOUT_IDS.filter((id) => !sizesOf(id) && !SOCIAL_SKIP.includes(id)))
   if (kinds.has('a4')) add([...LAYOUT_IDS.filter((id) => sizesOf(id)?.some((s) => s.startsWith('a4'))), ...DOC_BASIS])
   if (kinds.has('karte')) add(['business-card'])
+  if (kinds.has('stream')) add(['stream-screen', 'panel', 'cover', 'photo', 'statement'])
 
   const mods: string[] = ['geruest']
   if (kinds.has('slides')) mods.push('geruest-praesentation')
   if (kinds.has('social')) mods.push('geruest-social')
   if (kinds.has('a4')) mods.push('geruest-a4')
   if (kinds.has('karte')) mods.push('geruest-visitenkarte')
+  if (kinds.has('stream')) mods.push('geruest-stream')
   mods.push('inhalt-layout', 'text')
   if (!input.hasDeck) {
     mods.push('gestaltung', 'abwechslung', 'stil', 'katalog-themes', 'katalog-ton')

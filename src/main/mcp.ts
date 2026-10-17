@@ -25,7 +25,7 @@ export interface McpOptions {
 const INTRO = `# Deckwerk: Präsentationen aus einem Layout-Katalog
 Du wählst Layouts und füllst ihre Felder; Positionen, Schriftgrößen und Farben setzt die Engine. Setze nie Koordinaten.
 
-**Lade vor der Arbeit mit \`read_guide\` die Module, die der Auftrag braucht.** Der Index steht unten (kommt er gekürzt an: \`read_guide\` ohne Eingabe). Neues Deck zum Beispiel: \`read_guide({ module: ["storyline", "geruest-praesentation", "inhalt-layout", "gestaltung", "stil", "abwechslung", "text", "katalog-themes", "layout:cover", "layout:kpi-grid"] })\`. Für andere Formate das passende Gerüst (geruest-social, geruest-a4, geruest-visitenkarte), dazu jedes Layout, das du nutzt, als \`layout:<id>\`; bei Änderungen nur die betroffenen Module. Ohne das Schema eines Layouts rätst du Felder.
+**Lade vor der Arbeit mit \`read_guide\` die Module, die der Auftrag braucht.** Der Index steht unten (kommt er gekürzt an: \`read_guide\` ohne Eingabe). Neues Deck zum Beispiel: \`read_guide({ module: ["storyline", "geruest-praesentation", "inhalt-layout", "gestaltung", "stil", "abwechslung", "text", "katalog-themes", "layout:cover", "layout:kpi-grid"] })\`. Für andere Formate das passende Gerüst (geruest-social, geruest-a4, geruest-visitenkarte, geruest-stream), dazu jedes Layout, das du nutzt, als \`layout:<id>\`; bei Änderungen nur die betroffenen Module. Ohne das Schema eines Layouts rätst du Felder.
 
 Ablauf: Briefing klären → Storyline als Liste der Titel → \`propose_looks\` oder direkt \`create_deck\` mit eigenem Design → \`add_slides\` in Batches von 4–6 Folien, Rückmeldungen (Autofit, Lint) sofort beheben → \`render_overview\` und \`lint_deck\`, schwächste Folien verbessern → \`save_deck\`.
 

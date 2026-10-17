@@ -466,3 +466,23 @@
 .t.sk-price { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .t.sk-text { grid-column: 1 / -1; font-size: calc(var(--fs-small) * 1.08); text-wrap: pretty; } /* volle Breite: in zwei Spalten bliebe neben dem Preis zu wenig Platz */
 .t.sk-note { flex: none; margin-top: 20px; }
+
+/* ---------- Stream-Bildschirm (OBS-Szene 16:9): Präfix ss-. Bühne: Titel übergroß, Akzent nur an Uhrzeit bzw. handle (ende) ---------- */
+.ss { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; }
+.ss-main { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+.t.ss-title { font-size: calc(var(--fs-display) * var(--hs) * 1.45); line-height: 1; letter-spacing: -0.03em; max-width: 1080px; } /* Übergröße schrumpft über --fs-display mit dem Autofit */
+.t.ss-sub { color: var(--muted); max-width: 860px; }
+.ss-foot { position: relative; flex: none; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; padding: 20px 0 6px; } /* unten 6px: der Glyphenkasten (IBM Plex ~1,3em) ragt über enge Zeilenhöhen und zählt sonst als Überlauf */
+.ss-foot::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: currentColor; opacity: 0.2; }
+.t.ss-handle { min-width: 0; }
+.ss-ende .t.ss-handle { color: var(--accent); }
+.ss-time { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.ss-time .t { text-align: right; }
+.t.ss-clock { color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ss-ende .t.ss-clock { color: var(--text); } /* nur ein Akzent pro Bildschirm: bei ende trägt ihn der handle */
+
+/* ---------- Twitch-Panel (320 × 160): Präfix pn-. Feste Größe statt Profil-Faktor, schrumpft über --head-fit ---------- */
+.safe.pn-safe { left: 24px; right: 24px; top: 24px; bottom: 24px; } /* Lint frame: Text mindestens 24 px vom Rand */
+.pn { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; padding-bottom: 6px; } /* Glyphenkasten unter der engen Zeilenhöhe, wie .ss-foot */
+.pn::before { content: ''; flex: none; width: 28px; height: 3px; background: var(--accent); }
+.t.pn-label { font-size: calc(34px * (0.7 + 0.3 * var(--head-fit, 1))); line-height: 1.05; letter-spacing: -0.01em; overflow-wrap: anywhere; }

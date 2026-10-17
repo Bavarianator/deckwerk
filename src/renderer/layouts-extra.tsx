@@ -786,6 +786,44 @@ function BusinessCard({ c, v }: Props<'business-card'>) {
   )
 }
 
+// Stream-Bildschirm (OBS-Szene): Titel groß links, unten handle und Uhrzeit. Bei ende ist handle der Aufruf zum Folgen und steht in Akzentfarbe.
+const SS_TIME = { start: 'Start', pause: 'Weiter um', ende: 'Nächster Stream' }
+function StreamScreen({ c, v }: Props<'stream-screen'>) {
+  const k = v === 'pause' || v === 'ende' ? v : 'start'
+  return (
+    <Frame decor="hero">
+      <div className={`ss ss-${k}`}>
+        <div className="ss-main">
+          <T role="display" slot="title" maxLines={2} className="ss-title" build={0}>{c.title}</T>
+          {c.subtitle && <T role="h2" slot="subtitle" maxLines={2} className="ss-sub" build={0}>{c.subtitle}</T>}
+        </div>
+        {(c.handle || c.time) && (
+          <div className="ss-foot">
+            {c.handle ? <T role={k === 'ende' ? 'h2' : 'label'} slot="handle" className="ss-handle">{c.handle}</T> : <div />}
+            {c.time && (
+              <div className="ss-time">
+                <T role="eyebrow" slot="_time.label">{SS_TIME[k]}</T>
+                <T role="h1" slot="time" className="ss-clock">{c.time}</T>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Frame>
+  )
+}
+
+// Twitch-Panel (320 × 160): nur die Überschrift, links unten über einer kurzen Akzentlinie
+function Panel({ c }: Props<'panel'>) {
+  return (
+    <Frame safeClass="pn-safe">
+      <div className="pn">
+        <T role="h1" slot="label" maxLines={2} className="pn-label">{c.label}</T>
+      </div>
+    </Frame>
+  )
+}
+
 // Lebenslauf (A4 hoch): side = schmale Seitenspalte (Foto, Kontakt, Kenntnisse) neben Name und Stationen,
 // plain = tabellarisch (Zeitraum in schmaler Spalte links, Foto rechts neben dem Namen). Kenntnisse nur als Text, Abschnitte über Haarlinien.
 function Cv({ c, v }: Props<'cv'>) {
@@ -902,5 +940,5 @@ export const EXTRA_COMPONENTS = {
   blank: () => <Frame>{null}</Frame>, summary: Summary, options: Options, matrix: Matrix,
   table: Table, 'doc-text': DocText, offer: Offer, flyer: Flyer, 'flyer-back': FlyerBack, 'big-number': BigNumber, 'icon-grid': IconGrid, 'pros-cons': ProsCons, 'problem-solution': ProblemSolution, team: Team,
   pricing: Pricing, funnel: Funnel, 'market-size': MarketSize, logos: Logos, clip: Clip, schnitt: Schnitt,
-  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, cv: Cv, menu: Menu,
+  'application-cover': ApplicationCover, certificate: Certificate, invitation: Invitation, letter: Letter, 'business-card': BusinessCard, 'stream-screen': StreamScreen, panel: Panel, cv: Cv, menu: Menu,
 }

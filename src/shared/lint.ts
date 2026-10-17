@@ -16,7 +16,7 @@ export interface Issue {
 }
 
 const MARGIN = 24 // no text closer to the slide edge than this
-export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank', 'clip', 'schnitt'] // absichtlich luftig
+export const AIRY = ['cover', 'section', 'statement', 'big-number', 'photo', 'quote', 'closing', 'blank', 'clip', 'schnitt', 'stream-screen', 'panel'] // absichtlich luftig
 // Grenzen je Profil (aus der Foliengröße): Folien werden projiziert, Social-Posts aufs Handy skaliert, A4 gedruckt und gelesen.
 // Nur Folien haben Struktur-, Rhythmus- und Leere-Regeln; Karussells wiederholen Layouts mit Absicht, Dokumente sind dichter und ruhiger.
 const PROFILE = {

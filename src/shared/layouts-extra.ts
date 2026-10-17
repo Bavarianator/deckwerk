@@ -348,6 +348,17 @@ const businessCard = z.object({
   qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code auf der Rückseite (Webseite, Kontaktseite); je kürzer, desto gröber das Muster und desto sicherer der Scan'),
 })
 
+// Stream-Paket (Pro): Bildschirm für OBS-Szenen (Starting Soon, BRB, Ending) und Twitch-Panel-Überschrift
+const streamScreen = z.object({
+  title: z.string().min(2).max(40).describe('kurz und groß, z. B. „Gleich geht\'s los“, „Kurze Pause“, „Danke fürs Zuschauen“'),
+  subtitle: z.string().max(80).optional().describe('Thema des Streams, z. B. „Wir bauen ein Haus in Minecraft“'),
+  handle: z.string().max(40).optional().describe('Kanal oder Socials, z. B. „twitch.tv/name“; bei ende groß als Aufruf zum Folgen'),
+  time: z.string().max(12).optional().describe('Uhrzeit ohne Zusatz, z. B. „20:00“: Start (start), Rückkehr (pause) oder nächster Stream (ende)'),
+})
+const panel = z.object({
+  label: z.string().min(2).max(20).describe('1–2 Wörter, z. B. „Über mich“, „Regeln“, „Discord“, „Zeitplan“'),
+})
+
 // Lebenslauf (A4 hoch): Stationen und Kenntnisse nur als Text. Die Gesamtzahl der Stationen begrenzt, was auf eine Seite passt.
 const CV_ENTRIES = 5
 const cv = z.object({
@@ -785,6 +796,22 @@ export const EXTRA_LAYOUTS = {
       },
       max: { name: words(32), role: words(40, 1), org: words(40, 2), lines: rep(4, (i) => words(36, i + 3)), claim: words(60, 4), qr: 'https://example.com/kontakt' },
     },
+  }),
+  'stream-screen': L({
+    id: 'stream-screen', name: 'Stream-Bildschirm', variants: ['start', 'pause', 'ende'],
+    when: 'Stream-Paket in 16:9 (OBS-Szene): Bildschirm vor dem Stream (start, „Starting Soon“), in der Pause (pause, „BRB“) und am Ende (ende). title kurz wie ein Zuruf, subtitle = Thema des Streams, handle = Kanal oder Socials, time = Startzeit, Rückkehr bzw. nächster Stream. Je Variante eine Folie mit demselben handle; als PNG exportieren.',
+    schema: streamScreen, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Pause' },
+      typ: { title: 'Gleich geht\'s los', subtitle: 'Wir bauen heute die Brücke über den Fluss fertig', handle: 'twitch.tv/name', time: '20:00' },
+      max: { title: words(40), subtitle: words(80), handle: words(40, 1), time: '20:00 Uhr' },
+    },
+  }),
+  panel: L({
+    id: 'panel', name: 'Twitch-Panel', sizes: ['panel'],
+    when: 'Nur Format panel (320 × 160): Überschrift eines Twitch-Panels unter dem Stream. Eine Seite je Panel, label mit 1–2 Wörtern (Über mich, Regeln, Discord, Zeitplan); den Text darunter schreibt der Streamer in Twitch selbst. Alle Panels in einem Deck und Theme, als PNG exportieren.',
+    schema: panel, defaultBuild: 'none', footer: false,
+    samples: { min: { label: 'FAQ' }, typ: { label: 'Über mich' }, max: { label: words(20) } },
   }),
   cv: L({
     id: 'cv', name: 'Lebenslauf (A4)', variants: ['side', 'plain'], sizes: ['a4'],

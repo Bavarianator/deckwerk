@@ -41,7 +41,7 @@ ${index}
 ## Regeln
 - Nur IDs aus dem Index, genau so geschrieben.
 - Großzügig bei Layouts, die zu Format und Anlass passen: lieber ein Layout zu viel als eines, das fehlt. Layouts mit „nur Format …“ nur in diesem Format.
-- Immer das Gerüst zum Format: geruest plus geruest-praesentation, geruest-social, geruest-a4 oder geruest-visitenkarte.
+- Immer das Gerüst zum Format: geruest plus geruest-praesentation, geruest-social, geruest-a4 oder geruest-visitenkarte; Stream-Grafiken (Starting Soon, BRB, OBS-Szenen, Thumbnail, Twitch-Panels) geruest-stream mit layout:stream-screen und layout:panel.
 - Neues Deck: gestaltung, abwechslung, stil, katalog-themes, katalog-ton; bei mehreren Folien oder Seiten auch storyline und rhythmus.
 - Bestehendes Deck und kleine Änderung: wenige Module, nur was der Auftrag berührt.
 - animation und katalog-animationen nur, wenn es um Bewegung, Übergänge oder Animation geht.

@@ -15,7 +15,7 @@ Pro-Funktionen: Excel-Verknüpfungen von Diagrammen (`link`) setzt nur die App, 
 
 ## 1. Zuerst den Guide lesen
 
-Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler). Für reine Video-Aufträge genügt `read_guide({ topic: "video" })` (Video-Schnitt und das Layout `clip`).
+Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`, `geruest-stream`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler). Für reine Video-Aufträge genügt `read_guide({ topic: "video" })` (Video-Schnitt und das Layout `clip`).
 
 ## 2. Briefing und Material
 

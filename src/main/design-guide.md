@@ -113,6 +113,10 @@ cover (Hook: Versprechen oder Frage, höchstens ~8 Wörter) → 4–7 Folien mit
 
 **Visitenkarte (Format `visitenkarte`, 85 × 55 mm):** zwei Seiten `business-card` mit demselben content: Seite 1 variant front (Name und Funktion oben, Organisation und höchstens 4 Kontaktzeilen unten), Seite 2 variant back (Logo aus dem Brand-Kit, sonst Organisation groß, dazu `claim` und optional `qr`), die Rückseite gern mit `tone` accent. Nur der Name steht größer als 12 px; eine Angabe pro Zeile, ohne Icons oder Kürzel davor. Kontaktdaten nie erfinden: Platzhalter in eckigen Klammern („[Telefon]“) und nachfragen. `qr` nur mit echter, kurzer URL. Druckdatei mit `export_deck` und `format: "print"` (Endformat + Beschnitt wie beim Flyer, ohne `size`).
 
+### Stream-Paket
+
+**Stream-Grafiken für Twitch und YouTube (16:9, OBS-Szene):** ein Deck im Format 16:9 mit `stream-screen` je Variante: start („Gleich geht's los“, `time` = Startzeit), pause („Kurze Pause“, `time` = Rückkehr), ende („Danke fürs Zuschauen“, `handle` als Aufruf zum Folgen, `time` = nächster Stream). Dazu das YouTube-Thumbnail als `cover` oder `photo` mit Gesicht und 3–5 großen Wörtern (im Kleinbild lesbar, nicht den Videotitel wiederholen) und ein Offline-Banner (`statement` oder `cover`: Kanalname, Sendezeiten). `handle`, Sendezeiten und Thema nie erfinden: Platzhalter in eckigen Klammern und nachfragen. Twitch-Panels als eigenes Deck im Format `panel` (320 × 160): je Panel eine Seite `panel` mit 1–2 Wörtern. Ein Theme für alles, damit Szenen, Thumbnail und Panels zusammengehören; keine Neon-Rahmen, Verläufe oder Sticker. Export mit `export_deck` format png (Szenen 1920 × 1080 in OBS skalieren).
+
 ## 4. Inhalt → Layout
 
 Wähle das Layout nach der Form der Aussage, nicht nach Abwechslung um jeden Preis.
