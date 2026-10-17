@@ -12,10 +12,11 @@ import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM
 import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, isArt, cropFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
+import { clipMarks, xmeml, type Scene } from './export-xmeml'
 import { localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
-export interface Seg { file: string; dur: number; music?: [number, number, number][]; cues?: Cue[] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music), cues: Untertitel-Zeilen ab Seg-Anfang (fürs SRT)
+export interface Seg { file: string; dur: number; music?: [number, number, number][]; cues?: Cue[]; xml?: Scene[] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music), cues: Untertitel-Zeilen ab Seg-Anfang (fürs SRT), xml: Clip-Szenen ab Seg-Anfang (Schnittliste, an der ersten Seg der Szene)
 export interface Music { file: string; volume?: number } // absoluter Pfad, volume 0–1 (Standard 0,25)
 
 // Teilstücke je ffmpeg-Aufruf: je Teilstück ein Input mit eigenem Decoder, und der Filtergraph steht in argv (Linux: max. 128 KiB je Argument).
@@ -309,7 +310,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const ro = { cwd: dir, duration: dur, onProgress: onProgress && ((pct: number) => onProgress(Math.floor(((done + (dur * pct) / 100) / total) * 100))) }
     await ffx(args, ro, o.phone)
     const music = ps.flatMap((p, i): [number, number, number][] => (p.music === undefined ? [] : [[at[i], at[i + 1], p.music]]))
-    segs.push({ file, dur, ...(music.length ? { music } : {}), ...(words.length ? { cues: cues(words, 'satz') } : {}) }) // SRT (nur mit Untertiteln, captions ≠ aus und Transkript da) immer in Zeilen, auch bei wort
+    segs.push({ file, dur, ...(music.length ? { music } : {}), ...(words.length ? { cues: cues(words, 'satz') } : {}), ...(first ? { xml: [{ at: 0, src: job.file, info, parts, marks: clipMarks(job.hook, job.overlays, parts) }] } : {}) }) // SRT (nur mit Untertiteln, captions ≠ aus und Transkript da) immer in Zeilen, auch bei wort
     done += dur
   }
   return segs
@@ -385,7 +386,8 @@ export async function joinSegs(a: Seg, b: Seg, transition: string, out: string, 
     '-map', '[v]', '-map', '[a]', ...video(preset), ...PCM, out], { cwd: dir }, phone)
   const music = [...(a.music ?? []), ...(b.music ?? []).map(([x, y, v]): [number, number, number] => [x + off, y + off, v])]
   const subs = [...(a.cues ?? []), ...(b.cues ?? []).map((c) => ({ ...c, start: c.start + off, end: c.end + off }))]
-  return { file: out, dur: a.dur + b.dur - d / 30, ...(music.length ? { music } : {}), ...(subs.length ? { cues: subs } : {}) }
+  const xml = [...(a.xml ?? []), ...(b.xml ?? []).map((s) => ({ ...s, at: s.at + off }))]
+  return { file: out, dur: a.dur + b.dur - d / 30, ...(music.length ? { music } : {}), ...(subs.length ? { cues: subs } : {}), ...(xml.length ? { xml } : {}) }
 }
 
 /** Eine Clip-Szene fertig als MP4 (Zwischenstände + Endschritt). Gibt die Länge (s) zurück. */
@@ -496,8 +498,14 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
     }
     // Untertitel aller Zwischenstände auf der Achse der Ausgabedatei (Standbilder und Folienblenden stecken in Seg.dur)
     const subsOf = (segs: Seg[]) => { let off = 0; return segs.flatMap((x) => { const r = (x.cues ?? []).map((c) => ({ ...c, start: c.start + off, end: c.end + off })); off += x.dur; return r }) }
-    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string, phone?: Phone, subs: Cue[] = []) => {
+    // Schnittliste (.xml für Premiere/Resolve) aus den Clip-Szenen auf derselben Achse; ein Fehler kostet nur die Schnittliste
+    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string, phone?: Phone, segs: Seg[] = []) => {
+      const subs = subsOf(segs)
       if (subs.length) { await writeFile(join(dir, `${name}.srt`), srt(subs), 'utf8'); moves.push([join(dir, `${name}.srt`), `${to}.srt`]) }
+      let off = 0
+      const scenes = segs.flatMap((x) => { const r = (x.xml ?? []).map((s) => ({ ...s, at: s.at + off })); off += x.dur; return r })
+      if (scenes.length) await Promise.resolve().then(() => writeFile(join(dir, `${name}.xml`), xmeml({ name: basename(to), size, duration: off, scenes }), 'utf8')).then(
+        () => moves.push([join(dir, `${name}.xml`), `${to}.xml`]), (e: Error) => console.warn(`[video] Schnittliste ${basename(to)}.xml fehlgeschlagen:`, e.message))
       if (cover) await encodeCover(cover.job, cover.t, join(dir, `${name}.jpg`), dir, phone).then(
         () => moves.push([join(dir, `${name}.jpg`), `${to}.jpg`]), (e: Error) => console.warn(`[video] Titelbild ${basename(to)}.jpg fehlgeschlagen:`, e.message))
       if (post?.trim()) { await writeFile(join(dir, `${name}.txt`), post, 'utf8'); moves.push([join(dir, `${name}.txt`), `${to}.txt`]) }
@@ -528,17 +536,16 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         await Promise.all([a, b].map((x) => rm(x.file, { force: true })))
       }
       if (format === 'mp4') { all.push(...segs); continue }
-      const subs = subsOf(segs)
       await finish(segs, join(dir, `${name}.mp4`), dir, { loudnorm: true, music: o.music, phone: o.phone, onProgress: step(weights[k] * 0.2) })
       await Promise.all(segs.map((x) => rm(x.file, { force: true }))) // Zwischenstände sofort weg: bei langen Exporten sonst viele GB
       done += weights[k] * 0.2
       moves.push([join(dir, `${name}.mp4`), `${base}-${n2(k + 1)}.mp4`])
-      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post, o.phone, subs)
+      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post, o.phone, segs)
     }
     if (format === 'mp4') {
       await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: true, music: o.music, phone: o.phone, onProgress: step(sum * 0.2) })
       moves.push([join(dir, 'gesamt.mp4'), `${base}.mp4`])
-      await extras('gesamt', base, first.cover, first.post, o.phone, subsOf(all))
+      await extras('gesamt', base, first.cover, first.post, o.phone, all)
     }
     for (const [from, to] of moves) await rename(from, to) // Job-Ordner liegt neben dem Ziel, also im selben Dateisystem
     onProgress(100)

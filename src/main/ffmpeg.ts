@@ -115,7 +115,8 @@ export async function probe(file: string): Promise<VideoInfo & { audio: boolean 
   // Dauer steht im Container der fremden Datei: riesige Werte sprengten die Arrays in loudness und der Chunk-Planung
   const duration = +d[1] * 3600 + +d[2] * 60 + +d[3]
   if (duration > 48 * 3600) throw new Error(`Video ist länger als 48 Stunden (${basename(file)}). So lange Videos kann Deckwerk nicht verarbeiten.`)
-  return { duration, w, h, audio: streams.some((s) => / Audio: /.test(s.split('\n')[0])) }
+  const fps = Number(/, ([\d.]+) fps/.exec(video.split('\n')[0])?.[1]) || undefined // fehlt bei manchen Containern; variable Bildrate: Mittelwert
+  return { duration, w, h, ...(fps ? { fps } : {}), audio: streams.some((s) => / Audio: /.test(s.split('\n')[0])) }
 }
 
 /** Je Zeitpunkt (s) ein JPEG in width px Breite (Höhe proportional, gerade); -ss vor -i springt direkt hin. */
