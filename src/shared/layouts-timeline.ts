@@ -25,6 +25,8 @@ const tlClip = z.object({
   fit: z.enum(['crop', 'contain']).optional().describe('crop füllt das Bild (Standard), contain zeigt alles'),
   focus: z.number().min(0).max(1).optional().describe('horizontaler Bildmittelpunkt bei crop'),
   box: z.tuple([z.number().min(0).max(1), z.number().min(0).max(1), z.number().min(0.05).max(1)]).optional().describe('Bild-in-Bild [x, y, Breite] als Anteile (V2+)'),
+  fade: z.tuple([num(TL.fade), num(TL.fade)]).optional().describe('Ein-/Ausblenden [Anfang, Ende] in s'),
+  xfade: num(TL.xfade).optional().describe('Überblendung vom Clip direkt davor (s), mittig über dem Schnitt'),
 }).refine((c) => c.out >= c.in + TL.minLen, 'out muss nach in liegen')
 
 const track = z.object({

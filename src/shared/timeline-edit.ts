@@ -1,6 +1,6 @@
 // Schnitt-Operationen auf der Pro-Timeline: rein, immutabel (Eingabe bleibt unverändert), gemeinsam für UI und KI-Tools.
 // Zeiten sind Timeline-Sekunden und werden auf Bilder (fps) gerundet; Fehler als deutsche Error-Meldung.
-import { TL, clipEnd, clipLen, newId, snapFrame, srcAt, tlAt, type TLClip, type TLTrack, type TimelineContent } from './timeline'
+import { TL, clipEnd, clipLen, newId, snapFrame, speedOfClip, srcAt, tlAt, xfades, type TLClip, type TLTrack, type TimelineContent } from './timeline'
 
 const EPS = 1e-6
 
@@ -35,6 +35,9 @@ export function split(tl: TimelineContent, clipId: string, t: number, fps = 30):
   const s = srcAt(clip, t)
   const b: TLClip = { ...structuredClone(clip), id: newId(out, 'c'), at: t, in: s }
   clip.out = s
+  // Einblenden und Überblendung bleiben vorn, Ausblenden hinten
+  delete b.xfade
+  if (clip.fade) { b.fade = [0, clip.fade[1]]; clip.fade = [clip.fade[0], 0] }
   if (clip.keys) {
     b.keys = clip.keys.filter((k) => k[0] >= s)
     clip.keys = clip.keys.filter((k) => k[0] <= s)
@@ -192,9 +195,17 @@ export function lintTimeline(tl: TimelineContent, fps = 30): TLIssue[] {
       if (c.in < 0) res.push({ level: 'error', msg: `Clip ${c.id}: in vor Quellsekunde 0`, clip: c.id })
       if (c.out <= c.in) res.push({ level: 'error', msg: `Clip ${c.id}: out muss nach in liegen`, clip: c.id })
       else if (clipLen(c) < 2 / fps - EPS) res.push({ level: 'warn', msg: `Clip ${c.id} ist kürzer als 2 Bilder`, clip: c.id })
+      if (c.fade && c.fade[0] + c.fade[1] > clipLen(c) + EPS) res.push({ level: 'warn', msg: `Clip ${c.id}: Ein- und Ausblenden sind zusammen länger als der Clip`, clip: c.id })
       const n = cs[i + 1]
       if (n && n.at < clipEnd(c) - EPS) res.push({ level: 'error', msg: `Clip ${c.id} überlappt ${n.id} auf Spur ${t.id}`, clip: c.id })
     })
+    const xs = xfades(t)
+    for (const c of cs) {
+      if (!c.xfade) continue
+      const x = xs.find((x) => x.to === c)
+      if (!x) res.push({ level: 'warn', msg: `Clip ${c.id}: Überblendung ohne direkt anschließenden Clip davor, sie fällt weg`, clip: c.id })
+      else if (c.in < (c.at - x.a) * speedOfClip(c) - EPS) res.push({ level: 'warn', msg: `Clip ${c.id}: vor in fehlen ${+((c.at - x.a) * speedOfClip(c) - c.in).toFixed(2)} s Material für die Überblendung, der Anfang steht kurz still`, clip: c.id })
+    }
   }
   const v1 = tl.tracks.find((t) => t.kind === 'video')
   if (!v1) res.push({ level: 'warn', msg: 'Keine Videospur' })

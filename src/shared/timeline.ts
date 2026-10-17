@@ -11,7 +11,9 @@ export interface Eq { low?: number; mid?: number; high?: number }
 // Ein Clip auf einer Spur: Quelle src von in bis out (Quellsekunden) liegt ab at auf der Zeitachse, Länge (out−in)/speed.
 // volume 0..2 (1 = Original), keys: Pegel-Stützpunkte [Quellsekunde, dB], dazwischen linear; mute: Ton des Clips aus.
 // fit: crop füllt das Bild (focus = horizontaler Mittelpunkt 0..1), contain zeigt alles mit Rand. box: Bild-in-Bild [x, y, w] als Anteile des Bildes (V2+)
-export interface TLClip { id: string; src: string; at: number; in: number; out: number; speed?: number; volume?: number; keys?: [src: number, db: number][]; eq?: Eq; grade?: Grade; mute?: boolean; fit?: 'crop' | 'contain'; focus?: number; box?: [x: number, y: number, w: number] }
+// fade: Ein- und Ausblenden [Anfang, Ende] in s (Bild und Ton; V1 aus/zu Schwarz, V2+ auf die Spuren darunter).
+// xfade: Überblendung vom direkt anschließenden Clip davor auf derselben Spur (s), mittig über dem Schnitt; braucht Material vor in und nach dessen out
+export interface TLClip { id: string; src: string; at: number; in: number; out: number; speed?: number; volume?: number; keys?: [src: number, db: number][]; eq?: Eq; grade?: Grade; mute?: boolean; fit?: 'crop' | 'contain'; focus?: number; box?: [x: number, y: number, w: number]; fade?: [fadeIn: number, fadeOut: number]; xfade?: number }
 // Spuren von unten nach oben: höhere Videospuren liegen über tieferen. Audiospuren tragen Musik und Sprechertext (src = Audio- oder Videodatei)
 export interface TLTrack { id: string; kind: 'video' | 'audio'; clips: TLClip[]; mute?: boolean; hide?: boolean; volume?: number }
 export interface Sub { start: number; end: number; text: string } // Untertitel in Timeline-Sekunden
@@ -36,6 +38,8 @@ export const TL = {
   sat: { min: 0, max: 2 },
   temp: { min: -1, max: 1 },
   lufs: { min: -30, max: -9 },
+  fade: { min: 0, max: 10 }, // Ein-/Ausblenden (s)
+  xfade: { min: 0, max: 5 }, // Überblendung (s)
   fps: { min: 10, max: 120 },
   minLen: 1 / 30, // kürzester Clip (s)
   tracks: 12, // Spuren je Timeline
@@ -87,4 +91,29 @@ export function cutPoints(tl: Pick<TimelineContent, 'tracks'>): number[] {
 export function newId(tl: Pick<TimelineContent, 'tracks'>, prefix: string): string {
   const used = new Set(tl.tracks.flatMap((t) => [t.id, ...t.clips.map((c) => c.id)]))
   for (let i = 1; ; i++) if (!used.has(prefix + i)) return prefix + i
+}
+
+/** Faktor 0..1 aus fade (linear) zur Timeline-Zeit t: Deckkraft im Bild, Pegel im Ton */
+export function fadeGain(c: Pick<TLClip, 'at' | 'in' | 'out' | 'speed' | 'fade'>, t: number): number {
+  const [fi, fo] = c.fade ?? [0, 0], end = clipEnd(c)
+  return Math.max(0, Math.min(1, fi > 0 ? (t - c.at) / fi : 1, fo > 0 ? (end - t) / fo : 1))
+}
+// Überblendung auf einer Spur: from läuft bis b weiter, to beginnt schon bei a (a < to.at < b, mittig über dem Schnitt)
+export interface XFade { from: TLClip; to: TLClip; a: number; b: number }
+const XF_GAP = 1e-3 // s: so dicht müssen Ende und Anfang beieinander liegen
+/** Alle Überblendungen einer Spur; Länge höchstens die halbe Länge beider Clips, ohne direkten Vorgänger keine */
+export function xfades(track: Pick<TLTrack, 'clips'>): XFade[] {
+  const cs = [...track.clips].sort((a, b) => a.at - b.at), out: XFade[] = []
+  for (let i = 1; i < cs.length; i++) {
+    const to = cs[i], from = cs[i - 1]
+    if (!(to.xfade && to.xfade > 0) || Math.abs(clipEnd(from) - to.at) > XF_GAP) continue
+    const d = Math.min(to.xfade, TL.xfade.max, clipLen(from), clipLen(to))
+    out.push({ from, to, a: to.at - d / 2, b: to.at + d / 2 })
+  }
+  return out
+}
+/** Überblendung der Spur zur Zeit t und Fortschritt k (0 = nur from, 1 = nur to) */
+export function xfadeAt(track: Pick<TLTrack, 'clips'>, t: number): (XFade & { k: number }) | undefined {
+  const x = xfades(track).find((x) => t >= x.a && t < x.b)
+  return x && { ...x, k: (t - x.a) / (x.b - x.a) }
 }

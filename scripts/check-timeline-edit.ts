@@ -95,4 +95,11 @@ assert.ok(msgs.some((m) => m.startsWith('warn: Lücke auf v1 von 0s bis 1s')))
 assert.deepEqual(lintTimeline({ tracks: [] }).map((i) => i.msg), ['Keine Videospur'])
 
 assert.deepEqual(tl, orig, 'Eingabe unverändert')
+// split: Einblenden und Überblendung vorn, Ausblenden hinten
+const sf = split({ tracks: [{ id: 'v1', kind: 'video', clips: [{ id: 'c1', src: 'a', at: 0, in: 0, out: 4, fade: [1, 1], xfade: 0.5 }] }] }, 'c1', 2)
+assert.deepEqual(sf.tracks[0].clips.map((c) => [c.fade, c.xfade]), [[[1, 0], 0.5], [[0, 1], undefined]])
+// Lint: Überblendung ohne Vorgänger, zu wenig Material vor in
+const xl = lintTimeline({ tracks: [{ id: 'v1', kind: 'video', clips: [{ id: 'c1', src: 'a', at: 0, in: 0, out: 2, xfade: 1 }, { id: 'c2', src: 'a', at: 2, in: 0, out: 2, xfade: 1 }] }] })
+assert.ok(xl.some((x) => x.clip === 'c1' && /ohne direkt/.test(x.msg)))
+assert.ok(xl.some((x) => x.clip === 'c2' && /fehlen 0.5 s/.test(x.msg)))
 console.log('check-timeline-edit: ok')

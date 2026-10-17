@@ -1,6 +1,6 @@
 // Pro-Timeline Zeitachse: npx esbuild scripts/check-timeline.ts --bundle --platform=node --format=esm --outfile=${TMPDIR:-/tmp}/check-timeline.mjs && node ${TMPDIR:-/tmp}/check-timeline.mjs
 import assert from 'node:assert/strict'
-import { activeAt, clipLen, cutPoints, fpsArg, newId, snapFrame, srcAt, tlAt, tlDuration, type TimelineContent } from '../src/shared/timeline'
+import { activeAt, clipLen, fadeGain, xfadeAt, xfades, cutPoints, fpsArg, newId, snapFrame, srcAt, tlAt, tlDuration, type TimelineContent } from '../src/shared/timeline'
 
 const tl: TimelineContent = {
   tracks: [
@@ -30,4 +30,14 @@ assert.equal(snapFrame(1.01, 30), 1)
 assert.equal(snapFrame(1.02, 30), 31 / 30)
 assert.equal(newId(tl, 'c'), 'c5')
 assert.equal(newId(tl, 'v'), 'v3')
+// fade: linear an beiden Enden, sonst 1
+const fc = { at: 2, in: 0, out: 4, fade: [1, 2] as [number, number] }
+assert.equal(fadeGain(fc, 2), 0); assert.equal(fadeGain(fc, 2.5), 0.5); assert.equal(fadeGain(fc, 4), 1); assert.equal(fadeGain(fc, 5), 0.5)
+assert.equal(fadeGain({ at: 0, in: 0, out: 1 }, 0.5), 1)
+// xfade: nur mit direktem Vorgänger, mittig, höchstens so lang wie der kürzere Clip
+const xt = { clips: [{ id: 'a', src: 'a', at: 0, in: 0, out: 2 }, { id: 'b', src: 'b', at: 2, in: 1, out: 5, xfade: 1 }, { id: 'c', src: 'c', at: 7, in: 0, out: 1, xfade: 1 }] }
+const xs = xfades(xt)
+assert.equal(xs.length, 1); assert.equal(xs[0].from.id, 'a'); assert.equal(xs[0].a, 1.5); assert.equal(xs[0].b, 2.5)
+assert.equal(xfadeAt(xt, 2)?.k, 0.5); assert.equal(xfadeAt(xt, 3), undefined)
+assert.equal(xfades({ clips: [{ id: 'a', src: 'a', at: 0, in: 0, out: 0.4 }, { id: 'b', src: 'b', at: 0.4, in: 1, out: 3, xfade: 2 }] })[0].b.toFixed(6), '0.600000')
 console.log('check-timeline: ok')
