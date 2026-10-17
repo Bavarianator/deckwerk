@@ -11,7 +11,7 @@ export const GAP = 1.2 // ohne Stimme: Pause nach einem Aufbau, bevor der nächs
 export const HOLD = 1.5 // ohne Stimme: Standbild nach dem letzten Aufbau
 export const TAIL = 0.6 // nach dem letzten gesprochenen Wort
 export const MIN_SCENE = 2
-export const CHARS_PER_SEC = 14 // Schätzung fürs Sprechtempo (Piper Thorsten bei speed 1), solange die Stimme nicht synthetisiert ist
+const CHARS_PER_SEC = 14 // Schätzung fürs Sprechtempo (Piper Thorsten bei speed 1), solange die Stimme nicht synthetisiert ist
 
 // Kein Satzende: einzelner Buchstabe („z.“, „B.“ aus „z. B.“), Ordinalzahl („1. Platz“, „3. Mai“) oder eine übliche Abkürzung
 const ABBR = /(?:(?<![\p{L}\d])\p{L}|(?<![\d.,])\d+|\b(?:bzw|ca|vgl|Nr|Dr|Prof|etc|usw|inkl|ggf|evtl|vs|Mio|Mrd|Tsd))\.$/iu
@@ -30,7 +30,7 @@ export function voiceChunks(text: string): string[][] {
 }
 
 /** Geschätzte Sprechdauer eines Satzes (s) bei speed (1 = normal) */
-export const estimateSec = (sentence: string, speed = 1) => sentence.replace(BEAT_MARK, '').trim().length / (CHARS_PER_SEC * speed)
+const estimateSec = (sentence: string, speed = 1) => sentence.replace(BEAT_MARK, '').trim().length / (CHARS_PER_SEC * speed)
 
 export interface VoiceTiming {
   beats: number[] // Beginn jedes Takts in s ab Stimmbeginn; beats[0] = 0
@@ -63,7 +63,7 @@ export const estimateVoice = (text: string, speed = 1): VoiceTiming => {
 }
 
 /** Eine Untertitelzeile je Satz; Wortzeiten anteilig nach Buchstaben (ponytail: Schätzung; Upgrade: Parakeet über die TTS-Ausgabe) */
-export function sentenceCue(sentence: string, start: number, end: number): Cue {
+function sentenceCue(sentence: string, start: number, end: number): Cue {
   const ws = sentence.split(/\s+/).filter(Boolean)
   const len = ws.reduce((n, w) => n + w.length + 1, 0) || 1
   let t = start
@@ -98,7 +98,7 @@ export function sceneTimeline(o: { steps: number[]; voice?: VoiceTiming; duratio
 // Bildschirm-Zoom (Layout screen mit Video): Vergrößerung auf einen Punkt der Aufnahme, wie Screen Studio. Zeiten in Videosekunden.
 export interface ScreenZoom { start: number; end: number; x: number; y: number; scale?: number } // x/y = Zielpunkt 0..1, scale Standard 2
 export const ZOOM_SCALE = { min: 1.2, max: 3, def: 2 }
-export const ZOOM_EASE = 0.6 // s Ein- und Ausfahren (vor start bzw. nach end)
+const ZOOM_EASE = 0.6 // s Ein- und Ausfahren (vor start bzw. nach end)
 export const smooth = (p: number) => { const x = Math.min(1, Math.max(0, p)); return x * x * (3 - 2 * x) }
 
 /** Ausschnitt zum Zeitpunkt t: s = Vergrößerung (1 = ganzes Bild), x/y = Mitte des sichtbaren Ausschnitts (0..1 im Quellbild).

@@ -96,10 +96,10 @@ export async function ensurePhone(serial: string, models: string, model: string)
 }
 
 /** 16-bit-WAV, 16 kHz mono (das Programm liest nur WAV) */
-export function wav(s: Float32Array): Buffer {
+export function wav(s: Float32Array, sr = 16000): Buffer {
   const d = Buffer.alloc(44 + s.length * 2)
   d.write('RIFF', 0); d.writeUInt32LE(36 + s.length * 2, 4); d.write('WAVEfmt ', 8); d.writeUInt32LE(16, 16); d.writeUInt16LE(1, 20); d.writeUInt16LE(1, 22)
-  d.writeUInt32LE(16000, 24); d.writeUInt32LE(32000, 28); d.writeUInt16LE(2, 32); d.writeUInt16LE(16, 34); d.write('data', 36); d.writeUInt32LE(s.length * 2, 40)
+  d.writeUInt32LE(sr, 24); d.writeUInt32LE(sr * 2, 28); d.writeUInt16LE(2, 32); d.writeUInt16LE(16, 34); d.write('data', 36); d.writeUInt32LE(s.length * 2, 40)
   for (let i = 0; i < s.length; i++) d.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(s[i] * 32767))), 44 + i * 2)
   return d
 }
@@ -141,8 +141,8 @@ export async function phoneDecode(serial: string, model: string, parts: Float32A
   }
 }
 
-// Ein Argument für die Shell des Handys wie quote in phone-ffmpeg.ts (ein Import von dort gäbe einen Kreis: es braucht PHONE_DIR)
-const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`
+// Ein Argument für die Shell des Handys (auch phone-ffmpeg.ts)
+export const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`
 // Gemessen 17.10. auf dem S20+: jeder Lauf lädt die Stimme neu (~1,2 s), daher 4 Läufe zugleich mit je 2 Threads (8 Sätze: 5 s statt 11 s nacheinander)
 const TTS_JOBS = 4
 const QUICK = 30_000 // Frist für kleine adb-Schritte: schläft das Handy oder hängt USB, rechnet bald der PC

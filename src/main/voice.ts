@@ -7,7 +7,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { VoiceId } from '../shared/deck'
 import { VOICE_SPEED, voiceChunks, voiceTiming, type VoiceTiming } from '../shared/film'
-import { phoneTts, wav as wav16k } from './phone'
+import { phoneTts, wav as toWav } from './phone'
 import { ensureVoice, TTS, tts } from './sherpa'
 
 // Abkürzungen buchstabiert espeak-ng (Phonemisierung in Piper) oder liest sie als Wort („Nr.“ → „Närr“, „ggf.“ → „gegen F“): ausschreiben.
@@ -25,6 +25,9 @@ const SAY: Record<VoiceId, [RegExp, string][]> = {
 }
 const say = (s: string, voice: VoiceId) => SAY[voice].reduce((t, [re, to]) => t.replace(re, to), s)
 const CACHE_V = 1 // erhöhen, wenn sich SAY oder das Zusammensetzen der Tonspur ändert: alte Cache-Einträge gelten dann nicht mehr
+
+/** Modelle und Cache der Stimme unter dem Deckwerk-Ordner; Export (engine.ts) und Player (ipc.ts film:voice) teilen damit einen Cache */
+export const voiceDirs = (home: string) => ({ models: join(home, 'models'), cacheDir: join(home, 'assets', '.voice') })
 
 /** Sprechertext → WAV (16 bit mono) und Zeitplan. Sätze aus voiceChunks (ohne [klick]), dazwischen die Pausen aus voiceTiming.
  *  phone.serial: ein Handy (phone.ts) spricht; geht dort etwas schief, rechnet der PC. */
@@ -51,8 +54,7 @@ export async function synthesize(text: string, o: { voice: VoiceId; speed?: numb
   const pcm = new Float32Array(Math.round(timing.total * sr))
   // Rundung auf Samples: der letzte Satz kann um ein Sample über total hinausragen
   timing.cues.forEach((c, k) => pcm.set(samples[k].subarray(0, pcm.length - Math.round(c.start * sr)), Math.round(c.start * sr)))
-  const buf = wav16k(pcm)
-  buf.writeUInt32LE(sr, 24); buf.writeUInt32LE(sr * 2, 28) // phone.wav schreibt 16 kHz in den Kopf, Piper liefert 22 050 Hz
+  const buf = toWav(pcm, sr) // Piper liefert 22 050 Hz
   await mkdir(o.cacheDir, { recursive: true })
   // je Prozess über .tmp + rename: Player und Export lesen nie eine halbe Datei; json zuletzt, erst damit gilt der Eintrag als fertig
   for (const [f, data] of [[wav, buf], [json, JSON.stringify(timing)]] as const) {

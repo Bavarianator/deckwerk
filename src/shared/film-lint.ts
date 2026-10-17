@@ -86,7 +86,7 @@ export function lintFilm(deck: Deck, measured: Measured[] = []): Issue[] {
       if (bad.length) warn(i, 'film-zoom', `Zoom ${bad.map((z) => `${de(z.start)}–${de(z.end)} s`).join(', ')} liegt (teils) außerhalb des Ausschnitts ${de(from)}–${c.to === undefined ? 'Ende' : `${de(c.to)} s`}: Zoom-Zeiten sind Sekunden in der Datei wie from/to (aus screen_zooms unverändert), außerhalb wirken sie nicht.`, 'zooms')
     }
   })
-  if (deck.film?.voice && mute.length)
+  if (mute.length && mute.length < deck.slides.filter((s) => !s.hidden).length) // gemischt: manche Szenen sprechen, diese nicht
     warn(mute[0], 'film-ohne-stimme', `Hinweis: ${mute.length} ${mute.length === 1 ? 'Szene' : 'Szenen'} ohne Sprechtext (Folie ${mute.map((i) => i + 1).join(', ')}): Dort spricht niemand, die Szene läuft nach Aufbau und Lesezeit. Gewollt (Titel, Pause)? Sonst voice setzen.`)
   return out
 }

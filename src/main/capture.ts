@@ -25,7 +25,16 @@ function checkUrl(raw: string): URL {
   try { u = new URL(raw) } catch { throw new Error(`Keine gültige Adresse: ${raw}`) }
   if (!web(u.protocol)) throw new Error(`Nur Webseiten (http:// oder https://) lassen sich aufnehmen, nicht ${u.protocol}`)
   if (u.username || u.password) throw new Error('Adressen mit Zugangsdaten (name:passwort@…) nimmt Deckwerk nicht auf.')
+  if (blocked(u.href)) throw new Error(`${u.hostname} ist eine Geräte- oder Cloud-Metadaten-Adresse, die nimmt Deckwerk nicht auf.`)
   return u
+}
+// Link-Local und Cloud-Metadaten (169.254.x.x, fe80::, metadata.google.internal): dort liegen Zugangsdaten von Cloud-Rechnern und Geräteseiten,
+// nie eine Demo. Gilt auch für Weiterleitungen und Unterressourcen (onBeforeRequest). ponytail: nur IP-Literale und bekannte Namen, kein DNS-Auflösen
+const blocked = (url: string) => {
+  try {
+    const h = new URL(url).hostname.toLowerCase().replace(/^\[|\]$/g, '')
+    return /^169\.254\./.test(h) || /^fe[89ab][0-9a-f]:/.test(h) || h === 'metadata.google.internal' || h === 'metadata' || h === 'instance-data'
+  } catch { return false }
 }
 
 /** Nimmt die Seite auf; je Scroll-Stelle p (0 = oben, 1 = ganz unten) ein PNG in outDir. Gibt die absoluten Pfade zurück. */
@@ -42,7 +51,7 @@ export async function capturePage(url: string, o: { device?: 'desktop' | 'handy'
   ses.setPermissionCheckHandler(() => false)
   ses.on('will-download', (e) => e.preventDefault())
   // Unterressourcen nur aus dem Netz; file:, asset:, chrome: usw. nie. data:/blob: entstehen in der Seite selbst.
-  ses.webRequest.onBeforeRequest((d, cb) => cb({ cancel: !/^(https?|wss?|data|blob):/i.test(d.url) }))
+  ses.webRequest.onBeforeRequest((d, cb) => cb({ cancel: !/^(https?|wss?|data|blob):/i.test(d.url) || blocked(d.url) }))
   if (dev.ua) ses.setUserAgent(dev.ua)
 
   const win = new BrowserWindow({

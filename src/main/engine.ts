@@ -20,7 +20,7 @@ import { renderFilm, renderOverview, renderPdf, renderPrintPdf, renderSlide, war
 import { phoneDevice, phoneMarker } from './phone'
 import { PARAKEET_LANGS, asr, asrModelOf, diarize, tag, type AsrModel } from './sherpa'
 import { localAsset } from './sync'
-import { synthesize } from './voice'
+import { synthesize, voiceDirs } from './voice'
 import { CHUNK, chatPerSecond, chunkWindow, chunksIn, coveredOf, engineFor, inChunk, loudRanges, mergeSegments, withSpeakers, type Turn } from './video-cache'
 
 // asset://local/<pfad> oder absoluter Pfad → lokale Datei, wie videoPath in export-video.ts; null = keine Mediendatei
@@ -249,7 +249,7 @@ export function createEngine(): Engine {
   const voiceOf = async (film: FilmSettings | undefined, s: Slide) => {
     if (!voiceChunks(s.voice ?? '').flat().length) return undefined // nur „[klick]“: Takte ohne Stimme
     const d = await phoneNow()
-    return synthesize(s.voice!, { voice: film?.voice ?? 'de', speed: film?.speed, models, cacheDir: join(home, 'assets', '.voice'), phone: d ? { serial: d.serial } : undefined })
+    return synthesize(s.voice!.trim(), { voice: film?.voice ?? 'de', speed: film?.speed, ...voiceDirs(home), phone: d ? { serial: d.serial } : undefined })
   }
 
   return {
