@@ -11,7 +11,7 @@ import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'nod
 import { promisify } from 'node:util'
 import { download, httpFetch } from './download'
 import { run } from './ffmpeg'
-import { PHONE_DIR } from './phone'
+import { PHONE_DIR, quote } from './phone'
 
 const exec = promisify(execFile)
 const adb = (serial: string, ...args: string[]) => exec('adb', ['-s', serial, ...args], { maxBuffer: 1 << 28, timeout: 30 * 60_000 })
@@ -49,7 +49,7 @@ async function binary(models: string): Promise<string> {
 }
 
 /** Ein Argument für die Shell des Handys: in einfache Anführungszeichen, ' als '\'' */
-export const quote = (s: string) => `'${s.replaceAll("'", `'\\''`)}'`
+export { quote }
 
 const inside = (dir: string, p: string) => { const r = relative(dir, p); return !!r && r !== '..' && !r.startsWith(`..${sep}`) && !isAbsolute(r) }
 

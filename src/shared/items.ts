@@ -1,6 +1,6 @@
 // Freie Elemente (Slide.items): Schema für KI-Tools und Fabriken für die Canvas. Positionen in px auf 1280x720.
 import { z } from 'zod'
-import { ANIM_DIRS, DASHES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
+import { ANIM_DIRS, DASHES, EASES, FORMATS, ITEM_ANIMS, LINE_ENDS, MASKS, SHAPES, TEXT_EFFECTS, sizeOf, type ChartSpec, type Deck, type El, type FormatId, type Item, type Size } from './deck'
 import { fontInfo, suggestFont } from './font-catalog'
 import { FONT_NAMES } from './themes'
 
@@ -10,6 +10,16 @@ const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 const knownFont = (n: string) => (FONT_NAMES as string[]).includes(n) || fontInfo(n)?.family === n
 const unknownFont = { error: (iss: { input: unknown }) => { const n = String(iss.input), s = suggestFont(n); return `Schrift „${n}“ gibt es nicht${s ? ` – meintest du „${s}“?` : '. Erlaubt: gebündelte Schriften und der Schriftkatalog (Systemprompt, „Themes“)'}` } }
 export const fontName = z.string().max(60).refine(knownFont, unknownFont)
+// Motion-Grafik (ItemKey in deck.ts): Stand des Elements ab Takt step, fehlende Werte bleiben
+const itemKey = z.object({
+  step: z.number().int().min(0).max(20).describe('Takt (0 = Szenenbeginn, [klick] im Sprechertext = nächster)'),
+  x: z.number().min(-2000).max(4000).optional(), y: z.number().min(-2000).max(4000).optional(),
+  w: z.number().positive().max(4000).optional(), h: z.number().positive().max(4000).optional(),
+  rot: z.number().min(-720).max(720).optional(), opacity: z.number().min(0).max(1).optional(),
+  fill: hex.optional(), color: hex.optional(),
+  ease: z.enum(EASES).optional().describe('weich (Standard), feder = federt leicht über das Ziel (sparsam), linear'),
+  ms: z.number().min(100).max(5000).optional().describe('Dauer, Standard 800'),
+})
 
 export const itemSchema = z.object({
   id: z.string().max(40).optional().describe('weglassen = neu; vorhandene ID = dieses Element ersetzen'),
@@ -20,11 +30,12 @@ export const itemSchema = z.object({
   rot: z.number().min(-360).max(360).optional(),
   opacity: z.number().min(0).max(1).optional(),
   locked: z.boolean().optional(),
-  anim: z.enum(ITEM_ANIMS).optional().describe('Auftritt beim Präsentieren wie in Canva (je ein Klick): typewriter/ascend nur für Text, breathe pulsiert ohne Klick. Design-Guide §8'),
+  anim: z.enum(ITEM_ANIMS).optional().describe('Auftritt beim Präsentieren wie in Canva (je ein Klick): typewriter/ascend nur für Text, breathe pulsiert ohne Klick, draw zeichnet Linie, Pfeil, Umriss oder Icon. Design-Guide §8'),
   animDir: z.enum(ANIM_DIRS).optional().describe('Richtung der Bewegung bei pan, drift, wipe, float (Standard: pan/drift/wipe nach rechts, float nach oben)'),
   animSpeed: z.enum(['slow', 'fast']).optional().describe('Tempo der Animation; weglassen = normal'),
   animStart: z.enum(['click', 'with', 'after']).optional().describe('Start wie in PowerPoint: click = bei Klick, with = mit vorherigem, after = nach vorherigem; weglassen = je ein Klick (Selbstlauf: nacheinander). Nicht für breathe'),
   animDelay: z.number().min(0).max(10).optional().describe('Verzögerung vor dem Auftritt in Sekunden. Nicht für breathe'),
+  keys: z.array(itemKey).max(12).optional().describe('Nur im Film: Bewegung je Takt, zu Beginn von step gleitet das Element auf diese Werte (px wie x/y/w/h). Präsentation und PowerPoint zeigen die Grundlage. read_guide Modul film'),
   text: z.string().max(600).optional(),
   font: z.string().max(60).refine((n) => n === 'head' || n === 'body' || knownFont(n), unknownFont).optional().describe('head/body = Theme-Schrift, sonst Schriftname wie customTheme.headFont'),
   size: z.number().min(8).max(400).optional().describe('Schriftgröße in px (1 px = 0,75 pt)'),

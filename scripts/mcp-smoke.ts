@@ -34,7 +34,7 @@ const names = listed.map((t) => t.name).sort()
 // ohne readOnlyHint führt Claude Code Aufrufe nacheinander aus (4 KI-Bilder dauerten so über 6 min)
 assert.equal(listed.find((t) => t.name === 'generate_image')?.annotations?.readOnlyHint, true)
 assert.equal(listed.find((t) => t.name === 'add_slides')?.annotations?.readOnlyHint, undefined, 'Deck-Änderungen bleiben seriell')
-assert.equal(names.length, 27)
+assert.equal(names.length, 29)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 // read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
 const parts = guideParts()
@@ -74,6 +74,14 @@ r = await call('save_deck'); assert.match(r.content[0].text!, /\/leer\/deck\.jso
 assert.equal(JSON.parse(readFileSync(join(home, 'mcp-test/deck.json'), 'utf8')).slides.length, 2)
 r = await call('open_deck', { path: 'mcp-test/deck.json' }); assert.match(r.content[0].text!, /2 Folien/)
 assert.match((await call('export_deck', { format: 'pdf' })).content[0].text!, /deck\.pdf/)
+// Film: Felder überstehen Tool-Schema und get_deck (Feinsatz im Sprechertext); Frames ohne Engine-Methode → isError
+r = await call('create_deck', { title: 'Film', film: { voice: 'de' } }); assert.notEqual(r.isError, true)
+r = await call('add_slides', { slides: [{ layout: 'statement', content: { text: 'Ein ganzer Satz' }, voice: 'Hallo "Welt". [klick] Weiter.', duration: 6, camera: [{ step: 1, box: [0.25, 0.25, 0.5, 0.5] }] }] })
+assert.match(r.content[0].text!, /\n {2}Szene 1: ~6 s · Stimme ~[\d,]+ s · 2 Takte/)
+const film = JSON.parse((await call('get_deck')).content[0].text!)
+assert.deepEqual([film.film, film.slides[0].voice, film.slides[0].duration, film.slides[0].camera], [{ voice: 'de' }, 'Hallo „Welt“. [klick] Weiter.', 6, [{ step: 1, box: [0.25, 0.25, 0.5, 0.5] }]])
+r = await call('render_slides', { ids: [film.slides[0].id], at: [0, 1] })
+assert.equal(r.isError, true); assert.match(r.content[0].text!, /Frames der Zeitachse gibt es nur/)
 r = await call('transcribe_video', { video: '/x/talk.mp4' }) // Mock-Engine ohne video
 assert.equal(r.isError, true); assert.match(r.content[0].text!, /nur in der Deckwerk-App und im MCP-Server/)
 await client.close()

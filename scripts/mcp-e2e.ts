@@ -31,7 +31,7 @@ const call = async (name: string, args: Record<string, unknown> = {}) => {
 const t0 = Date.now()
 const lap = (what: string) => console.log(`${String(Date.now() - t0).padStart(6)} ms  ${what}`)
 
-assert.equal((await client.listTools()).tools.length, 27)
+assert.equal((await client.listTools()).tools.length, 29)
 await call('create_deck', { title: 'E2E Test', theme: 'corporate', brand: { primary: '#0A7C66' } })
 let r = await call('add_slides', { slides: [
   { layout: 'cover', content: { eyebrow: 'E2E', title: 'Der MCP-Server rendert echte Folien', subtitle: 'Offscreen-Chromium im Electron-Main-Prozess' }, notes: 'Testfolie' },
@@ -126,5 +126,15 @@ const joined = r.content[0].text!.split('\n')[1]
 const [, h2, m2, s2] = spawnSync('ffmpeg', ['-i', joined]).stderr.toString().match(/Duration: (\d+):(\d+):([\d.]+)/)!
 const dur2 = +h2 * 3600 + +m2 * 60 + +s2 // 3 s + 4 s / 2 = 5 s, minus 0,5 s Blende, plus Polster
 assert.ok(dur2 > 4.3 && dur2 < 5 + 4 * PAD + 0.3, `Zusammenschnitt dauert ${dur2} s statt ~4,5–5 s`)
+
+// Film ohne Stimme (im CI liegt kein Sprachmodell): Frames der Zeitachse wie im MP4
+await call('create_deck', { title: 'E2E Film', brand: null, film: {} })
+r = await call('add_slides', { slides: [{ layout: 'code', variant: 'terminal', content: { title: 'Installieren', code: '$ npm install deckwerk\nfertig in 2 s' }, camera: [{ step: 1, box: [0, 0, 0.6, 0.6] }] }] })
+assert.match(r.content[0].text!, /\n {2}Szene 1: ~[\d,]+ s · ohne Stimme · 2 Takte/)
+const scene = JSON.parse((await call('get_deck')).content[0].text!).slides[0]
+r = await call('render_slides', { ids: [scene.id], at: [0, 1], width: 480 })
+lap('render_slides at')
+assert.equal(r.content.filter((c) => c.type === 'image').length, 2, r.content[0].text ?? '')
+assert.match(r.content[0].text!, /bei 0 s\n.*bei 1 s$/)
 await client.close()
 console.log(`E2E OK · ${file} · ${mp4}`)

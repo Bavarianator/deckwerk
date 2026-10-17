@@ -8,3 +8,4 @@
 - standort-ecke.jpg: Bonnie Meisels, https://unsplash.com/photos/Y5uyOoct2pg
 - tee.jpg: Vee O, https://unsplash.com/photos/hGO27G5tZJ8
 - portraet.jpg: Alexander Shustov, https://unsplash.com/photos/AHBiSKaENwc
+- animation-ansicht.jpg: eigene Bildschirmaufnahme der Deckwerk-App (Animations-Ansicht)

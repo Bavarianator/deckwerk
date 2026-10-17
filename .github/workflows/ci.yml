@@ -29,6 +29,7 @@ jobs:
           $E scripts/check-phone.ts --format=esm --outfile=out/check-phone.mjs && node out/check-phone.mjs
           for c in check-hidden check-find check-layers; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-brand.ts --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
+          $E scripts/check-film.ts --format=esm --outfile=out/check-film.mjs && node out/check-film.mjs
           for c in check-guide-modules check-router check-cli-prompt; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           for c in check-recolor check-handout check-docx check-lint-profile check-pdf-boxes story-check; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
           $E src/shared/items.ts --outfile=out/items.cjs && DW_ITEMS_SELFTEST=1 node out/items.cjs
@@ -45,6 +46,10 @@ jobs:
         run: npx esbuild --bundle --platform=node --log-level=warning scripts/check-animations.ts --format=esm --outfile=out/check-animations.mjs && node out/check-animations.mjs
       - name: Rendern und Export (PPTX, PDF, PNG)
         run: xvfb-run -a npm run render examples/pitch.json
+      - name: Film-Renderer (Animation, Seek je Frame)
+        run: |
+          npx esbuild scripts/check-frames.ts --bundle --platform=node --format=cjs --external:electron --log-level=warning --outfile=out/main/check-frames.cjs
+          DECKWERK_HOME=$RUNNER_TEMP/check-frames xvfb-run -a ./node_modules/.bin/electron out/main/check-frames.cjs --ozone-platform=x11
       - name: MCP-Server Ende-zu-Ende
         run: xvfb-run -a npm run mcp:e2e
       - name: MCP-Server ohne Bildschirm (wie Vibe und Codex)

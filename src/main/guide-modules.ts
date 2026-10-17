@@ -43,6 +43,7 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['deck-auftraege', '### Aufträge fürs ganze Deck', 'Übersetzen, Notizen, Kürzen, als Text zusammenfassen, Rechtschreibung.'],
   ['fehler', '## 10. Häufige Fehler', 'Was oft schiefgeht.', true],
   ['video', '## 11. Video', 'Video-Schnitt: Shorts/Reels, Fulltime kürzen, Stream-Highlights, Kompilation; Bewertung, Hooks, Regeln für clip.'],
+  ['film', '## 12. Animation (Film)', 'Film (Erklärvideo, Live-Demo, Produkt-/Kennzahlen-Video): film, Sprechtext mit [klick], Kamera, capture_page, screen_zooms, Gerüst, Ablauf.'],
   ['katalog', '## Layout-Katalog', 'Layouts statt Koordinaten, freie Elemente (items).', true],
   ['katalog-themes', '## Themes', 'Katalog-Themes, Schriften mit Charakter und Schriftkatalog für headFont/bodyFont.'],
   ['katalog-ton', '## Folien-Ton und Dekor', 'tone pro Folie (normal, accent, invert) und Hintergrundmotive.'],
@@ -131,7 +132,7 @@ export function fullPrompt(): string {
 export function guideParts(max = 20000): string[] {
   const parts = ['']
   for (const block of fullPrompt().split(/\n(?=##+ )/)) {
-    if (parts.at(-1) && parts.at(-1)!.length + block.length > max) parts.push('')
+    if (parts.at(-1) && parts.at(-1)!.length + block.length + 1 > max) parts.push('')
     parts[parts.length - 1] += (parts.at(-1) ? '\n' : '') + block
   }
   return parts
@@ -143,8 +144,10 @@ export const VIDEO_MODULES = ['video', 'layout:clip'] // read_guide topic video
 const SOCIAL_SKIP: LayoutId[] = ['agenda', 'section', 'table'] // Guide „Social-Karussell“: weglassen
 const DOC_BASIS: LayoutId[] = ['cover', 'bullets', 'image-text', 'kpi-grid', 'chart', 'table', 'timeline', 'quote'] // Seiten zwischen A4-Dokumenten
 const DATA = ['inhalt-layout', 'layout:chart', 'layout:kpi-grid', 'layout:table', 'layout:big-number']
+const FILM = /erklärvideo|erklärfilm|demo-video|produktvideo|live-demo|produktdemo|app-demo|tutorial|screencast|bildschirmaufnahme|kennzahlen-video|animiertes video|explainer/ // Film aus Szenen (Modul film), kein Videoschnitt
 const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
   ['animation', /animation|animier|übergang|morph|\bbuild|einblend|bewegung|selbstlauf/, ['animation', 'katalog-animationen']],
+  ['film', FILM, ['film', 'layout:screen', 'layout:code']],
   ['bild', /foto|bild|photo|image|unsplash|illustration|logo|qr/, ['fotos', 'ki-bilder']],
   ['design', /farbe|look|theme|design|stil|schrift|font|mutig|sachlich|gestalt|marke|brand|hintergrund|dunkel|edel|modern/, ['gestaltung', 'abwechslung', 'stil', 'katalog-themes', 'katalog-ton']],
   ['text', /text|titel|formulier|rechtschreib|tippfehler|übersetz|notiz|notes|sprache|schreib|kürz|zusammenfass/, ['text', 'deck-auftraege']],
@@ -156,6 +159,9 @@ const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
 // Video-Auftrag: Stichwörter, ein angehängtes Video oder clip-Folien im Deck. Shorts, Reels und TikTok sind Video, kein Karussell.
 // Eng gefasst: „Kick-off“, „Quartals-Highlights“, „Schnittstelle“, „Mainstream“ oder „Untertitel“ einer Folie sind kein Video.
 const VIDEO = /video|\bclips?\b|\bshorts?\b|\breels?\b|\b(live)?streams?\b|zusammenschnitt|youtube|twitch|kick\.com|\bmp4\b|podcast|transkri/
+// Schnitt-Verb oder Quelle (Datei, Link, „aus meinem Video/Stream“): dann gewinnt der Videoschnitt. YouTube, Reels oder Shorts allein sind
+// beim Film nur das Ziel („Erklärvideo für YouTube“), keine Quelle
+const SCHNITT = /schneid|schnitt|kürzen|kürze\b|kürzt\b|\bcuts?\b|highlight|\.(mp4|mov|webm|mkv)\b|https?:|\baus (meinem|dem|der|einem|unserem) (video|stream|livestream|vod|aufnahme|mitschnitt)/
 const FOLIEN = /\bdecks?\b|\bfolien?\b|\bseiten?\b/ // spricht der Auftrag von Folien oder Seiten, ist er kein reiner Video-Auftrag
 const VIDEO_DECK: string[] = ['clip', 'section', 'statement'] // Zwischentitel einer Kompilation
 const KINDS = {
@@ -171,7 +177,7 @@ export function ruleRoute(input: RouteInput): Route {
   const kinds = new Set((Object.keys(KINDS) as (keyof typeof KINDS)[]).filter((k) => KINDS[k].test(t)))
   const video = VIDEO.test(t) || inDeck.includes('clip')
   // Reiner Video-Auftrag: nur Video-Schnitt und clip (dazu Zwischentitel), kein Gerüst, keine Gestaltung
-  if (video && !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t) && inDeck.every((id) => VIDEO_DECK.includes(id)))
+  if (video && (!FILM.test(t) || SCHNITT.test(t)) && !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t) && inDeck.every((id) => VIDEO_DECK.includes(id)))
     return { modules: [...VIDEO_MODULES, ...VIDEO_DECK.slice(1).map((id) => `layout:${id}`)], source: 'regel', reason: 'Regeln: Video', video: true }
   if (input.hasDeck || !kinds.size) kinds.add(input.profile === 'doc' ? (inDeck.includes('business-card') ? 'karte' : 'a4') : input.profile)
   const layouts = new Set<LayoutId>(inDeck)

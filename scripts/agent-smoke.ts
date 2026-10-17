@@ -33,7 +33,7 @@ const realHome = process.env.DECKWERK_HOME
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-home-')) // ohne die echten Decks des Nutzers (recentLooks)
 process.env.DECKWERK_OFFLINE = '1' // Katalogschriften nie aus dem Netz (webfonts.ts): Ersatz und Hinweis statt Download
 
-assert.equal(tools.length, 24)
+assert.equal(tools.length, 26)
 // laden aus dem Netz und schreiben Dateien: readOnly würde im MCP zu readOnlyHint, Claude Code liefe dann ohne Rückfrage
 for (const n of ['import_video', 'find_music']) assert.equal(T[n].readOnly, undefined, n)
 // API-Weg: Deck-Tools einer Antwort nacheinander (sonst geht eine Änderung verloren), readOnly-Tools gleichzeitig
@@ -391,6 +391,78 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.match(mu.text, /\[warn\] clip-musik: Musik im Hintergrund \(10 s, u\. a\. bei 0:00\)[\s\S]*\nKein Kontaktabzug: Video nicht gefunden/); assert.doesNotMatch(mu.text, /Musik nicht geprüft/)
   await fails(go('check_clip', { slide: 'nope' }), /gibt es nicht/)
   assert.match((await go('lint_deck', {})).text, /^\d+ Fehler, \d+ Warnungen, \d+ Hinweise:[\s\S]*\[warn\] clip-laenge[\s\S]*\[hinweis\] clip-hook/)
+}
+// Film (Feature „Animation“): Felder in create_deck/add_slides/update_slide/update_deck, Feinsatz im Sprechertext, Zeitachse im Ergebnis,
+// Film-Lint, Frames der Zeitachse, capture_page und screen_zooms (eigenes Tool-Set, damit events stimmt)
+{
+  const dir = mkdtempSync(join(tmpdir(), 'dw-film-')), shot = join(dir, 'seite.png'), rec = join(dir, 'aufnahme.mp4')
+  writeFileSync(shot, PNG); writeFileSync(rec, '')
+  const m0 = { els: [], fit: { ok: true, head: 0, body: 1, overflow: [] } }
+  const fe: Engine = {
+    ...engine,
+    lint: async (d) => lintDeck(d, d.slides.map(() => m0)),
+    renderFrames: async (_d, _i, times) => times.map((t) => ({ t, png: PNG })),
+    capturePage: async (url, o) => { assert.deepEqual([url, o], ['http://localhost:5173/', { device: 'handy', scroll: [0, 1] }]); return [shot] },
+    screenZooms: async (f) => { assert.equal(f, rec); return [{ start: 12, end: 14, x: 0.3, y: 0.6, scale: 2 }] },
+    video: {} as VideoTools, // screen_zooms löst den Pfad wie die Video-Tools auf
+  }
+  let fd: Deck | null = null
+  const TF = Object.fromEntries(buildTools({ engine: fe, getDeck: () => fd, setDeck: (x) => { fd = x }, assetDir: dir, outDir: dir }).map((t) => [t.name, t])) as Record<string, ToolDef>
+  const go = async (name: string, input: unknown) => TF[name].run(TF[name].inputSchema.parse(input))
+  assert.match((await go('create_deck', { title: 'Film', theme: 'midnight', film: { voice: 'de', speed: 2 } })).text, /, Film mit Stimme de\)/)
+  assert.deepEqual(fd!.film, { voice: 'de', speed: 1.3 }, 'Tempo auf VOICE_SPEED geklemmt')
+  const add = await go('add_slides', { slides: [
+    { layout: 'code', variant: 'terminal', content: { code: '$ npm run "build"\nfertig' }, voice: 'Erst bauen wir "das Projekt". [klick] Dann läuft es.', duration: 9, camera: [{ step: 1, box: [0.1, 0.2, 0.5, 0.5] }] },
+    { layout: 'screen', content: { image: { src: assetUrl(shot) }, cursor: [{ x: 0.2, y: 0.3 }, { x: 0.6, y: 0.5, click: true }] } },
+  ] })
+  const [a1, a2] = fd!.slides
+  assert.equal(a1.voice, 'Erst bauen wir „das Projekt“. [klick] Dann läuft es.', 'Feinsatz im Sprechertext')
+  assert.equal(a1.content.code, '$ npm run "build"\nfertig', 'Quelltext ohne Feinsatz')
+  assert.equal(a1.duration, 9); assert.deepEqual(a1.camera, [{ step: 1, box: [0.1, 0.2, 0.5, 0.5] }])
+  assert.match(add.text, /Folie 1 \(s[0-9a-f]{4}, code\): OK [^\n]*\n {2}Szene 1: ~9 s · Stimme ~2,8 s · 2 Takte\n/) // Tempo 1,3
+  assert.match(add.text, /Folie 2 [^\n]*\n {2}Szene 2: ~[\d,]+ s · ohne Stimme · 3 Takte\n {2}- \[warn\] film-ohne-stimme: Hinweis: 1 Szene ohne Sprechtext \(Folie 2\)/)
+  await fails(go('add_slides', { slides: [{ layout: 'statement', content: { text: 'Kurz' }, camera: [{ step: 0, box: [0.8, 0, 0.5, 0.5] }] }] }), /x \+ w und y \+ h höchstens 1/)
+  const long = await go('update_slide', { id: a2.id, voice: `${'Wort '.repeat(45).trim()}.`, duration: 3, camera: [{ step: 0, box: [0, 0, 0.2, 0.2] }, { step: 5 }] })
+  assert.match(long.text, /\[warn\] film-stimme: Sprechtext 45 Wörter[\s\S]*\[warn\] film-dauer: duration 3 s ist kürzer[\s\S]*film-kamera: camera\[0\]\.box ist winzig[\s\S]*film-kamera: Kamera in Takt 5, die Szene hat nur 3 Takte/)
+  await go('update_slide', { id: a2.id, voice: null, duration: null, camera: null })
+  assert.deepEqual([fd!.slides[1].voice, fd!.slides[1].duration, fd!.slides[1].camera], [undefined, undefined, undefined], 'null löscht')
+  const more = await go('add_slides', { slides: [
+    { layout: 'code', variant: 'terminal', content: { code: Array.from({ length: 3 }, (_, k) => `$ ${'x'.repeat(80)}${k}`).join('\n') }, voice: 'Drei lange Befehle.' },
+    { layout: 'screen', content: { video: rec, from: 10, to: 20, zooms: [{ start: 12, end: 14, x: 0.3, y: 0.6 }, { start: 2, end: 4, x: 0.5, y: 0.5 }] }, voice: 'Hier klickt jemand.' },
+  ] })
+  assert.match(more.text, /\[warn\] film-tippen @code: Tippen dauert ~11,2 s \(249 Zeichen × 45 ms\)/)
+  assert.match(more.text, /\[warn\] film-zoom @zooms: Zoom 2–4 s liegt \(teils\) außerhalb des Ausschnitts 10–20 s/); assert.doesNotMatch(more.text, /Zoom 12–14/)
+  // Frames der Zeitachse; ohne Engine-Methode eine klare Meldung
+  const fr = await go('render_slides', { ids: [a1.id], at: [0, 1.5] })
+  assert.equal(fr.images!.length, 2); assert.equal(fr.text, `Folie 1 (${a1.id}) bei 0 s\nFolie 1 (${a1.id}) bei 1,5 s`)
+  await fails(go('render_slides', { ids: [a1.id, a2.id, a1.id], at: [0] }), /höchstens 2 ids/)
+  await fails(run('render_slides', { ids: [b.id], at: [0] }), /^Frames der Zeitachse gibt es nur in der Deckwerk-App/)
+  // Motion-Grafik: keys und draw überstehen das Tool-Schema, keys zählen als Takte; Lint meldet späte Takte, Abgang und Unruhe
+  const box = (id: string, x: number, keys: unknown[]) => ({ id, kind: 'shape', shape: 'rect', x, y: 500, w: 100, h: 100, keys })
+  const mg = await go('add_slides', { slides: [{ layout: 'blank', content: {}, voice: 'Erst der Weg. [klick] Dann das Ziel.', items: [
+    { id: 'pfeil', kind: 'shape', shape: 'line', x: 100, y: 300, w: 400, h: 20, stroke: '#ffffff', anim: 'draw', keys: [{ step: 1, x: 600, ease: 'feder', ms: 600 }] },
+    box('weg', 100, [{ step: 1, x: 1300 }, { step: 4, y: 0 }]), ...[0, 1, 2, 3].map((k) => box(`b${k}`, 250 + k * 150, [{ step: 1, h: 150, fill: '#ff0000' }])),
+  ] }] })
+  const mgs = fd!.slides.at(-1)!
+  assert.equal(mgs.items![0].anim, 'draw'); assert.deepEqual(mgs.items![0].keys, [{ step: 1, x: 600, ease: 'feder', ms: 600 }])
+  assert.match(mg.text, /Szene 5: ~[\d,]+ s · Stimme ~[\d,]+ s · 5 Takte/)
+  assert.match(mg.text, /\[warn\] film-bewegung @items\.weg: Element weg liegt ab Takt 1 ganz außerhalb der Folie \(1280×720 px/)
+  assert.match(mg.text, /\[warn\] film-bewegung: keys von weg in Takt 2 oder später, die Szene hat nur 2 Takte/)
+  assert.match(mg.text, /\[warn\] film-unruhe: Hinweis: In Takt 1 bewegen sich 6 Elemente/); assert.doesNotMatch(mg.text, /In Takt 4 bewegen/)
+  await fails(go('add_slides', { slides: [{ layout: 'blank', content: {}, items: [box('x', 0, [{ step: 1, opacity: 2 }])] }] }), /opacity/)
+  await fails(go('add_slides', { slides: [{ layout: 'blank', content: {}, items: [box('x', 0, [{ step: 1, ease: 'huepf' }])] }] }), /ease/)
+  // update_deck: einzelne Werte ändern, Stimme weg, kein Film mehr
+  await go('update_deck', { film: { captions: 'satz' } }); assert.deepEqual(fd!.film, { voice: 'de', speed: 1.3, captions: 'satz' })
+  await go('update_deck', { film: { voice: null } }); assert.deepEqual(fd!.film, { speed: 1.3, captions: 'satz' })
+  await go('update_deck', { film: null }); assert.equal(fd!.film, undefined)
+  assert.match((await go('update_slide', { id: mgs.id })).text, /\n {2}Hinweis: keys wirken nur im Film/)
+  // capture_page: asset://-Pfade plus Vorschau; screen_zooms: Liste für screen.zooms
+  const cap = await go('capture_page', { url: 'http://localhost:5173/', device: 'handy', scroll: [0, 1] })
+  assert.match(cap.text, new RegExp(`^1 Aufnahme von http://localhost:5173/ .*\\n${assetUrl(shot)} — 1×1 px, quadratisch\\n\\nWeiter: Layout screen mit image = Pfad, frame handy`)); assert.equal(cap.images!.length, 1)
+  const zz = await go('screen_zooms', { video: assetUrl(rec) })
+  assert.match(zz.text, /^1 Zoom-Vorschlag für asset:.*\n\[\{"start":12,"end":14,"x":0.3,"y":0.6,"scale":2\}\]\nIn screen\.zooms übernehmen/)
+  await fails(run('capture_page', { url: 'https://example.com' }), /nur in der Deckwerk-App/)
+  await fails(run('screen_zooms', { video: rec }), /nur in der Deckwerk-App/)
 }
 await run('delete_slides', { ids: [c.id] })
 assert.equal(deck!.slides.length, 2)

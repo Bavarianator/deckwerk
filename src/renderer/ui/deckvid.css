@@ -68,6 +68,16 @@
 .dv-ov.zahl b { font-size: calc(var(--dv-ov) * 3.2); line-height: 1; }
 .dv-ov.zahl .dv-rule { margin: 0.3em 0; }
 .dv-ov.mitte.bauchbinde, .dv-ov.mitte.bauchbinde.on { transform: translateY(-50%); }
+.dv-ov.liste .dv-rule { margin-bottom: 0.25em; }
+.dv-li { display: block; font-size: 0.84em; font-weight: 400; transition: opacity 200ms linear; } /* Listenpunkte erscheinen nacheinander (listStep) */
+.dv-ov.zitat { font-size: calc(var(--dv-ov) * 1.2); }
+.dv-ov.zitat small, .dv-ov.abspann small { margin-top: 0.3em; font-size: 0.6em; }
+.dv-ov.abspann { font-size: calc(var(--dv-ov) * 1.6); }
+.dv-ov.abspann .dv-rule { margin-bottom: 0.3em; }
+.dv-mark { position: absolute; z-index: 1; outline: max(2px, 0.6cqmin) solid var(--dv-accent); pointer-events: none; transition: opacity 200ms linear; } /* markierung: Rahmen um box, Beschriftung darüber oder darunter */
+.dv-mark span { position: absolute; left: 0; white-space: nowrap; color: #fff; font-family: var(--dv-font); font-weight: var(--dv-weight); font-size: calc(var(--dv-ov) * 0.8); text-shadow: 0 0 2px #000, 0 2px 3px rgb(0 0 0 / 0.6); }
+.dv-mark .over { bottom: calc(100% + 1.2cqmin); }
+.dv-mark .under { top: calc(100% + 1.2cqmin); }
 .dv-dim { position: absolute; inset: 0; z-index: 1; background: rgb(0 0 0 / 0.35); pointer-events: none; transition: opacity 200ms linear; } /* hinter einem Titel */
 .dv-pix { position: absolute; z-index: 1; backdrop-filter: blur(1.2cqw); pointer-events: none; transition: opacity 200ms linear; } /* verpixeln: Bereich als Anteile der Bühne */
 /* Untertitel-Lage (captionPos): oben unter dem Hook; Einblendungen unten rücken dann auf die Untertitelhöhe */

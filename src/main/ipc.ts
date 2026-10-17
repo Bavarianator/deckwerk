@@ -6,7 +6,7 @@ import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, profileOf, type BrandKit, type Deck, type PrintOptions } from '../shared/deck'
+import { AUDIO_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, VOICES, profileOf, type BrandKit, type Deck, type FilmSettings, type PrintOptions, type VoiceId } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, hasFlag, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
@@ -25,6 +25,8 @@ import { checkSyncFolder, findFolder, syncFetchFor } from './sync-folder'
 import { CLOUDS } from '../shared/clouds'
 import { cliLogin, cliLogout, cliStatus, nextcloudLogin, setVibeKey, vibeKey, type LoginCli } from './accounts'
 import { deckJson, withDeckFonts } from './webfonts'
+import { recordArm, recordCancel, recordChunk, recordSources, recordStart, recordStop } from './record'
+import { synthesize, voiceDirs } from './voice'
 
 const HOME = join(homedir(), 'Deckwerk')
 
@@ -418,6 +420,29 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: kind === 'video' ? 'Videos' : 'Audio', extensions }] })
     const file = r.filePaths[0]
     return r.canceled || !file ? null : assetUrl(file)
+  })
+  // Bildschirmaufnahme (Animation): Zielpfad, Quellen- und Absenderprüfung nur im Main (record.ts)
+  ipcMain.handle('record:sources', (e) => recordSources(win, e.sender))
+  ipcMain.handle('record:arm', (e, source: unknown, mic: unknown) => recordArm(win, e.sender, source, mic))
+  ipcMain.handle('record:start', (e) => recordStart(e.sender))
+  ipcMain.handle('record:chunk', (e, data: unknown) => recordChunk(e.sender, data))
+  ipcMain.handle('record:stop', (e, cut: unknown) => recordStop(e.sender, cut === true))
+  ipcMain.handle('record:cancel', (e) => recordCancel(e.sender))
+  // Sprecherstimme für den Player der Animations-Ansicht: Pfade wie der Film-Export (engine.ts), damit beide denselben Cache nutzen
+  ipcMain.handle('film:voice', async (_, text: unknown, film: unknown) => {
+    if (typeof text !== 'string') throw new Error('Ungültiger Sprechertext.')
+    if (text.length > 2000) throw new Error('Der Sprechertext ist zu lang (höchstens 2000 Zeichen je Szene).')
+    const f = (film && typeof film === 'object' ? film : {}) as FilmSettings
+    const voice: VoiceId = VOICES.includes(f.voice as VoiceId) ? f.voice! : 'de'
+    const speed = typeof f.speed === 'number' && Number.isFinite(f.speed) ? f.speed : undefined // klemmt synthesize
+    const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
+    try {
+      const d = existsSync(phoneMarker(app.getPath('appData'))) ? null : await phoneDevice() // Handy spricht, wenn eingeschaltet und verbunden
+      const r = await synthesize(text, { voice, speed, ...voiceDirs(home), phone: d ? { serial: d.serial } : undefined })
+      return { url: assetUrl(r.wav), timing: r.timing }
+    } catch (e) {
+      throw new Error(`Die Stimme ließ sich nicht erzeugen: ${e instanceof Error ? e.message : String(e)}`)
+    }
   })
   // Quellmaterial (mehrere Dateien, auch Bilder); ohne Pfade per Dialog. null = abgebrochen
   ipcMain.handle('source:read', async (_, paths?: string[]) => {

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { BuildPreset, Deck, FormatId, FrameId, Slide, Tone } from './deck'
 import { EXTRA_LAYOUTS, FOCI, LOOKS, photo } from './layouts-extra' // Foto-Schema liegt dort, weil beide Kataloge es brauchen
+import { DEMO_LAYOUTS } from './layouts-demo'
 export { FOCI, LOOKS, photo }
 
 // Layout catalog without React: schemas + knowledge for the AI + samples.
@@ -375,6 +376,7 @@ export const LAYOUTS = {
     },
   }),
   ...EXTRA_LAYOUTS,
+  ...DEMO_LAYOUTS,
 } satisfies Record<string, LayoutDef<any>>
 
 export type LayoutId = keyof typeof LAYOUTS

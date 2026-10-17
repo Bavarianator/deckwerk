@@ -8,8 +8,8 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, VIDEO_FILE, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM, clipSpans, freezeOf, joinOf, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type Look, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex } from '../shared/video'
-import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, cropFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
+import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM, clipSpans, freezeOf, joinOf, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type Look, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, ovPos } from '../shared/video'
+import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, isArt, cropFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
 import { ffmpegBin, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { phoneFfmpeg } from './phone-ffmpeg'
 import { localAsset } from './sync'
@@ -26,8 +26,8 @@ const FADE = 0.4 // Übergang aus/in Schwarz (s)
 // hinaus, die Mitte der Blende liegt auf der alten Naht, Länge und Untertitel bleiben gleich. Wo das nicht geht (Gruppengrenze, Bildwechsel, Videoende): Tonblende AFADE.
 const AFADE = 0.08
 // Alle Zwischenstände eines Exports mit denselben Video-Parametern, sonst passt -c:v copy beim Verbinden nicht
-const video = (preset: string) => ['-c:v', 'libx264', '-preset', preset, '-profile:v', 'high', '-crf', '20', '-pix_fmt', 'yuv420p', '-r', '30']
-const PCM = ['-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2'] // AAC in Zwischenständen verschöbe den Ton an jeder concat-Naht (Priming: Lücke oder Versatz)
+export const video = (preset: string) => ['-c:v', 'libx264', '-preset', preset, '-profile:v', 'high', '-crf', '20', '-pix_fmt', 'yuv420p', '-r', '30']
+export const PCM = ['-c:a', 'pcm_s16le', '-ar', '48000', '-ac', '2'] // AAC in Zwischenständen verschöbe den Ton an jeder concat-Naht (Priming: Lücke oder Versatz)
 const AUDIO = ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000']
 const FAST = ['-movflags', '+faststart']
 // Lautheit in zwei Durchgängen: messen, dann mit den Messwerten linear anwenden (exakt −14 LUFS, kein Pumpen); ohne Messung dynamisch in einem Durchgang.
@@ -64,7 +64,7 @@ function assColor(hex: string) {
 /** Untertitel-Datei: Hook oben linksbündig, Untertitel unten mittig, Lage nach Format. Hochformat (9:16): bei 33 % der Höhe, über der Plattform-Leiste
  *  (Reels/TikTok verdecken unten ~35 %); 4:5 und 1:1: 12 %; Querformat: kleiner, 7 %. Weiß mit dünner Kontur und Schatten, keine Kästen, kein Pop.
  *  style 'lebendig': Wort-Pop, Hook mit Einblendung auf dunklem Balken, Fortschrittsbalken (bar: Lage der Gruppe in der Szene, s). */
-export function assSubs(o: { size: Size; font: string; bold: boolean; accent: string; hook?: string; hookDur: number; cues: Cue[]; mode: Captions; style?: ClipStyle; bar?: { off: number; dur: number; total: number }; overlays?: { start: number; end: number; text: string; pos?: Overlay['pos']; art?: Overlay['art']; sub?: string; fade?: [boolean, boolean] }[]; captionPos?: ClipContent['captionPos'] }): string {
+export function assSubs(o: { size: Size; font: string; bold: boolean; accent: string; hook?: string; hookDur: number; cues: Cue[]; mode: Captions; style?: ClipStyle; bar?: { off: number; dur: number; total: number }; overlays?: { start: number; end: number; text?: string; pos?: Overlay['pos']; art?: Overlay['art']; sub?: string; items?: string[]; box?: Overlay['box']; el?: number; len?: number; fade?: [boolean, boolean] }[]; captionPos?: ClipContent['captionPos'] }): string {
   const { w, h } = o.size, m = Math.min(w, h), line = Math.max(1, Math.round(m * 0.002)), wide = w > h, wort = o.mode === 'wort', live = o.style === 'lebendig'
   const hookV = h * (wide ? 0.07 : 0.12), capV = capMargin(o.size)
   const style = (name: string, size: number, align: number, marginV: number) =>
@@ -83,14 +83,14 @@ export function assSubs(o: { size: Size; font: string; bold: boolean; accent: st
     })
   }
   // Einblendungen: Style je Lage (ASS-Alignment), unten über der Untertitelzeile, oben auf Höhe des Hooks; blenden wie der Hook, nur an echten Enden (fade: [ein, aus])
-  // bauchbinde/titel/zahl: eigene Bausteine (artEvents) mit Standardlage unten-links bzw. mitte, titel immer mitte; die Abdunklung von titel zuerst (unter allem)
-  const ovs = (o.overlays ?? []).map((x) => ({ ...x, al: OV_ALIGN[x.art === 'titel' ? 'mitte' : x.pos ?? (x.art === 'bauchbinde' ? 'unten-links' : x.art === 'zahl' ? 'mitte' : 'unten')] }))
+  // bauchbinde/titel/zahl/liste/zitat/markierung/abspann: eigene Bausteine (artEvents), Lage nach ovPos; die Abdunklung von titel/zitat/abspann zuerst (unter allem)
+  const ovs = (o.overlays ?? []).map((x) => ({ ...x, al: OV_ALIGN[ovPos(x)] }))
   const low = capV + m * 0.16, hookSize = m * (wide ? 0.045 : 0.06)
   for (const x of ovs) {
-    if (x.art === 'bauchbinde' || x.art === 'titel' || x.art === 'zahl') {
-      const r = artEvents({ size: o.size, accent: assColor(o.accent), art: x.art, text: x.text, sub: x.sub, al: x.al, top: hookV, low, start: x.start, end: x.end, fade: [x.fade?.[0] !== false, x.fade?.[1] !== false], fadeMs: FX.hookFadeMs }, at, esc)
+    if (isArt(x.art)) {
+      const r = artEvents({ size: o.size, accent: assColor(o.accent), art: x.art, text: x.text, sub: x.sub, items: x.items, box: x.box, el: x.el, len: x.len, al: x.al, top: hookV, low, start: x.start, end: x.end, fade: [x.fade?.[0] !== false, x.fade?.[1] !== false], fadeMs: FX.hookFadeMs }, at, esc)
       events.unshift(...r.back); events.push(...r.front)
-    } else events.push(dlg(x.start, x.end, `Ov${x.al}`, `{\\fad(${x.fade?.[0] === false ? 0 : FX.hookFadeMs},${x.fade?.[1] === false ? 0 : FX.hookFadeMs})}` + esc(x.text.trim())))
+    } else events.push(dlg(x.start, x.end, `Ov${x.al}`, `{\\fad(${x.fade?.[0] === false ? 0 : FX.hookFadeMs},${x.fade?.[1] === false ? 0 : FX.hookFadeMs})}` + esc(x.text?.trim() ?? '')))
   }
   // Untertitel oben: unter der Hook-Zeile; mitte: Bildmitte
   const cap = o.captionPos === 'oben' ? [8, hookV + hookSize * 1.6] : o.captionPos === 'mitte' ? [5, 0] : [2, capV]
@@ -153,7 +153,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
 
 export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos'] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image
 /** Jeder ffmpeg-Schritt des Exports: auf dem Handy, wenn eins mitrechnet (gleiche Parameter, damit -c:v copy beim Verbinden passt); scheitert es, rechnet der PC */
-const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
+export const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
   if (!phone || phone.failed) return runFfmpeg(args, ro)
   return phoneFfmpeg(phone.serial, args, { ...ro, models: phone.models }).catch((e: Error) => {
     console.warn('[video] Export auf dem Handy fehlgeschlagen, der PC rechnet weiter:', e.message)
@@ -203,7 +203,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2)) // Grund klein weichzeichnen, dann hochskalieren: billig und weich
   const captions = job.transcript && job.captions !== 'aus' ? job.captions : null
   const live = job.style === 'lebendig', look = await lookFilter(job)
-  if (job.hook?.trim() || captions || live || job.overlays?.some((x) => x.text?.trim())) {
+  if (job.hook?.trim() || captions || live || job.overlays?.some((x) => x.text?.trim() || x.items?.length)) {
     // Eigener Unterordner: libass lädt alles in fontsdir, auch fertige Szenen. Relativ zu cwd = dir: kein Pfad-Escaping im Filter.
     await mkdir(join(dir, 'fonts'), { recursive: true })
     await Promise.all(job.font.files.map((b, i) => writeFile(join(dir, 'fonts', `font-${i}.ttf`), b)))
@@ -217,8 +217,9 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     // Einblendungen je sichtbarem Stück der Quelle über alle parts, auf die Gruppe (ab 0) beschnitten; Blende nur an echten Enden, nicht an Gruppenkanten
     // vt: Sekunde im Einblend-Video am Anfang des Stücks – es läuft über die sichtbaren Stücke weiter, ab from
     const ovs = (job.overlays ?? []).flatMap((x) => clipSpans(parts, x.start, x.end).map(([a, b], k, all) => [a, b, all.slice(0, k).reduce((q, [c, d]) => q + d - c, 0)]).filter(([a, b]) => b > done && a < done + dur)
-      .map(([a, b, run]) => ({ ...x, a: Math.max(0, a - done), b: Math.min(dur, b - done), vt: (x.from ?? 0) + run + Math.max(0, done - a), fade: [a >= done - 1e-3, b <= done + dur + 1e-3] as [boolean, boolean] })))
-    const texts = ovs.filter((x) => x.text?.trim()).map((x) => ({ start: x.a, end: x.b, text: x.text!, pos: x.pos, art: x.art, sub: x.sub, fade: x.fade })), imgs = ovs.filter((x) => x.image || x.video)
+      .map(([a, b, run]) => ({ ...x, a: Math.max(0, a - done), b: Math.min(dur, b - done), len: clipSpans(parts, x.start, x.end).reduce((q, [c, d]) => q + d - c, 0), vt: (x.from ?? 0) + run + Math.max(0, done - a), fade: [a >= done - 1e-3, b <= done + dur + 1e-3] as [boolean, boolean] })))
+    const texts = ovs.filter((x) => x.text?.trim() || x.items?.length || (x.art === 'markierung' && x.box))
+      .map((x) => ({ start: x.a, end: x.b, text: x.text, pos: x.pos, art: x.art, sub: x.sub, items: x.items, box: x.box, el: x.vt - (x.from ?? 0), len: x.len, fade: x.fade })), imgs = ovs.filter((x) => x.image || x.video)
     const pix = ovs.filter((x) => x.art === 'verpixeln' && x.box)
     const subs = !!hook || words.length > 0 || live || texts.length > 0
     if (subs) await writeFile(join(dir, `${id}.ass`), assSubs({ size, font: job.font.name, bold: job.font.bold, accent: job.accent, hook, hookDur: Math.min(4, dur), cues: captions && words.length ? cues(words, captions) : [], mode: job.captions, style: job.style, bar: { off: done, dur, total }, ...(texts.length ? { overlays: texts } : {}), ...(job.captionPos ? { captionPos: job.captionPos } : {}) }))
@@ -398,7 +399,7 @@ export async function encodeClip(job: ClipJob, out: string, dir: string, onProgr
 }
 
 // Head-Schrift des Themes als TTF (Premium- oder eigene Schrift), sonst Archivo Bold aus dem App-Paket. Buffer statt Pfad: im asar kann ffmpeg nicht lesen.
-async function subFont(deck: Deck): Promise<SubFont> {
+export async function subFont(deck: Deck): Promise<SubFont> {
   const head = resolveTheme(deck.theme).head
   const f = (await import('./export-pptx')).fontsOf(deck).find((x) => x.family === head.pptx)
   if (f) return { name: f.family, files: [f.regular, ...(f.bold ? [f.bold] : [])], bold: !!f.bold }
@@ -407,7 +408,7 @@ async function subFont(deck: Deck): Promise<SubFont> {
 }
 
 // asset://local/<pfad> oder absoluter Pfad; auf einem anderen Gerät auf den lokalen Deckwerk-Ordner umleiten
-function videoPath(src: string, slide: number, field = 'video') {
+export function videoPath(src: string, slide: number, field = 'video') {
   const p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src
   if (!isAbsolute(p)) throw new Error(`Folie ${slide}: „${field}“ muss ein asset://-Pfad oder ein absoluter Dateipfad sein.`)
   if (!MEDIA_EXT.test(p)) throw new Error(`Folie ${slide}: „${field}“ ist keine Mediendatei (${basename(p)}).`)

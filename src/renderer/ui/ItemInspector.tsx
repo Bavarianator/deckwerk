@@ -56,7 +56,7 @@ const DIR_NAME: Record<AnimDir, string> = { right: 'Nach rechts', left: 'Nach li
 const START: Record<AnimStart, [string, string]> = { click: ['Bei Klick', 'Bei Klick'], with: ['Zugleich', 'Mit vorherigem'], after: ['Danach', 'Nach vorherigem'] }
 const ANIM: Record<ItemAnim, string> = {
   none: 'Keine', fade: 'Einblenden', float: 'Aufsteigen', pan: 'Schwenken', drift: 'Treiben', pop: 'Pop', zoom: 'Zoomen', tumble: 'Purzeln',
-  stomp: 'Stampfen', baseline: 'Grundlinie', wipe: 'Wischen', typewriter: 'Schreibmaschine', ascend: 'Wort für Wort', breathe: 'Atmen (pulsiert ohne Klick)',
+  stomp: 'Stampfen', baseline: 'Grundlinie', wipe: 'Wischen', typewriter: 'Schreibmaschine', ascend: 'Wort für Wort', breathe: 'Atmen (pulsiert ohne Klick)', draw: 'Zeichnen',
 }
 const ALIGNS: [Align, LucideIcon, string][] = [
   ['left', AlignStartVertical, 'Links'], ['hcenter', AlignCenterVertical, 'Mittig'], ['right', AlignEndVertical, 'Rechts'],

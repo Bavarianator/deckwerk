@@ -19,12 +19,18 @@ export const XFADE: Partial<Record<string, string>> = { fade: 'fade', dissolve: 
  *  still = eine der beiden Folien hat kein Video (Zwischentitel): die blenden ohne Überblendung immer über Schwarz. */
 export const joinOf = (t: string, still: boolean): 'blend' | 'schwarz' | 'hart' => (t !== 'color' && XFADE[t] ? 'blend' : t === 'color' || still ? 'schwarz' : 'hart')
 // Einblendung über dem Video von start bis end (Quellsekunden wie parts; über Schnitte hinweg nur, wo die Quelle zu sehen ist).
-// Quelle: text (art text/bauchbinde/titel/zahl, sub = zweite Zeile), image, video (stumm, ab Sekunde from) oder slide (Nummer einer ausgeblendeten Folie, 1-basiert);
-// art verpixeln: Bereich box [x, y, w, h] als Anteile des Bildes. pos voll = Cutaway über das ganze Bild (Bild mit langsamem Zoom)
+// Quelle: text (art text/bauchbinde/titel/zahl/zitat/abspann, sub = zweite Zeile), image, video (stumm, ab Sekunde from) oder slide (Nummer einer ausgeblendeten Folie, 1-basiert);
+// art liste: Punkte items erscheinen nacheinander (text = Überschrift); art verpixeln/markierung: Bereich box [x, y, w, h] als Anteile des Bildes (markierung: Rahmen, text = Beschriftung).
+// pos voll = Cutaway über das ganze Bild (Bild mit langsamem Zoom)
 export const OVERLAY_POS = ['oben', 'mitte', 'unten', 'oben-links', 'oben-rechts', 'unten-links', 'unten-rechts', 'voll'] as const
-export const OVERLAY_ARTS = ['text', 'bauchbinde', 'titel', 'zahl', 'verpixeln'] as const
+export const OVERLAY_ARTS = ['text', 'bauchbinde', 'titel', 'zahl', 'liste', 'zitat', 'markierung', 'abspann', 'verpixeln'] as const
 export type OverlayArt = (typeof OVERLAY_ARTS)[number]
-export interface Overlay { start: number; end: number; art?: OverlayArt; text?: string; sub?: string; image?: string; video?: string; from?: number; slide?: number; box?: [x: number, y: number, w: number, h: number]; pos?: (typeof OVERLAY_POS)[number]; size?: 'klein' | 'mittel' | 'gross' }
+export interface Overlay { start: number; end: number; art?: OverlayArt; text?: string; sub?: string; items?: string[]; image?: string; video?: string; from?: number; slide?: number; box?: [x: number, y: number, w: number, h: number]; pos?: (typeof OVERLAY_POS)[number]; size?: 'klein' | 'mittel' | 'gross' }
+/** Lage einer Einblendung (Export und Vorschau): titel, zitat, abspann immer mitte, sonst pos oder Standard je Art */
+export const ovPos = (o: Pick<Overlay, 'art' | 'pos'>): (typeof OVERLAY_POS)[number] =>
+  o.art === 'titel' || o.art === 'zitat' || o.art === 'abspann' ? 'mitte' : o.pos ?? (o.art === 'bauchbinde' ? 'unten-links' : o.art === 'liste' ? 'oben-links' : o.art === 'zahl' ? 'mitte' : 'unten')
+/** Abstand der Listenpunkte (s): gleichmäßig über die sichtbare Länge len, höchstens 1,2 s – der letzte Punkt steht noch eine Weile */
+export const listStep = (n: number, len: number) => Math.min(1.2, len / (n + 1))
 /** Bild-Einblendung (Bild, Video, Folie) statt ASS-Text */
 export const isMedia = (o: Overlay) => !!(o.image || o.video || o.slide)
 export const MAX_MEDIA = 8 // Medien-Einblendungen je Clip-Folie: jede ist ein eigener Decoder im ffmpeg-Aufruf

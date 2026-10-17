@@ -117,7 +117,19 @@ export interface Slide {
   items?: Item[] // freie Elemente über dem Layout (Canvas: ziehen, skalieren, drehen); Reihenfolge = Ebenen
   bg?: { color?: string; image?: string; gradient?: [string, string]; angle?: number } // eigener Folienhintergrund statt Theme-Fläche; gradient = Verlauf (Winkel in Grad, Standard 135)
   hidden?: boolean // ausgeblendet (Canva „Seite ausblenden“): fehlt beim Präsentieren und im Export, PowerPoint behält sie versteckt
+  // Feature „Animation“ (nur bei Deck.film, src/shared/film.ts): voice = Sprechertext der Szene, [klick] startet den nächsten Takt;
+  // duration = Szenenlänge in s (sonst aus Stimme, Animationen und Lesezeit); camera = Kamerafahrt je Takt
+  voice?: string
+  duration?: number
+  camera?: CameraMove[]
 }
+// Kamerafahrt im Film: zu Beginn von Takt step fährt die Kamera in 0,8 s auf box (Anteile der Folie x, y, w, h); ohne box zurück auf die ganze Folie
+export interface CameraMove { step: number; box?: [x: number, y: number, w: number, h: number] }
+// Feature „Animation“ (Videos in Remotion-Art): Deck mit film = jede Folie ist eine Szene; mp4 rendert Frame für Frame (main/export-film.ts).
+// voice = Stimme (Piper, lokal), speed = Sprechtempo 0,8–1,3, captions = Untertitel eingebrannt (satz) oder nur als .srt (aus, Standard)
+export const VOICES = ['de', 'en'] as const
+export type VoiceId = (typeof VOICES)[number]
+export interface FilmSettings { voice?: VoiceId; speed?: number; captions?: 'satz' | 'aus' }
 
 // ---- freie Elemente (wie in Canva): Position in px auf der 1280x720-Folie ----
 export const SHAPES = ['rect', 'ellipse', 'triangle', 'diamond', 'hexagon', 'star', 'arrow', 'line',
@@ -136,7 +148,8 @@ export const DASHES = ['solid', 'dash', 'dot'] as const
 export type Dash = (typeof DASHES)[number]
 export type ShapeId = (typeof SHAPES)[number]
 // wie Canva: float = Aufsteigen (Rise); typewriter/ascend nur für Text (Buchstabe/Wort einzeln); breathe = Dauerpuls ohne Klick
-export const ITEM_ANIMS = ['none', 'fade', 'float', 'pan', 'drift', 'pop', 'zoom', 'tumble', 'stomp', 'baseline', 'wipe', 'typewriter', 'ascend', 'breathe'] as const
+// draw = Linien, Pfeile, Umrisse und Icons zeichnen sich (Strich wächst); in PowerPoint als Wischen
+export const ITEM_ANIMS = ['none', 'fade', 'float', 'pan', 'drift', 'pop', 'zoom', 'tumble', 'stomp', 'baseline', 'wipe', 'typewriter', 'ascend', 'breathe', 'draw'] as const
 export type ItemAnim = (typeof ITEM_ANIMS)[number]
 // Richtung der Bewegung (Canva: Schwenken, Treiben, Wischen, Aufsteigen); ohne = Standard des Stils
 export const ANIM_DIRS = ['right', 'left', 'up', 'down'] as const
@@ -155,6 +168,7 @@ export interface Item {
   anim?: ItemAnim // Auftritt beim Präsentieren (nacheinander per Klick)
   animDir?: AnimDir; animSpeed?: AnimSpeed
   animStart?: AnimStart; animDelay?: number // ohne Start: Klick-Modus je ein Klick, Selbstlauf nacheinander; Verzögerung in s (0–10)
+  keys?: ItemKey[] // Feature „Animation“: Bewegung im Film je Takt (Motion-Grafik wie Remotion); Präsentation und PowerPoint zeigen die Grundlage
   // text
   text?: string
   font?: 'head' | 'body' | string // head/body = Theme-Schrift, sonst FontName
@@ -197,6 +211,11 @@ export interface Item {
 }
 
 export interface Crop { x: number; y: number; w: number; h: number }
+// Motion-Grafik im Film (renderer/film.ts): zu Beginn von Takt step läuft das Element in ms (Standard 800) mit ease (Standard weich) auf diese Werte;
+// fehlende Werte bleiben, wie sie zuletzt waren (Lage x/y und Größe w/h in px wie das Element, rot in Grad, opacity 0–1, fill/color als Farbe)
+export const EASES = ['weich', 'feder', 'linear'] as const // feder = federt leicht über das Ziel hinaus (wie spring in Remotion)
+export type Ease = (typeof EASES)[number]
+export interface ItemKey { step: number; x?: number; y?: number; w?: number; h?: number; rot?: number; opacity?: number; fill?: string; color?: string; ease?: Ease; ms?: number }
 
 // Formate (Magic Resize): Größe in CSS-px, 96 px = 1 Zoll. Die Layouts sind für 16:9 entworfen und passen sich an.
 export const FORMATS = {
@@ -251,6 +270,7 @@ export interface Deck {
   style?: 'sachlich' | 'mutig' // Gestaltungsstil für die KI (Design-Guide §6 „Stil des Decks“); ohne = noch nicht gewählt: die KI wählt beim Anlegen nach Anlass, bis dahin wie sachlich
   mode: 'click' | 'auto' // click = presenter advances builds, auto = builds run by themselves
   music?: { src: string; volume?: number; credit?: string } // Hintergrundmusik im Video-Export (mp4): asset://-Pfad, volume 0–1 (Standard 0,25), credit = Nachweis (CC-BY)
+  film?: FilmSettings // Feature „Animation“: Szenen mit Zeitachse, Stimme und Kamera statt Standbildern (fehlt = Präsentation bzw. Video-Schnitt wie bisher)
   slides: Slide[]
 }
 // Folien, die präsentiert und exportiert werden (PDF, PNG, Word, Handout); ausgeblendete fehlen

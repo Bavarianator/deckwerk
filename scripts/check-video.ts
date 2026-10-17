@@ -8,8 +8,9 @@ import { join, resolve } from 'node:path'
 import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, joinSegs, padParts, seamless, snapParts } from '../src/main/export-video'
 import { LOOK_FILTER, autoLook, cropFilter, levelExpr, srt, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
+import { lintClip } from '../src/shared/clip-lint'
 import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
-import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Part, type Transcript } from '../src/shared/video'
+import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Overlay, type Part, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -163,6 +164,21 @@ async function main() {
       assert.ok(ev.some((l) => l.includes('\\c&H0088FF&') && l.includes('\\move(') && l.includes('\\p1}m 0 0 l 76 0 76 6 0 6')), 'bauchbinde: Akzentlinie')
       assert.ok(ev.some((l) => l.includes('\\an8\\pos(540,') && l.includes('\\fs130}73 %\\N{\\fs43\\b0}weniger Ausschuss') && l.includes('\\fad(200,0)')), 'zahl')
       assert.ok(ev.some((l) => l.includes('\\fs86}Kapitel 2')), 'titel')
+      // liste gestaffelt (1,2 s), geteilt ab el ohne Blende; zitat mit Anführungszeichen und Abdunklung; markierung als Rahmen um box; abspann mitte
+      const nw = assSubs({ ...base, overlays: [{ start: 0, end: 6, art: 'liste', text: 'Drei Schritte', items: ['Eins', 'Zwei', 'Drei'], fade: [true, true] }, { start: 7, end: 9, art: 'zitat', text: 'Wer fragt, gewinnt.', sub: 'Anna', fade: [true, true] },
+        { start: 10, end: 12, art: 'markierung', box: [0.1, 0.5, 0.3, 0.1], text: 'Hier', fade: [true, true] }, { start: 13, end: 15, art: 'abspann', text: '@beispiel', sub: 'beispiel.de', fade: [true, true] }] }).split('\n').filter((l) => l.startsWith('Dialogue:'))
+      assert.deepEqual(['Eins', 'Zwei', 'Drei'].map((x) => nw.find((l) => l.endsWith(`}${x}`))!.slice(12, 22)), ['0:00:00.00', '0:00:01.20', '0:00:02.40'], 'liste: gestaffelt')
+      assert.equal(nw.filter((l) => l.includes('\\1a&H80&')).length, 2, 'zitat/abspann: Abdunklung')
+      assert.ok(nw.some((l) => l.includes('}„Wer fragt, gewinnt.“\\N')), 'zitat')
+      assert.ok(nw.some((l) => l.includes('\\pos(108,960)\\bord6') && l.includes('\\1a&HFF&\\3c&H0088FF&') && l.endsWith('m 0 0 l 324 0 324 192 0 192')), 'markierung: Rahmen')
+      assert.ok(nw.some((l) => l.includes('\\an8\\pos(540,') && l.includes('}@beispiel\\N')), 'abspann')
+      const split = assSubs({ ...base, overlays: [{ start: 0, end: 2, art: 'liste', items: ['Eins', 'Zwei', 'Drei'], el: 1.5, len: 6, fade: [false, true] }] }).split('\n').filter((l) => l.startsWith('Dialogue:'))
+      assert.ok(split.find((l) => l.endsWith('}Zwei'))!.includes('\\fad(0,') && split.find((l) => l.endsWith('}Drei'))!.startsWith('Dialogue: 0,0:00:00.90'), 'liste geteilt')
+      // Clip-Prüfung: Abspann nur am Ende, Markierung kurz, Abspann + Logo zugleich erlaubt
+      const ovLint = (overlays: Overlay[]) => lintClip({ video: 'v.mp4', parts: [{ start: 0, end: 30 }], overlays }, big, { duration: 60 }).filter((x) => x.rule === 'clip-einblendung').map((x) => x.message).join(' | ')
+      assert.match(ovLint([{ start: 5, end: 10, art: 'abspann', text: '@x' }]), /nur in die letzten 8 s/)
+      assert.match(ovLint([{ start: 2, end: 12, art: 'markierung', box: [0, 0, 0.2, 0.2] }]), /markierung\) steht 10 s/)
+      assert.equal(ovLint([{ start: 25, end: 30, art: 'abspann', text: '@x' }, { start: 25, end: 30, image: 'asset://logo.png', pos: 'oben', size: 'klein' }]), '')
       assert.ok(/^Style: Ov1,.*,1,86,86,(\d+),1$/m.test(assSubs({ ...base, overlays: [{ start: 0, end: 1, text: 'x', pos: 'unten-links' }] })), 'unten-links: unten')
       // Untertitel oben: Alignment 8 unter dem Hook; mitte: 5
       const capStyle = (captionPos?: 'oben' | 'mitte') => assSubs({ ...base, hook: 'Hook', captionPos }).split('\n').find((l) => l.startsWith('Style: Cap,'))!.split(',')

@@ -232,12 +232,12 @@ const clip = z.object({
     start: z.number().min(0).describe('Sekunden im Quellvideo (aus transcribe_video)'),
     end: z.number().min(0),
     focus: z.number().min(0).max(1).optional().describe('horizontaler Bildmittelpunkt für den Zuschnitt, 0 = links, 1 = rechts (aus video_frames); Standard 0.5'),
-    speed: z.number().min(SPEED.min).max(SPEED.max).optional().describe('Tempo: 0.5 = Zeitlupe (halb so schnell), 2 = Zeitraffer; Ton läuft mit (ohne Tonhöhe zu ändern); Standard 1. Zeitlupe für den Höhepunkt einer Aktion, Zeitraffer für lange Abläufe ohne Sprache'),
+    speed: z.number().min(SPEED.min).max(SPEED.max).optional().describe('Tempo: 0.5 = Zeitlupe (halb so schnell), 2 = Zeitraffer; Ton läuft mit (ohne Tonhöhe zu ändern); Standard 1'),
     volume: z.number().min(0).max(2).optional().describe('Lautstärke des Originaltons: 0 = stumm (nur Musik), 0.5 = leise, 1 = unverändert (Standard), bis 2 lauter'),
-    music: z.number().min(0).max(1).optional().describe('Pegel der Hintergrundmusik (deck.music) in diesem Ausschnitt: 0 = aus, 0.25 = dezent (Standard aus deck.music.volume), 0.8 = laut (z. B. mit volume 0 für eine Montage ohne Sprache); wechselt weich'),
-    transition: z.enum(CUT_TRANSITIONS).optional().describe('Übergang am Schnitt vor diesem Ausschnitt: fade, dissolve, push, wipe, circle, zoom, split, stack, color (über Schwarz), none = harter Schnitt; weglassen = automatische weiche Blende (Standard, meist richtig). Effekte sparsam: an Szenen- oder Ortswechseln, nicht an Jump-Cuts'),
-    zoom: z.number().min(ZOOM.min).max(ZOOM.max).optional().describe('Punch-in: Bild enger, z. B. 1.15 für eine Pointe oder zur Betonung; ein eigener part mit zoom wirkt wie ein zweiter Kamerawinkel. Standard 1'),
-    freeze: z.number().min(FREEZE.min).max(FREEZE.max).optional().describe('Standbild: letztes Bild des Ausschnitts so viele Sekunden halten (Ton still), z. B. 1 für einen Moment zum Staunen oder unter einer Einblendung; nie mitten im Satz'),
+    music: z.number().min(0).max(1).optional().describe('Pegel der Hintergrundmusik (deck.music) in diesem Ausschnitt: 0 = aus, 0.25 = dezent (Standard aus deck.music.volume), 0.8 = laut; wechselt weich'),
+    transition: z.enum(CUT_TRANSITIONS).optional().describe('Übergang am Schnitt vor diesem Ausschnitt: fade, dissolve, push, wipe, circle, zoom, split, stack, color (über Schwarz), none = harter Schnitt; weglassen = automatische weiche Blende (Standard, meist richtig)'),
+    zoom: z.number().min(ZOOM.min).max(ZOOM.max).optional().describe('Punch-in: Bild enger, z. B. 1.15; Standard 1'),
+    freeze: z.number().min(FREEZE.min).max(FREEZE.max).optional().describe('Standbild: letztes Bild des Ausschnitts so viele Sekunden halten (Ton still); nie mitten im Satz'),
   }).refine((p) => p.end > p.start + 0.2, 'end muss nach start liegen')).min(1).max(MAX_PARTS).describe(`Ausschnitte, nacheinander abgespielt (Jump Cuts), Schnitte an Satzgrenzen. Short: zusammen ideal 55–75 s; ganzes Video kürzen: alles Behaltene, bis ${MAX_PARTS} Ausschnitte; Highlight: der Moment mit Anlauf und Auflösung`),
   hook: z.string().max(70).optional().describe('Einstiegszeile oben in den ersten Sekunden: macht neugierig, ohne Clickbait'),
   captions: z.enum(['wort', 'satz', 'aus']).optional().describe('Untertitel aus dem Transkript (nur im MP4): wort = wenige Wörter, aktuelles Wort in Akzentfarbe (Standard); satz = ganze Zeilen; aus'),
@@ -250,24 +250,29 @@ const clip = z.object({
   overlays: z.array(z.object({
     start: z.number().min(0).describe('Quellsekunde, ab der die Einblendung steht (wie parts)'),
     end: z.number().min(0),
-    art: z.enum(OVERLAY_ARTS).optional().describe('text (Standard): kurzer Text; bauchbinde: Name in text, Funktion/Ort in sub, unten links mit Akzentlinie; titel: Kapiteltitel groß in der Mitte, Bild dahinter abgedunkelt; zahl: große Zahl in text, Erklärung in sub; verpixeln: Bereich box unkenntlich (Gesicht, Kennzeichen, Bildschirm-Daten)'),
-    text: z.string().min(1).max(80).optional().describe('kurzer Text: Name, Ort, Zahl, Kapitel, Stichwort; nie das Gesagte wiederholen (dafür captions)'),
-    sub: z.string().min(1).max(60).optional().describe('zweite Zeile zu text bei bauchbinde, zahl oder titel'),
+    art: z.enum(OVERLAY_ARTS).optional().describe('text (Standard); bauchbinde: Name in text, Funktion in sub; titel: Kapitel, Bild abgedunkelt; zahl: Zahl in text, Erklärung in sub; liste: items nacheinander, text = Überschrift; zitat: Kernsatz, Quelle in sub; markierung: Rahmen um box, text = Beschriftung; abspann: Schluss, Link in sub; verpixeln: box unkenntlich'),
+    text: z.string().min(1).max(120).optional().describe('kurzer Text: Name, Ort, Zahl, Kapitel, Stichwort; nie das Gesagte wiederholen (dafür captions); zitat bis 120'),
+    sub: z.string().min(1).max(60).optional().describe('zweite Zeile zu text'),
+    items: z.array(z.string().min(1).max(40)).min(2).max(5).optional().describe('nur bei liste: 2–5 Punkte'),
     image: z.string().optional().describe('Bild: asset://-Pfad (Logo, Foto, Grafik aus dem Anhang, find_images oder generate_image) oder absoluter Pfad'),
     video: z.string().optional().describe('zweites Video (asset:// oder Pfad) ohne Ton: Bild-in-Bild (pos Ecke) oder B-Roll über dem Sprecher (pos voll), der Originalton läuft weiter'),
     from: z.number().min(0).optional().describe('bei video: Sekunde im Einblend-Video, ab der es läuft (Standard 0)'),
-    slide: z.number().int().min(1).optional().describe('Nummer einer ausgeblendeten Folie (hidden: true) dieses Decks, gerendert eingeblendet: Diagramm, KPI, Liste, Zitat aus dem Layout-Katalog; meist pos voll oder mitte'),
-    box: z.tuple([z.number().min(0).max(1), z.number().min(0).max(1), z.number().min(0.02).max(1), z.number().min(0.02).max(1)]).optional().describe('nur bei verpixeln: Bereich [x, y, Breite, Höhe] als Anteile des fertigen Bildes, 0,0 = oben links (aus check_clip/video_frames); steht still'),
-    pos: z.enum(OVERLAY_POS).optional().describe('Lage: oben, mitte, unten (Standard; bei Untertiteln darüber), oben-links, oben-rechts, unten-links, unten-rechts; voll = Bild, Video oder Folie füllt das ganze Bild (Cutaway/B-Roll, Bild mit langsamem Zoom)'),
+    slide: z.number().int().min(1).optional().describe('Nummer einer ausgeblendeten Folie (hidden: true) dieses Decks; meist pos voll oder mitte'),
+    box: z.tuple([z.number().min(0).max(1), z.number().min(0).max(1), z.number().min(0.02).max(1), z.number().min(0.02).max(1)]).optional().describe('nur bei verpixeln und markierung: Bereich [x, y, Breite, Höhe] als Anteile des fertigen Bildes, 0,0 = oben links (aus check_clip/video_frames); steht still'),
+    pos: z.enum(OVERLAY_POS).optional().describe('Lage (Standard je art, sonst unten über den Untertiteln); voll = Bild, Video oder Folie füllt das ganze Bild (Cutaway/B-Roll, Bild mit langsamem Zoom)'),
     size: z.enum(['klein', 'mittel', 'gross']).optional().describe('Breite von Bild, Video oder Folie: klein 25 %, mittel 40 % (Standard), gross 60 % der Videobreite; Text immer in einer festen Größe'),
   }).refine((o) => o.end > o.start + 0.3, 'end muss nach start liegen')
-    .refine((o) => (o.art === 'verpixeln' ? !!o.box && !o.text && !o.image && !o.video && !o.slide : [o.text, o.image, o.video, o.slide].filter((x) => x !== undefined).length === 1),
-      'genau eins von text, image, video oder slide (verpixeln: nur box)')
-    .refine((o) => !o.art || o.art === 'verpixeln' || !!o.text, 'bauchbinde, titel und zahl brauchen text')
-    .refine((o) => !o.box || o.art === 'verpixeln', 'box nur bei art verpixeln')
+    .refine((o) => !o.image && !o.video && !o.slide || [o.text, o.image, o.video, o.slide, o.items, o.box].filter((x) => x !== undefined).length === 1,
+      'image, video oder slide allein, ohne text, items oder box')
+    .refine((o) => o.art === 'verpixeln' ? !!o.box && !o.text : o.art === 'markierung' ? !!o.box : o.art === 'liste' ? !!o.items : !!(o.text || o.image || o.video || o.slide),
+      'verpixeln braucht nur box, markierung box (text optional), liste items (text = Überschrift), alle anderen genau eins von text, image, video oder slide')
+    .refine((o) => !o.art || o.art === 'text' || o.art === 'verpixeln' || o.art === 'markierung' || o.art === 'liste' || !!o.text, 'bauchbinde, titel, zahl, zitat und abspann brauchen text')
+    .refine((o) => !o.text || o.text.length <= 80 || o.art === 'zitat', 'text höchstens 80 Zeichen (zitat 120)')
+    .refine((o) => !o.items || o.art === 'liste', 'items nur bei art liste')
+    .refine((o) => !o.box || o.art === 'verpixeln' || o.art === 'markierung', 'box nur bei art verpixeln oder markierung')
     .refine((o) => o.box === undefined || (o.box[0] + o.box[2] <= 1.001 && o.box[1] + o.box[3] <= 1.001), 'box ragt aus dem Bild'))
     .max(30).refine((xs) => xs.filter((o) => o.image || o.video || o.slide).length <= MAX_MEDIA, `höchstens ${MAX_MEDIA} Einblendungen mit Bild, Video oder Folie je Clip`).optional()
-    .describe('Einblendungen über dem Video (nur im MP4 und in der Vorschau): Text, Bauchbinde, Titel, Zahl, Bild, Video, Folie oder Verpixeln für einen Quellbereich, blendet weich ein und aus; sichtbar nur dort, wo der Bereich im Clip vorkommt'),
+    .describe('Einblendungen über dem Video (nur im MP4 und in der Vorschau): Text, Bild, Video, Folie, Verpixeln oder eine art für einen Quellbereich, blendet weich ein und aus; sichtbar nur dort, wo der Bereich im Clip vorkommt'),
   look: z.enum(VIDEO_LOOKS).optional().describe('Farblook des ganzen Clips: neutral (Standard, unverändert), warm, kuehl, kontrast (kräftiger), matt (weich, gedämpft), sw (Schwarzweiß), auto (Helligkeit und Kontrast der Quelle ausgleichen, für zu dunkle oder flaue Handy-Aufnahmen); einer je Video, für alle Clip-Folien gleich'),
   stabil: z.boolean().optional().describe('true = Verwackeln glätten (Handy aus der Hand, Gehen); nur im Export, kostet Zeit; nie bei Stativ oder Bildschirmaufnahme'),
   captionPos: z.enum(CAPTION_POS).optional().describe('Lage der Untertitel: unten (Standard), mitte, oben – wenn unten Wichtiges im Bild steht (Tafel, Formel, Produkt)'),

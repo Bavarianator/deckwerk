@@ -14,6 +14,7 @@ import { BuildView, type StoryItem } from './ui/BuildView'
 import { ChatChoices, type Msg } from './ui/Chat'
 import { Deckvid } from './ui/Deckvid'
 import { EditorScreen } from './ui/EditorScreen'
+import { Film } from './ui/Film'
 import { FindBar } from './ui/FindBar'
 import type { FontsLoaded } from './ui/FontPicker'
 import { KeyDialog } from './ui/KeyDialog'
@@ -64,6 +65,7 @@ export default function App() {
   const [story, setStory] = useState<StoryItem[] | null>(null) // geplante Storyline der KI (plan_storyline)
   const videoBusy = useRef(false) // läuft ein Video-Export? Zweiten gar nicht erst starten
   const [videoMode, setVideoMode] = useState(false) // über den Video-Modus des Starts begonnen: Deckvid schon vor der ersten Clip-Folie
+  const [filmMode, setFilmMode] = useState(false) // über „Animation“ im Start begonnen: Animations-Ansicht schon vor dem ersten Film-Deck
   const [slidesView, setSlidesView] = useState(false) // Ausweg „Folien-Ansicht“: dieses Deck im normalen Editor
   const turnStart = useRef<Deck | null>(null)
   // automatisch sichern wie in Apple-Apps: jede Änderung nach kurzer Pause nach ~/Deckwerk/<titel>/deck.json
@@ -88,7 +90,8 @@ export default function App() {
   const deck = doc.deck
   const index = deck ? Math.max(0, Math.min(sel, deck.slides.length - 1)) : 0
   const hasClip = !!deck?.slides.some((s) => s.layout === 'clip')
-  const deckvid = (hasClip || videoMode) && !slidesView // Video-Decks: eigene, KI-zentrierte Ansicht
+  const film = (!!deck?.film || filmMode) && !slidesView // Animation (deck.film): eigene Ansicht mit Player, gewinnt auch bei Clip-Folien
+  const deckvid = !film && (hasClip || videoMode) && !slidesView // Video-Decks: eigene, KI-zentrierte Ansicht
   // einmal Video-Deck, immer Deckvid: Entfernen des letzten Clips springt nicht in den Editor
   useEffect(() => { if (hasClip && !videoMode) setVideoMode(true) }, [hasClip, videoMode])
 
@@ -240,6 +243,7 @@ export default function App() {
     setStory(null)
     setTarget(null)
     setVideoMode(false)
+    setFilmMode(false)
     setSlidesView(false)
     turnStart.current = null
   }
@@ -372,7 +376,7 @@ export default function App() {
 
   const home = !deck && !msgs.length
   // Entstehen: solange die KI nach ihrer Storyline baut; danach übernimmt der Editor
-  const building = !deckvid && busy && !!story?.length && (deck?.slides.length ?? 0) < story.length
+  const building = !deckvid && !film && busy && !!story?.length && (deck?.slides.length ?? 0) < story.length
 
   return (
     <ChatChoices.Provider value={choices}>
@@ -380,7 +384,7 @@ export default function App() {
     <div className="app">
       {home ? (
         <Start
-          onSubmit={send} onVideo={() => setVideoMode(true)} model={model} onModel={pickModel}
+          onSubmit={send} onVideo={() => setVideoMode(true)} onFilm={() => setFilmMode(true)} model={model} onModel={pickModel}
           onOpen={actions.onOpen} onOpenPath={actions.onOpenPath} onKey={() => openSettings()}
           onBlank={(size) => {
             // leer beginnen wie in Canva: eine leere Folie, alles Weitere von Hand oder per KI
@@ -397,6 +401,12 @@ export default function App() {
           </header>
           <BuildView deck={deck} story={story!} msgs={msgs} onAbort={abort} />
         </>
+      ) : film ? (
+        <Film
+          deck={deck} index={index} msgs={msgs} busy={busy} status={status} saved={saved} path={path} model={model} onModel={pickModel}
+          exporting={videoBusy.current} onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport}
+          onSlides={() => setSlidesView(true)} canUndo={canUndoTurn} onUndo={undoTurn}
+        />
       ) : deckvid ? (
         <Deckvid
           deck={deck} index={index} msgs={msgs} busy={busy} status={status} saved={saved} path={path} model={model} onModel={pickModel}
@@ -430,7 +440,8 @@ export default function App() {
             onSeries={actions.onSeries}
             onPresent={() => present(0)}
             onRestore={actions.onOpenPath}
-            onVideo={videoMode ? () => setSlidesView(false) : undefined}
+            onVideo={videoMode || filmMode || deck?.film ? () => setSlidesView(false) : undefined} // zurück nach Deckvid bzw. in die Animations-Ansicht
+            videoLabel={filmMode || deck?.film ? 'Animations-Ansicht' : undefined}
           />
           {deck && view === 'grid' ? (
             <Overview

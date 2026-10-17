@@ -243,7 +243,7 @@ function stepsFor(preset: BuildPreset, groups: Map<number, string[]>, mode: Deck
 const ITEM_FX: Record<Exclude<ItemAnim, 'none'>, Omit<AnimStep, 'shape' | 'trigger'>> = {
   fade: { effect: 'fade' }, float: { effect: 'float' }, pan: { effect: 'pan' }, drift: { effect: 'drift', durMs: 1200 },
   pop: { effect: 'pop', durMs: 450 }, zoom: { effect: 'zoom' }, tumble: { effect: 'zoom', durMs: 700 }, stomp: { effect: 'stomp' },
-  baseline: { effect: 'baseline', durMs: 600 }, wipe: { effect: 'wipe' },
+  baseline: { effect: 'baseline', durMs: 600 }, wipe: { effect: 'wipe' }, draw: { effect: 'wipe', durMs: 800 },
   typewriter: { effect: 'appear', by: 'letter', durMs: 1 }, ascend: { effect: 'float', by: 'word', durMs: 400 },
   breathe: { effect: 'pulse', durMs: 1200 },
 }

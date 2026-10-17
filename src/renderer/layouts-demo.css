@@ -1,0 +1,48 @@
+/* Demo-Layouts (layouts-demo.tsx): Code, Terminal, Bildschirm. Flächen sind native Formen (Box), Linien gibt es keine:
+   eine Linie im Hintergrundbild läge in der PPTX unter der gefüllten Fläche. Präfixe dwc- (Code) und dws- (Bildschirm). */
+
+/* ---------- Code / Terminal ---------- */
+.dwc { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; overflow: hidden; }
+.dwc-panel { flex: none; max-width: 100%; min-width: min(100%, 560px); display: flex; flex-direction: column; gap: 14px; padding: 20px 24px; border-radius: var(--radius); background: var(--surface); }
+/* .t.dwc-text: muss .t (white-space: pre-line) schlagen, sonst fallen Einrückungen weg */
+.t.dwc-text { font-family: 'IBM Plex Mono', monospace; font-size: var(--fs-small); line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-ligatures: none; }
+.dwc-text.big { font-size: var(--fs-body); }
+.dwc-note { max-width: var(--measure, 1000px); }
+
+/* ---------- Bildschirm ---------- */
+/* Fensterbreite aus der verfügbaren Höhe: (Höhe − Kopfzeile − Schattenplatz − Rand) × Seitenverhältnis + Rand, höchstens die Breite.
+   --dws-w enthält cq-Einheiten, die dort gelten, wo es eingesetzt wird: 16:9 an der Bühne (Container .dws, die Bildunterschrift
+   steht direkt daneben), Hochformat am Fenster (Container ist dann die Bühne, die Bildunterschrift steht darunter). */
+.dws { flex: 1; min-height: 0; display: flex; gap: 40px; container-type: size; }
+.dws:has(> .dws-cap) { --dws-capw: 300px; }
+.dws-stage {
+  --dws-bar: 0px; --dws-pad: 0px; --dws-sh: 0px; --dws-r: min(var(--radius), 12px);
+  --dws-w: calc((100cqh - var(--dws-bar) - var(--dws-sh) - 2 * var(--dws-pad)) * var(--dws-ar) + 2 * var(--dws-pad));
+  flex: none; width: min(100cqw - var(--dws-capw, 0px), var(--dws-w));
+}
+.dws-cap { flex: 1; min-width: 0; max-width: 420px; }
+.dws-win { position: relative; display: flex; flex-direction: column; padding: var(--dws-pad); }
+.dws-browser, .dws-fenster { --dws-bar: calc(var(--fs-small) * 2.6); --dws-pad: 1px; }
+.dws-handy { --dws-pad: 10px; --dws-r: 40px; }
+.dws-ohne { --dws-sh: 32px; } /* Platz für den Schatten unten */
+.dws-frame { position: absolute; inset: 0; border-radius: var(--dws-r); }
+:is(.dws-browser, .dws-fenster) .dws-frame { background: var(--surface); border: 1px solid var(--border); }
+.dws-handy .dws-frame { background: var(--text); }
+.dws-ohne .dws-frame { background: var(--surface); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16); }
+.dws-bar { position: relative; flex: none; height: var(--dws-bar); display: flex; align-items: center; justify-content: center; padding: 0 16px; }
+.dws-url { display: flex; align-items: center; justify-content: center; min-width: 50%; max-width: 100%; height: 70%; padding: 0 16px; border-radius: 999px; background: var(--bg); }
+.dws-bar .t { white-space: nowrap; }
+.dws-title { color: var(--text); }
+.dws-media { position: relative; flex: none; overflow: hidden; aspect-ratio: var(--dws-ar); border-radius: max(0px, calc(var(--dws-r) - var(--dws-pad))); }
+.dws-media > :is(.img, .placeholder) { position: absolute; inset: 0; border-radius: inherit; } /* Radius am Bild selbst: der Export liest ihn dort */
+.dws-zoom, .dws-still { position: absolute; inset: 0; }
+.dws-still { background-size: cover; background-position: top center; }
+.dws-zoom video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.dw-cursor { position: absolute; width: 28px; height: 28px; pointer-events: none; } /* Pfeilspitze = linke obere Ecke (film.ts setzt left/top) */
+.dw-cursor svg { display: block; overflow: visible; }
+
+/* Hochformat und Quadrat: Bildunterschrift unter dem Fenster */
+.fmt-tall .dws { flex-direction: column; gap: 28px; container-type: normal; }
+.fmt-tall .dws-stage { flex: 1; min-height: 0; width: auto; container-type: size; }
+.fmt-tall .dws-win { width: min(100cqw, var(--dws-w)); }
+.fmt-tall .dws-cap { flex: none; max-width: none; order: -1; } /* über dem Fenster: sonst stünde sie am Ende der Bühne, weit unter einem breiten Fenster */
