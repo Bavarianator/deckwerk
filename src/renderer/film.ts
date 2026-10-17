@@ -15,6 +15,7 @@ export interface FilmScene {
   steps: number[] // Länge jedes Takts in s (Ende seiner letzten Animation, inkl. Verzögerung)
   endless: boolean // Atmen, Foto-Zoom oder Video: das Bild ändert sich bis zum Szenenende
   words: number // Wörter auf der Folie (Lesezeit ohne Stimme)
+  media?: number // s Videomaterial ab Szenenbeginn: (to oder Videoende) − from, das längste Video; ohne Video oder unbekannte Länge undefined
   setBeats(beats: number[]): void // Beginn jedes Takts in s (sceneTimeline)
   seek(t: number): Promise<void>
   dispose(): void
@@ -157,7 +158,9 @@ export function filmPrepare(root: HTMLElement, deck: Deck, index: number): FilmS
   others.forEach((a) => a.pause())
 
   const end = (as: Animation[]) => Math.max(0, ...as.map((a) => Number(a.effect?.getComputedTiming().endTime ?? 0))) / 1000
-  const scene = { steps: steps.map(end), endless: preset === 'photo' || videos.length > 0 || !!root.querySelector('[data-anim="breathe"]'), words }
+  // Länge des Videomaterials; ohne to braucht es die Metadaten (Film-Host wartet darauf, die Vorschau in der App evtl. noch nicht)
+  const spans = videos.map((v) => { const { from, to } = videoSpan(v); return Math.min(to, v.duration || Infinity) - from }).filter(Number.isFinite)
+  const scene = { steps: steps.map(end), endless: preset === 'photo' || videos.length > 0 || !!root.querySelector('[data-anim="breathe"]'), words, media: spans.length ? Math.max(0, ...spans) : undefined }
   let beats = sceneTimeline({ ...scene, lead: 0 }).beats // bis setBeats: Zeitplan ohne Stimme
   return {
     ...scene,

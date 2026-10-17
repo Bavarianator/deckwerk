@@ -316,9 +316,10 @@ export function createEngine(): Engine {
         const report = (p: number) => { entry.pct = p; entry.listeners.forEach((l) => l(p)) }
         entry.done = (async () => {
           const music = musicOf(deck), t = transcriptsOf(deck)
-          if (all.film) { // Animation: Szenen Frame für Frame (export-film.ts), ohne Clip-Vorbereitung und Handy
+          if (all.film) { // Animation: Szenen Frame für Frame (export-film.ts), ohne Clip-Vorbereitung; die Bilder rendert der PC, kodieren kann das Handy
             if (format === 'clips') throw new Error('Animationen exportieren als ein Video: Format mp4.')
-            return (await import('./export-film')).exportFilm(deck, base, { voiceOf: (s) => voiceOf(all.film, s), ...music, onProgress: report })
+            const d = await phoneNow()
+            return (await import('./export-film')).exportFilm(deck, base, { voiceOf: (s) => voiceOf(all.film, s), ...music, onProgress: report, phone: d ? { serial: d.serial, models } : undefined })
           }
           // Handy-Option: die Clip-Gruppen rechnet das Handy (phone-ffmpeg.ts), Standbilder und Endschritt der PC
           const run = async (ready: Deck, pre: number) => {

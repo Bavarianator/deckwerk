@@ -17,7 +17,7 @@ import type { Status } from './TopBar'
 import './deckvid.css' // Chat, Fortschritt, Leerzustand und Abspielknopf wie in Deckvid
 import './film-view.css'
 
-type Metrics = Pick<FilmScene, 'steps' | 'endless' | 'words'>
+type Metrics = Pick<FilmScene, 'steps' | 'endless' | 'words' | 'media'>
 type Voice = { url: string; timing: VoiceTiming }
 // i = Folie, sure = Dauer steht fest (Animationen gemessen, Stimme echt oder keine)
 interface Plan { i: number; tl: SceneTimeline; url?: string; sure: boolean }
@@ -88,7 +88,7 @@ export function Film(p: Props) {
     const s = slides[i], m = deck ? metrics[sigOf(deck, i)] : undefined, text = s.voice?.trim()
     const v = text ? voices[vkey(text)] : undefined, real = typeof v === 'object' ? v : undefined
     const voice = text ? real?.timing ?? estimateVoice(text, speed) : undefined
-    return { i, tl: sceneTimeline({ steps: m?.steps ?? [], words: m?.words ?? 0, endless: m?.endless, voice, duration: s.duration, lead: 0 }), url: real?.url, sure: !!m && (!text || !!real) }
+    return { i, tl: sceneTimeline({ steps: m?.steps ?? [], words: m?.words ?? 0, endless: m?.endless, media: m?.media, voice, duration: s.duration, lead: 0 }), url: real?.url, sure: !!m && (!text || !!real) }
   })
   const voiceErr = texts.map((t) => voices[vkey(t)]).find((v): v is string => typeof v === 'string')
   const k = plan.findIndex((x) => x.i === index)
@@ -180,15 +180,22 @@ export function Film(p: Props) {
   )
 }
 
-// Vorschaubild der Szenenleiste (Endzustand). Misst beim Einhängen Takte und Wörter mit derselben Vorbereitung wie Player und Export.
+// Vorschaubild der Szenenleiste (Endzustand). Misst beim Einhängen Takte und Wörter mit derselben Vorbereitung wie Player und Export,
+// bei Videos ohne to noch einmal mit den Metadaten: erst dann ist die Länge (media) bekannt, sonst plante der Player kürzer als der Export.
 const Thumb = memo(function Thumb({ deck, i, sig, width, onMeasure }: { deck: Deck; i: number; sig: string; width: number; onMeasure: (sig: string, m: Metrics) => void }) {
   const ref = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     const root = ref.current?.querySelector<HTMLElement>('.slide')
     if (!root) return
-    const sc = filmPrepare(root, deck, i)
-    onMeasure(sig, { steps: sc.steps, endless: sc.endless, words: sc.words })
-    sc.dispose()
+    const measure = () => {
+      const sc = filmPrepare(root, deck, i)
+      onMeasure(sig, { steps: sc.steps, endless: sc.endless, words: sc.words, media: sc.media })
+      sc.dispose()
+    }
+    measure()
+    const late = [...root.querySelectorAll('video')].filter((v) => !v.dataset.to && !(v.duration > 0))
+    late.forEach((v) => v.addEventListener('loadedmetadata', measure, { once: true }))
+    return () => late.forEach((v) => v.removeEventListener('loadedmetadata', measure))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- key = sig
   return <span className="fv-thumb" ref={ref}><SlideView deck={deck} index={i} width={width} film /></span>
 }, (a, b) => a.sig === b.sig && a.width === b.width)

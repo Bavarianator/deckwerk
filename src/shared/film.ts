@@ -78,8 +78,9 @@ export interface SceneTimeline {
 
 /** Zeitachse einer Szene. steps = Dauer der Animationen je Takt (s, aus prepare(); Takt 0 läuft ohne Klick), voice = Zeitplan der Stimme,
  *  duration = Wunschlänge (die Stimme wird nie abgeschnitten), words = Wörter auf der Folie (Lesezeit ohne Stimme),
- *  lead = Vorlauf (Überblendung von der Szene davor; Stimme und Takt 0 beginnen danach), endless = Atmen/Foto-Zoom/Video läuft bis zum Ende. */
-export function sceneTimeline(o: { steps: number[]; voice?: VoiceTiming; duration?: number; words: number; lead: number; endless?: boolean }): SceneTimeline {
+ *  lead = Vorlauf (Überblendung von der Szene davor; Stimme und Takt 0 beginnen danach), endless = Atmen/Foto-Zoom/Video läuft bis zum Ende,
+ *  media = Videomaterial ab Szenenbeginn (s): ohne duration läuft die Szene mindestens lead + media, die Aufnahme wird nicht abgeschnitten. */
+export function sceneTimeline(o: { steps: number[]; voice?: VoiceTiming; duration?: number; words: number; lead: number; endless?: boolean; media?: number }): SceneTimeline {
   const n = Math.max(o.steps.length, o.voice?.beats.length ?? 0, 1)
   const beats: number[] = []
   for (let k = 0; k < n; k++) {
@@ -89,7 +90,7 @@ export function sceneTimeline(o: { steps: number[]; voice?: VoiceTiming; duratio
   }
   const animEnd = Math.max(o.lead, ...beats.map((b, k) => b + (o.steps[k] ?? 0)))
   const voiceEnd = o.voice ? o.lead + o.voice.total + TAIL : 0
-  const auto = Math.max(animEnd + (o.voice ? 0.3 : HOLD), voiceEnd, o.voice ? 0 : o.lead + 1 + o.words / 3, MIN_SCENE)
+  const auto = Math.max(animEnd + (o.voice ? 0.3 : HOLD), voiceEnd, o.voice ? 0 : o.lead + 1 + o.words / 3, o.lead + (o.media ?? 0), MIN_SCENE)
   const dur = Math.max(o.duration ?? auto, voiceEnd, 0.5)
   return { beats, dur, hold: o.endless ? dur : Math.min(dur, animEnd) }
 }

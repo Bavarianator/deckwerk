@@ -117,7 +117,7 @@ async function main() {
   const colors: number[][] = []
   await renderFilm(deck, 3, {
     width: 1280,
-    plan: (s) => (assert.equal(s.endless, true, 'Video → endless'), { beats: [0], times: [0.5, 1.5, 0.5, 5] }),
+    plan: (s) => (assert.equal(s.endless, true, 'Video → endless'), near(s.media ?? 0, 2, 0.1, 'Videomaterial (media)'), { beats: [0], times: [0.5, 1.5, 0.5, 5] }),
   }, (_, img) => void colors.push(rgbAt(img, 320, 180)))
   const is = (c: number[], rgb: number[], what: string) => assert.ok(c.every((v, k) => Math.abs(v - rgb[k]) < 60), `${what}: ${c}`)
   is(colors[0], [255, 0, 0], 'Video bei 0,5 s rot')

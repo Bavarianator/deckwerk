@@ -153,7 +153,7 @@ function checkParts(parts: Part[] | undefined, where: string) {
 
 export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos'] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image
 /** Jeder ffmpeg-Schritt des Exports: auf dem Handy, wenn eins mitrechnet (gleiche Parameter, damit -c:v copy beim Verbinden passt); scheitert es, rechnet der PC */
-const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
+export const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
   if (!phone || phone.failed) return runFfmpeg(args, ro)
   return phoneFfmpeg(phone.serial, args, { ...ro, models: phone.models }).catch((e: Error) => {
     console.warn('[video] Export auf dem Handy fehlgeschlagen, der PC rechnet weiter:', e.message)

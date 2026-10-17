@@ -130,7 +130,7 @@ function Host({ mode }: { mode: string }) {
       await frames()
     },
     // Film: Szene laden und alle Animationen pausiert anlegen; Takte und Zeitpunkte plant der Main-Prozess
-    async filmLoad(deck: Deck, index: number): Promise<Pick<FilmScene, 'steps' | 'endless' | 'words'>> {
+    async filmLoad(deck: Deck, index: number): Promise<Pick<FilmScene, 'steps' | 'endless' | 'words' | 'media'>> {
       scene?.dispose()
       scene = null
       await fontsLoaded()
@@ -142,7 +142,7 @@ function Host({ mode }: { mode: string }) {
       await videosLoaded(root)
       autofit(root)
       scene = filmPrepare(root, deck, index)
-      return { steps: scene.steps, endless: scene.endless, words: scene.words }
+      return { steps: scene.steps, endless: scene.endless, words: scene.words, media: scene.media }
     },
     filmBeats: (beats: number[]) => loaded().setBeats(beats),
     async filmSeek(t: number) {

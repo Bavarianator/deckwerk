@@ -39,6 +39,12 @@ near(b.beats[1], 3.5)
 near(b.beats[2], 3.5 + 0.5 + GAP) // mehr Schritte als Marker: verkettet
 near(b.dur, 0.5 + 5 + TAIL)
 near(b.hold, b.beats[2] + 0.5)
+// Video in der Szene: ohne duration mindestens lead + Videomaterial; mit duration gilt sie, die Stimme aber nie abgeschnitten
+near(sceneTimeline({ steps: [0.4], words: 0, lead: 0.5, media: 12 }).dur, 12.5)
+near(sceneTimeline({ steps: [0.4], voice: { beats: [0], total: 3, cues: [] }, words: 0, lead: 0, media: 8 }).dur, 8)
+near(sceneTimeline({ steps: [0.4], words: 0, lead: 0, media: 12, duration: 5 }).dur, 5)
+near(sceneTimeline({ steps: [0.4], voice: { beats: [0], total: 7, cues: [] }, words: 0, lead: 0, media: 12, duration: 5 }).dur, 7 + TAIL)
+near(sceneTimeline({ steps: [0.4], words: 0, lead: 0, media: 0.5 }).dur, MIN_SCENE)
 // Mehr Marker als Schritte: zusätzliche Takte (für Kamera), endlose Animation hält nie
 const c = sceneTimeline({ steps: [0.4], voice: { beats: [0, 1, 2], total: 3, cues: [] }, words: 0, lead: 0, endless: true })
 assert.deepEqual(c.beats, [0, 1, 2])

@@ -130,7 +130,7 @@ export function renderSlide(deck: Deck, i: number, opts: { png?: boolean; backgr
   })
 }
 
-export interface FilmScene { steps: number[]; endless: boolean; words: number } // renderer/film.ts
+export interface FilmScene { steps: number[]; endless: boolean; words: number; media?: number } // renderer/film.ts
 /** Film (Feature „Animation“): Szene i Frame für Frame per Seek wie bei Remotion. plan bekommt die Takte der Szene und liefert
  *  Taktbeginne (beats) und Zeitpunkte (times, s ab Szenenbeginn); onFrame erhält je Zeitpunkt das Bild in width px Breite.
  *  Ein Job in der Render-Warteschlange: Vorschauen und Exporte warten so lange. Kein Resize je Frame (UnknownVizError). */
