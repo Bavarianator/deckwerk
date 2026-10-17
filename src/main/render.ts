@@ -1,7 +1,8 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { isA4, PRINT_SIZES, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
 import { setPrintBoxes } from './pdf-boxes'
+import { toPdfX4 } from './print-pdf'
 
 // Offscreen Chromium windows that render slides with the exact same React code as the app.
 // Render at zoom 2 → 2560x1440 captures (crisp backgrounds), while the CSS layout stays 1280x720.
@@ -138,13 +139,15 @@ export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buf
   const pageW = Math.round(tw * PT + 2 * bleed), pageH = Math.round(th * PT + 2 * bleed)
   const fx = ((pageW - 2 * bleed) * 4) / 3 / w, fy = ((pageH - 2 * bleed) * 4) / 3 / h // 1 pt = 4/3 CSS-px
   const geo = { pageW, pageH, bleed, fx, fy, bx: (bleed * 4) / 3 / fx, by: (bleed * 4) / 3 / fy }
-  return serial(async () => {
+  const rgb = serial(async () => {
     const win = await host('print')
     fitWindow(win, w, h + 1)
     await call(win, `dw.renderAll(${JSON.stringify(deck)}, ${JSON.stringify(geo)})`)
     const pdf = await win.webContents.printToPDF({ pageSize: { width: pageW / 72, height: pageH / 72 }, printBackground: true, margins: { top: 0, bottom: 0, left: 0, right: 0 }, preferCSSPageSize: true })
     return setPrintBoxes(pdf, bleed)
   })
+  // CMYK außerhalb von serial(): gs braucht die Render-Fenster nicht und hielte sonst das Rendern anderer Folien auf
+  return opts.cmyk ? rgb.then((pdf) => toPdfX4(pdf, join(app.getAppPath(), 'assets/icc/FOGRA39L_coated.icc'))) : rgb
 }
 
 export function renderOverview(deck: Deck): Promise<Buffer> {
