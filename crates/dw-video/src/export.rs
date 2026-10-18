@@ -1192,6 +1192,19 @@ pub fn clip_segs(
     name: &str,
     dir: &Path,
     o: &SegOpts,
+    on_progress: Option<&mut dyn FnMut(f64)>,
+    cancel: &Cancel,
+) -> Result<Vec<Seg>> {
+    clip_segs_with(&ffmpeg::Local, job, name, dir, o, on_progress, cancel)
+}
+
+/// wie [`clip_segs`], die Gruppen-Encodes rechnet `runner` (Probe, Stillen und Look weiter lokal)
+pub fn clip_segs_with(
+    runner: &dyn ffmpeg::Runner,
+    job: &ClipJob,
+    name: &str,
+    dir: &Path,
+    o: &SegOpts,
     mut on_progress: Option<&mut dyn FnMut(f64)>,
     cancel: &Cancel,
 ) -> Result<Vec<Seg>> {
@@ -1228,10 +1241,10 @@ pub fn clip_segs(
                 let mut cb = pct_cb(dur, |pct| {
                     p(((done + (dur * pct) / 100.0) / total * 100.0).floor())
                 });
-                ffmpeg::run_in(dir, &g.args, Some(&mut cb), cancel)?;
+                runner.run_in(dir, &g.args, Some(&mut cb), cancel)?;
             }
             None => {
-                ffmpeg::run_in(dir, &g.args, None, cancel)?;
+                runner.run_in(dir, &g.args, None, cancel)?;
             }
         }
         done += dur;
@@ -1676,6 +1689,19 @@ pub fn encode_clip(
     out: &Path,
     dir: &Path,
     music: Option<Music>,
+    on_progress: Option<&mut dyn FnMut(f64)>,
+    cancel: &Cancel,
+) -> Result<f64> {
+    encode_clip_with(&ffmpeg::Local, job, out, dir, music, on_progress, cancel)
+}
+
+/// wie [`encode_clip`], die Gruppen rechnet `runner`, den Endschritt der PC
+pub fn encode_clip_with(
+    runner: &dyn ffmpeg::Runner,
+    job: &ClipJob,
+    out: &Path,
+    dir: &Path,
+    music: Option<Music>,
     mut on_progress: Option<&mut dyn FnMut(f64)>,
     cancel: &Cancel,
 ) -> Result<f64> {
@@ -1690,7 +1716,7 @@ pub fn encode_clip(
                 f((p * 0.9).floor())
             }
         };
-        clip_segs(job, &stem, dir, &o, Some(&mut cb), cancel)?
+        clip_segs_with(runner, job, &stem, dir, &o, Some(&mut cb), cancel)?
     };
     let mut cb = |p: f64| {
         if let Some(f) = on_progress.as_mut() {

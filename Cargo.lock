@@ -1353,6 +1353,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "dw-phone"
+version = "0.1.0"
+dependencies = [
+ "dw-video",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "dw-podcast"
 version = "0.1.0"
 dependencies = [

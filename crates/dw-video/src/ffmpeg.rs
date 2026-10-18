@@ -58,7 +58,8 @@ impl Cancel {
     pub fn is_cancelled(&self) -> bool {
         self.flag.load(Ordering::Relaxed)
     }
-    fn check(&self) -> Result<()> {
+    /// Abgebrochen oder Frist vorbei → Fehler (für Wachen außerhalb von [`exec`], z. B. dw-phone)
+    pub fn check(&self) -> Result<()> {
         if self.is_cancelled() {
             Err(Error::Cancelled)
         } else if self.deadline.is_some_and(|d| Instant::now() >= d) {
@@ -330,6 +331,33 @@ fn run_opt(
         });
     }
     Ok(r.out)
+}
+
+/// Wer einen ffmpeg-Aufruf im Arbeitsordner rechnet (Clip-Gruppen in [`crate::export::clip_segs_with`]); Argumente und Fortschritt
+/// wie [`run_in`]. Standard ist [`Local`]; dw-phone lagert aufs Handy aus.
+pub trait Runner {
+    fn run_in(
+        &self,
+        cwd: &Path,
+        args: &[String],
+        on_progress: Option<&mut dyn FnMut(f64)>,
+        cancel: &Cancel,
+    ) -> Result<()>;
+}
+
+/// ffmpeg dieses Rechners
+pub struct Local;
+
+impl Runner for Local {
+    fn run_in(
+        &self,
+        cwd: &Path,
+        args: &[String],
+        on_progress: Option<&mut dyn FnMut(f64)>,
+        cancel: &Cancel,
+    ) -> Result<()> {
+        run_in(cwd, args, on_progress, cancel).map(drop)
+    }
 }
 
 /// Dauer und Maße, wie das Video angezeigt wird (Drehung 90/270 tauscht w und h), Bildrate und ob es Ton hat;
