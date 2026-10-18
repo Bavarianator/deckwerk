@@ -24,6 +24,10 @@ impl X {
         ))));
         X(w)
     }
+    /// Ohne XML-Deklaration, für Bausteine, die in ein anderes Teil kommen.
+    pub fn frag() -> Self {
+        X(Writer::new(Vec::new()))
+    }
     fn start(n: &str, a: Attrs) -> BytesStart<'static> {
         let mut s = BytesStart::new(n.to_string());
         for (k, v) in a {
@@ -50,6 +54,10 @@ impl X {
     }
     /// Nur feste Bausteine ohne Nutzerdaten.
     pub fn raw(&mut self, s: &'static str) {
+        self.0.get_mut().extend_from_slice(s.as_bytes());
+    }
+    /// Selbst erzeugtes XML ohne Nutzertext (Zeitleiste, Übergang) oder ein `frag()`-Ergebnis.
+    pub fn trusted(&mut self, s: &str) {
         self.0.get_mut().extend_from_slice(s.as_bytes());
     }
     pub fn done(self) -> Vec<u8> {

@@ -1,0 +1,161 @@
+{
+ "duotone": [
+  "#12345a",
+  "#E0E8F0"
+ ],
+ "cases": [
+  {
+   "adjust": {
+    "bright": 20
+   },
+   "look": null,
+   "kids": "<a:lum bright=\"20000\" contrast=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "bright": 20
+   },
+   "look": "mono",
+   "kids": "<a:grayscl/><a:lum bright=\"20000\" contrast=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "bright": 20
+   },
+   "look": "duotone",
+   "kids": "<a:duotone><a:srgbClr val=\"12345A\"/><a:srgbClr val=\"E0E8F0\"/></a:duotone><a:lum bright=\"20000\" contrast=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "contrast": -35
+   },
+   "look": null,
+   "kids": "<a:lum bright=\"0\" contrast=\"-35000\"/>"
+  },
+  {
+   "adjust": {
+    "contrast": -35
+   },
+   "look": "mono",
+   "kids": "<a:grayscl/><a:lum bright=\"0\" contrast=\"-35000\"/>"
+  },
+  {
+   "adjust": {
+    "contrast": -35
+   },
+   "look": "duotone",
+   "kids": "<a:duotone><a:srgbClr val=\"12345A\"/><a:srgbClr val=\"E0E8F0\"/></a:duotone><a:lum bright=\"0\" contrast=\"-35000\"/>"
+  },
+  {
+   "adjust": {
+    "sat": -100
+   },
+   "look": null,
+   "kids": "<a:hsl hue=\"0\" sat=\"-100000\" lum=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "sat": -100
+   },
+   "look": "mono",
+   "kids": "<a:grayscl/><a:hsl hue=\"0\" sat=\"-100000\" lum=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "sat": -100
+   },
+   "look": "duotone",
+   "kids": "<a:duotone><a:srgbClr val=\"12345A\"/><a:srgbClr val=\"E0E8F0\"/></a:duotone><a:hsl hue=\"0\" sat=\"-100000\" lum=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "blur": 37
+   },
+   "look": null,
+   "kids": "<a:blur rad=\"70485\" grow=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "blur": 37
+   },
+   "look": "mono",
+   "kids": "<a:grayscl/><a:blur rad=\"70485\" grow=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "blur": 37
+   },
+   "look": "duotone",
+   "kids": "<a:duotone><a:srgbClr val=\"12345A\"/><a:srgbClr val=\"E0E8F0\"/></a:duotone><a:blur rad=\"70485\" grow=\"0\"/>"
+  },
+  {
+   "adjust": {
+    "bright": -10,
+    "contrast": 15,
+    "sat": 50,
+    "blur": 100
+   },
+   "look": null,
+   "kids": "<a:blur rad=\"190500\" grow=\"0\"/><a:hsl hue=\"0\" sat=\"50000\" lum=\"0\"/><a:lum bright=\"-10000\" contrast=\"15000\"/>"
+  },
+  {
+   "adjust": {
+    "bright": -10,
+    "contrast": 15,
+    "sat": 50,
+    "blur": 100
+   },
+   "look": "mono",
+   "kids": "<a:grayscl/><a:blur rad=\"190500\" grow=\"0\"/><a:hsl hue=\"0\" sat=\"50000\" lum=\"0\"/><a:lum bright=\"-10000\" contrast=\"15000\"/>"
+  },
+  {
+   "adjust": {
+    "bright": -10,
+    "contrast": 15,
+    "sat": 50,
+    "blur": 100
+   },
+   "look": "duotone",
+   "kids": "<a:duotone><a:srgbClr val=\"12345A\"/><a:srgbClr val=\"E0E8F0\"/></a:duotone><a:blur rad=\"190500\" grow=\"0\"/><a:hsl hue=\"0\" sat=\"50000\" lum=\"0\"/><a:lum bright=\"-10000\" contrast=\"15000\"/>"
+  },
+  {
+   "adjust": {
+    "bright": 0,
+    "sat": 0
+   },
+   "look": null,
+   "kids": ""
+  },
+  {
+   "adjust": {
+    "bright": 0,
+    "sat": 0
+   },
+   "look": "mono",
+   "kids": "<a:grayscl/>"
+  },
+  {
+   "adjust": {
+    "bright": 0,
+    "sat": 0
+   },
+   "look": "duotone",
+   "kids": "<a:duotone><a:srgbClr val=\"12345A\"/><a:srgbClr val=\"E0E8F0\"/></a:duotone>"
+  },
+  {
+   "adjust": {},
+   "look": null,
+   "kids": ""
+  },
+  {
+   "adjust": {},
+   "look": "mono",
+   "kids": "<a:grayscl/>"
+  },
+  {
+   "adjust": {},
+   "look": "duotone",
+   "kids": "<a:duotone><a:srgbClr val=\"12345A\"/><a:srgbClr val=\"E0E8F0\"/></a:duotone>"
+  }
+ ]
+}

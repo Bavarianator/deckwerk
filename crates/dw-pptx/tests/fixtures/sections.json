@@ -1,0 +1,166 @@
+[
+ {
+  "deck": {
+   "title": "T",
+   "theme": {
+    "id": "beratung"
+   },
+   "transition": "none",
+   "slides": [
+    {
+     "id": "s0",
+     "layout": "title",
+     "content": {
+      "title": "Start"
+     }
+    },
+    {
+     "id": "s1",
+     "layout": "agenda",
+     "content": {
+      "items": [
+       {
+        "title": "Markt und Lage"
+       },
+       {
+        "title": "Die Lösung"
+       },
+       {
+        "title": "Team"
+       },
+       {
+        "title": "Ausblick 2030"
+       }
+      ]
+     }
+    },
+    {
+     "id": "s2",
+     "layout": "section",
+     "content": {
+      "number": "01",
+      "title": "Der Markt"
+     }
+    },
+    {
+     "id": "s3",
+     "layout": "bullets",
+     "content": {}
+    },
+    {
+     "id": "s4",
+     "layout": "section",
+     "content": {
+      "number": 2,
+      "title": "Unsere Lösung"
+     }
+    },
+    {
+     "id": "s5",
+     "layout": "section",
+     "content": {
+      "title": ""
+     }
+    },
+    {
+     "id": "s6",
+     "layout": "section",
+     "content": {
+      "number": 0,
+      "title": "Ausblick & Ziele <2030>"
+     }
+    }
+   ]
+  },
+  "sections": "<p:extLst><p:ext uri=\"{521415D9-36F7-43E2-AB2F-B90AF26B5E84}\"><p14:sectionLst xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\"><p14:section name=\"Einstieg\" id=\"{GUID}\"><p14:sldIdLst><p14:sldId id=\"256\"/><p14:sldId id=\"257\"/></p14:sldIdLst></p14:section><p14:section name=\"01 Der Markt\" id=\"{GUID}\"><p14:sldIdLst><p14:sldId id=\"258\"/><p14:sldId id=\"259\"/></p14:sldIdLst></p14:section><p14:section name=\"2 Unsere Lösung\" id=\"{GUID}\"><p14:sldIdLst><p14:sldId id=\"260\"/></p14:sldIdLst></p14:section><p14:section name=\"\" id=\"{GUID}\"><p14:sldIdLst><p14:sldId id=\"261\"/></p14:sldIdLst></p14:section><p14:section name=\"Ausblick &amp; Ziele &lt;2030&gt;\" id=\"{GUID}\"><p14:sldIdLst><p14:sldId id=\"262\"/></p14:sldIdLst></p14:section></p14:sectionLst></p:ext></p:extLst>",
+  "agenda": [
+   [
+    1,
+    [
+     [
+      0,
+      2
+     ],
+     [
+      1,
+      4
+     ],
+     [
+      3,
+      6
+     ]
+    ]
+   ]
+  ]
+ },
+ {
+  "deck": {
+   "title": "T",
+   "theme": {
+    "id": "beratung"
+   },
+   "transition": "none",
+   "slides": [
+    {
+     "id": "s0",
+     "layout": "section",
+     "content": {
+      "title": "Gleich zu Beginn"
+     }
+    },
+    {
+     "id": "s1",
+     "layout": "agenda",
+     "content": {
+      "items": [
+       {
+        "title": "Beginn"
+       },
+       {}
+      ]
+     }
+    },
+    {
+     "id": "s2",
+     "layout": "quote",
+     "content": {}
+    }
+   ]
+  },
+  "sections": "<p:extLst><p:ext uri=\"{521415D9-36F7-43E2-AB2F-B90AF26B5E84}\"><p14:sectionLst xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\"><p14:section name=\"Gleich zu Beginn\" id=\"{GUID}\"><p14:sldIdLst><p14:sldId id=\"256\"/><p14:sldId id=\"257\"/><p14:sldId id=\"258\"/></p14:sldIdLst></p14:section></p14:sectionLst></p:ext></p:extLst>",
+  "agenda": [
+   [
+    1,
+    [
+     [
+      0,
+      0
+     ]
+    ]
+   ]
+  ]
+ },
+ {
+  "deck": {
+   "title": "T",
+   "theme": {
+    "id": "beratung"
+   },
+   "transition": "none",
+   "slides": [
+    {
+     "id": "s0",
+     "layout": "title",
+     "content": {}
+    },
+    {
+     "id": "s1",
+     "layout": "bullets",
+     "content": {}
+    }
+   ]
+  },
+  "sections": "",
+  "agenda": []
+ }
+]

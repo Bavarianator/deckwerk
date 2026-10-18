@@ -1,6 +1,10 @@
 //! PPTX in einem Durchgang: gemessene Elemente + Hintergrund-PNG je Folie → .pptx-Bytes (RUST-REWRITE.md §6.3/6.4).
 //! Jedes Teil wird genau einmal geschrieben, Rels und Content-Types kommen aus einem Register.
 
+pub mod anim;
+pub mod chart;
+mod deckinfo;
+pub mod fonts;
 mod parts;
 mod slide;
 mod xml;
@@ -10,6 +14,9 @@ use std::io::{Cursor, Write};
 
 use dw_model::{Measured, Size};
 use xml::{X, a};
+
+pub use deckinfo::{agenda_links, sections};
+pub use fonts::EmbedFont;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -42,6 +49,71 @@ pub struct PptxSlide {
     pub hidden: bool,
     /// diese oder die folgende Folie nutzt Morph → Namen mit `!!dw:`
     pub morph: bool,
+}
+
+/// Theme-Farben, die der Export braucht: Diagramme (charts.ts chartColors) und Duotone (themes.ts duotoneOf).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Palette {
+    pub bg: String,
+    pub text: String,
+    pub muted: String,
+    pub border: String,
+    pub good: String,
+    pub bad: String,
+    pub chart: Vec<String>,
+    /// [dunkel, hell]
+    pub duotone: (String, String),
+}
+
+impl Default for Palette {
+    fn default() -> Self {
+        let s = |v: &str| v.to_string();
+        Palette {
+            bg: s("#FFFFFF"),
+            text: s("#161616"),
+            muted: s("#6B6B6B"),
+            border: s("#D9D9D9"),
+            good: s("#1E7A45"),
+            bad: s("#B83227"),
+            chart: vec![s("#2563EB"), s("#6B6B6B"), s("#A3A3A3")],
+            duotone: (s("#0F2A5E"), s("#C8D6F5")),
+        }
+    }
+}
+
+/// Was über `PptxInput` hinaus aus dem Deck kommt. Alles optional; `Default` = Export wie `build_pptx`.
+#[derive(Debug, Clone, Default)]
+pub struct PptxOpts {
+    /// deck.mode == "auto": keine Klicks, alles nacheinander
+    pub auto: bool,
+    pub palette: Palette,
+    /// je Folie (Index wie `PptxInput.slides`); fehlende Einträge = Standard
+    pub slides: Vec<SlideOpts>,
+    /// eingebettete Schriften; Office-Schriften gehören nicht hierher
+    pub fonts: Vec<EmbedFont>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct SlideOpts {
+    /// Übergang an der Grenze zu dieser Folie (deck.ts transitionOf); auf Folie 1 ignoriert
+    pub transition: Option<String>,
+    /// slow | fast
+    pub transition_speed: Option<String>,
+    /// Aufbau-Preset (layouts.ts buildOf)
+    pub build: Option<String>,
+    /// Start und Verzögerung (s) freier Elemente nach Slot `items.<id>` (Item.animStart/animDelay)
+    pub items: HashMap<String, (Option<String>, f64)>,
+    /// Name des Abschnitts, den diese Folie beginnt (Kapiteltrenner), siehe `sections`
+    pub section: Option<String>,
+    /// Agenda-Punkt k → Folienindex (0-basiert), siehe `agenda_links`
+    pub agenda: Vec<(usize, usize)>,
+    /// Farben bei abweichendem Folien-Ton
+    pub palette: Option<Palette>,
+}
+
+pub struct PptxOutput {
+    pub bytes: Vec<u8>,
+    pub warnings: Vec<String>,
 }
 
 const REL: &str = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/";
@@ -91,13 +163,14 @@ impl Rels {
 pub(crate) struct Pkg {
     parts: Vec<(String, Vec<u8>)>,
     overrides: Vec<(String, String)>,
-    defaults: BTreeMap<&'static str, &'static str>,
+    pub(crate) defaults: BTreeMap<&'static str, &'static str>,
     media_by_src: HashMap<String, String>,
     media_count: usize,
+    pub(crate) chart_count: usize,
 }
 
 impl Pkg {
-    fn part(&mut self, path: &str, kind: Option<&str>, body: Vec<u8>) {
+    pub(crate) fn part(&mut self, path: &str, kind: Option<&str>, body: Vec<u8>) {
         if let Some(k) = kind {
             let ct = if k.contains('/') {
                 k.to_string()
@@ -108,7 +181,7 @@ impl Pkg {
         }
         self.parts.push((path.to_string(), body));
     }
-    fn rels(&mut self, path: &str, rels: &Rels) {
+    pub(crate) fn rels(&mut self, path: &str, rels: &Rels) {
         let (dir, file) = path.rsplit_once('/').unwrap_or(("", path));
         let p = if dir.is_empty() {
             format!("_rels/{file}.rels")
@@ -129,15 +202,29 @@ impl Pkg {
             image::ImageFormat::WebP => ("webp", "image/webp"),
             _ => return None,
         };
+        Some(self.blob(src, bytes, "image", ext, ct))
+    }
+    /// Beliebige Datei unter ppt/media (ein Eintrag je `key`) → Ziel relativ zu ppt/slides.
+    pub fn blob(
+        &mut self,
+        key: Option<&str>,
+        bytes: &[u8],
+        stem: &str,
+        ext: &'static str,
+        ct: &'static str,
+    ) -> String {
+        if let Some(t) = key.and_then(|s| self.media_by_src.get(s)) {
+            return t.clone();
+        }
         self.defaults.insert(ext, ct);
         self.media_count += 1;
         let n = self.media_count;
-        self.part(&format!("ppt/media/image{n}.{ext}"), None, bytes.to_vec());
-        let target = format!("../media/image{n}.{ext}");
-        if let Some(s) = src {
+        self.part(&format!("ppt/media/{stem}{n}.{ext}"), None, bytes.to_vec());
+        let target = format!("../media/{stem}{n}.{ext}");
+        if let Some(s) = key {
             self.media_by_src.insert(s.to_string(), target.clone());
         }
-        Some(target)
+        target
     }
     fn content_types(&self) -> Vec<u8> {
         let mut x = X::new();
@@ -161,7 +248,17 @@ impl Pkg {
     }
 }
 
+/// Wie `build_pptx_with` ohne Deck-Optionen; Warnungen gehen nach stderr.
 pub fn build_pptx(input: &PptxInput) -> Result<Vec<u8>, Error> {
+    let out = build_pptx_with(input, &PptxOpts::default())?;
+    for w in &out.warnings {
+        eprintln!("[dw-pptx] {w}");
+    }
+    Ok(out.bytes)
+}
+
+pub fn build_pptx_with(input: &PptxInput, opts: &PptxOpts) -> Result<PptxOutput, Error> {
+    let mut warnings = vec![];
     let Size { w, h } = input.size;
     let (cx, cy) = (slide::emu(w), slide::emu(h));
     // Grenzen von ST_SlideSizeCoordinate
@@ -201,10 +298,14 @@ pub fn build_pptx(input: &PptxInput) -> Result<Vec<u8>, Error> {
     pres.add("presProps", "presProps.xml", false);
     pres.add("viewProps", "viewProps.xml", false);
     pres.add("tableStyles", "tableStyles.xml", false);
+    let fonts = embed_fonts(&opts.fonts, &mut pres, &mut pkg, &mut warnings);
+    let none = SlideOpts::default();
+    let so = |i: usize| opts.slides.get(i).unwrap_or(&none);
+    let secs: Vec<Option<String>> = (0..n).map(|i| so(i).section.clone()).collect();
     pkg.part(
         "ppt/presentation.xml",
         Some("presentation.main"),
-        parts::presentation(&master, &notes_master, &slide_ids, cx, cy),
+        parts::presentation(&master, &notes_master, &slide_ids, cx, cy, &fonts, &secs),
     );
     pkg.rels("ppt/presentation.xml", &pres);
 
@@ -256,9 +357,11 @@ pub fn build_pptx(input: &PptxInput) -> Result<Vec<u8>, Error> {
     );
     pkg.rels("ppt/notesMasters/notesMaster1.xml", &r);
 
+    let mut prev = vec![];
     for (i, s) in input.slides.iter().enumerate() {
         let k = i + 1;
-        let (xml, mut rels) = slide::slide_xml(input, s, &mut pkg)?;
+        let (xml, mut rels) =
+            slide::slide_xml(input, opts, i, s, &mut pkg, &mut prev, &mut warnings)?;
         if let Some(notes) = s.notes.as_deref().filter(|t| !t.trim().is_empty()) {
             rels.add(
                 "notesSlide",
@@ -286,5 +389,64 @@ pub fn build_pptx(input: &PptxInput) -> Result<Vec<u8>, Error> {
         zip.start_file(p.as_str(), opt)?;
         zip.write_all(body)?;
     }
-    Ok(zip.finish()?.into_inner())
+    Ok(PptxOutput {
+        bytes: zip.finish()?.into_inner(),
+        warnings,
+    })
+}
+
+/// Schnitte → EOT-Teile + Rels an presentation.xml; Rückgabe: (typeface, serif, [(Schnitt, rId)]).
+fn embed_fonts(
+    fonts: &[EmbedFont],
+    pres: &mut Rels,
+    pkg: &mut Pkg,
+    warnings: &mut Vec<String>,
+) -> Vec<parts::Font> {
+    let mut out = vec![];
+    let mut n = 0;
+    for f in fonts {
+        if out.iter().any(|(fam, _, _): &parts::Font| fam == &f.family) {
+            continue;
+        }
+        let faces = [
+            ("regular", Some(&f.regular)),
+            ("bold", f.bold.as_ref()),
+            ("italic", f.italic.as_ref()),
+            ("boldItalic", f.bold_italic.as_ref()),
+        ];
+        let mut refs = vec![];
+        for (face, ttf) in faces {
+            let Some(ttf) = ttf else { continue };
+            // „restricted“: nicht einbetten statt das Bit zu löschen (RUST-REWRITE §7.1 S14)
+            match fonts::fs_type(ttf) {
+                // mehrere Bits: das am wenigsten strenge gilt
+                Ok(t) if t & 0x0002 != 0 && t & 0x000C == 0 => {
+                    warnings.push(format!(
+                        "{} {face}: Lizenz verbietet Einbetten (fsType restricted), nicht eingebettet",
+                        f.family
+                    ));
+                    continue;
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    warnings.push(format!("{} {face} nicht einbettbar: {e}", f.family));
+                    continue;
+                }
+            }
+            match fonts::ttf_to_eot(ttf) {
+                Ok(eot) => {
+                    n += 1;
+                    let path = format!("fonts/font{n}.fntdata");
+                    pkg.defaults.insert("fntdata", "application/x-fontdata");
+                    pkg.part(&format!("ppt/{path}"), None, eot);
+                    refs.push((face, pres.add("font", path, false)));
+                }
+                Err(e) => warnings.push(format!("{} {face} nicht einbettbar: {e}", f.family)),
+            }
+        }
+        if !refs.is_empty() {
+            out.push((f.family.clone(), f.serif, refs));
+        }
+    }
+    out
 }

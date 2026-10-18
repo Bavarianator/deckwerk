@@ -37,18 +37,31 @@ pub fn app(slides: usize) -> Vec<u8> {
     x.done()
 }
 
+/// (typeface, serif, [(Schnitt, rId)])
+pub type Font = (String, bool, Vec<(&'static str, String)>);
+pub type Fonts = [Font];
+
 pub fn presentation(
     master: &str,
     notes_master: &str,
     slides: &[String],
     cx: i64,
     cy: i64,
+    fonts: &Fonts,
+    sections: &[Option<String>],
 ) -> Vec<u8> {
     let mut x = X::new();
-    x.open(
-        "p:presentation",
-        a!["xmlns:a" => NS_A, "xmlns:r" => NS_R, "xmlns:p" => NS_P],
-    );
+    if fonts.is_empty() {
+        x.open(
+            "p:presentation",
+            a!["xmlns:a" => NS_A, "xmlns:r" => NS_R, "xmlns:p" => NS_P],
+        );
+    } else {
+        x.open(
+            "p:presentation",
+            a!["xmlns:a" => NS_A, "xmlns:r" => NS_R, "xmlns:p" => NS_P, "embedTrueTypeFonts" => 1],
+        );
+    }
     x.open("p:sldMasterIdLst", a![]);
     x.empty("p:sldMasterId", a!["id" => 2147483648u32, "r:id" => master]);
     x.close("p:sldMasterIdLst");
@@ -64,8 +77,68 @@ pub fn presentation(
     }
     x.empty("p:sldSz", a!["cx" => cx, "cy" => cy]);
     x.empty("p:notesSz", a!["cx" => 6858000, "cy" => 9144000]);
+    // Schema-Reihenfolge: … notesSz, smartTags, embeddedFontLst, …, extLst
+    if !fonts.is_empty() {
+        x.open("p:embeddedFontLst", a![]);
+        for (family, serif, refs) in fonts {
+            x.open("p:embeddedFont", a![]);
+            x.empty(
+                "p:font",
+                a!["typeface" => family, "pitchFamily" => if *serif { 18 } else { 34 }, "charset" => 0],
+            );
+            for (face, rid) in refs {
+                x.empty(&format!("p:{face}"), a!["r:id" => rid]);
+            }
+            x.close("p:embeddedFont");
+        }
+        x.close("p:embeddedFontLst");
+    }
+    sections_xml(&mut x, sections);
     x.close("p:presentation");
     x.done()
+}
+
+/// Abschnitte der Foliensortierung (p14:sectionLst): jeder Kapiteltrenner beginnt einen, Folien davor heißen „Einstieg“.
+fn sections_xml(x: &mut X, sections: &[Option<String>]) {
+    if sections.iter().all(Option::is_none) {
+        return;
+    }
+    let mut secs: Vec<(String, Vec<usize>)> = vec![];
+    for (i, s) in sections.iter().enumerate() {
+        if s.is_some() || secs.is_empty() {
+            secs.push((s.clone().unwrap_or_else(|| "Einstieg".into()), vec![]));
+        }
+        secs.last_mut().expect("nicht leer").1.push(256 + i);
+    }
+    x.open("p:extLst", a![]);
+    x.open("p:ext", a!["uri" => "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"]);
+    x.open(
+        "p14:sectionLst",
+        a!["xmlns:p14" => "http://schemas.microsoft.com/office/powerpoint/2010/main"],
+    );
+    for (k, (name, ids)) in secs.iter().enumerate() {
+        x.open("p14:section", a!["name" => name, "id" => guid(k, name)]);
+        x.open("p14:sldIdLst", a![]);
+        for id in ids {
+            x.empty("p14:sldId", a!["id" => id]);
+        }
+        x.close("p14:sldIdLst");
+        x.close("p14:section");
+    }
+    x.close("p14:sectionLst");
+    x.close("p:ext");
+    x.close("p:extLst");
+}
+
+// stabile GUID aus Position und Name (FNV-1a), damit gleiche Decks gleiche Dateien ergeben
+fn guid(k: usize, name: &str) -> String {
+    let mut h: u128 = 0x6c62272e07bb014262b821756295c58d;
+    for b in k.to_le_bytes().iter().chain(name.as_bytes()) {
+        h ^= *b as u128;
+        h = h.wrapping_mul(0x0000000001000000000000000000013B);
+    }
+    let s = format!("{h:032X}");
+    format!("{{{}-{}-{}-{}-{}}}", &s[..8], &s[8..12], &s[12..16], &s[16..20], &s[20..])
 }
 
 pub fn theme(input: &PptxInput) -> Vec<u8> {

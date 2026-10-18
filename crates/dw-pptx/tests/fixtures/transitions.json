@@ -1,0 +1,197 @@
+[
+ {
+  "t": "none",
+  "speed": null,
+  "xml": ""
+ },
+ {
+  "t": "none",
+  "speed": "slow",
+  "xml": ""
+ },
+ {
+  "t": "none",
+  "speed": "fast",
+  "xml": ""
+ },
+ {
+  "t": "fade",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:fade/></p:transition>"
+ },
+ {
+  "t": "fade",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:fade/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "fade",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:fade/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "push",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:push dir=\"u\"/></p:transition>"
+ },
+ {
+  "t": "push",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:push dir=\"u\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:push dir=\"u\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "push",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:push dir=\"u\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:push dir=\"u\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "morph",
+  "speed": null,
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p159=\"http://schemas.microsoft.com/office/powerpoint/2015/09/main\" Requires=\"p159\"><p:transition spd=\"slow\"><p159:morph option=\"byObject\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"slow\"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "morph",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p159=\"http://schemas.microsoft.com/office/powerpoint/2015/09/main\" xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p159\"><p:transition spd=\"slow\" p14:dur=\"1600\"><p159:morph option=\"byObject\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"slow\"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "morph",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p159=\"http://schemas.microsoft.com/office/powerpoint/2015/09/main\" xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p159\"><p:transition spd=\"fast\" p14:dur=\"600\"><p159:morph option=\"byObject\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:fade/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "dissolve",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:dissolve/></p:transition>"
+ },
+ {
+  "t": "dissolve",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:dissolve/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:dissolve/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "dissolve",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:dissolve/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:dissolve/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "wipe",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:wipe dir=\"r\"/></p:transition>"
+ },
+ {
+  "t": "wipe",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:wipe dir=\"r\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:wipe dir=\"r\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "wipe",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:wipe dir=\"r\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:wipe dir=\"r\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "cover",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:cover dir=\"l\"/></p:transition>"
+ },
+ {
+  "t": "cover",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:cover dir=\"l\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:cover dir=\"l\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "cover",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:cover dir=\"l\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:cover dir=\"l\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "split",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:split orient=\"vert\" dir=\"out\"/></p:transition>"
+ },
+ {
+  "t": "split",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:split orient=\"vert\" dir=\"out\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:split orient=\"vert\" dir=\"out\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "split",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:split orient=\"vert\" dir=\"out\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:split orient=\"vert\" dir=\"out\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "circle",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:circle/></p:transition>"
+ },
+ {
+  "t": "circle",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:circle/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:circle/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "circle",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:circle/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:circle/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "zoom",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:zoom/></p:transition>"
+ },
+ {
+  "t": "zoom",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:zoom/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:zoom/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "zoom",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:zoom/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:zoom/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "slide",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:push dir=\"l\"/></p:transition>"
+ },
+ {
+  "t": "slide",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:push dir=\"l\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:push dir=\"l\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "slide",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:push dir=\"l\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:push dir=\"l\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "stack",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:cover dir=\"l\"/></p:transition>"
+ },
+ {
+  "t": "stack",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:cover dir=\"l\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:cover dir=\"l\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "stack",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:cover dir=\"l\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:cover dir=\"l\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "color",
+  "speed": null,
+  "xml": "<p:transition spd=\"fast\"><p:wipe dir=\"r\"/></p:transition>"
+ },
+ {
+  "t": "color",
+  "speed": "slow",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"med\" p14:dur=\"800\"><p:wipe dir=\"r\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"med\"><p:wipe dir=\"r\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ },
+ {
+  "t": "color",
+  "speed": "fast",
+  "xml": "<mc:AlternateContent xmlns:mc=\"http://schemas.openxmlformats.org/markup-compatibility/2006\"><mc:Choice xmlns:p14=\"http://schemas.microsoft.com/office/powerpoint/2010/main\" Requires=\"p14\"><p:transition spd=\"fast\" p14:dur=\"300\"><p:wipe dir=\"r\"/></p:transition></mc:Choice><mc:Fallback><p:transition spd=\"fast\"><p:wipe dir=\"r\"/></p:transition></mc:Fallback></mc:AlternateContent>"
+ }
+]

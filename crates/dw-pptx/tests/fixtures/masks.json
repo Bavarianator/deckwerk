@@ -1,0 +1,34 @@
+[
+ {
+  "mask": "circle",
+  "geom": "<a:prstGeom prst=\"ellipse\"><a:avLst/></a:prstGeom>"
+ },
+ {
+  "mask": "arch",
+  "geom": "<a:prstGeom prst=\"round2SameRect\"><a:avLst><a:gd name=\"adj1\" fmla=\"val 50000\"/><a:gd name=\"adj2\" fmla=\"val 0\"/></a:avLst></a:prstGeom>"
+ },
+ {
+  "mask": "hexagon",
+  "geom": "<a:prstGeom prst=\"hexagon\"><a:avLst/></a:prstGeom>"
+ },
+ {
+  "mask": "diamond",
+  "geom": "<a:prstGeom prst=\"diamond\"><a:avLst/></a:prstGeom>"
+ },
+ {
+  "mask": "octagon",
+  "geom": "<a:prstGeom prst=\"octagon\"><a:avLst/></a:prstGeom>"
+ },
+ {
+  "mask": "star",
+  "geom": "<a:prstGeom prst=\"star5\"><a:avLst/></a:prstGeom>"
+ },
+ {
+  "mask": "heart",
+  "geom": "<a:prstGeom prst=\"heart\"><a:avLst/></a:prstGeom>"
+ },
+ {
+  "mask": "blob",
+  "geom": "<a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom>"
+ }
+]
