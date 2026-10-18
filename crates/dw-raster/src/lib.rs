@@ -323,3 +323,8 @@ pub fn fit_rect(rect: Rect, iw: f64, ih: f64, fit: ImgFit, focus: (f32, f32)) ->
     let y = rect.y0 + (rect.height() - h) * f64::from(focus.1);
     Rect::new(x, y, x + w, y + h)
 }
+
+/// Bild einer `ImageSrc` als RGBA (ohne vormultipliziertes Alpha), z. B. für den GPU-Weg im Editor.
+pub fn decode_image(src: &ImageSrc) -> Result<image::RgbaImage> {
+    decode(src)
+}

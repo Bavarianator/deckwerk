@@ -5,6 +5,14 @@ export struct Thumb {
     label: string,
 }
 
+// Rechteck in Folienpixeln
+export struct SRect {
+    x: float,
+    y: float,
+    w: float,
+    h: float,
+}
+
 export component AppWindow inherits Window {
     in property <string> win-title: "Deckwerk-Spike";
     title: win-title;
@@ -19,29 +27,32 @@ export component AppWindow inherits Window {
     in property <string> status;
     in property <float> slide-w: 1280;
     in property <float> slide-h: 720;
-    // Auswahl und Editor in Folienpixeln; die Stage rechnet in Bildschirm um
+    // Auswahl in Folienpixeln; die Stage rechnet in Bildschirm um
     in property <bool> sel-visible;
     in property <float> sel-x;
     in property <float> sel-y;
     in property <float> sel-w;
     in property <float> sel-h;
+    // Editor-Overlay aus dw-edit: Cursor, Auswahl, Preedit-Unterstreichung (Folienpixel)
     in property <bool> editing;
-    in-out property <string> edit-text;
-    in property <float> edit-font-size: 20;
+    in property <bool> caret-visible;
+    in property <SRect> caret;
+    in property <[SRect]> sel-rects;
+    in property <[SRect]> compose-rects;
+    // Folie → Bildschirm (logische px), für die Texturauflösung
+    out property <float> stage-f: stage.f;
 
-    callback stage-clicked(float, float, float, float, bool);
+    callback stage-pointer(int, float, float, float, float, bool);
     callback select-slide(int);
     callback nav(int);
     callback deselect();
     callback start-edit();
     callback save();
-    callback edit-changed(string);
-    callback edit-commit();
-    callback edit-cancel();
+    callback undo(bool);
+    callback edit-key(string, bool, bool, bool) -> bool;
 
     public function focus-editor() {
-        editor.focus();
-        editor.select-all();
+        edit-keys.focus();
     }
     public function focus-keys() {
         keys.focus();
@@ -51,6 +62,10 @@ export component AppWindow inherits Window {
         key-pressed(e) => {
             if (e.modifiers.control && (e.text == "s" || e.text == "S")) {
                 root.save();
+                return accept;
+            }
+            if (e.modifiers.control && (e.text == "z" || e.text == "Z")) {
+                root.undo(e.modifiers.shift);
                 return accept;
             }
             if (e.text == Key.LeftArrow) {
@@ -70,6 +85,19 @@ export component AppWindow inherits Window {
                 return accept;
             }
             reject
+        }
+
+        // Tasten beim Bearbeiten gehen an dw-edit; IME kommt über winit direkt (main.rs)
+        edit-keys := FocusScope {
+            width: 0px;
+            height: 0px;
+            enabled: root.editing;
+            key-pressed(e) => {
+                if (root.edit-key(e.text, e.modifiers.control, e.modifiers.shift, e.modifiers.alt)) {
+                    return accept;
+                }
+                reject
+            }
         }
 
         VerticalLayout {
@@ -115,15 +143,6 @@ export component AppWindow inherits Window {
                     property <float> f: min(self.width / 1px / root.slide-w, self.height / 1px / root.slide-h);
                     property <length> ox: (self.width - root.slide-w * f * 1px) / 2;
                     property <length> oy: (self.height - root.slide-h * f * 1px) / 2;
-                    // Klicks werden in Rust gegen die Measured-Boxen geprüft (logic::to_slide)
-                    TouchArea {
-                        clicked => {
-                            root.stage-clicked(self.pressed-x / 1px, self.pressed-y / 1px, self.width / 1px, self.height / 1px, false);
-                        }
-                        double-clicked => {
-                            root.stage-clicked(self.pressed-x / 1px, self.pressed-y / 1px, self.width / 1px, self.height / 1px, true);
-                        }
-                    }
                     Image {
                         x: stage.ox;
                         y: stage.oy;
@@ -136,52 +155,50 @@ export component AppWindow inherits Window {
                         font-size: 22px;
                         color: #555;
                     }
-                    if root.sel-visible && !root.editing: Rectangle {
+                    if root.sel-visible: Rectangle {
                         x: stage.ox + root.sel-x * stage.f * 1px - 2px;
                         y: stage.oy + root.sel-y * stage.f * 1px - 2px;
                         width: root.sel-w * stage.f * 1px + 4px;
                         height: root.sel-h * stage.f * 1px + 4px;
-                        border-width: 2px;
+                        border-width: root.editing ? 1px : 2px;
                         border-color: #2f6fd6;
                     }
-                    Rectangle {
-                        visible: root.editing;
-                        x: stage.ox + root.sel-x * stage.f * 1px - 2px;
-                        y: stage.oy + root.sel-y * stage.f * 1px - 2px;
-                        width: root.sel-w * stage.f * 1px + 4px;
-                        height: max(root.sel-h * stage.f * 1px, editor.preferred-height) + 4px;
-                        background: #fffffff0;
-                        border-width: 2px;
-                        border-color: #2f6fd6;
-                        editor := TextInput {
-                            x: 2px;
-                            y: 2px;
-                            width: parent.width - 4px;
-                            enabled: root.editing;
-                            text <=> root.edit-text;
-                            font-size: root.edit-font-size * stage.f * 1px;
-                            single-line: false;
-                            wrap: word-wrap;
-                            color: #1a1a1a;
-                            edited => {
-                                root.edit-changed(self.text);
+                    for r in root.sel-rects: Rectangle {
+                        x: stage.ox + r.x * stage.f * 1px;
+                        y: stage.oy + r.y * stage.f * 1px;
+                        width: r.w * stage.f * 1px;
+                        height: r.h * stage.f * 1px;
+                        background: #2f6fd650;
+                    }
+                    for r in root.compose-rects: Rectangle {
+                        x: stage.ox + r.x * stage.f * 1px;
+                        y: stage.oy + (r.y + r.h) * stage.f * 1px - 2px;
+                        width: r.w * stage.f * 1px;
+                        height: 2px;
+                        background: #2f6fd6;
+                    }
+                    if root.editing && root.caret-visible: Rectangle {
+                        x: stage.ox + root.caret.x * stage.f * 1px;
+                        y: stage.oy + root.caret.y * stage.f * 1px;
+                        width: max(1px, root.caret.w * stage.f * 1px);
+                        height: root.caret.h * stage.f * 1px;
+                        background: #1a1a1a;
+                    }
+                    // Zeiger in Rust gegen Measured-Boxen bzw. das Editor-Layout prüfen (dw_edit::stage)
+                    TouchArea {
+                        pointer-event(e) => {
+                            if (e.button == PointerEventButton.left && e.kind == PointerEventKind.down) {
+                                root.stage-pointer(0, self.mouse-x / 1px, self.mouse-y / 1px, self.width / 1px, self.height / 1px, e.modifiers.shift);
                             }
-                            key-pressed(e) => {
-                                if (e.text == Key.Escape) {
-                                    root.edit-cancel();
-                                    return accept;
-                                }
-                                if (e.text == Key.Return && !e.modifiers.shift) {
-                                    root.edit-commit();
-                                    return accept;
-                                }
-                                if (e.modifiers.control && (e.text == "s" || e.text == "S")) {
-                                    root.edit-commit();
-                                    root.save();
-                                    return accept;
-                                }
-                                reject
+                            if (e.button == PointerEventButton.left && e.kind == PointerEventKind.up) {
+                                root.stage-pointer(2, self.mouse-x / 1px, self.mouse-y / 1px, self.width / 1px, self.height / 1px, e.modifiers.shift);
                             }
+                        }
+                        moved => {
+                            root.stage-pointer(1, self.mouse-x / 1px, self.mouse-y / 1px, self.width / 1px, self.height / 1px, false);
+                        }
+                        double-clicked => {
+                            root.stage-pointer(3, self.mouse-x / 1px, self.mouse-y / 1px, self.width / 1px, self.height / 1px, false);
                         }
                     }
                 }

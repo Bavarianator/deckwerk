@@ -10,7 +10,12 @@ publish = false
 dw-model = { path = "../dw-model" }
 dw-scene = { path = "../dw-scene" }
 dw-raster = { path = "../dw-raster" }
-slint = "1.18"
+dw-theme = { path = "../dw-theme" }
+dw-edit = { path = "../dw-edit" }
+dw-canvas = { path = "../dw-canvas" }
+# wgpu 30: passt zu vello 0.11 (dw-canvas) und zu Slints femtovg-wgpu-Renderer
+slint = { version = "1.18", features = ["renderer-femtovg-wgpu", "unstable-wgpu-30", "unstable-winit-030"] }
+kurbo.workspace = true
 serde_json.workspace = true
 anyhow = "1"
 
