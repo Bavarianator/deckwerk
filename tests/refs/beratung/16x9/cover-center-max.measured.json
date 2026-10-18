@@ -1,0 +1,132 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 590.9140625,
+        "y": 173.6484375,
+        "w": 98.171875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 140,
+        "y": 214.4453125,
+        "w": 1000,
+        "h": 241.6640625
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 76,
+      "lineHeightPx": 80.56,
+      "trackingPx": -1.52,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Kundenzufriedenheit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "steigt deutlich durch neue",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 210,
+        "y": 480.109375,
+        "w": 860,
+        "h": 66.234375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "meta",
+      "box": {
+        "x": 406.609375,
+        "y": 622.921875,
+        "w": 466.78125,
+        "h": 25.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "neue Prozesse im Vertrieb und Wachstumsstrategie für",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

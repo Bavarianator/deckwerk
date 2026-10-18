@@ -1,0 +1,13 @@
+[package]
+name = "dw-refcheck"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+dw-scene = { path = "../dw-scene" }
+dw-raster = { path = "../dw-raster" }
+image = { version = "0.25", default-features = false, features = ["png"] }
+serde_json.workspace = true

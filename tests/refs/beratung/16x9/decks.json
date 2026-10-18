@@ -1,0 +1,743 @@
+{
+  "cover-left-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "left",
+        "content": {
+          "title": "Q3-Review"
+        }
+      }
+    ]
+  },
+  "cover-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-left-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+          "subtitle": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+          "meta": "neue Prozesse im Vertrieb und Wachstumsstrategie für"
+        }
+      }
+    ]
+  },
+  "cover-center-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "center",
+        "content": {
+          "title": "Q3-Review"
+        }
+      }
+    ]
+  },
+  "cover-center-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-center-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+          "subtitle": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+          "meta": "neue Prozesse im Vertrieb und Wachstumsstrategie für"
+        }
+      }
+    ]
+  },
+  "cover-bottom-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "bottom",
+        "content": {
+          "title": "Q3-Review"
+        }
+      }
+    ]
+  },
+  "cover-bottom-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "bottom",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-bottom-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "bottom",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+          "subtitle": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+          "meta": "neue Prozesse im Vertrieb und Wachstumsstrategie für"
+        }
+      }
+    ]
+  },
+  "cover-side-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "side",
+        "content": {
+          "title": "Q3-Review"
+        }
+      }
+    ]
+  },
+  "cover-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-side-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+          "subtitle": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+          "meta": "neue Prozesse im Vertrieb und Wachstumsstrategie für"
+        }
+      }
+    ]
+  },
+  "bullets-list-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "list",
+        "content": {
+          "title": "Zwei Gründe sprechen für den Wechsel",
+          "items": [
+            {
+              "text": "Geringere Kosten"
+            },
+            {
+              "text": "Schnellere Abläufe"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "bullets-list-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "list",
+        "content": {
+          "eyebrow": "Warum jetzt",
+          "title": "Drei Entwicklungen machen den Markt jetzt attraktiv",
+          "items": [
+            {
+              "text": "Regulierung schafft Nachfrage",
+              "sub": "Ab 2027 wird digitale Dokumentation Pflicht"
+            },
+            {
+              "text": "Wettbewerb ist fragmentiert",
+              "sub": "Kein Anbieter hat mehr als 8 % Marktanteil"
+            },
+            {
+              "text": "Kunden sind wechselbereit",
+              "sub": "62 % planen einen Anbieterwechsel in 24 Monaten"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "bullets-list-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "list",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "items": [
+            {
+              "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "sub": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem",
+              "icon": "check"
+            },
+            {
+              "text": "Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+              "sub": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+              "icon": "check"
+            },
+            {
+              "text": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für",
+              "sub": "neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+              "icon": "check"
+            },
+            {
+              "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für",
+              "sub": "Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+              "icon": "check"
+            },
+            {
+              "text": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte",
+              "sub": "im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+              "icon": "check"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "bullets-cards-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "cards",
+        "content": {
+          "title": "Zwei Gründe sprechen für den Wechsel",
+          "items": [
+            {
+              "text": "Geringere Kosten"
+            },
+            {
+              "text": "Schnellere Abläufe"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "bullets-cards-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Warum jetzt",
+          "title": "Drei Entwicklungen machen den Markt jetzt attraktiv",
+          "items": [
+            {
+              "text": "Regulierung schafft Nachfrage",
+              "sub": "Ab 2027 wird digitale Dokumentation Pflicht"
+            },
+            {
+              "text": "Wettbewerb ist fragmentiert",
+              "sub": "Kein Anbieter hat mehr als 8 % Marktanteil"
+            },
+            {
+              "text": "Kunden sind wechselbereit",
+              "sub": "62 % planen einen Anbieterwechsel in 24 Monaten"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "bullets-cards-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "items": [
+            {
+              "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "sub": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem",
+              "icon": "check"
+            },
+            {
+              "text": "Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+              "sub": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+              "icon": "check"
+            },
+            {
+              "text": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für",
+              "sub": "neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+              "icon": "check"
+            },
+            {
+              "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für",
+              "sub": "Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+              "icon": "check"
+            },
+            {
+              "text": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte",
+              "sub": "im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+              "icon": "check"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "two-column-rule-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "rule",
+        "content": {
+          "title": "Heute gegenüber morgen",
+          "left": {
+            "heading": "Heute"
+          },
+          "right": {
+            "heading": "Morgen"
+          }
+        }
+      }
+    ]
+  },
+  "two-column-rule-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "rule",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-rule-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "rule",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "left": {
+            "heading": "Digitalisierung Kundenzufriedenheit",
+            "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt",
+            "points": [
+              "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+              "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "steigt deutlich durch neue Prozesse im Vertrieb und",
+              "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie"
+            ]
+          },
+          "right": {
+            "heading": "steigt deutlich durch neue Prozesse im",
+            "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+            "points": [
+              "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "steigt deutlich durch neue Prozesse im Vertrieb und",
+              "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie",
+              "durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-equal-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "equal",
+        "content": {
+          "title": "Heute gegenüber morgen",
+          "left": {
+            "heading": "Heute"
+          },
+          "right": {
+            "heading": "Morgen"
+          }
+        }
+      }
+    ]
+  },
+  "two-column-equal-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "equal",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-equal-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "equal",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "left": {
+            "heading": "Digitalisierung Kundenzufriedenheit",
+            "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt",
+            "points": [
+              "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+              "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "steigt deutlich durch neue Prozesse im Vertrieb und",
+              "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie"
+            ]
+          },
+          "right": {
+            "heading": "steigt deutlich durch neue Prozesse im",
+            "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+            "points": [
+              "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "steigt deutlich durch neue Prozesse im Vertrieb und",
+              "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie",
+              "durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-highlight-right-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "highlight-right",
+        "content": {
+          "title": "Heute gegenüber morgen",
+          "left": {
+            "heading": "Heute"
+          },
+          "right": {
+            "heading": "Morgen"
+          }
+        }
+      }
+    ]
+  },
+  "two-column-highlight-right-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "highlight-right",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-highlight-right-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "highlight-right",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "left": {
+            "heading": "Digitalisierung Kundenzufriedenheit",
+            "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt",
+            "points": [
+              "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+              "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "steigt deutlich durch neue Prozesse im Vertrieb und",
+              "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie"
+            ]
+          },
+          "right": {
+            "heading": "steigt deutlich durch neue Prozesse im",
+            "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+            "points": [
+              "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+              "steigt deutlich durch neue Prozesse im Vertrieb und",
+              "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie",
+              "durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

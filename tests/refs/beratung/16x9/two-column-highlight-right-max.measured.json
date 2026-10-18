@@ -1,0 +1,596 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 2,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 91.15625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.13,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 89.59375,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit steigt",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.left",
+      "box": {
+        "x": 72,
+        "y": 226.34375,
+        "w": 554,
+        "h": 420.3671875
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.heading",
+      "box": {
+        "x": 72,
+        "y": 254.34375,
+        "w": 554,
+        "h": 26.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 22,
+      "lineHeightPx": 26.84,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "left.text",
+      "box": {
+        "x": 72,
+        "y": 295.1796875,
+        "w": 554,
+        "h": 110.375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 4,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.left.points.0",
+      "box": {
+        "x": 72,
+        "y": 432.3515625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.points.0",
+      "box": {
+        "x": 100,
+        "y": 419.5546875,
+        "w": 526,
+        "h": 55.1875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.left.points.1",
+      "box": {
+        "x": 72,
+        "y": 497.5390625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.points.1",
+      "box": {
+        "x": 100,
+        "y": 484.7421875,
+        "w": 526,
+        "h": 55.1875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.left.points.2",
+      "box": {
+        "x": 72,
+        "y": 562.7265625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.points.2",
+      "box": {
+        "x": 100,
+        "y": 549.9296875,
+        "w": 526,
+        "h": 27.59375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich durch neue Prozesse im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.left.points.3",
+      "box": {
+        "x": 72,
+        "y": 600.3203125,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.points.3",
+      "box": {
+        "x": 100,
+        "y": 587.5234375,
+        "w": 526,
+        "h": 55.1875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.right",
+      "box": {
+        "x": 654,
+        "y": 226.34375,
+        "w": 554,
+        "h": 420.3671875
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.heading",
+      "box": {
+        "x": 654,
+        "y": 254.34375,
+        "w": 554,
+        "h": 26.8359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 22,
+      "lineHeightPx": 26.84,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich durch neue Prozesse im",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "right.text",
+      "box": {
+        "x": 654,
+        "y": 295.1796875,
+        "w": 554,
+        "h": 110.375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 4,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.right.points.0",
+      "box": {
+        "x": 654,
+        "y": 432.3515625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.points.0",
+      "box": {
+        "x": 682,
+        "y": 419.5546875,
+        "w": 526,
+        "h": 55.1875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.right.points.1",
+      "box": {
+        "x": 654,
+        "y": 497.5390625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.points.1",
+      "box": {
+        "x": 682,
+        "y": 484.7421875,
+        "w": 526,
+        "h": 27.59375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich durch neue Prozesse im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.right.points.2",
+      "box": {
+        "x": 654,
+        "y": 535.1328125,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.points.2",
+      "box": {
+        "x": 682,
+        "y": 522.3359375,
+        "w": 526,
+        "h": 55.1875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.right.points.3",
+      "box": {
+        "x": 654,
+        "y": 600.3203125,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.points.3",
+      "box": {
+        "x": 682,
+        "y": 587.5234375,
+        "w": 526,
+        "h": 55.1875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

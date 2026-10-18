@@ -1,0 +1,228 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Zwei Gründe sprechen für den Wechsel",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.0",
+      "box": {
+        "x": 72,
+        "y": 148.875,
+        "w": 556,
+        "h": 260
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_ib.0",
+      "box": {
+        "x": 72,
+        "y": 176.875,
+        "w": 556,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.0",
+      "box": {
+        "x": 72,
+        "y": 176.875,
+        "w": 11.40625,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.text",
+      "box": {
+        "x": 72,
+        "y": 231.953125,
+        "w": 556,
+        "h": 27.2734375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Geringere Kosten",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.1",
+      "box": {
+        "x": 652,
+        "y": 148.875,
+        "w": 556,
+        "h": 260
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_ib.1",
+      "box": {
+        "x": 652,
+        "y": 176.875,
+        "w": 556,
+        "h": 25.078125
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.1",
+      "box": {
+        "x": 652,
+        "y": 176.875,
+        "w": 11.40625,
+        "h": 25.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.text",
+      "box": {
+        "x": 652,
+        "y": 231.953125,
+        "w": 556,
+        "h": 27.2734375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Schnellere Abläufe",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

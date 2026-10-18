@@ -1,0 +1,37 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 319.71875,
+        "w": 1000,
+        "h": 80.5546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 76,
+      "lineHeightPx": 80.56,
+      "trackingPx": -1.52,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Q3-Review",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}
