@@ -1,0 +1,12 @@
+[package]
+name = "dw-theme"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+dw-color = { path = "../dw-color" }
+serde.workspace = true
+serde_json.workspace = true

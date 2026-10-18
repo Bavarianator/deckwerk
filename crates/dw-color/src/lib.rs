@@ -134,7 +134,7 @@ impl Oklab {
     }
 
     /// sRGB 0..1, ungeklammert (kann außerhalb des Farbraums liegen).
-    fn to_srgb(self) -> [f64; 3] {
+    pub fn to_srgb(self) -> [f64; 3] {
         let Oklab { l, a, b } = self;
         let l_ = (l + 0.3963377773761749 * a + 0.2158037573099136 * b).powi(3);
         let m_ = (l - 0.1055613458156586 * a - 0.0638541728258133 * b).powi(3);
@@ -168,8 +168,9 @@ fn displayable(c: [f64; 3]) -> bool {
     c.iter().all(|v| (0.0..=1.0).contains(v))
 }
 
-// culori clampChroma in OKLCH: Chroma halbieren, bis die Farbe im sRGB liegt (Auflösung 0,4 / 2^13)
-fn clamp_chroma(l: f64, c: f64, h: f64) -> [f64; 3] {
+/// culori clampChroma in OKLCH: Chroma halbieren, bis die Farbe im sRGB liegt (Auflösung 0,4 / 2^13)
+/// Eingabe OKLCH mit h in Radiant, Ausgabe sRGB 0..1.
+pub fn clamp_chroma(l: f64, c: f64, h: f64) -> [f64; 3] {
     let at = |c: f64| {
         Oklab {
             l,
