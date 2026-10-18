@@ -16,13 +16,13 @@ jobs:
       - name: Systempakete
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libxkbcommon-dev libwayland-dev libfontconfig1-dev libfuse2
       - name: Bauen
-        run: cargo build --release -p dw-app
+        run: cargo build --release -p dw-app -p dw-mcp
       - name: AppImage packen
         run: |
           set -e
           D=AppDir
           mkdir -p $D/usr/bin $D/usr/share/deckwerk
-          cp target/release/deckwerk-app $D/usr/bin/
+          cp target/release/deckwerk-app target/release/dw-mcp $D/usr/bin/
           cp -r assets/fonts examples $D/usr/share/deckwerk/
           cp assets/icon.png $D/deckwerk.png
           cat > $D/deckwerk.desktop <<'EOF'
@@ -37,6 +37,8 @@ jobs:
           #!/bin/sh
           HERE="$(dirname "$(readlink -f "$0")")"
           export DECKWERK_ASSETS="$HERE/usr/share/deckwerk"
+          # --mcp (wie bei Electron, auch mit --ozone-…-Resten aus alten MCP-Einträgen) → MCP-Server über stdio
+          for a in "$@"; do [ "$a" = --mcp ] && exec "$HERE/usr/bin/dw-mcp"; done
           exec "$HERE/usr/bin/deckwerk-app" "$@"
           EOF
           chmod +x $D/AppRun
