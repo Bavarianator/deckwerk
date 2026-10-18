@@ -81,6 +81,13 @@ let bin: Promise<string> | undefined
 /** Pfad zu einem ffmpeg mit libass und libx264: aus dem PATH, sonst einmalig geladen. Ergebnis gemerkt, Fehler nicht. */
 export const ffmpegBin = () => (bin ??= locate().catch((e) => { bin = undefined; throw e }))
 
+const encoders = new Map<string, Promise<boolean>>()
+/** Ob das ffmpeg (ffmpegBin) den Encoder name kennt, z. B. libx265; gemerkt */
+export function hasEncoder(name: string): Promise<boolean> {
+  if (!encoders.has(name)) encoders.set(name, ffmpegBin().then((b) => run(b, ['-hide_banner', '-encoders'])).then((r) => new RegExp(`\\s${name}\\s`).test(r.out.toString()), () => false))
+  return encoders.get(name)!
+}
+
 async function ff(args: string[], o: RunOpts = {}) {
   const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-y', ...args], o)
   if (r.code !== 0) throw new Error(`ffmpeg fehlgeschlagen (Code ${r.code}):\n${r.err.trim().split('\n').slice(-15).join('\n')}`)

@@ -29,6 +29,7 @@ jobs:
           $E scripts/check-update.ts --format=esm --outfile=out/check-update.mjs && node out/check-update.mjs
           $E scripts/check-phone.ts --format=esm --outfile=out/check-phone.mjs && node out/check-phone.mjs
           $E scripts/check-paths.ts --format=cjs --external:electron --loader:.md=text --loader:.css=empty --outfile=out/check-paths.cjs && node out/check-paths.cjs
+          $E scripts/check-chat-overlay.ts --format=esm --outfile=out/check-chat-overlay.mjs && node out/check-chat-overlay.mjs
           for c in check-hidden check-find check-layers; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
           $E scripts/check-brand.ts --format=esm --loader:.md=text --outfile=out/check-brand.mjs && node out/check-brand.mjs
           $E scripts/check-film.ts --format=esm --outfile=out/check-film.mjs && node out/check-film.mjs

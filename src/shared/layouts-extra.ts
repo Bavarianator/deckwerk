@@ -245,7 +245,7 @@ const clip = z.object({
   fit: z.enum(['crop', 'blur']).optional().describe('Bild im Format: crop = Bild füllt das Format, Zuschnitt um focus (Standard); blur = ganzes Bild mittig auf unscharfem Grund, wenn Gesten oder Folien am Rand wichtig sind'),
   follow: z.enum(['sprecher']).optional().describe('sprecher = Zuschnitt folgt dem, der gerade spricht (Podcast, Gespräch); nur bei mehreren Personen im Bild'),
   style: z.enum(['ruhig', 'lebendig']).optional().describe('Animation im Export: ruhig (Standard, ohne Animation und ohne Zoom) oder lebendig (Wort-Pop, Hook mit Einblendung, Fortschrittsbalken, leichter Zoom-Wechsel nur bei einem neuen Moment, nie an Jump-Cuts) – lebendig für Shorts/Reels, ruhig für Vorträge und Fulltime'),
-  ton: z.enum(['klar', 'original']).optional().describe('Ton im Export: klar = Sprache aufbereiten (Hochpass, Entrauschen, Kompressor, De-Esser) für Talking Head, Podcast, Vortrag, Aufnahmen mit Rauschen oder Hall vom Handy/Webcam; original = unverändert (Standard). Nie klar bei Musik, Gesang oder Vorführungen, deren Geräusche zählen'),
+  ton: z.enum(['klar', 'original']).optional().describe('Ton im Export: klar = Sprache aufbereiten (Entrauschen, Kompressor, De-Esser) für Talking Head, Podcast, Handy-/Webcam-Ton; original = unverändert (Standard)'),
   cover: z.number().min(0).optional().describe('Quellsekunde fürs Titelbild (Export: .jpg neben dem MP4): ausdrucksstarkes Gesicht oder der Kernmoment, aus dem Kontaktabzug; muss im Video liegen, nicht der erste Frame, kein Schwarzbild'),
   overlays: z.array(z.object({
     start: z.number().min(0).describe('Quellsekunde, ab der die Einblendung steht (wie parts)'),
@@ -276,6 +276,8 @@ const clip = z.object({
   look: z.enum(VIDEO_LOOKS).optional().describe('Farblook des ganzen Clips: neutral (Standard, unverändert), warm, kuehl, kontrast (kräftiger), matt (weich, gedämpft), sw (Schwarzweiß), auto (Helligkeit und Kontrast der Quelle ausgleichen, für zu dunkle oder flaue Handy-Aufnahmen); einer je Video, für alle Clip-Folien gleich'),
   stabil: z.boolean().optional().describe('true = Verwackeln glätten (Handy aus der Hand, Gehen); nur im Export, kostet Zeit; nie bei Stativ oder Bildschirmaufnahme'),
   captionPos: z.enum(CAPTION_POS).optional().describe('Lage der Untertitel: unten (Standard), mitte, oben – wenn unten Wichtiges im Bild steht (Tafel, Formel, Produkt)'),
+  chat: z.object({ pos: z.enum(['links', 'rechts']).optional(), zeilen: z.number().int().min(3).max(8).optional(), namen: z.boolean().optional().describe('nur auf Wunsch') })
+    .optional().describe('Chat-Replay aus dem Import (YouTube, Twitch) einblenden (Stream-Highlights)'),
   post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
   // knapp beschrieben: Modul video + layout:clip muss unter 20 000 Zeichen bleiben (mcp-smoke)
   sfx: z.array(z.object({ src: z.string().min(1), at: z.number().min(0), gain: z.number().min(-24).max(12).optional() })).max(30).optional()

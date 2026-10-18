@@ -52,4 +52,9 @@ assert.match(chatAss([{ t: 1, x: 'x'.repeat(200) }], [{ start: 0, end: 10 }], o)
 assert.deepEqual(chatAss([], parts, o).events, [])
 assert.deepEqual(chatAss([{ t: 12 }, { t: 13, x: '  ' }], parts, o).events, [])
 
+
+// (g) Gruppenfenster: Nachrichten von vor der Gruppe stehen ab 0 weiter da, Zeiten ab Gruppenanfang
+const win = chatAss([{ t: 1, x: 'früh' }, { t: 6, x: 'spät' }], [{ start: 0, end: 20 }], { ...o, win: [5, 10] }).events.map(parse)
+assert.ok(win.some((e) => e.text === 'früh' && e.a === 0), 'früh steht ab Gruppenanfang')
+assert.ok(win.some((e) => e.text === 'spät' && e.a === 1) && win.every((e) => e.b <= 5), 'Zeiten ab Gruppenanfang, nicht über das Fenster')
 console.log('check-chat-overlay ok')

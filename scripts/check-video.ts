@@ -5,12 +5,12 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { assSubs, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, joinSegs, padParts, seamless, snapParts } from '../src/main/export-video'
+import { assSubs, chatOf, clipSegs, encodeClip, encodeCover, encodeStill, exportVideo, finish, joinSegs, padParts, presetFor, seamless, snapParts } from '../src/main/export-video'
 import { LOOK_FILTER, autoLook, cropFilter, levelExpr, srt, zoomCrop } from '../src/main/video-fx'
 import type { Deck } from '../src/shared/deck'
 import { lintClip } from '../src/shared/clip-lint'
-import { contactSheet, ffmpegBin, frames, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
-import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Overlay, type Part, type Transcript } from '../src/shared/video'
+import { contactSheet, ffmpegBin, frames, hasEncoder, loudness, pcm16k, probe, rawFrames, run, runFfmpeg, scenes, silences } from '../src/main/ffmpeg'
+import { CUT, FX, MIN_PAUSE, PAD, STILL, cutFrames, clipWords, cropRect, cues, estimateWords, followParts, outSize, videoSize, partsLength, snapToScenes, tighten, zoomOf, cutIndex, type Overlay, type Part, type Transcript } from '../src/shared/video'
 
 const near = (a: number, b: number, tol: number, what: string) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} statt ${b} ± ${tol}`)
 // Kleinster Pegel (RMS in 10-ms-Fenstern, 16 kHz) in ±50 ms um t, relativ zum Pegel bei ref: zeigt Fades an Schnitten
@@ -154,6 +154,15 @@ async function main() {
       const fzt = await seg1('pro-freeze-track', [{ start: 0.5, end: 2, freeze: 1, track: [[0.5, 0.2], [3.5, 0.8]] }])
       assert.ok(diff(await img(fzt.file, fs + 0.15), await img(fzt.file, fs + 0.75)) < 2, 'freeze+track: Ausschnitt fährt im Standbild weiter')
       assert.ok(dbOf(fzPcm, fs + 0.15, fs + 0.8) < -60, `freeze: Ton im Standbild ${dbOf(fzPcm, fs + 0.15, fs + 0.8).toFixed(1)} dB`)
+      // Chat-Replay: chatOf liest den Chat neben dem Video (nicht aus fremden Ordnern), clipSegs brennt ihn unten links ein
+      const src = join(dir, 'stream.mp4'), msgs = [{ t: 0.6, w: 1, x: 'hallo zusammen' }, { t: 1.2, w: 1, x: 'KEKW' }, { t: 1.8, w: 1, x: 'was war das' }]
+      writeFileSync(join(dir, 'stream.chat.json'), JSON.stringify(msgs))
+      writeFileSync(`${src}.meta.json`, JSON.stringify({ chat: join(dir, 'stream.chat.json') }))
+      assert.deepEqual(await chatOf(src), msgs)
+      writeFileSync(`${src}.meta.json`, JSON.stringify({ chat: join(tmpdir(), 'fremd.chat.json') }))
+      assert.deepEqual(await chatOf(src), [], 'Chat nur aus dem Ordner des Videos')
+      const mitChat = await seg1('pro-chat', parts, { chat: { msgs } }), oc = await img(mitChat.file, 2.2)
+      assert.ok(diff(oc, await img(ohne.file, 2.2), 0, 160, 90, 250) > 3, 'Chat unten links eingebrannt')
       // Bauchbinde, Titel, Zahl in der ASS; Text-Einblendung wie bisher; Lagen unten-links/-rechts unten (über den Untertiteln)
       const big = { w: 1080, h: 1920 }, base = { size: big, font: 'Archivo', bold: true, accent: '#FF8800', hookDur: 4, cues: [], mode: 'aus' as const }
       const art = assSubs({ ...base, overlays: [{ start: 1, end: 3, art: 'bauchbinde', text: 'Anna Beispiel', sub: 'Leiterin Werkstatt', fade: [true, true] }, { start: 4, end: 6, art: 'titel', text: 'Kapitel 2', sub: 'Der Umbau', fade: [true, true] }, { start: 7, end: 9, art: 'zahl', text: '73 %', sub: 'weniger Ausschuss', fade: [true, false] }] })
@@ -434,6 +443,27 @@ async function main() {
     assert.deepEqual(outSize({ w: 720, h: 1280 }), out)
     assert.deepEqual(outSize({ w: 50000, h: 50000 }), { w: 3840, h: 3840 })
     assert.deepEqual(outSize({ w: 3000, h: 1000 }), { w: 3840, h: 1280 })
+    // Wählbare Auflösung (deck.videoRes): kurze Seite je Stufe, lange Seite höchstens 7680
+    const q169 = { w: 1280, h: 720 }, q916 = { w: 720, h: 1280 }
+    for (const [res, k] of [['720p', 720], ['1080p', 1080], ['1440p', 1440], ['4k', 2160], ['8k', 4320]] as const) {
+      assert.deepEqual(outSize(q169, res), { w: (k * 16) / 9, h: k }, `${res} 16:9`)
+      assert.deepEqual(outSize(q916, res), { w: k, h: (k * 16) / 9 }, `${res} 9:16`)
+    }
+    assert.deepEqual(outSize({ w: 3000, h: 1000 }, '8k'), { w: 7680, h: 2560 })
+    // nie hochskalieren, aber nie unter den Standard; 720p bleibt 720p; ohne Wahl wie outSize
+    const fhd = { w: 1920, h: 1080 }, uhd = { w: 3840, h: 2160 }
+    assert.deepEqual(videoSize(q169, undefined, [{ w: 640, h: 360 }]), outSize(q169))
+    assert.deepEqual(videoSize(q169, '4k', [fhd]), fhd)
+    assert.deepEqual(videoSize(q169, '4k', [{ w: 640, h: 360 }]), fhd, 'nie unter 1080p')
+    assert.deepEqual(videoSize(q169, '4k', [fhd, { w: 2560, h: 1440 }]), { w: 2560, h: 1440 }, 'größte Quelle zählt')
+    assert.deepEqual(videoSize(q169, '4k', [uhd]), uhd)
+    assert.deepEqual(videoSize(q169, '8k', [uhd]), uhd)
+    assert.deepEqual(videoSize(q169, '4k', []), uhd, 'nur Standbilder: wie gewählt')
+    assert.deepEqual(videoSize(q169, '720p', [uhd]), { w: 1280, h: 720 })
+    assert.deepEqual(videoSize(q916, '4k', [uhd]), { w: 1216, h: 2160 }, '9:16 aus 4K-Quer: Ausschnitt 1215×2160')
+    assert.deepEqual(videoSize(q916, '4k', [fhd]), { w: 1080, h: 1920 })
+    assert.equal(presetFor(60), 'veryfast'); assert.equal(presetFor(700), 'superfast')
+    assert.equal(presetFor(60, true), 'superfast'); assert.equal(presetFor(700, true), 'ultrafast')
 
     // Wörter auf der Clip-Zeitachse (geschätzt aus dem Text), Häppchen
     const tr: Transcript = { duration: 12, lang: 'de', segments: [{ start: 1, end: 4, text: 'eins zwei drei' }, { start: 6, end: 8, text: 'vier fünf' }] }
@@ -595,6 +625,13 @@ async function main() {
     const [vorher, ab, ein, danach] = [await hell(1), await hell(STILL - 0.05), await hell(STILL + 0.02), await hell(STILL + 0.5)]
     assert.ok(ab < vorher * 0.5, `Abblende fehlt (${ab.toFixed(1)} von ${vorher.toFixed(1)})`)
     assert.ok(ein < danach * 0.5, `Einblende fehlt (${ein.toFixed(1)} statt deutlich unter ${danach.toFixed(1)})`)
+    // H.265 (ab 4K): Zwischenstand mit libx265, im mp4 kopiert mit Tag hvc1 (Apple/Safari)
+    if (await hasEncoder('libx265')) {
+      const hv = join(dir, 'hevc.mp4')
+      await finish([await encodeStill(grau, join(dir, 'hevc.mkv'), dir, { preset: 'ultrafast', hevc: true })], hv, dir, { hevc: true })
+      const head = (await run(await ffmpegBin(), ['-hide_banner', '-i', hv])).err
+      assert.match(head, /Video: hevc .*hvc1/, head)
+    } else console.log('libx265 fehlt: H.265-Pfad nicht geprüft')
 
     // Musik weicht der Sprache: leise Sprache wie vom Handy (440 Hz, −31 dBFS RMS) 0–3 und 7–10 s, Musik 2000 Hz aus 5 s in Schleife; Pegel der Musik per Bandpass.
     // Pausenfenster bis 12 s: dort muss die Musik noch laufen (sidechaincompress verwarf sonst je nach Scheduling das Ende)
