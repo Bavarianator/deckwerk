@@ -3,7 +3,7 @@
 import { desktopCapturer, webContents, type BrowserWindow, type WebContents } from 'electron'
 import { createWriteStream, existsSync, rmSync, type WriteStream } from 'node:fs'
 import { mkdir, rename, rm, statfs } from 'node:fs/promises'
-import { homedir } from 'node:os'
+import { dataDir } from './clients'
 import { basename, join } from 'node:path'
 import { finished } from 'node:stream/promises'
 import { pathToFileURL } from 'node:url'
@@ -16,7 +16,7 @@ const CUT = 0.7 // Stopp per Rückkehr: die letzten 0,7 s zeigen den Klick zurü
 /** Wie webrtc (DesktopCapturer::IsRunningUnderWayland): dann nimmt Chromium PipeWire, getSources öffnet das Portal */
 export const usesPortal = () => process.platform === 'linux' && !!process.env.WAYLAND_DISPLAY && !!process.env.XDG_SESSION_TYPE?.startsWith('wayland')
 
-const assetDir = () => join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'assets')
+const assetDir = () => join(dataDir(), 'assets')
 
 // eigene App-Seite: Dev-Server oder die gebaute index.html (wie createWindow in index.ts)
 const ownPage = (url: string) => {

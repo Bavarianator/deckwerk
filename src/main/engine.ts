@@ -1,3 +1,4 @@
+import { APP } from '../shared/app-id'
 import { app, nativeImage } from 'electron'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
@@ -331,7 +332,7 @@ export function createEngine(): Engine {
         const report = (p: number) => { entry.pct = p; entry.listeners.forEach((l) => l(p)) }
         entry.done = (async () => {
           // Pro-Timeline: je sichtbare schnitt-Folie eine Datei (mehrere: -01, -02 …); Lautheit und Hinweise kennt export_deck nicht, nur Log
-          const cuts = deck.slides.filter((s) => s.layout === 'schnitt')
+          const cuts = APP.pro ? deck.slides.filter((s) => s.layout === 'schnitt') : [] // Timeline-Export nur in Pro
           if (cuts.length) {
             if (deck.slides.some((x) => x.layout === 'clip')) throw new Error('Timeline und Clip-Folien nicht im selben Deck mischen: Clips per edit_timeline from_clips übernehmen und die Clip-Folien ausblenden.')
             const { exportTimeline } = await import('./export-timeline'), size = sizeOf(deck), out: string[] = []

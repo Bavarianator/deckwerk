@@ -27,6 +27,8 @@ if (process.platform === 'darwin') process.env.PATH = [process.env.PATH, '/opt/h
 
 // Linux-Paket (AppImage) ohne Startskript: unter Wayland hängt printToPDF, deshalb einmal über XWayland neu starten.
 // Nur die App; CLI und MCP bekommen die Flags über ihren Aufruf (MCP-Eintrag in ipc.ts wählt x11 oder headless).
+// Pro aus dem Quellcode (dev:pro, --mcp): eigenes userData wie die installierte Pro-App, nicht das von Deckwerk (package.json name)
+if (APP.pro && !app.isPackaged) app.setPath('userData', join(app.getPath('appData'), APP.id))
 const argv0 = process.argv
 if (process.platform === 'linux' && app.isPackaged && process.env.WAYLAND_DISPLAY && !argv0.some((a) => a.startsWith('--ozone-platform'))
   && !['--mcp', '--render', '--check'].some((f) => argv0.includes(f))) {

@@ -1,4 +1,5 @@
 // Marke: Standard-Brand-Kit (~/Deckwerk/brand.json), das jedes neue Deck der KI bekommt, und der Hausstil (~/Deckwerk/hausstil.md).
+import { APP } from '../../../shared/app-id'
 import { useEffect, useRef, useState } from 'react'
 import type { BrandKit } from '../../../shared/deck'
 import { Select, confirmDialog } from '../kit'
@@ -62,7 +63,7 @@ export function MarkeSection(_: SectionProps) {
   // Deckwerk Pro: Kunden. getBrand/getStyle und ihre Gegenstücke arbeiten auf dem aktiven Kunden; vor dem Wechsel Offenes in den bisherigen schreiben
   const [kunden, setKunden] = useState<{ list: string[]; active: string | null }>()
   const [neu, setNeu] = useState<string | null>(null) // Namensfeld für „Neuer Kunde …“
-  useEffect(() => { void window.api.clients().then(setKunden) }, [])
+  useEffect(() => { if (APP.pro) void window.api.clients().then(setKunden) }, []) // Kunden, Firmenvorlage, Brand-Lock: nur Pro
   // Anzeige immer vom aktiven Kunden; was nicht lädt, wird nicht gezeigt, damit nichts Altes in den neuen Kunden gespeichert wird
   const reload = async () => {
     const [k, brand, style] = await Promise.allSettled([window.api.clients(), window.api.getBrand(), window.api.getStyle()])
@@ -111,9 +112,11 @@ export function MarkeSection(_: SectionProps) {
       )}
       {kit === undefined ? <p><Spin /> Wird geladen …</p> : kit === null ? (
         <Group label="Brand-Kit">
+          {APP.pro && (
           <Row title="Firmenvorlage" action={<button type="button" className="pill" disabled={!!busy} onClick={() => void fromPotx()}>{busy === 'brand' ? <><Spin />Lese …</> : 'Aus PowerPoint-Vorlage …'}</button>}>
   {skipped.length ? <span className="error">Übersprungene Schriften (nicht im Katalog): {skipped.join(', ')}.</span> : 'Übernimmt Akzentfarben und Schriften aus einer .potx, .pptx oder .thmx. Das Logo bleibt.'}
 </Row>
+          )}
           <Row ok={false} title="Noch kein Standard" action={<button className="pill tint" disabled={!!busy} onClick={() => save({ primary: '#4F52D9' })}>Mit Akzentfarbe anlegen</button>}>
             Im Look eines Decks legt „Als Standard speichern“ eins an. Oder fang hier mit einer Farbe an.
           </Row>
@@ -121,9 +124,11 @@ export function MarkeSection(_: SectionProps) {
       ) : (
         <>
           <Group label="Brand-Kit">
+            {APP.pro && (
             <Row title="Firmenvorlage" action={<button type="button" className="pill" disabled={!!busy} onClick={() => void fromPotx()}>{busy === 'brand' ? <><Spin />Lese …</> : 'Aus PowerPoint-Vorlage …'}</button>}>
   {skipped.length ? <span className="error">Übersprungene Schriften (nicht im Katalog): {skipped.join(', ')}.</span> : 'Übernimmt Akzentfarben und Schriften aus einer .potx, .pptx oder .thmx. Das Logo bleibt.'}
 </Row>
+            )}
             <Row title="Farben" action={<>
               <label className="swatch" style={{ background: kit.primary }} title="Primärfarbe">
                 <input type="color" aria-label="Primärfarbe" value={kit.primary} onChange={(e) => save({ ...kit, primary: e.target.value.toUpperCase() }, 400)} />
@@ -146,9 +151,11 @@ export function MarkeSection(_: SectionProps) {
             <Row title="Schriften">
               {`Überschriften: ${kit.headFont ?? 'wie im Theme'}. Text: ${kit.bodyFont ?? 'wie im Theme'}. Schriften wählst du im Look eines Decks.`}
             </Row>
+            {APP.pro && (
             <Row title="Marke sperren (Brand-Lock)" action={
               <input type="checkbox" aria-label="Marke sperren (Brand-Lock)" checked={!!kit.lock} disabled={!!busy} onChange={(e) => save({ ...kit, lock: e.target.checked || undefined })} />
             }>Die KI darf Farben, Schriften und Logo nicht ändern; Abweichungen zeigt die Prüfung als Fehler.</Row>
+            )}
           </Group>
           <button type="button" className="plain" disabled={!!busy} onClick={() => void clear()}>Standard löschen</button>
         </>

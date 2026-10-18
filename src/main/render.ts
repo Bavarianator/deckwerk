@@ -1,3 +1,4 @@
+import { APP } from '../shared/app-id'
 import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { isA4, PRINT_SIZES, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
@@ -185,7 +186,7 @@ export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<{ p
     return setPrintBoxes(pdf, bleed)
   })
   // CMYK außerhalb von serial(): gs braucht die Render-Fenster nicht und hielte sonst das Rendern anderer Folien auf
-  return opts.cmyk ? rgb.then((pdf) => toPdfX4(pdf, join(app.getAppPath(), 'assets/icc/FOGRA39L_coated.icc'))) : rgb.then((pdf) => ({ pdf }))
+  return opts.cmyk && APP.pro ? rgb.then((pdf) => toPdfX4(pdf, join(app.getAppPath(), 'assets/icc/FOGRA39L_coated.icc'))) : rgb.then((pdf) => ({ pdf }))
 }
 
 export function renderOverview(deck: Deck): Promise<Buffer> {

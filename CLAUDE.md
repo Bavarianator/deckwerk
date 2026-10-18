@@ -76,6 +76,12 @@ Jedes ändernde Tool antwortet mit Autofit und Lint pro Folie; daran korrigiert 
 - Cloud-Sync (`src/main/sync.ts`, Electron-frei, läuft auch in der Android-Engine): WebDAV-Spiegel von `~/Deckwerk` ohne `versions/`, `out/`, `models/`, Punktdateien; Abgleich über `.sync-state.json`, Konflikt → neuere gewinnt, ältere deck.json nach `versions/`. Zugang in `appData/deckwerk/sync.bin`. Selbsttest `scripts/check-sync.ts`.
 - Weitere Schlüssel kommen aus der Umgebung: `UNSPLASH_ACCESS_KEY`, `MAMMOUTH_API_KEY`, `OPENAI_API_KEY`, `IMAGE_MODEL`.
 
+## Editionen
+
+- Deckwerk und Deckwerk Pro sind ein Code. `src/shared/app-id.ts` liefert `EDITION` und `APP` (`name`, `id`, `home`, `repo`, `pro`) aus `__DW_EDITION__` (electron-vite `define` aus `DW_EDITION`); esbuild-Skripte ohne define lesen `process.env.DW_EDITION`. Pfade, appData, MCP-Name, Skill, Update-Repo und PPTX-/DOCX-Autor immer über `APP`, nie fest „Deckwerk“.
+- Pro-Funktionen schalten über `APP.pro`: Werkzeuge (`PRO_TOOLS` in `tools.ts`), Schemafelder (`proFields`), Guide-Abschnitte (`PRO_MODULES` in `guide-modules.ts`), angebotene Layouts (`PRO_LAYOUT_IDS` in `layouts.ts`; registriert bleiben sie, damit Pro-Decks in Deckwerk lesbar sind), Kunden (`clients.ts`), Brand-Lock (Lint), CMYK, XML, UI-Teile. Pro-Felder in Decks nie verwerfen.
+- Werkzeugzahlen in den Smoke-Tests hängen von der Edition ab (`APP.pro ? … : …`). Pro-Selbsttests laufen in der CI mit `DW_EDITION=pro`. Skills: `skills/deckwerk/` und `skills/deckwerk-pro/` gemeinsam pflegen. Die Einrichtung trägt nur den eigenen MCP-Eintrag ein und lässt den der anderen Edition stehen. Pro-Paket: `npm run dist:linux:pro` (`electron-builder.pro.cjs`). Pro-Umfang: `PRO.md`.
+
 ## Gestaltungskurs
 
 Der Nutzer lehnt den „KI-Look“ ab. Gestaltet wird zurückhaltend: flach, linksbündig, eine Akzentfarbe, keine Kästen, Blobs, Verläufe oder Icon-Kacheln als Standard. Canva-Deko (Sticker, Masken, Motive, Texteffekte) gibt es nur auf ausdrücklichen Wunsch. Leitlinien für die KI stehen in `src/main/design-guide.md` §6, Hintergrund in `CANVA-VERGLEICH.md`. Neue Stil-Hebel für Themes sind kleine Enums mit nur guten Optionen. Sie müssen in `themeFromSpec`, im `themeSpec` in `tools.ts` und im Guide auftauchen.

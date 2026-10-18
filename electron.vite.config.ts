@@ -23,11 +23,14 @@ const shortcuts: Plugin = {
   },
 }
 
+// Edition (Deckwerk oder Deckwerk Pro) zur Build-Zeit: DW_EDITION=pro, sonst Deckwerk (src/shared/app-id.ts)
+const define = { __DW_EDITION__: JSON.stringify(process.env.DW_EDITION === 'pro' ? 'pro' : 'deckwerk') }
+
 export default defineConfig({
   // onnxruntime-node (Freisteller) und sherpa-onnx-node (Spracherkennung) sind native Module (.node) und müssen zur Laufzeit
   // aus node_modules kommen. sherpa-worker ist ein eigener Einstieg: sherpa.ts startet ihn als Kindprozess (out/main/sherpa-worker.js).
   // Chunks wie ohne input direkt in out/main, sonst stimmen die __dirname-Pfade (../renderer, ../preload) nicht mehr.
-  main: { build: { externalizeDeps: false, rollupOptions: { input: { index: 'src/main/index.ts', 'sherpa-worker': 'src/main/sherpa-worker.ts' }, external: ['onnxruntime-node', /^sherpa-onnx-node(\/.*)?$/], output: { chunkFileNames: '[name]-[hash].js' }, onwarn } } },
-  preload: {},
-  renderer: { plugins: [shortcuts, react()], build: { rollupOptions: { onwarn } } },
+  main: { define, build: { externalizeDeps: false, rollupOptions: { input: { index: 'src/main/index.ts', 'sherpa-worker': 'src/main/sherpa-worker.ts' }, external: ['onnxruntime-node', /^sherpa-onnx-node(\/.*)?$/], output: { chunkFileNames: '[name]-[hash].js' }, onwarn } } },
+  preload: { define },
+  renderer: { define, plugins: [shortcuts, react()], build: { rollupOptions: { onwarn } } },
 })

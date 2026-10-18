@@ -443,7 +443,7 @@ export default function App() {
             onAddSlide={() => addSlide('blank', deck?.slides.length ?? 0)}
             onHome={actions.onNew}
             onLook={openLook}
-            onDeck={() => { setPicked([]); setDeckSheet(true) }}
+            onDeck={APP.pro ? () => { setPicked([]); setDeckSheet(true) } : undefined}
             onExport={actions.onExport}
             onFormats={() => { setPicked([]); setFormats(true) }}
             hasClip={hasClip}

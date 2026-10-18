@@ -1,5 +1,6 @@
 // Diagramm-Daten direkt an der Folie: Typ, Tabelle (Kategorien × Datenreihen), Hervorhebung, Einheit.
 // Werte mit Komma oder Punkt; „Aus Excel einfügen“ liest Tabulator-getrennten Text aus der Zwischenablage.
+import { APP } from '../../shared/app-id'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Select } from './kit'
 import { LoaderCircle, RefreshCw, Sparkles, X } from 'lucide-react'
@@ -119,7 +120,9 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e)).rep
 const fileName = (f: string) => f.split(/[\\/]/).pop()
 
 // Je Diagramm eine eigene Instanz: Aufrufer setzen einen key (Folie + Slot bzw. Element-id), sonst hinge ein Formular am falschen Diagramm
-export function ExcelLink({ spec, busy, free = false, onChange, onWorking }: { spec: ChartSpec; busy: boolean; free?: boolean; onChange: (spec: ChartSpec) => void; onWorking?: (on: boolean) => void }) {
+// Excel-Verknüpfung gibt es nur in Deckwerk Pro; in Deckwerk bleibt ein vorhandener link im Deck unangetastet
+export const ExcelLink = APP.pro ? ExcelLinkPro : () => null
+function ExcelLinkPro({ spec, busy, free = false, onChange, onWorking }: { spec: ChartSpec; busy: boolean; free?: boolean; onChange: (spec: ChartSpec) => void; onWorking?: (on: boolean) => void }) {
   const [form, setForm] = useState<ChartLink | null>(null) // Datei gewählt, Blatt und Bereich fehlen noch
   const [err, setErr] = useState('')
   const [warn, setWarn] = useState<string[]>([])

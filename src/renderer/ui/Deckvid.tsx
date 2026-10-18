@@ -1,5 +1,6 @@
 // Deckvid: Arbeitsansicht für Video-Decks (Folien im Layout clip). Fast alles läuft über die KI (Chat und Ein-Klick-Aufträge);
 // von Hand gibt es nur, was einfacher ist als ein Satz: abspielen, Feinschnitt, Entfernen, Export.
+import { APP } from '../../shared/app-id'
 import { Fragment, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowUp, Check, ChevronLeft, Paperclip, Pause, Play, RotateCcw, RotateCw, Settings, Share, Square, Undo2 } from 'lucide-react'
 import { sizeOf, type Deck, type Size, type Slide } from '../../shared/deck'
@@ -101,7 +102,7 @@ export function Deckvid(p: Props) {
   const slide = slides[index]
   const clip = isClip(slide) ? slide : null
   const clips = slides.filter(isClip)
-  const cut = slide?.layout === 'schnitt' ? (slide.content as TimelineContent) : null // Pro-Timeline
+  const cut = APP.pro && slide?.layout === 'schnitt' ? (slide.content as TimelineContent) : null // Pro-Timeline
   const no = (s: Slide) => slides.slice(0, slides.indexOf(s) + 1).filter(isClip).length // Clip-Nummer wie in der Liste
   const here = clip ? where(clip, no(clip)) : undefined
   const { srcs, attach, remove, clear, err } = useSource()
@@ -274,7 +275,7 @@ export function Deckvid(p: Props) {
         )}
 
         <aside className="dv-chat" aria-label="KI">
-          <VideoTools deck={deck} slide={slide} index={index} patchSlide={p.patchSlide} newTimeline={p.newTimeline} />
+          {APP.pro && <VideoTools deck={deck} slide={slide} index={index} patchSlide={p.patchSlide} newTimeline={p.newTimeline} />}
           <ChatLog className="dv-log" msgs={p.msgs} busy={busy} onSend={onSend} />
           {!p.msgs.length && pod && ep && <p className="dv-hint">Die KI kennt deine Folge. Sag zum Beispiel: „Schneid die Begrüßung raus“ oder „Setz Kapitel“.</p>}
           {!p.msgs.length && !pod && clips.length > 0 && (

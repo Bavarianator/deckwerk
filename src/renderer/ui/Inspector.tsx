@@ -1,5 +1,6 @@
 // Anpassen-Panel: gewählte freie Elemente und die Einstellungen der Folie (inkl. Hintergrund).
 // Deck-weite Einstellungen (Theme, Übergang, Ablauf, Marke) stehen im Look, die Notizen unter der Folie.
+import { APP } from '../../shared/app-id'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ImagePlus, Scissors, X } from 'lucide-react'
 import { BUILDS, DECORS, TONES, TRANSITIONS, sizeOf, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
@@ -73,10 +74,12 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
             {clip && <button type="button" className="btn wide" title="Ausschnitte von Hand nachschneiden" onClick={() => setCutting(true)}><Scissors size={14} /> Schneiden</button>}
+            {APP.pro && (
             <details className="layers-panel cf-panel">
               <summary>Inhalt</summary>
               <ContentForm key={slide.id} slide={slide} onPatch={(content, final) => { patchSlide(index, { content }, `content-${slide.id}-${step.current}`); if (final) step.current++ }} />
             </details>
+            )}
             {(def?.variants || def?.frames) && <SlideLooks deck={deck} index={index} patchSlide={patchSlide} />}
             {slide.layout !== 'blank' && (
               <button type="button" className="btn wide" title="Alle Texte, Formen, Bilder und Icons der Folie werden frei verschiebbar wie in Canva. Rückgängig mit Strg+Z."
@@ -85,6 +88,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
                   if (root) patchSlide(index, { layout: 'blank', variant: undefined, frame: undefined, content: {}, items: [...elsToItems([...eyebrowRules(root), ...extract(root)]), ...items] })
                 }}>In freie Elemente umwandeln</button>
             )}
+            {APP.pro && <>
             <Field label="Layout">
               <Select value={slide.layout} disabled={video} title={video ? 'Video-Folien behalten ihr Layout' : undefined} onChange={(e) => {
                 const to = e.target.value as LayoutId
@@ -99,6 +103,7 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
             </Field>
             {video && <p className="muted cf-note">Video-Folien behalten ihr Layout.</p>}
             {lost && lost.content === slide.content && lost.names.length > 0 && <p className="muted cf-note">Nicht übernommen: {lost.names.join(', ')}. Rückgängig mit Strg+Z.</p>}
+            </>}
             {def?.variants && (
               <Field label="Variante">
                 <Select value={slide.variant ?? def.variants[0]} onChange={(e) => patchSlide(index, { variant: e.target.value })}>

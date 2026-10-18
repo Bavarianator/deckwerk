@@ -295,6 +295,10 @@ Plattformabhängiges steht per `process.platform` im Code. Die Tastenkürzel in 
 
 **Notarisieren (macOS):** Mit einem Apple Developer Program signiert und notarisiert `mac.yml` automatisch, sobald diese Repository-Secrets gesetzt sind: `MAC_CERT_P12_BASE64` (Zertifikat „Developer ID Application“ als .p12, base64), `MAC_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`. Ohne sie wird ad hoc signiert.
 
+### Editionen
+
+Deckwerk und Deckwerk Pro sind ein Code. Die Edition wählt `DW_EDITION` beim Bauen: ohne Angabe Deckwerk, mit `DW_EDITION=pro` Deckwerk Pro (`npm run dev:pro`, `npm run smoke:pro`, `npm run dist:linux:pro` → `dist/DeckwerkPro-x86_64.AppImage`). Pro hat eine eigene Identität (Datenordner `~/DeckwerkPro`, MCP-Server und Skill `deckwerk-pro`, Paket `de.deckwerk.pro`) und läuft neben Deckwerk; Modelle und Schriften unter `~/Deckwerk` teilen sich beide. Nur in Pro: Mehrspur-Schnitt (Layout `schnitt`, `edit_timeline`, Schnittplatz), Layouts `gantt`, `stream-screen` und `panel`, Theme-Editor, Inhaltsformular, Prüfliste, Kunden, Brand-Lock, Firmenvorlage, Excel-Verknüpfung, Druck-PDF in CMYK, Stapel-Export und die Premiere/Resolve-XML. Deckwerk öffnet Pro-Decks und lässt deren Pro-Felder stehen. Funktionsumfang und Roadmap: [PRO.md](PRO.md).
+
 ### Aufbau
 
 - `src/main/`: Electron-Main.

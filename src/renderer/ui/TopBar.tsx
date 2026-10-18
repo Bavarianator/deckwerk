@@ -28,7 +28,7 @@ interface Props {
   onAddSlide: () => void
   onHome: () => void
   onLook: () => void
-  onDeck: () => void // Sheet „Deck“: Titel, Briefing, Musik
+  onDeck?: () => void // Sheet „Deck“: Titel, Briefing, Musik
   onExport: (format: Format) => void
   onFormats: () => void // Sheet „Formate“ (Quadrat, Story, A4 …)
   hasClip: boolean // Deck mit Clip-Folie: Video-Export anbieten
@@ -79,7 +79,7 @@ export function TopBar(p: Props) {
         </div>
       </div>
       <div className="top-title" title={p.path ?? undefined}>
-        <button className="top-title-btn" disabled={!p.hasDeck} title="Titel, Briefing und Musik" onClick={p.onDeck}><b>{p.title}</b></button>
+        {p.onDeck ? <button className="top-title-btn" disabled={!p.hasDeck} title="Titel, Briefing und Musik" onClick={p.onDeck}><b>{p.title}</b></button> : <b>{p.title}</b>}
         {state && <span className={p.status?.error ? 'error' : undefined} role="status">— {state}</span>}
       </div>
       <div className="top-r">

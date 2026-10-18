@@ -1,4 +1,5 @@
 // Konten ohne echte Dienste (Fake-CLI, Mini-Nextcloud): npx esbuild scripts/check-accounts.ts --bundle --platform=node --format=esm --outfile=${TMPDIR:-/tmp}/check-accounts.mjs && node ${TMPDIR:-/tmp}/check-accounts.mjs
+import { APP } from '../src/shared/app-id'
 import { deepStrictEqual as eq, ok, rejects } from 'node:assert'
 import { chmodSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
@@ -88,7 +89,7 @@ const opened: string[] = []
 const s = await nextcloudLogin(` ${url}/nc/index.php/apps/files/?dir=/ `, { open: (u) => opened.push(u), signal: new AbortController().signal, interval: 10 })
 eq(opened, [`${url}/nc/login/v2/flow/abc`])
 eq(s, { url: `${url}/nc/remote.php/webdav/`, user: 'anna@b.de', pass: 'app-pw' })
-eq(davBase(s), `${url}/nc/remote.php/webdav/DeckwerkPro/`)
+eq(davBase(s), `${url}/nc/remote.php/webdav/${APP.home}/`)
 eq(polls, 3)
 
 mode = 'offen'

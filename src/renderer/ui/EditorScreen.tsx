@@ -1,4 +1,5 @@
 // Arbeitsansicht: Folienübersicht | Folie mit Notizen und KI-Leiste | Panel „Einfügen“ oder „Anpassen“ (ausblendbar).
+import { APP } from '../../shared/app-id'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { fmtSec, speakSec } from '../../shared/handout'
@@ -126,8 +127,8 @@ export function EditorScreen(p: Props) {
               <button type="button" className="plain tint" disabled={p.busy} onClick={() => p.onSend(`Schreibe die Sprechernotizen für Folie ${p.index + 1} neu: was ich dazu sage, 30–60 Sekunden, frei gesprochen, ohne den Folientext zu wiederholen. Ändere nur notes.`)}>
                 <Sparkles size={13} />{slide.notes?.trim() ? 'Überarbeiten' : 'Schreiben lassen'}
               </button>
-              <AccentPicker slideId={slide.id} disabled={p.busy} />
-              <LintPanel order={p.deck!.slides.map((s) => s.id).join()} disabled={p.busy} onSelect={p.onSelect} />
+              {APP.pro && <><AccentPicker slideId={slide.id} disabled={p.busy} />
+              <LintPanel order={p.deck!.slides.map((s) => s.id).join()} disabled={p.busy} onSelect={p.onSelect} /></>}
             </div>
             <textarea
               id="slide-notes"

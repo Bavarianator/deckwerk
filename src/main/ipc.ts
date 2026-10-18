@@ -813,24 +813,6 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       return sec.includes(`command = ${JSON.stringify(mcpCmd.command)}`) && sec.includes(JSON.stringify(mcpCmd.args.at(-1)))
     } catch { return false } // keine Datei = nicht eingerichtet
   }
-  // Pro ersetzt Deckwerk in den Agenten (Nutzerentscheidung): beim Einrichten dessen MCP-Eintrag „deckwerk“ und Skill entfernen.
-  // Nur exakt dieser Name; den Skill-Ordner nur, wenn sein Frontmatter name: deckwerk trägt (nie etwas anderes löschen).
-  const OLD = 'deckwerk'
-  const hasOld = (cli: Cli) => {
-    try {
-      const text = readFileSync(config[cli], 'utf8')
-      return cli === 'claude' ? !!JSON.parse(text).mcpServers?.[OLD] : text.includes(cli === 'codex' ? `[mcp_servers.${OLD}]\n` : `[[mcp_servers]]\nname = "${OLD}"\n`)
-    } catch { return false }
-  }
-  const dropOldSkill = async (cli: Cli): Promise<boolean> => {
-    const f = skillFile(cli)
-    if (!f) return false
-    const dir = join(dirname(dirname(f)), OLD)
-    const head = /^---\r?\n([\s\S]*?)\r?\n---/.exec(await readFile(join(dir, 'SKILL.md'), 'utf8'))?.[1] ?? ''
-    if (!/^name:[ \t]*(["']?)deckwerk\1[ \t]*\r?$/m.test(head)) return false
-    await rm(dir, { recursive: true, force: true }) // ein Symlink verschwindet allein, sein Ziel bleibt
-    return true
-  }
   const cliArg = (cli: unknown): Cli => {
     if (!CLIS.includes(cli as Cli)) throw new Error(`Unbekanntes Werkzeug: ${String(cli)}`)
     return cli as Cli
@@ -955,10 +937,6 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     }[cli]
     await run(remove(APP.id)).catch(() => {}) // alter Eintrag mit anderem Pfad
     await run(add)
-    // Deckwerk erst abmelden, wenn Pro angemeldet ist: scheitert das, bleibt Deckwerk nutzbar
-    const had = hasOld(cli)
-    await run(remove(OLD)).catch(() => {}) // Fehler beim Abmelden von Deckwerk verhindern das Einrichten nicht
-    const skillGone = await dropOldSkill(cli).catch(() => false)
     const f = skillFile(cli)
     if (f) { await mkdir(dirname(f), { recursive: true }); await writeFile(f, skill()) }
     // Electron braucht zum Starten länger als die 10 s, die Codex wartet, und Rendern länger als dessen Tool-Timeout;
@@ -969,7 +947,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
       if (!tomlSection(text, head).includes('startup_timeout_sec'))
         await writeFile(config.codex, text.replace(head, `${head}startup_timeout_sec = 90\ntool_timeout_sec = 300\n`))
     }
-    return had || skillGone ? `Deckwerk ist in ${CLI_NAME[cli]} jetzt durch Deckwerk Pro ersetzt; die Deckwerk-App bleibt installiert.` : null
+    return null // beide Editionen tragen nur ihren eigenen Eintrag ein; der der anderen bleibt stehen
   })
   // Verbindung testen wie Claude Code: Server per stdio starten, initialize + tools/list, Anzahl der Werkzeuge zurück
   ipcMain.handle('setup:mcpTest', () => new Promise<number>((ok, fail) => {

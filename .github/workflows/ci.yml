@@ -45,6 +45,19 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libxml2-utils ffmpeg
           # Ubuntu 24.04 sperrt unprivilegierte User-Namespaces per AppArmor; die Sandbox braucht sie
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Edition Deckwerk Pro (Smoke mit Pro-Werkzeugen, Druck, Excel, XML, Kunden, Marke, Timeline mit ffmpeg)
+        env:
+          DW_EDITION: pro
+        run: |
+          # Ghostscript des Runners ist älter als 10.05: check-print prüft dann nur den Fehlerpfad
+          sudo apt-get install -y -qq ghostscript qpdf poppler-utils
+          npm run smoke
+          E="npx esbuild --bundle --platform=node --log-level=warning"
+          for c in check-print check-tac; do $E scripts/$c.ts --outfile=out/$c.cjs && node out/$c.cjs; done
+          for c in check-xlsx check-xmeml check-clients check-guide-modules check-router check-potx check-brand-lock; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
+          for c in check-timeline check-timeline-edit check-timeline-convert check-scopes check-timeline-player check-timeline-drag check-layout-switch check-lint-panel check-video-tools check-theme-editor check-color-wheel check-media check-mixer; do $E scripts/$c.ts --format=esm --loader:.css=empty --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
+          for c in check-grade check-timeline-ffmpeg check-timeline-media check-timeline-export check-xmeml-tl; do $E scripts/$c.ts --format=esm --loader:.md=text --outfile=out/$c.mjs && node out/$c.mjs; done
+          $E scripts/check-batch.ts --format=esm --loader:.md=text --external:./render --external:./export-pptx --external:electron --outfile=out/check-batch.mjs && node out/check-batch.mjs
       - name: Animationen im PPTX-XML (braucht xmllint)
         run: npx esbuild --bundle --platform=node --log-level=warning scripts/check-animations.ts --format=esm --outfile=out/check-animations.mjs && node out/check-animations.mjs
       - name: Rendern und Export (PPTX, PDF, PNG)

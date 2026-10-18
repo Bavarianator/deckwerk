@@ -1,6 +1,7 @@
 // Gemeinsam bearbeiten in der App: verbindet mitarbeit.ts (Links, Freigaben, Live-Abgleich) mit dem offenen Deck aus ipc.ts.
 // Gast-Zugänge und Link-Passwörter liegen verschlüsselt in appData/deckwerk/mitarbeit.bin, der Anzeigename in profil.json.
 import { app, ipcMain, safeStorage, type BrowserWindow } from 'electron'
+import { APP } from '../shared/app-id'
 import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { userInfo } from 'node:os'
@@ -31,7 +32,7 @@ export interface GemeinsamCtx {
 const stamp = () => new Date().toLocaleString('sv').replace(' ', 'T').replace(/:/g, '-')
 
 export function registerGemeinsam(win: BrowserWindow, ctx: GemeinsamCtx) {
-  const dir = join(app.getPath('appData'), 'deckwerk')
+  const dir = join(app.getPath('appData'), APP.id)
   const storeFile = join(dir, 'mitarbeit.bin'), profilFile = join(dir, 'profil.json')
   let store: Store = { gaeste: {}, passwoerter: {} }
   try { if (existsSync(storeFile)) store = { ...store, ...JSON.parse(safeStorage.decryptString(readFileSync(storeFile))) } } catch (e) { console.warn('[gemeinsam] Zugänge nicht lesbar:', e) }

@@ -147,7 +147,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   // sich in mindestens 4 Strukturmerkmalen (Prüfung im Werkzeug); die Bilder kommen in der Reihenfolge der Eingabe
   const [looks, setLooks] = useState<{ ids: string[]; images: string[]; text: string } | null>(null)
   const [proposing, setProposing] = useState(false)
-  const canPropose = typeof window.api.runTool === 'function'
+  const canPropose = APP.pro && typeof window.api.runTool === 'function'
   const propose = async () => {
     const trio = deck.style === 'mutig' ? ['plakat', 'magazin', 'neomono'] : ['beratung', 'keynote', 'redaktion']
     setProposing(true)
@@ -313,6 +313,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
             {tuned > 0 && <button className="plain tint" onClick={() => setTune(Object.fromEntries(OFFERED.map((k) => [k, undefined])))}>Zurücksetzen</button>}
           </p>
         </details>
+        {APP.pro && (
         <details className="look-tune">
           <summary>
             <ChevronRight size={15} className="look-tune-chev" aria-hidden />
@@ -322,6 +323,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
           {/* Vorschau während des Ziehens im selben Undo-Schritt; erst das Loslassen schließt ihn ab */}
           <ThemeEditor deck={deck} onTheme={(theme, final) => { patchDeck({ theme }, `look-edit-${editStep.current}`); if (final) editStep.current++ }} />
         </details>
+        )}
         <div className="look-row">
           <div className="look-group">
             <b>Markenfarben</b>

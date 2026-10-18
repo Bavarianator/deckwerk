@@ -1,5 +1,6 @@
 // PDF für die Druckerei: Endformat (A2 bis A6, nur bei A4-Decks; die Visitenkarte druckt in ihrer Größe) und Beschnitt je Druckerei wählen, dann exportieren.
 // Seite = Endformat + Beschnitt ringsum; wahlweise CMYK (PDF/X-4, FOGRA39) per Ghostscript. Die Auswahl wird für das nächste Mal gemerkt.
+import { APP } from '../../shared/app-id'
 import { useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
 import { isA4, PRINT_SIZES, sizeOf, type Deck, type PrintOptions } from '../../shared/deck'
@@ -33,7 +34,7 @@ export function PrintSheet({ deck, onExport, onClose }: Props) {
   const n = deck.slides.length
   const go = () => {
     try { localStorage.setItem(KEY, JSON.stringify({ size, bleed, cmyk })) } catch { /* Wahl gilt nur diesmal */ }
-    onExport({ size: a4 ? size : undefined, bleed, cmyk })
+    onExport({ size: a4 ? size : undefined, bleed, cmyk: APP.pro && cmyk })
     onClose()
   }
 
@@ -48,7 +49,7 @@ export function PrintSheet({ deck, onExport, onClose }: Props) {
       <div className="fmt-body">
         <aside className="fmt-side">
           <h1>Druckfertig, mit Beschnitt.</h1>
-          <p>Seite = Endformat + Beschnitt ringsum, ohne Schnittmarken. Randabfallende Fotos laufen in den Beschnitt. Ohne CMYK bleiben die Farben RGB: Flyeralarm, Saxoprint, WIRmachenDRUCK und Onlineprinters wandeln selbst nach CMYK, leuchtende Akzente werden dabei etwas matter. print24 verlangt CMYK-Daten. Vor einer großen Auflage einen Probedruck bestellen.</p>
+          <p>Seite = Endformat + Beschnitt ringsum, ohne Schnittmarken. Randabfallende Fotos laufen in den Beschnitt. {APP.pro ? 'Ohne CMYK bleiben die Farben RGB' : 'Farben bleiben RGB'}: Flyeralarm, Saxoprint, WIRmachenDRUCK und Onlineprinters wandeln selbst nach CMYK, leuchtende Akzente werden dabei etwas matter. print24 verlangt CMYK-Daten. Vor einer großen Auflage einen Probedruck bestellen.</p>
           {n > 2 && <p>Das Deck hat {n} Seiten. Ein Flyer hat 1 Seite, beidseitig 2 (Vorder- und Rückseite). Nicht gewählte Entwürfe vorher löschen.</p>}
           {a4 && <div className="fmt-list" role="radiogroup" aria-label="Endformat">
             {SIZES.map((id) => {
@@ -71,12 +72,14 @@ export function PrintSheet({ deck, onExport, onClose }: Props) {
               </button>
             ))}
           </div>
+          {APP.pro && (
           <div className="fmt-list" role="group" aria-label="Farben">
             <button role="checkbox" aria-checked={cmyk} className={cmyk ? 'on' : ''} onClick={() => setCmyk(!cmyk)}>
               <span className="fmt-name"><b>CMYK für die Druckerei (PDF/X-4, FOGRA39)</b><span>Braucht Ghostscript ab 10.05 auf diesem Rechner.</span></span>
               <span className={`fmt-check ${cmyk ? 'on' : ''}`} aria-hidden="true">{cmyk && <Check size={12} strokeWidth={3.2} />}</span>
             </button>
           </div>
+          )}
         </aside>
       </div>
     </div>
