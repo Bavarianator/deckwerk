@@ -1,0 +1,26 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Kurzinfo zum Vorhaben"
+    ]
+  },
+  {
+    "slot": "sections.0.text",
+    "lines": [
+      "Ein Absatz genügt."
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

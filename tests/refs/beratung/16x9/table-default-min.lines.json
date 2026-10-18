@@ -1,0 +1,50 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Nord liegt vorn"
+    ]
+  },
+  {
+    "slot": "columns.0",
+    "lines": [
+      "Region"
+    ]
+  },
+  {
+    "slot": "columns.1",
+    "lines": [
+      "Umsatz"
+    ]
+  },
+  {
+    "slot": "rows.0.0",
+    "lines": [
+      "Nord"
+    ]
+  },
+  {
+    "slot": "rows.0.1",
+    "lines": [
+      "2,4 Mio"
+    ]
+  },
+  {
+    "slot": "rows.1.0",
+    "lines": [
+      "Süd"
+    ]
+  },
+  {
+    "slot": "rows.1.1",
+    "lines": [
+      "1,9 Mio"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

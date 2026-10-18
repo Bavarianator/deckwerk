@@ -1,0 +1,26 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Heute gegenüber morgen"
+    ]
+  },
+  {
+    "slot": "left.heading",
+    "lines": [
+      "Heute"
+    ]
+  },
+  {
+    "slot": "right.heading",
+    "lines": [
+      "Morgen"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

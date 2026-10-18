@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Zwei Themen gehen zuerst"
+    ]
+  },
+  {
+    "slot": "y",
+    "lines": [
+      "↑ Machbarkeit"
+    ]
+  },
+  {
+    "slot": "items.0.label",
+    "lines": [
+      "Self-Service"
+    ]
+  },
+  {
+    "slot": "items.1.label",
+    "lines": [
+      "Neues CRM"
+    ]
+  },
+  {
+    "slot": "x",
+    "lines": [
+      "Nutzen →"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

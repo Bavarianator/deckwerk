@@ -1,0 +1,184 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 1,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 80.8828125,
+        "h": 522.6640625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wirkung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "label",
+      "box": {
+        "x": 568,
+        "y": 60,
+        "w": 440,
+        "h": 313.4765625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 55,
+      "lineHeightPx": 62.7,
+      "trackingPx": -0.825,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit Ortho-Bot",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "machen Kinder",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "nach sechs",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Monaten deutlich",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "weniger Fehler",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 5,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "context",
+      "box": {
+        "x": 568,
+        "y": 389.4765625,
+        "w": 440,
+        "h": 193.1875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 4,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "value",
+      "box": {
+        "x": 72,
+        "y": 943.203125,
+        "w": 936,
+        "h": 294
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "hero",
+      "sizePx": 294,
+      "lineHeightPx": 294,
+      "trackingPx": -11.76,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "−41",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " %",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563",
+          "sizePx": 132.3,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 1255.203125,
+        "w": 936,
+        "h": 22.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 19,
+      "lineHeightPx": 22.8,
+      "trackingPx": 0.38,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilotauswertung 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Produkt"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Ein Dashboard",
+      "für alle Standorte"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "Alle Kennzahlen live an einem Ort.",
+      "Abweichungen werden automatisch erkannt",
+      "und gemeldet."
+    ]
+  },
+  {
+    "slot": "points.0",
+    "lines": [
+      "Echtzeit-Daten"
+    ]
+  },
+  {
+    "slot": "points.1",
+    "lines": [
+      "Automatische Warnungen"
+    ]
+  },
+  {
+    "slot": "points.2",
+    "lines": [
+      "Mobil verfügbar"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

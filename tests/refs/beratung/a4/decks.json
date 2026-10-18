@@ -1,0 +1,3763 @@
+{
+  "cover-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-center-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-bottom-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "bottom",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "agenda-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "agenda",
+        "content": {
+          "title": "Agenda",
+          "items": [
+            {
+              "title": "Ausgangslage",
+              "desc": "Wo wir heute stehen"
+            },
+            {
+              "title": "Marktchance",
+              "desc": "Warum jetzt der richtige Zeitpunkt ist"
+            },
+            {
+              "title": "Unser Plan",
+              "desc": "Drei Hebel für Wachstum"
+            },
+            {
+              "title": "Investition & Ask",
+              "desc": "Was wir brauchen"
+            }
+          ],
+          "active": 1
+        }
+      }
+    ]
+  },
+  "section-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "section",
+        "content": {
+          "title": "Unser Plan",
+          "subtitle": "Drei Hebel, die sich gegenseitig verstärken"
+        }
+      }
+    ]
+  },
+  "statement-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "statement-center-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "statement-poster-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "bullets-list-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "list",
+        "content": {
+          "eyebrow": "Warum jetzt",
+          "title": "Drei Entwicklungen machen den Markt jetzt attraktiv",
+          "items": [
+            {
+              "text": "Regulierung schafft Nachfrage",
+              "sub": "Ab 2027 wird digitale Dokumentation Pflicht"
+            },
+            {
+              "text": "Wettbewerb ist fragmentiert",
+              "sub": "Kein Anbieter hat mehr als 8 % Marktanteil"
+            },
+            {
+              "text": "Kunden sind wechselbereit",
+              "sub": "62 % planen einen Anbieterwechsel in 24 Monaten"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "bullets-cards-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Warum jetzt",
+          "title": "Drei Entwicklungen machen den Markt jetzt attraktiv",
+          "items": [
+            {
+              "text": "Regulierung schafft Nachfrage",
+              "sub": "Ab 2027 wird digitale Dokumentation Pflicht"
+            },
+            {
+              "text": "Wettbewerb ist fragmentiert",
+              "sub": "Kein Anbieter hat mehr als 8 % Marktanteil"
+            },
+            {
+              "text": "Kunden sind wechselbereit",
+              "sub": "62 % planen einen Anbieterwechsel in 24 Monaten"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "two-column-rule-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "rule",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-equal-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "equal",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-highlight-right-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "highlight-right",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-left",
+        "content": {
+          "eyebrow": "Produkt",
+          "title": "Ein Dashboard für alle Standorte",
+          "text": "Alle Kennzahlen live an einem Ort. Abweichungen werden automatisch erkannt und gemeldet.",
+          "points": [
+            "Echtzeit-Daten",
+            "Automatische Warnungen",
+            "Mobil verfügbar"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-right-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-right",
+        "content": {
+          "eyebrow": "Produkt",
+          "title": "Ein Dashboard für alle Standorte",
+          "text": "Alle Kennzahlen live an einem Ort. Abweichungen werden automatisch erkannt und gemeldet.",
+          "points": [
+            "Echtzeit-Daten",
+            "Automatische Warnungen",
+            "Mobil verfügbar"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "kpi-grid-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Ergebnisse Q3",
+          "title": "Wir wachsen schneller als der Markt – und profitabel",
+          "kpis": [
+            {
+              "value": "+34 %",
+              "label": "Umsatzwachstum",
+              "delta": "+12 % ggü. Plan",
+              "sentiment": "positive"
+            },
+            {
+              "value": "2,4 Mio",
+              "label": "Wiederkehrender Umsatz (ARR)",
+              "delta": "+0,6 Mio",
+              "sentiment": "positive"
+            },
+            {
+              "value": "1,8 %",
+              "label": "Monatliche Kündigungsrate",
+              "delta": "−0,4 Pp.",
+              "sentiment": "positive"
+            }
+          ],
+          "focus": 0,
+          "source": "Interne Finanzdaten, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "kpi-grid-cards-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Ergebnisse Q3",
+          "title": "Wir wachsen schneller als der Markt – und profitabel",
+          "kpis": [
+            {
+              "value": "+34 %",
+              "label": "Umsatzwachstum",
+              "delta": "+12 % ggü. Plan",
+              "sentiment": "positive"
+            },
+            {
+              "value": "2,4 Mio",
+              "label": "Wiederkehrender Umsatz (ARR)",
+              "delta": "+0,6 Mio",
+              "sentiment": "positive"
+            },
+            {
+              "value": "1,8 %",
+              "label": "Monatliche Kündigungsrate",
+              "delta": "−0,4 Pp.",
+              "sentiment": "positive"
+            }
+          ],
+          "focus": 0,
+          "source": "Interne Finanzdaten, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "chart-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "chart",
+        "content": {
+          "eyebrow": "Umsatzentwicklung",
+          "title": "Der Umsatz hat sich seit 2023 mehr als verdoppelt",
+          "chart": {
+            "type": "bar",
+            "categories": [
+              "2022",
+              "2023",
+              "2024",
+              "2025",
+              "2026e"
+            ],
+            "series": [
+              {
+                "name": "Umsatz",
+                "values": [
+                  1.1,
+                  1.4,
+                  2,
+                  2.6,
+                  3.3
+                ]
+              },
+              {
+                "name": "Plan",
+                "values": [
+                  1,
+                  1.5,
+                  1.9,
+                  2.4,
+                  3
+                ]
+              }
+            ],
+            "unit": "Mio €",
+            "highlight": "Umsatz",
+            "annotate": "cagr"
+          },
+          "takeaway": {
+            "value": "+136 %",
+            "text": "Wachstum seit 2023 – getrieben durch das neue Abo-Modell"
+          },
+          "source": "Geschäftsberichte 2022–2025, 2026 Prognose"
+        }
+      }
+    ]
+  },
+  "timeline-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "timeline",
+        "content": {
+          "eyebrow": "Roadmap",
+          "title": "In vier Schritten zur Marktreife bis Ende 2027",
+          "items": [
+            {
+              "date": "Q4 2026",
+              "title": "Pilot mit 3 Kunden",
+              "desc": "Validierung der Kernfunktionen"
+            },
+            {
+              "date": "Q1 2027",
+              "title": "Beta-Programm",
+              "desc": "25 Kunden, Feedback-Schleifen"
+            },
+            {
+              "date": "Q2 2027",
+              "title": "Marktstart DACH",
+              "desc": "Vertrieb und Partner an Bord"
+            },
+            {
+              "date": "Q4 2027",
+              "title": "Internationalisierung",
+              "desc": "Start in Benelux und Nordics"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "process-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "process",
+        "content": {
+          "eyebrow": "Vorgehen",
+          "title": "Vom Erstgespräch zum Go-live in sechs Wochen",
+          "steps": [
+            {
+              "title": "Analyse",
+              "desc": "Workshops mit allen Fachbereichen"
+            },
+            {
+              "title": "Konzept",
+              "desc": "Zielbild und Umsetzungsplan"
+            },
+            {
+              "title": "Umsetzung",
+              "desc": "Einrichtung und Datenübernahme"
+            },
+            {
+              "title": "Go-live",
+              "desc": "Schulung und Begleitung im Betrieb"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "closing-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "left",
+        "content": {
+          "title": "Lassen Sie uns den Pilot im November starten",
+          "subtitle": "Entscheidung bis 15. Oktober – Budget 120.000 €",
+          "contact": [
+            "Max Muster",
+            "max.muster@firma.de",
+            "+49 170 1234567"
+          ]
+        }
+      }
+    ]
+  },
+  "closing-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "side",
+        "content": {
+          "title": "Lassen Sie uns den Pilot im November starten",
+          "subtitle": "Entscheidung bis 15. Oktober – Budget 120.000 €",
+          "contact": [
+            "Max Muster",
+            "max.muster@firma.de",
+            "+49 170 1234567"
+          ]
+        }
+      }
+    ]
+  },
+  "photo-text-bottom-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-bottom",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-text-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-left",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-card-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "card",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "gallery-row-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "row",
+        "content": {
+          "eyebrow": "Eindrücke",
+          "title": "Drei Pilotschulen zeigen, wie es im Alltag aussieht",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Grundschule Nord"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Realschule Mitte"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Gymnasium Süd"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "gallery-mosaic-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "mosaic",
+        "content": {
+          "eyebrow": "Eindrücke",
+          "title": "Drei Pilotschulen zeigen, wie es im Alltag aussieht",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Grundschule Nord"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Realschule Mitte"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Gymnasium Süd"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "quote-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "quote",
+        "content": {
+          "text": "Seit dem Pilot korrigieren meine Schüler ihre Texte selbst – und verstehen endlich, warum.",
+          "author": "Julia Hartmann",
+          "role": "Deutschlehrerin, Grundschule Nord",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "blank-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "blank",
+        "content": {}
+      }
+    ]
+  },
+  "summary-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "summary",
+        "content": {
+          "eyebrow": "Executive Summary",
+          "title": "Wir empfehlen, den Pilot im November mit 20 Schulen zu starten",
+          "points": [
+            {
+              "title": "Jedes vierte Kind hat erhebliche Rechtschreibschwächen",
+              "text": "Lehrkräfte fehlt die Zeit für Einzelförderung – der Bedarf wächst."
+            },
+            {
+              "title": "Ortho-Bot senkt die Fehlerquote in sechs Monaten um 41 %",
+              "text": "Pilot mit 6 Schulen und 412 Kindern, bei gleicher Unterrichtszeit."
+            },
+            {
+              "title": "Eine Schullizenz kostet weniger als ein Klassensatz Hefte",
+              "text": "1.900 € pro Jahr statt rund 2.400 € für Arbeitshefte."
+            }
+          ],
+          "recommendation": "Pilot mit 20 Partnerschulen ab November freigeben – Budget 38.000 €, Entscheidung bis 15. Oktober."
+        }
+      }
+    ]
+  },
+  "options-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "options",
+        "content": {
+          "eyebrow": "Entscheidung",
+          "title": "Die Partnerlösung bringt uns am schnellsten und günstigsten ans Ziel",
+          "criteria": [
+            "Zeit bis zum Start",
+            "Kosten im ersten Jahr",
+            "Kontrolle über Daten",
+            "Risiko"
+          ],
+          "options": [
+            {
+              "name": "Eigenentwicklung",
+              "scores": [
+                1,
+                1,
+                4,
+                2
+              ],
+              "note": "Volle Kontrolle, aber 14 Monate Vorlauf"
+            },
+            {
+              "name": "Partnerlösung",
+              "scores": [
+                4,
+                3,
+                3,
+                3
+              ],
+              "note": "Start in 8 Wochen, Daten bleiben in DE"
+            },
+            {
+              "name": "Zukauf",
+              "scores": [
+                3,
+                0,
+                2,
+                1
+              ],
+              "note": "Schnell, aber teuer und schwer integrierbar"
+            }
+          ],
+          "recommended": 1
+        }
+      }
+    ]
+  },
+  "matrix-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "matrix",
+        "content": {
+          "eyebrow": "Priorisierung",
+          "title": "Self-Service und Rechnungsprozess bringen den größten Nutzen bei wenig Aufwand",
+          "x": "Nutzen für Kunden",
+          "y": "Umsetzbarkeit",
+          "quadrants": [
+            "Später prüfen",
+            "Sofort umsetzen",
+            "Verwerfen",
+            "Groß planen"
+          ],
+          "items": [
+            {
+              "label": "Self-Service-Portal",
+              "x": 82,
+              "y": 78
+            },
+            {
+              "label": "Rechnungsprozess",
+              "x": 64,
+              "y": 88
+            },
+            {
+              "label": "Chatbot",
+              "x": 38,
+              "y": 64
+            },
+            {
+              "label": "Neues CRM",
+              "x": 76,
+              "y": 22
+            },
+            {
+              "label": "Filialumbau",
+              "x": 26,
+              "y": 18
+            }
+          ],
+          "highlight": "Self-Service-Portal",
+          "takeaway": "Zwei Vorhaben liegen klar im Zielquadranten und lassen sich mit bestehenden Teams bis Q2 umsetzen."
+        }
+      }
+    ]
+  },
+  "table-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "table",
+        "content": {
+          "eyebrow": "Regionen",
+          "title": "Der Norden wächst am stärksten und trägt fast die Hälfte des Plus",
+          "columns": [
+            "Region",
+            "Umsatz 2026",
+            "Wachstum",
+            "Marge"
+          ],
+          "rows": [
+            [
+              "Nord",
+              "2,4 Mio €",
+              "+18 %",
+              "31 %"
+            ],
+            [
+              "West",
+              "2,1 Mio €",
+              "+9 %",
+              "28 %"
+            ],
+            [
+              "Süd",
+              "1,9 Mio €",
+              "+6 %",
+              "26 %"
+            ],
+            [
+              "Ost",
+              "1,2 Mio €",
+              "+4 %",
+              "22 %"
+            ]
+          ],
+          "highlight": {
+            "row": 0
+          },
+          "source": "Controlling, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "big-number-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Wirkung",
+          "value": "−41 %",
+          "label": "Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler",
+          "context": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "source": "Pilotauswertung 2026"
+        }
+      }
+    ]
+  },
+  "big-number-poster-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Wirkung",
+          "value": "−41 %",
+          "label": "Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler",
+          "context": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "source": "Pilotauswertung 2026"
+        }
+      }
+    ]
+  },
+  "doc-text-one-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "title": "Kurzinfo zum Vorhaben",
+          "sections": [
+            {
+              "text": "Ein Absatz genügt."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "doc-text-one-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "doc-text-one-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "lead": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            },
+            {
+              "heading": "Kundenbindung verbessert deutlich durch schnellere",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+            },
+            {
+              "heading": "verbessert deutlich durch schnellere Abläufe im",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+            }
+          ],
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+        }
+      }
+    ]
+  },
+  "doc-text-two-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "title": "Kurzinfo zum Vorhaben",
+          "sections": [
+            {
+              "text": "Ein Absatz genügt."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "doc-text-two-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "doc-text-two-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "lead": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            },
+            {
+              "heading": "Kundenbindung verbessert deutlich durch schnellere",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+            },
+            {
+              "heading": "verbessert deutlich durch schnellere Abläufe im",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+            }
+          ],
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+        }
+      }
+    ]
+  },
+  "offer-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "offer",
+        "content": {
+          "title": "Angebot Webseiten-Relaunch",
+          "items": [
+            {
+              "name": "Konzept und Design",
+              "price": "4.800 €"
+            }
+          ],
+          "totals": [
+            {
+              "label": "Gesamt",
+              "value": "4.800 €"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "offer-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "offer",
+        "content": {
+          "eyebrow": "Angebot 2026-041",
+          "title": "Angebot Webseiten-Relaunch",
+          "to": "Muster GmbH\nMusterweg 1\n12345 Musterstadt",
+          "meta": "04.10.2026 · gültig bis 03.11.2026",
+          "items": [
+            {
+              "name": "Konzept und Design",
+              "detail": "Strukturplan, Gestaltung von fünf Seitentypen",
+              "qty": "1 Pauschale",
+              "price": "4.800 €"
+            },
+            {
+              "name": "Umsetzung",
+              "detail": "Programmierung, Anbindung an das Redaktionssystem",
+              "qty": "40 Std.",
+              "price": "3.600 €"
+            },
+            {
+              "name": "Inhalte und Fotos",
+              "qty": "1 Pauschale",
+              "price": "1.200 €"
+            },
+            {
+              "name": "Schulung",
+              "detail": "Zwei Termine à zwei Stunden",
+              "qty": "4 Std.",
+              "price": "360 €"
+            }
+          ],
+          "totals": [
+            {
+              "label": "Netto",
+              "value": "9.960 €"
+            },
+            {
+              "label": "Umsatzsteuer 19 %",
+              "value": "1.892,40 €"
+            },
+            {
+              "label": "Gesamt",
+              "value": "11.852,40 €"
+            }
+          ],
+          "terms": "Zahlbar innerhalb von 14 Tagen nach Rechnungsstellung. Lieferzeit: sechs Wochen ab Beauftragung."
+        }
+      }
+    ]
+  },
+  "offer-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "offer",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "to": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+          "meta": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "items": [
+            {
+              "name": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+              "detail": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            },
+            {
+              "name": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+              "detail": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            },
+            {
+              "name": "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+              "detail": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            },
+            {
+              "name": "deutlich durch schnellere Abläufe im Vertrieb und klare",
+              "detail": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            },
+            {
+              "name": "durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+              "detail": "durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            },
+            {
+              "name": "schnellere Abläufe im Vertrieb und klare Verantwortung für",
+              "detail": "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            },
+            {
+              "name": "Abläufe im Vertrieb und klare Verantwortung für messbare",
+              "detail": "Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            },
+            {
+              "name": "im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+              "detail": "im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung",
+              "qty": "120 Std.",
+              "price": "12.345,67 €"
+            }
+          ],
+          "totals": [
+            {
+              "label": "Wettbewerbsfähigkeit",
+              "value": "123.456,78 €"
+            },
+            {
+              "label": "Kundenbindung verbessert",
+              "value": "123.456,78 €"
+            },
+            {
+              "label": "verbessert deutlich",
+              "value": "123.456,78 €"
+            }
+          ],
+          "terms": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+        }
+      }
+    ]
+  },
+  "flyer-top-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "top",
+        "content": {
+          "title": "Sommerfest am Freitag",
+          "cta": "Alle sind eingeladen"
+        }
+      }
+    ]
+  },
+  "flyer-top-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "top",
+        "content": {
+          "eyebrow": "Pitch Day · 14. Oktober",
+          "title": "Präsentationen in Minuten statt Stunden",
+          "subtitle": "Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und exportiert nach PowerPoint.",
+          "points": [
+            {
+              "head": "10 Minuten",
+              "text": "vom Briefing bis zum fertigen Deck"
+            },
+            {
+              "head": "Kein KI-Look",
+              "text": "ruhige Layouts, eine Akzentfarbe"
+            },
+            {
+              "head": "PPTX, PDF, PNG",
+              "text": "bearbeitbar in PowerPoint"
+            }
+          ],
+          "cta": "Jetzt kostenlos testen",
+          "contact": [
+            "deckwerk.app",
+            "hallo@deckwerk.app"
+          ],
+          "qr": "https://example.com"
+        }
+      }
+    ]
+  },
+  "flyer-top-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "top",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "subtitle": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "image": {
+            "src": ""
+          },
+          "points": [
+            {
+              "head": "Wettbewerbsfähigkeit Kundenbindung",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+            },
+            {
+              "head": "Kundenbindung verbessert deutlich durch",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            },
+            {
+              "head": "verbessert deutlich durch schnellere",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+            },
+            {
+              "head": "deutlich durch schnellere Abläufe im",
+              "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+            }
+          ],
+          "cta": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "contact": [
+            "Wettbewerbsfähigkeit Kundenbindung verbessert",
+            "Kundenbindung verbessert deutlich durch schnellere",
+            "verbessert deutlich durch schnellere Abläufe im"
+          ],
+          "qr": "https://example.com/anmeldung"
+        }
+      }
+    ]
+  },
+  "flyer-full-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "full",
+        "content": {
+          "title": "Sommerfest am Freitag",
+          "cta": "Alle sind eingeladen"
+        }
+      }
+    ]
+  },
+  "flyer-full-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "full",
+        "content": {
+          "eyebrow": "Pitch Day · 14. Oktober",
+          "title": "Präsentationen in Minuten statt Stunden",
+          "subtitle": "Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und exportiert nach PowerPoint.",
+          "points": [
+            {
+              "head": "10 Minuten",
+              "text": "vom Briefing bis zum fertigen Deck"
+            },
+            {
+              "head": "Kein KI-Look",
+              "text": "ruhige Layouts, eine Akzentfarbe"
+            },
+            {
+              "head": "PPTX, PDF, PNG",
+              "text": "bearbeitbar in PowerPoint"
+            }
+          ],
+          "cta": "Jetzt kostenlos testen",
+          "contact": [
+            "deckwerk.app",
+            "hallo@deckwerk.app"
+          ],
+          "qr": "https://example.com"
+        }
+      }
+    ]
+  },
+  "flyer-full-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "full",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "subtitle": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "image": {
+            "src": ""
+          },
+          "points": [
+            {
+              "head": "Wettbewerbsfähigkeit Kundenbindung",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+            },
+            {
+              "head": "Kundenbindung verbessert deutlich durch",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            },
+            {
+              "head": "verbessert deutlich durch schnellere",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+            },
+            {
+              "head": "deutlich durch schnellere Abläufe im",
+              "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+            }
+          ],
+          "cta": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "contact": [
+            "Wettbewerbsfähigkeit Kundenbindung verbessert",
+            "Kundenbindung verbessert deutlich durch schnellere",
+            "verbessert deutlich durch schnellere Abläufe im"
+          ],
+          "qr": "https://example.com/anmeldung"
+        }
+      }
+    ]
+  },
+  "flyer-back-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer-back",
+        "content": {
+          "title": "So läuft der Abend",
+          "items": [
+            {
+              "head": "18:00",
+              "text": "Ankommen"
+            },
+            {
+              "head": "18:30",
+              "text": "Live-Demo"
+            }
+          ],
+          "cta": "Jetzt anmelden"
+        }
+      }
+    ]
+  },
+  "flyer-back-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer-back",
+        "content": {
+          "eyebrow": "Programm · 14. Oktober",
+          "title": "So läuft der Pitch Day",
+          "intro": "Ein Abend, fünf Teams, ein Werkzeug: Wir zeigen live, wie aus Stichpunkten ein fertiges Deck wird.",
+          "items": [
+            {
+              "head": "18:00",
+              "text": "Ankommen, Getränke und kurze Begrüßung im Foyer"
+            },
+            {
+              "head": "18:30",
+              "text": "Live-Demo: vom Briefing bis zur fertigen PowerPoint in zehn Minuten"
+            },
+            {
+              "head": "19:15",
+              "text": "Fünf Teams pitchen ihre Idee mit einem Deck aus Deckwerk"
+            },
+            {
+              "head": "20:00",
+              "text": "Fragen und Antworten, danach offener Austausch"
+            }
+          ],
+          "facts": [
+            {
+              "label": "Wann",
+              "value": "14. Oktober, 18 Uhr"
+            },
+            {
+              "label": "Wo",
+              "value": "Stadtbibliothek, Saal 2"
+            },
+            {
+              "label": "Eintritt",
+              "value": "frei"
+            }
+          ],
+          "cta": "Jetzt anmelden",
+          "contact": [
+            "example.com/anmeldung",
+            "hallo@example.com"
+          ],
+          "qr": "https://example.com/anmeldung",
+          "legal": "Veranstalter: Deckwerk-Projekt, Musterweg 1, 12345 Musterstadt. Foto: Deckwerk."
+        }
+      }
+    ]
+  },
+  "flyer-back-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer-back",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "intro": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "items": [
+            {
+              "head": "Wettbewerbsfähigkeit",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            },
+            {
+              "head": "Kundenbindung verbessert",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare"
+            },
+            {
+              "head": "verbessert deutlich",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            },
+            {
+              "head": "deutlich durch",
+              "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            },
+            {
+              "head": "durch schnellere Abläufe",
+              "text": "durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+            },
+            {
+              "head": "schnellere Abläufe im",
+              "text": "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+            }
+          ],
+          "facts": [
+            {
+              "label": "Wettbewerbsfähig",
+              "value": "Wettbewerbsfähigkeit Kundenbindung"
+            },
+            {
+              "label": "Kundenbindung",
+              "value": "Kundenbindung verbessert deutlich durch"
+            },
+            {
+              "label": "verbessert",
+              "value": "verbessert deutlich durch schnellere"
+            },
+            {
+              "label": "deutlich durch",
+              "value": "deutlich durch schnellere Abläufe im"
+            }
+          ],
+          "cta": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "contact": [
+            "Wettbewerbsfähigkeit Kundenbindung verbessert",
+            "Kundenbindung verbessert deutlich durch schnellere",
+            "verbessert deutlich durch schnellere Abläufe im"
+          ],
+          "qr": "https://example.com/anmeldung",
+          "legal": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+        }
+      }
+    ]
+  },
+  "icon-grid-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "icon-grid",
+        "content": {
+          "eyebrow": "Vorteile",
+          "title": "Sechs Gründe, warum Schulen nach dem Pilot bleiben",
+          "items": [
+            {
+              "icon": "zap",
+              "head": "Sofort startklar",
+              "sub": "Keine Installation, läuft im Browser"
+            },
+            {
+              "icon": "shield-check",
+              "head": "DSGVO-konform",
+              "sub": "Server in Deutschland, keine Werbung"
+            },
+            {
+              "icon": "users",
+              "head": "Für jede Klasse",
+              "sub": "Passt sich dem Niveau jedes Kindes an"
+            },
+            {
+              "icon": "chart-line",
+              "head": "Sichtbarer Fortschritt",
+              "sub": "Wochenbericht für Lehrkräfte"
+            },
+            {
+              "icon": "clock",
+              "head": "10 Minuten am Tag",
+              "sub": "Fügt sich in den Unterricht ein"
+            },
+            {
+              "icon": "heart",
+              "head": "Motivierend",
+              "sub": "Kleine Erfolge statt roter Striche"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pros-cons-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pros-cons",
+        "content": {
+          "eyebrow": "Abwägung",
+          "title": "Der zweite Standort lohnt sich trotz höherer Miete",
+          "pros": [
+            "60 zusätzliche Plätze in der Innenstadt",
+            "Mittagsgeschäft mit Büros in Laufweite",
+            "Küche entlastet den Stammladen"
+          ],
+          "cons": [
+            "Miete 38 % über dem Stammladen",
+            "Sechs neue Stellen im Service",
+            "Umbau dauert vier Monate"
+          ],
+          "verdict": "Ab 140 Gästen am Tag trägt sich der Standort – der Stammladen schafft heute 190."
+        }
+      }
+    ]
+  },
+  "problem-solution-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "problem-solution",
+        "content": {
+          "eyebrow": "Unser Ansatz",
+          "title": "Aus drei Wochen Papierweg wird ein Antrag in zehn Minuten",
+          "problem": {
+            "heading": "Heute",
+            "text": "Anträge wandern per Hauspost durch vier Abteilungen.",
+            "points": [
+              "Ø 21 Tage Bearbeitung",
+              "Jeder fünfte Antrag unvollständig",
+              "Kein Status für Bürger"
+            ]
+          },
+          "solution": {
+            "heading": "Mit dem Portal",
+            "text": "Bürger stellen den Antrag online, das System prüft sofort.",
+            "points": [
+              "Ø 10 Minuten bis zur Eingangsbestätigung",
+              "Pflichtfelder verhindern Lücken",
+              "Status jederzeit online"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "team-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "team",
+        "content": {
+          "eyebrow": "Team",
+          "title": "Ein Team aus Schule, Sprachforschung und Software",
+          "people": [
+            {
+              "name": "Julia Hartmann",
+              "role": "CEO · Lehrerin a. D.",
+              "line": "12 Jahre Grundschule, kennt den Alltag"
+            },
+            {
+              "name": "Dr. Emre Yilmaz",
+              "role": "Forschung",
+              "line": "Promotion in Sprachdidaktik"
+            },
+            {
+              "name": "Lena Vogt",
+              "role": "CTO",
+              "line": "Baute Lernapps für 2 Mio Nutzer"
+            },
+            {
+              "name": "Paul Neumann",
+              "role": "Vertrieb Schulen",
+              "line": "Kontakte zu 300 Schulträgern"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pricing-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pricing",
+        "content": {
+          "eyebrow": "Preise",
+          "title": "Die Schullizenz rechnet sich schon ab vier Klassen",
+          "tiers": [
+            {
+              "name": "Klasse",
+              "price": "19 €",
+              "period": "pro Monat",
+              "features": [
+                "Eine Klasse bis 30 Kinder",
+                "Wochenbericht",
+                "E-Mail-Support"
+              ]
+            },
+            {
+              "name": "Schule",
+              "price": "149 €",
+              "period": "pro Monat",
+              "features": [
+                "Alle Klassen",
+                "Schulung fürs Kollegium",
+                "Auswertung pro Jahrgang",
+                "Telefon-Support"
+              ],
+              "highlight": true
+            },
+            {
+              "name": "Träger",
+              "price": "auf Anfrage",
+              "features": [
+                "Mehrere Schulen",
+                "Zentrale Verwaltung",
+                "Eigener Ansprechpartner"
+              ]
+            }
+          ],
+          "note": "Alle Preise zzgl. MwSt., jährliche Abrechnung"
+        }
+      }
+    ]
+  },
+  "funnel-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "funnel",
+        "content": {
+          "eyebrow": "Vertrieb",
+          "title": "Der größte Verlust liegt zwischen Demo und Angebot",
+          "stages": [
+            {
+              "label": "Website-Besucher",
+              "value": "48.000"
+            },
+            {
+              "label": "Anfragen",
+              "value": "2.100"
+            },
+            {
+              "label": "Demos",
+              "value": "640"
+            },
+            {
+              "label": "Angebote",
+              "value": "190"
+            },
+            {
+              "label": "Neue Schulen",
+              "value": "84"
+            }
+          ],
+          "takeaway": "Nur 30 % der Demos führen zu einem Angebot – hier setzt das neue Pilotpaket an."
+        }
+      }
+    ]
+  },
+  "market-size-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "market-size",
+        "content": {
+          "eyebrow": "Markt",
+          "title": "Schon 5 % der Grundschulen in DACH tragen ein profitables Geschäft",
+          "tam": {
+            "value": "1,2 Mrd €",
+            "label": "Digitale Lernmittel an Schulen in DACH"
+          },
+          "sam": {
+            "value": "180 Mio €",
+            "label": "Deutsch und Rechtschreibung, Klasse 1–6"
+          },
+          "som": {
+            "value": "9 Mio €",
+            "label": "5 % der Grundschulen bis 2029"
+          },
+          "source": "Bildungsbericht 2026, eigene Hochrechnung"
+        }
+      }
+    ]
+  },
+  "logos-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "logos",
+        "content": {
+          "eyebrow": "Partner",
+          "title": "Über 40 Schulen und drei Träger arbeiten bereits mit uns",
+          "logos": [
+            {
+              "name": "Stadt Nord"
+            },
+            {
+              "name": "Bildungswerk Süd"
+            },
+            {
+              "name": "Lernfabrik"
+            },
+            {
+              "name": "Kreis Mitte"
+            },
+            {
+              "name": "Grundschule am Park"
+            },
+            {
+              "name": "Schulverbund West"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "application-cover-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "application-cover",
+        "content": {
+          "title": "Bewerbung als Erzieherin",
+          "name": "Mara"
+        }
+      }
+    ]
+  },
+  "application-cover-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "application-cover",
+        "content": {
+          "eyebrow": "Bewerbung",
+          "title": "als Pflegefachkraft in der ambulanten Pflege",
+          "org": "bei der Sozialstation Musterstadt",
+          "name": "Vorname Nachname",
+          "photo": {
+            "src": ""
+          },
+          "contact": [
+            "Musterweg 1",
+            "12345 Musterstadt",
+            "Telefon 0123 456789"
+          ],
+          "contents": [
+            "Anschreiben",
+            "Lebenslauf",
+            "Examenszeugnis",
+            "Arbeitszeugnisse"
+          ]
+        }
+      }
+    ]
+  },
+  "application-cover-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "application-cover",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "org": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "name": "Wettbewerbsfähigkeit Kundenbindung",
+          "photo": {
+            "src": ""
+          },
+          "contact": [
+            "Wettbewerbsfähigkeit Kundenbindung verbessert",
+            "Kundenbindung verbessert deutlich durch schnellere",
+            "verbessert deutlich durch schnellere Abläufe im",
+            "deutlich durch schnellere Abläufe im Vertrieb und"
+          ],
+          "contents": [
+            "Wettbewerbsfähigkeit Kundenbindung",
+            "Kundenbindung verbessert deutlich durch",
+            "verbessert deutlich durch schnellere",
+            "deutlich durch schnellere Abläufe im",
+            "durch schnellere Abläufe im Vertrieb und",
+            "schnellere Abläufe im Vertrieb und klare"
+          ]
+        }
+      }
+    ]
+  },
+  "invitation-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "invitation",
+        "content": {
+          "title": "Sommerfest im Hof",
+          "facts": [
+            {
+              "label": "Wann",
+              "value": "Freitag, 3. Juli, 17 Uhr"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "invitation-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "invitation",
+        "content": {
+          "eyebrow": "Einladung",
+          "title": "Wir feiern 25 Jahre Praxis am Markt",
+          "text": "Seit 25 Jahren sind wir für euch da. Das möchten wir mit allen feiern, die uns auf diesem Weg begleitet haben – mit Musik, Essen und guten Gesprächen.",
+          "facts": [
+            {
+              "label": "Wann",
+              "value": "Samstag, 4. Juli, ab 18 Uhr"
+            },
+            {
+              "label": "Wo",
+              "value": "Praxis am Markt, Musterweg 1, 12345 Musterstadt"
+            },
+            {
+              "label": "Dresscode",
+              "value": "Sommerlich"
+            }
+          ],
+          "rsvp": "Bitte sagt bis 20. Juni zu, gern über den QR-Code.",
+          "host": "Das Team der Praxis am Markt",
+          "qr": "https://example.com/zusage"
+        }
+      }
+    ]
+  },
+  "invitation-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "invitation",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+          "facts": [
+            {
+              "label": "Wettbewerbsfäh",
+              "value": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch"
+            },
+            {
+              "label": "Kundenbindung",
+              "value": "Kundenbindung verbessert deutlich durch schnellere Abläufe"
+            },
+            {
+              "label": "verbessert",
+              "value": "verbessert deutlich durch schnellere Abläufe im Vertrieb und"
+            },
+            {
+              "label": "deutlich durch",
+              "value": "deutlich durch schnellere Abläufe im Vertrieb und klare"
+            }
+          ],
+          "rsvp": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "host": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "image": {
+            "src": ""
+          },
+          "qr": "https://example.com/zusage"
+        }
+      }
+    ]
+  },
+  "letter-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "letter",
+        "content": {
+          "sender": "Praxis am Markt",
+          "to": "Muster GmbH\nMusterweg 1\n12345 Musterstadt",
+          "subject": "Ihr Termin am 4. November steht",
+          "body": "Wir bestätigen den Impftermin für Ihr Team am 4. November um 9 Uhr."
+        }
+      }
+    ]
+  },
+  "letter-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "letter",
+        "content": {
+          "sender": "Praxis am Markt",
+          "senderLine": "Praxis am Markt, Marktplatz 3, 12345 Musterstadt",
+          "to": "Muster GmbH\nPersonalabteilung\nMusterweg 1\n12345 Musterstadt",
+          "info": [
+            {
+              "label": "Ihr Zeichen",
+              "value": "PA-2026-17"
+            },
+            {
+              "label": "Ansprechpartnerin",
+              "value": "Sabine, Praxisleitung"
+            },
+            {
+              "label": "Telefon",
+              "value": "0123 456789"
+            },
+            {
+              "label": "Datum",
+              "value": "8. Oktober 2026"
+            }
+          ],
+          "subject": "Grippeschutzimpfung für Ihr Team am 4. November",
+          "salutation": "Sehr geehrte Damen und Herren,",
+          "body": "vielen Dank für Ihre Anfrage. Gern impfen wir Ihre Mitarbeitenden in Ihren Räumen gegen Grippe. Wir kommen am 4. November um 9 Uhr mit zwei Fachkräften und bringen den Impfstoff mit.\nBitte stellen Sie einen ruhigen Raum mit Tisch und zwei Stühlen bereit. Pro Person rechnen wir mit zehn Minuten, bei 40 Anmeldungen sind wir gegen 12 Uhr fertig.\nDie Kosten übernimmt in der Regel die Krankenkasse. Den Aufklärungsbogen legen wir bei; er sollte ausgefüllt mitgebracht werden.",
+          "closing": "Mit freundlichen Grüßen",
+          "signature": "Sabine\nPraxisleitung",
+          "enclosures": [
+            "Aufklärungsbogen"
+          ],
+          "footer": [
+            "Praxis am Markt\nMarktplatz 3\n12345 Musterstadt",
+            "Telefon 0123 456789\nexample.com",
+            "Sparkasse Musterstadt\nIBAN DE12 3456 7890 1234 5678 90",
+            "Sprechzeiten\nMo–Fr 8–18 Uhr"
+          ]
+        }
+      }
+    ]
+  },
+  "letter-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "letter",
+        "content": {
+          "sender": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "senderLine": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "to": "Wettbewerbsfähigkeit\nKundenbindung verbessert\nverbessert deutlich durch\ndeutlich durch schnellere\ndurch schnellere Abläufe im\nschnellere Abläufe im",
+          "info": [
+            {
+              "label": "Wettbewerbsfähigkeit",
+              "value": "Wettbewerbsfähigkeit Kundenbindung"
+            },
+            {
+              "label": "Kundenbindung",
+              "value": "Kundenbindung verbessert deutlich durch"
+            },
+            {
+              "label": "verbessert deutlich",
+              "value": "verbessert deutlich durch schnellere"
+            },
+            {
+              "label": "deutlich durch",
+              "value": "deutlich durch schnellere Abläufe im"
+            }
+          ],
+          "subject": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "salutation": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "body": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare\nKundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse\nverbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit\ndeutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung",
+          "closing": "Wettbewerbsfähigkeit Kundenbindung",
+          "signature": "Wettbewerbsfähigkeit Kundenbindung\nverbessert deutlich durch schnellere",
+          "enclosures": [
+            "Wettbewerbsfähigkeit Kundenbindung",
+            "Kundenbindung verbessert deutlich durch",
+            "verbessert deutlich durch schnellere",
+            "deutlich durch schnellere Abläufe im",
+            "durch schnellere Abläufe im Vertrieb und",
+            "schnellere Abläufe im Vertrieb und klare"
+          ],
+          "footer": [
+            "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+            "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+            "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+            "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+          ]
+        }
+      }
+    ]
+  },
+  "cv-side-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "side",
+        "content": {
+          "name": "Vorname Nachname",
+          "sections": [
+            {
+              "heading": "Berufserfahrung",
+              "entries": [
+                {
+                  "period": "2021 – heute",
+                  "title": "Projektleitung"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "cv-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "side",
+        "content": {
+          "name": "Mara",
+          "role": "Produktdesignerin mit Schwerpunkt Barrierefreiheit",
+          "profile": "Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche eine Rolle mit Verantwortung für ein Designteam.",
+          "contact": [
+            "Musterweg 1, 12345 Musterstadt",
+            "0123 456789",
+            "example.com/mara"
+          ],
+          "sections": [
+            {
+              "heading": "Berufserfahrung",
+              "entries": [
+                {
+                  "period": "2021 – heute",
+                  "title": "Senior Produktdesignerin",
+                  "place": "Muster GmbH, Musterstadt",
+                  "text": "Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %."
+                },
+                {
+                  "period": "2018 – 2021",
+                  "title": "Produktdesignerin",
+                  "place": "Beispiel AG, Musterstadt",
+                  "text": "Aufbau eines Designsystems für zwölf Fachanwendungen."
+                },
+                {
+                  "period": "2016 – 2018",
+                  "title": "Junior UX-Designerin",
+                  "place": "Agentur Nord, Musterstadt"
+                }
+              ]
+            },
+            {
+              "heading": "Ausbildung",
+              "entries": [
+                {
+                  "period": "2013 – 2016",
+                  "title": "B. A. Kommunikationsdesign",
+                  "place": "Hochschule Musterstadt",
+                  "text": "Abschlussarbeit über barrierefreie Formulare, Note 1,3."
+                }
+              ]
+            }
+          ],
+          "skills": [
+            {
+              "label": "Sprachen",
+              "text": "Deutsch (Muttersprache), Englisch (C1), Spanisch (B1)"
+            },
+            {
+              "label": "Werkzeuge",
+              "text": "Figma, HTML und CSS, Nutzertests, WCAG 2.2"
+            }
+          ],
+          "signed": "Musterstadt, 8. Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cv-side-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "side",
+        "content": {
+          "name": "Wettbewerbsfähigkeit Kundenbindung",
+          "role": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "image": {
+            "src": ""
+          },
+          "profile": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "contact": [
+            "Wettbewerbsfähigkeit Kundenbindung",
+            "Kundenbindung verbessert deutlich durch",
+            "verbessert deutlich durch schnellere",
+            "deutlich durch schnellere Abläufe im",
+            "durch schnellere Abläufe im Vertrieb und"
+          ],
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit",
+              "entries": [
+                {
+                  "period": "Wettbewerbsfähigkeit",
+                  "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+                },
+                {
+                  "period": "Kundenbindung verbessert",
+                  "title": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "place": "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+                }
+              ]
+            },
+            {
+              "heading": "Kundenbindung verbessert",
+              "entries": [
+                {
+                  "period": "Kundenbindung verbessert",
+                  "title": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+                }
+              ]
+            },
+            {
+              "heading": "verbessert deutlich durch",
+              "entries": [
+                {
+                  "period": "verbessert deutlich",
+                  "title": "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+                }
+              ]
+            },
+            {
+              "heading": "deutlich durch schnellere",
+              "entries": [
+                {
+                  "period": "deutlich durch",
+                  "title": "deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert"
+                }
+              ]
+            }
+          ],
+          "skills": [
+            {
+              "label": "Wettbewerbsfähigkeit",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+            },
+            {
+              "label": "Kundenbindung verbessert",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            },
+            {
+              "label": "verbessert deutlich",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+            },
+            {
+              "label": "deutlich durch",
+              "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+            }
+          ],
+          "signed": "Wettbewerbsfähigkeit Kundenbindung verbessert"
+        }
+      }
+    ]
+  },
+  "cv-plain-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "plain",
+        "content": {
+          "name": "Vorname Nachname",
+          "sections": [
+            {
+              "heading": "Berufserfahrung",
+              "entries": [
+                {
+                  "period": "2021 – heute",
+                  "title": "Projektleitung"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "cv-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "plain",
+        "content": {
+          "name": "Mara",
+          "role": "Produktdesignerin mit Schwerpunkt Barrierefreiheit",
+          "profile": "Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche eine Rolle mit Verantwortung für ein Designteam.",
+          "contact": [
+            "Musterweg 1, 12345 Musterstadt",
+            "0123 456789",
+            "example.com/mara"
+          ],
+          "sections": [
+            {
+              "heading": "Berufserfahrung",
+              "entries": [
+                {
+                  "period": "2021 – heute",
+                  "title": "Senior Produktdesignerin",
+                  "place": "Muster GmbH, Musterstadt",
+                  "text": "Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %."
+                },
+                {
+                  "period": "2018 – 2021",
+                  "title": "Produktdesignerin",
+                  "place": "Beispiel AG, Musterstadt",
+                  "text": "Aufbau eines Designsystems für zwölf Fachanwendungen."
+                },
+                {
+                  "period": "2016 – 2018",
+                  "title": "Junior UX-Designerin",
+                  "place": "Agentur Nord, Musterstadt"
+                }
+              ]
+            },
+            {
+              "heading": "Ausbildung",
+              "entries": [
+                {
+                  "period": "2013 – 2016",
+                  "title": "B. A. Kommunikationsdesign",
+                  "place": "Hochschule Musterstadt",
+                  "text": "Abschlussarbeit über barrierefreie Formulare, Note 1,3."
+                }
+              ]
+            }
+          ],
+          "skills": [
+            {
+              "label": "Sprachen",
+              "text": "Deutsch (Muttersprache), Englisch (C1), Spanisch (B1)"
+            },
+            {
+              "label": "Werkzeuge",
+              "text": "Figma, HTML und CSS, Nutzertests, WCAG 2.2"
+            }
+          ],
+          "signed": "Musterstadt, 8. Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cv-plain-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "plain",
+        "content": {
+          "name": "Wettbewerbsfähigkeit Kundenbindung",
+          "role": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "image": {
+            "src": ""
+          },
+          "profile": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "contact": [
+            "Wettbewerbsfähigkeit Kundenbindung",
+            "Kundenbindung verbessert deutlich durch",
+            "verbessert deutlich durch schnellere",
+            "deutlich durch schnellere Abläufe im",
+            "durch schnellere Abläufe im Vertrieb und"
+          ],
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit",
+              "entries": [
+                {
+                  "period": "Wettbewerbsfähigkeit",
+                  "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+                },
+                {
+                  "period": "Kundenbindung verbessert",
+                  "title": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "place": "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+                }
+              ]
+            },
+            {
+              "heading": "Kundenbindung verbessert",
+              "entries": [
+                {
+                  "period": "Kundenbindung verbessert",
+                  "title": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+                }
+              ]
+            },
+            {
+              "heading": "verbessert deutlich durch",
+              "entries": [
+                {
+                  "period": "verbessert deutlich",
+                  "title": "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+                }
+              ]
+            },
+            {
+              "heading": "deutlich durch schnellere",
+              "entries": [
+                {
+                  "period": "deutlich durch",
+                  "title": "deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "place": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert"
+                }
+              ]
+            }
+          ],
+          "skills": [
+            {
+              "label": "Wettbewerbsfähigkeit",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+            },
+            {
+              "label": "Kundenbindung verbessert",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            },
+            {
+              "label": "verbessert deutlich",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+            },
+            {
+              "label": "deutlich durch",
+              "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+            }
+          ],
+          "signed": "Wettbewerbsfähigkeit Kundenbindung verbessert"
+        }
+      }
+    ]
+  },
+  "menu-one-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "one",
+        "content": {
+          "title": "Speisekarte",
+          "sections": [
+            {
+              "heading": "Heute",
+              "items": [
+                {
+                  "name": "Linsensuppe",
+                  "price": "6,50"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "menu-one-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Herbst · ab 1. Oktober",
+          "title": "Herbstkarte",
+          "intro": "Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen.",
+          "sections": [
+            {
+              "heading": "Vorspeisen",
+              "items": [
+                {
+                  "name": "Kürbissuppe",
+                  "text": "Hokkaido, Ingwer, geröstete Kerne",
+                  "price": "7,50",
+                  "tag": "vegan"
+                },
+                {
+                  "name": "Feldsalat",
+                  "text": "Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing",
+                  "price": "9,80",
+                  "tag": "G, H"
+                }
+              ]
+            },
+            {
+              "heading": "Hauptgerichte",
+              "items": [
+                {
+                  "name": "Rinderroulade",
+                  "text": "Rotkohl, Kartoffelklöße, Schmorsauce",
+                  "price": "21,50",
+                  "tag": "A, I"
+                },
+                {
+                  "name": "Kürbisrisotto",
+                  "text": "Salbeibutter, Bergkäse",
+                  "price": "16,90",
+                  "tag": "G"
+                },
+                {
+                  "name": "Saibling",
+                  "text": "Aus dem Fichtelgebirge, mit Petersilienkartoffeln und Rahmspinat",
+                  "price": "23,00",
+                  "tag": "D, G"
+                }
+              ]
+            },
+            {
+              "heading": "Nachspeisen",
+              "items": [
+                {
+                  "name": "Zwetschgendatschi",
+                  "text": "Mit geschlagener Sahne",
+                  "price": "5,50",
+                  "tag": "A, C, G"
+                }
+              ]
+            }
+          ],
+          "note": "Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt."
+        }
+      }
+    ]
+  },
+  "menu-one-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung",
+          "intro": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit",
+              "items": [
+                {
+                  "name": "Wettbewerbsfähigkeit Kundenbindung",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "price": "1.234,50 €",
+                  "tag": "Wettbewerbsfähigkeit"
+                },
+                {
+                  "name": "Kundenbindung verbessert deutlich durch",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "price": "1.234,50 €",
+                  "tag": "Kundenbindung"
+                },
+                {
+                  "name": "verbessert deutlich durch schnellere",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+                  "price": "1.234,50 €",
+                  "tag": "verbessert deutlich"
+                },
+                {
+                  "name": "deutlich durch schnellere Abläufe im",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+                  "price": "1.234,50 €",
+                  "tag": "deutlich durch"
+                }
+              ]
+            },
+            {
+              "heading": "Kundenbindung verbessert",
+              "items": [
+                {
+                  "name": "Kundenbindung verbessert deutlich durch",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "price": "1.234,50 €",
+                  "tag": "Wettbewerbsfähigkeit"
+                },
+                {
+                  "name": "verbessert deutlich durch schnellere",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "price": "1.234,50 €",
+                  "tag": "Kundenbindung"
+                },
+                {
+                  "name": "deutlich durch schnellere Abläufe im",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+                  "price": "1.234,50 €",
+                  "tag": "verbessert deutlich"
+                },
+                {
+                  "name": "durch schnellere Abläufe im Vertrieb und",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+                  "price": "1.234,50 €",
+                  "tag": "deutlich durch"
+                }
+              ]
+            },
+            {
+              "heading": "verbessert deutlich durch",
+              "items": [
+                {
+                  "name": "verbessert deutlich durch schnellere",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "price": "1.234,50 €",
+                  "tag": "Wettbewerbsfähigkeit"
+                },
+                {
+                  "name": "deutlich durch schnellere Abläufe im",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "price": "1.234,50 €",
+                  "tag": "Kundenbindung"
+                },
+                {
+                  "name": "durch schnellere Abläufe im Vertrieb und",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+                  "price": "1.234,50 €",
+                  "tag": "verbessert deutlich"
+                },
+                {
+                  "name": "schnellere Abläufe im Vertrieb und klare",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+                  "price": "1.234,50 €",
+                  "tag": "deutlich durch"
+                }
+              ]
+            }
+          ],
+          "note": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+        }
+      }
+    ]
+  },
+  "menu-two-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "two",
+        "content": {
+          "title": "Speisekarte",
+          "sections": [
+            {
+              "heading": "Heute",
+              "items": [
+                {
+                  "name": "Linsensuppe",
+                  "price": "6,50"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "menu-two-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Herbst · ab 1. Oktober",
+          "title": "Herbstkarte",
+          "intro": "Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen.",
+          "sections": [
+            {
+              "heading": "Vorspeisen",
+              "items": [
+                {
+                  "name": "Kürbissuppe",
+                  "text": "Hokkaido, Ingwer, geröstete Kerne",
+                  "price": "7,50",
+                  "tag": "vegan"
+                },
+                {
+                  "name": "Feldsalat",
+                  "text": "Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing",
+                  "price": "9,80",
+                  "tag": "G, H"
+                }
+              ]
+            },
+            {
+              "heading": "Hauptgerichte",
+              "items": [
+                {
+                  "name": "Rinderroulade",
+                  "text": "Rotkohl, Kartoffelklöße, Schmorsauce",
+                  "price": "21,50",
+                  "tag": "A, I"
+                },
+                {
+                  "name": "Kürbisrisotto",
+                  "text": "Salbeibutter, Bergkäse",
+                  "price": "16,90",
+                  "tag": "G"
+                },
+                {
+                  "name": "Saibling",
+                  "text": "Aus dem Fichtelgebirge, mit Petersilienkartoffeln und Rahmspinat",
+                  "price": "23,00",
+                  "tag": "D, G"
+                }
+              ]
+            },
+            {
+              "heading": "Nachspeisen",
+              "items": [
+                {
+                  "name": "Zwetschgendatschi",
+                  "text": "Mit geschlagener Sahne",
+                  "price": "5,50",
+                  "tag": "A, C, G"
+                }
+              ]
+            }
+          ],
+          "note": "Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt."
+        }
+      }
+    ]
+  },
+  "menu-two-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung",
+          "intro": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit",
+              "items": [
+                {
+                  "name": "Wettbewerbsfähigkeit Kundenbindung",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "price": "1.234,50 €",
+                  "tag": "Wettbewerbsfähigkeit"
+                },
+                {
+                  "name": "Kundenbindung verbessert deutlich durch",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "price": "1.234,50 €",
+                  "tag": "Kundenbindung"
+                },
+                {
+                  "name": "verbessert deutlich durch schnellere",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+                  "price": "1.234,50 €",
+                  "tag": "verbessert deutlich"
+                },
+                {
+                  "name": "deutlich durch schnellere Abläufe im",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+                  "price": "1.234,50 €",
+                  "tag": "deutlich durch"
+                }
+              ]
+            },
+            {
+              "heading": "Kundenbindung verbessert",
+              "items": [
+                {
+                  "name": "Kundenbindung verbessert deutlich durch",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "price": "1.234,50 €",
+                  "tag": "Wettbewerbsfähigkeit"
+                },
+                {
+                  "name": "verbessert deutlich durch schnellere",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "price": "1.234,50 €",
+                  "tag": "Kundenbindung"
+                },
+                {
+                  "name": "deutlich durch schnellere Abläufe im",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+                  "price": "1.234,50 €",
+                  "tag": "verbessert deutlich"
+                },
+                {
+                  "name": "durch schnellere Abläufe im Vertrieb und",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+                  "price": "1.234,50 €",
+                  "tag": "deutlich durch"
+                }
+              ]
+            },
+            {
+              "heading": "verbessert deutlich durch",
+              "items": [
+                {
+                  "name": "verbessert deutlich durch schnellere",
+                  "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+                  "price": "1.234,50 €",
+                  "tag": "Wettbewerbsfähigkeit"
+                },
+                {
+                  "name": "deutlich durch schnellere Abläufe im",
+                  "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+                  "price": "1.234,50 €",
+                  "tag": "Kundenbindung"
+                },
+                {
+                  "name": "durch schnellere Abläufe im Vertrieb und",
+                  "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+                  "price": "1.234,50 €",
+                  "tag": "verbessert deutlich"
+                },
+                {
+                  "name": "schnellere Abläufe im Vertrieb und klare",
+                  "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+                  "price": "1.234,50 €",
+                  "tag": "deutlich durch"
+                }
+              ]
+            }
+          ],
+          "note": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+        }
+      }
+    ]
+  },
+  "code-editor-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "editor",
+        "content": {
+          "title": "Eine Abfrage liefert den Wochenumsatz",
+          "lang": "ts",
+          "focus": "6-7",
+          "code": "// Bestellungen der letzten sieben Tage laden\nconst seit = new Date(Date.now() - 7 * 864e5)\nconst res = await fetch(`/api/orders?since=${seit.toISOString()}`)\nif (!res.ok) throw new Error(`HTTP ${res.status}`)\n\nconst orders = await res.json()\nconst umsatz = orders.reduce((s, o) => s + o.total, 0)\nconsole.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "note": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf."
+        }
+      }
+    ]
+  },
+  "code-terminal-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "terminal",
+        "content": {
+          "title": "Eine Abfrage liefert den Wochenumsatz",
+          "lang": "ts",
+          "focus": "6-7",
+          "code": "// Bestellungen der letzten sieben Tage laden\nconst seit = new Date(Date.now() - 7 * 864e5)\nconst res = await fetch(`/api/orders?since=${seit.toISOString()}`)\nif (!res.ok) throw new Error(`HTTP ${res.status}`)\n\nconst orders = await res.json()\nconst umsatz = orders.reduce((s, o) => s + o.total, 0)\nconsole.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "note": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf."
+        }
+      }
+    ]
+  },
+  "screen-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "screen",
+        "content": {
+          "title": "Der Export dauert drei Klicks",
+          "image": {
+            "src": ""
+          },
+          "url": "example.com/export",
+          "caption": "Format wählen, prüfen, herunterladen: Die Datei lässt sich sofort in PowerPoint bearbeiten.",
+          "cursor": [
+            {
+              "x": 0.2,
+              "y": 0.3
+            },
+            {
+              "x": 0.62,
+              "y": 0.55,
+              "click": true
+            },
+            {
+              "x": 0.84,
+              "y": 0.86,
+              "click": true,
+              "zoom": 2
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

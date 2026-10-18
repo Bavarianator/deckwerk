@@ -1,0 +1,65 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "recipient",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb und klare Verantwortung für",
+      "messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für"
+    ]
+  },
+  {
+    "slot": "date",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "signers.0.name",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "signers.0.role",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "signers.1.name",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "signers.1.role",
+    "lines": [
+      "verbessert deutlich durch schnellere"
+    ]
+  }
+]

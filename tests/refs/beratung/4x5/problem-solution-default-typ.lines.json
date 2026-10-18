@@ -1,0 +1,88 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Unser Ansatz"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Aus drei Wochen Papierweg",
+      "wird ein Antrag in zehn Minuten"
+    ]
+  },
+  {
+    "slot": "problem.heading",
+    "lines": [
+      "Heute"
+    ]
+  },
+  {
+    "slot": "problem.text",
+    "lines": [
+      "Anträge wandern",
+      "per Hauspost durch",
+      "vier Abteilungen."
+    ]
+  },
+  {
+    "slot": "problem.points.0",
+    "lines": [
+      "Ø 21 Tage Bearbeitung"
+    ]
+  },
+  {
+    "slot": "problem.points.1",
+    "lines": [
+      "Jeder fünfte Antrag",
+      "unvollständig"
+    ]
+  },
+  {
+    "slot": "problem.points.2",
+    "lines": [
+      "Kein Status für Bürger"
+    ]
+  },
+  {
+    "slot": "solution.heading",
+    "lines": [
+      "Mit dem Portal"
+    ]
+  },
+  {
+    "slot": "solution.text",
+    "lines": [
+      "Bürger stellen den",
+      "Antrag online, das",
+      "System prüft sofort."
+    ]
+  },
+  {
+    "slot": "solution.points.0",
+    "lines": [
+      "Ø 10 Minuten bis zur",
+      "Eingangsbestätigung"
+    ]
+  },
+  {
+    "slot": "solution.points.1",
+    "lines": [
+      "Pflichtfelder verhindern",
+      "Lücken"
+    ]
+  },
+  {
+    "slot": "solution.points.2",
+    "lines": [
+      "Status jederzeit online"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

@@ -1,0 +1,317 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 117.6875,
+        "h": 24
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Warum jetzt",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 98,
+        "w": 936,
+        "h": 136.796875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 60,
+      "lineHeightPx": 68.4,
+      "trackingPx": -0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Drei Entwicklungen machen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "den Markt jetzt attraktiv",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.0",
+      "box": {
+        "x": 72,
+        "y": 304.984375,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.0.text",
+      "box": {
+        "x": 108,
+        "y": 275.796875,
+        "w": 900,
+        "h": 60.375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 43.75,
+      "lineHeightPx": 60.375,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Regulierung schafft Nachfrage",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.sub",
+      "box": {
+        "x": 108,
+        "y": 340.171875,
+        "w": 900,
+        "h": 48.296875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ab 2027 wird digitale Dokumentation Pflicht",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.1",
+      "box": {
+        "x": 72,
+        "y": 457.65625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.1.text",
+      "box": {
+        "x": 108,
+        "y": 428.46875,
+        "w": 900,
+        "h": 60.375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 43.75,
+      "lineHeightPx": 60.375,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerb ist fragmentiert",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.sub",
+      "box": {
+        "x": 108,
+        "y": 492.84375,
+        "w": 900,
+        "h": 48.296875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kein Anbieter hat mehr als 8 % Marktanteil",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.2",
+      "box": {
+        "x": 72,
+        "y": 610.328125,
+        "w": 14,
+        "h": 2
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.2.text",
+      "box": {
+        "x": 108,
+        "y": 581.140625,
+        "w": 900,
+        "h": 60.375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 43.75,
+      "lineHeightPx": 60.375,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kunden sind wechselbereit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.sub",
+      "box": {
+        "x": 108,
+        "y": 645.515625,
+        "w": 900,
+        "h": 48.296875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "62 % planen einen Anbieterwechsel in 24 Monaten",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 967.0546875,
+        "y": 1287.203125,
+        "w": 40.9453125,
+        "h": 22.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 19,
+      "lineHeightPx": 22.8,
+      "trackingPx": 0.38,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

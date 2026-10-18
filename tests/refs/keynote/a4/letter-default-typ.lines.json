@@ -1,0 +1,152 @@
+[
+  {
+    "slot": "sender",
+    "lines": [
+      "Praxis am Markt"
+    ]
+  },
+  {
+    "slot": "senderLine",
+    "lines": [
+      "Praxis am Markt, Marktplatz 3, 12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "to",
+    "lines": [
+      "Muster GmbH",
+      "Personalabteilung",
+      "Musterweg 1",
+      "12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "info.0.label",
+    "lines": [
+      "Ihr Zeichen"
+    ]
+  },
+  {
+    "slot": "info.0.value",
+    "lines": [
+      "PA-2026-17"
+    ]
+  },
+  {
+    "slot": "info.1.label",
+    "lines": [
+      "Ansprechpartnerin"
+    ]
+  },
+  {
+    "slot": "info.1.value",
+    "lines": [
+      "Sabine, Praxisleitung"
+    ]
+  },
+  {
+    "slot": "info.2.label",
+    "lines": [
+      "Telefon"
+    ]
+  },
+  {
+    "slot": "info.2.value",
+    "lines": [
+      "0123 456789"
+    ]
+  },
+  {
+    "slot": "info.3.label",
+    "lines": [
+      "Datum"
+    ]
+  },
+  {
+    "slot": "info.3.value",
+    "lines": [
+      "8. Oktober 2026"
+    ]
+  },
+  {
+    "slot": "subject",
+    "lines": [
+      "Grippeschutzimpfung für Ihr Team am 4. November"
+    ]
+  },
+  {
+    "slot": "salutation",
+    "lines": [
+      "Sehr geehrte Damen und Herren,"
+    ]
+  },
+  {
+    "slot": "body",
+    "lines": [
+      "vielen Dank für Ihre Anfrage. Gern impfen wir Ihre Mitarbeitenden in Ihren Räumen",
+      "gegen Grippe. Wir kommen am 4. November um 9 Uhr mit zwei Fachkräften und",
+      "bringen den Impfstoff mit.",
+      "",
+      "Bitte stellen Sie einen ruhigen Raum mit Tisch und zwei Stühlen bereit. Pro Person",
+      "rechnen wir mit zehn Minuten, bei 40 Anmeldungen sind wir gegen 12 Uhr fertig.",
+      "",
+      "Die Kosten übernimmt in der Regel die Krankenkasse. Den Aufklärungsbogen",
+      "legen wir bei; er sollte ausgefüllt mitgebracht werden."
+    ]
+  },
+  {
+    "slot": "closing",
+    "lines": [
+      "Mit freundlichen Grüßen"
+    ]
+  },
+  {
+    "slot": "signature",
+    "lines": [
+      "Sabine",
+      "Praxisleitung"
+    ]
+  },
+  {
+    "slot": "_enc",
+    "lines": [
+      "Anlagen"
+    ]
+  },
+  {
+    "slot": "enclosures.0",
+    "lines": [
+      "Aufklärungsbogen"
+    ]
+  },
+  {
+    "slot": "footer.0",
+    "lines": [
+      "Praxis am Markt",
+      "Marktplatz 3",
+      "12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "footer.1",
+    "lines": [
+      "Telefon 0123 456789",
+      "example.com"
+    ]
+  },
+  {
+    "slot": "footer.2",
+    "lines": [
+      "Sparkasse Musterstadt",
+      "IBAN DE12 3456 7890",
+      "1234 5678 90"
+    ]
+  },
+  {
+    "slot": "footer.3",
+    "lines": [
+      "Sprechzeiten",
+      "Mo–Fr 8–18 Uhr"
+    ]
+  }
+]

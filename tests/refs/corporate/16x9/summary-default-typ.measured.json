@@ -1,0 +1,423 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 116.21875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Executive Summary",
+          "bold": true,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.84,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wir empfehlen, den Pilot im",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "November mit 20 Schulen zu starten",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_n.0",
+      "box": {
+        "x": 72,
+        "y": 316.9140625,
+        "w": 48,
+        "h": 31.71875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "01",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "points.0.title",
+      "box": {
+        "x": 148,
+        "y": 320.4140625,
+        "w": 676,
+        "h": 27.2734375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.22,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jedes vierte Kind hat erhebliche Rechtschreibschwächen",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "points.0.text",
+      "box": {
+        "x": 148,
+        "y": 353.6875,
+        "w": 676,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Lehrkräfte fehlt die Zeit für Einzelförderung – der Bedarf wächst.",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_n.1",
+      "box": {
+        "x": 72,
+        "y": 406.8203125,
+        "w": 48,
+        "h": 31.71875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "02",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "points.1.title",
+      "box": {
+        "x": 148,
+        "y": 410.3203125,
+        "w": 676,
+        "h": 27.2734375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.22,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ortho-Bot senkt die Fehlerquote in sechs Monaten um 41 %",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "points.1.text",
+      "box": {
+        "x": 148,
+        "y": 443.59375,
+        "w": 676,
+        "h": 24.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilot mit 6 Schulen und 412 Kindern, bei gleicher Unterrichtszeit.",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_n.2",
+      "box": {
+        "x": 72,
+        "y": 496.7265625,
+        "w": 48,
+        "h": 31.71875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "03",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "points.2.title",
+      "box": {
+        "x": 148,
+        "y": 500.2265625,
+        "w": 676,
+        "h": 27.2734375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.22,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Eine Schullizenz kostet weniger als ein Klassensatz Hefte",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "points.2.text",
+      "box": {
+        "x": 148,
+        "y": 533.5,
+        "w": 676,
+        "h": 24.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1.900 € pro Jahr statt rund 2.400 € für Arbeitshefte.",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_rec",
+      "box": {
+        "x": 868,
+        "y": 307.078125,
+        "w": 340,
+        "h": 260.3828125
+      },
+      "build": 3,
+      "kind": "box",
+      "fill": {
+        "color": "#1F5EFF",
+        "alpha": 1
+      },
+      "radius": 14,
+      "ellipse": false
+    },
+    {
+      "slot": "_rec.label",
+      "box": {
+        "x": 900,
+        "y": 339.078125,
+        "w": 276,
+        "h": 16.796875
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Empfehlung",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#1F5EFF"
+    },
+    {
+      "slot": "recommendation",
+      "box": {
+        "x": 900,
+        "y": 369.875,
+        "w": 276,
+        "h": 165.5859375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilot mit 20 Partnerschulen ab November freigeben – Budget 38.000 €, Entscheidung bis 15. Oktober.",
+          "bold": false,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 5,
+      "bg": "#1F5EFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1182.6171875,
+        "y": 677.203125,
+        "w": 25.3828125,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

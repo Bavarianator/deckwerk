@@ -1,0 +1,95 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Vorteile"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Sechs Gründe, warum Schulen",
+      "nach dem Pilot bleiben"
+    ]
+  },
+  {
+    "slot": "items.0.head",
+    "lines": [
+      "Sofort startklar"
+    ]
+  },
+  {
+    "slot": "items.0.sub",
+    "lines": [
+      "Keine Installation, läuft im Browser"
+    ]
+  },
+  {
+    "slot": "items.1.head",
+    "lines": [
+      "DSGVO-konform"
+    ]
+  },
+  {
+    "slot": "items.1.sub",
+    "lines": [
+      "Server in Deutschland,",
+      "keine Werbung"
+    ]
+  },
+  {
+    "slot": "items.2.head",
+    "lines": [
+      "Für jede Klasse"
+    ]
+  },
+  {
+    "slot": "items.2.sub",
+    "lines": [
+      "Passt sich dem Niveau jedes",
+      "Kindes an"
+    ]
+  },
+  {
+    "slot": "items.3.head",
+    "lines": [
+      "Sichtbarer Fortschritt"
+    ]
+  },
+  {
+    "slot": "items.3.sub",
+    "lines": [
+      "Wochenbericht für Lehrkräfte"
+    ]
+  },
+  {
+    "slot": "items.4.head",
+    "lines": [
+      "10 Minuten am Tag"
+    ]
+  },
+  {
+    "slot": "items.4.sub",
+    "lines": [
+      "Fügt sich in den Unterricht ein"
+    ]
+  },
+  {
+    "slot": "items.5.head",
+    "lines": [
+      "Motivierend"
+    ]
+  },
+  {
+    "slot": "items.5.sub",
+    "lines": [
+      "Kleine Erfolge statt roter Striche"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

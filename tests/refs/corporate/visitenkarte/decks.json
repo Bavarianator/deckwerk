@@ -1,0 +1,64 @@
+{
+  "business-card-front-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "corporate"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 321,
+      "h": 208
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "business-card",
+        "variant": "front",
+        "content": {
+          "name": "Vorname Nachname",
+          "role": "Landschaftsarchitektin",
+          "org": "Grünwerk Gartenplanung",
+          "lines": [
+            "Telefon 0123 456789",
+            "example.com",
+            "Musterweg 1, 12345 Musterstadt"
+          ],
+          "claim": "Gärten, die mit wenig Pflege durchs ganze Jahr tragen.",
+          "qr": "https://example.com"
+        }
+      }
+    ]
+  },
+  "business-card-back-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "corporate"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 321,
+      "h": 208
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "business-card",
+        "variant": "back",
+        "content": {
+          "name": "Vorname Nachname",
+          "role": "Landschaftsarchitektin",
+          "org": "Grünwerk Gartenplanung",
+          "lines": [
+            "Telefon 0123 456789",
+            "example.com",
+            "Musterweg 1, 12345 Musterstadt"
+          ],
+          "claim": "Gärten, die mit wenig Pflege durchs ganze Jahr tragen.",
+          "qr": "https://example.com"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "value",
+    "lines": [
+      "€ 12,4 M"
+    ]
+  },
+  {
+    "slot": "label",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung",
+      "verbessert deutlich durch",
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "context",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert",
+      "deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+    ]
+  }
+]

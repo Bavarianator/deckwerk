@@ -1,0 +1,53 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Teilnahmebescheinigung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Erste-Hilfe-Kurs"
+    ]
+  },
+  {
+    "slot": "recipient",
+    "lines": [
+      "Mara"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "hat am 8. Oktober 2026 erfolgreich am Erste-Hilfe-Kurs mit",
+      "neun Unterrichtseinheiten teilgenommen. Inhalte: Notruf, stabile",
+      "Seitenlage, Herz-Lungen-Wiederbelebung und der Einsatz",
+      "eines Defibrillators."
+    ]
+  },
+  {
+    "slot": "date",
+    "lines": [
+      "Musterstadt, 8. Oktober 2026"
+    ]
+  },
+  {
+    "slot": "signers.0.name",
+    "lines": [
+      "Jonas"
+    ]
+  },
+  {
+    "slot": "signers.0.role",
+    "lines": [
+      "Kursleitung"
+    ]
+  },
+  {
+    "slot": "signers.1.role",
+    "lines": [
+      "Geschäftsführung"
+    ]
+  }
+]

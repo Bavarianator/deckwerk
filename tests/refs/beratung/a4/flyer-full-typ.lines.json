@@ -1,0 +1,77 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Pitch Day · 14. Oktober"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Präsentationen",
+      "in Minuten",
+      "statt Stunden"
+    ]
+  },
+  {
+    "slot": "subtitle",
+    "lines": [
+      "Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und",
+      "exportiert nach PowerPoint."
+    ]
+  },
+  {
+    "slot": "points.0.head",
+    "lines": [
+      "10 Minuten"
+    ]
+  },
+  {
+    "slot": "points.0.text",
+    "lines": [
+      "vom Briefing bis zum fertigen Deck"
+    ]
+  },
+  {
+    "slot": "points.1.head",
+    "lines": [
+      "Kein KI-Look"
+    ]
+  },
+  {
+    "slot": "points.1.text",
+    "lines": [
+      "ruhige Layouts, eine Akzentfarbe"
+    ]
+  },
+  {
+    "slot": "points.2.head",
+    "lines": [
+      "PPTX, PDF, PNG"
+    ]
+  },
+  {
+    "slot": "points.2.text",
+    "lines": [
+      "bearbeitbar in PowerPoint"
+    ]
+  },
+  {
+    "slot": "cta",
+    "lines": [
+      "Jetzt kostenlos testen"
+    ]
+  },
+  {
+    "slot": "contact.0",
+    "lines": [
+      "deckwerk.app"
+    ]
+  },
+  {
+    "slot": "contact.1",
+    "lines": [
+      "hallo@deckwerk.app"
+    ]
+  }
+]

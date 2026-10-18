@@ -1,0 +1,102 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "org",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "name",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "contact.0",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "contact.1",
+    "lines": [
+      "Kundenbindung verbessert deutlich",
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "contact.2",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "contact.3",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "_toc.label",
+    "lines": [
+      "Inhalt"
+    ]
+  },
+  {
+    "slot": "contents.0",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "contents.1",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "contents.2",
+    "lines": [
+      "verbessert deutlich",
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "contents.3",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "contents.4",
+    "lines": [
+      "durch schnellere Abläufe im",
+      "Vertrieb und"
+    ]
+  },
+  {
+    "slot": "contents.5",
+    "lines": [
+      "schnellere Abläufe im Vertrieb",
+      "und klare"
+    ]
+  }
+]

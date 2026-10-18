@@ -1,0 +1,21 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Sommerfest",
+      "im Hof"
+    ]
+  },
+  {
+    "slot": "facts.0.label",
+    "lines": [
+      "Wann"
+    ]
+  },
+  {
+    "slot": "facts.0.value",
+    "lines": [
+      "Freitag, 3. Juli, 17 Uhr"
+    ]
+  }
+]

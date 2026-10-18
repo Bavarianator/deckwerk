@@ -1,0 +1,348 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 3,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 128.25,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 88.3984375,
+        "w": 979,
+        "h": 61.546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "lead",
+      "box": {
+        "x": 72,
+        "y": 190.9453125,
+        "w": 979,
+        "h": 60.46875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 14.4,
+      "lineHeightPx": 20.16,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.heading",
+      "box": {
+        "x": 72,
+        "y": 273.4140625,
+        "w": 469.5,
+        "h": 14.875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 12,
+      "lineHeightPx": 14.88,
+      "trackingPx": -0.09,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.text",
+      "box": {
+        "x": 72,
+        "y": 294.2890625,
+        "w": 469.5,
+        "h": 148.9921875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 12,
+      "lineHeightPx": 16.56,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 9,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.heading",
+      "box": {
+        "x": 72,
+        "y": 465.28125,
+        "w": 469.5,
+        "h": 14.875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 12,
+      "lineHeightPx": 14.88,
+      "trackingPx": -0.09,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.text",
+      "box": {
+        "x": 72,
+        "y": 486.15625,
+        "w": 469.5,
+        "h": 148.9921875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 12,
+      "lineHeightPx": 16.56,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 9,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.heading",
+      "box": {
+        "x": 581.5,
+        "y": 273.4140625,
+        "w": 469.5,
+        "h": 14.875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 12,
+      "lineHeightPx": 14.88,
+      "trackingPx": -0.09,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.text",
+      "box": {
+        "x": 581.5,
+        "y": 294.2890625,
+        "w": 469.5,
+        "h": 148.9921875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 12,
+      "lineHeightPx": 16.56,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 9,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 707.6015625,
+        "w": 979,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 751.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1043.5546875,
+        "y": 751.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

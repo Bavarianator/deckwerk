@@ -1,0 +1,20 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Preis und Menge tragen das EBIT-Plus"
+    ]
+  },
+  {
+    "slot": "_unit",
+    "lines": [
+      "in Mio €"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

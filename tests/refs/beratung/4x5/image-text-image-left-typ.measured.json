@@ -1,0 +1,254 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 729.5546875,
+        "w": 76.6640625,
+        "h": 24
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Produkt",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 767.5546875,
+        "w": 936,
+        "h": 68.3984375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 60,
+      "lineHeightPx": 68.4,
+      "trackingPx": -0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ein Dashboard für alle Standorte",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 72,
+        "y": 863.953125,
+        "w": 936,
+        "h": 96.59375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Alle Kennzahlen live an einem Ort. Abweichungen werden automatisch erkannt und gemeldet.",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.points.0",
+      "box": {
+        "x": 72,
+        "y": 1005.6953125,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "points.0",
+      "box": {
+        "x": 100,
+        "y": 982.546875,
+        "w": 908,
+        "h": 48.296875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Echtzeit-Daten",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.points.1",
+      "box": {
+        "x": 72,
+        "y": 1067.9921875,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "points.1",
+      "box": {
+        "x": 100,
+        "y": 1044.84375,
+        "w": 908,
+        "h": 48.296875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Automatische Warnungen",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.points.2",
+      "box": {
+        "x": 72,
+        "y": 1130.2890625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "points.2",
+      "box": {
+        "x": 100,
+        "y": 1107.140625,
+        "w": 908,
+        "h": 48.296875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mobil verfügbar",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 967.0546875,
+        "y": 1287.203125,
+        "w": 40.9453125,
+        "h": 22.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 19,
+      "lineHeightPx": 22.8,
+      "trackingPx": 0.38,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Preise"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Die Schullizenz rechnet sich schon ab vier Klassen"
+    ]
+  },
+  {
+    "slot": "tiers.0.name",
+    "lines": [
+      "Klasse"
+    ]
+  },
+  {
+    "slot": "tiers.0.price",
+    "lines": [
+      "19 €"
+    ]
+  },
+  {
+    "slot": "tiers.0.period",
+    "lines": [
+      "pro Monat"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.0",
+    "lines": [
+      "Eine Klasse bis 30 Kinder"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.1",
+    "lines": [
+      "Wochenbericht"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.2",
+    "lines": [
+      "E-Mail-Support"
+    ]
+  },
+  {
+    "slot": "tiers.1.name",
+    "lines": [
+      "Schule"
+    ]
+  },
+  {
+    "slot": "tiers.1.price",
+    "lines": [
+      "149 €"
+    ]
+  },
+  {
+    "slot": "tiers.1.period",
+    "lines": [
+      "pro Monat"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.0",
+    "lines": [
+      "Alle Klassen"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.1",
+    "lines": [
+      "Schulung fürs Kollegium"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.2",
+    "lines": [
+      "Auswertung pro Jahrgang"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.3",
+    "lines": [
+      "Telefon-Support"
+    ]
+  },
+  {
+    "slot": "tiers.2.name",
+    "lines": [
+      "Träger"
+    ]
+  },
+  {
+    "slot": "tiers.2.price",
+    "lines": [
+      "auf Anfrage"
+    ]
+  },
+  {
+    "slot": "tiers.2.features.0",
+    "lines": [
+      "Mehrere Schulen"
+    ]
+  },
+  {
+    "slot": "tiers.2.features.1",
+    "lines": [
+      "Zentrale Verwaltung"
+    ]
+  },
+  {
+    "slot": "tiers.2.features.2",
+    "lines": [
+      "Eigener Ansprechpartner"
+    ]
+  },
+  {
+    "slot": "note",
+    "lines": [
+      "Alle Preise zzgl. MwSt., jährliche Abrechnung"
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

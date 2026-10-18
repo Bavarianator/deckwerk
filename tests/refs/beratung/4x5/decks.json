@@ -1,0 +1,2480 @@
+{
+  "cover-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-center-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-bottom-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "bottom",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cover-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cover",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Strategie 2027",
+          "title": "Wie wir den Umsatz in 18 Monaten verdoppeln",
+          "subtitle": "Wachstumsplan für die Geschäftsführung",
+          "meta": "Max Muster · Oktober 2026"
+        }
+      }
+    ]
+  },
+  "agenda-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "agenda",
+        "content": {
+          "title": "Agenda",
+          "items": [
+            {
+              "title": "Ausgangslage",
+              "desc": "Wo wir heute stehen"
+            },
+            {
+              "title": "Marktchance",
+              "desc": "Warum jetzt der richtige Zeitpunkt ist"
+            },
+            {
+              "title": "Unser Plan",
+              "desc": "Drei Hebel für Wachstum"
+            },
+            {
+              "title": "Investition & Ask",
+              "desc": "Was wir brauchen"
+            }
+          ],
+          "active": 1
+        }
+      }
+    ]
+  },
+  "section-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "section",
+        "content": {
+          "title": "Unser Plan",
+          "subtitle": "Drei Hebel, die sich gegenseitig verstärken"
+        }
+      }
+    ]
+  },
+  "statement-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "statement-center-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "statement-poster-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "bullets-list-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "list",
+        "content": {
+          "eyebrow": "Warum jetzt",
+          "title": "Drei Entwicklungen machen den Markt jetzt attraktiv",
+          "items": [
+            {
+              "text": "Regulierung schafft Nachfrage",
+              "sub": "Ab 2027 wird digitale Dokumentation Pflicht"
+            },
+            {
+              "text": "Wettbewerb ist fragmentiert",
+              "sub": "Kein Anbieter hat mehr als 8 % Marktanteil"
+            },
+            {
+              "text": "Kunden sind wechselbereit",
+              "sub": "62 % planen einen Anbieterwechsel in 24 Monaten"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "bullets-cards-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "bullets",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Warum jetzt",
+          "title": "Drei Entwicklungen machen den Markt jetzt attraktiv",
+          "items": [
+            {
+              "text": "Regulierung schafft Nachfrage",
+              "sub": "Ab 2027 wird digitale Dokumentation Pflicht"
+            },
+            {
+              "text": "Wettbewerb ist fragmentiert",
+              "sub": "Kein Anbieter hat mehr als 8 % Marktanteil"
+            },
+            {
+              "text": "Kunden sind wechselbereit",
+              "sub": "62 % planen einen Anbieterwechsel in 24 Monaten"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "two-column-rule-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "rule",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-equal-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "equal",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "two-column-highlight-right-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "two-column",
+        "variant": "highlight-right",
+        "content": {
+          "title": "Die neue Plattform halbiert den manuellen Aufwand",
+          "left": {
+            "heading": "Heute",
+            "points": [
+              "6 Systeme, keine Schnittstellen",
+              "Berichte per Excel",
+              "3 Tage bis zur Freigabe"
+            ]
+          },
+          "right": {
+            "heading": "Mit Deckwerk",
+            "points": [
+              "Eine Plattform für alles",
+              "Berichte in Echtzeit",
+              "Freigabe in 2 Stunden"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-left",
+        "content": {
+          "eyebrow": "Produkt",
+          "title": "Ein Dashboard für alle Standorte",
+          "text": "Alle Kennzahlen live an einem Ort. Abweichungen werden automatisch erkannt und gemeldet.",
+          "points": [
+            "Echtzeit-Daten",
+            "Automatische Warnungen",
+            "Mobil verfügbar"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-right-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-right",
+        "content": {
+          "eyebrow": "Produkt",
+          "title": "Ein Dashboard für alle Standorte",
+          "text": "Alle Kennzahlen live an einem Ort. Abweichungen werden automatisch erkannt und gemeldet.",
+          "points": [
+            "Echtzeit-Daten",
+            "Automatische Warnungen",
+            "Mobil verfügbar"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "kpi-grid-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Ergebnisse Q3",
+          "title": "Wir wachsen schneller als der Markt – und profitabel",
+          "kpis": [
+            {
+              "value": "+34 %",
+              "label": "Umsatzwachstum",
+              "delta": "+12 % ggü. Plan",
+              "sentiment": "positive"
+            },
+            {
+              "value": "2,4 Mio",
+              "label": "Wiederkehrender Umsatz (ARR)",
+              "delta": "+0,6 Mio",
+              "sentiment": "positive"
+            },
+            {
+              "value": "1,8 %",
+              "label": "Monatliche Kündigungsrate",
+              "delta": "−0,4 Pp.",
+              "sentiment": "positive"
+            }
+          ],
+          "focus": 0,
+          "source": "Interne Finanzdaten, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "kpi-grid-cards-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Ergebnisse Q3",
+          "title": "Wir wachsen schneller als der Markt – und profitabel",
+          "kpis": [
+            {
+              "value": "+34 %",
+              "label": "Umsatzwachstum",
+              "delta": "+12 % ggü. Plan",
+              "sentiment": "positive"
+            },
+            {
+              "value": "2,4 Mio",
+              "label": "Wiederkehrender Umsatz (ARR)",
+              "delta": "+0,6 Mio",
+              "sentiment": "positive"
+            },
+            {
+              "value": "1,8 %",
+              "label": "Monatliche Kündigungsrate",
+              "delta": "−0,4 Pp.",
+              "sentiment": "positive"
+            }
+          ],
+          "focus": 0,
+          "source": "Interne Finanzdaten, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "chart-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "chart",
+        "content": {
+          "eyebrow": "Umsatzentwicklung",
+          "title": "Der Umsatz hat sich seit 2023 mehr als verdoppelt",
+          "chart": {
+            "type": "bar",
+            "categories": [
+              "2022",
+              "2023",
+              "2024",
+              "2025",
+              "2026e"
+            ],
+            "series": [
+              {
+                "name": "Umsatz",
+                "values": [
+                  1.1,
+                  1.4,
+                  2,
+                  2.6,
+                  3.3
+                ]
+              },
+              {
+                "name": "Plan",
+                "values": [
+                  1,
+                  1.5,
+                  1.9,
+                  2.4,
+                  3
+                ]
+              }
+            ],
+            "unit": "Mio €",
+            "highlight": "Umsatz",
+            "annotate": "cagr"
+          },
+          "takeaway": {
+            "value": "+136 %",
+            "text": "Wachstum seit 2023 – getrieben durch das neue Abo-Modell"
+          },
+          "source": "Geschäftsberichte 2022–2025, 2026 Prognose"
+        }
+      }
+    ]
+  },
+  "timeline-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "timeline",
+        "content": {
+          "eyebrow": "Roadmap",
+          "title": "In vier Schritten zur Marktreife bis Ende 2027",
+          "items": [
+            {
+              "date": "Q4 2026",
+              "title": "Pilot mit 3 Kunden",
+              "desc": "Validierung der Kernfunktionen"
+            },
+            {
+              "date": "Q1 2027",
+              "title": "Beta-Programm",
+              "desc": "25 Kunden, Feedback-Schleifen"
+            },
+            {
+              "date": "Q2 2027",
+              "title": "Marktstart DACH",
+              "desc": "Vertrieb und Partner an Bord"
+            },
+            {
+              "date": "Q4 2027",
+              "title": "Internationalisierung",
+              "desc": "Start in Benelux und Nordics"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "process-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "process",
+        "content": {
+          "eyebrow": "Vorgehen",
+          "title": "Vom Erstgespräch zum Go-live in sechs Wochen",
+          "steps": [
+            {
+              "title": "Analyse",
+              "desc": "Workshops mit allen Fachbereichen"
+            },
+            {
+              "title": "Konzept",
+              "desc": "Zielbild und Umsetzungsplan"
+            },
+            {
+              "title": "Umsetzung",
+              "desc": "Einrichtung und Datenübernahme"
+            },
+            {
+              "title": "Go-live",
+              "desc": "Schulung und Begleitung im Betrieb"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "closing-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "left",
+        "content": {
+          "title": "Lassen Sie uns den Pilot im November starten",
+          "subtitle": "Entscheidung bis 15. Oktober – Budget 120.000 €",
+          "contact": [
+            "Max Muster",
+            "max.muster@firma.de",
+            "+49 170 1234567"
+          ]
+        }
+      }
+    ]
+  },
+  "closing-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "side",
+        "content": {
+          "title": "Lassen Sie uns den Pilot im November starten",
+          "subtitle": "Entscheidung bis 15. Oktober – Budget 120.000 €",
+          "contact": [
+            "Max Muster",
+            "max.muster@firma.de",
+            "+49 170 1234567"
+          ]
+        }
+      }
+    ]
+  },
+  "photo-text-bottom-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-bottom",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-text-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-left",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-card-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "card",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "gallery-row-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "row",
+        "content": {
+          "eyebrow": "Eindrücke",
+          "title": "Drei Pilotschulen zeigen, wie es im Alltag aussieht",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Grundschule Nord"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Realschule Mitte"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Gymnasium Süd"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "gallery-mosaic-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "mosaic",
+        "content": {
+          "eyebrow": "Eindrücke",
+          "title": "Drei Pilotschulen zeigen, wie es im Alltag aussieht",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Grundschule Nord"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Realschule Mitte"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Gymnasium Süd"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "quote-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "quote",
+        "content": {
+          "text": "Seit dem Pilot korrigieren meine Schüler ihre Texte selbst – und verstehen endlich, warum.",
+          "author": "Julia Hartmann",
+          "role": "Deutschlehrerin, Grundschule Nord",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "blank-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "blank",
+        "content": {}
+      }
+    ]
+  },
+  "summary-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "summary",
+        "content": {
+          "eyebrow": "Executive Summary",
+          "title": "Wir empfehlen, den Pilot im November mit 20 Schulen zu starten",
+          "points": [
+            {
+              "title": "Jedes vierte Kind hat erhebliche Rechtschreibschwächen",
+              "text": "Lehrkräfte fehlt die Zeit für Einzelförderung – der Bedarf wächst."
+            },
+            {
+              "title": "Ortho-Bot senkt die Fehlerquote in sechs Monaten um 41 %",
+              "text": "Pilot mit 6 Schulen und 412 Kindern, bei gleicher Unterrichtszeit."
+            },
+            {
+              "title": "Eine Schullizenz kostet weniger als ein Klassensatz Hefte",
+              "text": "1.900 € pro Jahr statt rund 2.400 € für Arbeitshefte."
+            }
+          ],
+          "recommendation": "Pilot mit 20 Partnerschulen ab November freigeben – Budget 38.000 €, Entscheidung bis 15. Oktober."
+        }
+      }
+    ]
+  },
+  "options-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "options",
+        "content": {
+          "eyebrow": "Entscheidung",
+          "title": "Die Partnerlösung bringt uns am schnellsten und günstigsten ans Ziel",
+          "criteria": [
+            "Zeit bis zum Start",
+            "Kosten im ersten Jahr",
+            "Kontrolle über Daten",
+            "Risiko"
+          ],
+          "options": [
+            {
+              "name": "Eigenentwicklung",
+              "scores": [
+                1,
+                1,
+                4,
+                2
+              ],
+              "note": "Volle Kontrolle, aber 14 Monate Vorlauf"
+            },
+            {
+              "name": "Partnerlösung",
+              "scores": [
+                4,
+                3,
+                3,
+                3
+              ],
+              "note": "Start in 8 Wochen, Daten bleiben in DE"
+            },
+            {
+              "name": "Zukauf",
+              "scores": [
+                3,
+                0,
+                2,
+                1
+              ],
+              "note": "Schnell, aber teuer und schwer integrierbar"
+            }
+          ],
+          "recommended": 1
+        }
+      }
+    ]
+  },
+  "matrix-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "matrix",
+        "content": {
+          "eyebrow": "Priorisierung",
+          "title": "Self-Service und Rechnungsprozess bringen den größten Nutzen bei wenig Aufwand",
+          "x": "Nutzen für Kunden",
+          "y": "Umsetzbarkeit",
+          "quadrants": [
+            "Später prüfen",
+            "Sofort umsetzen",
+            "Verwerfen",
+            "Groß planen"
+          ],
+          "items": [
+            {
+              "label": "Self-Service-Portal",
+              "x": 82,
+              "y": 78
+            },
+            {
+              "label": "Rechnungsprozess",
+              "x": 64,
+              "y": 88
+            },
+            {
+              "label": "Chatbot",
+              "x": 38,
+              "y": 64
+            },
+            {
+              "label": "Neues CRM",
+              "x": 76,
+              "y": 22
+            },
+            {
+              "label": "Filialumbau",
+              "x": 26,
+              "y": 18
+            }
+          ],
+          "highlight": "Self-Service-Portal",
+          "takeaway": "Zwei Vorhaben liegen klar im Zielquadranten und lassen sich mit bestehenden Teams bis Q2 umsetzen."
+        }
+      }
+    ]
+  },
+  "table-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "table",
+        "content": {
+          "eyebrow": "Regionen",
+          "title": "Der Norden wächst am stärksten und trägt fast die Hälfte des Plus",
+          "columns": [
+            "Region",
+            "Umsatz 2026",
+            "Wachstum",
+            "Marge"
+          ],
+          "rows": [
+            [
+              "Nord",
+              "2,4 Mio €",
+              "+18 %",
+              "31 %"
+            ],
+            [
+              "West",
+              "2,1 Mio €",
+              "+9 %",
+              "28 %"
+            ],
+            [
+              "Süd",
+              "1,9 Mio €",
+              "+6 %",
+              "26 %"
+            ],
+            [
+              "Ost",
+              "1,2 Mio €",
+              "+4 %",
+              "22 %"
+            ]
+          ],
+          "highlight": {
+            "row": 0
+          },
+          "source": "Controlling, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "big-number-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Wirkung",
+          "value": "−41 %",
+          "label": "Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler",
+          "context": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "source": "Pilotauswertung 2026"
+        }
+      }
+    ]
+  },
+  "big-number-poster-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Wirkung",
+          "value": "−41 %",
+          "label": "Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler",
+          "context": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "source": "Pilotauswertung 2026"
+        }
+      }
+    ]
+  },
+  "icon-grid-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "icon-grid",
+        "content": {
+          "eyebrow": "Vorteile",
+          "title": "Sechs Gründe, warum Schulen nach dem Pilot bleiben",
+          "items": [
+            {
+              "icon": "zap",
+              "head": "Sofort startklar",
+              "sub": "Keine Installation, läuft im Browser"
+            },
+            {
+              "icon": "shield-check",
+              "head": "DSGVO-konform",
+              "sub": "Server in Deutschland, keine Werbung"
+            },
+            {
+              "icon": "users",
+              "head": "Für jede Klasse",
+              "sub": "Passt sich dem Niveau jedes Kindes an"
+            },
+            {
+              "icon": "chart-line",
+              "head": "Sichtbarer Fortschritt",
+              "sub": "Wochenbericht für Lehrkräfte"
+            },
+            {
+              "icon": "clock",
+              "head": "10 Minuten am Tag",
+              "sub": "Fügt sich in den Unterricht ein"
+            },
+            {
+              "icon": "heart",
+              "head": "Motivierend",
+              "sub": "Kleine Erfolge statt roter Striche"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pros-cons-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pros-cons",
+        "content": {
+          "eyebrow": "Abwägung",
+          "title": "Der zweite Standort lohnt sich trotz höherer Miete",
+          "pros": [
+            "60 zusätzliche Plätze in der Innenstadt",
+            "Mittagsgeschäft mit Büros in Laufweite",
+            "Küche entlastet den Stammladen"
+          ],
+          "cons": [
+            "Miete 38 % über dem Stammladen",
+            "Sechs neue Stellen im Service",
+            "Umbau dauert vier Monate"
+          ],
+          "verdict": "Ab 140 Gästen am Tag trägt sich der Standort – der Stammladen schafft heute 190."
+        }
+      }
+    ]
+  },
+  "problem-solution-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "problem-solution",
+        "content": {
+          "eyebrow": "Unser Ansatz",
+          "title": "Aus drei Wochen Papierweg wird ein Antrag in zehn Minuten",
+          "problem": {
+            "heading": "Heute",
+            "text": "Anträge wandern per Hauspost durch vier Abteilungen.",
+            "points": [
+              "Ø 21 Tage Bearbeitung",
+              "Jeder fünfte Antrag unvollständig",
+              "Kein Status für Bürger"
+            ]
+          },
+          "solution": {
+            "heading": "Mit dem Portal",
+            "text": "Bürger stellen den Antrag online, das System prüft sofort.",
+            "points": [
+              "Ø 10 Minuten bis zur Eingangsbestätigung",
+              "Pflichtfelder verhindern Lücken",
+              "Status jederzeit online"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "team-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "team",
+        "content": {
+          "eyebrow": "Team",
+          "title": "Ein Team aus Schule, Sprachforschung und Software",
+          "people": [
+            {
+              "name": "Julia Hartmann",
+              "role": "CEO · Lehrerin a. D.",
+              "line": "12 Jahre Grundschule, kennt den Alltag"
+            },
+            {
+              "name": "Dr. Emre Yilmaz",
+              "role": "Forschung",
+              "line": "Promotion in Sprachdidaktik"
+            },
+            {
+              "name": "Lena Vogt",
+              "role": "CTO",
+              "line": "Baute Lernapps für 2 Mio Nutzer"
+            },
+            {
+              "name": "Paul Neumann",
+              "role": "Vertrieb Schulen",
+              "line": "Kontakte zu 300 Schulträgern"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pricing-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pricing",
+        "content": {
+          "eyebrow": "Preise",
+          "title": "Die Schullizenz rechnet sich schon ab vier Klassen",
+          "tiers": [
+            {
+              "name": "Klasse",
+              "price": "19 €",
+              "period": "pro Monat",
+              "features": [
+                "Eine Klasse bis 30 Kinder",
+                "Wochenbericht",
+                "E-Mail-Support"
+              ]
+            },
+            {
+              "name": "Schule",
+              "price": "149 €",
+              "period": "pro Monat",
+              "features": [
+                "Alle Klassen",
+                "Schulung fürs Kollegium",
+                "Auswertung pro Jahrgang",
+                "Telefon-Support"
+              ],
+              "highlight": true
+            },
+            {
+              "name": "Träger",
+              "price": "auf Anfrage",
+              "features": [
+                "Mehrere Schulen",
+                "Zentrale Verwaltung",
+                "Eigener Ansprechpartner"
+              ]
+            }
+          ],
+          "note": "Alle Preise zzgl. MwSt., jährliche Abrechnung"
+        }
+      }
+    ]
+  },
+  "funnel-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "funnel",
+        "content": {
+          "eyebrow": "Vertrieb",
+          "title": "Der größte Verlust liegt zwischen Demo und Angebot",
+          "stages": [
+            {
+              "label": "Website-Besucher",
+              "value": "48.000"
+            },
+            {
+              "label": "Anfragen",
+              "value": "2.100"
+            },
+            {
+              "label": "Demos",
+              "value": "640"
+            },
+            {
+              "label": "Angebote",
+              "value": "190"
+            },
+            {
+              "label": "Neue Schulen",
+              "value": "84"
+            }
+          ],
+          "takeaway": "Nur 30 % der Demos führen zu einem Angebot – hier setzt das neue Pilotpaket an."
+        }
+      }
+    ]
+  },
+  "market-size-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "market-size",
+        "content": {
+          "eyebrow": "Markt",
+          "title": "Schon 5 % der Grundschulen in DACH tragen ein profitables Geschäft",
+          "tam": {
+            "value": "1,2 Mrd €",
+            "label": "Digitale Lernmittel an Schulen in DACH"
+          },
+          "sam": {
+            "value": "180 Mio €",
+            "label": "Deutsch und Rechtschreibung, Klasse 1–6"
+          },
+          "som": {
+            "value": "9 Mio €",
+            "label": "5 % der Grundschulen bis 2029"
+          },
+          "source": "Bildungsbericht 2026, eigene Hochrechnung"
+        }
+      }
+    ]
+  },
+  "logos-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "logos",
+        "content": {
+          "eyebrow": "Partner",
+          "title": "Über 40 Schulen und drei Träger arbeiten bereits mit uns",
+          "logos": [
+            {
+              "name": "Stadt Nord"
+            },
+            {
+              "name": "Bildungswerk Süd"
+            },
+            {
+              "name": "Lernfabrik"
+            },
+            {
+              "name": "Kreis Mitte"
+            },
+            {
+              "name": "Grundschule am Park"
+            },
+            {
+              "name": "Schulverbund West"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "clip-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "clip",
+        "content": {
+          "video": "",
+          "parts": [
+            {
+              "start": 0,
+              "end": 4
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "clip-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "clip",
+        "content": {
+          "video": "",
+          "hook": "Warum neun von zehn Pitches scheitern",
+          "parts": [
+            {
+              "start": 12.4,
+              "end": 21.8,
+              "focus": 0.5
+            },
+            {
+              "start": 40.1,
+              "end": 52
+            },
+            {
+              "start": 63,
+              "end": 70.5
+            }
+          ],
+          "captions": "wort",
+          "cover": 45.2,
+          "post": "Warum neun von zehn Pitches scheitern\nDer häufigste Fehler steckt in der ersten Minute. So vermeidest du ihn.\n#pitch #startup #gründen"
+        }
+      }
+    ]
+  },
+  "clip-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "clip",
+        "content": {
+          "video": "",
+          "hook": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "parts": [
+            {
+              "start": 0,
+              "end": 8,
+              "focus": 1
+            },
+            {
+              "start": 10,
+              "end": 18,
+              "focus": 1
+            },
+            {
+              "start": 20,
+              "end": 28,
+              "focus": 1
+            },
+            {
+              "start": 30,
+              "end": 38,
+              "focus": 1
+            },
+            {
+              "start": 40,
+              "end": 48,
+              "focus": 1
+            },
+            {
+              "start": 50,
+              "end": 58,
+              "focus": 1
+            },
+            {
+              "start": 60,
+              "end": 68,
+              "focus": 1
+            },
+            {
+              "start": 70,
+              "end": 78,
+              "focus": 1
+            },
+            {
+              "start": 80,
+              "end": 88,
+              "focus": 1
+            },
+            {
+              "start": 90,
+              "end": 98,
+              "focus": 1
+            },
+            {
+              "start": 100,
+              "end": 108,
+              "focus": 1
+            },
+            {
+              "start": 110,
+              "end": 118,
+              "focus": 1
+            },
+            {
+              "start": 120,
+              "end": 128,
+              "focus": 1
+            },
+            {
+              "start": 130,
+              "end": 138,
+              "focus": 1
+            },
+            {
+              "start": 140,
+              "end": 148,
+              "focus": 1
+            },
+            {
+              "start": 150,
+              "end": 158,
+              "focus": 1
+            },
+            {
+              "start": 160,
+              "end": 168,
+              "focus": 1
+            },
+            {
+              "start": 170,
+              "end": 178,
+              "focus": 1
+            },
+            {
+              "start": 180,
+              "end": 188,
+              "focus": 1
+            },
+            {
+              "start": 190,
+              "end": 198,
+              "focus": 1
+            },
+            {
+              "start": 200,
+              "end": 208,
+              "focus": 1
+            },
+            {
+              "start": 210,
+              "end": 218,
+              "focus": 1
+            },
+            {
+              "start": 220,
+              "end": 228,
+              "focus": 1
+            },
+            {
+              "start": 230,
+              "end": 238,
+              "focus": 1
+            },
+            {
+              "start": 240,
+              "end": 248,
+              "focus": 1
+            },
+            {
+              "start": 250,
+              "end": 258,
+              "focus": 1
+            },
+            {
+              "start": 260,
+              "end": 268,
+              "focus": 1
+            },
+            {
+              "start": 270,
+              "end": 278,
+              "focus": 1
+            },
+            {
+              "start": 280,
+              "end": 288,
+              "focus": 1
+            },
+            {
+              "start": 290,
+              "end": 298,
+              "focus": 1
+            },
+            {
+              "start": 300,
+              "end": 308,
+              "focus": 1
+            },
+            {
+              "start": 310,
+              "end": 318,
+              "focus": 1
+            },
+            {
+              "start": 320,
+              "end": 328,
+              "focus": 1
+            },
+            {
+              "start": 330,
+              "end": 338,
+              "focus": 1
+            },
+            {
+              "start": 340,
+              "end": 348,
+              "focus": 1
+            },
+            {
+              "start": 350,
+              "end": 358,
+              "focus": 1
+            },
+            {
+              "start": 360,
+              "end": 368,
+              "focus": 1
+            },
+            {
+              "start": 370,
+              "end": 378,
+              "focus": 1
+            },
+            {
+              "start": 380,
+              "end": 388,
+              "focus": 1
+            },
+            {
+              "start": 390,
+              "end": 398,
+              "focus": 1
+            },
+            {
+              "start": 400,
+              "end": 408,
+              "focus": 1
+            },
+            {
+              "start": 410,
+              "end": 418,
+              "focus": 1
+            },
+            {
+              "start": 420,
+              "end": 428,
+              "focus": 1
+            },
+            {
+              "start": 430,
+              "end": 438,
+              "focus": 1
+            },
+            {
+              "start": 440,
+              "end": 448,
+              "focus": 1
+            },
+            {
+              "start": 450,
+              "end": 458,
+              "focus": 1
+            },
+            {
+              "start": 460,
+              "end": 468,
+              "focus": 1
+            },
+            {
+              "start": 470,
+              "end": 478,
+              "focus": 1
+            },
+            {
+              "start": 480,
+              "end": 488,
+              "focus": 1
+            },
+            {
+              "start": 490,
+              "end": 498,
+              "focus": 1
+            },
+            {
+              "start": 500,
+              "end": 508,
+              "focus": 1
+            },
+            {
+              "start": 510,
+              "end": 518,
+              "focus": 1
+            },
+            {
+              "start": 520,
+              "end": 528,
+              "focus": 1
+            },
+            {
+              "start": 530,
+              "end": 538,
+              "focus": 1
+            },
+            {
+              "start": 540,
+              "end": 548,
+              "focus": 1
+            },
+            {
+              "start": 550,
+              "end": 558,
+              "focus": 1
+            },
+            {
+              "start": 560,
+              "end": 568,
+              "focus": 1
+            },
+            {
+              "start": 570,
+              "end": 578,
+              "focus": 1
+            },
+            {
+              "start": 580,
+              "end": 588,
+              "focus": 1
+            },
+            {
+              "start": 590,
+              "end": 598,
+              "focus": 1
+            },
+            {
+              "start": 600,
+              "end": 608,
+              "focus": 1
+            },
+            {
+              "start": 610,
+              "end": 618,
+              "focus": 1
+            },
+            {
+              "start": 620,
+              "end": 628,
+              "focus": 1
+            },
+            {
+              "start": 630,
+              "end": 638,
+              "focus": 1
+            },
+            {
+              "start": 640,
+              "end": 648,
+              "focus": 1
+            },
+            {
+              "start": 650,
+              "end": 658,
+              "focus": 1
+            },
+            {
+              "start": 660,
+              "end": 668,
+              "focus": 1
+            },
+            {
+              "start": 670,
+              "end": 678,
+              "focus": 1
+            },
+            {
+              "start": 680,
+              "end": 688,
+              "focus": 1
+            },
+            {
+              "start": 690,
+              "end": 698,
+              "focus": 1
+            },
+            {
+              "start": 700,
+              "end": 708,
+              "focus": 1
+            },
+            {
+              "start": 710,
+              "end": 718,
+              "focus": 1
+            },
+            {
+              "start": 720,
+              "end": 728,
+              "focus": 1
+            },
+            {
+              "start": 730,
+              "end": 738,
+              "focus": 1
+            },
+            {
+              "start": 740,
+              "end": 748,
+              "focus": 1
+            },
+            {
+              "start": 750,
+              "end": 758,
+              "focus": 1
+            },
+            {
+              "start": 760,
+              "end": 768,
+              "focus": 1
+            },
+            {
+              "start": 770,
+              "end": 778,
+              "focus": 1
+            },
+            {
+              "start": 780,
+              "end": 788,
+              "focus": 1
+            },
+            {
+              "start": 790,
+              "end": 798,
+              "focus": 1
+            },
+            {
+              "start": 800,
+              "end": 808,
+              "focus": 1
+            },
+            {
+              "start": 810,
+              "end": 818,
+              "focus": 1
+            },
+            {
+              "start": 820,
+              "end": 828,
+              "focus": 1
+            },
+            {
+              "start": 830,
+              "end": 838,
+              "focus": 1
+            },
+            {
+              "start": 840,
+              "end": 848,
+              "focus": 1
+            },
+            {
+              "start": 850,
+              "end": 858,
+              "focus": 1
+            },
+            {
+              "start": 860,
+              "end": 868,
+              "focus": 1
+            },
+            {
+              "start": 870,
+              "end": 878,
+              "focus": 1
+            },
+            {
+              "start": 880,
+              "end": 888,
+              "focus": 1
+            },
+            {
+              "start": 890,
+              "end": 898,
+              "focus": 1
+            },
+            {
+              "start": 900,
+              "end": 908,
+              "focus": 1
+            },
+            {
+              "start": 910,
+              "end": 918,
+              "focus": 1
+            },
+            {
+              "start": 920,
+              "end": 928,
+              "focus": 1
+            },
+            {
+              "start": 930,
+              "end": 938,
+              "focus": 1
+            },
+            {
+              "start": 940,
+              "end": 948,
+              "focus": 1
+            },
+            {
+              "start": 950,
+              "end": 958,
+              "focus": 1
+            },
+            {
+              "start": 960,
+              "end": 968,
+              "focus": 1
+            },
+            {
+              "start": 970,
+              "end": 978,
+              "focus": 1
+            },
+            {
+              "start": 980,
+              "end": 988,
+              "focus": 1
+            },
+            {
+              "start": 990,
+              "end": 998,
+              "focus": 1
+            }
+          ],
+          "captions": "satz",
+          "fit": "blur",
+          "follow": "sprecher",
+          "style": "lebendig",
+          "ton": "klar",
+          "cover": 5,
+          "post": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+          "sfx": [
+            {
+              "src": "/sfx/piep.wav",
+              "at": 0,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 20,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 40,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 60,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 80,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 100,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 120,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 140,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 160,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 180,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 200,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 220,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 240,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 260,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 280,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 300,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 320,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 340,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 360,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 380,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 400,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 420,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 440,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 460,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 480,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 500,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 520,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 540,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 560,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 580,
+              "gain": -6
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "code-editor-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "editor",
+        "content": {
+          "title": "Eine Abfrage liefert den Wochenumsatz",
+          "lang": "ts",
+          "focus": "6-7",
+          "code": "// Bestellungen der letzten sieben Tage laden\nconst seit = new Date(Date.now() - 7 * 864e5)\nconst res = await fetch(`/api/orders?since=${seit.toISOString()}`)\nif (!res.ok) throw new Error(`HTTP ${res.status}`)\n\nconst orders = await res.json()\nconst umsatz = orders.reduce((s, o) => s + o.total, 0)\nconsole.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "note": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf."
+        }
+      }
+    ]
+  },
+  "code-terminal-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "terminal",
+        "content": {
+          "title": "Eine Abfrage liefert den Wochenumsatz",
+          "lang": "ts",
+          "focus": "6-7",
+          "code": "// Bestellungen der letzten sieben Tage laden\nconst seit = new Date(Date.now() - 7 * 864e5)\nconst res = await fetch(`/api/orders?since=${seit.toISOString()}`)\nif (!res.ok) throw new Error(`HTTP ${res.status}`)\n\nconst orders = await res.json()\nconst umsatz = orders.reduce((s, o) => s + o.total, 0)\nconsole.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "note": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf."
+        }
+      }
+    ]
+  },
+  "screen-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1350
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "screen",
+        "content": {
+          "title": "Der Export dauert drei Klicks",
+          "image": {
+            "src": ""
+          },
+          "url": "example.com/export",
+          "caption": "Format wählen, prüfen, herunterladen: Die Datei lässt sich sofort in PowerPoint bearbeiten.",
+          "cursor": [
+            {
+              "x": 0.2,
+              "y": 0.3
+            },
+            {
+              "x": 0.62,
+              "y": 0.55,
+              "click": true
+            },
+            {
+              "x": 0.84,
+              "y": 0.86,
+              "click": true,
+              "zoom": 2
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

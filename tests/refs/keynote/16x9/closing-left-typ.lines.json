@@ -1,0 +1,33 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Lassen Sie uns den Pilot",
+      "im November starten"
+    ]
+  },
+  {
+    "slot": "subtitle",
+    "lines": [
+      "Entscheidung bis 15. Oktober – Budget 120.000 €"
+    ]
+  },
+  {
+    "slot": "contact.0",
+    "lines": [
+      "Max Muster"
+    ]
+  },
+  {
+    "slot": "contact.1",
+    "lines": [
+      "max.muster@firma.de"
+    ]
+  },
+  {
+    "slot": "contact.2",
+    "lines": [
+      "+49 170 1234567"
+    ]
+  }
+]

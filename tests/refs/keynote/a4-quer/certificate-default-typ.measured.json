@@ -1,0 +1,232 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 104,
+        "y": 88,
+        "w": 915,
+        "h": 18
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 15,
+      "lineHeightPx": 18,
+      "trackingPx": 0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Teilnahmebescheinigung",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 104,
+        "y": 118,
+        "w": 915,
+        "h": 43.1796875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 37.881,
+      "lineHeightPx": 43.1843,
+      "trackingPx": -1.13643,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Erste-Hilfe-Kurs",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "recipient",
+      "box": {
+        "x": 104,
+        "y": 267.0859375,
+        "w": 915,
+        "h": 99.46875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 95.648,
+      "lineHeightPx": 99.4739,
+      "trackingPx": -4.18938,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mara",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 104,
+        "y": 390.5546875,
+        "w": 593.9921875,
+        "h": 111.375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 19.2,
+      "lineHeightPx": 27.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "hat am 8. Oktober 2026 erfolgreich am Erste-Hilfe-Kurs mit neun Unterrichtseinheiten teilgenommen. Inhalte: Notruf, stabile Seitenlage, Herz-Lungen-Wiederbelebung und der Einsatz eines Defibrillators.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 4,
+      "bg": "#111113"
+    },
+    {
+      "slot": "date",
+      "box": {
+        "x": 104,
+        "y": 667.84375,
+        "w": 273,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Musterstadt, 8. Oktober 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "signers.0.name",
+      "box": {
+        "x": 425,
+        "y": 667.84375,
+        "w": 273,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jonas",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "signers.0.role",
+      "box": {
+        "x": 425,
+        "y": 691.921875,
+        "w": 273,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kursleitung",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "signers.1.role",
+      "box": {
+        "x": 746,
+        "y": 667.84375,
+        "w": 273,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Geschäftsführung",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

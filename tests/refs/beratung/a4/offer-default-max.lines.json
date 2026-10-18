@@ -1,0 +1,303 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "to",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb und klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "meta",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "_h.name",
+    "lines": [
+      "Position"
+    ]
+  },
+  {
+    "slot": "_h.qty",
+    "lines": [
+      "Menge"
+    ]
+  },
+  {
+    "slot": "_h.price",
+    "lines": [
+      "Betrag"
+    ]
+  },
+  {
+    "slot": "items.0.name",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "items.0.detail",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "items.0.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.0.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "items.1.name",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "items.1.detail",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+      "Vertrieb und klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "items.1.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.1.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "items.2.name",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "items.2.detail",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für messbare"
+    ]
+  },
+  {
+    "slot": "items.2.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.2.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "items.3.name",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "items.3.detail",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+      "für messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "items.3.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.3.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "items.4.name",
+    "lines": [
+      "durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "items.4.detail",
+    "lines": [
+      "durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+      "messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "items.4.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.4.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "items.5.name",
+    "lines": [
+      "schnellere Abläufe im Vertrieb und klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "items.5.detail",
+    "lines": [
+      "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+      "Ergebnisse Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "items.5.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.5.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "items.6.name",
+    "lines": [
+      "Abläufe im Vertrieb und klare Verantwortung für messbare"
+    ]
+  },
+  {
+    "slot": "items.6.detail",
+    "lines": [
+      "Abläufe im Vertrieb und klare Verantwortung für messbare",
+      "Ergebnisse Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "items.6.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.6.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "items.7.name",
+    "lines": [
+      "im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "items.7.detail",
+    "lines": [
+      "im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "items.7.qty",
+    "lines": [
+      "120 Std."
+    ]
+  },
+  {
+    "slot": "items.7.price",
+    "lines": [
+      "12.345,67 €"
+    ]
+  },
+  {
+    "slot": "totals.0.label",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "totals.0.value",
+    "lines": [
+      "123.456,78 €"
+    ]
+  },
+  {
+    "slot": "totals.1.label",
+    "lines": [
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "totals.1.value",
+    "lines": [
+      "123.456,78 €"
+    ]
+  },
+  {
+    "slot": "totals.2.label",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "totals.2.value",
+    "lines": [
+      "123.456,78 €"
+    ]
+  },
+  {
+    "slot": "terms",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+      "für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb",
+      "und klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

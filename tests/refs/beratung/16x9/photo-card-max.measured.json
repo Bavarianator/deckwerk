@@ -1,0 +1,127 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 2,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_card",
+      "box": {
+        "x": 72,
+        "y": 88,
+        "w": 640,
+        "h": 344.421875
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 0.97
+      },
+      "radius": 2,
+      "shadow": {
+        "color": "#000000",
+        "alpha": 0.22,
+        "blur": 60,
+        "offsetY": 24
+      },
+      "ellipse": false
+    },
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 116,
+        "y": 128,
+        "w": 98.171875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 116,
+        "y": 160.796875,
+        "w": 552,
+        "h": 116.2734375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 34,
+      "lineHeightPx": 38.76,
+      "trackingPx": -0.51,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "Kundenzufriedenheit steigt",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "deutlich durch neue Prozesse im",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 3,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 116,
+        "y": 293.0703125,
+        "w": 552,
+        "h": 99.3515625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+          "bold": false,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 3,
+      "bg": "#0B5563"
+    }
+  ]
+}

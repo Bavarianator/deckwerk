@@ -1,0 +1,152 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 460.5234375,
+        "w": 650,
+        "h": 103.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 49,
+      "lineHeightPx": 51.94,
+      "trackingPx": -0.98,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Lassen Sie uns den Pilot",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "im November starten",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 588.3984375,
+        "w": 650,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Entscheidung bis 15. Oktober – Budget 120.000 €",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.0",
+      "box": {
+        "x": 72,
+        "y": 1035.1640625,
+        "w": 62.546875,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Max Muster",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.1",
+      "box": {
+        "x": 174.546875,
+        "y": 1035.1640625,
+        "w": 119.921875,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "max.muster@firma.de",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.2",
+      "box": {
+        "x": 334.46875,
+        "y": 1035.1640625,
+        "w": 99.265625,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+49 170 1234567",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

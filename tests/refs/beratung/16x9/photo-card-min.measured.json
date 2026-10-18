@@ -1,0 +1,59 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_card",
+      "box": {
+        "x": 72,
+        "y": 88,
+        "w": 640,
+        "h": 127.875
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 0.97
+      },
+      "radius": 2,
+      "shadow": {
+        "color": "#000000",
+        "alpha": 0.22,
+        "blur": 60,
+        "offsetY": 24
+      },
+      "ellipse": false
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 116,
+        "y": 128,
+        "w": 552,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Hier fängt es an",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    }
+  ]
+}

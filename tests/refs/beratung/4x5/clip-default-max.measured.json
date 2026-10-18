@@ -1,0 +1,83 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_scrim",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 1080,
+        "h": 607.5
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false,
+      "gradient": {
+        "angle": 180,
+        "stops": [
+          {
+            "color": "#16202B",
+            "alpha": 0.85,
+            "pos": 0
+          },
+          {
+            "color": "#16202B",
+            "alpha": 0.55,
+            "pos": 0.55
+          },
+          {
+            "color": "#16202B",
+            "alpha": 0,
+            "pos": 1
+          }
+        ]
+      }
+    },
+    {
+      "slot": "hook",
+      "box": {
+        "x": 72,
+        "y": 108,
+        "w": 900,
+        "h": 201.5859375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 60,
+      "lineHeightPx": 67.2,
+      "trackingPx": -0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "Kundenbindung",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "verbessert deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 3,
+      "bg": "#16202B"
+    }
+  ]
+}

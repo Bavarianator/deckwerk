@@ -1,0 +1,519 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 83.546875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ergebnisse Q3",
+          "bold": true,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.84,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wir wachsen schneller als",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "der Markt – und profitabel",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.0",
+      "box": {
+        "x": 72,
+        "y": 226.546875,
+        "w": 447.5078125,
+        "h": 243.765625
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "kpis.0.value",
+      "box": {
+        "x": 72,
+        "y": 234.546875,
+        "w": 230.1953125,
+        "h": 113.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 108,
+      "lineHeightPx": 113.4,
+      "trackingPx": -3.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+34",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        },
+        {
+          "text": " %",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF",
+          "sizePx": 48.6,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "kpis.0.label",
+      "box": {
+        "x": 72,
+        "y": 357.9453125,
+        "w": 230.1953125,
+        "h": 66.234375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Umsatzwachstum",
+          "bold": false,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow.0",
+      "box": {
+        "x": 72,
+        "y": 441.2421875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#018044\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-right\" aria-hidden=\"true\"><path d=\"M7 7h10v10\"></path><path d=\"M7 17 17 7\"></path></svg>",
+      "name": "arrow-up-right",
+      "color": "#018044",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAACzklEQVR4AezaMW/TUBAH8P85QWKADkiInYmBoQIkFkStthLiCzCxICHEwMIGEiJvQWJCYmJgYWFiRxVyKgorggEmVtiQCozQqI8zrSs1dXNNcu/l2T0nr659yfny870hsTPYMlLAgEbyAAZkQIKAELYOMiBBQAhbBxmQICCErYMMSBAQwtZBBiQICGHrIAMSBITw+B0kJGxb2ICEM2pABiQICGHdDnq0dApu8Tbcsos7Fp+gt/wJbuk9XD4vfOaxwnpALj+DDfpKyJ4R0Is1AN8D6C4R5gl0Ceh8ZKQLUFr0gNC5ScCcUl0HTkPYelRv4C0COk+r7WnXikDoTluM4vuPaeVSBPKvtYqS8niUj/pXbUU2P9dHx9+rB+RW33BxVz3wisdasOH9B/6YG8R/6p7EUw7IBnWxSfbpAZVHd/0VuOIajzzIwOAOiE4T6AgiLbpAIYt2+Vmgu0bAiZCHGc6dDe9IcnsEDk/lPyFrTh9oNM464FeaDjR5/SLOYIGT/+IR7JluBx0Ex739EkxmO3GaQInglEbpASWEkx5QYjhpASWIkw5QojhpACWMM3ugxHFmC9QAnNkBNQRnNkANwokP1DCcuEANxIkHNC5OWVkiI/x3sQbjlOcoLFDDccICtQAnHFBLcMIAtQhHH6hlOLpA7uIc0F2tu27Fl2Z+IkOOCL8hQ3nJ9PIdv884J4fzMc46MLiMh4Xa9fLhY4TcVgTaW+Y2zkLgzqm57OP5pOytZ5I9ekBH8ZhBflRF/P8/yrSqu6uE1O400QO6V/xG9+95D/+CcZ7ztDoXZVrtuqvEv/TYvALXL6oTNe1aD6is5MG7b1zcDbjiFk+r7+WuKGPnrpL+dTCY5jF1gTQrSyRXW4CCcRqQQGtABiQICGHrIAMSBISwdZABCQJC2DrIgAQBIWwdZECCgBC2DjIgQUAIH94OEmCqsAFVEvus/wEAAP//b9WupAAAAAZJREFUAwBwN4OgOgFQhwAAAABJRU5ErkJggg=="
+    },
+    {
+      "slot": "kpis.0.delta",
+      "box": {
+        "x": 96,
+        "y": 438.1796875,
+        "w": 110.2890625,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+12 % ggü. Plan",
+          "bold": true,
+          "italic": false,
+          "color": "#018044"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.1",
+      "box": {
+        "x": 519.5078125,
+        "y": 226.546875,
+        "w": 344.2421875,
+        "h": 243.765625
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_rule.1",
+      "box": {
+        "x": 519.5078125,
+        "y": 234.546875,
+        "w": 2,
+        "h": 227.765625
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#DCE3EE",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "kpis.1.value",
+      "box": {
+        "x": 547.5078125,
+        "y": 266.046875,
+        "w": 288.2421875,
+        "h": 75.59375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2,4",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        },
+        {
+          "text": " Mio",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "kpis.1.label",
+      "box": {
+        "x": 547.5078125,
+        "y": 357.9453125,
+        "w": 288.2421875,
+        "h": 66.234375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wiederkehrender Umsatz (ARR)",
+          "bold": false,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow.1",
+      "box": {
+        "x": 547.5078125,
+        "y": 441.2421875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#018044\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-right\" aria-hidden=\"true\"><path d=\"M7 7h10v10\"></path><path d=\"M7 17 17 7\"></path></svg>",
+      "name": "arrow-up-right",
+      "color": "#018044",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAACzklEQVR4AezaMW/TUBAH8P85QWKADkiInYmBoQIkFkStthLiCzCxICHEwMIGEiJvQWJCYmJgYWFiRxVyKgorggEmVtiQCozQqI8zrSs1dXNNcu/l2T0nr659yfny870hsTPYMlLAgEbyAAZkQIKAELYOMiBBQAhbBxmQICCErYMMSBAQwtZBBiQICGHrIAMSBITw+B0kJGxb2ICEM2pABiQICGHdDnq0dApu8Tbcsos7Fp+gt/wJbuk9XD4vfOaxwnpALj+DDfpKyJ4R0Is1AN8D6C4R5gl0Ceh8ZKQLUFr0gNC5ScCcUl0HTkPYelRv4C0COk+r7WnXikDoTluM4vuPaeVSBPKvtYqS8niUj/pXbUU2P9dHx9+rB+RW33BxVz3wisdasOH9B/6YG8R/6p7EUw7IBnWxSfbpAZVHd/0VuOIajzzIwOAOiE4T6AgiLbpAIYt2+Vmgu0bAiZCHGc6dDe9IcnsEDk/lPyFrTh9oNM464FeaDjR5/SLOYIGT/+IR7JluBx0Ex739EkxmO3GaQInglEbpASWEkx5QYjhpASWIkw5QojhpACWMM3ugxHFmC9QAnNkBNQRnNkANwokP1DCcuEANxIkHNC5OWVkiI/x3sQbjlOcoLFDDccICtQAnHFBLcMIAtQhHH6hlOLpA7uIc0F2tu27Fl2Z+IkOOCL8hQ3nJ9PIdv884J4fzMc46MLiMh4Xa9fLhY4TcVgTaW+Y2zkLgzqm57OP5pOytZ5I9ekBH8ZhBflRF/P8/yrSqu6uE1O400QO6V/xG9+95D/+CcZ7ztDoXZVrtuqvEv/TYvALXL6oTNe1aD6is5MG7b1zcDbjiFk+r7+WuKGPnrpL+dTCY5jF1gTQrSyRXW4CCcRqQQGtABiQICGHrIAMSBISwdZABCQJC2DrIgAQBIWwdZECCgBC2DjIgQUAIH94OEmCqsAFVEvus/wEAAP//b9WupAAAAAZJREFUAwBwN4OgOgFQhwAAAABJRU5ErkJggg=="
+    },
+    {
+      "slot": "kpis.1.delta",
+      "box": {
+        "x": 571.5078125,
+        "y": 438.1796875,
+        "w": 62.1015625,
+        "h": 24.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+0,6 Mio",
+          "bold": true,
+          "italic": false,
+          "color": "#018044"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.2",
+      "box": {
+        "x": 863.75,
+        "y": 226.546875,
+        "w": 344.25,
+        "h": 243.765625
+      },
+      "build": 2,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_rule.2",
+      "box": {
+        "x": 863.75,
+        "y": 234.546875,
+        "w": 2,
+        "h": 227.765625
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#DCE3EE",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "kpis.2.value",
+      "box": {
+        "x": 891.75,
+        "y": 266.046875,
+        "w": 267.7421875,
+        "h": 75.59375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1,8",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        },
+        {
+          "text": " %",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "kpis.2.label",
+      "box": {
+        "x": 891.75,
+        "y": 357.9453125,
+        "w": 267.7421875,
+        "h": 66.234375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Monatliche Kündigungsrate",
+          "bold": false,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow.2",
+      "box": {
+        "x": 891.75,
+        "y": 441.2421875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 2,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#018044\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-down-right\" aria-hidden=\"true\"><path d=\"m7 7 10 10\"></path><path d=\"M17 7v10H7\"></path></svg>",
+      "name": "arrow-down-right",
+      "color": "#018044",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAC3UlEQVR4AezavW4TQRAH8P/Y5qvgQ3xFSFAiUQAtogELWwh6REMVlALeAKpsEJF4AwoEJRKiREIIxY7TUUBHFfEANCBRpSDxsotjJ3acm1g3e969zMpj6zznvdnfja+wrwIdmQIKlMkDKJACMQJMWjtIgRgBJq0dpECMAJPWDlIgRoBJawcpECPApLWDFIgRYNKTdxAzYdnSCsScUQVSIEaASct2kKmfh2m+gWm8xvMbF5hjy6UXGzMwtx65mIO5fVZuYskfzMy1Y0D1KwGzBHqI9YPfYBpXJYsdO5epX8JfWiVUXrp4BdtdhX8PMkOwg44+dTAz/bIIOAPQsiv2MoKO6pw7ljs5vYMQ4ThQne1t5X8WBNpZDAEngdpKYKTTO4+MwYkak5vorcpEe2ftfBgvrLW/Rnf5j2SrHTxrXhnNpbAtB/Rk6Q9oo26B36MLJ6JT6KITuJMQYsgB+epM5zuwfnMsUjFfN1+FaMgC+dJKhiQPVDKkMEAlQgoHtIWU9DUpLFAJkMIDJY5UDFDCSMUBJYpULFCCSMUDJYY0HaCEkKYHlAjSdIESQJo+UORIcQBFjBQPUKRIcQFFiBQfkEeK6Ee3OIEiQooXaK9IwAkEHHED+YWzXzfc8buFiviB/MozkFz6kItgjzSA/PKzkfweQUIWaHCXRdPABAjU7gHddxZ2zf33Bh9BVLZNKgfk76gY3GWBefeXc6CoPCbQEXKL6IV/dhtDD3tgaDPHhhwQhu+yyFFT/o9aErujRBAItfwrE5qB7JrQTBAEsh+liso9D2Ex9xybE8gBmfZnd/G86y6c712sFBrWfnHH/mlt94fFxgPMtz9sri/3ixyQL8W0PsEs3XdRLzQWWtdhWuew0L4Is/wWgkMWSLCwWKYqC1AwTwViaBVIgRgBJq0dpECMAJPWDlIgRoBJawcpECPApLWDFIgRYNLaQQrECDDp/dtBDEw/rUB9iV1e/wEAAP//TV7VXQAAAAZJREFUAwBdJYCgXNYDuQAAAABJRU5ErkJggg=="
+    },
+    {
+      "slot": "kpis.2.delta",
+      "box": {
+        "x": 915.75,
+        "y": 438.1796875,
+        "w": 56.640625,
+        "h": 24.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "−0,4 Pp.",
+          "bold": true,
+          "italic": false,
+          "color": "#018044"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 632.40625,
+        "w": 1136,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Interne Finanzdaten, Stand 30.09.2026",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1182.6171875,
+        "y": 677.203125,
+        "w": 25.3828125,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

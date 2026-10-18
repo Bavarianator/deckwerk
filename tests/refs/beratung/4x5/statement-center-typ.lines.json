@@ -1,0 +1,23 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Die Erkenntnis"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "80 % unserer Neukunden",
+      "kommen über Empfehlungen",
+      "– Zufriedenheit ist unser",
+      "stärkster Vertriebskanal."
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Kundenbefragung 2026, n = 1.240"
+    ]
+  }
+]

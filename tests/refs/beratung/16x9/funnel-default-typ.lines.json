@@ -1,0 +1,113 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Vertrieb"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Der größte Verlust liegt",
+      "zwischen Demo und Angebot"
+    ]
+  },
+  {
+    "slot": "stages.0.value",
+    "lines": [
+      "48.000"
+    ]
+  },
+  {
+    "slot": "stages.0.label",
+    "lines": [
+      "Website-Besucher"
+    ]
+  },
+  {
+    "slot": "stages.1.value",
+    "lines": [
+      "2.100"
+    ]
+  },
+  {
+    "slot": "stages.1.label",
+    "lines": [
+      "Anfragen"
+    ]
+  },
+  {
+    "slot": "_conv.1",
+    "lines": [
+      "4 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "stages.2.value",
+    "lines": [
+      "640"
+    ]
+  },
+  {
+    "slot": "stages.2.label",
+    "lines": [
+      "Demos"
+    ]
+  },
+  {
+    "slot": "_conv.2",
+    "lines": [
+      "30 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "stages.3.value",
+    "lines": [
+      "190"
+    ]
+  },
+  {
+    "slot": "stages.3.label",
+    "lines": [
+      "Angebote"
+    ]
+  },
+  {
+    "slot": "_conv.3",
+    "lines": [
+      "30 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "stages.4.value",
+    "lines": [
+      "84"
+    ]
+  },
+  {
+    "slot": "stages.4.label",
+    "lines": [
+      "Neue Schulen"
+    ]
+  },
+  {
+    "slot": "_conv.4",
+    "lines": [
+      "44 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "takeaway",
+    "lines": [
+      "Nur 30 % der Demos führen",
+      "zu einem Angebot – hier setzt",
+      "das neue Pilotpaket an."
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

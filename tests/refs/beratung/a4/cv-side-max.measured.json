@@ -1,0 +1,1185 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "contact.0",
+      "box": {
+        "x": 56,
+        "y": 311.421875,
+        "w": 180,
+        "h": 31.671875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.1",
+      "box": {
+        "x": 56,
+        "y": 346.09375,
+        "w": 180,
+        "h": 31.671875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.2",
+      "box": {
+        "x": 56,
+        "y": 380.765625,
+        "w": 180,
+        "h": 31.671875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.3",
+      "box": {
+        "x": 56,
+        "y": 415.4375,
+        "w": 180,
+        "h": 31.671875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch schnellere Abläufe im",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.4",
+      "box": {
+        "x": 56,
+        "y": 450.109375,
+        "w": 180,
+        "h": 31.671875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "durch schnellere Abläufe im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.0.label",
+      "box": {
+        "x": 56,
+        "y": 501.78125,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.0.text",
+      "box": {
+        "x": 56,
+        "y": 518.6171875,
+        "w": 180,
+        "h": 63.34375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 4,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.1.label",
+      "box": {
+        "x": 56,
+        "y": 601.9609375,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.1.text",
+      "box": {
+        "x": 56,
+        "y": 618.796875,
+        "w": 180,
+        "h": 47.5078125
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.2.label",
+      "box": {
+        "x": 56,
+        "y": 686.3046875,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.2.text",
+      "box": {
+        "x": 56,
+        "y": 703.140625,
+        "w": 180,
+        "h": 47.5078125
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.3.label",
+      "box": {
+        "x": 56,
+        "y": 770.6484375,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.3.text",
+      "box": {
+        "x": 56,
+        "y": 787.484375,
+        "w": 180,
+        "h": 47.5078125
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "name",
+      "box": {
+        "x": 280,
+        "y": 60,
+        "w": 458,
+        "h": 72.890625
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 33.75,
+      "lineHeightPx": 36.45,
+      "trackingPx": -0.50625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Kundenbindung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "role",
+      "box": {
+        "x": 280,
+        "y": 138.890625,
+        "w": 458,
+        "h": 44.15625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "bold": false,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "profile",
+      "box": {
+        "x": 280,
+        "y": 203.046875,
+        "w": 458,
+        "h": 96.5625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 14,
+      "lineHeightPx": 19.32,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 5,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.heading",
+      "box": {
+        "x": 280,
+        "y": 329.609375,
+        "w": 458,
+        "h": 14.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.96,
+      "align": "left",
+      "upper": true,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.period",
+      "box": {
+        "x": 619.8359375,
+        "y": 355.5078125,
+        "w": 118.1640625,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.title",
+      "box": {
+        "x": 280,
+        "y": 354.0078125,
+        "w": 323.8359375,
+        "h": 34.71875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.place",
+      "box": {
+        "x": 280,
+        "y": 389.7265625,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.text",
+      "box": {
+        "x": 280,
+        "y": 406.5625,
+        "w": 458,
+        "h": 31.671875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.period",
+      "box": {
+        "x": 592.7578125,
+        "y": 449.734375,
+        "w": 145.2421875,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.title",
+      "box": {
+        "x": 280,
+        "y": 448.234375,
+        "w": 296.7578125,
+        "h": 34.71875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "schnellere Abläufe",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.place",
+      "box": {
+        "x": 280,
+        "y": 483.953125,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.text",
+      "box": {
+        "x": 280,
+        "y": 500.7890625,
+        "w": 458,
+        "h": 31.671875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.heading",
+      "box": {
+        "x": 280,
+        "y": 562.4609375,
+        "w": 458,
+        "h": 14.3984375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.96,
+      "align": "left",
+      "upper": true,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.period",
+      "box": {
+        "x": 592.7578125,
+        "y": 588.359375,
+        "w": 145.2421875,
+        "h": 15.8359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.title",
+      "box": {
+        "x": 280,
+        "y": 586.859375,
+        "w": 296.7578125,
+        "h": 34.71875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "schnellere Abläufe",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.place",
+      "box": {
+        "x": 280,
+        "y": 622.578125,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.text",
+      "box": {
+        "x": 280,
+        "y": 639.4140625,
+        "w": 458,
+        "h": 31.671875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.heading",
+      "box": {
+        "x": 280,
+        "y": 701.0859375,
+        "w": 458,
+        "h": 14.3984375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.96,
+      "align": "left",
+      "upper": true,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.entries.0.period",
+      "box": {
+        "x": 634.2578125,
+        "y": 726.984375,
+        "w": 103.7421875,
+        "h": 15.8359375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.entries.0.title",
+      "box": {
+        "x": 280,
+        "y": 725.484375,
+        "w": 338.2578125,
+        "h": 34.71875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Vertrieb und",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.entries.0.place",
+      "box": {
+        "x": 280,
+        "y": 761.203125,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.entries.0.text",
+      "box": {
+        "x": 280,
+        "y": 778.0390625,
+        "w": 458,
+        "h": 31.671875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.3.heading",
+      "box": {
+        "x": 280,
+        "y": 839.7109375,
+        "w": 458,
+        "h": 14.3984375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.96,
+      "align": "left",
+      "upper": true,
+      "runs": [
+        {
+          "text": "deutlich durch schnellere",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.3.entries.0.period",
+      "box": {
+        "x": 660.5,
+        "y": 865.609375,
+        "w": 77.5,
+        "h": 15.8359375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.3.entries.0.title",
+      "box": {
+        "x": 280,
+        "y": 864.109375,
+        "w": 364.5,
+        "h": 17.359375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch schnellere Abläufe im Vertrieb und klare",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.3.entries.0.place",
+      "box": {
+        "x": 280,
+        "y": 882.46875,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.3.entries.0.text",
+      "box": {
+        "x": 280,
+        "y": 899.3046875,
+        "w": 458,
+        "h": 31.671875
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "signed",
+      "box": {
+        "x": 280,
+        "y": 1055.1640625,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

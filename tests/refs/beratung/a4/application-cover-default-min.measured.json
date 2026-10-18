@@ -1,0 +1,65 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 94,
+        "y": 100,
+        "w": 624,
+        "h": 50.953125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 49,
+      "lineHeightPx": 50.96,
+      "trackingPx": -0.98,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Bewerbung als Erzieherin",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "name",
+      "box": {
+        "x": 94,
+        "y": 986.015625,
+        "w": 624,
+        "h": 34.984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 32.4,
+      "lineHeightPx": 34.992,
+      "trackingPx": -0.486,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mara",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Urkunde"
+    ]
+  },
+  {
+    "slot": "recipient",
+    "lines": [
+      "Mara"
+    ]
+  }
+]

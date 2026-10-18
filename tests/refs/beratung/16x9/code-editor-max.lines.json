@@ -1,0 +1,46 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Der Bericht entsteht in einem Durchlauf wert wert"
+    ]
+  },
+  {
+    "slot": "code",
+    "lines": [
+      "summe_0 = berechne(region=\"Nord\", quartal=0, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_1 = berechne(region=\"Nord\", quartal=1, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_2 = berechne(region=\"Nord\", quartal=2, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_3 = berechne(region=\"Nord\", quartal=3, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_4 = berechne(region=\"Nord\", quartal=4, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_5 = berechne(region=\"Nord\", quartal=5, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_6 = berechne(region=\"Nord\", quartal=6, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_7 = berechne(region=\"Nord\", quartal=7, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_8 = berechne(region=\"Nord\", quartal=8, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_9 = berechne(region=\"Nord\", quartal=9, faktor=1.25) # Prüfwert wert wert wert w",
+      "summe_10 = berechne(region=\"Nord\", quartal=10, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_11 = berechne(region=\"Nord\", quartal=11, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_12 = berechne(region=\"Nord\", quartal=12, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_13 = berechne(region=\"Nord\", quartal=13, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_14 = berechne(region=\"Nord\", quartal=14, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_15 = berechne(region=\"Nord\", quartal=15, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_16 = berechne(region=\"Nord\", quartal=16, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_17 = berechne(region=\"Nord\", quartal=17, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_18 = berechne(region=\"Nord\", quartal=18, faktor=1.25) # Prüfwert wert wert wert",
+      "summe_19 = berechne(region=\"Nord\", quartal=19, faktor=1.25) # Prüfwert wert wert wert"
+    ]
+  },
+  {
+    "slot": "note",
+    "lines": [
+      "Jede Zeile berechnet eine Region; die markierten Zeilen fließen in den Bericht ein wert wert wert wert wert wert wert wert wert wert",
+      "wert we"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

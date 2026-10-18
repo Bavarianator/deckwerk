@@ -1,0 +1,239 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "columns.0",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "columns.1",
+    "lines": [
+      "Kundenbindung",
+      "verbessert"
+    ]
+  },
+  {
+    "slot": "columns.2",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "columns.3",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "columns.4",
+    "lines": [
+      "durch schnellere",
+      "Abläufe"
+    ]
+  },
+  {
+    "slot": "rows.0.0",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "rows.0.1",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.0.2",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.0.3",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.0.4",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.1.0",
+    "lines": [
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "rows.1.1",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.1.2",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.1.3",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.1.4",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.2.0",
+    "lines": [
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "rows.2.1",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.2.2",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.2.3",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.2.4",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.3.0",
+    "lines": [
+      "deutlich durch schnellere"
+    ]
+  },
+  {
+    "slot": "rows.3.1",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.3.2",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.3.3",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.3.4",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.4.0",
+    "lines": [
+      "durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "rows.4.1",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.4.2",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.4.3",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.4.4",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.5.0",
+    "lines": [
+      "schnellere Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "rows.5.1",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.5.2",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.5.3",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "rows.5.4",
+    "lines": [
+      "€ 12.345,6"
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

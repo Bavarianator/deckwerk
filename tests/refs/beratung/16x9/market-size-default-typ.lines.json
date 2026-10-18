@@ -1,0 +1,63 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Markt"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Schon 5 % der Grundschulen in",
+      "DACH tragen ein profitables Geschäft"
+    ]
+  },
+  {
+    "slot": "tam.value",
+    "lines": [
+      "1,2 Mrd €"
+    ]
+  },
+  {
+    "slot": "tam.label",
+    "lines": [
+      "TAM · Digitale Lernmittel an Schulen in DACH"
+    ]
+  },
+  {
+    "slot": "sam.value",
+    "lines": [
+      "180 Mio €"
+    ]
+  },
+  {
+    "slot": "sam.label",
+    "lines": [
+      "SAM · Deutsch und Rechtschreibung, Klasse 1–6"
+    ]
+  },
+  {
+    "slot": "som.value",
+    "lines": [
+      "9 Mio €"
+    ]
+  },
+  {
+    "slot": "som.label",
+    "lines": [
+      "SOM · 5 % der Grundschulen bis 2029"
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Bildungsbericht 2026, eigene Hochrechnung"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

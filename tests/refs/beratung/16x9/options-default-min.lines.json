@@ -1,0 +1,44 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Option B ist die bessere Wahl"
+    ]
+  },
+  {
+    "slot": "options.0.name",
+    "lines": [
+      "Option A"
+    ]
+  },
+  {
+    "slot": "_badge.text",
+    "lines": [
+      "Empfehlung"
+    ]
+  },
+  {
+    "slot": "options.1.name",
+    "lines": [
+      "Option B"
+    ]
+  },
+  {
+    "slot": "criteria.0",
+    "lines": [
+      "Kosten"
+    ]
+  },
+  {
+    "slot": "criteria.1",
+    "lines": [
+      "Tempo"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

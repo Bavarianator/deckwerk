@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "name",
+    "lines": [
+      "Vorname Nachname"
+    ]
+  },
+  {
+    "slot": "role",
+    "lines": [
+      "Landschaftsarchitektin"
+    ]
+  },
+  {
+    "slot": "org",
+    "lines": [
+      "Grünwerk Gartenplanung"
+    ]
+  },
+  {
+    "slot": "lines.0",
+    "lines": [
+      "Telefon 0123 456789"
+    ]
+  },
+  {
+    "slot": "lines.1",
+    "lines": [
+      "example.com"
+    ]
+  },
+  {
+    "slot": "lines.2",
+    "lines": [
+      "Musterweg 1, 12345 Musterstadt"
+    ]
+  }
+]

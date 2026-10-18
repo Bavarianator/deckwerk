@@ -1,0 +1,135 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Digitalisierung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit steigt",
+      "deutlich durch neue Prozesse im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "items.0.date",
+    "lines": [
+      "Q4 2027 ff."
+    ]
+  },
+  {
+    "slot": "items.0.title",
+    "lines": [
+      "Digitalisierung"
+    ]
+  },
+  {
+    "slot": "items.0.desc",
+    "lines": [
+      "steigt deutlich durch",
+      "neue Prozesse",
+      "im Vertrieb und",
+      "Wachstumsstrategie",
+      "für"
+    ]
+  },
+  {
+    "slot": "items.1.date",
+    "lines": [
+      "Q4 2027 ff."
+    ]
+  },
+  {
+    "slot": "items.1.title",
+    "lines": [
+      "Kundenzufriedenheit",
+      "steigt"
+    ]
+  },
+  {
+    "slot": "items.1.desc",
+    "lines": [
+      "deutlich durch neue",
+      "Prozesse im",
+      "Vertrieb und",
+      "Wachstumsstrategie",
+      "für"
+    ]
+  },
+  {
+    "slot": "items.2.date",
+    "lines": [
+      "Q4 2027 ff."
+    ]
+  },
+  {
+    "slot": "items.2.title",
+    "lines": [
+      "steigt deutlich",
+      "durch neue"
+    ]
+  },
+  {
+    "slot": "items.2.desc",
+    "lines": [
+      "durch neue",
+      "Prozesse im Vertrieb",
+      "und",
+      "Wachstumsstrategie",
+      "für internationale",
+      "Märkte"
+    ]
+  },
+  {
+    "slot": "items.3.date",
+    "lines": [
+      "Q4 2027 ff."
+    ]
+  },
+  {
+    "slot": "items.3.title",
+    "lines": [
+      "deutlich durch neue"
+    ]
+  },
+  {
+    "slot": "items.3.desc",
+    "lines": [
+      "neue Prozesse im",
+      "Vertrieb und",
+      "Wachstumsstrategie",
+      "für internationale",
+      "Märkte mit"
+    ]
+  },
+  {
+    "slot": "items.4.date",
+    "lines": [
+      "Q4 2027 ff."
+    ]
+  },
+  {
+    "slot": "items.4.title",
+    "lines": [
+      "durch neue",
+      "Prozesse im"
+    ]
+  },
+  {
+    "slot": "items.4.desc",
+    "lines": [
+      "Prozesse im Vertrieb",
+      "und",
+      "Wachstumsstrategie",
+      "für internationale",
+      "Märkte mit"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

@@ -1,0 +1,217 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 650,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wirkung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "label",
+      "box": {
+        "x": 72,
+        "y": 98.3984375,
+        "w": 650,
+        "h": 61.546875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit Ortho-Bot machen Kinder nach",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "sechs Monaten deutlich weniger Fehler",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "context",
+      "box": {
+        "x": 72,
+        "y": 175.9453125,
+        "w": 650,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "value",
+      "box": {
+        "x": 72,
+        "y": 849.6015625,
+        "w": 650,
+        "h": 169
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "hero",
+      "sizePx": 169,
+      "lineHeightPx": 169,
+      "trackingPx": -6.76,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "−41",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " %",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563",
+          "sizePx": 76.05,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 1036.6015625,
+        "w": 650,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilotauswertung 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 714.5546875,
+        "y": 1080.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

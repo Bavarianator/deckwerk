@@ -1,0 +1,266 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Zwei Gründer, ein Ziel",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_ini.0",
+      "box": {
+        "x": 260,
+        "y": 148.875,
+        "w": 176,
+        "h": 176
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#E7EDEE",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ini.0.t",
+      "box": {
+        "x": 330.6171875,
+        "y": 221.015625,
+        "w": 34.765625,
+        "h": 31.71875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "AB",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E7EDEE"
+    },
+    {
+      "slot": "people.0.name",
+      "box": {
+        "x": 285.78125,
+        "y": 344.875,
+        "w": 124.4296875,
+        "h": 31.71875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Anna Berg",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.0.role",
+      "box": {
+        "x": 329.265625,
+        "y": 384.59375,
+        "w": 37.46875,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "CEO",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_ini.1",
+      "box": {
+        "x": 844,
+        "y": 148.875,
+        "w": 176,
+        "h": 176
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#E7EDEE",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ini.1.t",
+      "box": {
+        "x": 915.5546875,
+        "y": 221.015625,
+        "w": 32.890625,
+        "h": 31.71875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "TK",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E7EDEE"
+    },
+    {
+      "slot": "people.1.name",
+      "box": {
+        "x": 868.421875,
+        "y": 344.875,
+        "w": 127.15625,
+        "h": 31.71875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Tom Kraus",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.1.role",
+      "box": {
+        "x": 913.71875,
+        "y": 384.59375,
+        "w": 36.5625,
+        "h": 25.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "CTO",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

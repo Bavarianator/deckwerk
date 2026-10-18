@@ -1,0 +1,616 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 78.1640625,
+        "h": 24
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vertrieb",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 98,
+        "w": 936,
+        "h": 136.796875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 60,
+      "lineHeightPx": 68.4,
+      "trackingPx": -0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der größte Verlust liegt",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "zwischen Demo und Angebot",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.0",
+      "box": {
+        "x": 72,
+        "y": 581.4765625,
+        "w": 336,
+        "h": 64
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#E9EBED",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.0.value",
+      "box": {
+        "x": 92,
+        "y": 593.6328125,
+        "w": 104.484375,
+        "h": 39.6796875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 32,
+      "lineHeightPx": 39.68,
+      "trackingPx": -0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "48.000",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E9EBED"
+    },
+    {
+      "slot": "stages.0.label",
+      "box": {
+        "x": 428,
+        "y": 577.84375,
+        "w": 220,
+        "h": 71.265625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Website-Besucher",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.1",
+      "box": {
+        "x": 72,
+        "y": 662.9609375,
+        "w": 289.796875,
+        "h": 64
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.1.value",
+      "box": {
+        "x": 92,
+        "y": 675.1171875,
+        "w": 85.5234375,
+        "h": 39.6796875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 32,
+      "lineHeightPx": 39.68,
+      "trackingPx": -0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2.100",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "stages.1.label",
+      "box": {
+        "x": 428,
+        "y": 659.109375,
+        "w": 220,
+        "h": 35.6328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Anfragen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_conv.1",
+      "box": {
+        "x": 428,
+        "y": 696.7421875,
+        "w": 220,
+        "h": 34.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 24,
+      "lineHeightPx": 34.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "4 % der Vorstufe",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.2",
+      "box": {
+        "x": 72,
+        "y": 744.671875,
+        "w": 243.59375,
+        "h": 64
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#E9EBED",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.2.value",
+      "box": {
+        "x": 92,
+        "y": 756.828125,
+        "w": 56.8828125,
+        "h": 39.6796875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 32,
+      "lineHeightPx": 39.68,
+      "trackingPx": -0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "640",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E9EBED"
+    },
+    {
+      "slot": "stages.2.label",
+      "box": {
+        "x": 428,
+        "y": 740.8203125,
+        "w": 220,
+        "h": 35.6328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Demos",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_conv.2",
+      "box": {
+        "x": 428,
+        "y": 778.453125,
+        "w": 220,
+        "h": 34.078125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 24,
+      "lineHeightPx": 34.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "30 % der Vorstufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.3",
+      "box": {
+        "x": 72,
+        "y": 826.3828125,
+        "w": 197.3984375,
+        "h": 64
+      },
+      "build": 3,
+      "kind": "box",
+      "fill": {
+        "color": "#E9EBED",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.3.value",
+      "box": {
+        "x": 92,
+        "y": 838.5390625,
+        "w": 56.8828125,
+        "h": 39.6796875
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 32,
+      "lineHeightPx": 39.68,
+      "trackingPx": -0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "190",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E9EBED"
+    },
+    {
+      "slot": "stages.3.label",
+      "box": {
+        "x": 428,
+        "y": 822.53125,
+        "w": 220,
+        "h": 35.6328125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Angebote",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_conv.3",
+      "box": {
+        "x": 428,
+        "y": 860.1640625,
+        "w": 220,
+        "h": 34.078125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 24,
+      "lineHeightPx": 34.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "30 % der Vorstufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.4",
+      "box": {
+        "x": 72,
+        "y": 908.09375,
+        "w": 151.1953125,
+        "h": 64
+      },
+      "build": 4,
+      "kind": "box",
+      "fill": {
+        "color": "#E9EBED",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.4.value",
+      "box": {
+        "x": 92,
+        "y": 920.25,
+        "w": 37.921875,
+        "h": 39.6796875
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 32,
+      "lineHeightPx": 39.68,
+      "trackingPx": -0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "84",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E9EBED"
+    },
+    {
+      "slot": "stages.4.label",
+      "box": {
+        "x": 428,
+        "y": 904.2421875,
+        "w": 220,
+        "h": 35.6328125
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Neue Schulen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_conv.4",
+      "box": {
+        "x": 428,
+        "y": 941.875,
+        "w": 220,
+        "h": 34.078125
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 24,
+      "lineHeightPx": 34.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "44 % der Vorstufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_take",
+      "box": {
+        "x": 688,
+        "y": 640.15625,
+        "w": 320,
+        "h": 273.484375
+      },
+      "build": 5,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "takeaway",
+      "box": {
+        "x": 688,
+        "y": 668.15625,
+        "w": 320,
+        "h": 241.484375
+      },
+      "build": 5,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Nur 30 % der Demos führen zu einem Angebot – hier setzt das neue Pilotpaket an.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 5,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 967.0546875,
+        "y": 1287.203125,
+        "w": 40.9453125,
+        "h": 22.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 19,
+      "lineHeightPx": 22.8,
+      "trackingPx": 0.38,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

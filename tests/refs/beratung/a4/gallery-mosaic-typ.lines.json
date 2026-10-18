@@ -1,0 +1,44 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Eindrücke"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Drei Pilotschulen zeigen, wie es im Alltag aussieht"
+    ]
+  },
+  {
+    "slot": "images.0.caption",
+    "lines": [
+      "Grundschule Nord"
+    ]
+  },
+  {
+    "slot": "images.1.caption",
+    "lines": [
+      "Realschule Mitte"
+    ]
+  },
+  {
+    "slot": "images.2.caption",
+    "lines": [
+      "Gymnasium Süd"
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Drei Gründe"
+    ]
+  },
+  {
+    "slot": "items.0.head",
+    "lines": [
+      "Schnell"
+    ]
+  },
+  {
+    "slot": "items.1.head",
+    "lines": [
+      "Sicher"
+    ]
+  },
+  {
+    "slot": "items.2.head",
+    "lines": [
+      "Einfach"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

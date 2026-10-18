@@ -239,6 +239,341 @@
       }
     ]
   },
+  "agenda-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "agenda",
+        "content": {
+          "title": "Agenda",
+          "items": [
+            {
+              "title": "Ausgangslage"
+            },
+            {
+              "title": "Lösung"
+            },
+            {
+              "title": "Nächste Schritte"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "agenda-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "agenda",
+        "content": {
+          "title": "Agenda",
+          "items": [
+            {
+              "title": "Ausgangslage",
+              "desc": "Wo wir heute stehen"
+            },
+            {
+              "title": "Marktchance",
+              "desc": "Warum jetzt der richtige Zeitpunkt ist"
+            },
+            {
+              "title": "Unser Plan",
+              "desc": "Drei Hebel für Wachstum"
+            },
+            {
+              "title": "Investition & Ask",
+              "desc": "Was wir brauchen"
+            }
+          ],
+          "active": 1
+        }
+      }
+    ]
+  },
+  "agenda-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "agenda",
+        "content": {
+          "title": "Digitalisierung",
+          "items": [
+            {
+              "title": "Digitalisierung Kundenzufriedenheit",
+              "desc": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie"
+            },
+            {
+              "title": "Kundenzufriedenheit steigt deutlich",
+              "desc": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+            },
+            {
+              "title": "steigt deutlich durch neue Prozesse im",
+              "desc": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+            },
+            {
+              "title": "deutlich durch neue Prozesse im Vertrieb",
+              "desc": "neue Prozesse im Vertrieb und Wachstumsstrategie für internationale"
+            },
+            {
+              "title": "durch neue Prozesse im Vertrieb und",
+              "desc": "Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte"
+            },
+            {
+              "title": "neue Prozesse im Vertrieb und",
+              "desc": "im Vertrieb und Wachstumsstrategie für internationale Märkte mit"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "section-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "section",
+        "content": {
+          "title": "Lösung"
+        }
+      }
+    ]
+  },
+  "section-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "section",
+        "content": {
+          "title": "Unser Plan",
+          "subtitle": "Drei Hebel, die sich gegenseitig verstärken"
+        }
+      }
+    ]
+  },
+  "section-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "section",
+        "content": {
+          "number": "12",
+          "title": "Digitalisierung Kundenzufriedenheit steigt",
+          "subtitle": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem"
+        }
+      }
+    ]
+  },
+  "statement-left-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "left",
+        "content": {
+          "text": "Kunden bleiben, wenn es **einfach** ist."
+        }
+      }
+    ]
+  },
+  "statement-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "statement-left-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "left",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit",
+          "source": "deutlich durch neue Prozesse im Vertrieb und"
+        }
+      }
+    ]
+  },
+  "statement-center-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "center",
+        "content": {
+          "text": "Kunden bleiben, wenn es **einfach** ist."
+        }
+      }
+    ]
+  },
+  "statement-center-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "statement-center-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "center",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit",
+          "source": "deutlich durch neue Prozesse im Vertrieb und"
+        }
+      }
+    ]
+  },
+  "statement-poster-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "poster",
+        "content": {
+          "text": "Kunden bleiben, wenn es **einfach** ist."
+        }
+      }
+    ]
+  },
+  "statement-poster-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Die Erkenntnis",
+          "text": "80 % unserer Neukunden kommen über Empfehlungen – **Zufriedenheit ist unser stärkster Vertriebskanal.**",
+          "source": "Kundenbefragung 2026, n = 1.240"
+        }
+      }
+    ]
+  },
+  "statement-poster-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "statement",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit",
+          "source": "deutlich durch neue Prozesse im Vertrieb und"
+        }
+      }
+    ]
+  },
   "bullets-list-min": {
     "title": "Beispiel",
     "theme": {
@@ -736,6 +1071,4193 @@
               "durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
             ]
           }
+        }
+      }
+    ]
+  },
+  "image-text-image-left-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-left",
+        "content": {
+          "title": "So sieht es aus",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-left",
+        "content": {
+          "eyebrow": "Produkt",
+          "title": "Ein Dashboard für alle Standorte",
+          "text": "Alle Kennzahlen live an einem Ort. Abweichungen werden automatisch erkannt und gemeldet.",
+          "points": [
+            "Echtzeit-Daten",
+            "Automatische Warnungen",
+            "Mobil verfügbar"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-left-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-left",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb",
+          "points": [
+            "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+            "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+            "steigt deutlich durch neue Prozesse im Vertrieb und",
+            "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-right-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-right",
+        "content": {
+          "title": "So sieht es aus",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-right-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-right",
+        "content": {
+          "eyebrow": "Produkt",
+          "title": "Ein Dashboard für alle Standorte",
+          "text": "Alle Kennzahlen live an einem Ort. Abweichungen werden automatisch erkannt und gemeldet.",
+          "points": [
+            "Echtzeit-Daten",
+            "Automatische Warnungen",
+            "Mobil verfügbar"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "image-text-image-right-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "image-text",
+        "variant": "image-right",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb",
+          "points": [
+            "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue",
+            "Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+            "steigt deutlich durch neue Prozesse im Vertrieb und",
+            "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie"
+          ],
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "kpi-grid-plain-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "plain",
+        "content": {
+          "title": "Zwei Zahlen zeigen den Erfolg",
+          "kpis": [
+            {
+              "value": "98 %",
+              "label": "Verfügbarkeit"
+            },
+            {
+              "value": "4,8",
+              "label": "Kundenbewertung"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "kpi-grid-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Ergebnisse Q3",
+          "title": "Wir wachsen schneller als der Markt – und profitabel",
+          "kpis": [
+            {
+              "value": "+34 %",
+              "label": "Umsatzwachstum",
+              "delta": "+12 % ggü. Plan",
+              "sentiment": "positive"
+            },
+            {
+              "value": "2,4 Mio",
+              "label": "Wiederkehrender Umsatz (ARR)",
+              "delta": "+0,6 Mio",
+              "sentiment": "positive"
+            },
+            {
+              "value": "1,8 %",
+              "label": "Monatliche Kündigungsrate",
+              "delta": "−0,4 Pp.",
+              "sentiment": "positive"
+            }
+          ],
+          "focus": 0,
+          "source": "Interne Finanzdaten, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "kpi-grid-plain-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "kpis": [
+            {
+              "value": "€ 12,4 M",
+              "label": "Digitalisierung Kundenzufriedenheit steigt",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            },
+            {
+              "value": "€ 12,4 M",
+              "label": "Kundenzufriedenheit steigt deutlich durch neue",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            },
+            {
+              "value": "€ 12,4 M",
+              "label": "steigt deutlich durch neue Prozesse im Vertrieb",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            },
+            {
+              "value": "€ 12,4 M",
+              "label": "deutlich durch neue Prozesse im Vertrieb und",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            }
+          ],
+          "source": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und"
+        }
+      }
+    ]
+  },
+  "kpi-grid-cards-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "cards",
+        "content": {
+          "title": "Zwei Zahlen zeigen den Erfolg",
+          "kpis": [
+            {
+              "value": "98 %",
+              "label": "Verfügbarkeit"
+            },
+            {
+              "value": "4,8",
+              "label": "Kundenbewertung"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "kpi-grid-cards-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Ergebnisse Q3",
+          "title": "Wir wachsen schneller als der Markt – und profitabel",
+          "kpis": [
+            {
+              "value": "+34 %",
+              "label": "Umsatzwachstum",
+              "delta": "+12 % ggü. Plan",
+              "sentiment": "positive"
+            },
+            {
+              "value": "2,4 Mio",
+              "label": "Wiederkehrender Umsatz (ARR)",
+              "delta": "+0,6 Mio",
+              "sentiment": "positive"
+            },
+            {
+              "value": "1,8 %",
+              "label": "Monatliche Kündigungsrate",
+              "delta": "−0,4 Pp.",
+              "sentiment": "positive"
+            }
+          ],
+          "focus": 0,
+          "source": "Interne Finanzdaten, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "kpi-grid-cards-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "kpi-grid",
+        "variant": "cards",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "kpis": [
+            {
+              "value": "€ 12,4 M",
+              "label": "Digitalisierung Kundenzufriedenheit steigt",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            },
+            {
+              "value": "€ 12,4 M",
+              "label": "Kundenzufriedenheit steigt deutlich durch neue",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            },
+            {
+              "value": "€ 12,4 M",
+              "label": "steigt deutlich durch neue Prozesse im Vertrieb",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            },
+            {
+              "value": "€ 12,4 M",
+              "label": "deutlich durch neue Prozesse im Vertrieb und",
+              "delta": "+12,5 % ggü.",
+              "sentiment": "positive"
+            }
+          ],
+          "source": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und"
+        }
+      }
+    ]
+  },
+  "chart-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "chart",
+        "content": {
+          "title": "Preis und Menge tragen das EBIT-Plus",
+          "chart": {
+            "type": "waterfall",
+            "categories": [
+              "2025",
+              "Preis",
+              "Menge",
+              "Kosten",
+              "2026"
+            ],
+            "series": [
+              {
+                "name": "EBIT",
+                "values": [
+                  4.2,
+                  1.1,
+                  0.8,
+                  -0.9,
+                  5.2
+                ]
+              }
+            ],
+            "unit": "Mio €"
+          }
+        }
+      }
+    ]
+  },
+  "chart-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "chart",
+        "content": {
+          "eyebrow": "Umsatzentwicklung",
+          "title": "Der Umsatz hat sich seit 2023 mehr als verdoppelt",
+          "chart": {
+            "type": "bar",
+            "categories": [
+              "2022",
+              "2023",
+              "2024",
+              "2025",
+              "2026e"
+            ],
+            "series": [
+              {
+                "name": "Umsatz",
+                "values": [
+                  1.1,
+                  1.4,
+                  2,
+                  2.6,
+                  3.3
+                ]
+              },
+              {
+                "name": "Plan",
+                "values": [
+                  1,
+                  1.5,
+                  1.9,
+                  2.4,
+                  3
+                ]
+              }
+            ],
+            "unit": "Mio €",
+            "highlight": "Umsatz",
+            "annotate": "cagr"
+          },
+          "takeaway": {
+            "value": "+136 %",
+            "text": "Wachstum seit 2023 – getrieben durch das neue Abo-Modell"
+          },
+          "source": "Geschäftsberichte 2022–2025, 2026 Prognose"
+        }
+      }
+    ]
+  },
+  "chart-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "chart",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "chart": {
+            "type": "bar",
+            "categories": [
+              "Kategorie 1",
+              "Kategorie 2",
+              "Kategorie 3",
+              "Kategorie 4",
+              "Kategorie 5",
+              "Kategorie 6",
+              "Kategorie 7",
+              "Kategorie 8",
+              "Kategorie 9",
+              "Kategorie 10",
+              "Kategorie 11",
+              "Kategorie 12"
+            ],
+            "series": [
+              {
+                "name": "Digitalisierung",
+                "values": [
+                  10,
+                  23,
+                  36,
+                  49,
+                  22,
+                  35,
+                  48,
+                  21,
+                  34,
+                  47,
+                  20,
+                  33
+                ]
+              },
+              {
+                "name": "Kundenzufriedenheit",
+                "values": [
+                  17,
+                  30,
+                  43,
+                  16,
+                  29,
+                  42,
+                  15,
+                  28,
+                  41,
+                  14,
+                  27,
+                  40
+                ]
+              },
+              {
+                "name": "steigt deutlich durch",
+                "values": [
+                  24,
+                  37,
+                  10,
+                  23,
+                  36,
+                  49,
+                  22,
+                  35,
+                  48,
+                  21,
+                  34,
+                  47
+                ]
+              },
+              {
+                "name": "deutlich durch neue",
+                "values": [
+                  31,
+                  44,
+                  17,
+                  30,
+                  43,
+                  16,
+                  29,
+                  42,
+                  15,
+                  28,
+                  41,
+                  14
+                ]
+              }
+            ],
+            "unit": "Mio €"
+          },
+          "takeaway": {
+            "value": "+136 %",
+            "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+          },
+          "source": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und"
+        }
+      }
+    ]
+  },
+  "timeline-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "timeline",
+        "content": {
+          "title": "Drei Meilensteine bis zum Launch",
+          "items": [
+            {
+              "date": "Q1",
+              "title": "Pilot"
+            },
+            {
+              "date": "Q2",
+              "title": "Beta"
+            },
+            {
+              "date": "Q3",
+              "title": "Launch"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "timeline-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "timeline",
+        "content": {
+          "eyebrow": "Roadmap",
+          "title": "In vier Schritten zur Marktreife bis Ende 2027",
+          "items": [
+            {
+              "date": "Q4 2026",
+              "title": "Pilot mit 3 Kunden",
+              "desc": "Validierung der Kernfunktionen"
+            },
+            {
+              "date": "Q1 2027",
+              "title": "Beta-Programm",
+              "desc": "25 Kunden, Feedback-Schleifen"
+            },
+            {
+              "date": "Q2 2027",
+              "title": "Marktstart DACH",
+              "desc": "Vertrieb und Partner an Bord"
+            },
+            {
+              "date": "Q4 2027",
+              "title": "Internationalisierung",
+              "desc": "Start in Benelux und Nordics"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "timeline-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "timeline",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "items": [
+            {
+              "date": "Q4 2027 ff.",
+              "title": "Digitalisierung",
+              "desc": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+            },
+            {
+              "date": "Q4 2027 ff.",
+              "title": "Kundenzufriedenheit steigt",
+              "desc": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für"
+            },
+            {
+              "date": "Q4 2027 ff.",
+              "title": "steigt deutlich durch neue",
+              "desc": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte"
+            },
+            {
+              "date": "Q4 2027 ff.",
+              "title": "deutlich durch neue",
+              "desc": "neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit"
+            },
+            {
+              "date": "Q4 2027 ff.",
+              "title": "durch neue Prozesse im",
+              "desc": "Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "process-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "process",
+        "content": {
+          "title": "So funktioniert es",
+          "steps": [
+            {
+              "title": "Anmelden"
+            },
+            {
+              "title": "Verbinden"
+            },
+            {
+              "title": "Loslegen"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "process-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "process",
+        "content": {
+          "eyebrow": "Vorgehen",
+          "title": "Vom Erstgespräch zum Go-live in sechs Wochen",
+          "steps": [
+            {
+              "title": "Analyse",
+              "desc": "Workshops mit allen Fachbereichen"
+            },
+            {
+              "title": "Konzept",
+              "desc": "Zielbild und Umsetzungsplan"
+            },
+            {
+              "title": "Umsetzung",
+              "desc": "Einrichtung und Datenübernahme"
+            },
+            {
+              "title": "Go-live",
+              "desc": "Schulung und Begleitung im Betrieb"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "process-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "process",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "steps": [
+            {
+              "title": "Digitalisierung",
+              "desc": "Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie",
+              "icon": "check"
+            },
+            {
+              "title": "Kundenzufriedenheit steigt",
+              "desc": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale",
+              "icon": "check"
+            },
+            {
+              "title": "steigt deutlich durch neue",
+              "desc": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte",
+              "icon": "check"
+            },
+            {
+              "title": "deutlich durch neue",
+              "desc": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit",
+              "icon": "check"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "closing-left-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "left",
+        "content": {
+          "title": "Danke"
+        }
+      }
+    ]
+  },
+  "closing-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "left",
+        "content": {
+          "title": "Lassen Sie uns den Pilot im November starten",
+          "subtitle": "Entscheidung bis 15. Oktober – Budget 120.000 €",
+          "contact": [
+            "Max Muster",
+            "max.muster@firma.de",
+            "+49 170 1234567"
+          ]
+        }
+      }
+    ]
+  },
+  "closing-left-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "left",
+        "content": {
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch",
+          "subtitle": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+          "contact": [
+            "Digitalisierung Kundenzufriedenheit steigt",
+            "Kundenzufriedenheit steigt deutlich durch neue",
+            "steigt deutlich durch neue Prozesse im Vertrieb"
+          ]
+        }
+      }
+    ]
+  },
+  "closing-side-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "side",
+        "content": {
+          "title": "Danke"
+        }
+      }
+    ]
+  },
+  "closing-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "side",
+        "content": {
+          "title": "Lassen Sie uns den Pilot im November starten",
+          "subtitle": "Entscheidung bis 15. Oktober – Budget 120.000 €",
+          "contact": [
+            "Max Muster",
+            "max.muster@firma.de",
+            "+49 170 1234567"
+          ]
+        }
+      }
+    ]
+  },
+  "closing-side-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "closing",
+        "variant": "side",
+        "content": {
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch",
+          "subtitle": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert",
+          "contact": [
+            "Digitalisierung Kundenzufriedenheit steigt",
+            "Kundenzufriedenheit steigt deutlich durch neue",
+            "steigt deutlich durch neue Prozesse im Vertrieb"
+          ]
+        }
+      }
+    ]
+  },
+  "photo-text-bottom-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-bottom",
+        "content": {
+          "title": "Hier fängt es an",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-text-bottom-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-bottom",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-text-bottom-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-bottom",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "subtitle": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-text-left-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-left",
+        "content": {
+          "title": "Hier fängt es an",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-text-left-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-left",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-text-left-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "text-left",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "subtitle": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-card-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "card",
+        "content": {
+          "title": "Hier fängt es an",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-card-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "card",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-card-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "card",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "subtitle": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-side-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "side",
+        "content": {
+          "title": "Hier fängt es an",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Vor Ort",
+          "title": "Jede dritte Schule arbeitet schon digital – der Rest wartet auf Lösungen",
+          "subtitle": "Besuch an der Grundschule Nord, September 2026",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "photo-side-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "photo",
+        "variant": "side",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "subtitle": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "gallery-row-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "row",
+        "content": {
+          "title": "Zwei Standorte",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              }
+            },
+            {
+              "image": {
+                "src": ""
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "gallery-row-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "row",
+        "content": {
+          "eyebrow": "Eindrücke",
+          "title": "Drei Pilotschulen zeigen, wie es im Alltag aussieht",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Grundschule Nord"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Realschule Mitte"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Gymnasium Süd"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "gallery-row-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "row",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Digitalisierung Kundenzufriedenheit"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Kundenzufriedenheit steigt deutlich"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "steigt deutlich durch neue Prozesse im"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "deutlich durch neue Prozesse im Vertrieb"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "gallery-mosaic-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "mosaic",
+        "content": {
+          "title": "Zwei Standorte",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              }
+            },
+            {
+              "image": {
+                "src": ""
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "gallery-mosaic-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "mosaic",
+        "content": {
+          "eyebrow": "Eindrücke",
+          "title": "Drei Pilotschulen zeigen, wie es im Alltag aussieht",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Grundschule Nord"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Realschule Mitte"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Gymnasium Süd"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "gallery-mosaic-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "gallery",
+        "variant": "mosaic",
+        "content": {
+          "eyebrow": "Digitalisierung",
+          "title": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im",
+          "images": [
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Digitalisierung Kundenzufriedenheit"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "Kundenzufriedenheit steigt deutlich"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "steigt deutlich durch neue Prozesse im"
+            },
+            {
+              "image": {
+                "src": ""
+              },
+              "caption": "deutlich durch neue Prozesse im Vertrieb"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "quote-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "quote",
+        "content": {
+          "text": "Das hat uns wirklich Zeit gespart.",
+          "author": "Anna Berg"
+        }
+      }
+    ]
+  },
+  "quote-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "quote",
+        "content": {
+          "text": "Seit dem Pilot korrigieren meine Schüler ihre Texte selbst – und verstehen endlich, warum.",
+          "author": "Julia Hartmann",
+          "role": "Deutschlehrerin, Grundschule Nord",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "quote-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "quote",
+        "content": {
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+          "author": "Digitalisierung Kundenzufriedenheit",
+          "role": "deutlich durch neue Prozesse im Vertrieb und",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "blank-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "blank",
+        "content": {}
+      }
+    ]
+  },
+  "blank-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "blank",
+        "content": {}
+      }
+    ]
+  },
+  "blank-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "blank",
+        "content": {}
+      }
+    ]
+  },
+  "summary-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "summary",
+        "content": {
+          "title": "Wir empfehlen den Pilot",
+          "points": [
+            {
+              "title": "Der Bedarf ist belegt"
+            },
+            {
+              "title": "Das Risiko ist begrenzt"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "summary-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "summary",
+        "content": {
+          "eyebrow": "Executive Summary",
+          "title": "Wir empfehlen, den Pilot im November mit 20 Schulen zu starten",
+          "points": [
+            {
+              "title": "Jedes vierte Kind hat erhebliche Rechtschreibschwächen",
+              "text": "Lehrkräfte fehlt die Zeit für Einzelförderung – der Bedarf wächst."
+            },
+            {
+              "title": "Ortho-Bot senkt die Fehlerquote in sechs Monaten um 41 %",
+              "text": "Pilot mit 6 Schulen und 412 Kindern, bei gleicher Unterrichtszeit."
+            },
+            {
+              "title": "Eine Schullizenz kostet weniger als ein Klassensatz Hefte",
+              "text": "1.900 € pro Jahr statt rund 2.400 € für Arbeitshefte."
+            }
+          ],
+          "recommendation": "Pilot mit 20 Partnerschulen ab November freigeben – Budget 38.000 €, Entscheidung bis 15. Oktober."
+        }
+      }
+    ]
+  },
+  "summary-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "summary",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "points": [
+            {
+              "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+            },
+            {
+              "title": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+              "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+            },
+            {
+              "title": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+              "text": "durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert"
+            },
+            {
+              "title": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+              "text": "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert"
+            }
+          ],
+          "recommendation": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich"
+        }
+      }
+    ]
+  },
+  "options-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "options",
+        "content": {
+          "title": "Option B ist die bessere Wahl",
+          "criteria": [
+            "Kosten",
+            "Tempo"
+          ],
+          "options": [
+            {
+              "name": "Option A",
+              "scores": [
+                2,
+                1
+              ]
+            },
+            {
+              "name": "Option B",
+              "scores": [
+                3,
+                4
+              ]
+            }
+          ],
+          "recommended": 1
+        }
+      }
+    ]
+  },
+  "options-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "options",
+        "content": {
+          "eyebrow": "Entscheidung",
+          "title": "Die Partnerlösung bringt uns am schnellsten und günstigsten ans Ziel",
+          "criteria": [
+            "Zeit bis zum Start",
+            "Kosten im ersten Jahr",
+            "Kontrolle über Daten",
+            "Risiko"
+          ],
+          "options": [
+            {
+              "name": "Eigenentwicklung",
+              "scores": [
+                1,
+                1,
+                4,
+                2
+              ],
+              "note": "Volle Kontrolle, aber 14 Monate Vorlauf"
+            },
+            {
+              "name": "Partnerlösung",
+              "scores": [
+                4,
+                3,
+                3,
+                3
+              ],
+              "note": "Start in 8 Wochen, Daten bleiben in DE"
+            },
+            {
+              "name": "Zukauf",
+              "scores": [
+                3,
+                0,
+                2,
+                1
+              ],
+              "note": "Schnell, aber teuer und schwer integrierbar"
+            }
+          ],
+          "recommended": 1
+        }
+      }
+    ]
+  },
+  "options-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "options",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "criteria": [
+            "Wettbewerbsfähigkeit",
+            "Kundenbindung verbessert",
+            "verbessert deutlich durch",
+            "deutlich durch schnellere",
+            "durch schnellere Abläufe im",
+            "schnellere Abläufe im Vertrieb"
+          ],
+          "options": [
+            {
+              "name": "Wettbewerbsfähigkeit",
+              "scores": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                0
+              ],
+              "note": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb"
+            },
+            {
+              "name": "Kundenbindung verbessert",
+              "scores": [
+                1,
+                2,
+                3,
+                4,
+                0,
+                1
+              ],
+              "note": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            },
+            {
+              "name": "verbessert deutlich",
+              "scores": [
+                2,
+                3,
+                4,
+                0,
+                1,
+                2
+              ],
+              "note": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+            }
+          ],
+          "recommended": 2
+        }
+      }
+    ]
+  },
+  "matrix-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "matrix",
+        "content": {
+          "title": "Zwei Themen gehen zuerst",
+          "x": "Nutzen",
+          "y": "Machbarkeit",
+          "items": [
+            {
+              "label": "Self-Service",
+              "x": 70,
+              "y": 70
+            },
+            {
+              "label": "Neues CRM",
+              "x": 70,
+              "y": 30
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "matrix-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "matrix",
+        "content": {
+          "eyebrow": "Priorisierung",
+          "title": "Self-Service und Rechnungsprozess bringen den größten Nutzen bei wenig Aufwand",
+          "x": "Nutzen für Kunden",
+          "y": "Umsetzbarkeit",
+          "quadrants": [
+            "Später prüfen",
+            "Sofort umsetzen",
+            "Verwerfen",
+            "Groß planen"
+          ],
+          "items": [
+            {
+              "label": "Self-Service-Portal",
+              "x": 82,
+              "y": 78
+            },
+            {
+              "label": "Rechnungsprozess",
+              "x": 64,
+              "y": 88
+            },
+            {
+              "label": "Chatbot",
+              "x": 38,
+              "y": 64
+            },
+            {
+              "label": "Neues CRM",
+              "x": 76,
+              "y": 22
+            },
+            {
+              "label": "Filialumbau",
+              "x": 26,
+              "y": 18
+            }
+          ],
+          "highlight": "Self-Service-Portal",
+          "takeaway": "Zwei Vorhaben liegen klar im Zielquadranten und lassen sich mit bestehenden Teams bis Q2 umsetzen."
+        }
+      }
+    ]
+  },
+  "matrix-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "matrix",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "x": "Wettbewerbsfähigkeit",
+          "y": "Kundenbindung verbessert",
+          "quadrants": [
+            "Wettbewerbsfähigkeit",
+            "Kundenbindung verbessert",
+            "verbessert deutlich",
+            "deutlich durch"
+          ],
+          "items": [
+            {
+              "label": "Wettbewerbsfähigkeit",
+              "x": 22,
+              "y": 72
+            },
+            {
+              "label": "Kundenbindung",
+              "x": 50,
+              "y": 72
+            },
+            {
+              "label": "verbessert deutlich",
+              "x": 78,
+              "y": 72
+            },
+            {
+              "label": "deutlich durch",
+              "x": 22,
+              "y": 50
+            },
+            {
+              "label": "durch schnellere",
+              "x": 50,
+              "y": 50
+            },
+            {
+              "label": "schnellere Abläufe im",
+              "x": 78,
+              "y": 50
+            },
+            {
+              "label": "Abläufe im Vertrieb",
+              "x": 22,
+              "y": 28
+            },
+            {
+              "label": "im Vertrieb und klare",
+              "x": 50,
+              "y": 28
+            }
+          ],
+          "highlight": "deutlich durch",
+          "takeaway": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+        }
+      }
+    ]
+  },
+  "table-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "table",
+        "content": {
+          "title": "Nord liegt vorn",
+          "columns": [
+            "Region",
+            "Umsatz"
+          ],
+          "rows": [
+            [
+              "Nord",
+              "2,4 Mio"
+            ],
+            [
+              "Süd",
+              "1,9 Mio"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  "table-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "table",
+        "content": {
+          "eyebrow": "Regionen",
+          "title": "Der Norden wächst am stärksten und trägt fast die Hälfte des Plus",
+          "columns": [
+            "Region",
+            "Umsatz 2026",
+            "Wachstum",
+            "Marge"
+          ],
+          "rows": [
+            [
+              "Nord",
+              "2,4 Mio €",
+              "+18 %",
+              "31 %"
+            ],
+            [
+              "West",
+              "2,1 Mio €",
+              "+9 %",
+              "28 %"
+            ],
+            [
+              "Süd",
+              "1,9 Mio €",
+              "+6 %",
+              "26 %"
+            ],
+            [
+              "Ost",
+              "1,2 Mio €",
+              "+4 %",
+              "22 %"
+            ]
+          ],
+          "highlight": {
+            "row": 0
+          },
+          "source": "Controlling, Stand 30.09.2026"
+        }
+      }
+    ]
+  },
+  "table-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "table",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "columns": [
+            "Wettbewerbsfähigkeit",
+            "Kundenbindung verbessert",
+            "verbessert deutlich",
+            "deutlich durch",
+            "durch schnellere Abläufe"
+          ],
+          "rows": [
+            [
+              "Wettbewerbsfähigkeit",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6"
+            ],
+            [
+              "Kundenbindung verbessert",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6"
+            ],
+            [
+              "verbessert deutlich durch",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6"
+            ],
+            [
+              "deutlich durch schnellere",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6"
+            ],
+            [
+              "durch schnellere Abläufe im",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6"
+            ],
+            [
+              "schnellere Abläufe im Vertrieb",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6",
+              "€ 12.345,6"
+            ]
+          ],
+          "highlight": {
+            "col": 2
+          },
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+        }
+      }
+    ]
+  },
+  "big-number-plain-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "plain",
+        "content": {
+          "value": "41 %",
+          "label": "Weniger Fehler nach sechs Monaten"
+        }
+      }
+    ]
+  },
+  "big-number-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Wirkung",
+          "value": "−41 %",
+          "label": "Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler",
+          "context": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "source": "Pilotauswertung 2026"
+        }
+      }
+    ]
+  },
+  "big-number-plain-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "plain",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "value": "€ 12,4 M",
+          "label": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "context": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "big-number-poster-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "poster",
+        "content": {
+          "value": "41 %",
+          "label": "Weniger Fehler nach sechs Monaten"
+        }
+      }
+    ]
+  },
+  "big-number-poster-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Wirkung",
+          "value": "−41 %",
+          "label": "Mit Ortho-Bot machen Kinder nach sechs Monaten deutlich weniger Fehler",
+          "context": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "source": "Pilotauswertung 2026"
+        }
+      }
+    ]
+  },
+  "big-number-poster-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "big-number",
+        "variant": "poster",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "value": "€ 12,4 M",
+          "label": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "context": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "image": {
+            "src": ""
+          }
+        }
+      }
+    ]
+  },
+  "icon-grid-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "icon-grid",
+        "content": {
+          "title": "Drei Gründe",
+          "items": [
+            {
+              "icon": "zap",
+              "head": "Schnell"
+            },
+            {
+              "icon": "shield-check",
+              "head": "Sicher"
+            },
+            {
+              "icon": "smile",
+              "head": "Einfach"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "icon-grid-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "icon-grid",
+        "content": {
+          "eyebrow": "Vorteile",
+          "title": "Sechs Gründe, warum Schulen nach dem Pilot bleiben",
+          "items": [
+            {
+              "icon": "zap",
+              "head": "Sofort startklar",
+              "sub": "Keine Installation, läuft im Browser"
+            },
+            {
+              "icon": "shield-check",
+              "head": "DSGVO-konform",
+              "sub": "Server in Deutschland, keine Werbung"
+            },
+            {
+              "icon": "users",
+              "head": "Für jede Klasse",
+              "sub": "Passt sich dem Niveau jedes Kindes an"
+            },
+            {
+              "icon": "chart-line",
+              "head": "Sichtbarer Fortschritt",
+              "sub": "Wochenbericht für Lehrkräfte"
+            },
+            {
+              "icon": "clock",
+              "head": "10 Minuten am Tag",
+              "sub": "Fügt sich in den Unterricht ein"
+            },
+            {
+              "icon": "heart",
+              "head": "Motivierend",
+              "sub": "Kleine Erfolge statt roter Striche"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "icon-grid-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "icon-grid",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "items": [
+            {
+              "icon": "sparkles",
+              "head": "Wettbewerbsfähigkeit",
+              "sub": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+            },
+            {
+              "icon": "sparkles",
+              "head": "Kundenbindung verbessert",
+              "sub": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            },
+            {
+              "icon": "sparkles",
+              "head": "verbessert deutlich durch",
+              "sub": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+            },
+            {
+              "icon": "sparkles",
+              "head": "deutlich durch schnellere",
+              "sub": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare"
+            },
+            {
+              "icon": "sparkles",
+              "head": "durch schnellere Abläufe im",
+              "sub": "durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            },
+            {
+              "icon": "sparkles",
+              "head": "schnellere Abläufe im",
+              "sub": "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pros-cons-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pros-cons",
+        "content": {
+          "title": "Der Umzug lohnt sich",
+          "pros": [
+            "Mehr Platz",
+            "Bessere Lage"
+          ],
+          "cons": [
+            "Höhere Miete",
+            "Umzugskosten"
+          ]
+        }
+      }
+    ]
+  },
+  "pros-cons-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pros-cons",
+        "content": {
+          "eyebrow": "Abwägung",
+          "title": "Der zweite Standort lohnt sich trotz höherer Miete",
+          "pros": [
+            "60 zusätzliche Plätze in der Innenstadt",
+            "Mittagsgeschäft mit Büros in Laufweite",
+            "Küche entlastet den Stammladen"
+          ],
+          "cons": [
+            "Miete 38 % über dem Stammladen",
+            "Sechs neue Stellen im Service",
+            "Umbau dauert vier Monate"
+          ],
+          "verdict": "Ab 140 Gästen am Tag trägt sich der Standort – der Stammladen schafft heute 190."
+        }
+      }
+    ]
+  },
+  "pros-cons-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pros-cons",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "prosLabel": "Wettbewerbsfähigkeit",
+          "consLabel": "verbessert deutlich",
+          "pros": [
+            "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+            "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb",
+            "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+            "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+          ],
+          "cons": [
+            "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+            "durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+            "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+            "Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+          ],
+          "verdict": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+        }
+      }
+    ]
+  },
+  "problem-solution-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "problem-solution",
+        "content": {
+          "title": "Aus Papier wird digital",
+          "problem": {
+            "text": "Formulare auf Papier"
+          },
+          "solution": {
+            "text": "Ein Klick im Portal"
+          }
+        }
+      }
+    ]
+  },
+  "problem-solution-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "problem-solution",
+        "content": {
+          "eyebrow": "Unser Ansatz",
+          "title": "Aus drei Wochen Papierweg wird ein Antrag in zehn Minuten",
+          "problem": {
+            "heading": "Heute",
+            "text": "Anträge wandern per Hauspost durch vier Abteilungen.",
+            "points": [
+              "Ø 21 Tage Bearbeitung",
+              "Jeder fünfte Antrag unvollständig",
+              "Kein Status für Bürger"
+            ]
+          },
+          "solution": {
+            "heading": "Mit dem Portal",
+            "text": "Bürger stellen den Antrag online, das System prüft sofort.",
+            "points": [
+              "Ø 10 Minuten bis zur Eingangsbestätigung",
+              "Pflichtfelder verhindern Lücken",
+              "Status jederzeit online"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "problem-solution-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "problem-solution",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "problem": {
+            "heading": "Wettbewerbsfähigkeit",
+            "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+            "points": [
+              "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+              "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb",
+              "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+            ]
+          },
+          "solution": {
+            "heading": "Kundenbindung verbessert",
+            "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung",
+            "points": [
+              "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+              "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+              "durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "team-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "team",
+        "content": {
+          "title": "Zwei Gründer, ein Ziel",
+          "people": [
+            {
+              "name": "Anna Berg",
+              "role": "CEO"
+            },
+            {
+              "name": "Tom Kraus",
+              "role": "CTO"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "team-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "team",
+        "content": {
+          "eyebrow": "Team",
+          "title": "Ein Team aus Schule, Sprachforschung und Software",
+          "people": [
+            {
+              "name": "Julia Hartmann",
+              "role": "CEO · Lehrerin a. D.",
+              "line": "12 Jahre Grundschule, kennt den Alltag"
+            },
+            {
+              "name": "Dr. Emre Yilmaz",
+              "role": "Forschung",
+              "line": "Promotion in Sprachdidaktik"
+            },
+            {
+              "name": "Lena Vogt",
+              "role": "CTO",
+              "line": "Baute Lernapps für 2 Mio Nutzer"
+            },
+            {
+              "name": "Paul Neumann",
+              "role": "Vertrieb Schulen",
+              "line": "Kontakte zu 300 Schulträgern"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "team-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "team",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "people": [
+            {
+              "name": "Wettbewerbsfähigkeit",
+              "role": "Kundenbindung verbessert deutlich durch",
+              "line": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+              "image": {
+                "src": ""
+              }
+            },
+            {
+              "name": "Kundenbindung verbessert",
+              "role": "verbessert deutlich durch schnellere",
+              "line": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+              "image": {
+                "src": ""
+              }
+            },
+            {
+              "name": "verbessert deutlich durch",
+              "role": "deutlich durch schnellere Abläufe im",
+              "line": "durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+              "image": {
+                "src": ""
+              }
+            },
+            {
+              "name": "deutlich durch schnellere",
+              "role": "durch schnellere Abläufe im Vertrieb und",
+              "line": "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+              "image": {
+                "src": ""
+              }
+            },
+            {
+              "name": "durch schnellere Abläufe im",
+              "role": "schnellere Abläufe im Vertrieb und klare",
+              "line": "Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+              "image": {
+                "src": ""
+              }
+            },
+            {
+              "name": "schnellere Abläufe im",
+              "role": "Abläufe im Vertrieb und klare",
+              "line": "im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+              "image": {
+                "src": ""
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pricing-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pricing",
+        "content": {
+          "title": "Zwei Pakete",
+          "tiers": [
+            {
+              "name": "Basis",
+              "price": "19 €",
+              "features": [
+                "1 Klasse",
+                "E-Mail-Support"
+              ]
+            },
+            {
+              "name": "Schule",
+              "price": "149 €",
+              "features": [
+                "Alle Klassen",
+                "Schulung"
+              ],
+              "highlight": true
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "pricing-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pricing",
+        "content": {
+          "eyebrow": "Preise",
+          "title": "Die Schullizenz rechnet sich schon ab vier Klassen",
+          "tiers": [
+            {
+              "name": "Klasse",
+              "price": "19 €",
+              "period": "pro Monat",
+              "features": [
+                "Eine Klasse bis 30 Kinder",
+                "Wochenbericht",
+                "E-Mail-Support"
+              ]
+            },
+            {
+              "name": "Schule",
+              "price": "149 €",
+              "period": "pro Monat",
+              "features": [
+                "Alle Klassen",
+                "Schulung fürs Kollegium",
+                "Auswertung pro Jahrgang",
+                "Telefon-Support"
+              ],
+              "highlight": true
+            },
+            {
+              "name": "Träger",
+              "price": "auf Anfrage",
+              "features": [
+                "Mehrere Schulen",
+                "Zentrale Verwaltung",
+                "Eigener Ansprechpartner"
+              ]
+            }
+          ],
+          "note": "Alle Preise zzgl. MwSt., jährliche Abrechnung"
+        }
+      }
+    ]
+  },
+  "pricing-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "pricing",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "tiers": [
+            {
+              "name": "Wettbewerbsfähigkeit",
+              "price": "€ 1.234",
+              "period": "Wettbewerbsfähig",
+              "features": [
+                "Wettbewerbsfähigkeit Kundenbindung",
+                "Kundenbindung verbessert deutlich",
+                "verbessert deutlich durch schnellere",
+                "deutlich durch schnellere Abläufe im"
+              ],
+              "highlight": false
+            },
+            {
+              "name": "Kundenbindung",
+              "price": "€ 1.234",
+              "period": "Kundenbindung",
+              "features": [
+                "Kundenbindung verbessert deutlich",
+                "verbessert deutlich durch schnellere",
+                "deutlich durch schnellere Abläufe im",
+                "durch schnellere Abläufe im Vertrieb"
+              ],
+              "highlight": true
+            },
+            {
+              "name": "verbessert deutlich",
+              "price": "€ 1.234",
+              "period": "verbessert",
+              "features": [
+                "verbessert deutlich durch schnellere",
+                "deutlich durch schnellere Abläufe im",
+                "durch schnellere Abläufe im Vertrieb",
+                "schnellere Abläufe im Vertrieb und"
+              ],
+              "highlight": false
+            },
+            {
+              "name": "deutlich durch",
+              "price": "€ 1.234",
+              "period": "deutlich durch",
+              "features": [
+                "deutlich durch schnellere Abläufe im",
+                "durch schnellere Abläufe im Vertrieb",
+                "schnellere Abläufe im Vertrieb und",
+                "Abläufe im Vertrieb und klare"
+              ],
+              "highlight": false
+            }
+          ],
+          "note": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und"
+        }
+      }
+    ]
+  },
+  "funnel-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "funnel",
+        "content": {
+          "title": "Jeder zehnte Lead wird Kunde",
+          "stages": [
+            {
+              "label": "Leads",
+              "value": "400"
+            },
+            {
+              "label": "Angebote",
+              "value": "120"
+            },
+            {
+              "label": "Kunden",
+              "value": "40"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "funnel-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "funnel",
+        "content": {
+          "eyebrow": "Vertrieb",
+          "title": "Der größte Verlust liegt zwischen Demo und Angebot",
+          "stages": [
+            {
+              "label": "Website-Besucher",
+              "value": "48.000"
+            },
+            {
+              "label": "Anfragen",
+              "value": "2.100"
+            },
+            {
+              "label": "Demos",
+              "value": "640"
+            },
+            {
+              "label": "Angebote",
+              "value": "190"
+            },
+            {
+              "label": "Neue Schulen",
+              "value": "84"
+            }
+          ],
+          "takeaway": "Nur 30 % der Demos führen zu einem Angebot – hier setzt das neue Pilotpaket an."
+        }
+      }
+    ]
+  },
+  "funnel-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "funnel",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "stages": [
+            {
+              "label": "Wettbewerbsfähigkeit",
+              "value": "€ 1.234,5"
+            },
+            {
+              "label": "Kundenbindung verbessert",
+              "value": "€ 1.234,5"
+            },
+            {
+              "label": "verbessert deutlich durch",
+              "value": "€ 1.234,5"
+            },
+            {
+              "label": "deutlich durch schnellere",
+              "value": "€ 1.234,5"
+            },
+            {
+              "label": "durch schnellere Abläufe im",
+              "value": "€ 1.234,5"
+            }
+          ],
+          "takeaway": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+        }
+      }
+    ]
+  },
+  "market-size-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "market-size",
+        "content": {
+          "title": "Der Markt ist groß genug",
+          "tam": {
+            "value": "2 Mrd €",
+            "label": "Gesamtmarkt"
+          },
+          "sam": {
+            "value": "400 Mio €",
+            "label": "Erreichbar"
+          },
+          "som": {
+            "value": "20 Mio €",
+            "label": "Unser Ziel"
+          }
+        }
+      }
+    ]
+  },
+  "market-size-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "market-size",
+        "content": {
+          "eyebrow": "Markt",
+          "title": "Schon 5 % der Grundschulen in DACH tragen ein profitables Geschäft",
+          "tam": {
+            "value": "1,2 Mrd €",
+            "label": "Digitale Lernmittel an Schulen in DACH"
+          },
+          "sam": {
+            "value": "180 Mio €",
+            "label": "Deutsch und Rechtschreibung, Klasse 1–6"
+          },
+          "som": {
+            "value": "9 Mio €",
+            "label": "5 % der Grundschulen bis 2029"
+          },
+          "source": "Bildungsbericht 2026, eigene Hochrechnung"
+        }
+      }
+    ]
+  },
+  "market-size-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "market-size",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "tam": {
+            "value": "€ 12,3 Mrd",
+            "label": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch"
+          },
+          "sam": {
+            "value": "€ 1,23 Mrd",
+            "label": "verbessert deutlich durch schnellere Abläufe im Vertrieb und"
+          },
+          "som": {
+            "value": "€ 123 Mio",
+            "label": "durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+          },
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+        }
+      }
+    ]
+  },
+  "logos-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "logos",
+        "content": {
+          "title": "Drei Partner",
+          "logos": [
+            {
+              "name": "Stadt Nord"
+            },
+            {
+              "name": "Bildungswerk"
+            },
+            {
+              "name": "Lernfabrik"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "logos-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "logos",
+        "content": {
+          "eyebrow": "Partner",
+          "title": "Über 40 Schulen und drei Träger arbeiten bereits mit uns",
+          "logos": [
+            {
+              "name": "Stadt Nord"
+            },
+            {
+              "name": "Bildungswerk Süd"
+            },
+            {
+              "name": "Lernfabrik"
+            },
+            {
+              "name": "Kreis Mitte"
+            },
+            {
+              "name": "Grundschule am Park"
+            },
+            {
+              "name": "Schulverbund West"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "logos-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "logos",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im",
+          "logos": [
+            {
+              "name": "Wettbewerbsfähigkeit"
+            },
+            {
+              "name": "Kundenbindung"
+            },
+            {
+              "name": "verbessert deutlich"
+            },
+            {
+              "name": "deutlich durch"
+            },
+            {
+              "name": "durch schnellere"
+            },
+            {
+              "name": "schnellere Abläufe im"
+            },
+            {
+              "name": "Abläufe im Vertrieb"
+            },
+            {
+              "name": "im Vertrieb und klare"
+            },
+            {
+              "name": "Vertrieb und klare"
+            },
+            {
+              "name": "und klare"
+            },
+            {
+              "name": "klare Verantwortung"
+            },
+            {
+              "name": "Verantwortung für"
+            }
+          ],
+          "mono": true
+        }
+      }
+    ]
+  },
+  "clip-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "clip",
+        "content": {
+          "video": "",
+          "parts": [
+            {
+              "start": 0,
+              "end": 4
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "clip-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "clip",
+        "content": {
+          "video": "",
+          "hook": "Warum neun von zehn Pitches scheitern",
+          "parts": [
+            {
+              "start": 12.4,
+              "end": 21.8,
+              "focus": 0.5
+            },
+            {
+              "start": 40.1,
+              "end": 52
+            },
+            {
+              "start": 63,
+              "end": 70.5
+            }
+          ],
+          "captions": "wort",
+          "cover": 45.2,
+          "post": "Warum neun von zehn Pitches scheitern\nDer häufigste Fehler steckt in der ersten Minute. So vermeidest du ihn.\n#pitch #startup #gründen"
+        }
+      }
+    ]
+  },
+  "clip-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "clip",
+        "content": {
+          "video": "",
+          "hook": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "parts": [
+            {
+              "start": 0,
+              "end": 8,
+              "focus": 1
+            },
+            {
+              "start": 10,
+              "end": 18,
+              "focus": 1
+            },
+            {
+              "start": 20,
+              "end": 28,
+              "focus": 1
+            },
+            {
+              "start": 30,
+              "end": 38,
+              "focus": 1
+            },
+            {
+              "start": 40,
+              "end": 48,
+              "focus": 1
+            },
+            {
+              "start": 50,
+              "end": 58,
+              "focus": 1
+            },
+            {
+              "start": 60,
+              "end": 68,
+              "focus": 1
+            },
+            {
+              "start": 70,
+              "end": 78,
+              "focus": 1
+            },
+            {
+              "start": 80,
+              "end": 88,
+              "focus": 1
+            },
+            {
+              "start": 90,
+              "end": 98,
+              "focus": 1
+            },
+            {
+              "start": 100,
+              "end": 108,
+              "focus": 1
+            },
+            {
+              "start": 110,
+              "end": 118,
+              "focus": 1
+            },
+            {
+              "start": 120,
+              "end": 128,
+              "focus": 1
+            },
+            {
+              "start": 130,
+              "end": 138,
+              "focus": 1
+            },
+            {
+              "start": 140,
+              "end": 148,
+              "focus": 1
+            },
+            {
+              "start": 150,
+              "end": 158,
+              "focus": 1
+            },
+            {
+              "start": 160,
+              "end": 168,
+              "focus": 1
+            },
+            {
+              "start": 170,
+              "end": 178,
+              "focus": 1
+            },
+            {
+              "start": 180,
+              "end": 188,
+              "focus": 1
+            },
+            {
+              "start": 190,
+              "end": 198,
+              "focus": 1
+            },
+            {
+              "start": 200,
+              "end": 208,
+              "focus": 1
+            },
+            {
+              "start": 210,
+              "end": 218,
+              "focus": 1
+            },
+            {
+              "start": 220,
+              "end": 228,
+              "focus": 1
+            },
+            {
+              "start": 230,
+              "end": 238,
+              "focus": 1
+            },
+            {
+              "start": 240,
+              "end": 248,
+              "focus": 1
+            },
+            {
+              "start": 250,
+              "end": 258,
+              "focus": 1
+            },
+            {
+              "start": 260,
+              "end": 268,
+              "focus": 1
+            },
+            {
+              "start": 270,
+              "end": 278,
+              "focus": 1
+            },
+            {
+              "start": 280,
+              "end": 288,
+              "focus": 1
+            },
+            {
+              "start": 290,
+              "end": 298,
+              "focus": 1
+            },
+            {
+              "start": 300,
+              "end": 308,
+              "focus": 1
+            },
+            {
+              "start": 310,
+              "end": 318,
+              "focus": 1
+            },
+            {
+              "start": 320,
+              "end": 328,
+              "focus": 1
+            },
+            {
+              "start": 330,
+              "end": 338,
+              "focus": 1
+            },
+            {
+              "start": 340,
+              "end": 348,
+              "focus": 1
+            },
+            {
+              "start": 350,
+              "end": 358,
+              "focus": 1
+            },
+            {
+              "start": 360,
+              "end": 368,
+              "focus": 1
+            },
+            {
+              "start": 370,
+              "end": 378,
+              "focus": 1
+            },
+            {
+              "start": 380,
+              "end": 388,
+              "focus": 1
+            },
+            {
+              "start": 390,
+              "end": 398,
+              "focus": 1
+            },
+            {
+              "start": 400,
+              "end": 408,
+              "focus": 1
+            },
+            {
+              "start": 410,
+              "end": 418,
+              "focus": 1
+            },
+            {
+              "start": 420,
+              "end": 428,
+              "focus": 1
+            },
+            {
+              "start": 430,
+              "end": 438,
+              "focus": 1
+            },
+            {
+              "start": 440,
+              "end": 448,
+              "focus": 1
+            },
+            {
+              "start": 450,
+              "end": 458,
+              "focus": 1
+            },
+            {
+              "start": 460,
+              "end": 468,
+              "focus": 1
+            },
+            {
+              "start": 470,
+              "end": 478,
+              "focus": 1
+            },
+            {
+              "start": 480,
+              "end": 488,
+              "focus": 1
+            },
+            {
+              "start": 490,
+              "end": 498,
+              "focus": 1
+            },
+            {
+              "start": 500,
+              "end": 508,
+              "focus": 1
+            },
+            {
+              "start": 510,
+              "end": 518,
+              "focus": 1
+            },
+            {
+              "start": 520,
+              "end": 528,
+              "focus": 1
+            },
+            {
+              "start": 530,
+              "end": 538,
+              "focus": 1
+            },
+            {
+              "start": 540,
+              "end": 548,
+              "focus": 1
+            },
+            {
+              "start": 550,
+              "end": 558,
+              "focus": 1
+            },
+            {
+              "start": 560,
+              "end": 568,
+              "focus": 1
+            },
+            {
+              "start": 570,
+              "end": 578,
+              "focus": 1
+            },
+            {
+              "start": 580,
+              "end": 588,
+              "focus": 1
+            },
+            {
+              "start": 590,
+              "end": 598,
+              "focus": 1
+            },
+            {
+              "start": 600,
+              "end": 608,
+              "focus": 1
+            },
+            {
+              "start": 610,
+              "end": 618,
+              "focus": 1
+            },
+            {
+              "start": 620,
+              "end": 628,
+              "focus": 1
+            },
+            {
+              "start": 630,
+              "end": 638,
+              "focus": 1
+            },
+            {
+              "start": 640,
+              "end": 648,
+              "focus": 1
+            },
+            {
+              "start": 650,
+              "end": 658,
+              "focus": 1
+            },
+            {
+              "start": 660,
+              "end": 668,
+              "focus": 1
+            },
+            {
+              "start": 670,
+              "end": 678,
+              "focus": 1
+            },
+            {
+              "start": 680,
+              "end": 688,
+              "focus": 1
+            },
+            {
+              "start": 690,
+              "end": 698,
+              "focus": 1
+            },
+            {
+              "start": 700,
+              "end": 708,
+              "focus": 1
+            },
+            {
+              "start": 710,
+              "end": 718,
+              "focus": 1
+            },
+            {
+              "start": 720,
+              "end": 728,
+              "focus": 1
+            },
+            {
+              "start": 730,
+              "end": 738,
+              "focus": 1
+            },
+            {
+              "start": 740,
+              "end": 748,
+              "focus": 1
+            },
+            {
+              "start": 750,
+              "end": 758,
+              "focus": 1
+            },
+            {
+              "start": 760,
+              "end": 768,
+              "focus": 1
+            },
+            {
+              "start": 770,
+              "end": 778,
+              "focus": 1
+            },
+            {
+              "start": 780,
+              "end": 788,
+              "focus": 1
+            },
+            {
+              "start": 790,
+              "end": 798,
+              "focus": 1
+            },
+            {
+              "start": 800,
+              "end": 808,
+              "focus": 1
+            },
+            {
+              "start": 810,
+              "end": 818,
+              "focus": 1
+            },
+            {
+              "start": 820,
+              "end": 828,
+              "focus": 1
+            },
+            {
+              "start": 830,
+              "end": 838,
+              "focus": 1
+            },
+            {
+              "start": 840,
+              "end": 848,
+              "focus": 1
+            },
+            {
+              "start": 850,
+              "end": 858,
+              "focus": 1
+            },
+            {
+              "start": 860,
+              "end": 868,
+              "focus": 1
+            },
+            {
+              "start": 870,
+              "end": 878,
+              "focus": 1
+            },
+            {
+              "start": 880,
+              "end": 888,
+              "focus": 1
+            },
+            {
+              "start": 890,
+              "end": 898,
+              "focus": 1
+            },
+            {
+              "start": 900,
+              "end": 908,
+              "focus": 1
+            },
+            {
+              "start": 910,
+              "end": 918,
+              "focus": 1
+            },
+            {
+              "start": 920,
+              "end": 928,
+              "focus": 1
+            },
+            {
+              "start": 930,
+              "end": 938,
+              "focus": 1
+            },
+            {
+              "start": 940,
+              "end": 948,
+              "focus": 1
+            },
+            {
+              "start": 950,
+              "end": 958,
+              "focus": 1
+            },
+            {
+              "start": 960,
+              "end": 968,
+              "focus": 1
+            },
+            {
+              "start": 970,
+              "end": 978,
+              "focus": 1
+            },
+            {
+              "start": 980,
+              "end": 988,
+              "focus": 1
+            },
+            {
+              "start": 990,
+              "end": 998,
+              "focus": 1
+            }
+          ],
+          "captions": "satz",
+          "fit": "blur",
+          "follow": "sprecher",
+          "style": "lebendig",
+          "ton": "klar",
+          "cover": 5,
+          "post": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+          "sfx": [
+            {
+              "src": "/sfx/piep.wav",
+              "at": 0,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 20,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 40,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 60,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 80,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 100,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 120,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 140,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 160,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 180,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 200,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 220,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 240,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 260,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 280,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 300,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 320,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 340,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 360,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 380,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 400,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 420,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 440,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 460,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 480,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 500,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 520,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 540,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 560,
+              "gain": -6
+            },
+            {
+              "src": "/sfx/piep.wav",
+              "at": 580,
+              "gain": -6
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "code-editor-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "editor",
+        "content": {
+          "code": "print(\"Hallo, Welt\")"
+        }
+      }
+    ]
+  },
+  "code-editor-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "editor",
+        "content": {
+          "title": "Eine Abfrage liefert den Wochenumsatz",
+          "lang": "ts",
+          "focus": "6-7",
+          "code": "// Bestellungen der letzten sieben Tage laden\nconst seit = new Date(Date.now() - 7 * 864e5)\nconst res = await fetch(`/api/orders?since=${seit.toISOString()}`)\nif (!res.ok) throw new Error(`HTTP ${res.status}`)\n\nconst orders = await res.json()\nconst umsatz = orders.reduce((s, o) => s + o.total, 0)\nconsole.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "note": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf."
+        }
+      }
+    ]
+  },
+  "code-editor-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "editor",
+        "content": {
+          "title": "Der Bericht entsteht in einem Durchlauf wert wert ",
+          "lang": "python",
+          "focus": "3-5,8",
+          "reveal": "tippen",
+          "code": "    summe_0 = berechne(region=\"Nord\", quartal=0, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_1 = berechne(region=\"Nord\", quartal=1, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_2 = berechne(region=\"Nord\", quartal=2, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_3 = berechne(region=\"Nord\", quartal=3, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_4 = berechne(region=\"Nord\", quartal=4, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_5 = berechne(region=\"Nord\", quartal=5, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_6 = berechne(region=\"Nord\", quartal=6, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_7 = berechne(region=\"Nord\", quartal=7, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_8 = berechne(region=\"Nord\", quartal=8, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_9 = berechne(region=\"Nord\", quartal=9, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_10 = berechne(region=\"Nord\", quartal=10, faktor=1.25)  # Prüfwert wert wert wert\n    summe_11 = berechne(region=\"Nord\", quartal=11, faktor=1.25)  # Prüfwert wert wert wert\n    summe_12 = berechne(region=\"Nord\", quartal=12, faktor=1.25)  # Prüfwert wert wert wert\n    summe_13 = berechne(region=\"Nord\", quartal=13, faktor=1.25)  # Prüfwert wert wert wert\n    summe_14 = berechne(region=\"Nord\", quartal=14, faktor=1.25)  # Prüfwert wert wert wert\n    summe_15 = berechne(region=\"Nord\", quartal=15, faktor=1.25)  # Prüfwert wert wert wert\n    summe_16 = berechne(region=\"Nord\", quartal=16, faktor=1.25)  # Prüfwert wert wert wert\n    summe_17 = berechne(region=\"Nord\", quartal=17, faktor=1.25)  # Prüfwert wert wert wert\n    summe_18 = berechne(region=\"Nord\", quartal=18, faktor=1.25)  # Prüfwert wert wert wert\n    summe_19 = berechne(region=\"Nord\", quartal=19, faktor=1.25)  # Prüfwert wert wert wert",
+          "note": "Jede Zeile berechnet eine Region; die markierten Zeilen fließen in den Bericht ein wert wert wert wert wert wert wert wert wert wert wert we"
+        }
+      }
+    ]
+  },
+  "code-terminal-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "terminal",
+        "content": {
+          "code": "print(\"Hallo, Welt\")"
+        }
+      }
+    ]
+  },
+  "code-terminal-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "terminal",
+        "content": {
+          "title": "Eine Abfrage liefert den Wochenumsatz",
+          "lang": "ts",
+          "focus": "6-7",
+          "code": "// Bestellungen der letzten sieben Tage laden\nconst seit = new Date(Date.now() - 7 * 864e5)\nconst res = await fetch(`/api/orders?since=${seit.toISOString()}`)\nif (!res.ok) throw new Error(`HTTP ${res.status}`)\n\nconst orders = await res.json()\nconst umsatz = orders.reduce((s, o) => s + o.total, 0)\nconsole.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "note": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf."
+        }
+      }
+    ]
+  },
+  "code-terminal-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "code",
+        "variant": "terminal",
+        "content": {
+          "title": "Der Bericht entsteht in einem Durchlauf wert wert ",
+          "lang": "python",
+          "focus": "3-5,8",
+          "reveal": "tippen",
+          "code": "    summe_0 = berechne(region=\"Nord\", quartal=0, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_1 = berechne(region=\"Nord\", quartal=1, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_2 = berechne(region=\"Nord\", quartal=2, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_3 = berechne(region=\"Nord\", quartal=3, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_4 = berechne(region=\"Nord\", quartal=4, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_5 = berechne(region=\"Nord\", quartal=5, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_6 = berechne(region=\"Nord\", quartal=6, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_7 = berechne(region=\"Nord\", quartal=7, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_8 = berechne(region=\"Nord\", quartal=8, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_9 = berechne(region=\"Nord\", quartal=9, faktor=1.25)  # Prüfwert wert wert wert w\n    summe_10 = berechne(region=\"Nord\", quartal=10, faktor=1.25)  # Prüfwert wert wert wert\n    summe_11 = berechne(region=\"Nord\", quartal=11, faktor=1.25)  # Prüfwert wert wert wert\n    summe_12 = berechne(region=\"Nord\", quartal=12, faktor=1.25)  # Prüfwert wert wert wert\n    summe_13 = berechne(region=\"Nord\", quartal=13, faktor=1.25)  # Prüfwert wert wert wert\n    summe_14 = berechne(region=\"Nord\", quartal=14, faktor=1.25)  # Prüfwert wert wert wert\n    summe_15 = berechne(region=\"Nord\", quartal=15, faktor=1.25)  # Prüfwert wert wert wert\n    summe_16 = berechne(region=\"Nord\", quartal=16, faktor=1.25)  # Prüfwert wert wert wert\n    summe_17 = berechne(region=\"Nord\", quartal=17, faktor=1.25)  # Prüfwert wert wert wert\n    summe_18 = berechne(region=\"Nord\", quartal=18, faktor=1.25)  # Prüfwert wert wert wert\n    summe_19 = berechne(region=\"Nord\", quartal=19, faktor=1.25)  # Prüfwert wert wert wert",
+          "note": "Jede Zeile berechnet eine Region; die markierten Zeilen fließen in den Bericht ein wert wert wert wert wert wert wert wert wert wert wert we"
+        }
+      }
+    ]
+  },
+  "screen-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "screen",
+        "content": {
+          "image": {
+            "src": ""
+          },
+          "frame": "handy"
+        }
+      }
+    ]
+  },
+  "screen-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "screen",
+        "content": {
+          "title": "Der Export dauert drei Klicks",
+          "image": {
+            "src": ""
+          },
+          "url": "example.com/export",
+          "caption": "Format wählen, prüfen, herunterladen: Die Datei lässt sich sofort in PowerPoint bearbeiten.",
+          "cursor": [
+            {
+              "x": 0.2,
+              "y": 0.3
+            },
+            {
+              "x": 0.62,
+              "y": 0.55,
+              "click": true
+            },
+            {
+              "x": 0.84,
+              "y": 0.86,
+              "click": true,
+              "zoom": 2
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "screen-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "screen",
+        "content": {
+          "title": "Der Export dauert drei Klicks wert wert wert wert wert wert ",
+          "image": {
+            "src": ""
+          },
+          "frame": "browser",
+          "url": "example.com/export wert wert wert wert wert wert wert wert w",
+          "caption": "Format wählen, prüfen, herunterladen wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wer",
+          "cursor": [
+            {
+              "x": 0.1111111111111111,
+              "y": 0.8888888888888888,
+              "step": 0,
+              "click": true,
+              "zoom": 3
+            },
+            {
+              "x": 0.2222222222222222,
+              "y": 0.7777777777777778,
+              "step": 1,
+              "click": true,
+              "zoom": 3
+            },
+            {
+              "x": 0.3333333333333333,
+              "y": 0.6666666666666667,
+              "step": 2,
+              "click": true,
+              "zoom": 3
+            },
+            {
+              "x": 0.4444444444444444,
+              "y": 0.5555555555555556,
+              "step": 3,
+              "click": true,
+              "zoom": 3
+            },
+            {
+              "x": 0.5555555555555556,
+              "y": 0.4444444444444444,
+              "step": 4,
+              "click": true,
+              "zoom": 3
+            },
+            {
+              "x": 0.6666666666666666,
+              "y": 0.33333333333333337,
+              "step": 5,
+              "click": true,
+              "zoom": 3
+            },
+            {
+              "x": 0.7777777777777778,
+              "y": 0.2222222222222222,
+              "step": 6,
+              "click": true,
+              "zoom": 3
+            },
+            {
+              "x": 0.8888888888888888,
+              "y": 0.11111111111111116,
+              "step": 7,
+              "click": true,
+              "zoom": 3
+            }
+          ]
         }
       }
     ]

@@ -1,0 +1,339 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jeder zehnte Lead wird Kunde",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.0",
+      "box": {
+        "x": 72,
+        "y": 292.4375,
+        "w": 896,
+        "h": 64
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#E9EBED",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.0.value",
+      "box": {
+        "x": 92,
+        "y": 310.796875,
+        "w": 39.109375,
+        "h": 27.2734375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "400",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E9EBED"
+    },
+    {
+      "slot": "stages.0.label",
+      "box": {
+        "x": 988,
+        "y": 311.8984375,
+        "w": 220,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Leads",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.1",
+      "box": {
+        "x": 72,
+        "y": 366.4375,
+        "w": 649.59375,
+        "h": 64
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.1.value",
+      "box": {
+        "x": 92,
+        "y": 384.796875,
+        "w": 39.109375,
+        "h": 27.2734375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "stages.1.label",
+      "box": {
+        "x": 988,
+        "y": 372.828125,
+        "w": 220,
+        "h": 25.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Angebote",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_conv.1",
+      "box": {
+        "x": 988,
+        "y": 399.90625,
+        "w": 220,
+        "h": 24.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "30 % der Vorstufe",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_bar.2",
+      "box": {
+        "x": 72,
+        "y": 440.4375,
+        "w": 403.1953125,
+        "h": 64
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#E9EBED",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "stages.2.value",
+      "box": {
+        "x": 92,
+        "y": 458.796875,
+        "w": 26.0703125,
+        "h": 27.2734375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "40",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E9EBED"
+    },
+    {
+      "slot": "stages.2.label",
+      "box": {
+        "x": 988,
+        "y": 446.828125,
+        "w": 220,
+        "h": 25.078125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kunden",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_conv.2",
+      "box": {
+        "x": 988,
+        "y": 473.90625,
+        "w": 220,
+        "h": 24.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "33 % der Vorstufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

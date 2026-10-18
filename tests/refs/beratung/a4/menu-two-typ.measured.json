@@ -1,0 +1,874 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 650,
+        "h": 17.2734375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14.4,
+      "lineHeightPx": 17.28,
+      "trackingPx": 0.144,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Herbst · ab 1. Oktober",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 91.2734375,
+        "w": 650,
+        "h": 50.5390625
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 48.6,
+      "lineHeightPx": 50.544,
+      "trackingPx": -0.729,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Herbstkarte",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "intro",
+      "box": {
+        "x": 72,
+        "y": 155.8125,
+        "w": 540,
+        "h": 44.15625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.heading",
+      "box": {
+        "x": 72,
+        "y": 244.765625,
+        "w": 305,
+        "h": 23.84375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 19.55,
+      "lineHeightPx": 23.851,
+      "trackingPx": -0.146625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vorspeisen",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.0.name",
+      "box": {
+        "x": 72,
+        "y": 279.8046875,
+        "w": 94.3515625,
+        "h": 19.9609375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kürbissuppe",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.0.tag",
+      "box": {
+        "x": 176.3515625,
+        "y": 282.3046875,
+        "w": 31.921875,
+        "h": 17.0390625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "vegan",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.0.price",
+      "box": {
+        "x": 343.5234375,
+        "y": 279.8046875,
+        "w": 33.4765625,
+        "h": 19.9609375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "7,50",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.0.text",
+      "box": {
+        "x": 72,
+        "y": 301.765625,
+        "w": 305,
+        "h": 18.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12.96,
+      "lineHeightPx": 18.4032,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Hokkaido, Ingwer, geröstete Kerne",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.1.name",
+      "box": {
+        "x": 72,
+        "y": 332.9609375,
+        "w": 68.890625,
+        "h": 19.9609375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Feldsalat",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.1.tag",
+      "box": {
+        "x": 150.890625,
+        "y": 335.4609375,
+        "w": 22.921875,
+        "h": 17.0390625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "G, H",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.1.price",
+      "box": {
+        "x": 343.5234375,
+        "y": 332.9609375,
+        "w": 33.4765625,
+        "h": 19.9609375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "9,80",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.1.text",
+      "box": {
+        "x": 72,
+        "y": 354.921875,
+        "w": 305,
+        "h": 18.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12.96,
+      "lineHeightPx": 18.4032,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.heading",
+      "box": {
+        "x": 72,
+        "y": 414.9140625,
+        "w": 305,
+        "h": 23.84375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 19.55,
+      "lineHeightPx": 23.851,
+      "trackingPx": -0.146625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Hauptgerichte",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.0.name",
+      "box": {
+        "x": 72,
+        "y": 449.953125,
+        "w": 106.7578125,
+        "h": 19.9609375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Rinderroulade",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.0.tag",
+      "box": {
+        "x": 188.7578125,
+        "y": 452.453125,
+        "w": 18.7734375,
+        "h": 17.0390625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "A, I",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.0.price",
+      "box": {
+        "x": 333.984375,
+        "y": 449.953125,
+        "w": 43.015625,
+        "h": 19.9609375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "21,50",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.0.text",
+      "box": {
+        "x": 72,
+        "y": 471.9140625,
+        "w": 305,
+        "h": 18.3984375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12.96,
+      "lineHeightPx": 18.4032,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Rotkohl, Kartoffelklöße, Schmorsauce",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.1.name",
+      "box": {
+        "x": 417,
+        "y": 238.3671875,
+        "w": 97.359375,
+        "h": 19.9609375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kürbisrisotto",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.1.tag",
+      "box": {
+        "x": 524.359375,
+        "y": 240.8671875,
+        "w": 8.34375,
+        "h": 17.0390625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "G",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.1.price",
+      "box": {
+        "x": 678.984375,
+        "y": 238.3671875,
+        "w": 43.015625,
+        "h": 19.9609375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "16,90",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.1.text",
+      "box": {
+        "x": 417,
+        "y": 260.328125,
+        "w": 305,
+        "h": 18.3984375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12.96,
+      "lineHeightPx": 18.4032,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Salbeibutter, Bergkäse",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.2.name",
+      "box": {
+        "x": 417,
+        "y": 291.5234375,
+        "w": 60.578125,
+        "h": 19.9609375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Saibling",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.2.tag",
+      "box": {
+        "x": 487.578125,
+        "y": 294.0234375,
+        "w": 22.1328125,
+        "h": 17.0390625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "D, G",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.2.price",
+      "box": {
+        "x": 678.984375,
+        "y": 291.5234375,
+        "w": 43.015625,
+        "h": 19.9609375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "23,00",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.items.2.text",
+      "box": {
+        "x": 417,
+        "y": 313.484375,
+        "w": 305,
+        "h": 36.796875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12.96,
+      "lineHeightPx": 18.4032,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Aus dem Fichtelgebirge, mit Petersilienkartoffeln und Rahmspinat",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.heading",
+      "box": {
+        "x": 417,
+        "y": 391.875,
+        "w": 305,
+        "h": 23.84375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 19.55,
+      "lineHeightPx": 23.851,
+      "trackingPx": -0.146625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Nachspeisen",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.items.0.name",
+      "box": {
+        "x": 417,
+        "y": 426.9140625,
+        "w": 145.3828125,
+        "h": 19.9609375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Zwetschgendatschi",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.items.0.tag",
+      "box": {
+        "x": 572.3828125,
+        "y": 429.4140625,
+        "w": 35.859375,
+        "h": 17.0390625
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "A, C, G",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.items.0.price",
+      "box": {
+        "x": 688.5234375,
+        "y": 426.9140625,
+        "w": 33.4765625,
+        "h": 19.9609375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "5,50",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.2.items.0.text",
+      "box": {
+        "x": 417,
+        "y": 448.875,
+        "w": 305,
+        "h": 18.3984375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12.96,
+      "lineHeightPx": 18.4032,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit geschlagener Sahne",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "note",
+      "box": {
+        "x": 72,
+        "y": 1033.9609375,
+        "w": 650,
+        "h": 17.0390625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt.",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

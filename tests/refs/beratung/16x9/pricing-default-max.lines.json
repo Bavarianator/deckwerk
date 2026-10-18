@@ -1,0 +1,211 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "tiers.0.name",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "tiers.0.price",
+    "lines": [
+      "€ 1.234"
+    ]
+  },
+  {
+    "slot": "tiers.0.period",
+    "lines": [
+      "Wettbewerbsfähig"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.0",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.1",
+    "lines": [
+      "Kundenbindung",
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.2",
+    "lines": [
+      "verbessert deutlich durch",
+      "schnellere"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.3",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "tiers.1.name",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "tiers.1.price",
+    "lines": [
+      "€ 1.234"
+    ]
+  },
+  {
+    "slot": "tiers.1.period",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.0",
+    "lines": [
+      "Kundenbindung",
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.1",
+    "lines": [
+      "verbessert deutlich durch",
+      "schnellere"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.2",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.3",
+    "lines": [
+      "durch schnellere Abläufe",
+      "im Vertrieb"
+    ]
+  },
+  {
+    "slot": "tiers.2.name",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "tiers.2.price",
+    "lines": [
+      "€ 1.234"
+    ]
+  },
+  {
+    "slot": "tiers.2.period",
+    "lines": [
+      "verbessert"
+    ]
+  },
+  {
+    "slot": "tiers.2.features.0",
+    "lines": [
+      "verbessert deutlich durch",
+      "schnellere"
+    ]
+  },
+  {
+    "slot": "tiers.2.features.1",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "tiers.2.features.2",
+    "lines": [
+      "durch schnellere Abläufe",
+      "im Vertrieb"
+    ]
+  },
+  {
+    "slot": "tiers.2.features.3",
+    "lines": [
+      "schnellere Abläufe im",
+      "Vertrieb und"
+    ]
+  },
+  {
+    "slot": "tiers.3.name",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "tiers.3.price",
+    "lines": [
+      "€ 1.234"
+    ]
+  },
+  {
+    "slot": "tiers.3.period",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "tiers.3.features.0",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "tiers.3.features.1",
+    "lines": [
+      "durch schnellere Abläufe",
+      "im Vertrieb"
+    ]
+  },
+  {
+    "slot": "tiers.3.features.2",
+    "lines": [
+      "schnellere Abläufe im",
+      "Vertrieb und"
+    ]
+  },
+  {
+    "slot": "tiers.3.features.3",
+    "lines": [
+      "Abläufe im Vertrieb",
+      "und klare"
+    ]
+  },
+  {
+    "slot": "note",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

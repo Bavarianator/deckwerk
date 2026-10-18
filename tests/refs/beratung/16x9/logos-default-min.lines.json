@@ -1,0 +1,32 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Drei Partner"
+    ]
+  },
+  {
+    "slot": "logos.0.name",
+    "lines": [
+      "Stadt Nord"
+    ]
+  },
+  {
+    "slot": "logos.1.name",
+    "lines": [
+      "Bildungswerk"
+    ]
+  },
+  {
+    "slot": "logos.2.name",
+    "lines": [
+      "Lernfabrik"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

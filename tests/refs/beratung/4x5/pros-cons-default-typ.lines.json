@@ -1,0 +1,82 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Abwägung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Der zweite Standort lohnt",
+      "sich trotz höherer Miete"
+    ]
+  },
+  {
+    "slot": "prosLabel",
+    "lines": [
+      "Dafür"
+    ]
+  },
+  {
+    "slot": "pros.0",
+    "lines": [
+      "60 zusätzliche Plätze in",
+      "der Innenstadt"
+    ]
+  },
+  {
+    "slot": "pros.1",
+    "lines": [
+      "Mittagsgeschäft mit",
+      "Büros in Laufweite"
+    ]
+  },
+  {
+    "slot": "pros.2",
+    "lines": [
+      "Küche entlastet den",
+      "Stammladen"
+    ]
+  },
+  {
+    "slot": "consLabel",
+    "lines": [
+      "Dagegen"
+    ]
+  },
+  {
+    "slot": "cons.0",
+    "lines": [
+      "Miete 38 % über dem",
+      "Stammladen"
+    ]
+  },
+  {
+    "slot": "cons.1",
+    "lines": [
+      "Sechs neue Stellen",
+      "im Service"
+    ]
+  },
+  {
+    "slot": "cons.2",
+    "lines": [
+      "Umbau dauert",
+      "vier Monate"
+    ]
+  },
+  {
+    "slot": "verdict",
+    "lines": [
+      "Ab 140 Gästen am Tag trägt sich der Standort",
+      "– der Stammladen schafft heute 190."
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

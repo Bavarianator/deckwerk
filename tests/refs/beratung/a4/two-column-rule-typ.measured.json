@@ -1,0 +1,443 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 650,
+        "h": 30.7734375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Die neue Plattform halbiert den manuellen Aufwand",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.left",
+      "box": {
+        "x": 72,
+        "y": 131.7734375,
+        "w": 650,
+        "h": 152.96875
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.heading",
+      "box": {
+        "x": 72,
+        "y": 159.7734375,
+        "w": 650,
+        "h": 20.734375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Heute",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.left.points.0",
+      "box": {
+        "x": 72,
+        "y": 204.546875,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.points.0",
+      "box": {
+        "x": 100,
+        "y": 194.5078125,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "6 Systeme, keine Schnittstellen",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.left.points.1",
+      "box": {
+        "x": 72,
+        "y": 236.625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.points.1",
+      "box": {
+        "x": 100,
+        "y": 226.5859375,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Berichte per Excel",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.left.points.2",
+      "box": {
+        "x": 72,
+        "y": 268.703125,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "left.points.2",
+      "box": {
+        "x": 100,
+        "y": 258.6640625,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "3 Tage bis zur Freigabe",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.right",
+      "box": {
+        "x": 72,
+        "y": 312.7421875,
+        "w": 650,
+        "h": 152.96875
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.heading",
+      "box": {
+        "x": 72,
+        "y": 340.7421875,
+        "w": 650,
+        "h": 20.734375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit Deckwerk",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.right.points.0",
+      "box": {
+        "x": 72,
+        "y": 385.515625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.points.0",
+      "box": {
+        "x": 100,
+        "y": 375.4765625,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Eine Plattform für alles",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.right.points.1",
+      "box": {
+        "x": 72,
+        "y": 417.59375,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.points.1",
+      "box": {
+        "x": 100,
+        "y": 407.5546875,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Berichte in Echtzeit",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.right.points.2",
+      "box": {
+        "x": 72,
+        "y": 449.671875,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "right.points.2",
+      "box": {
+        "x": 100,
+        "y": 439.6328125,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Freigabe in 2 Stunden",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 714.5546875,
+        "y": 1080.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

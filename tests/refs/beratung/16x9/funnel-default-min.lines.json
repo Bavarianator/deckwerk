@@ -1,0 +1,62 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Jeder zehnte Lead wird Kunde"
+    ]
+  },
+  {
+    "slot": "stages.0.value",
+    "lines": [
+      "400"
+    ]
+  },
+  {
+    "slot": "stages.0.label",
+    "lines": [
+      "Leads"
+    ]
+  },
+  {
+    "slot": "stages.1.value",
+    "lines": [
+      "120"
+    ]
+  },
+  {
+    "slot": "stages.1.label",
+    "lines": [
+      "Angebote"
+    ]
+  },
+  {
+    "slot": "_conv.1",
+    "lines": [
+      "30 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "stages.2.value",
+    "lines": [
+      "40"
+    ]
+  },
+  {
+    "slot": "stages.2.label",
+    "lines": [
+      "Kunden"
+    ]
+  },
+  {
+    "slot": "_conv.2",
+    "lines": [
+      "33 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

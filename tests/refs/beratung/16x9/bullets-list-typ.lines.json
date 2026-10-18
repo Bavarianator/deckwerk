@@ -1,0 +1,57 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Warum jetzt"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Drei Entwicklungen machen",
+      "den Markt jetzt attraktiv"
+    ]
+  },
+  {
+    "slot": "items.0.text",
+    "lines": [
+      "Regulierung schafft Nachfrage"
+    ]
+  },
+  {
+    "slot": "items.0.sub",
+    "lines": [
+      "Ab 2027 wird digitale Dokumentation Pflicht"
+    ]
+  },
+  {
+    "slot": "items.1.text",
+    "lines": [
+      "Wettbewerb ist fragmentiert"
+    ]
+  },
+  {
+    "slot": "items.1.sub",
+    "lines": [
+      "Kein Anbieter hat mehr als 8 % Marktanteil"
+    ]
+  },
+  {
+    "slot": "items.2.text",
+    "lines": [
+      "Kunden sind wechselbereit"
+    ]
+  },
+  {
+    "slot": "items.2.sub",
+    "lines": [
+      "62 % planen einen Anbieterwechsel in 24 Monaten"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

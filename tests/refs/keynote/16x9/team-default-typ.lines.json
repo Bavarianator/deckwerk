@@ -1,0 +1,120 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Team"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Ein Team aus Schule,",
+      "Sprachforschung und Software"
+    ]
+  },
+  {
+    "slot": "_ini.0.t",
+    "lines": [
+      "JH"
+    ]
+  },
+  {
+    "slot": "people.0.name",
+    "lines": [
+      "Julia Hartmann"
+    ]
+  },
+  {
+    "slot": "people.0.role",
+    "lines": [
+      "CEO · Lehrerin a. D."
+    ]
+  },
+  {
+    "slot": "people.0.line",
+    "lines": [
+      "12 Jahre Grundschule, kennt",
+      "den Alltag"
+    ]
+  },
+  {
+    "slot": "_ini.1.t",
+    "lines": [
+      "EY"
+    ]
+  },
+  {
+    "slot": "people.1.name",
+    "lines": [
+      "Dr. Emre Yilmaz"
+    ]
+  },
+  {
+    "slot": "people.1.role",
+    "lines": [
+      "Forschung"
+    ]
+  },
+  {
+    "slot": "people.1.line",
+    "lines": [
+      "Promotion in Sprachdidaktik"
+    ]
+  },
+  {
+    "slot": "_ini.2.t",
+    "lines": [
+      "LV"
+    ]
+  },
+  {
+    "slot": "people.2.name",
+    "lines": [
+      "Lena Vogt"
+    ]
+  },
+  {
+    "slot": "people.2.role",
+    "lines": [
+      "CTO"
+    ]
+  },
+  {
+    "slot": "people.2.line",
+    "lines": [
+      "Baute Lernapps für 2",
+      "Mio Nutzer"
+    ]
+  },
+  {
+    "slot": "_ini.3.t",
+    "lines": [
+      "PN"
+    ]
+  },
+  {
+    "slot": "people.3.name",
+    "lines": [
+      "Paul Neumann"
+    ]
+  },
+  {
+    "slot": "people.3.role",
+    "lines": [
+      "Vertrieb Schulen"
+    ]
+  },
+  {
+    "slot": "people.3.line",
+    "lines": [
+      "Kontakte zu 300",
+      "Schulträgern"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

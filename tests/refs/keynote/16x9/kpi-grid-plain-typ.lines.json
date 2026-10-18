@@ -1,0 +1,83 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Ergebnisse Q3"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wir wachsen schneller als",
+      "der Markt – und profitabel"
+    ]
+  },
+  {
+    "slot": "kpis.0.value",
+    "lines": [
+      "+34 %"
+    ]
+  },
+  {
+    "slot": "kpis.0.label",
+    "lines": [
+      "Umsatzwachstum"
+    ]
+  },
+  {
+    "slot": "kpis.0.delta",
+    "lines": [
+      "+12 % ggü. Plan"
+    ]
+  },
+  {
+    "slot": "kpis.1.value",
+    "lines": [
+      "2,4 Mio"
+    ]
+  },
+  {
+    "slot": "kpis.1.label",
+    "lines": [
+      "Wiederkehrender",
+      "Umsatz (ARR)"
+    ]
+  },
+  {
+    "slot": "kpis.1.delta",
+    "lines": [
+      "+0,6 Mio"
+    ]
+  },
+  {
+    "slot": "kpis.2.value",
+    "lines": [
+      "1,8 %"
+    ]
+  },
+  {
+    "slot": "kpis.2.label",
+    "lines": [
+      "Monatliche",
+      "Kündigungsrate"
+    ]
+  },
+  {
+    "slot": "kpis.2.delta",
+    "lines": [
+      "−0,4 Pp."
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Interne Finanzdaten, Stand 30.09.2026"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

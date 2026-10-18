@@ -1,0 +1,142 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_mark",
+      "box": {
+        "x": 444,
+        "y": 111.875,
+        "w": 764,
+        "h": 104
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 190,
+      "lineHeightPx": 155.8,
+      "trackingPx": -8.322,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "“",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 444,
+        "y": 237.875,
+        "w": 764,
+        "h": 283.03125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "statement",
+      "sizePx": 61,
+      "lineHeightPx": 70.76,
+      "trackingPx": -2.6718,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Seit dem Pilot korrigieren",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "meine Schüler ihre Texte",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "selbst – und verstehen",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "endlich, warum.",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 4,
+      "bg": "#111113"
+    },
+    {
+      "slot": "author",
+      "box": {
+        "x": 444,
+        "y": 542.90625,
+        "w": 764,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Julia Hartmann",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "role",
+      "box": {
+        "x": 444,
+        "y": 571.984375,
+        "w": 764,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Deutschlehrerin, Grundschule Nord",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

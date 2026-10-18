@@ -1,0 +1,50 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Drei Meilensteine bis zum Launch"
+    ]
+  },
+  {
+    "slot": "items.0.date",
+    "lines": [
+      "Q1"
+    ]
+  },
+  {
+    "slot": "items.0.title",
+    "lines": [
+      "Pilot"
+    ]
+  },
+  {
+    "slot": "items.1.date",
+    "lines": [
+      "Q2"
+    ]
+  },
+  {
+    "slot": "items.1.title",
+    "lines": [
+      "Beta"
+    ]
+  },
+  {
+    "slot": "items.2.date",
+    "lines": [
+      "Q3"
+    ]
+  },
+  {
+    "slot": "items.2.title",
+    "lines": [
+      "Launch"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

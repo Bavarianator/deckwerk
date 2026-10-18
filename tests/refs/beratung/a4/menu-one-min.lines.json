@@ -1,0 +1,26 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Speisekarte"
+    ]
+  },
+  {
+    "slot": "sections.0.heading",
+    "lines": [
+      "Heute"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.name",
+    "lines": [
+      "Linsensuppe"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.price",
+    "lines": [
+      "6,50"
+    ]
+  }
+]

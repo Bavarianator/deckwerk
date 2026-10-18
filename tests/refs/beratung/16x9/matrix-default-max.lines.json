@@ -1,0 +1,116 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "y",
+    "lines": [
+      "↑ Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "quadrants.0",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "quadrants.1",
+    "lines": [
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "quadrants.2",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "quadrants.3",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "items.0.label",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "items.1.label",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "items.2.label",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "items.3.label",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "items.4.label",
+    "lines": [
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "items.5.label",
+    "lines": [
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "items.6.label",
+    "lines": [
+      "Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "items.7.label",
+    "lines": [
+      "im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "x",
+    "lines": [
+      "Wettbewerbsfähigkeit →"
+    ]
+  },
+  {
+    "slot": "takeaway",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert",
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und",
+      "klare Verantwortung für",
+      "messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

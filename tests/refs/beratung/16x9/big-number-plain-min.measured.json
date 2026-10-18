@@ -1,0 +1,74 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "value",
+      "box": {
+        "x": 72,
+        "y": 224.0625,
+        "w": 980,
+        "h": 190
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "hero",
+      "sizePx": 200,
+      "lineHeightPx": 190,
+      "trackingPx": -8,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "41",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " %",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563",
+          "sizePx": 90,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "label",
+      "box": {
+        "x": 72,
+        "y": 436.0625,
+        "w": 900,
+        "h": 47.875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Weniger Fehler nach sechs Monaten",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

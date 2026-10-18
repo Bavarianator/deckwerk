@@ -1,0 +1,93 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "problem.heading",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "problem.text",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare",
+      "Verantwortung für messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "problem.points.0",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "problem.points.1",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "problem.points.2",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im",
+      "Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "solution.heading",
+    "lines": [
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "solution.text",
+    "lines": [
+      "verbessert deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare",
+      "Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "solution.points.0",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im",
+      "Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "solution.points.1",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb",
+      "und klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "solution.points.2",
+    "lines": [
+      "durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

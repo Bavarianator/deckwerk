@@ -1,0 +1,98 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 920.9765625,
+        "w": 40.734375,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vor Ort",
+          "bold": true,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 949.375,
+        "w": 650,
+        "h": 61.546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jede dritte Schule arbeitet schon",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "digital – der Rest wartet auf Lösungen",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 2,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 1024.921875,
+        "w": 650,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Besuch an der Grundschule Nord, September 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    }
+  ]
+}

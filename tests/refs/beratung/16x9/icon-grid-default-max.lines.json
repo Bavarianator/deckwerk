@@ -1,0 +1,108 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "items.0.head",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "items.0.sub",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert",
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "items.1.head",
+    "lines": [
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "items.1.sub",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "items.2.head",
+    "lines": [
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "items.2.sub",
+    "lines": [
+      "verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb",
+      "und klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "items.3.head",
+    "lines": [
+      "deutlich durch schnellere"
+    ]
+  },
+  {
+    "slot": "items.3.sub",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare",
+      "Verantwortung für messbare"
+    ]
+  },
+  {
+    "slot": "items.4.head",
+    "lines": [
+      "durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "items.4.sub",
+    "lines": [
+      "durch schnellere Abläufe im",
+      "Vertrieb und klare",
+      "Verantwortung für messbare",
+      "Ergebnisse"
+    ]
+  },
+  {
+    "slot": "items.5.head",
+    "lines": [
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "items.5.sub",
+    "lines": [
+      "schnellere Abläufe im Vertrieb",
+      "und klare Verantwortung für",
+      "messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

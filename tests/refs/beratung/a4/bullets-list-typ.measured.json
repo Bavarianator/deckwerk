@@ -1,0 +1,337 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 70.609375,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Warum jetzt",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 88.3984375,
+        "w": 650,
+        "h": 30.7734375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Drei Entwicklungen machen den Markt jetzt attraktiv",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.0",
+      "box": {
+        "x": 72,
+        "y": 172.96875,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.0.text",
+      "box": {
+        "x": 108,
+        "y": 160.171875,
+        "w": 614,
+        "h": 27.59375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Regulierung schafft Nachfrage",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.sub",
+      "box": {
+        "x": 108,
+        "y": 191.765625,
+        "w": 614,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ab 2027 wird digitale Dokumentation Pflicht",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.1",
+      "box": {
+        "x": 72,
+        "y": 266.640625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.1.text",
+      "box": {
+        "x": 108,
+        "y": 253.84375,
+        "w": 614,
+        "h": 27.59375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerb ist fragmentiert",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.sub",
+      "box": {
+        "x": 108,
+        "y": 285.4375,
+        "w": 614,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kein Anbieter hat mehr als 8 % Marktanteil",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.2",
+      "box": {
+        "x": 72,
+        "y": 360.3125,
+        "w": 14,
+        "h": 2
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.2.text",
+      "box": {
+        "x": 108,
+        "y": 347.515625,
+        "w": 614,
+        "h": 27.59375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 20,
+      "lineHeightPx": 27.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kunden sind wechselbereit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.sub",
+      "box": {
+        "x": 108,
+        "y": 379.109375,
+        "w": 614,
+        "h": 22.078125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "62 % planen einen Anbieterwechsel in 24 Monaten",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 714.5546875,
+        "y": 1080.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

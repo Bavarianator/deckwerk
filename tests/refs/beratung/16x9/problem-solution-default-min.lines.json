@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Aus Papier wird digital"
+    ]
+  },
+  {
+    "slot": "problem.heading",
+    "lines": [
+      "Heute"
+    ]
+  },
+  {
+    "slot": "problem.text",
+    "lines": [
+      "Formulare auf Papier"
+    ]
+  },
+  {
+    "slot": "solution.heading",
+    "lines": [
+      "Mit uns"
+    ]
+  },
+  {
+    "slot": "solution.text",
+    "lines": [
+      "Ein Klick im Portal"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

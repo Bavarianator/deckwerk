@@ -1,0 +1,50 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Zwei Gründer, ein Ziel"
+    ]
+  },
+  {
+    "slot": "_ini.0.t",
+    "lines": [
+      "AB"
+    ]
+  },
+  {
+    "slot": "people.0.name",
+    "lines": [
+      "Anna Berg"
+    ]
+  },
+  {
+    "slot": "people.0.role",
+    "lines": [
+      "CEO"
+    ]
+  },
+  {
+    "slot": "_ini.1.t",
+    "lines": [
+      "TK"
+    ]
+  },
+  {
+    "slot": "people.1.name",
+    "lines": [
+      "Tom Kraus"
+    ]
+  },
+  {
+    "slot": "people.1.role",
+    "lines": [
+      "CTO"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

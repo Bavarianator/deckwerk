@@ -1,0 +1,308 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 138.828125,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Umsatzentwicklung",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 116.828125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 51.24,
+      "lineHeightPx": 58.4136,
+      "trackingPx": -1.5372,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der Umsatz hat sich seit",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "2023 mehr als verdoppelt",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_unit",
+      "box": {
+        "x": 72,
+        "y": 251.625,
+        "w": 64.7265625,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "in Mio €",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_ann",
+      "box": {
+        "x": 606.859375,
+        "y": 247.625,
+        "w": 235.140625,
+        "h": 32.1328125
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_ann.text",
+      "box": {
+        "x": 606.859375,
+        "y": 251.625,
+        "w": 235.140625,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "CAGR 2022–2026e: +31,6 %",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "chart",
+      "box": {
+        "x": 72,
+        "y": 287.7578125,
+        "w": 770,
+        "h": 326.6484375
+      },
+      "build": 0,
+      "kind": "chart",
+      "spec": {
+        "type": "bar",
+        "categories": [
+          "2022",
+          "2023",
+          "2024",
+          "2025",
+          "2026e"
+        ],
+        "series": [
+          {
+            "name": "Umsatz",
+            "values": [
+              1.1,
+              1.4,
+              2,
+              2.6,
+              3.3
+            ]
+          },
+          {
+            "name": "Plan",
+            "values": [
+              1,
+              1.5,
+              1.9,
+              2.4,
+              3
+            ]
+          }
+        ],
+        "unit": "Mio €",
+        "highlight": "Umsatz",
+        "annotate": "cagr"
+      }
+    },
+    {
+      "slot": "_take",
+      "box": {
+        "x": 878,
+        "y": 247.625,
+        "w": 330,
+        "h": 366.78125
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "takeaway.value",
+      "box": {
+        "x": 878,
+        "y": 335.5390625,
+        "w": 330,
+        "h": 75.59375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+136 %",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "takeaway.text",
+      "box": {
+        "x": 878,
+        "y": 423.1328125,
+        "w": 330,
+        "h": 99.3515625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wachstum seit 2023 – getrieben durch das neue Abo-Modell",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 3,
+      "bg": "#111113"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 632.40625,
+        "w": 1136,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Geschäftsberichte 2022–2025, 2026 Prognose",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1184.125,
+        "y": 677.203125,
+        "w": 23.875,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

@@ -1,0 +1,247 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 650,
+        "h": 30.7734375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Eine Abfrage liefert den Wochenumsatz",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_panel",
+      "box": {
+        "x": 72,
+        "y": 131.7734375,
+        "w": 560,
+        "h": 174.375
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#F4F5F6",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "code",
+      "box": {
+        "x": 96,
+        "y": 151.7734375,
+        "w": 512,
+        "h": 134.375
+      },
+      "kind": "text",
+      "font": "body",
+      "fontFace": "Courier New",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "// Bestellungen der letzten sieben Tage laden",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "const seit = new Date(Date.now() - 7 * 864e5)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "const res = await fetch(`/api/orders?since=${seit.toISOString()}`)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "if (!res.ok) throw new Error(`HTTP ${res.status}`)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": " ",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "const",
+          "bold": false,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " orders = ",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "await",
+          "bold": false,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " res.json()",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "const",
+          "bold": false,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " umsatz = orders.reduce((s, o) => s + o.total, ",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "0",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ")",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "console.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 8,
+      "bg": "#F4F5F6"
+    },
+    {
+      "slot": "note",
+      "box": {
+        "x": 72,
+        "y": 326.1484375,
+        "w": 363.78125,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf.",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 714.5546875,
+        "y": 1080.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

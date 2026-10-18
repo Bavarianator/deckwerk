@@ -1,0 +1,355 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 65.40625,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Projektinfo",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 88.3984375,
+        "w": 650,
+        "h": 75.09375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 32.94,
+      "lineHeightPx": 37.5516,
+      "trackingPx": -0.9882,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ortho-Bot startet im",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Herbst an 20 Pilotschulen",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "lead",
+      "box": {
+        "x": 72,
+        "y": 203.4921875,
+        "w": 650,
+        "h": 53.765625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 19.2,
+      "lineHeightPx": 26.88,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "sections.0.heading",
+      "box": {
+        "x": 72,
+        "y": 279.2578125,
+        "w": 305,
+        "h": 17.359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.21,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Worum es geht",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "sections.0.text",
+      "box": {
+        "x": 72,
+        "y": 302.6171875,
+        "w": 305,
+        "h": 88.3125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 4,
+      "bg": "#111113"
+    },
+    {
+      "slot": "sections.1.heading",
+      "box": {
+        "x": 72,
+        "y": 412.9296875,
+        "w": 305,
+        "h": 17.359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.21,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Was wir brauchen",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "sections.1.text",
+      "box": {
+        "x": 72,
+        "y": 436.2890625,
+        "w": 305,
+        "h": 110.390625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Die Anmeldung ist bis zum 15. Oktober möglich.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 5,
+      "bg": "#111113"
+    },
+    {
+      "slot": "sections.2.heading",
+      "box": {
+        "x": 417,
+        "y": 279.2578125,
+        "w": 305,
+        "h": 17.359375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.21,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Datenschutz",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "sections.2.text",
+      "box": {
+        "x": 417,
+        "y": 302.6171875,
+        "w": 305,
+        "h": 88.3125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 4,
+      "bg": "#111113"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 1036.6015625,
+        "w": 650,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Stand Oktober 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 46.171875,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 716.875,
+        "y": 1080.796875,
+        "w": 5.125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

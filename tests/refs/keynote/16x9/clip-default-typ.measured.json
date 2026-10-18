@@ -1,0 +1,76 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_scrim",
+      "box": {
+        "x": 0,
+        "y": 0,
+        "w": 1280,
+        "h": 324
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false,
+      "gradient": {
+        "angle": 180,
+        "stops": [
+          {
+            "color": "#111113",
+            "alpha": 0.85,
+            "pos": 0
+          },
+          {
+            "color": "#111113",
+            "alpha": 0.55,
+            "pos": 0.55
+          },
+          {
+            "color": "#111113",
+            "alpha": 0,
+            "pos": 1
+          }
+        ]
+      }
+    },
+    {
+      "slot": "hook",
+      "box": {
+        "x": 72,
+        "y": 108,
+        "w": 900,
+        "h": 114.78125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 51.24,
+      "lineHeightPx": 57.3888,
+      "trackingPx": -1.5372,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Warum neun von zehn",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Pitches scheitern",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    }
+  ]
+}

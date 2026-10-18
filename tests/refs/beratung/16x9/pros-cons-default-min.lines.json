@@ -1,0 +1,50 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Der Umzug lohnt sich"
+    ]
+  },
+  {
+    "slot": "prosLabel",
+    "lines": [
+      "Dafür"
+    ]
+  },
+  {
+    "slot": "pros.0",
+    "lines": [
+      "Mehr Platz"
+    ]
+  },
+  {
+    "slot": "pros.1",
+    "lines": [
+      "Bessere Lage"
+    ]
+  },
+  {
+    "slot": "consLabel",
+    "lines": [
+      "Dagegen"
+    ]
+  },
+  {
+    "slot": "cons.0",
+    "lines": [
+      "Höhere Miete"
+    ]
+  },
+  {
+    "slot": "cons.1",
+    "lines": [
+      "Umzugskosten"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

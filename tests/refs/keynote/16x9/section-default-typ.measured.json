@@ -1,0 +1,64 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 486.6015625,
+        "w": 980,
+        "h": 98.28125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 92.72,
+      "lineHeightPx": 98.2832,
+      "trackingPx": -4.06114,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Unser Plan",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 602.8828125,
+        "w": 780,
+        "h": 33.1171875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Drei Hebel, die sich gegenseitig verstärken",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

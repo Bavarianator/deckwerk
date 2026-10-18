@@ -1,0 +1,271 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "So funktioniert es",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.0",
+      "box": {
+        "x": 72,
+        "y": 148.875,
+        "w": 360,
+        "h": 135.8984375
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.0",
+      "box": {
+        "x": 72,
+        "y": 184.875,
+        "w": 21.6640625,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": -0.57,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "01",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.0.title",
+      "box": {
+        "x": 72,
+        "y": 237.953125,
+        "w": 348,
+        "h": 42.8203125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 35.1,
+      "lineHeightPx": 42.822,
+      "trackingPx": -0.26325,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Anmelden",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.1",
+      "box": {
+        "x": 460,
+        "y": 148.875,
+        "w": 360,
+        "h": 135.8984375
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.1",
+      "box": {
+        "x": 460,
+        "y": 184.875,
+        "w": 21.6640625,
+        "h": 25.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": -0.57,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "02",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.1.title",
+      "box": {
+        "x": 460,
+        "y": 237.953125,
+        "w": 348,
+        "h": 42.8203125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 35.1,
+      "lineHeightPx": 42.822,
+      "trackingPx": -0.26325,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Verbinden",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.2",
+      "box": {
+        "x": 848,
+        "y": 148.875,
+        "w": 360,
+        "h": 135.8984375
+      },
+      "build": 2,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.2",
+      "box": {
+        "x": 848,
+        "y": 184.875,
+        "w": 21.6640625,
+        "h": 25.078125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": -0.57,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "03",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.2.title",
+      "box": {
+        "x": 848,
+        "y": 237.953125,
+        "w": 348,
+        "h": 42.8203125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 35.1,
+      "lineHeightPx": 42.822,
+      "trackingPx": -0.26325,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Loslegen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

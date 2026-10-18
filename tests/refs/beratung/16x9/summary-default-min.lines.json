@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Wir empfehlen den Pilot"
+    ]
+  },
+  {
+    "slot": "_n.0",
+    "lines": [
+      "01"
+    ]
+  },
+  {
+    "slot": "points.0.title",
+    "lines": [
+      "Der Bedarf ist belegt"
+    ]
+  },
+  {
+    "slot": "_n.1",
+    "lines": [
+      "02"
+    ]
+  },
+  {
+    "slot": "points.1.title",
+    "lines": [
+      "Das Risiko ist begrenzt"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

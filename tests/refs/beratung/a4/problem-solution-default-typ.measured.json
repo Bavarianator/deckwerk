@@ -1,0 +1,561 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 76.3828125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Unser Ansatz",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 88.3984375,
+        "w": 650,
+        "h": 61.546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Aus drei Wochen Papierweg",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "wird ein Antrag in zehn Minuten",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.problem",
+      "box": {
+        "x": 72,
+        "y": 379.6015625,
+        "w": 650,
+        "h": 189.3671875
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "problem.heading",
+      "box": {
+        "x": 72,
+        "y": 407.6015625,
+        "w": 650,
+        "h": 14.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Heute",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "problem.text",
+      "box": {
+        "x": 72,
+        "y": 436,
+        "w": 650,
+        "h": 20.734375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Anträge wandern per Hauspost durch vier Abteilungen.",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.problem.0",
+      "box": {
+        "x": 72,
+        "y": 480.7734375,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#16202B",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "problem.points.0",
+      "box": {
+        "x": 100,
+        "y": 470.734375,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ø 21 Tage Bearbeitung",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.problem.1",
+      "box": {
+        "x": 72,
+        "y": 516.8515625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#16202B",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "problem.points.1",
+      "box": {
+        "x": 100,
+        "y": 506.8125,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jeder fünfte Antrag unvollständig",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.problem.2",
+      "box": {
+        "x": 72,
+        "y": 552.9296875,
+        "w": 14,
+        "h": 2
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#16202B",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "problem.points.2",
+      "box": {
+        "x": 100,
+        "y": 542.890625,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kein Status für Bürger",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow",
+      "box": {
+        "x": 72,
+        "y": 588.96875,
+        "w": 64,
+        "h": 64
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_arrow.icon",
+      "box": {
+        "x": 90,
+        "y": 606.96875,
+        "w": 28,
+        "h": 28
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#5A6470\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-right\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg>",
+      "name": "arrow-right",
+      "color": "#5A6470",
+      "png": "data:image/png;base64,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"
+    },
+    {
+      "slot": "_card.solution",
+      "box": {
+        "x": 72,
+        "y": 672.96875,
+        "w": 650,
+        "h": 189.3671875
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "solution.heading",
+      "box": {
+        "x": 72,
+        "y": 700.96875,
+        "w": 650,
+        "h": 14.3984375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit dem Portal",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "solution.text",
+      "box": {
+        "x": 72,
+        "y": 729.3671875,
+        "w": 650,
+        "h": 20.734375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Bürger stellen den Antrag online, das System prüft sofort.",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.solution.0",
+      "box": {
+        "x": 72,
+        "y": 774.140625,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "solution.points.0",
+      "box": {
+        "x": 100,
+        "y": 764.1015625,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ø 10 Minuten bis zur Eingangsbestätigung",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.solution.1",
+      "box": {
+        "x": 72,
+        "y": 810.21875,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "solution.points.1",
+      "box": {
+        "x": 100,
+        "y": 800.1796875,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pflichtfelder verhindern Lücken",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pd.solution.2",
+      "box": {
+        "x": 72,
+        "y": 846.296875,
+        "w": 14,
+        "h": 2
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "solution.points.2",
+      "box": {
+        "x": 100,
+        "y": 836.2578125,
+        "w": 622,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Status jederzeit online",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 714.5546875,
+        "y": 1080.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Roadmap"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "In vier Schritten zur",
+      "Marktreife bis Ende 2027"
+    ]
+  },
+  {
+    "slot": "items.0.date",
+    "lines": [
+      "Q4 2026"
+    ]
+  },
+  {
+    "slot": "items.0.title",
+    "lines": [
+      "Pilot mit 3 Kunden"
+    ]
+  },
+  {
+    "slot": "items.0.desc",
+    "lines": [
+      "Validierung der Kernfunktionen"
+    ]
+  },
+  {
+    "slot": "items.1.date",
+    "lines": [
+      "Q1 2027"
+    ]
+  },
+  {
+    "slot": "items.1.title",
+    "lines": [
+      "Beta-Programm"
+    ]
+  },
+  {
+    "slot": "items.1.desc",
+    "lines": [
+      "25 Kunden, Feedback-Schleifen"
+    ]
+  },
+  {
+    "slot": "items.2.date",
+    "lines": [
+      "Q2 2027"
+    ]
+  },
+  {
+    "slot": "items.2.title",
+    "lines": [
+      "Marktstart DACH"
+    ]
+  },
+  {
+    "slot": "items.2.desc",
+    "lines": [
+      "Vertrieb und Partner an Bord"
+    ]
+  },
+  {
+    "slot": "items.3.date",
+    "lines": [
+      "Q4 2027"
+    ]
+  },
+  {
+    "slot": "items.3.title",
+    "lines": [
+      "Internationalisierung"
+    ]
+  },
+  {
+    "slot": "items.3.desc",
+    "lines": [
+      "Start in Benelux und Nordics"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

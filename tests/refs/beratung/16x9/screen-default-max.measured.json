@@ -1,0 +1,161 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der Export dauert drei Klicks",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "wert wert wert wert wert wert",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_frame",
+      "box": {
+        "x": 72,
+        "y": 196.75,
+        "w": 650.078125,
+        "h": 451.2421875
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#F4F5F6",
+        "alpha": 1
+      },
+      "border": {
+        "color": "#DDE1E5",
+        "width": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "_url",
+      "box": {
+        "x": 139.109375,
+        "y": 204.3828125,
+        "w": 515.859375,
+        "h": 30.9296875
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#FFFFFF",
+        "alpha": 1
+      },
+      "radius": 999,
+      "ellipse": false
+    },
+    {
+      "slot": "url",
+      "box": {
+        "x": 155.109375,
+        "y": 207.78125,
+        "w": 483.859375,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "example.com/export wert wert wert wert wert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "caption",
+      "box": {
+        "x": 762.078125,
+        "y": 196.75,
+        "w": 420,
+        "h": 451.25
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Format wählen, prüfen, herunterladen wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wert wer",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 4,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 1,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 214.953125,
+        "w": 98.171875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 245.75,
+        "w": 600,
+        "h": 129.9375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 38,
+      "lineHeightPx": 43.32,
+      "trackingPx": -0.57,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "Kundenzufriedenheit steigt",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "deutlich durch neue Prozesse im",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 3,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 389.6875,
+        "w": 600,
+        "h": 99.3515625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem Mehrwert Digitalisierung",
+          "bold": false,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 3,
+      "bg": "#0B5563"
+    }
+  ]
+}

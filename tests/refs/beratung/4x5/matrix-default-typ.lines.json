@@ -1,0 +1,99 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Priorisierung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Self-Service und Rechnungsprozess bringen",
+      "den größten Nutzen bei wenig Aufwand"
+    ]
+  },
+  {
+    "slot": "y",
+    "lines": [
+      "↑ Umsetzbarkeit"
+    ]
+  },
+  {
+    "slot": "quadrants.0",
+    "lines": [
+      "Später prüfen"
+    ]
+  },
+  {
+    "slot": "quadrants.1",
+    "lines": [
+      "Sofort umsetzen"
+    ]
+  },
+  {
+    "slot": "quadrants.2",
+    "lines": [
+      "Verwerfen"
+    ]
+  },
+  {
+    "slot": "quadrants.3",
+    "lines": [
+      "Groß planen"
+    ]
+  },
+  {
+    "slot": "items.0.label",
+    "lines": [
+      "Self-Service-Portal"
+    ]
+  },
+  {
+    "slot": "items.1.label",
+    "lines": [
+      "Rechnungsprozess"
+    ]
+  },
+  {
+    "slot": "items.2.label",
+    "lines": [
+      "Chatbot"
+    ]
+  },
+  {
+    "slot": "items.3.label",
+    "lines": [
+      "Neues CRM"
+    ]
+  },
+  {
+    "slot": "items.4.label",
+    "lines": [
+      "Filialumbau"
+    ]
+  },
+  {
+    "slot": "x",
+    "lines": [
+      "Nutzen für Kunden →"
+    ]
+  },
+  {
+    "slot": "takeaway",
+    "lines": [
+      "Zwei Vorhaben",
+      "liegen klar im",
+      "Zielquadranten",
+      "und lassen sich",
+      "mit bestehenden",
+      "Teams bis Q2",
+      "umsetzen."
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

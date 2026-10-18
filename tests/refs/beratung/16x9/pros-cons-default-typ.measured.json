@@ -1,0 +1,539 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 70.71875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Abwägung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der zweite Standort lohnt sich trotz höherer Miete",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "prosLabel",
+      "box": {
+        "x": 72,
+        "y": 200.671875,
+        "w": 540,
+        "h": 31.71875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Dafür",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.pros.0",
+      "box": {
+        "x": 72,
+        "y": 250.9453125,
+        "w": 18,
+        "h": 32
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.pros.0",
+      "box": {
+        "x": 72,
+        "y": 257.9453125,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADq0lEQVR4AezY3U7UQBQH8DNDr4zRQEiMwvoAajR6q8JuICQ+Bl74BEYC3ngjuLyC0fgcuAqKXpgYjUF9AD68EUVjDDHQjv3vsmSBdk+7/didchomu+2ZdmZ+nOm2o0m2tgIC1JaHSIAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABOOn0HMBYsWPjZAQ/fKw6Xp8aelmfEn5+5PlKL+I48F0NBU5Yp2nI9KqUlF6rZjzLv+qfHTUZAKD1Sambik+5yXPsxgC8jZk5rutuyHfi00EHCIzCtFNBAqwAQKCzQ8M3Y5DMeQ2dx2t+cZm3q4kEDIHEV6MShzDNFPIl3ZnH/7hyJshQMCTnjmAEeNrs0ufI5gU69SKKC0cSBUGKAscAoDlBVOIYCyxLEeKGscq4HywMkLCO2kWvLCQaet+xXLE8c6oLxxrALqBo41QN3CiQXU6YocGklSsNgV9m5FhraMa8px3q3i9iXSTXrgwa1TfY7zXilVX5HrM96HxnJC3Obi1QdOY7ErYD3Hx/E8M7pera3Eu2q82pGATvzbmSZSZ2hvU6QGtdFL56fHLuwdSv0D0yoMB0sWRqmRrHEwqEhAqHikKOon0m+yQAJO2LQCDlG8JQtKsEUC+uvRI2PMjyPt+EhG6eXGgI5EOzrQmLomcJkUfcj6nnO405GAtqq134rMCG6Khy+giAaUMa/TyCRAq3YrgUqX85hW1LJFAkL91bkXX4m8G0FIpCjxdAMOhSyw5z2tMN5miQyEE7JC6lUcjDkWEE5IG6mXcTDe2EA4KS2kUBy/kW5OK7/5/b+OgHB2UiQbcDDOjoFwcqdItuBgjImAcIG4SDbhYHyJgXCROpK3e7PtI8BU5aJtOBhbKkC40Gp18Yvr7Vb8Z5lf2D9Q8JyknWU8UOLB8kAMO/6LZ95PyGg2SkkNCI1tVBc/kTHXQzMJUKjYUvBrZXJ68WxpNvLXVIHQKqZbaCahQmvp4cxpdjN1IFwYmeS6bjkwk1DBL3jxzGM9x28q0V8mQOgRkCjk3Q3Tirrw4ol+xS2ZAaEjmG7IEmQL9lGMoe+9ekNG/w6XTIHQ2Hq1tuJqfdXPmmf+Dfyx5+5cwzHEbCiZAwHh28OFtbXZ55Orc7U7G/NL6zhmS8kFyBaMoH4WBShobKkcEyCGUYAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABM+vhnEwDTDAtSUCPn8DwAA//8RmOfQAAAABklEQVQDAHGx3aBDPSAKAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "pros.0",
+      "box": {
+        "x": 106,
+        "y": 250.390625,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "60 zusätzliche Plätze in der Innenstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.pros.1",
+      "box": {
+        "x": 72,
+        "y": 302.0625,
+        "w": 18,
+        "h": 32
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.pros.1",
+      "box": {
+        "x": 72,
+        "y": 309.0625,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADq0lEQVR4AezY3U7UQBQH8DNDr4zRQEiMwvoAajR6q8JuICQ+Bl74BEYC3ngjuLyC0fgcuAqKXpgYjUF9AD68EUVjDDHQjv3vsmSBdk+7/didchomu+2ZdmZ+nOm2o0m2tgIC1JaHSIAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABOOn0HMBYsWPjZAQ/fKw6Xp8aelmfEn5+5PlKL+I48F0NBU5Yp2nI9KqUlF6rZjzLv+qfHTUZAKD1Sambik+5yXPsxgC8jZk5rutuyHfi00EHCIzCtFNBAqwAQKCzQ8M3Y5DMeQ2dx2t+cZm3q4kEDIHEV6MShzDNFPIl3ZnH/7hyJshQMCTnjmAEeNrs0ufI5gU69SKKC0cSBUGKAscAoDlBVOIYCyxLEeKGscq4HywMkLCO2kWvLCQaet+xXLE8c6oLxxrALqBo41QN3CiQXU6YocGklSsNgV9m5FhraMa8px3q3i9iXSTXrgwa1TfY7zXilVX5HrM96HxnJC3Obi1QdOY7ErYD3Hx/E8M7pera3Eu2q82pGATvzbmSZSZ2hvU6QGtdFL56fHLuwdSv0D0yoMB0sWRqmRrHEwqEhAqHikKOon0m+yQAJO2LQCDlG8JQtKsEUC+uvRI2PMjyPt+EhG6eXGgI5EOzrQmLomcJkUfcj6nnO405GAtqq134rMCG6Khy+giAaUMa/TyCRAq3YrgUqX85hW1LJFAkL91bkXX4m8G0FIpCjxdAMOhSyw5z2tMN5miQyEE7JC6lUcjDkWEE5IG6mXcTDe2EA4KS2kUBy/kW5OK7/5/b+OgHB2UiQbcDDOjoFwcqdItuBgjImAcIG4SDbhYHyJgXCROpK3e7PtI8BU5aJtOBhbKkC40Gp18Yvr7Vb8Z5lf2D9Q8JyknWU8UOLB8kAMO/6LZ95PyGg2SkkNCI1tVBc/kTHXQzMJUKjYUvBrZXJ68WxpNvLXVIHQKqZbaCahQmvp4cxpdjN1IFwYmeS6bjkwk1DBL3jxzGM9x28q0V8mQOgRkCjk3Q3Tirrw4ol+xS2ZAaEjmG7IEmQL9lGMoe+9ekNG/w6XTIHQ2Hq1tuJqfdXPmmf+Dfyx5+5cwzHEbCiZAwHh28OFtbXZ55Orc7U7G/NL6zhmS8kFyBaMoH4WBShobKkcEyCGUYAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABM+vhnEwDTDAtSUCPn8DwAA//8RmOfQAAAABklEQVQDAHGx3aBDPSAKAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "pros.1",
+      "box": {
+        "x": 106,
+        "y": 301.5078125,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mittagsgeschäft mit Büros in Laufweite",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.pros.2",
+      "box": {
+        "x": 72,
+        "y": 353.1796875,
+        "w": 18,
+        "h": 32
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.pros.2",
+      "box": {
+        "x": 72,
+        "y": 360.1796875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADq0lEQVR4AezY3U7UQBQH8DNDr4zRQEiMwvoAajR6q8JuICQ+Bl74BEYC3ngjuLyC0fgcuAqKXpgYjUF9AD68EUVjDDHQjv3vsmSBdk+7/didchomu+2ZdmZ+nOm2o0m2tgIC1JaHSIAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABOOn0HMBYsWPjZAQ/fKw6Xp8aelmfEn5+5PlKL+I48F0NBU5Yp2nI9KqUlF6rZjzLv+qfHTUZAKD1Sambik+5yXPsxgC8jZk5rutuyHfi00EHCIzCtFNBAqwAQKCzQ8M3Y5DMeQ2dx2t+cZm3q4kEDIHEV6MShzDNFPIl3ZnH/7hyJshQMCTnjmAEeNrs0ufI5gU69SKKC0cSBUGKAscAoDlBVOIYCyxLEeKGscq4HywMkLCO2kWvLCQaet+xXLE8c6oLxxrALqBo41QN3CiQXU6YocGklSsNgV9m5FhraMa8px3q3i9iXSTXrgwa1TfY7zXilVX5HrM96HxnJC3Obi1QdOY7ErYD3Hx/E8M7pera3Eu2q82pGATvzbmSZSZ2hvU6QGtdFL56fHLuwdSv0D0yoMB0sWRqmRrHEwqEhAqHikKOon0m+yQAJO2LQCDlG8JQtKsEUC+uvRI2PMjyPt+EhG6eXGgI5EOzrQmLomcJkUfcj6nnO405GAtqq134rMCG6Khy+giAaUMa/TyCRAq3YrgUqX85hW1LJFAkL91bkXX4m8G0FIpCjxdAMOhSyw5z2tMN5miQyEE7JC6lUcjDkWEE5IG6mXcTDe2EA4KS2kUBy/kW5OK7/5/b+OgHB2UiQbcDDOjoFwcqdItuBgjImAcIG4SDbhYHyJgXCROpK3e7PtI8BU5aJtOBhbKkC40Gp18Yvr7Vb8Z5lf2D9Q8JyknWU8UOLB8kAMO/6LZ95PyGg2SkkNCI1tVBc/kTHXQzMJUKjYUvBrZXJ68WxpNvLXVIHQKqZbaCahQmvp4cxpdjN1IFwYmeS6bjkwk1DBL3jxzGM9x28q0V8mQOgRkCjk3Q3Tirrw4ol+xS2ZAaEjmG7IEmQL9lGMoe+9ekNG/w6XTIHQ2Hq1tuJqfdXPmmf+Dfyx5+5cwzHEbCiZAwHh28OFtbXZ55Orc7U7G/NL6zhmS8kFyBaMoH4WBShobKkcEyCGUYAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABM+vhnEwDTDAtSUCPn8DwAA//8RmOfQAAAABklEQVQDAHGx3aBDPSAKAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "pros.2",
+      "box": {
+        "x": 106,
+        "y": 352.625,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Küche entlastet den Stammladen",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "consLabel",
+      "box": {
+        "x": 668,
+        "y": 200.671875,
+        "w": 540,
+        "h": 31.71875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Dagegen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.cons.0",
+      "box": {
+        "x": 668,
+        "y": 250.9453125,
+        "w": 18,
+        "h": 32
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.cons.0",
+      "box": {
+        "x": 668,
+        "y": 257.9453125,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#B83227\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>",
+      "name": "x",
+      "color": "#B83227",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAD/0lEQVR4Aezay04UQRQG4Kru1h2SeAkx0Y0QcQEYhi0RMCGgb4ELn8CNb2B8BaPxKRCCQUzYmAhEYCFE3OjKC4aYuNDuKeufsZvBqeYwU7eOFpmiL9VT55yP6pnpoSMWfo4VCEDH8jAWgAIQIUB0hxkUgAgBojvMoABECBDdYQYFIEKA6A4zKAARAkR3mEEBiBAgujufQcSA/1q3NtD8yMClhdrgk4XRwceLQ/2XfQOZzkcLaH5g4EwUR68lyhzj7E79VLz2rDY4Ire9PBZGr17nSbQhgzfyEaeTV0tjV3rldtcPLSDeE91nnPfl0TnnF7hgLxZH+ofyfa6WzZh8mTN+viXmxbR+6l7LdserWkDKaJydFXHyspmw8gjjOxELMZmMbXpwLaAkSh/IhL7KdvQhExVJsrI0fG34aIf5LZzSZTiCiS89P9hDnahaQNNr7w94mk4ywfYVSZzLErGCv66iz8gujI1TWjlzZE5Rmk2N7+x81wmmBYTAM5t72zxLJ5RImEmWTjfglM0c5IKckBty1GnaQAiORJAQEsP2kWYByRUO6jAChIFcIbnEQV3GgDCYbSTXOKjJKBAGtIXkAwf1GAfCoKaRfOGgFitAGNgUkk8c1GENCIP/Qer6I4BvHNRgFQgBukWqAg7ytw6EIJ0iVQUHuTsBQqCTIlUJB3k7A0IwEimJV0Ucr5ZdW+HTOsbAWK6aUyAUhQJRqPKyhPFexmXDga1NXnjiOXhu624X686BUBQKRcFqJBzR0jziIAsvQAhcIDFxgG1lE+IAkDhW2e9gpzegojZRrLWv8PZdrvd4Azp8t1K85hQKvBff+eDYYpfjFS9AKBiFM/ldEVmvPAbH4jnksRYOcA6EQlGwEke+5jDVa5JHJKdAx+OwfZ5l4zzNxpXvbp6QnAHROOkE3q3QuIfvuMvOTidAJ8XJk5zx9I+APH7r0jpQpzh5clWZSVaBusWpEpI1IF2cqiBZATKFUwUk40CmcXwjGQWyheMTyRiQbRxfSEaAXOH4QNIGco3jGkkLCPco1uN4WXXhKQT7Fqd8Eh/48qJML5tji5uI1TZ249otfu79HkXcl9iWnGD7UZbemN56u9XWZ3jH7MbuG8RSX+DyvurdoyhxcLHZ/Osa1igZDrEQU4lU8pyT7tY6xXCPohDicx4M67ZPqzzW30sgCc6mcF9i0SfEJ+/3KEa/sjH5JddT2R6JrF5zcVoVAIcrjbVb6zub0c+sJnNp5FPP6mP+71Hc3vswu747J9vd25vvPjYy9fhrxnA+WqeYRwdnoQMQQR2AAhAhQHSHGRSACAGiO8ygAEQIEN1hBgUgQoDoDjMoABECRPf/O4MImLw7AOUSJcvfAAAA//8zLswGAAAABklEQVQDAP9V369C2eZtAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "cons.0",
+      "box": {
+        "x": 702,
+        "y": 250.390625,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Miete 38 % über dem Stammladen",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.cons.1",
+      "box": {
+        "x": 668,
+        "y": 302.0625,
+        "w": 18,
+        "h": 32
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.cons.1",
+      "box": {
+        "x": 668,
+        "y": 309.0625,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#B83227\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>",
+      "name": "x",
+      "color": "#B83227",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAD/0lEQVR4Aezay04UQRQG4Kru1h2SeAkx0Y0QcQEYhi0RMCGgb4ELn8CNb2B8BaPxKRCCQUzYmAhEYCFE3OjKC4aYuNDuKeufsZvBqeYwU7eOFpmiL9VT55yP6pnpoSMWfo4VCEDH8jAWgAIQIUB0hxkUgAgBojvMoABECBDdYQYFIEKA6A4zKAARAkR3mEEBiBAgujufQcSA/1q3NtD8yMClhdrgk4XRwceLQ/2XfQOZzkcLaH5g4EwUR68lyhzj7E79VLz2rDY4Ire9PBZGr17nSbQhgzfyEaeTV0tjV3rldtcPLSDeE91nnPfl0TnnF7hgLxZH+ofyfa6WzZh8mTN+viXmxbR+6l7LdserWkDKaJydFXHyspmw8gjjOxELMZmMbXpwLaAkSh/IhL7KdvQhExVJsrI0fG34aIf5LZzSZTiCiS89P9hDnahaQNNr7w94mk4ywfYVSZzLErGCv66iz8gujI1TWjlzZE5Rmk2N7+x81wmmBYTAM5t72zxLJ5RImEmWTjfglM0c5IKckBty1GnaQAiORJAQEsP2kWYByRUO6jAChIFcIbnEQV3GgDCYbSTXOKjJKBAGtIXkAwf1GAfCoKaRfOGgFitAGNgUkk8c1GENCIP/Qer6I4BvHNRgFQgBukWqAg7ytw6EIJ0iVQUHuTsBQqCTIlUJB3k7A0IwEimJV0Ucr5ZdW+HTOsbAWK6aUyAUhQJRqPKyhPFexmXDga1NXnjiOXhu624X686BUBQKRcFqJBzR0jziIAsvQAhcIDFxgG1lE+IAkDhW2e9gpzegojZRrLWv8PZdrvd4Azp8t1K85hQKvBff+eDYYpfjFS9AKBiFM/ldEVmvPAbH4jnksRYOcA6EQlGwEke+5jDVa5JHJKdAx+OwfZ5l4zzNxpXvbp6QnAHROOkE3q3QuIfvuMvOTidAJ8XJk5zx9I+APH7r0jpQpzh5clWZSVaBusWpEpI1IF2cqiBZATKFUwUk40CmcXwjGQWyheMTyRiQbRxfSEaAXOH4QNIGco3jGkkLCPco1uN4WXXhKQT7Fqd8Eh/48qJML5tji5uI1TZ249otfu79HkXcl9iWnGD7UZbemN56u9XWZ3jH7MbuG8RSX+DyvurdoyhxcLHZ/Osa1igZDrEQU4lU8pyT7tY6xXCPohDicx4M67ZPqzzW30sgCc6mcF9i0SfEJ+/3KEa/sjH5JddT2R6JrF5zcVoVAIcrjbVb6zub0c+sJnNp5FPP6mP+71Hc3vswu747J9vd25vvPjYy9fhrxnA+WqeYRwdnoQMQQR2AAhAhQHSHGRSACAGiO8ygAEQIEN1hBgUgQoDoDjMoABECRPf/O4MImLw7AOUSJcvfAAAA//8zLswGAAAABklEQVQDAP9V369C2eZtAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "cons.1",
+      "box": {
+        "x": 702,
+        "y": 301.5078125,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sechs neue Stellen im Service",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.cons.2",
+      "box": {
+        "x": 668,
+        "y": 353.1796875,
+        "w": 18,
+        "h": 32
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.cons.2",
+      "box": {
+        "x": 668,
+        "y": 360.1796875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#B83227\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>",
+      "name": "x",
+      "color": "#B83227",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAD/0lEQVR4Aezay04UQRQG4Kru1h2SeAkx0Y0QcQEYhi0RMCGgb4ELn8CNb2B8BaPxKRCCQUzYmAhEYCFE3OjKC4aYuNDuKeufsZvBqeYwU7eOFpmiL9VT55yP6pnpoSMWfo4VCEDH8jAWgAIQIUB0hxkUgAgBojvMoABECBDdYQYFIEKA6A4zKAARAkR3mEEBiBAgujufQcSA/1q3NtD8yMClhdrgk4XRwceLQ/2XfQOZzkcLaH5g4EwUR68lyhzj7E79VLz2rDY4Ire9PBZGr17nSbQhgzfyEaeTV0tjV3rldtcPLSDeE91nnPfl0TnnF7hgLxZH+ofyfa6WzZh8mTN+viXmxbR+6l7LdserWkDKaJydFXHyspmw8gjjOxELMZmMbXpwLaAkSh/IhL7KdvQhExVJsrI0fG34aIf5LZzSZTiCiS89P9hDnahaQNNr7w94mk4ywfYVSZzLErGCv66iz8gujI1TWjlzZE5Rmk2N7+x81wmmBYTAM5t72zxLJ5RImEmWTjfglM0c5IKckBty1GnaQAiORJAQEsP2kWYByRUO6jAChIFcIbnEQV3GgDCYbSTXOKjJKBAGtIXkAwf1GAfCoKaRfOGgFitAGNgUkk8c1GENCIP/Qer6I4BvHNRgFQgBukWqAg7ytw6EIJ0iVQUHuTsBQqCTIlUJB3k7A0IwEimJV0Ucr5ZdW+HTOsbAWK6aUyAUhQJRqPKyhPFexmXDga1NXnjiOXhu624X686BUBQKRcFqJBzR0jziIAsvQAhcIDFxgG1lE+IAkDhW2e9gpzegojZRrLWv8PZdrvd4Azp8t1K85hQKvBff+eDYYpfjFS9AKBiFM/ldEVmvPAbH4jnksRYOcA6EQlGwEke+5jDVa5JHJKdAx+OwfZ5l4zzNxpXvbp6QnAHROOkE3q3QuIfvuMvOTidAJ8XJk5zx9I+APH7r0jpQpzh5clWZSVaBusWpEpI1IF2cqiBZATKFUwUk40CmcXwjGQWyheMTyRiQbRxfSEaAXOH4QNIGco3jGkkLCPco1uN4WXXhKQT7Fqd8Eh/48qJML5tji5uI1TZ249otfu79HkXcl9iWnGD7UZbemN56u9XWZ3jH7MbuG8RSX+DyvurdoyhxcLHZ/Osa1igZDrEQU4lU8pyT7tY6xXCPohDicx4M67ZPqzzW30sgCc6mcF9i0SfEJ+/3KEa/sjH5JddT2R6JrF5zcVoVAIcrjbVb6zub0c+sJnNp5FPP6mP+71Hc3vswu747J9vd25vvPjYy9fhrxnA+WqeYRwdnoQMQQR2AAhAhQHSHGRSACAGiO8ygAEQIEN1hBgUgQoDoDjMoABECRPf/O4MImLw7AOUSJcvfAAAA//8zLswGAAAABklEQVQDAP9V369C2eZtAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "cons.2",
+      "box": {
+        "x": 702,
+        "y": 352.625,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Umbau dauert vier Monate",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_verdict",
+      "box": {
+        "x": 72,
+        "y": 409.7421875,
+        "w": 1136,
+        "h": 53.2734375
+      },
+      "build": 2,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_vi",
+      "box": {
+        "x": 72,
+        "y": 432.375,
+        "w": 26,
+        "h": 26
+      },
+      "build": 2,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"26\" height=\"26\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0B5563\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-scale\" aria-hidden=\"true\"><path d=\"M12 3v18\"></path><path d=\"m19 8 3 8a5 5 0 0 1-6 0zV7\"></path><path d=\"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1\"></path><path d=\"m5 8 3 8a5 5 0 0 1-6 0zV7\"></path><path d=\"M7 21h10\"></path></svg>",
+      "name": "scale",
+      "color": "#0B5563",
+      "png": "data:image/png;base64,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"
+    },
+    {
+      "slot": "verdict",
+      "box": {
+        "x": 116,
+        "y": 431.7421875,
+        "w": 843.8984375,
+        "h": 27.2734375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 22,
+      "lineHeightPx": 27.28,
+      "trackingPx": -0.165,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ab 140 Gästen am Tag trägt sich der Standort – der Stammladen schafft heute 190.",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

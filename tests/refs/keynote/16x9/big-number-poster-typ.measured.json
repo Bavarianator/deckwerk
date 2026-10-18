@@ -1,0 +1,170 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 3,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 59.625,
+        "h": 217.9375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wirkung",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "label",
+      "box": {
+        "x": 768,
+        "y": 60,
+        "w": 440,
+        "h": 102.5859375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 30,
+      "lineHeightPx": 34.2,
+      "trackingPx": -0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit Ortho-Bot machen",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Kinder nach sechs Monaten",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "deutlich weniger Fehler",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 3,
+      "bg": "#111113"
+    },
+    {
+      "slot": "context",
+      "box": {
+        "x": 768,
+        "y": 178.5859375,
+        "w": 440,
+        "h": 99.3515625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilot mit 412 Kindern an 6 Grundschulen, gleiche Unterrichtszeit wie die Vergleichsgruppe.",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 3,
+      "bg": "#111113"
+    },
+    {
+      "slot": "value",
+      "box": {
+        "x": 72,
+        "y": 398.40625,
+        "w": 1136,
+        "h": 216
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "hero",
+      "sizePx": 216,
+      "lineHeightPx": 216,
+      "trackingPx": -8.64,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "−41",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        },
+        {
+          "text": " %",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF",
+          "sizePx": 97.2,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 632.40625,
+        "w": 1136,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilotauswertung 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

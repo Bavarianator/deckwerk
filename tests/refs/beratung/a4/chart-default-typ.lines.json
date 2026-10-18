@@ -1,0 +1,56 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Umsatzentwicklung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Der Umsatz hat sich seit 2023 mehr als verdoppelt"
+    ]
+  },
+  {
+    "slot": "_unit",
+    "lines": [
+      "in Mio €"
+    ]
+  },
+  {
+    "slot": "_ann.text",
+    "lines": [
+      "CAGR 2022–2026e: +31,6 %"
+    ]
+  },
+  {
+    "slot": "takeaway.value",
+    "lines": [
+      "+136 %"
+    ]
+  },
+  {
+    "slot": "takeaway.text",
+    "lines": [
+      "Wachstum seit 2023 – getrieben durch das neue Abo-Modell"
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Geschäftsberichte 2022–2025, 2026 Prognose"
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

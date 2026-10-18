@@ -1,0 +1,174 @@
+[
+  {
+    "slot": "contact.0",
+    "lines": [
+      "Musterweg 1, 12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "contact.1",
+    "lines": [
+      "0123 456789"
+    ]
+  },
+  {
+    "slot": "contact.2",
+    "lines": [
+      "example.com/mara"
+    ]
+  },
+  {
+    "slot": "skills.0.label",
+    "lines": [
+      "Sprachen"
+    ]
+  },
+  {
+    "slot": "skills.0.text",
+    "lines": [
+      "Deutsch (Muttersprache), Englisch",
+      "(C1), Spanisch (B1)"
+    ]
+  },
+  {
+    "slot": "skills.1.label",
+    "lines": [
+      "Werkzeuge"
+    ]
+  },
+  {
+    "slot": "skills.1.text",
+    "lines": [
+      "Figma, HTML und CSS, Nutzertests,",
+      "WCAG 2.2"
+    ]
+  },
+  {
+    "slot": "name",
+    "lines": [
+      "Mara"
+    ]
+  },
+  {
+    "slot": "role",
+    "lines": [
+      "Produktdesignerin mit Schwerpunkt Barrierefreiheit"
+    ]
+  },
+  {
+    "slot": "profile",
+    "lines": [
+      "Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und",
+      "Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche",
+      "eine Rolle mit Verantwortung für ein Designteam."
+    ]
+  },
+  {
+    "slot": "sections.0.heading",
+    "lines": [
+      "Berufserfahrung"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.0.period",
+    "lines": [
+      "2021 – heute"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.0.title",
+    "lines": [
+      "Senior Produktdesignerin"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.0.place",
+    "lines": [
+      "Muster GmbH, Musterstadt"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.0.text",
+    "lines": [
+      "Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %."
+    ]
+  },
+  {
+    "slot": "sections.0.entries.1.period",
+    "lines": [
+      "2018 – 2021"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.1.title",
+    "lines": [
+      "Produktdesignerin"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.1.place",
+    "lines": [
+      "Beispiel AG, Musterstadt"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.1.text",
+    "lines": [
+      "Aufbau eines Designsystems für zwölf Fachanwendungen."
+    ]
+  },
+  {
+    "slot": "sections.0.entries.2.period",
+    "lines": [
+      "2016 – 2018"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.2.title",
+    "lines": [
+      "Junior UX-Designerin"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.2.place",
+    "lines": [
+      "Agentur Nord, Musterstadt"
+    ]
+  },
+  {
+    "slot": "sections.1.heading",
+    "lines": [
+      "Ausbildung"
+    ]
+  },
+  {
+    "slot": "sections.1.entries.0.period",
+    "lines": [
+      "2013 – 2016"
+    ]
+  },
+  {
+    "slot": "sections.1.entries.0.title",
+    "lines": [
+      "B. A. Kommunikationsdesign"
+    ]
+  },
+  {
+    "slot": "sections.1.entries.0.place",
+    "lines": [
+      "Hochschule Musterstadt"
+    ]
+  },
+  {
+    "slot": "sections.1.entries.0.text",
+    "lines": [
+      "Abschlussarbeit über barrierefreie Formulare, Note 1,3."
+    ]
+  },
+  {
+    "slot": "signed",
+    "lines": [
+      "Musterstadt, 8. Oktober 2026"
+    ]
+  }
+]

@@ -1,0 +1,90 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Entscheidung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Die Partnerlösung bringt uns am",
+      "schnellsten und günstigsten ans Ziel"
+    ]
+  },
+  {
+    "slot": "options.0.name",
+    "lines": [
+      "Eigenentwicklung"
+    ]
+  },
+  {
+    "slot": "_badge.text",
+    "lines": [
+      "Empfehlung"
+    ]
+  },
+  {
+    "slot": "options.1.name",
+    "lines": [
+      "Partnerlösung"
+    ]
+  },
+  {
+    "slot": "options.2.name",
+    "lines": [
+      "Zukauf"
+    ]
+  },
+  {
+    "slot": "criteria.0",
+    "lines": [
+      "Zeit bis zum Start"
+    ]
+  },
+  {
+    "slot": "criteria.1",
+    "lines": [
+      "Kosten im ersten Jahr"
+    ]
+  },
+  {
+    "slot": "criteria.2",
+    "lines": [
+      "Kontrolle über Daten"
+    ]
+  },
+  {
+    "slot": "criteria.3",
+    "lines": [
+      "Risiko"
+    ]
+  },
+  {
+    "slot": "options.0.note",
+    "lines": [
+      "Volle Kontrolle, aber 14",
+      "Monate Vorlauf"
+    ]
+  },
+  {
+    "slot": "options.1.note",
+    "lines": [
+      "Start in 8 Wochen, Daten",
+      "bleiben in DE"
+    ]
+  },
+  {
+    "slot": "options.2.note",
+    "lines": [
+      "Schnell, aber teuer und",
+      "schwer integrierbar"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

@@ -1,0 +1,81 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "label",
+      "box": {
+        "x": 768,
+        "y": 60,
+        "w": 440,
+        "h": 95.75
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Weniger Fehler",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "nach sechs Monaten",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "value",
+      "box": {
+        "x": 72,
+        "y": 288,
+        "w": 1136,
+        "h": 360
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "hero",
+      "sizePx": 360,
+      "lineHeightPx": 360,
+      "trackingPx": -14.4,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "41",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " %",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563",
+          "sizePx": 162,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

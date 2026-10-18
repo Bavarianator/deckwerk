@@ -1,0 +1,50 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Agenda"
+    ]
+  },
+  {
+    "slot": "_num.0",
+    "lines": [
+      "01"
+    ]
+  },
+  {
+    "slot": "items.0.title",
+    "lines": [
+      "Ausgangslage"
+    ]
+  },
+  {
+    "slot": "_num.1",
+    "lines": [
+      "02"
+    ]
+  },
+  {
+    "slot": "items.1.title",
+    "lines": [
+      "Lösung"
+    ]
+  },
+  {
+    "slot": "_num.2",
+    "lines": [
+      "03"
+    ]
+  },
+  {
+    "slot": "items.2.title",
+    "lines": [
+      "Nächste Schritte"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

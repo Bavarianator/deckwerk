@@ -1,0 +1,74 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Einladung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wir feiern 25",
+      "Jahre Praxis",
+      "am Markt"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "Seit 25 Jahren sind wir für euch da. Das möchten wir mit allen",
+      "feiern, die uns auf diesem Weg begleitet haben – mit Musik,",
+      "Essen und guten Gesprächen."
+    ]
+  },
+  {
+    "slot": "host",
+    "lines": [
+      "Das Team der Praxis am Markt"
+    ]
+  },
+  {
+    "slot": "facts.0.label",
+    "lines": [
+      "Wann"
+    ]
+  },
+  {
+    "slot": "facts.0.value",
+    "lines": [
+      "Samstag, 4. Juli, ab 18 Uhr"
+    ]
+  },
+  {
+    "slot": "facts.1.label",
+    "lines": [
+      "Wo"
+    ]
+  },
+  {
+    "slot": "facts.1.value",
+    "lines": [
+      "Praxis am Markt, Musterweg 1,",
+      "12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "facts.2.label",
+    "lines": [
+      "Dresscode"
+    ]
+  },
+  {
+    "slot": "facts.2.value",
+    "lines": [
+      "Sommerlich"
+    ]
+  },
+  {
+    "slot": "rsvp",
+    "lines": [
+      "Bitte sagt bis 20. Juni zu,",
+      "gern über den QR-Code."
+    ]
+  }
+]

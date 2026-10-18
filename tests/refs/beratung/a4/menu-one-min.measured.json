@@ -1,0 +1,121 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 650,
+        "h": 50.5390625
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 48.6,
+      "lineHeightPx": 50.544,
+      "trackingPx": -0.729,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Speisekarte",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.heading",
+      "box": {
+        "x": 72,
+        "y": 155.3359375,
+        "w": 650,
+        "h": 23.84375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 19.55,
+      "lineHeightPx": 23.851,
+      "trackingPx": -0.146625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Heute",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.0.name",
+      "box": {
+        "x": 72,
+        "y": 190.375,
+        "w": 94.46875,
+        "h": 19.9609375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Linsensuppe",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.items.0.price",
+      "box": {
+        "x": 688.5234375,
+        "y": 190.375,
+        "w": 33.4765625,
+        "h": 19.9609375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 16.1,
+      "lineHeightPx": 19.964,
+      "trackingPx": -0.12075,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "6,50",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

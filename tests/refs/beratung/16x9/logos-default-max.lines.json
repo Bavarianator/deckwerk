@@ -1,0 +1,93 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "logos.0.name",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "logos.1.name",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "logos.2.name",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "logos.3.name",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "logos.4.name",
+    "lines": [
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "logos.5.name",
+    "lines": [
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "logos.6.name",
+    "lines": [
+      "Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "logos.7.name",
+    "lines": [
+      "im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "logos.8.name",
+    "lines": [
+      "Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "logos.9.name",
+    "lines": [
+      "und klare"
+    ]
+  },
+  {
+    "slot": "logos.10.name",
+    "lines": [
+      "klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "logos.11.name",
+    "lines": [
+      "Verantwortung für"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

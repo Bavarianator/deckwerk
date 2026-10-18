@@ -142,6 +142,63 @@ pub fn compare(reference: &Measured, ours: &Measured) -> Report {
     rep
 }
 
+/// Zeilentexte eines Text-Slots: (slot, Zeilen) in Dokumentreihenfolge, aus `.lines.json` bzw. `dw_scene::SlotLines`.
+pub type SlotText = (String, Vec<String>);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LineDiff {
+    pub slot: String,
+    pub reference: Vec<String>,
+    pub ours: Vec<String>,
+}
+
+// Chromium liefert den DOM-Text (ohne text-transform, mit weichen Trennstellen): Leerraum, Groß/klein und U+00AD zählen nicht
+fn norm(lines: &[String]) -> Vec<String> {
+    lines
+        .iter()
+        .map(|l| {
+            l.replace('\u{ad}', "")
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ")
+                .to_lowercase()
+        })
+        .collect()
+}
+
+fn keyed(v: &[SlotText]) -> BTreeMap<String, Vec<String>> {
+    let mut out = BTreeMap::new();
+    for (slot, lines) in v {
+        let mut key = slot.clone();
+        let mut n = 1;
+        while out.contains_key(&key) {
+            key = format!("{slot}#{n}");
+            n += 1;
+        }
+        out.insert(key, norm(lines));
+    }
+    out
+}
+
+/// Slots mit anderen Umbruchstellen; ein fehlender Slot zählt wie einer ohne Zeilen.
+pub fn lines_diff(reference: &[SlotText], ours: &[SlotText]) -> Vec<LineDiff> {
+    let (r, o) = (keyed(reference), keyed(ours));
+    let none = Vec::new();
+    let mut keys: Vec<&String> = r.keys().chain(o.keys()).collect();
+    keys.sort();
+    keys.dedup();
+    keys.into_iter()
+        .filter_map(|k| {
+            let (a, b) = (r.get(k).unwrap_or(&none), o.get(k).unwrap_or(&none));
+            (a != b).then(|| LineDiff {
+                slot: k.clone(),
+                reference: a.clone(),
+                ours: b.clone(),
+            })
+        })
+        .collect()
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct PixelDiff {
     pub mean: [f64; 3], // mittlere |Δ| je Kanal (0–255)
@@ -260,6 +317,40 @@ mod tests {
         let mut t = text("title", 72., 60., 2);
         t["lineHeightPx"] = json!(27.605);
         assert!(compare(&a, &deck(vec![t], 0)).ok());
+    }
+
+    #[test]
+    fn lines() {
+        let l = |s: &str, v: &[&str]| {
+            (
+                s.to_string(),
+                v.iter().map(|x| x.to_string()).collect::<Vec<_>>(),
+            )
+        };
+        let r = vec![
+            l("title", &["Wie wir den  Umsatz", "ver\u{ad}doppeln"]),
+            l("meta", &[]),
+            l("t", &["a"]),
+            l("t", &["b"]),
+        ];
+        let same = vec![
+            l("title", &["WIE WIR DEN UMSATZ", "verdoppeln"]),
+            l("t", &["a"]),
+            l("t", &["b"]),
+        ];
+        assert!(lines_diff(&r, &same).is_empty());
+        let moved = vec![
+            l("title", &["Wie wir den", "Umsatz verdoppeln"]),
+            l("t", &["a"]),
+            l("t", &["c"]),
+            l("x", &["y"]),
+        ];
+        let d = lines_diff(&r, &moved);
+        assert_eq!(
+            d.iter().map(|d| d.slot.as_str()).collect::<Vec<_>>(),
+            ["t#1", "title", "x"]
+        );
+        assert_eq!(d[1].ours, ["wie wir den", "umsatz verdoppeln"]);
     }
 
     #[test]

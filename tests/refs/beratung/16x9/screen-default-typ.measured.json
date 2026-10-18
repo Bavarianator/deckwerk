@@ -1,0 +1,154 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der Export dauert drei Klicks",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_frame",
+      "box": {
+        "x": 72,
+        "y": 148.875,
+        "w": 726.6796875,
+        "h": 499.1171875
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#F4F5F6",
+        "alpha": 1
+      },
+      "border": {
+        "color": "#DDE1E5",
+        "width": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "_url",
+      "box": {
+        "x": 262.171875,
+        "y": 156.5078125,
+        "w": 346.3359375,
+        "h": 30.9296875
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#FFFFFF",
+        "alpha": 1
+      },
+      "radius": 999,
+      "ellipse": false
+    },
+    {
+      "slot": "url",
+      "box": {
+        "x": 356.3046875,
+        "y": 159.90625,
+        "w": 158.0703125,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "example.com/export",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "caption",
+      "box": {
+        "x": 838.6796875,
+        "y": 148.875,
+        "w": 369.3203125,
+        "h": 499.125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Format wählen, prüfen, herunterladen: Die Datei lässt sich sofort in PowerPoint bearbeiten.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

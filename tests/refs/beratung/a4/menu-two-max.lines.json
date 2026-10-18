@@ -1,0 +1,359 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "intro",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+      "im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "sections.0.heading",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.name",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.tag",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.text",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert",
+      "deutlich durch schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.name",
+    "lines": [
+      "Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.tag",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.text",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "sections.0.items.2.name",
+    "lines": [
+      "verbessert deutlich",
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "sections.0.items.2.tag",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "sections.0.items.2.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.0.items.2.text",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im",
+      "Vertrieb und klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "sections.0.items.3.name",
+    "lines": [
+      "deutlich durch",
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "sections.0.items.3.tag",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "sections.0.items.3.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.0.items.3.text",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "sections.1.heading",
+    "lines": [
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.name",
+    "lines": [
+      "Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.tag",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.text",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert",
+      "deutlich durch schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.name",
+    "lines": [
+      "verbessert deutlich",
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.tag",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.text",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.name",
+    "lines": [
+      "deutlich durch",
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.tag",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.text",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im",
+      "Vertrieb und klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "sections.1.items.3.name",
+    "lines": [
+      "durch schnellere",
+      "Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "sections.1.items.3.tag",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "sections.1.items.3.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.1.items.3.text",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "sections.2.heading",
+    "lines": [
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.name",
+    "lines": [
+      "verbessert deutlich",
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.tag",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.text",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert",
+      "deutlich durch schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "sections.2.items.1.name",
+    "lines": [
+      "deutlich durch",
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "sections.2.items.1.tag",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "sections.2.items.1.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.2.items.1.text",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "sections.2.items.2.name",
+    "lines": [
+      "durch schnellere",
+      "Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "sections.2.items.2.tag",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "sections.2.items.2.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.2.items.2.text",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im",
+      "Vertrieb und klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "sections.2.items.3.name",
+    "lines": [
+      "schnellere Abläufe",
+      "im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "sections.2.items.3.tag",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "sections.2.items.3.price",
+    "lines": [
+      "1.234,50 €"
+    ]
+  },
+  {
+    "slot": "sections.2.items.3.text",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "note",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+      "für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+    ]
+  }
+]

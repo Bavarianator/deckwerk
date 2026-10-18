@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Zwei Gründe sprechen für den Wechsel"
+    ]
+  },
+  {
+    "slot": "_n.0",
+    "lines": [
+      "1"
+    ]
+  },
+  {
+    "slot": "items.0.text",
+    "lines": [
+      "Geringere Kosten"
+    ]
+  },
+  {
+    "slot": "_n.1",
+    "lines": [
+      "2"
+    ]
+  },
+  {
+    "slot": "items.1.text",
+    "lines": [
+      "Schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

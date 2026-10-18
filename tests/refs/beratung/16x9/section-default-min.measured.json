@@ -1,0 +1,37 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 555.4453125,
+        "w": 980,
+        "h": 80.5546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 76,
+      "lineHeightPx": 80.56,
+      "trackingPx": -1.52,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Lösung",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    }
+  ]
+}

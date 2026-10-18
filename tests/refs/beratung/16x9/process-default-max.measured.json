@@ -1,0 +1,560 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 1,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 98.171875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit steigt",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.0",
+      "box": {
+        "x": 72,
+        "y": 227.546875,
+        "w": 263,
+        "h": 306.34375
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.0",
+      "box": {
+        "x": 72,
+        "y": 257.6640625,
+        "w": 21.0625,
+        "h": 23.7578125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 18,
+      "lineHeightPx": 23.76,
+      "trackingPx": -0.27,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "01",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_icon.0",
+      "box": {
+        "x": 295,
+        "y": 255.546875,
+        "w": 28,
+        "h": 28
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0B5563\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#0B5563",
+      "png": "data:image/png;base64,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"
+    },
+    {
+      "slot": "steps.0.title",
+      "box": {
+        "x": 72,
+        "y": 305.546875,
+        "w": 251,
+        "h": 29.2734375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 24,
+      "lineHeightPx": 29.28,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.0.desc",
+      "box": {
+        "x": 72,
+        "y": 348.8203125,
+        "w": 251,
+        "h": 151.796875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 22,
+      "lineHeightPx": 30.36,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 5,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.1",
+      "box": {
+        "x": 363,
+        "y": 227.546875,
+        "w": 263,
+        "h": 306.34375
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.1",
+      "box": {
+        "x": 363,
+        "y": 257.6640625,
+        "w": 21.0625,
+        "h": 23.7578125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 18,
+      "lineHeightPx": 23.76,
+      "trackingPx": -0.27,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "02",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_icon.1",
+      "box": {
+        "x": 586,
+        "y": 255.546875,
+        "w": 28,
+        "h": 28
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0B5563\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#0B5563",
+      "png": "data:image/png;base64,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"
+    },
+    {
+      "slot": "steps.1.title",
+      "box": {
+        "x": 363,
+        "y": 305.546875,
+        "w": 251,
+        "h": 58.546875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 24,
+      "lineHeightPx": 29.28,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenzufriedenheit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "steigt",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.1.desc",
+      "box": {
+        "x": 363,
+        "y": 378.09375,
+        "w": 251,
+        "h": 151.796875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 22,
+      "lineHeightPx": 30.36,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 5,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.2",
+      "box": {
+        "x": 654,
+        "y": 227.546875,
+        "w": 263,
+        "h": 306.34375
+      },
+      "build": 2,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.2",
+      "box": {
+        "x": 654,
+        "y": 257.6640625,
+        "w": 21.0625,
+        "h": 23.7578125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 18,
+      "lineHeightPx": 23.76,
+      "trackingPx": -0.27,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "03",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_icon.2",
+      "box": {
+        "x": 877,
+        "y": 255.546875,
+        "w": 28,
+        "h": 28
+      },
+      "build": 2,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0B5563\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#0B5563",
+      "png": "data:image/png;base64,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"
+    },
+    {
+      "slot": "steps.2.title",
+      "box": {
+        "x": 654,
+        "y": 305.546875,
+        "w": 251,
+        "h": 58.546875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 24,
+      "lineHeightPx": 29.28,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "durch neue",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.2.desc",
+      "box": {
+        "x": 654,
+        "y": 378.09375,
+        "w": 251,
+        "h": 121.4375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 22,
+      "lineHeightPx": 30.36,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 4,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.3",
+      "box": {
+        "x": 945,
+        "y": 227.546875,
+        "w": 263,
+        "h": 306.34375
+      },
+      "build": 3,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.3",
+      "box": {
+        "x": 945,
+        "y": 257.6640625,
+        "w": 21.0625,
+        "h": 23.7578125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 18,
+      "lineHeightPx": 23.76,
+      "trackingPx": -0.27,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "04",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_icon.3",
+      "box": {
+        "x": 1168,
+        "y": 255.546875,
+        "w": 28,
+        "h": 28
+      },
+      "build": 3,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#0B5563\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#0B5563",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHAAAABwCAYAAADG4PRLAAAHNElEQVR4AeybsY8bRRTG39i+OHdGkZBAOUQSAkkQiALR0NBEikQBIsBxlkhQQsgFJCIk/gAgCiCERIXSUECOiFAEfOiqVFBckqNIF1FQIKWCjhSRkA1EsTfv273z2Xf27uzseHfGfic/387Mm5nn7+c33tm1SyR/XisgAL3GRyQABaDnCngevmSgAPRcAc/DlwwUgJ4r4Hn4koGTCdDzVz1G4UsGeg5TAApAzxXwPHzJQAHouQKehy8ZKAA9V8Dz8CUDBWAKBcTVugKSgdYlzXdAAZiv3tZnE4DWJc13QAGYr97WZxOA1iWNH3B67tSu6frCs/T8sVq8p16rANTTKbNX7fCpnbX5hV9K5eBPFv36zI5tt2fmT35E9Xo5y+A8Vpbu0ldHgeorb+4Lqp0bpOjQur9SVFFKfTJDO75crzP5LwBNVEvRp/rq249Xpiq/KlKzg7opovem5xaeG9SmU+cFQJ0X4qIPMq9caV/h2HayDX+U6PDwxvgWARivj3FrCG+qvKqGZF7vwIroTm85zbEATKOWpm/1tRMHypXKNaUBD0O226WL+G9iAtBEtZg+YeaVSleVoodi3LpNQUCf/7/89R/dipQHAjClYHHuITzNZRPjBBRcbt26eQbHpiYATZXb1G/73MIj5bTw6J+XaWXl7qahUhUFYCq5BjsDXqlEWicsGCHMPMBrNNooZzEBmEU97tuFp2gXFxMfNuFhMgEIFQytaHgIe5wB4vWNzFyAhxcnAKFCSnMFHsIWgFAhhbkED2ELQKigaa7BQ9gCECpomIvwELYAhAoJ5io8hC0AoUKMuQwPYQtAqDDEpuvHHw6vsBS0SR8SVl+1AOyTY6MAeIoqq3xXoZArLBuRxB8JwC36EHXhkdo7oHlLle3LY1smiKkQgJvE8QkeQheAUGHNfIOHsAUgVGAzgLfcsnRLiKc3fghAls4IXmPPPFm4n8fTZ3pMPEBjeHS2k0l5S53tAKyfvg/f94cYluLKZRj8TkHRFL49pnW2SQE1Wo3FOXIEHkTKBvDgwcpMfeHjGfrvNg90vURTf+H7//gdADn+hzebKncYHj2qEypvFZabS7tf1/HN04d1N59u5sF95xTRGUWq3B1F0SH8DgDf0OrWOXaAN5jCJl1/n7fcwmeeQ5m3LqkxwO3zpw4qonfXB+r9r0jN4vcA1frC/t56F45r9ROzQTVY5Rj3asWju2xqDWbfyRhgmYKk7/PvZJ9ruBhsP2yzEZF5AZWxbGq9sVxdNntfvTHADgWJ3+fnd/ksLga7ADGEF2YeacNzddm0ArCtgu96Bxp2rPhKfgTx5GPDfEZdj2WTtoUnLFrwKAguuXa2OUwj4wy80/j2905AXwwbuLc+gqiuFJGJYebxsklKHeiNadhxtGzueWNYu2v1xgDxQv69dfMD/v8zW+IjgkirOH1PdLbkEMIbw2WzV55MAGll5W7z75sv8Lv2cu+gw44BEafveUCcBHjQORtAjMAQcVFXGyLvvUYNcVLgQf7sADEKX9R1BeIkwYP0dgBiJBcgvvTOA9Em3Z+tAqTLYvYAIgpDiMgadM9kDK9WvZtqk+7DPi9JE7sAMZsBRGRNJohr8Hir8ARCSLRwn8f38xy8tpkY+yYH+wAxQWqItN8YogG85tLiEZduCUEyUxsNQESTB0RjeAhwPGx0AKGPIURiMOgea+yDz7w0y2aUebGjetc4WoCQYwPiMopJpoj2h2AY0FBfbgt9lNL+zBtHeNBn9AAxCyDyDVHe7GtBRFaFgBgUuvcZ14VtAi+UJR+A4VRnOzhtzwRR4IVK9j7lCBDTGkJ88ej9+FyUzIOGoXWfcgaIeQFxcY7vuf2IUqLxUlmbnr5W296+iqU10T9yuDiun3nRy9t4LgBgNHlzac8R/eWUnuJeT7IlP3iT3mycP57sOB4ehQHERjrVZ6KO3oC3hE26jvN4+BQIEAKuLadEP6CUyQL6flKWzV6dCgYYhdJs7D6qvZxGXfqfw8w7f6y/cjJKTgBcX075xOZSatlDeJO1bPZq5AhAhHS2Ey6BvBSipGOctRfCPjrOY+rjEMBI4eYSL4WcVVEp5pl9Wo3Ft2I8JqLJOYBQPcwqBoTjgcZtoc/AxsmqTAcwR20AKCD6bPOUQRB8irbN9ZNadhYggLQa5z8kaj/DIL/iE5xz1FFPt5YWz6BNLFLAaYAIsdm4cINBnuase7/50ze/oU5sQwHnAW6EKkeDFBCAg1TxqE4AegRrUKgCcJAqHtUJQI9gDQpVAA5SxaO6XAB6pId3oQpA75D1BywA+/XwriQAvUPWH7AA7NfDu5IA9A5Zf8ACsF8P70oC0Dtk/QELwH49vCu5DNA7MYsIWAAWobrFOQWgRTGLGEoAFqG6xTkFoEUxixhKABahusU5BaBFMYsYSgAWobrFOQWgRTGLGGoMARYhY3FzCsDitLcyswC0ImNxg9wDAAD//xFA+qkAAAAGSURBVAMAZDzG/5/1iIsAAAAASUVORK5CYII="
+    },
+    {
+      "slot": "steps.3.title",
+      "box": {
+        "x": 945,
+        "y": 305.546875,
+        "w": 251,
+        "h": 29.2734375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 24,
+      "lineHeightPx": 29.28,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.3.desc",
+      "box": {
+        "x": 945,
+        "y": 348.8203125,
+        "w": 251,
+        "h": 121.4375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 22,
+      "lineHeightPx": 30.36,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 4,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

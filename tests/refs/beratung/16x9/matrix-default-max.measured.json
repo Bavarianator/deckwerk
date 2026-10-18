@@ -1,0 +1,709 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 149.625,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "y",
+      "box": {
+        "x": 72,
+        "y": 227.546875,
+        "w": 796,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "↑ Kundenbindung verbessert",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_q.0",
+      "box": {
+        "x": 72,
+        "y": 259.6796875,
+        "w": 396,
+        "h": 176.09375
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.0",
+      "box": {
+        "x": 72,
+        "y": 271.6796875,
+        "w": 178.28125,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_q.1",
+      "box": {
+        "x": 472,
+        "y": 259.6796875,
+        "w": 396,
+        "h": 176.09375
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.1",
+      "box": {
+        "x": 651.5546875,
+        "y": 271.6796875,
+        "w": 216.4453125,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_q.2",
+      "box": {
+        "x": 72,
+        "y": 439.7734375,
+        "w": 396,
+        "h": 176.09375
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.2",
+      "box": {
+        "x": 72,
+        "y": 579.734375,
+        "w": 154.8203125,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_q.3",
+      "box": {
+        "x": 472,
+        "y": 439.7734375,
+        "w": 396,
+        "h": 176.09375
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.3",
+      "box": {
+        "x": 752.34375,
+        "y": 579.734375,
+        "w": 115.65625,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.0",
+      "box": {
+        "x": 238.1171875,
+        "y": 350.40625,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#5A6470",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.0.label",
+      "box": {
+        "x": 163.4140625,
+        "y": 374.40625,
+        "w": 167.40625,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.1",
+      "box": {
+        "x": 461,
+        "y": 350.40625,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#5A6470",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.1.label",
+      "box": {
+        "x": 409.65625,
+        "y": 374.40625,
+        "w": 120.6875,
+        "h": 24.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.2",
+      "box": {
+        "x": 683.875,
+        "y": 350.40625,
+        "w": 18,
+        "h": 18
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#5A6470",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.2.label",
+      "box": {
+        "x": 619.390625,
+        "y": 374.40625,
+        "w": 146.96875,
+        "h": 24.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.3",
+      "box": {
+        "x": 238.1171875,
+        "y": 428.7734375,
+        "w": 18,
+        "h": 18
+      },
+      "build": 3,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.3.label",
+      "box": {
+        "x": 189.2890625,
+        "y": 452.7734375,
+        "w": 115.65625,
+        "h": 24.1328125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.4",
+      "box": {
+        "x": 461,
+        "y": 428.7734375,
+        "w": 18,
+        "h": 18
+      },
+      "build": 4,
+      "kind": "box",
+      "fill": {
+        "color": "#5A6470",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.4.label",
+      "box": {
+        "x": 406.328125,
+        "y": 452.7734375,
+        "w": 127.3515625,
+        "h": 24.1328125
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "durch schnellere",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.5",
+      "box": {
+        "x": 683.875,
+        "y": 428.7734375,
+        "w": 18,
+        "h": 18
+      },
+      "build": 5,
+      "kind": "box",
+      "fill": {
+        "color": "#5A6470",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.5.label",
+      "box": {
+        "x": 610.1484375,
+        "y": 452.7734375,
+        "w": 165.4609375,
+        "h": 24.1328125
+      },
+      "build": 5,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "schnellere Abläufe im",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.6",
+      "box": {
+        "x": 238.1171875,
+        "y": 507.1328125,
+        "w": 18,
+        "h": 18
+      },
+      "build": 6,
+      "kind": "box",
+      "fill": {
+        "color": "#5A6470",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.6.label",
+      "box": {
+        "x": 173.546875,
+        "y": 531.1328125,
+        "w": 147.140625,
+        "h": 24.1328125
+      },
+      "build": 6,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Abläufe im Vertrieb",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.7",
+      "box": {
+        "x": 461,
+        "y": 507.1328125,
+        "w": 18,
+        "h": 18
+      },
+      "build": 7,
+      "kind": "box",
+      "fill": {
+        "color": "#5A6470",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.7.label",
+      "box": {
+        "x": 390.2109375,
+        "y": 531.1328125,
+        "w": 159.5859375,
+        "h": 24.1328125
+      },
+      "build": 7,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "im Vertrieb und klare",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "x",
+      "box": {
+        "x": 670.40625,
+        "y": 623.8671875,
+        "w": 197.59375,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit →",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_take",
+      "box": {
+        "x": 908,
+        "y": 324.421875,
+        "w": 300,
+        "h": 226.703125
+      },
+      "build": 8,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "takeaway",
+      "box": {
+        "x": 908,
+        "y": 348.421875,
+        "w": 300,
+        "h": 198.703125
+      },
+      "build": 8,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 6,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

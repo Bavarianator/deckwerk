@@ -1,0 +1,14 @@
+[
+  {
+    "slot": "code",
+    "lines": [
+      "print(\"Hallo, Welt\")"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

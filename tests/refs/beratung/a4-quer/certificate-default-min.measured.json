@@ -1,0 +1,65 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 104,
+        "y": 88,
+        "w": 915,
+        "h": 35.390625
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 31.05,
+      "lineHeightPx": 35.397,
+      "trackingPx": -0.46575,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Urkunde",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "recipient",
+      "box": {
+        "x": 104,
+        "y": 377.9296875,
+        "w": 915,
+        "h": 81.53125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 78.4,
+      "lineHeightPx": 81.536,
+      "trackingPx": -1.568,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mara",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 64,
+        "y": 64,
+        "w": 666,
+        "h": 171.5
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 85.75,
+      "lineHeightPx": 85.75,
+      "trackingPx": -1.28625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sommerfest",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "im Hof",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.0.label",
+      "box": {
+        "x": 64,
+        "y": 1021.59375,
+        "w": 173.15625,
+        "h": 26.921875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 20.4,
+      "lineHeightPx": 26.928,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wann",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.0.value",
+      "box": {
+        "x": 261.15625,
+        "y": 1019.09375,
+        "w": 468.84375,
+        "h": 29.5078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 23.8,
+      "lineHeightPx": 29.512,
+      "trackingPx": -0.1785,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Freitag, 3. Juli, 17 Uhr",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,436 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 3,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der Bericht entsteht in einem Durchlauf wert wert",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_panel",
+      "box": {
+        "x": 72,
+        "y": 148.875,
+        "w": 804.0390625,
+        "h": 431.875
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#F4F5F6",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "code",
+      "box": {
+        "x": 96,
+        "y": 168.875,
+        "w": 756.0390625,
+        "h": 391.875
+      },
+      "kind": "text",
+      "font": "body",
+      "fontFace": "Courier New",
+      "role": "small",
+      "sizePx": 14,
+      "lineHeightPx": 19.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "    summe_0 = berechne(region=\"Nord\", quartal=0, faktor=1.25)  # Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_1 = berechne(region=\"Nord\", quartal=1, faktor=1.25)  # Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_2 = berechne(region=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "\"Nord\"",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", quartal=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "2",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", faktor=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "1.25",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ")  ",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "# Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_3 = berechne(region=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "\"Nord\"",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", quartal=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "3",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", faktor=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "1.25",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ")  ",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "# Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_4 = berechne(region=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "\"Nord\"",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", quartal=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "4",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", faktor=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "1.25",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ")  ",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "# Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_5 = berechne(region=\"Nord\", quartal=5, faktor=1.25)  # Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_6 = berechne(region=\"Nord\", quartal=6, faktor=1.25)  # Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_7 = berechne(region=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "\"Nord\"",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", quartal=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "7",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ", faktor=",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "1.25",
+          "bold": false,
+          "italic": false,
+          "color": "#1E7A45"
+        },
+        {
+          "text": ")  ",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "# Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_8 = berechne(region=\"Nord\", quartal=8, faktor=1.25)  # Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_9 = berechne(region=\"Nord\", quartal=9, faktor=1.25)  # Prüfwert wert wert wert w",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_10 = berechne(region=\"Nord\", quartal=10, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_11 = berechne(region=\"Nord\", quartal=11, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_12 = berechne(region=\"Nord\", quartal=12, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_13 = berechne(region=\"Nord\", quartal=13, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_14 = berechne(region=\"Nord\", quartal=14, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_15 = berechne(region=\"Nord\", quartal=15, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_16 = berechne(region=\"Nord\", quartal=16, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_17 = berechne(region=\"Nord\", quartal=17, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_18 = berechne(region=\"Nord\", quartal=18, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "    summe_19 = berechne(region=\"Nord\", quartal=19, faktor=1.25)  # Prüfwert wert wert wert",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 20,
+      "bg": "#F4F5F6"
+    },
+    {
+      "slot": "note",
+      "box": {
+        "x": 72,
+        "y": 600.75,
+        "w": 1000,
+        "h": 42.234375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 16,
+      "lineHeightPx": 21.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jede Zeile berechnet eine Region; die markierten Zeilen fließen in den Bericht ein wert wert wert wert wert wert wert wert wert wert wert we",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,733 @@
+{
+  "doc-text-one-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "doc-text-two-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "offer-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "offer",
+        "content": {
+          "eyebrow": "Angebot 2026-041",
+          "title": "Angebot Webseiten-Relaunch",
+          "to": "Muster GmbH\nMusterweg 1\n12345 Musterstadt",
+          "meta": "04.10.2026 · gültig bis 03.11.2026",
+          "items": [
+            {
+              "name": "Konzept und Design",
+              "detail": "Strukturplan, Gestaltung von fünf Seitentypen",
+              "qty": "1 Pauschale",
+              "price": "4.800 €"
+            },
+            {
+              "name": "Umsetzung",
+              "detail": "Programmierung, Anbindung an das Redaktionssystem",
+              "qty": "40 Std.",
+              "price": "3.600 €"
+            },
+            {
+              "name": "Inhalte und Fotos",
+              "qty": "1 Pauschale",
+              "price": "1.200 €"
+            },
+            {
+              "name": "Schulung",
+              "detail": "Zwei Termine à zwei Stunden",
+              "qty": "4 Std.",
+              "price": "360 €"
+            }
+          ],
+          "totals": [
+            {
+              "label": "Netto",
+              "value": "9.960 €"
+            },
+            {
+              "label": "Umsatzsteuer 19 %",
+              "value": "1.892,40 €"
+            },
+            {
+              "label": "Gesamt",
+              "value": "11.852,40 €"
+            }
+          ],
+          "terms": "Zahlbar innerhalb von 14 Tagen nach Rechnungsstellung. Lieferzeit: sechs Wochen ab Beauftragung."
+        }
+      }
+    ]
+  },
+  "flyer-top-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "top",
+        "content": {
+          "eyebrow": "Pitch Day · 14. Oktober",
+          "title": "Präsentationen in Minuten statt Stunden",
+          "subtitle": "Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und exportiert nach PowerPoint.",
+          "points": [
+            {
+              "head": "10 Minuten",
+              "text": "vom Briefing bis zum fertigen Deck"
+            },
+            {
+              "head": "Kein KI-Look",
+              "text": "ruhige Layouts, eine Akzentfarbe"
+            },
+            {
+              "head": "PPTX, PDF, PNG",
+              "text": "bearbeitbar in PowerPoint"
+            }
+          ],
+          "cta": "Jetzt kostenlos testen",
+          "contact": [
+            "deckwerk.app",
+            "hallo@deckwerk.app"
+          ],
+          "qr": "https://example.com"
+        }
+      }
+    ]
+  },
+  "flyer-full-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer",
+        "variant": "full",
+        "content": {
+          "eyebrow": "Pitch Day · 14. Oktober",
+          "title": "Präsentationen in Minuten statt Stunden",
+          "subtitle": "Deckwerk baut aus Stichpunkten fertige Folien, prüft jede Seite und exportiert nach PowerPoint.",
+          "points": [
+            {
+              "head": "10 Minuten",
+              "text": "vom Briefing bis zum fertigen Deck"
+            },
+            {
+              "head": "Kein KI-Look",
+              "text": "ruhige Layouts, eine Akzentfarbe"
+            },
+            {
+              "head": "PPTX, PDF, PNG",
+              "text": "bearbeitbar in PowerPoint"
+            }
+          ],
+          "cta": "Jetzt kostenlos testen",
+          "contact": [
+            "deckwerk.app",
+            "hallo@deckwerk.app"
+          ],
+          "qr": "https://example.com"
+        }
+      }
+    ]
+  },
+  "flyer-back-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "flyer-back",
+        "content": {
+          "eyebrow": "Programm · 14. Oktober",
+          "title": "So läuft der Pitch Day",
+          "intro": "Ein Abend, fünf Teams, ein Werkzeug: Wir zeigen live, wie aus Stichpunkten ein fertiges Deck wird.",
+          "items": [
+            {
+              "head": "18:00",
+              "text": "Ankommen, Getränke und kurze Begrüßung im Foyer"
+            },
+            {
+              "head": "18:30",
+              "text": "Live-Demo: vom Briefing bis zur fertigen PowerPoint in zehn Minuten"
+            },
+            {
+              "head": "19:15",
+              "text": "Fünf Teams pitchen ihre Idee mit einem Deck aus Deckwerk"
+            },
+            {
+              "head": "20:00",
+              "text": "Fragen und Antworten, danach offener Austausch"
+            }
+          ],
+          "facts": [
+            {
+              "label": "Wann",
+              "value": "14. Oktober, 18 Uhr"
+            },
+            {
+              "label": "Wo",
+              "value": "Stadtbibliothek, Saal 2"
+            },
+            {
+              "label": "Eintritt",
+              "value": "frei"
+            }
+          ],
+          "cta": "Jetzt anmelden",
+          "contact": [
+            "example.com/anmeldung",
+            "hallo@example.com"
+          ],
+          "qr": "https://example.com/anmeldung",
+          "legal": "Veranstalter: Deckwerk-Projekt, Musterweg 1, 12345 Musterstadt. Foto: Deckwerk."
+        }
+      }
+    ]
+  },
+  "application-cover-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "application-cover",
+        "content": {
+          "eyebrow": "Bewerbung",
+          "title": "als Pflegefachkraft in der ambulanten Pflege",
+          "org": "bei der Sozialstation Musterstadt",
+          "name": "Vorname Nachname",
+          "photo": {
+            "src": ""
+          },
+          "contact": [
+            "Musterweg 1",
+            "12345 Musterstadt",
+            "Telefon 0123 456789"
+          ],
+          "contents": [
+            "Anschreiben",
+            "Lebenslauf",
+            "Examenszeugnis",
+            "Arbeitszeugnisse"
+          ]
+        }
+      }
+    ]
+  },
+  "invitation-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "invitation",
+        "content": {
+          "eyebrow": "Einladung",
+          "title": "Wir feiern 25 Jahre Praxis am Markt",
+          "text": "Seit 25 Jahren sind wir für euch da. Das möchten wir mit allen feiern, die uns auf diesem Weg begleitet haben – mit Musik, Essen und guten Gesprächen.",
+          "facts": [
+            {
+              "label": "Wann",
+              "value": "Samstag, 4. Juli, ab 18 Uhr"
+            },
+            {
+              "label": "Wo",
+              "value": "Praxis am Markt, Musterweg 1, 12345 Musterstadt"
+            },
+            {
+              "label": "Dresscode",
+              "value": "Sommerlich"
+            }
+          ],
+          "rsvp": "Bitte sagt bis 20. Juni zu, gern über den QR-Code.",
+          "host": "Das Team der Praxis am Markt",
+          "qr": "https://example.com/zusage"
+        }
+      }
+    ]
+  },
+  "letter-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "letter",
+        "content": {
+          "sender": "Praxis am Markt",
+          "senderLine": "Praxis am Markt, Marktplatz 3, 12345 Musterstadt",
+          "to": "Muster GmbH\nPersonalabteilung\nMusterweg 1\n12345 Musterstadt",
+          "info": [
+            {
+              "label": "Ihr Zeichen",
+              "value": "PA-2026-17"
+            },
+            {
+              "label": "Ansprechpartnerin",
+              "value": "Sabine, Praxisleitung"
+            },
+            {
+              "label": "Telefon",
+              "value": "0123 456789"
+            },
+            {
+              "label": "Datum",
+              "value": "8. Oktober 2026"
+            }
+          ],
+          "subject": "Grippeschutzimpfung für Ihr Team am 4. November",
+          "salutation": "Sehr geehrte Damen und Herren,",
+          "body": "vielen Dank für Ihre Anfrage. Gern impfen wir Ihre Mitarbeitenden in Ihren Räumen gegen Grippe. Wir kommen am 4. November um 9 Uhr mit zwei Fachkräften und bringen den Impfstoff mit.\nBitte stellen Sie einen ruhigen Raum mit Tisch und zwei Stühlen bereit. Pro Person rechnen wir mit zehn Minuten, bei 40 Anmeldungen sind wir gegen 12 Uhr fertig.\nDie Kosten übernimmt in der Regel die Krankenkasse. Den Aufklärungsbogen legen wir bei; er sollte ausgefüllt mitgebracht werden.",
+          "closing": "Mit freundlichen Grüßen",
+          "signature": "Sabine\nPraxisleitung",
+          "enclosures": [
+            "Aufklärungsbogen"
+          ],
+          "footer": [
+            "Praxis am Markt\nMarktplatz 3\n12345 Musterstadt",
+            "Telefon 0123 456789\nexample.com",
+            "Sparkasse Musterstadt\nIBAN DE12 3456 7890 1234 5678 90",
+            "Sprechzeiten\nMo–Fr 8–18 Uhr"
+          ]
+        }
+      }
+    ]
+  },
+  "cv-side-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "side",
+        "content": {
+          "name": "Mara",
+          "role": "Produktdesignerin mit Schwerpunkt Barrierefreiheit",
+          "profile": "Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche eine Rolle mit Verantwortung für ein Designteam.",
+          "contact": [
+            "Musterweg 1, 12345 Musterstadt",
+            "0123 456789",
+            "example.com/mara"
+          ],
+          "sections": [
+            {
+              "heading": "Berufserfahrung",
+              "entries": [
+                {
+                  "period": "2021 – heute",
+                  "title": "Senior Produktdesignerin",
+                  "place": "Muster GmbH, Musterstadt",
+                  "text": "Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %."
+                },
+                {
+                  "period": "2018 – 2021",
+                  "title": "Produktdesignerin",
+                  "place": "Beispiel AG, Musterstadt",
+                  "text": "Aufbau eines Designsystems für zwölf Fachanwendungen."
+                },
+                {
+                  "period": "2016 – 2018",
+                  "title": "Junior UX-Designerin",
+                  "place": "Agentur Nord, Musterstadt"
+                }
+              ]
+            },
+            {
+              "heading": "Ausbildung",
+              "entries": [
+                {
+                  "period": "2013 – 2016",
+                  "title": "B. A. Kommunikationsdesign",
+                  "place": "Hochschule Musterstadt",
+                  "text": "Abschlussarbeit über barrierefreie Formulare, Note 1,3."
+                }
+              ]
+            }
+          ],
+          "skills": [
+            {
+              "label": "Sprachen",
+              "text": "Deutsch (Muttersprache), Englisch (C1), Spanisch (B1)"
+            },
+            {
+              "label": "Werkzeuge",
+              "text": "Figma, HTML und CSS, Nutzertests, WCAG 2.2"
+            }
+          ],
+          "signed": "Musterstadt, 8. Oktober 2026"
+        }
+      }
+    ]
+  },
+  "cv-plain-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "cv",
+        "variant": "plain",
+        "content": {
+          "name": "Mara",
+          "role": "Produktdesignerin mit Schwerpunkt Barrierefreiheit",
+          "profile": "Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche eine Rolle mit Verantwortung für ein Designteam.",
+          "contact": [
+            "Musterweg 1, 12345 Musterstadt",
+            "0123 456789",
+            "example.com/mara"
+          ],
+          "sections": [
+            {
+              "heading": "Berufserfahrung",
+              "entries": [
+                {
+                  "period": "2021 – heute",
+                  "title": "Senior Produktdesignerin",
+                  "place": "Muster GmbH, Musterstadt",
+                  "text": "Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %."
+                },
+                {
+                  "period": "2018 – 2021",
+                  "title": "Produktdesignerin",
+                  "place": "Beispiel AG, Musterstadt",
+                  "text": "Aufbau eines Designsystems für zwölf Fachanwendungen."
+                },
+                {
+                  "period": "2016 – 2018",
+                  "title": "Junior UX-Designerin",
+                  "place": "Agentur Nord, Musterstadt"
+                }
+              ]
+            },
+            {
+              "heading": "Ausbildung",
+              "entries": [
+                {
+                  "period": "2013 – 2016",
+                  "title": "B. A. Kommunikationsdesign",
+                  "place": "Hochschule Musterstadt",
+                  "text": "Abschlussarbeit über barrierefreie Formulare, Note 1,3."
+                }
+              ]
+            }
+          ],
+          "skills": [
+            {
+              "label": "Sprachen",
+              "text": "Deutsch (Muttersprache), Englisch (C1), Spanisch (B1)"
+            },
+            {
+              "label": "Werkzeuge",
+              "text": "Figma, HTML und CSS, Nutzertests, WCAG 2.2"
+            }
+          ],
+          "signed": "Musterstadt, 8. Oktober 2026"
+        }
+      }
+    ]
+  },
+  "menu-one-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Herbst · ab 1. Oktober",
+          "title": "Herbstkarte",
+          "intro": "Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen.",
+          "sections": [
+            {
+              "heading": "Vorspeisen",
+              "items": [
+                {
+                  "name": "Kürbissuppe",
+                  "text": "Hokkaido, Ingwer, geröstete Kerne",
+                  "price": "7,50",
+                  "tag": "vegan"
+                },
+                {
+                  "name": "Feldsalat",
+                  "text": "Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing",
+                  "price": "9,80",
+                  "tag": "G, H"
+                }
+              ]
+            },
+            {
+              "heading": "Hauptgerichte",
+              "items": [
+                {
+                  "name": "Rinderroulade",
+                  "text": "Rotkohl, Kartoffelklöße, Schmorsauce",
+                  "price": "21,50",
+                  "tag": "A, I"
+                },
+                {
+                  "name": "Kürbisrisotto",
+                  "text": "Salbeibutter, Bergkäse",
+                  "price": "16,90",
+                  "tag": "G"
+                },
+                {
+                  "name": "Saibling",
+                  "text": "Aus dem Fichtelgebirge, mit Petersilienkartoffeln und Rahmspinat",
+                  "price": "23,00",
+                  "tag": "D, G"
+                }
+              ]
+            },
+            {
+              "heading": "Nachspeisen",
+              "items": [
+                {
+                  "name": "Zwetschgendatschi",
+                  "text": "Mit geschlagener Sahne",
+                  "price": "5,50",
+                  "tag": "A, C, G"
+                }
+              ]
+            }
+          ],
+          "note": "Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt."
+        }
+      }
+    ]
+  },
+  "menu-two-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 794,
+      "h": 1123
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "menu",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Herbst · ab 1. Oktober",
+          "title": "Herbstkarte",
+          "intro": "Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die wir kennen.",
+          "sections": [
+            {
+              "heading": "Vorspeisen",
+              "items": [
+                {
+                  "name": "Kürbissuppe",
+                  "text": "Hokkaido, Ingwer, geröstete Kerne",
+                  "price": "7,50",
+                  "tag": "vegan"
+                },
+                {
+                  "name": "Feldsalat",
+                  "text": "Birne, Walnuss, Ziegenkäse, Honig-Senf-Dressing",
+                  "price": "9,80",
+                  "tag": "G, H"
+                }
+              ]
+            },
+            {
+              "heading": "Hauptgerichte",
+              "items": [
+                {
+                  "name": "Rinderroulade",
+                  "text": "Rotkohl, Kartoffelklöße, Schmorsauce",
+                  "price": "21,50",
+                  "tag": "A, I"
+                },
+                {
+                  "name": "Kürbisrisotto",
+                  "text": "Salbeibutter, Bergkäse",
+                  "price": "16,90",
+                  "tag": "G"
+                },
+                {
+                  "name": "Saibling",
+                  "text": "Aus dem Fichtelgebirge, mit Petersilienkartoffeln und Rahmspinat",
+                  "price": "23,00",
+                  "tag": "D, G"
+                }
+              ]
+            },
+            {
+              "heading": "Nachspeisen",
+              "items": [
+                {
+                  "name": "Zwetschgendatschi",
+                  "text": "Mit geschlagener Sahne",
+                  "price": "5,50",
+                  "tag": "A, C, G"
+                }
+              ]
+            }
+          ],
+          "note": "Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt."
+        }
+      }
+    ]
+  }
+}

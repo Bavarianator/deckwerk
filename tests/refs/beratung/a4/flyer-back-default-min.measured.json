@@ -1,0 +1,177 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 60,
+        "y": 60,
+        "w": 674,
+        "h": 49.1328125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 47.25,
+      "lineHeightPx": 49.14,
+      "trackingPx": -0.4725,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "So läuft der Abend",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.head",
+      "box": {
+        "x": 60,
+        "y": 152.2265625,
+        "w": 202.1953125,
+        "h": 22.5703125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 18.2,
+      "lineHeightPx": 22.568,
+      "trackingPx": -0.1365,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "18:00",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.text",
+      "box": {
+        "x": 286.1953125,
+        "y": 150.7265625,
+        "w": 447.8046875,
+        "h": 25.3828125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 18.4,
+      "lineHeightPx": 25.392,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ankommen",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.head",
+      "box": {
+        "x": 60,
+        "y": 212.796875,
+        "w": 202.1953125,
+        "h": 22.5703125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 18.2,
+      "lineHeightPx": 22.568,
+      "trackingPx": -0.1365,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "18:30",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.text",
+      "box": {
+        "x": 286.1953125,
+        "y": 211.296875,
+        "w": 447.8046875,
+        "h": 25.3828125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 18.4,
+      "lineHeightPx": 25.392,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Live-Demo",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "cta",
+      "box": {
+        "x": 60,
+        "y": 1034.3515625,
+        "w": 171.9609375,
+        "h": 26.6484375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 23.8,
+      "lineHeightPx": 26.656,
+      "trackingPx": -0.1785,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jetzt anmelden",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 2,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 806.109375,
+        "w": 141.4453125,
+        "h": 24
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Strategie 2027",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 854.109375,
+        "w": 936,
+        "h": 295.59375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 96.6,
+      "lineHeightPx": 98.532,
+      "trackingPx": -1.932,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wie wir den Umsatz",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "in 18 Monaten",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "verdoppeln",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 1173.703125,
+        "w": 860,
+        "h": 48.296875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wachstumsplan für die Geschäftsführung",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "meta",
+      "box": {
+        "x": 72,
+        "y": 1242.3671875,
+        "w": 331.3984375,
+        "h": 35.6328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Max Muster · Oktober 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

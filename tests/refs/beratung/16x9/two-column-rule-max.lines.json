@@ -1,0 +1,105 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Digitalisierung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit steigt",
+      "deutlich durch neue Prozesse im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "left.heading",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit"
+    ]
+  },
+  {
+    "slot": "left.text",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit steigt deutlich durch",
+      "neue Prozesse im Vertrieb und Wachstumsstrategie für",
+      "internationale Märkte mit messbarem Mehrwert",
+      "Digitalisierung Kundenzufriedenheit steigt"
+    ]
+  },
+  {
+    "slot": "left.points.0",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit steigt deutlich",
+      "durch neue"
+    ]
+  },
+  {
+    "slot": "left.points.1",
+    "lines": [
+      "Kundenzufriedenheit steigt deutlich durch neue",
+      "Prozesse im"
+    ]
+  },
+  {
+    "slot": "left.points.2",
+    "lines": [
+      "steigt deutlich durch neue Prozesse im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "left.points.3",
+    "lines": [
+      "deutlich durch neue Prozesse im Vertrieb und",
+      "Wachstumsstrategie"
+    ]
+  },
+  {
+    "slot": "right.heading",
+    "lines": [
+      "steigt deutlich durch neue Prozesse im"
+    ]
+  },
+  {
+    "slot": "right.text",
+    "lines": [
+      "deutlich durch neue Prozesse im Vertrieb und",
+      "Wachstumsstrategie für internationale Märkte mit",
+      "messbarem Mehrwert Digitalisierung Kundenzufriedenheit",
+      "steigt deutlich durch neue Prozesse im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "right.points.0",
+    "lines": [
+      "Kundenzufriedenheit steigt deutlich durch neue",
+      "Prozesse im"
+    ]
+  },
+  {
+    "slot": "right.points.1",
+    "lines": [
+      "steigt deutlich durch neue Prozesse im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "right.points.2",
+    "lines": [
+      "deutlich durch neue Prozesse im Vertrieb und",
+      "Wachstumsstrategie"
+    ]
+  },
+  {
+    "slot": "right.points.3",
+    "lines": [
+      "durch neue Prozesse im Vertrieb und",
+      "Wachstumsstrategie für"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

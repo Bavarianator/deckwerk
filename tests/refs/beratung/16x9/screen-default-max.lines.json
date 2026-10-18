@@ -1,0 +1,30 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Der Export dauert drei Klicks",
+      "wert wert wert wert wert wert"
+    ]
+  },
+  {
+    "slot": "url",
+    "lines": [
+      "example.com/export wert wert wert wert wert wert wert wert w"
+    ]
+  },
+  {
+    "slot": "caption",
+    "lines": [
+      "Format wählen, prüfen, herunterladen",
+      "wert wert wert wert wert wert wert",
+      "wert wert wert wert wert wert wert",
+      "wert wert wert wert wert wert wer"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

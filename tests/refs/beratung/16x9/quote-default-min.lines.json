@@ -1,0 +1,20 @@
+[
+  {
+    "slot": "_mark",
+    "lines": [
+      "“"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "Das hat uns wirklich Zeit gespart."
+    ]
+  },
+  {
+    "slot": "author",
+    "lines": [
+      "Anna Berg"
+    ]
+  }
+]

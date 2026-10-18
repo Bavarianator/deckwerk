@@ -1,0 +1,190 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Angebot 2026-041"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Angebot Webseiten-Relaunch"
+    ]
+  },
+  {
+    "slot": "to",
+    "lines": [
+      "Muster GmbH",
+      "Musterweg 1",
+      "12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "meta",
+    "lines": [
+      "04.10.2026 · gültig bis 03.11.2026"
+    ]
+  },
+  {
+    "slot": "_h.name",
+    "lines": [
+      "Position"
+    ]
+  },
+  {
+    "slot": "_h.qty",
+    "lines": [
+      "Menge"
+    ]
+  },
+  {
+    "slot": "_h.price",
+    "lines": [
+      "Betrag"
+    ]
+  },
+  {
+    "slot": "items.0.name",
+    "lines": [
+      "Konzept und Design"
+    ]
+  },
+  {
+    "slot": "items.0.detail",
+    "lines": [
+      "Strukturplan, Gestaltung von fünf Seitentypen"
+    ]
+  },
+  {
+    "slot": "items.0.qty",
+    "lines": [
+      "1 Pauschale"
+    ]
+  },
+  {
+    "slot": "items.0.price",
+    "lines": [
+      "4.800 €"
+    ]
+  },
+  {
+    "slot": "items.1.name",
+    "lines": [
+      "Umsetzung"
+    ]
+  },
+  {
+    "slot": "items.1.detail",
+    "lines": [
+      "Programmierung, Anbindung an das Redaktionssystem"
+    ]
+  },
+  {
+    "slot": "items.1.qty",
+    "lines": [
+      "40 Std."
+    ]
+  },
+  {
+    "slot": "items.1.price",
+    "lines": [
+      "3.600 €"
+    ]
+  },
+  {
+    "slot": "items.2.name",
+    "lines": [
+      "Inhalte und Fotos"
+    ]
+  },
+  {
+    "slot": "items.2.qty",
+    "lines": [
+      "1 Pauschale"
+    ]
+  },
+  {
+    "slot": "items.2.price",
+    "lines": [
+      "1.200 €"
+    ]
+  },
+  {
+    "slot": "items.3.name",
+    "lines": [
+      "Schulung"
+    ]
+  },
+  {
+    "slot": "items.3.detail",
+    "lines": [
+      "Zwei Termine à zwei Stunden"
+    ]
+  },
+  {
+    "slot": "items.3.qty",
+    "lines": [
+      "4 Std."
+    ]
+  },
+  {
+    "slot": "items.3.price",
+    "lines": [
+      "360 €"
+    ]
+  },
+  {
+    "slot": "totals.0.label",
+    "lines": [
+      "Netto"
+    ]
+  },
+  {
+    "slot": "totals.0.value",
+    "lines": [
+      "9.960 €"
+    ]
+  },
+  {
+    "slot": "totals.1.label",
+    "lines": [
+      "Umsatzsteuer 19 %"
+    ]
+  },
+  {
+    "slot": "totals.1.value",
+    "lines": [
+      "1.892,40 €"
+    ]
+  },
+  {
+    "slot": "totals.2.label",
+    "lines": [
+      "Gesamt"
+    ]
+  },
+  {
+    "slot": "totals.2.value",
+    "lines": [
+      "11.852,40 €"
+    ]
+  },
+  {
+    "slot": "terms",
+    "lines": [
+      "Zahlbar innerhalb von 14 Tagen nach Rechnungsstellung. Lieferzeit: sechs Wochen ab Beauftragung."
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

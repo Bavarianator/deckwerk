@@ -1,0 +1,90 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Executive Summary"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wir empfehlen, den Pilot im",
+      "November mit 20 Schulen zu starten"
+    ]
+  },
+  {
+    "slot": "_n.0",
+    "lines": [
+      "01"
+    ]
+  },
+  {
+    "slot": "points.0.title",
+    "lines": [
+      "Jedes vierte Kind hat erhebliche Rechtschreibschwächen"
+    ]
+  },
+  {
+    "slot": "points.0.text",
+    "lines": [
+      "Lehrkräfte fehlt die Zeit für Einzelförderung – der Bedarf wächst."
+    ]
+  },
+  {
+    "slot": "_n.1",
+    "lines": [
+      "02"
+    ]
+  },
+  {
+    "slot": "points.1.title",
+    "lines": [
+      "Ortho-Bot senkt die Fehlerquote in sechs Monaten um 41 %"
+    ]
+  },
+  {
+    "slot": "points.1.text",
+    "lines": [
+      "Pilot mit 6 Schulen und 412 Kindern, bei gleicher Unterrichtszeit."
+    ]
+  },
+  {
+    "slot": "_n.2",
+    "lines": [
+      "03"
+    ]
+  },
+  {
+    "slot": "points.2.title",
+    "lines": [
+      "Eine Schullizenz kostet weniger als ein Klassensatz Hefte"
+    ]
+  },
+  {
+    "slot": "points.2.text",
+    "lines": [
+      "1.900 € pro Jahr statt rund 2.400 € für Arbeitshefte."
+    ]
+  },
+  {
+    "slot": "_rec.label",
+    "lines": [
+      "Empfehlung"
+    ]
+  },
+  {
+    "slot": "recommendation",
+    "lines": [
+      "Pilot mit 20 Partnerschulen ab",
+      "November freigeben – Budget",
+      "38.000 €, Entscheidung bis",
+      "15. Oktober."
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

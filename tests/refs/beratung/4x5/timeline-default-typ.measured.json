@@ -1,0 +1,570 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 90.8203125,
+        "h": 24
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Roadmap",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 98,
+        "w": 936,
+        "h": 136.796875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 60,
+      "lineHeightPx": 68.4,
+      "trackingPx": -0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "In vier Schritten zur",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Marktreife bis Ende 2027",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_axis",
+      "box": {
+        "x": 72,
+        "y": 282.796875,
+        "w": 936,
+        "h": 2
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#DDE1E5",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_dot.0",
+      "box": {
+        "x": 72,
+        "y": 281.796875,
+        "w": 24,
+        "h": 4
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_card.0",
+      "box": {
+        "x": 72,
+        "y": 313.796875,
+        "w": 936,
+        "h": 182.4765625
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.0.date",
+      "box": {
+        "x": 72,
+        "y": 313.796875,
+        "w": 924,
+        "h": 61.046875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 55.5,
+      "lineHeightPx": 61.05,
+      "trackingPx": -0.41625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Q4 2026",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.title",
+      "box": {
+        "x": 72,
+        "y": 386.84375,
+        "w": 924,
+        "h": 45.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pilot mit 3 Kunden",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.desc",
+      "box": {
+        "x": 72,
+        "y": 443.9765625,
+        "w": 924,
+        "h": 48.296875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Validierung der Kernfunktionen",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.1",
+      "box": {
+        "x": 72,
+        "y": 502.2734375,
+        "w": 24,
+        "h": 4
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_card.1",
+      "box": {
+        "x": 72,
+        "y": 534.2734375,
+        "w": 936,
+        "h": 182.4765625
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.1.date",
+      "box": {
+        "x": 72,
+        "y": 534.2734375,
+        "w": 924,
+        "h": 61.046875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 55.5,
+      "lineHeightPx": 61.05,
+      "trackingPx": -0.41625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Q1 2027",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.title",
+      "box": {
+        "x": 72,
+        "y": 607.3203125,
+        "w": 924,
+        "h": 45.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beta-Programm",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.desc",
+      "box": {
+        "x": 72,
+        "y": 664.453125,
+        "w": 924,
+        "h": 48.296875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "25 Kunden, Feedback-Schleifen",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.2",
+      "box": {
+        "x": 72,
+        "y": 722.75,
+        "w": 24,
+        "h": 4
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_card.2",
+      "box": {
+        "x": 72,
+        "y": 754.75,
+        "w": 936,
+        "h": 182.4765625
+      },
+      "build": 2,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.2.date",
+      "box": {
+        "x": 72,
+        "y": 754.75,
+        "w": 924,
+        "h": 61.046875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 55.5,
+      "lineHeightPx": 61.05,
+      "trackingPx": -0.41625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Q2 2027",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.title",
+      "box": {
+        "x": 72,
+        "y": 827.796875,
+        "w": 924,
+        "h": 45.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Marktstart DACH",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.desc",
+      "box": {
+        "x": 72,
+        "y": 884.9296875,
+        "w": 924,
+        "h": 48.296875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vertrieb und Partner an Bord",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.3",
+      "box": {
+        "x": 72,
+        "y": 943.2265625,
+        "w": 24,
+        "h": 4
+      },
+      "build": 3,
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_card.3",
+      "box": {
+        "x": 72,
+        "y": 975.2265625,
+        "w": 936,
+        "h": 182.4765625
+      },
+      "build": 3,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "items.3.date",
+      "box": {
+        "x": 72,
+        "y": 975.2265625,
+        "w": 924,
+        "h": 61.046875
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 55.5,
+      "lineHeightPx": 61.05,
+      "trackingPx": -0.41625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Q4 2027",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.3.title",
+      "box": {
+        "x": 72,
+        "y": 1048.2734375,
+        "w": 924,
+        "h": 45.1328125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Internationalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.3.desc",
+      "box": {
+        "x": 72,
+        "y": 1105.40625,
+        "w": 924,
+        "h": 48.296875
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Start in Benelux und Nordics",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 967.0546875,
+        "y": 1287.203125,
+        "w": 40.9453125,
+        "h": 22.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 19,
+      "lineHeightPx": 22.8,
+      "trackingPx": 0.38,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

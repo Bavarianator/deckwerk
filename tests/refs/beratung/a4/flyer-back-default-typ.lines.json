@@ -1,0 +1,131 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Programm · 14. Oktober"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "So läuft der Pitch Day"
+    ]
+  },
+  {
+    "slot": "intro",
+    "lines": [
+      "Ein Abend, fünf Teams, ein Werkzeug: Wir zeigen live, wie aus",
+      "Stichpunkten ein fertiges Deck wird."
+    ]
+  },
+  {
+    "slot": "items.0.head",
+    "lines": [
+      "18:00"
+    ]
+  },
+  {
+    "slot": "items.0.text",
+    "lines": [
+      "Ankommen, Getränke und kurze Begrüßung im Foyer"
+    ]
+  },
+  {
+    "slot": "items.1.head",
+    "lines": [
+      "18:30"
+    ]
+  },
+  {
+    "slot": "items.1.text",
+    "lines": [
+      "Live-Demo: vom Briefing bis zur fertigen PowerPoint in",
+      "zehn Minuten"
+    ]
+  },
+  {
+    "slot": "items.2.head",
+    "lines": [
+      "19:15"
+    ]
+  },
+  {
+    "slot": "items.2.text",
+    "lines": [
+      "Fünf Teams pitchen ihre Idee mit einem Deck",
+      "aus Deckwerk"
+    ]
+  },
+  {
+    "slot": "items.3.head",
+    "lines": [
+      "20:00"
+    ]
+  },
+  {
+    "slot": "items.3.text",
+    "lines": [
+      "Fragen und Antworten, danach offener Austausch"
+    ]
+  },
+  {
+    "slot": "facts.0.label",
+    "lines": [
+      "Wann"
+    ]
+  },
+  {
+    "slot": "facts.0.value",
+    "lines": [
+      "14. Oktober, 18 Uhr"
+    ]
+  },
+  {
+    "slot": "facts.1.label",
+    "lines": [
+      "Wo"
+    ]
+  },
+  {
+    "slot": "facts.1.value",
+    "lines": [
+      "Stadtbibliothek, Saal 2"
+    ]
+  },
+  {
+    "slot": "facts.2.label",
+    "lines": [
+      "Eintritt"
+    ]
+  },
+  {
+    "slot": "facts.2.value",
+    "lines": [
+      "frei"
+    ]
+  },
+  {
+    "slot": "cta",
+    "lines": [
+      "Jetzt anmelden"
+    ]
+  },
+  {
+    "slot": "contact.0",
+    "lines": [
+      "example.com/anmeldung"
+    ]
+  },
+  {
+    "slot": "contact.1",
+    "lines": [
+      "hallo@example.com"
+    ]
+  },
+  {
+    "slot": "legal",
+    "lines": [
+      "Veranstalter: Deckwerk-Projekt, Musterweg 1, 12345 Musterstadt. Foto: Deckwerk."
+    ]
+  }
+]

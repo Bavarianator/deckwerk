@@ -1,0 +1,635 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 51.6875,
+        "h": 24
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Team",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 98,
+        "w": 936,
+        "h": 136.796875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 60,
+      "lineHeightPx": 68.4,
+      "trackingPx": -0.9,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ein Team aus Schule,",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Sprachforschung und Software",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_ini.0",
+      "box": {
+        "x": 89,
+        "y": 275.796875,
+        "w": 176,
+        "h": 176
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#E7EDEE",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ini.0.t",
+      "box": {
+        "x": 153.5390625,
+        "y": 341.2265625,
+        "w": 46.921875,
+        "h": 45.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "JH",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E7EDEE"
+    },
+    {
+      "slot": "people.0.name",
+      "box": {
+        "x": 72,
+        "y": 471.796875,
+        "w": 210,
+        "h": 90.265625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Julia",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Hartmann",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.0.role",
+      "box": {
+        "x": 72,
+        "y": 570.0625,
+        "w": 210,
+        "h": 71.265625
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "CEO · Lehrerin a. D.",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.0.line",
+      "box": {
+        "x": 72,
+        "y": 649.328125,
+        "w": 210,
+        "h": 106.8984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12 Jahre Grundschule, kennt den Alltag",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_ini.1",
+      "box": {
+        "x": 331,
+        "y": 275.796875,
+        "w": 176,
+        "h": 176
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#E7EDEE",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ini.1.t",
+      "box": {
+        "x": 396.0390625,
+        "y": 341.2265625,
+        "w": 45.921875,
+        "h": 45.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "EY",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E7EDEE"
+    },
+    {
+      "slot": "people.1.name",
+      "box": {
+        "x": 314,
+        "y": 471.796875,
+        "w": 210,
+        "h": 90.265625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Dr. Emre",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Yilmaz",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.1.role",
+      "box": {
+        "x": 353.0859375,
+        "y": 570.0625,
+        "w": 131.8203125,
+        "h": 35.6328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Forschung",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.1.line",
+      "box": {
+        "x": 314,
+        "y": 613.6953125,
+        "w": 210,
+        "h": 71.265625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Promotion in Sprachdidaktik",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_ini.2",
+      "box": {
+        "x": 573,
+        "y": 275.796875,
+        "w": 176,
+        "h": 176
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#E7EDEE",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ini.2.t",
+      "box": {
+        "x": 640.7734375,
+        "y": 341.2265625,
+        "w": 40.4453125,
+        "h": 45.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "LV",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E7EDEE"
+    },
+    {
+      "slot": "people.2.name",
+      "box": {
+        "x": 577.203125,
+        "y": 471.796875,
+        "w": 167.59375,
+        "h": 45.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Lena Vogt",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.2.role",
+      "box": {
+        "x": 635.0234375,
+        "y": 524.9296875,
+        "w": 51.953125,
+        "h": 35.6328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "CTO",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.2.line",
+      "box": {
+        "x": 556,
+        "y": 568.5625,
+        "w": 210,
+        "h": 71.265625
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Baute Lernapps für 2 Mio Nutzer",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_ini.3",
+      "box": {
+        "x": 815,
+        "y": 275.796875,
+        "w": 176,
+        "h": 176
+      },
+      "build": 3,
+      "kind": "box",
+      "fill": {
+        "color": "#E7EDEE",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ini.3.t",
+      "box": {
+        "x": 877.7421875,
+        "y": 341.2265625,
+        "w": 50.5078125,
+        "h": 45.1328125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "PN",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#E7EDEE"
+    },
+    {
+      "slot": "people.3.name",
+      "box": {
+        "x": 798,
+        "y": 471.796875,
+        "w": 210,
+        "h": 90.265625
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 37,
+      "lineHeightPx": 45.14,
+      "trackingPx": -0.2775,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Paul",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "Neumann",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.3.role",
+      "box": {
+        "x": 798,
+        "y": 570.0625,
+        "w": 210,
+        "h": 71.265625
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vertrieb Schulen",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "people.3.line",
+      "box": {
+        "x": 798,
+        "y": 649.328125,
+        "w": 210,
+        "h": 71.265625
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kontakte zu 300 Schulträgern",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 967.0546875,
+        "y": 1287.203125,
+        "w": 40.9453125,
+        "h": 22.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 19,
+      "lineHeightPx": 22.8,
+      "trackingPx": 0.38,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

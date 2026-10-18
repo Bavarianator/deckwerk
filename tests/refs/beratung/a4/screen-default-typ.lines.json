@@ -1,0 +1,33 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Der Export dauert drei Klicks"
+    ]
+  },
+  {
+    "slot": "url",
+    "lines": [
+      "example.com/export"
+    ]
+  },
+  {
+    "slot": "caption",
+    "lines": [
+      "Format wählen, prüfen, herunterladen: Die Datei lässt sich sofort in",
+      "PowerPoint bearbeiten."
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

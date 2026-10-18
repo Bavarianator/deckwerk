@@ -1,0 +1,202 @@
+import { ListView } from "std-widgets.slint";
+
+export struct Thumb {
+    image: image,
+    label: string,
+}
+
+export component AppWindow inherits Window {
+    in property <string> win-title: "Deckwerk-Spike";
+    title: win-title;
+    preferred-width: 1280px;
+    preferred-height: 800px;
+    background: #e9e9e6;
+
+    in property <[Thumb]> thumbs;
+    in property <int> current;
+    in property <image> stage-image;
+    in property <string> placeholder;
+    in property <string> status;
+    in property <float> slide-w: 1280;
+    in property <float> slide-h: 720;
+    // Auswahl und Editor in Folienpixeln; die Stage rechnet in Bildschirm um
+    in property <bool> sel-visible;
+    in property <float> sel-x;
+    in property <float> sel-y;
+    in property <float> sel-w;
+    in property <float> sel-h;
+    in property <bool> editing;
+    in-out property <string> edit-text;
+    in property <float> edit-font-size: 20;
+
+    callback stage-clicked(float, float, float, float, bool);
+    callback select-slide(int);
+    callback nav(int);
+    callback deselect();
+    callback start-edit();
+    callback save();
+    callback edit-changed(string);
+    callback edit-commit();
+    callback edit-cancel();
+
+    public function focus-editor() {
+        editor.focus();
+        editor.select-all();
+    }
+    public function focus-keys() {
+        keys.focus();
+    }
+
+    keys := FocusScope {
+        key-pressed(e) => {
+            if (e.modifiers.control && (e.text == "s" || e.text == "S")) {
+                root.save();
+                return accept;
+            }
+            if (e.text == Key.LeftArrow) {
+                root.nav(-1);
+                return accept;
+            }
+            if (e.text == Key.RightArrow) {
+                root.nav(1);
+                return accept;
+            }
+            if (e.text == Key.Escape) {
+                root.deselect();
+                return accept;
+            }
+            if (e.text == Key.Return) {
+                root.start-edit();
+                return accept;
+            }
+            reject
+        }
+
+        VerticalLayout {
+            HorizontalLayout {
+                padding: 12px;
+                spacing: 12px;
+                ListView {
+                    width: 200px;
+                    for t[i] in root.thumbs: Rectangle {
+                        height: 120px;
+                        Rectangle {
+                            x: 4px;
+                            y: 4px;
+                            width: parent.width - 8px;
+                            height: parent.height - 8px;
+                            border-width: i == root.current ? 3px : 1px;
+                            border-color: i == root.current ? #2f6fd6 : #b8b8b2;
+                            background: white;
+                            Image {
+                                x: 3px;
+                                y: 3px;
+                                width: parent.width - 6px;
+                                height: parent.height - 6px;
+                                source: t.image;
+                                image-fit: contain;
+                            }
+                            if t.label != "": Text {
+                                text: t.label;
+                                color: #444;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                        TouchArea {
+                            clicked => {
+                                root.select-slide(i);
+                            }
+                        }
+                    }
+                }
+
+                stage := Rectangle {
+                    property <float> f: min(self.width / 1px / root.slide-w, self.height / 1px / root.slide-h);
+                    property <length> ox: (self.width - root.slide-w * f * 1px) / 2;
+                    property <length> oy: (self.height - root.slide-h * f * 1px) / 2;
+                    // Klicks werden in Rust gegen die Measured-Boxen geprüft (logic::to_slide)
+                    TouchArea {
+                        clicked => {
+                            root.stage-clicked(self.pressed-x / 1px, self.pressed-y / 1px, self.width / 1px, self.height / 1px, false);
+                        }
+                        double-clicked => {
+                            root.stage-clicked(self.pressed-x / 1px, self.pressed-y / 1px, self.width / 1px, self.height / 1px, true);
+                        }
+                    }
+                    Image {
+                        x: stage.ox;
+                        y: stage.oy;
+                        width: root.slide-w * stage.f * 1px;
+                        height: root.slide-h * stage.f * 1px;
+                        source: root.stage-image;
+                    }
+                    if root.placeholder != "": Text {
+                        text: root.placeholder;
+                        font-size: 22px;
+                        color: #555;
+                    }
+                    if root.sel-visible && !root.editing: Rectangle {
+                        x: stage.ox + root.sel-x * stage.f * 1px - 2px;
+                        y: stage.oy + root.sel-y * stage.f * 1px - 2px;
+                        width: root.sel-w * stage.f * 1px + 4px;
+                        height: root.sel-h * stage.f * 1px + 4px;
+                        border-width: 2px;
+                        border-color: #2f6fd6;
+                    }
+                    Rectangle {
+                        visible: root.editing;
+                        x: stage.ox + root.sel-x * stage.f * 1px - 2px;
+                        y: stage.oy + root.sel-y * stage.f * 1px - 2px;
+                        width: root.sel-w * stage.f * 1px + 4px;
+                        height: max(root.sel-h * stage.f * 1px, editor.preferred-height) + 4px;
+                        background: #fffffff0;
+                        border-width: 2px;
+                        border-color: #2f6fd6;
+                        editor := TextInput {
+                            x: 2px;
+                            y: 2px;
+                            width: parent.width - 4px;
+                            enabled: root.editing;
+                            text <=> root.edit-text;
+                            font-size: root.edit-font-size * stage.f * 1px;
+                            single-line: false;
+                            wrap: word-wrap;
+                            color: #1a1a1a;
+                            edited => {
+                                root.edit-changed(self.text);
+                            }
+                            key-pressed(e) => {
+                                if (e.text == Key.Escape) {
+                                    root.edit-cancel();
+                                    return accept;
+                                }
+                                if (e.text == Key.Return && !e.modifiers.shift) {
+                                    root.edit-commit();
+                                    return accept;
+                                }
+                                if (e.modifiers.control && (e.text == "s" || e.text == "S")) {
+                                    root.edit-commit();
+                                    root.save();
+                                    return accept;
+                                }
+                                reject
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 28px;
+                background: #d9d9d4;
+                Text {
+                    x: 12px;
+                    text: root.status;
+                    color: #222;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+}

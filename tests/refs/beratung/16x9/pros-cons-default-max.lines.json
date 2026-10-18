@@ -1,0 +1,95 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "prosLabel",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "pros.0",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert",
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "pros.1",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch schnellere",
+      "Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "pros.2",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb",
+      "und klare"
+    ]
+  },
+  {
+    "slot": "pros.3",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "consLabel",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "cons.0",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "cons.1",
+    "lines": [
+      "durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für"
+    ]
+  },
+  {
+    "slot": "cons.2",
+    "lines": [
+      "schnellere Abläufe im Vertrieb und klare Verantwortung",
+      "für messbare"
+    ]
+  },
+  {
+    "slot": "cons.3",
+    "lines": [
+      "Abläufe im Vertrieb und klare Verantwortung für",
+      "messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "verdict",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

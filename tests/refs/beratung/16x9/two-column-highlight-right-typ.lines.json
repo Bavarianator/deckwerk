@@ -1,0 +1,62 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Die neue Plattform halbiert den manuellen Aufwand"
+    ]
+  },
+  {
+    "slot": "left.heading",
+    "lines": [
+      "Heute"
+    ]
+  },
+  {
+    "slot": "left.points.0",
+    "lines": [
+      "6 Systeme, keine Schnittstellen"
+    ]
+  },
+  {
+    "slot": "left.points.1",
+    "lines": [
+      "Berichte per Excel"
+    ]
+  },
+  {
+    "slot": "left.points.2",
+    "lines": [
+      "3 Tage bis zur Freigabe"
+    ]
+  },
+  {
+    "slot": "right.heading",
+    "lines": [
+      "Mit Deckwerk"
+    ]
+  },
+  {
+    "slot": "right.points.0",
+    "lines": [
+      "Eine Plattform für alles"
+    ]
+  },
+  {
+    "slot": "right.points.1",
+    "lines": [
+      "Berichte in Echtzeit"
+    ]
+  },
+  {
+    "slot": "right.points.2",
+    "lines": [
+      "Freigabe in 2 Stunden"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

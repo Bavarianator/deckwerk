@@ -1,0 +1,149 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 1,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_mark",
+      "box": {
+        "x": 444,
+        "y": 125.796875,
+        "w": 764,
+        "h": 104
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 190,
+      "lineHeightPx": 155.8,
+      "trackingPx": -3.8,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "“",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 444,
+        "y": 251.796875,
+        "w": 764,
+        "h": 255.1953125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "statement",
+      "sizePx": 44,
+      "lineHeightPx": 51.04,
+      "trackingPx": -0.88,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "steigt deutlich durch neue Prozesse",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "im Vertrieb und Wachstumsstrategie",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "für internationale Märkte mit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "messbarem Mehrwert Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 5,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "author",
+      "box": {
+        "x": 444,
+        "y": 528.9921875,
+        "w": 764,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "role",
+      "box": {
+        "x": 444,
+        "y": 558.0703125,
+        "w": 764,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

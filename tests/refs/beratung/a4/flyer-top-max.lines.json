@@ -1,0 +1,104 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "subtitle",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+      "im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+    ]
+  },
+  {
+    "slot": "points.0.head",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "points.0.text",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich",
+      "durch schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "points.1.head",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "points.1.text",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+      "im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "points.2.head",
+    "lines": [
+      "verbessert deutlich",
+      "durch schnellere"
+    ]
+  },
+  {
+    "slot": "points.2.text",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "points.3.head",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "points.3.text",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für"
+    ]
+  },
+  {
+    "slot": "cta",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "contact.0",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "contact.1",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch schnellere"
+    ]
+  },
+  {
+    "slot": "contact.2",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  }
+]

@@ -1,0 +1,147 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Regionen"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Der Norden wächst am stärksten",
+      "und trägt fast die Hälfte des Plus"
+    ]
+  },
+  {
+    "slot": "columns.0",
+    "lines": [
+      "Region"
+    ]
+  },
+  {
+    "slot": "columns.1",
+    "lines": [
+      "Umsatz 2026"
+    ]
+  },
+  {
+    "slot": "columns.2",
+    "lines": [
+      "Wachstum"
+    ]
+  },
+  {
+    "slot": "columns.3",
+    "lines": [
+      "Marge"
+    ]
+  },
+  {
+    "slot": "rows.0.0",
+    "lines": [
+      "Nord"
+    ]
+  },
+  {
+    "slot": "rows.0.1",
+    "lines": [
+      "2,4 Mio €"
+    ]
+  },
+  {
+    "slot": "rows.0.2",
+    "lines": [
+      "+18 %"
+    ]
+  },
+  {
+    "slot": "rows.0.3",
+    "lines": [
+      "31 %"
+    ]
+  },
+  {
+    "slot": "rows.1.0",
+    "lines": [
+      "West"
+    ]
+  },
+  {
+    "slot": "rows.1.1",
+    "lines": [
+      "2,1 Mio €"
+    ]
+  },
+  {
+    "slot": "rows.1.2",
+    "lines": [
+      "+9 %"
+    ]
+  },
+  {
+    "slot": "rows.1.3",
+    "lines": [
+      "28 %"
+    ]
+  },
+  {
+    "slot": "rows.2.0",
+    "lines": [
+      "Süd"
+    ]
+  },
+  {
+    "slot": "rows.2.1",
+    "lines": [
+      "1,9 Mio €"
+    ]
+  },
+  {
+    "slot": "rows.2.2",
+    "lines": [
+      "+6 %"
+    ]
+  },
+  {
+    "slot": "rows.2.3",
+    "lines": [
+      "26 %"
+    ]
+  },
+  {
+    "slot": "rows.3.0",
+    "lines": [
+      "Ost"
+    ]
+  },
+  {
+    "slot": "rows.3.1",
+    "lines": [
+      "1,2 Mio €"
+    ]
+  },
+  {
+    "slot": "rows.3.2",
+    "lines": [
+      "+4 %"
+    ]
+  },
+  {
+    "slot": "rows.3.3",
+    "lines": [
+      "22 %"
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Controlling, Stand 30.09.2026"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

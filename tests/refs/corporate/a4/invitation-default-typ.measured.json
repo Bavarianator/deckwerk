@@ -1,0 +1,357 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 64,
+        "y": 64,
+        "w": 666,
+        "h": 25.1953125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 21,
+      "lineHeightPx": 25.2,
+      "trackingPx": 0.21,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Einladung",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 64,
+        "y": 109.1953125,
+        "w": 666,
+        "h": 257.25
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 85.75,
+      "lineHeightPx": 85.75,
+      "trackingPx": -1.28625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wir feiern 25",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "Jahre Praxis",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "am Markt",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 64,
+        "y": 386.4453125,
+        "w": 666,
+        "h": 99.3515625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Seit 25 Jahren sind wir für euch da. Das möchten wir mit allen feiern, die uns auf diesem Weg begleitet haben – mit Musik, Essen und guten Gesprächen.",
+          "bold": false,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "host",
+      "box": {
+        "x": 64,
+        "y": 505.796875,
+        "w": 666,
+        "h": 33.1171875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Das Team der Praxis am Markt",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.0.label",
+      "box": {
+        "x": 64,
+        "y": 729.8828125,
+        "w": 173.15625,
+        "h": 26.921875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 20.4,
+      "lineHeightPx": 26.928,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wann",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.0.value",
+      "box": {
+        "x": 261.15625,
+        "y": 727.3828125,
+        "w": 468.84375,
+        "h": 29.5078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 23.8,
+      "lineHeightPx": 29.512,
+      "trackingPx": -0.238,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Samstag, 4. Juli, ab 18 Uhr",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.1.label",
+      "box": {
+        "x": 64,
+        "y": 788.1875,
+        "w": 173.15625,
+        "h": 26.921875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 20.4,
+      "lineHeightPx": 26.928,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wo",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.1.value",
+      "box": {
+        "x": 261.15625,
+        "y": 785.6875,
+        "w": 468.84375,
+        "h": 59.015625
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 23.8,
+      "lineHeightPx": 29.512,
+      "trackingPx": -0.238,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Praxis am Markt, Musterweg 1,",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "12345 Musterstadt",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.2.label",
+      "box": {
+        "x": 64,
+        "y": 876,
+        "w": 173.15625,
+        "h": 26.921875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 20.4,
+      "lineHeightPx": 26.928,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Dresscode",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "facts.2.value",
+      "box": {
+        "x": 261.15625,
+        "y": 873.5,
+        "w": 468.84375,
+        "h": 29.5078125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 23.8,
+      "lineHeightPx": 29.512,
+      "trackingPx": -0.238,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sommerlich",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_qr",
+      "box": {
+        "x": 64,
+        "y": 943,
+        "w": 120,
+        "h": 120
+      },
+      "build": 3,
+      "kind": "icon",
+      "svg": "<svg viewBox=\"0 0 33 33\" width=\"100%\" height=\"100%\" shape-rendering=\"crispEdges\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"33\" height=\"33\" fill=\"#FFFFFF\"></rect><path d=\"M4 4h1v1h-1zM5 4h1v1h-1zM6 4h1v1h-1zM7 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM20 4h1v1h-1zM22 4h1v1h-1zM23 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM26 4h1v1h-1zM27 4h1v1h-1zM28 4h1v1h-1zM4 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM4 6h1v1h-1zM6 6h1v1h-1zM7 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM13 6h1v1h-1zM15 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM4 7h1v1h-1zM6 7h1v1h-1zM7 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM17 7h1v1h-1zM19 7h1v1h-1zM22 7h1v1h-1zM24 7h1v1h-1zM25 7h1v1h-1zM26 7h1v1h-1zM28 7h1v1h-1zM4 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM8 8h1v1h-1zM10 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM4 9h1v1h-1zM10 9h1v1h-1zM12 9h1v1h-1zM13 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM22 9h1v1h-1zM28 9h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM10 10h1v1h-1zM12 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM18 10h1v1h-1zM20 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1zM27 10h1v1h-1zM28 10h1v1h-1zM12 11h1v1h-1zM13 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM17 11h1v1h-1zM4 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM10 12h1v1h-1zM12 12h1v1h-1zM14 12h1v1h-1zM15 12h1v1h-1zM17 12h1v1h-1zM19 12h1v1h-1zM21 12h1v1h-1zM22 12h1v1h-1zM23 12h1v1h-1zM24 12h1v1h-1zM25 12h1v1h-1zM28 12h1v1h-1zM4 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM8 13h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM15 13h1v1h-1zM16 13h1v1h-1zM18 13h1v1h-1zM19 13h1v1h-1zM20 13h1v1h-1zM21 13h1v1h-1zM24 13h1v1h-1zM26 13h1v1h-1zM27 13h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM9 14h1v1h-1zM10 14h1v1h-1zM14 14h1v1h-1zM20 14h1v1h-1zM22 14h1v1h-1zM23 14h1v1h-1zM24 14h1v1h-1zM25 14h1v1h-1zM26 14h1v1h-1zM28 14h1v1h-1zM5 15h1v1h-1zM7 15h1v1h-1zM8 15h1v1h-1zM9 15h1v1h-1zM12 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM23 15h1v1h-1zM25 15h1v1h-1zM26 15h1v1h-1zM27 15h1v1h-1zM28 15h1v1h-1zM4 16h1v1h-1zM9 16h1v1h-1zM10 16h1v1h-1zM14 16h1v1h-1zM15 16h1v1h-1zM16 16h1v1h-1zM17 16h1v1h-1zM20 16h1v1h-1zM24 16h1v1h-1zM27 16h1v1h-1zM28 16h1v1h-1zM6 17h1v1h-1zM7 17h1v1h-1zM8 17h1v1h-1zM11 17h1v1h-1zM13 17h1v1h-1zM14 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM26 17h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM10 18h1v1h-1zM13 18h1v1h-1zM15 18h1v1h-1zM19 18h1v1h-1zM21 18h1v1h-1zM24 18h1v1h-1zM26 18h1v1h-1zM27 18h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM14 19h1v1h-1zM16 19h1v1h-1zM17 19h1v1h-1zM18 19h1v1h-1zM23 19h1v1h-1zM24 19h1v1h-1zM26 19h1v1h-1zM27 19h1v1h-1zM5 20h1v1h-1zM6 20h1v1h-1zM7 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM10 20h1v1h-1zM11 20h1v1h-1zM12 20h1v1h-1zM13 20h1v1h-1zM14 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM25 20h1v1h-1zM28 20h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM14 21h1v1h-1zM15 21h1v1h-1zM19 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM26 21h1v1h-1zM4 22h1v1h-1zM5 22h1v1h-1zM6 22h1v1h-1zM7 22h1v1h-1zM8 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM15 22h1v1h-1zM16 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM25 22h1v1h-1zM28 22h1v1h-1zM4 23h1v1h-1zM10 23h1v1h-1zM13 23h1v1h-1zM14 23h1v1h-1zM15 23h1v1h-1zM16 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM7 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM12 24h1v1h-1zM13 24h1v1h-1zM14 24h1v1h-1zM17 24h1v1h-1zM18 24h1v1h-1zM20 24h1v1h-1zM21 24h1v1h-1zM22 24h1v1h-1zM23 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM27 24h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM7 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM13 25h1v1h-1zM14 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM19 25h1v1h-1zM26 25h1v1h-1zM28 25h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM7 26h1v1h-1zM8 26h1v1h-1zM10 26h1v1h-1zM12 26h1v1h-1zM13 26h1v1h-1zM15 26h1v1h-1zM18 26h1v1h-1zM19 26h1v1h-1zM20 26h1v1h-1zM21 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM4 27h1v1h-1zM10 27h1v1h-1zM12 27h1v1h-1zM13 27h1v1h-1zM15 27h1v1h-1zM17 27h1v1h-1zM18 27h1v1h-1zM20 27h1v1h-1zM21 27h1v1h-1zM25 27h1v1h-1zM26 27h1v1h-1zM27 27h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM7 28h1v1h-1zM8 28h1v1h-1zM9 28h1v1h-1zM10 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM15 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM19 28h1v1h-1zM22 28h1v1h-1zM25 28h1v1h-1zM26 28h1v1h-1zM27 28h1v1h-1zM28 28h1v1h-1z\" fill=\"#000000\"></path></svg>",
+      "qr": "https://example.com/zusage",
+      "color": "#0E1A2B",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAAHgCAYAAAB91L6VAAAQAElEQVR4Aezd23bbOBIFUNX8/z97Wp3O3bLIAkFcas9qJbZEEDi7lDmP/N+H/xEgQIAAAQK3C/zv4X8ECBAgQIDA7QK1C/h2bhsSIECAAIFvAgr4m4M/CRAgQIDArQIK+FbuqTZzGAIECBAYKKCAB+LbmgABAgTqCijgurOvnVx6AgQIDBZQwIMHYHsCBAgQqCmggGvOXeraAtITIDCBgAKeYAiOQIAAAQL1BBRwvZlLTKC2gPQEJhFQwJMMwjEIECBAoJaAAq41b2kJEKgtIP1EAgp4omE4CgECBAjUEVDAdWYtKQECBGoLTJZeAU82EMchQIAAgRoCCrjGnKUkQIAAgckEbi7gydI7DgECBAgQGCSggAfB25YAAQIEagso4BvnbysCBAgQIPBdQAF/l/A3AQIECBC4UUAB34hdeyvpCRAgQOBXAQX8q4afCRAgQIDATQIK+CZo29QWkJ4AAQJ/CijgP0X8ToAAAQIEbhBQwDcg24JAbQHpCRD4TEABf6biPQIECBAg0FlAAXcGdnsCBGoLSE/glYACfiXjfQIECBAg0FFAAXfEdWsCBAjUFpD+KwEF/JWOzwgQIECAQCcBBdwJ1m0JECBAoLbAu/QK+J2QzwkQIECAQAcBBdwB1S0JECBAgMA7gb0L+F16nxMgQIAAgUECCngQvG0JECBAoLaAAt53/pIRIECAwMQCCnji4TgaAQIECOwroID3nW3tZNITIEBgcgEFPPmAHI8AAQIE9hRQwHvOVaraAtITILCAgAJeYEiOSIAAAQL7CSjg/WYqEYHaAtITWERAAS8yKMckQIAAgb0EFPBe85SGAIHaAtIvJKCAFxqWoxIgQIDAPgIKeJ9ZSkKAAIHaAoulV8CLDcxxCRAgQGAPAQW8xxylIECAAIHFBC4u4MXSOy4BAgQIEBgkoIAHwduWAAECBGoLKOAL5+9WBAgQIEDgqIACPirlOgIECBAgcKGAAr4Qs/atpCdAgACBMwIK+IyWawkQIECAwEUCCvgiSLepLSA9AQIEzgoo4LNiridAgAABAhcIKOALEN2CQG0B6QkQyAiUKeCIeER4RcxlkPnSfl8TMVeWiD7n+Z737N8Rfc4TMdd9z7r8en3EXFkinCcifh3R1j+XKeCtpygcAQLDBGxMICuggLNy1hEgQIAAgQYBBdyAZykBAgRqC0jfIqCAW/SsJUCAAAECSQEFnISzjAABAgRqC7SmV8CtgtYTIECAAIGEgAJOoFlCgAABAgRaBdYu4Nb01hMgQIAAgUECCngQvG0JECBAoLaAAl53/k5OgAABAgsLKOCFh+foBAgQILCugAJed3a1Ty49AQIEFhdQwIsP0PEJECBAYE0BBbzm3Jy6toD0BAhsIKCADwzx4+Pj4fXa4ABhl0uyM2k5THbPlnURkXqUZsueWaOWPbNrs2dtXZc9b5V1rb4V1ivgClOWkcBOArIQ2ERAAW8ySDEIECBAYC0BBbzWvJyWAIHaAtJvJKCANxqmKAQIECCwjoACXmdWTkqAAIHaApulV8CbDVQcAgQIEFhDQAGvMSenJECAAIHNBE4W8GbpxSFAgAABAoMEFPAgeNsSIECAQG0BBXxi/i4lQIAAAQJXCSjgqyTdhwABAgQInBBQwCewal8qPQECBAhcKaCAr9R0LwIECBAgcFBAAR+EylwWkXuKTcSYdZmMVda05ozIzzT79JyWM4/YMyJn1JJzxNqIXM6IMetGGFXZUwFXmbScBAgQIDCVgAKeahwOQ2BGAWciQKCHgALuoeqeBAgQIEDgjYACfgPkYwIEagtIT6CXgALuJeu+BAgQIEDgCwEF/AWOjwgQIFBbQPqeAgq4p657EyBAgACBFwIK+AWMtwkQIECgtkDv9Aq4t7D7EyBAgACBTwQU8Cco3iJAgAABAr0F5i7g3undnwABAgQIDBJQwIPgbUuAAAECtQUU8LzzdzICBAgQ2FhAAW88XNEIECBAYF4BBTzvbGqf7ED6iNzj2Q7c+uUlEbk9s4/3e66LyO0ZkV/3EuDNBxH5PZ9ZM683R/IxgWkFFPC0o3EwAgQIENhZQAHvPF3ZVhVwbgIECggo4AJDFpEAAQIE5hNQwPPNxIkI1BaQnkARAQVcZNBiEiBAgMBcAgp4rnk4DQECtQWkLySggAsNW1QCBAgQmEdAAc8zCychQIBAbYFi6RVwsYGLS4AAAQJzCCjgOebgFAQIECBQTOCPAi6WXlwCBAgQIDBIQAEPgrctAQIECNQWUMC/zN+PBAgQIEDgLgEFfJe0fbYQyDyt57mmJfxz/d2v7HlbzhmRe5JS9qzWERgtoIBHT2Ca/R2EAAECBO4UUMB3atuLAAECBAj8J6CA/4PwV20B6QkQIHC3gAK+W9x+BAgQIEDgHwEF/A+C/wjUFpCeAIERAgp4hLo9CRAgQKC8gAIu/xUAQKC2gPQERgko4FHy9iVAgACB0gIKuPT4hSdAoLaA9CMFFPBIfXsTIECAQFkBBVx29IITIECgtsDo9Ap49ATsT4AAAQIlBRRwybELTYAAAQKjBcYW8Oj09idAgAABAoMEFHBH+JZHs41Y25Fim1tHrPPIvIjcWSMiPa+IeETkXtnvfPqwgxZmc45aN4ipxLYKeNyY7UyAAAEChQUUcOHhi06AAAEC4wQU8Dj72jtLT4AAgeICCrj4F0B8AgQIEBgjoIDHuNu1toD0BAgQeChgXwICBAgQIDBAQAEPQLclgdICwhMg8K+AAv6XwR8ECBAgQOBeAQV8r7fdCBCoLSA9gR8CCvgHhR8IECBAgMB9Agr4Pms7ESBAoLaA9L8JKODfOPxCgAABAgTuEVDA9zjbhQABAgRqC/yVXgH/RfL3GxG5p7tE1Fj3t9jc77Q8VWZEsojc96glZ8Q6e46YyXPPiJxRRI11TyOvrwUU8Nc+PiVAgAABAl0EShVwF0E3JUCAAAECCQEFnECzhAABAgQItAoo4FbBZdY7KAECBAjMJKCAZ5qGsxAgQIBAGQEFXGbUtYNKT4AAgdkEFPBsE3EeAgQIECghoIBLjFnI2gLSEyAwo4ACnnEqzkSAAAEC2wso4O1HLCCB2gLSE5hVQAHPOhnnIkCAAIGtBRTw1uMVjgCB2gLSzyyggGeejrMRIECAwLYCCnjb0QpGgACB2gKzpy9TwC2PZrP249HLYMQ/kIj84+BGnDe7Z0Q+Z3be2bM+1620Z/as1h37/5Ln96HCq0wBVximjAQIECCwjkDfAl7HwUkJECBAgMCtAgr4Vm6bESBAgACBbwIK+JtDjz/dkwABAgQIvBRQwC9pfECAAAECBPoJKOB+trXvLD0BAgQIfCmggL/k8SEBAgQIEOgjoID7uLprbQHpCRAg8FZAAb8lcgEBAgQIELheQAFfb+qOBGoLSE+AwCEBBXyIyUUECBAgQOBaAQV8rae7ESBQW0B6AocFFPBhKhcSIECAAIHrBBTwdZbuRIAAgdoC0p8SKFPAEflHs0Xcv/bUFH+5OCJ/1l9uc+rHiPv3PHXAPy5ueSTcH7c6/GtE3ih73sOHu/DCiHzO7DEi8ntG1FibtW1ZF5G3bdl3pbVlCniloTgrAQIECCwncPrACvg0mQUECBAgQKBdQAG3G7oDAQIECBA4LbBVAZ9ObwEBAgQIEBgkoIAHwduWAAECBGoLKOBt5i8IAQIECKwkoIBXmpazEiBAgMA2Agp4m1HWDiI9AQIEVhNQwKtNzHkJECBAYAsBBbzFGIWoLSA9AQIrCijgFafmzAQIECCwvIACXn6EAhCoLSA9gVUFFPCqk3NuAgQIEFhaQAF3HF/2KTbPdRG5J4l0jPPy1s/zZl8vb9rxg4icbUR0PNXrW0fEI+L8KzuT57qI8/tFxOsQBz6JiFTOA7d+eckz692vl4c58MHfZ/14HHkvImcbkV935FyvrjlAscUlCniLMQpBgAABAqsJKODVJua8BAgQIPCvwOp/KODVJ+j8BAgQILCkgAJecmwOTYAAAQKrC7QV8OrpnZ8AAQIECAwSUMCD4G1LgAABArUFFHB+/lYSIECAAIG0gAJO01lIgAABAgTyAgo4b1d7pfQECBAg0CSggJv4LCZAgAABAjkBBZxzs6q2gPQECBBoFlDAzYRuQIAAAQIEzgso4PNmVhCoLSA9AQKXCCjgSxjdhAABAgQInBMoU8CvHnt15P1zpD+vjrj/UV4/dz//U0T+vBG5tedP+XPFkdldfc3P3c/9dPU5jtzv3Al/v/rI/a++5vcTHP+t5RwRp7+3j4i2NceT/X1lRG7vv+90/J2sb0TurBFx/HCLX1mmgBefk+MTIECAwGYCCnizgYpDgACBbgJufKmAAr6U080IECBAgMAxAQV8zMlVBAgQIFBb4PL0CvhyUjckQIAAAQLvBRTweyNXECBAgACBywWWKuDL07shAQIECBAYJKCAB8HblgABAgRqCyjgZebvoAQIECCwk4AC3mmashAgQIDAMgIKeJlR1T6o9AQIENhNQAHvNlF5CBAgQGAJAQW8xJgcsraA9AQI7CiggDtONfsUkee6iEg9daVjnJe3fp43+3p50wMfRKxjdCDOy0siauR8CbDZB9l/K891IygifP96uSvgXrLuS4DAJQJuQmBXAQW862TlIkCAAIGpBRTw1ONxOAIEagtIv7OAAt55urIRIECAwLQCCnja0TgYAQIEagvsnl4B7z5h+QgQIEBgSgEFPOVYHIoAAQIEdhf4uoB3Ty8fAQIECBAYJKCAB8HblgABAgRqCyjg1/P3CQECBAgQ6CaggLvRujEBAgQIEHgtoIBf29T+RHoCBAgQ6CqggLvyujkBAgQIEPhcQAF/7uLd2gLSEyBAoLtAmQKOyD1SKyIez8eAZV4t08vs17ome96IvG12z+e6bN7n2rtfEfcbRdy/592urftlv0Mt6yLyc2nZN7u21dj61wJlCvg1gU8IEPhNwC8ECNwioIBvYbYJAQIECBD4XUAB/+7hNwIEagtIT+A2AQV8G7WNCBAgQIDATwEF/NPCTwQIEKgtIP2tAgr4Vm6bESBAgACBbwIK+JuDPwkQIECgtsDt6RXw7eQ2JECAAAECj4cC9i0gQIAAAQIDBKYq4AH5bUmAAAECBIYIKOAh7DYlQIAAgeoCCniab4CDECBAgEAlAQVcadqyEiBAgMA0AmUKOPskkOe67LQi4hGxzuuZ9e5XxDefiPN/j5hLds+7XVv3y+ZcbV3E+e9dRNualtlkfSPyZ245b3ZtNudq68oU8GqDcV4CBAgQ2FtAAe89X+mWEHBIAgQqCijgilOXmQABAgSGCyjg4SNwAAK1BaQnUFVAAVedvNwECBAgMFRAAQ/ltzkBArUFpK8soIArT192AgQIEBgmoICH0duYAAECtQWqp1fA1b8B8hMgQIDAEAEFPITdpgQIECBQW+DxUMDVvwHyEyBAgMAQAQU8hN2mBAgQIFBdoHIB+lqMdwAADVhJREFUV5+9/AQIECAwUEABD8S3NQECBAjUFShTwBGRfjTgiK9H98d4fRIqIm8UkVubzflc90mE7m899828InI+EdE905UbRET631nG9bkm4v49n/tmXxH58145q6P3isid9+j9K19XpoArD1l2AgQIEJhPQAHPNxMn6i9gBwIECAwXUMDDR+AABAgQIFBRQAFXnLrMtQWkJ0BgCgEFPMUYHIIAAQIEqgko4GoTl5dAbQHpCUwjoICnGYWDECBAgEAlAQVcadqyEiBQW0D6qQQU8FTjcBgCBAgQqCKggKtMWk4CBAjUFpguvQKebiQORIAAAQIVBBRwhSnLSIAAAQLTCdxawNOldyACBAgQIDBIoEwBZ59c8lyXnc1zbfY1Ys/sWVvWReSetBIRWaKmdRGRetrPKKOI3HkjcutacmYHM2LP51kjckbPtV4EngJlCvgZduzL7gQIECBA4KeAAv5p4ScCBAgQIHCbgAK+jbr2RtITIECAwO8CCvh3D78RIECAAIFbBBTwLcw2qS0gPQECBP4WUMB/m3iHAAECBAh0F1DA3YltQKC2gPQECHwuoIA/d/EuAQIECBDoKqCAu/K6OQECtQWkJ/BaQAG/tvEJAQIECBDoJqCAu9G6MQECBGoLSP+1gAL+2senBAgQIECgi4AC7sLqpgQIECBQW+B9egX83sgVBAgQIEDgcgEFfIA0IvfYsQjrIr42OMD/8pKIr+8d8fnnL2/og6ECEZ/PK2LO90dgReQsWh7ZmF0bkTtrRIygHbLnzgU8BNSmBAgQIEDgiIACPqLkGgIECBAgcLGAAr4YdJrbOQgBAgQITC2ggKcej8MRIECAwK4CCnjXydbOJT0BAgSmF1DA04/IAQkQIEBgRwEFvONUZaotID0BAksIKOAlxuSQBAgQILCbgALebaLyEKgtID2BZQQU8DKjclACBAgQ2ElAAe80TVkIEKgtIP1SAgp4qXE5LAECBAjsIqCAd5mkHAQIEKgtsFx6BXxgZNmngVj38ehpcGB001wSEY+I3Kun4dX3jshljIj0rK7O0Pt+6aANCyMi/f3LbtvimN1ztXUKeLWJOS8BAgQIbCFwaQFvISIEAQIECBC4QUAB34BsCwIECBAg8KeAAv5TJP27hQQIECBA4LiAAj5u5UoCBAgQIHCZgAK+jLL2jaQnQIAAgXMCCvicl6sJECBAgMAlAgr4EkY3qS0gPQECBM4LKODzZlYQIECAAIFmAQXcTOgGBGoLSE+AQE5AAefcrCJAgAABAk0CCriJz2ICBGoLSE8gL6CA83ZWEiBAgACBtIACTtNZSIAAgdoC0rcJlCngiPzjuCKsjehj0PL1bXnc2d1rW3JG5OxX27PlvNm1ETnbiMhuOWRdy/c9e+CIuP0RiNmzjlpXpoBHAduXAAECBHYUaM+kgNsN3YEAAQIECJwWUMCnySwgQIAAAQLtAisXcHt6dyBAgAABAoMEFPAgeNsSIECAQG0BBbzq/J2bAAECBJYWUMBLj8/hCRAgQGBVAQW86uRqn1t6AgQILC+ggJcfoQAECBAgsKKAAl5xas5cW0B6AgS2EFDAW4xRCAIECBBYTUABrzYx5yVQW0B6AtsIKOBtRikIAQIECKwkoIBXmpazEiBQW0D6rQQU8IFxtjzKq8LaA4RTXRKRf0xaRG7tVAAHDpP93h649VSXZHM+140I8tw382o5a0TuO5855/c1Leddaa0CXmlazkqAAIG6AtslV8DbjVQgAgQIEFhBQAGvMCVnJECAAIHtBE4V8HbpBSJAgAABAoMEFPAgeNsSIECAQG0BBXx4/i4kQIAAAQLXCSjg6yzdiQABAgQIHBZQwIepal8oPQECBAhcK6CAr/V0NwIECBAgcEhAAR9iclFtAekJECBwvYACvt7UHQkQIECAwFsBBfyWyAUEagtIT4BAHwEF3MfVXQkQIECAwJcCCvhLnrYPI3JPEYkYs64t7f2rI3JO95/08fj+lJc7/47I+UTk17Xky84lIn/eiHdrr/88m7NlXUQ+R8u+1n4toIC/9vEpAQIECBDoIqCAu7C6KQECBNYXkKCvgALu6+vuBAgQIEDgUwEF/CmLNwkQIECgtkD/9Aq4v7EdCBAgQIDAXwIK+C8SbxAgQIAAgf4CMxdw//R2IECAAAECgwQU8CB42xIgQIBAbQEFPOv8nYsAAQIEthZQwFuPVzgCBAgQmFVAAc86mdrnkp4AAQLbCyjg7UcsIAECBAjMKKCAZ5yKM9UWkJ4AgRICCrjEmIUkQIAAgdkEFPBsE3GewwLZR98d3uDCCyPufxxc1ue5Lhs9Ip/zue/Hx8fD3x8vDbJzaVmXnUdE/rvQct6V1irglablrAQIECCwjYAC3maUghAgsLyAAKUEFHCpcQtLgAABArMIKOBZJuEcBAgQqC1QLr0CLjdygQkQIEBgBgEFPMMUnIEAAQIEygn8VsDl0gtMgAABAgQGCSjgQfC2JUCAAIHaAgr4x/z9QIAAAQIE7hNQwPdZ24kAAQIECPwQUMA/KGr/ID0BAgQI3CuggO/1thsBAgQIEPhXQAH/y+CP2gLSEyBA4H4BBXy/uR0vEojIPW2lZfvsk2Fa9qyyNiI3z4j8uiq2LTkjcr7ZfyvPdS3nXWmtAl5pWs5KoIOAWxIgMEZAAY9xtysBAgQIFBdQwMW/AOITqC0gPYFxAgp4nL2dCRAgQKCwgAIuPHzRCRCoLSD9WAEFPNbf7gQIECBQVEABFx282AQIEKgtMD69Ah4/AycgQIAAgYICCrjg0EUmQIAAgfECIwt4fHonIECAAAECgwQU8CB42xIgQIBAbQEFPGr+9iVAgACB0gIKuPT4hSdAgACBUQIKeJR87X2lJ0CAQHkBBdzxK/B8rNZKr44Ubj1AICL3GLmISJ+25fue3rTQwoh4RJx/FSJaKqoCXmpcDruFgBAECBD4R0AB/4PgPwIECBAgcLeAAr5b3H4EagtIT4DAfwIK+D8IfxEgQIAAgTsFFPCd2vYiQKC2gPQEfhFQwL9g+JEAAQIECNwloIDvkrYPAQIEagtI/4eAAv4DxK8ECBAgQOAOAQV8h7I9CBAgQKC2wCfpFfAnKN4iQIAAAQK9BRRwb2H3J0CAAAECnwgUKuBP0nuLAAECBAgMElDAg+BtS4AAAQK1BRTwgflHnH/6SMRcayL6necA4VSXtDyxJyLn2AIQkduzJWf2vBG5s0bEo+W82bUR+fNmjaqsi2D7btYK+J2QzwkQIECAQAcBBdwB1S1nE3AeAgQIzCeggOebiRMRIECAQAEBBVxgyCLWFpCeAIE5BRTwnHNxKgIECBDYXEABbz5g8QjUFpCewLwCCnje2TgZAQIECGwsoIA3Hq5oBAjUFpB+bgEFPPd8nI4AAQIENhVQwJsOViwCBAjUFpg/vQKef0ZOSIAAAQIbCijgDYcqEgECBAjML9CzgOdP74QECBAgQGCQgAIeBG9bAgQIEKgtUKaAs48rS6/7+BjyeLXVztvyzy+bdcSe2bO2rFstZ8t5s2tH+Y44b0vWu9dmfVZbV6aAVxuM8xIgQIDA3gIKeO/5jkpnXwIECBB4I6CA3wD5mAABAgQI9BBQwD1U3bO2gPQECBA4IKCADyC5hAABAgQIXC2ggK8WdT8CtQWkJ0DgoIACPgjlMgIECBAgcKWAAr5S070IEKgtID2BEwIK+ASWSwkQIECAwFUCCvgqSfchQIBAbQHpTwoo4JNgLidAgAABAlcIKOArFN2DAAECBGoLJNIr4ASaJQQIECBAoFVAAbcKWk+AAAECBBICGxVwIr0lBAgQIEBgkIACHgRvWwIECBCoLaCAN5m/GAQIECCwloACXmteTkuAAAECmwgo4E0GWTuG9AQIEFhPQAGvNzMnJkCAAIENBBTwBkMUobaA9AQIrCmggNecm1MTIECAwOICCnjxATo+gdoC0hNYV0ABrzs7JydAgACBhQUU8MLDc3QCBGoLSL+2gAJee35OT4AAAQKLCijgRQfn2AQIEKgtsH56Bbz+DCUgQIAAgQUFFPCCQ3NkAgQIEFhfoKWA108vAQECBAgQGCSggAfB25YAAQIEagso4Oz8rSNAgAABAg0CCrgBz1ICBAgQIJAVUMBZudrrpCdAgACBRgEF3AhoOQECBAgQyAgo4IyaNbUFpCdAgMAFAgr4AkS3IECAAAECZwUU8Fkx1xOoLSA9AQIXCSjgiyDdhgABAgQInBFQwGe0XEuAQG0B6QlcKKCAL8R0KwIECBAgcFRAAR+Vch0BAgRqC0h/sYACvhjU7QgQIECAwBEBBXxEyTUECBAgUFugQ3oF3AHVLQkQIECAwDsBBfxOyOcECBAgQKCDwEIF3CG9WxIgQIAAgUECCngQvG0JECBAoLaAAl5k/o5JgAABAnsJKOC95ikNAQIECCwioIAXGVTtY0pPgACB/QQU8H4zlYgAAQIEFhBQwAsMyRFrC0hPgMCeAgp4z7lKRYAAAQKTCyjgyQfkeARqC0hPYF8BBbzvbCUjQIAAgYkFFPDEw3E0AgRqC0i/t8D/AQAA///t0cTuAAAABklEQVQDAE9Jpl3n2aNsAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "rsvp",
+      "box": {
+        "x": 212,
+        "y": 972.9140625,
+        "w": 518,
+        "h": 60.171875
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 25.5,
+      "lineHeightPx": 30.09,
+      "trackingPx": -0.255,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Bitte sagt bis 20. Juni zu,",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF",
+          "breakAfter": true
+        },
+        {
+          "text": "gern über den QR-Code.",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

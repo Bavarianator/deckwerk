@@ -1,0 +1,688 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 98.171875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit steigt",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.0",
+      "box": {
+        "x": 72,
+        "y": 227.546875,
+        "w": 343.4375,
+        "h": 252.765625
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "kpis.0.value",
+      "box": {
+        "x": 72,
+        "y": 235.546875,
+        "w": 315.4375,
+        "h": 113.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 108,
+      "lineHeightPx": 113.4,
+      "trackingPx": -3.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "€ ",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563",
+          "sizePx": 48.6,
+          "trackingPx": 0
+        },
+        {
+          "text": "12,4",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " M",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563",
+          "sizePx": 48.6,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "kpis.0.label",
+      "box": {
+        "x": 72,
+        "y": 358.9453125,
+        "w": 315.4375,
+        "h": 75.234375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit steigt",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow.0",
+      "box": {
+        "x": 72,
+        "y": 451.2421875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-right\" aria-hidden=\"true\"><path d=\"M7 7h10v10\"></path><path d=\"M7 17 17 7\"></path></svg>",
+      "name": "arrow-up-right",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADBUlEQVR4AezaMW/TUBAA4DtTpAihDhUFCREGJgaGChgRVJAU9Q8wsSAhxMDCACJhaBfSlAGJiYGFhYkdVUmKqFgRDDAxJoEFqYWBoQrx8R6QEpmQa5R7L8/mnJwS+9r3zp/PjRo7Al2GCijQUB4ABVIgRoBJawcpECPApLWDFIgRYNLaQQrECDBp7SAFYgSYtHaQAjECTHr0DmIGzFpagZgjqkAKxAgwadEOOli+cCh/t3j9aLmw7DPyd84/OFIqvM2XC69mbxXnmH0eKS0GdLi0cDwH0QckeASAS76CCJYgim5GiHMIeCY3RW8O3C6eBqFFDGgP0lVT07QJr09EwwK4MyeaJRfBw50NY74RAyKAqTFrkft1jPdLDRZJDYQxPJcaixuHwD4G/9TvzLvB2dG3igG1qvVaHMeLpoRn5u/Chrug10jQ+XNSmRn7ngj2EX3v2zTWWzEgW0W7ur7WrNQvtVbq8y4CEG+YOGZir53PR4gCuSw4X144AUAbCDDjcp7k2KkAGopDsJ3cKcn14IGG4ZhPzk1CWpMESY7lAyg5567XORwAPAeEX8DhEizQbnBaldp7hzY/hw4SKBQcKxQcUEg4wQGFhhMUUIg4wQCFihMEUMg4EwcKHWeiQGnAmRhQWnAmApQmHO9AacPxCpRGHG9AI+PYygIJ5/+LpRnHHiOnQGnHcQqUBRxnQFnBcQKUJRxxoKzhiALNLC9OA9ELHHTdimCLujTv4ztku1OSIfYptm+7U0KE2WRxvy7N4Nn2akPsenlyDpfrYkCDirQ4YC7NuOwcQvj7sg/SJggtYkDfYqgSwedeXfa9j9Nq0F0lGJPYnSZiQFurja/dCE+ZrnkCRI/jbuekj9Oq/64SM+9TiuFis7re6B2ocV/FgGwhn+7VWq1K/UpzpXHt4/2XbbvNR/TuKjHzXrZgknOKAkkWFspYWQFy5qlADK0CKRAjwKS1gxSIEWDS2kEKxAgwae0gBWIEmLR2kAIxAkxaO0iBGAEm/f92EAPTSytQT+Ifrz8AAAD//++uIsIAAAAGSURBVAMARXHyoL/H4dEAAAAASUVORK5CYII="
+    },
+    {
+      "slot": "kpis.0.delta",
+      "box": {
+        "x": 96,
+        "y": 448.1796875,
+        "w": 104.875,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+12,5 % ggü.",
+          "bold": true,
+          "italic": false,
+          "color": "#1E7A45"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.1",
+      "box": {
+        "x": 415.4375,
+        "y": 227.546875,
+        "w": 264.1875,
+        "h": 252.765625
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_rule.1",
+      "box": {
+        "x": 415.4375,
+        "y": 235.546875,
+        "w": 2,
+        "h": 236.765625
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#DDE1E5",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "kpis.1.value",
+      "box": {
+        "x": 443.4375,
+        "y": 267.546875,
+        "w": 208.1875,
+        "h": 75.59375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "€ ",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        },
+        {
+          "text": "12,4",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": " M",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "kpis.1.label",
+      "box": {
+        "x": 443.4375,
+        "y": 358.9453125,
+        "w": 208.1875,
+        "h": 75.234375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenzufriedenheit steigt deutlich durch neue",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow.1",
+      "box": {
+        "x": 443.4375,
+        "y": 451.2421875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-right\" aria-hidden=\"true\"><path d=\"M7 7h10v10\"></path><path d=\"M7 17 17 7\"></path></svg>",
+      "name": "arrow-up-right",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADBUlEQVR4AezaMW/TUBAA4DtTpAihDhUFCREGJgaGChgRVJAU9Q8wsSAhxMDCACJhaBfSlAGJiYGFhYkdVUmKqFgRDDAxJoEFqYWBoQrx8R6QEpmQa5R7L8/mnJwS+9r3zp/PjRo7Al2GCijQUB4ABVIgRoBJawcpECPApLWDFIgRYNLaQQrECDBp7SAFYgSYtHaQAjECTHr0DmIGzFpagZgjqkAKxAgwadEOOli+cCh/t3j9aLmw7DPyd84/OFIqvM2XC69mbxXnmH0eKS0GdLi0cDwH0QckeASAS76CCJYgim5GiHMIeCY3RW8O3C6eBqFFDGgP0lVT07QJr09EwwK4MyeaJRfBw50NY74RAyKAqTFrkft1jPdLDRZJDYQxPJcaixuHwD4G/9TvzLvB2dG3igG1qvVaHMeLpoRn5u/Chrug10jQ+XNSmRn7ngj2EX3v2zTWWzEgW0W7ur7WrNQvtVbq8y4CEG+YOGZir53PR4gCuSw4X144AUAbCDDjcp7k2KkAGopDsJ3cKcn14IGG4ZhPzk1CWpMESY7lAyg5567XORwAPAeEX8DhEizQbnBaldp7hzY/hw4SKBQcKxQcUEg4wQGFhhMUUIg4wQCFihMEUMg4EwcKHWeiQGnAmRhQWnAmApQmHO9AacPxCpRGHG9AI+PYygIJ5/+LpRnHHiOnQGnHcQqUBRxnQFnBcQKUJRxxoKzhiALNLC9OA9ELHHTdimCLujTv4ztku1OSIfYptm+7U0KE2WRxvy7N4Nn2akPsenlyDpfrYkCDirQ4YC7NuOwcQvj7sg/SJggtYkDfYqgSwedeXfa9j9Nq0F0lGJPYnSZiQFurja/dCE+ZrnkCRI/jbuekj9Oq/64SM+9TiuFis7re6B2ocV/FgGwhn+7VWq1K/UpzpXHt4/2XbbvNR/TuKjHzXrZgknOKAkkWFspYWQFy5qlADK0CKRAjwKS1gxSIEWDS2kEKxAgwae0gBWIEmLR2kAIxAkxaO0iBGAEm/f92EAPTSytQT+Ifrz8AAAD//++uIsIAAAAGSURBVAMARXHyoL/H4dEAAAAASUVORK5CYII="
+    },
+    {
+      "slot": "kpis.1.delta",
+      "box": {
+        "x": 467.4375,
+        "y": 448.1796875,
+        "w": 104.875,
+        "h": 24.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+12,5 % ggü.",
+          "bold": true,
+          "italic": false,
+          "color": "#1E7A45"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.2",
+      "box": {
+        "x": 679.625,
+        "y": 227.546875,
+        "w": 264.1875,
+        "h": 252.765625
+      },
+      "build": 2,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_rule.2",
+      "box": {
+        "x": 679.625,
+        "y": 235.546875,
+        "w": 2,
+        "h": 236.765625
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#DDE1E5",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "kpis.2.value",
+      "box": {
+        "x": 707.625,
+        "y": 267.546875,
+        "w": 208.1875,
+        "h": 75.59375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "€ ",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        },
+        {
+          "text": "12,4",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": " M",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "kpis.2.label",
+      "box": {
+        "x": 707.625,
+        "y": 358.9453125,
+        "w": 208.1875,
+        "h": 75.234375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "steigt deutlich durch neue Prozesse im Vertrieb",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow.2",
+      "box": {
+        "x": 707.625,
+        "y": 451.2421875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 2,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-right\" aria-hidden=\"true\"><path d=\"M7 7h10v10\"></path><path d=\"M7 17 17 7\"></path></svg>",
+      "name": "arrow-up-right",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADBUlEQVR4AezaMW/TUBAA4DtTpAihDhUFCREGJgaGChgRVJAU9Q8wsSAhxMDCACJhaBfSlAGJiYGFhYkdVUmKqFgRDDAxJoEFqYWBoQrx8R6QEpmQa5R7L8/mnJwS+9r3zp/PjRo7Al2GCijQUB4ABVIgRoBJawcpECPApLWDFIgRYNLaQQrECDBp7SAFYgSYtHaQAjECTHr0DmIGzFpagZgjqkAKxAgwadEOOli+cCh/t3j9aLmw7DPyd84/OFIqvM2XC69mbxXnmH0eKS0GdLi0cDwH0QckeASAS76CCJYgim5GiHMIeCY3RW8O3C6eBqFFDGgP0lVT07QJr09EwwK4MyeaJRfBw50NY74RAyKAqTFrkft1jPdLDRZJDYQxPJcaixuHwD4G/9TvzLvB2dG3igG1qvVaHMeLpoRn5u/Chrug10jQ+XNSmRn7ngj2EX3v2zTWWzEgW0W7ur7WrNQvtVbq8y4CEG+YOGZir53PR4gCuSw4X144AUAbCDDjcp7k2KkAGopDsJ3cKcn14IGG4ZhPzk1CWpMESY7lAyg5567XORwAPAeEX8DhEizQbnBaldp7hzY/hw4SKBQcKxQcUEg4wQGFhhMUUIg4wQCFihMEUMg4EwcKHWeiQGnAmRhQWnAmApQmHO9AacPxCpRGHG9AI+PYygIJ5/+LpRnHHiOnQGnHcQqUBRxnQFnBcQKUJRxxoKzhiALNLC9OA9ELHHTdimCLujTv4ztku1OSIfYptm+7U0KE2WRxvy7N4Nn2akPsenlyDpfrYkCDirQ4YC7NuOwcQvj7sg/SJggtYkDfYqgSwedeXfa9j9Nq0F0lGJPYnSZiQFurja/dCE+ZrnkCRI/jbuekj9Oq/64SM+9TiuFis7re6B2ocV/FgGwhn+7VWq1K/UpzpXHt4/2XbbvNR/TuKjHzXrZgknOKAkkWFspYWQFy5qlADK0CKRAjwKS1gxSIEWDS2kEKxAgwae0gBWIEmLR2kAIxAkxaO0iBGAEm/f92EAPTSytQT+Ifrz8AAAD//++uIsIAAAAGSURBVAMARXHyoL/H4dEAAAAASUVORK5CYII="
+    },
+    {
+      "slot": "kpis.2.delta",
+      "box": {
+        "x": 731.625,
+        "y": 448.1796875,
+        "w": 104.875,
+        "h": 24.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+12,5 % ggü.",
+          "bold": true,
+          "italic": false,
+          "color": "#1E7A45"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.3",
+      "box": {
+        "x": 943.8125,
+        "y": 227.546875,
+        "w": 264.1796875,
+        "h": 252.765625
+      },
+      "build": 3,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_rule.3",
+      "box": {
+        "x": 943.8125,
+        "y": 235.546875,
+        "w": 2,
+        "h": 236.765625
+      },
+      "build": 3,
+      "kind": "box",
+      "fill": {
+        "color": "#DDE1E5",
+        "alpha": 1
+      },
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "kpis.3.value",
+      "box": {
+        "x": 971.8125,
+        "y": 267.546875,
+        "w": 208.1796875,
+        "h": 75.59375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "€ ",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        },
+        {
+          "text": "12,4",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": " M",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "sizePx": 32.4,
+          "trackingPx": 0
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "kpis.3.label",
+      "box": {
+        "x": 971.8125,
+        "y": 358.9453125,
+        "w": 208.1796875,
+        "h": 75.234375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch neue Prozesse im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_arrow.3",
+      "box": {
+        "x": 971.8125,
+        "y": 451.2421875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 3,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-right\" aria-hidden=\"true\"><path d=\"M7 7h10v10\"></path><path d=\"M7 17 17 7\"></path></svg>",
+      "name": "arrow-up-right",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADBUlEQVR4AezaMW/TUBAA4DtTpAihDhUFCREGJgaGChgRVJAU9Q8wsSAhxMDCACJhaBfSlAGJiYGFhYkdVUmKqFgRDDAxJoEFqYWBoQrx8R6QEpmQa5R7L8/mnJwS+9r3zp/PjRo7Al2GCijQUB4ABVIgRoBJawcpECPApLWDFIgRYNLaQQrECDBp7SAFYgSYtHaQAjECTHr0DmIGzFpagZgjqkAKxAgwadEOOli+cCh/t3j9aLmw7DPyd84/OFIqvM2XC69mbxXnmH0eKS0GdLi0cDwH0QckeASAS76CCJYgim5GiHMIeCY3RW8O3C6eBqFFDGgP0lVT07QJr09EwwK4MyeaJRfBw50NY74RAyKAqTFrkft1jPdLDRZJDYQxPJcaixuHwD4G/9TvzLvB2dG3igG1qvVaHMeLpoRn5u/Chrug10jQ+XNSmRn7ngj2EX3v2zTWWzEgW0W7ur7WrNQvtVbq8y4CEG+YOGZir53PR4gCuSw4X144AUAbCDDjcp7k2KkAGopDsJ3cKcn14IGG4ZhPzk1CWpMESY7lAyg5567XORwAPAeEX8DhEizQbnBaldp7hzY/hw4SKBQcKxQcUEg4wQGFhhMUUIg4wQCFihMEUMg4EwcKHWeiQGnAmRhQWnAmApQmHO9AacPxCpRGHG9AI+PYygIJ5/+LpRnHHiOnQGnHcQqUBRxnQFnBcQKUJRxxoKzhiALNLC9OA9ELHHTdimCLujTv4ztku1OSIfYptm+7U0KE2WRxvy7N4Nn2akPsenlyDpfrYkCDirQ4YC7NuOwcQvj7sg/SJggtYkDfYqgSwedeXfa9j9Nq0F0lGJPYnSZiQFurja/dCE+ZrnkCRI/jbuekj9Oq/64SM+9TiuFis7re6B2ocV/FgGwhn+7VWq1K/UpzpXHt4/2XbbvNR/TuKjHzXrZgknOKAkkWFspYWQFy5qlADK0CKRAjwKS1gxSIEWDS2kEKxAgwae0gBWIEmLR2kAIxAkxaO0iBGAEm/f92EAPTSytQT+Ifrz8AAAD//++uIsIAAAAGSURBVAMARXHyoL/H4dEAAAAASUVORK5CYII="
+    },
+    {
+      "slot": "kpis.3.delta",
+      "box": {
+        "x": 995.8125,
+        "y": 448.1796875,
+        "w": 104.875,
+        "h": 24.1328125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "+12,5 % ggü.",
+          "bold": true,
+          "italic": false,
+          "color": "#1E7A45"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 632.40625,
+        "w": 1136,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

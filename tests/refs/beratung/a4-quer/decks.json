@@ -1,0 +1,303 @@
+{
+  "doc-text-one-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "title": "Kurzinfo zum Vorhaben",
+          "sections": [
+            {
+              "text": "Ein Absatz genügt."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "doc-text-one-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "doc-text-one-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "lead": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            },
+            {
+              "heading": "Kundenbindung verbessert deutlich durch schnellere",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+            },
+            {
+              "heading": "verbessert deutlich durch schnellere Abläufe im",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+            }
+          ],
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+        }
+      }
+    ]
+  },
+  "doc-text-two-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "title": "Kurzinfo zum Vorhaben",
+          "sections": [
+            {
+              "text": "Ein Absatz genügt."
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "doc-text-two-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "doc-text-two-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "lead": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "sections": [
+            {
+              "heading": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+              "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse"
+            },
+            {
+              "heading": "Kundenbindung verbessert deutlich durch schnellere",
+              "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit"
+            },
+            {
+              "heading": "verbessert deutlich durch schnellere Abläufe im",
+              "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+            }
+          ],
+          "source": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+        }
+      }
+    ]
+  },
+  "certificate-default-min": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "certificate",
+        "content": {
+          "title": "Urkunde",
+          "recipient": "Mara"
+        }
+      }
+    ]
+  },
+  "certificate-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "certificate",
+        "content": {
+          "eyebrow": "Teilnahmebescheinigung",
+          "title": "Erste-Hilfe-Kurs",
+          "recipient": "Mara",
+          "text": "hat am 8. Oktober 2026 erfolgreich am Erste-Hilfe-Kurs mit neun Unterrichtseinheiten teilgenommen. Inhalte: Notruf, stabile Seitenlage, Herz-Lungen-Wiederbelebung und der Einsatz eines Defibrillators.",
+          "date": "Musterstadt, 8. Oktober 2026",
+          "signers": [
+            {
+              "name": "Jonas",
+              "role": "Kursleitung"
+            },
+            {
+              "role": "Geschäftsführung"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "certificate-default-max": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "beratung"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "certificate",
+        "content": {
+          "eyebrow": "Wettbewerbsfähigkeit Kundenbindung",
+          "title": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "recipient": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+          "date": "Wettbewerbsfähigkeit Kundenbindung verbessert",
+          "signers": [
+            {
+              "name": "Wettbewerbsfähigkeit Kundenbindung",
+              "role": "Kundenbindung verbessert deutlich durch"
+            },
+            {
+              "name": "Kundenbindung verbessert deutlich durch",
+              "role": "verbessert deutlich durch schnellere"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

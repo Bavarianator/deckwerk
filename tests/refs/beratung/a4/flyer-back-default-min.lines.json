@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "So läuft der Abend"
+    ]
+  },
+  {
+    "slot": "items.0.head",
+    "lines": [
+      "18:00"
+    ]
+  },
+  {
+    "slot": "items.0.text",
+    "lines": [
+      "Ankommen"
+    ]
+  },
+  {
+    "slot": "items.1.head",
+    "lines": [
+      "18:30"
+    ]
+  },
+  {
+    "slot": "items.1.text",
+    "lines": [
+      "Live-Demo"
+    ]
+  },
+  {
+    "slot": "cta",
+    "lines": [
+      "Jetzt anmelden"
+    ]
+  }
+]

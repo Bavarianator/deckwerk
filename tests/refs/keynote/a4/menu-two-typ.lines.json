@@ -1,0 +1,191 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Herbst · ab 1. Oktober"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Herbstkarte"
+    ]
+  },
+  {
+    "slot": "intro",
+    "lines": [
+      "Wir kochen mit Gemüse aus dem Umland und Fleisch von Höfen, die",
+      "wir kennen."
+    ]
+  },
+  {
+    "slot": "sections.0.heading",
+    "lines": [
+      "Vorspeisen"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.name",
+    "lines": [
+      "Kürbissuppe"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.tag",
+    "lines": [
+      "vegan"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.price",
+    "lines": [
+      "7,50"
+    ]
+  },
+  {
+    "slot": "sections.0.items.0.text",
+    "lines": [
+      "Hokkaido, Ingwer, geröstete Kerne"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.name",
+    "lines": [
+      "Feldsalat"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.tag",
+    "lines": [
+      "G, H"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.price",
+    "lines": [
+      "9,80"
+    ]
+  },
+  {
+    "slot": "sections.0.items.1.text",
+    "lines": [
+      "Birne, Walnuss, Ziegenkäse, Honig-",
+      "Senf-Dressing"
+    ]
+  },
+  {
+    "slot": "sections.1.heading",
+    "lines": [
+      "Hauptgerichte"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.name",
+    "lines": [
+      "Rinderroulade"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.tag",
+    "lines": [
+      "A, I"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.price",
+    "lines": [
+      "21,50"
+    ]
+  },
+  {
+    "slot": "sections.1.items.0.text",
+    "lines": [
+      "Rotkohl, Kartoffelklöße, Schmorsauce"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.name",
+    "lines": [
+      "Kürbisrisotto"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.tag",
+    "lines": [
+      "G"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.price",
+    "lines": [
+      "16,90"
+    ]
+  },
+  {
+    "slot": "sections.1.items.1.text",
+    "lines": [
+      "Salbeibutter, Bergkäse"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.name",
+    "lines": [
+      "Saibling"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.tag",
+    "lines": [
+      "D, G"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.price",
+    "lines": [
+      "23,00"
+    ]
+  },
+  {
+    "slot": "sections.1.items.2.text",
+    "lines": [
+      "Aus dem Fichtelgebirge, mit Petersilienkartoffeln",
+      "und Rahmspinat"
+    ]
+  },
+  {
+    "slot": "sections.2.heading",
+    "lines": [
+      "Nachspeisen"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.name",
+    "lines": [
+      "Zwetschgendatschi"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.tag",
+    "lines": [
+      "A, C, G"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.price",
+    "lines": [
+      "5,50"
+    ]
+  },
+  {
+    "slot": "sections.2.items.0.text",
+    "lines": [
+      "Mit geschlagener Sahne"
+    ]
+  },
+  {
+    "slot": "note",
+    "lines": [
+      "Allergene: A Gluten, C Ei, D Fisch, G Milch, H Schalenfrüchte, I Sellerie. Alle Preise in Euro inkl. MwSt."
+    ]
+  }
+]

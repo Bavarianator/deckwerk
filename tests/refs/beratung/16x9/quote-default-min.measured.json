@@ -1,0 +1,93 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_mark",
+      "box": {
+        "x": 140,
+        "y": 238.4609375,
+        "w": 1000,
+        "h": 104
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 190,
+      "lineHeightPx": 155.8,
+      "trackingPx": -3.8,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "“",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 140,
+        "y": 364.4609375,
+        "w": 1000,
+        "h": 58
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "statement",
+      "sizePx": 50,
+      "lineHeightPx": 58,
+      "trackingPx": -1,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Das hat uns wirklich Zeit gespart.",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "author",
+      "box": {
+        "x": 140,
+        "y": 444.4609375,
+        "w": 1000,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Anna Berg",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

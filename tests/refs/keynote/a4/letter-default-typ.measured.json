@@ -1,0 +1,695 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "sender",
+      "box": {
+        "x": 94.484375,
+        "y": 52.90625,
+        "w": 244.7109375,
+        "h": 37.546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 32.94,
+      "lineHeightPx": 37.5516,
+      "trackingPx": -0.9882,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Praxis am Markt",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "senderLine",
+      "box": {
+        "x": 94.4765625,
+        "y": 214.265625,
+        "w": 302.3671875,
+        "h": 17.0390625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Praxis am Markt, Marktplatz 3, 12345 Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "to",
+      "box": {
+        "x": 94.4765625,
+        "y": 236.96875,
+        "w": 302.3671875,
+        "h": 67.1875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 15,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Muster GmbH",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Personalabteilung",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Musterweg 1",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "12345 Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 4,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.0.label",
+      "box": {
+        "x": 472.4375,
+        "y": 188.96875,
+        "w": 105.8671875,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ihr Zeichen",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.0.value",
+      "box": {
+        "x": 590.3046875,
+        "y": 188.96875,
+        "w": 165.59375,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "PA-2026-17",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.1.label",
+      "box": {
+        "x": 472.4375,
+        "y": 207.8046875,
+        "w": 105.8671875,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ansprechpartnerin",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.1.value",
+      "box": {
+        "x": 590.3046875,
+        "y": 207.8046875,
+        "w": 165.59375,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sabine, Praxisleitung",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.2.label",
+      "box": {
+        "x": 472.4375,
+        "y": 226.640625,
+        "w": 105.8671875,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Telefon",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.2.value",
+      "box": {
+        "x": 590.3046875,
+        "y": 226.640625,
+        "w": 165.59375,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "0123 456789",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.3.label",
+      "box": {
+        "x": 472.4375,
+        "y": 245.4765625,
+        "w": 105.8671875,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Datum",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "info.3.value",
+      "box": {
+        "x": 590.3046875,
+        "y": 245.4765625,
+        "w": 165.59375,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "8. Oktober 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "subject",
+      "box": {
+        "x": 94.484375,
+        "y": 372.125,
+        "w": 623.9296875,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Grippeschutzimpfung für Ihr Team am 4. November",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "salutation",
+      "box": {
+        "x": 94.484375,
+        "y": 416.28125,
+        "w": 623.9296875,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sehr geehrte Damen und Herren,",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "body",
+      "box": {
+        "x": 94.484375,
+        "y": 460.4375,
+        "w": 623.9296875,
+        "h": 198.703125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "vielen Dank für Ihre Anfrage. Gern impfen wir Ihre Mitarbeitenden in Ihren Räumen gegen Grippe. Wir kommen am 4. November um 9 Uhr mit zwei Fachkräften und bringen den Impfstoff mit.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": " ",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Bitte stellen Sie einen ruhigen Raum mit Tisch und zwei Stühlen bereit. Pro Person rechnen wir mit zehn Minuten, bei 40 Anmeldungen sind wir gegen 12 Uhr fertig.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": " ",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Die Kosten übernimmt in der Regel die Krankenkasse. Den Aufklärungsbogen legen wir bei; er sollte ausgefüllt mitgebracht werden.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 9,
+      "bg": "#111113"
+    },
+    {
+      "slot": "closing",
+      "box": {
+        "x": 94.484375,
+        "y": 681.21875,
+        "w": 623.9296875,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit freundlichen Grüßen",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "signature",
+      "box": {
+        "x": 94.484375,
+        "y": 768.890625,
+        "w": 623.9296875,
+        "h": 44.15625
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sabine",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "Praxisleitung",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_enc",
+      "box": {
+        "x": 94.484375,
+        "y": 835.125,
+        "w": 623.9296875,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Anlagen",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "enclosures.0",
+      "box": {
+        "x": 94.484375,
+        "y": 857.203125,
+        "w": 623.9296875,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Aufklärungsbogen",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "footer.0",
+      "box": {
+        "x": 94.484375,
+        "y": 1034.09375,
+        "w": 146.9765625,
+        "h": 51.1171875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Praxis am Markt",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93",
+          "breakAfter": true
+        },
+        {
+          "text": "Marktplatz 3",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93",
+          "breakAfter": true
+        },
+        {
+          "text": "12345 Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 3,
+      "bg": "#111113"
+    },
+    {
+      "slot": "footer.1",
+      "box": {
+        "x": 253.4609375,
+        "y": 1034.09375,
+        "w": 146.984375,
+        "h": 51.1171875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Telefon 0123 456789",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93",
+          "breakAfter": true
+        },
+        {
+          "text": "example.com",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "footer.2",
+      "box": {
+        "x": 412.4453125,
+        "y": 1034.09375,
+        "w": 146.984375,
+        "h": 51.1171875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sparkasse Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93",
+          "breakAfter": true
+        },
+        {
+          "text": "IBAN DE12 3456 7890 1234 5678 90",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 3,
+      "bg": "#111113"
+    },
+    {
+      "slot": "footer.3",
+      "box": {
+        "x": 571.4296875,
+        "y": 1034.09375,
+        "w": 146.984375,
+        "h": 51.1171875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 12,
+      "lineHeightPx": 17.04,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sprechzeiten",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93",
+          "breakAfter": true
+        },
+        {
+          "text": "Mo–Fr 8–18 Uhr",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    }
+  ]
+}

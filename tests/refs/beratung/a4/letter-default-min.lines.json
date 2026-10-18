@@ -1,0 +1,28 @@
+[
+  {
+    "slot": "sender",
+    "lines": [
+      "Praxis am Markt"
+    ]
+  },
+  {
+    "slot": "to",
+    "lines": [
+      "Muster GmbH",
+      "Musterweg 1",
+      "12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "subject",
+    "lines": [
+      "Ihr Termin am 4. November steht"
+    ]
+  },
+  {
+    "slot": "body",
+    "lines": [
+      "Wir bestätigen den Impftermin für Ihr Team am 4. November um 9 Uhr."
+    ]
+  }
+]

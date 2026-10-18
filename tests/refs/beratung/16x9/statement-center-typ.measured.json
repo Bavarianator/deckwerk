@@ -1,0 +1,113 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 590.9609375,
+        "y": 208.0625,
+        "w": 98.078125,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Die Erkenntnis",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 120,
+        "y": 254.859375,
+        "w": 1040,
+        "h": 174
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "statement",
+      "sizePx": 50,
+      "lineHeightPx": 58,
+      "trackingPx": -1,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "80 % unserer Neukunden kommen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "über Empfehlungen – ",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "Zufriedenheit",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563",
+          "breakAfter": true
+        },
+        {
+          "text": "ist unser stärkster Vertriebskanal.",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 493.2109375,
+        "y": 474.859375,
+        "w": 293.5703125,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbefragung 2026, n = 1.240",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

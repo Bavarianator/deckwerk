@@ -1,0 +1,98 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 449.2578125,
+        "w": 50.0703125,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vor Ort",
+          "bold": true,
+          "italic": false,
+          "color": "#1C314A"
+        }
+      ],
+      "lines": 1,
+      "bg": "#3D9BFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 480.0546875,
+        "w": 920,
+        "h": 116.828125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 51.24,
+      "lineHeightPx": 58.4136,
+      "trackingPx": -1.5372,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jede dritte Schule arbeitet schon",
+          "bold": true,
+          "italic": false,
+          "color": "#0B0B0C",
+          "breakAfter": true
+        },
+        {
+          "text": "digital – der Rest wartet auf Lösungen",
+          "bold": true,
+          "italic": false,
+          "color": "#0B0B0C"
+        }
+      ],
+      "lines": 2,
+      "bg": "#3D9BFF"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 610.8828125,
+        "w": 920,
+        "h": 33.1171875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Besuch an der Grundschule Nord, September 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#1C314A"
+        }
+      ],
+      "lines": 1,
+      "bg": "#3D9BFF"
+    }
+  ]
+}

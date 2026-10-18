@@ -1,0 +1,788 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "contact.0",
+      "box": {
+        "x": 56,
+        "y": 60,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Musterweg 1, 12345 Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.1",
+      "box": {
+        "x": 56,
+        "y": 78.8359375,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "0123 456789",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "contact.2",
+      "box": {
+        "x": 56,
+        "y": 97.671875,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "example.com/mara",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.0.label",
+      "box": {
+        "x": 56,
+        "y": 133.5078125,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sprachen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.0.text",
+      "box": {
+        "x": 56,
+        "y": 150.34375,
+        "w": 180,
+        "h": 31.671875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Deutsch (Muttersprache), Englisch (C1), Spanisch (B1)",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.1.label",
+      "box": {
+        "x": 56,
+        "y": 202.015625,
+        "w": 180,
+        "h": 15.8359375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Werkzeuge",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "skills.1.text",
+      "box": {
+        "x": 56,
+        "y": 218.8515625,
+        "w": 180,
+        "h": 31.671875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Figma, HTML und CSS, Nutzertests, WCAG 2.2",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "name",
+      "box": {
+        "x": 280,
+        "y": 60,
+        "w": 458,
+        "h": 36.4453125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 33.75,
+      "lineHeightPx": 36.45,
+      "trackingPx": -0.50625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mara",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "role",
+      "box": {
+        "x": 280,
+        "y": 102.4453125,
+        "w": 458,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Produktdesignerin mit Schwerpunkt Barrierefreiheit",
+          "bold": false,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "profile",
+      "box": {
+        "x": 280,
+        "y": 144.5234375,
+        "w": 458,
+        "h": 57.9375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 14,
+      "lineHeightPx": 19.32,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Acht Jahre Erfahrung in der Gestaltung digitaler Dienste für Verwaltung und Mittelstand. Ich verbinde Nutzerforschung mit sorgfältiger Umsetzung und suche eine Rolle mit Verantwortung für ein Designteam.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.heading",
+      "box": {
+        "x": 280,
+        "y": 232.4609375,
+        "w": 458,
+        "h": 14.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.96,
+      "align": "left",
+      "upper": true,
+      "runs": [
+        {
+          "text": "Berufserfahrung",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.period",
+      "box": {
+        "x": 665.5078125,
+        "y": 258.359375,
+        "w": 72.4921875,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2021 – heute",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.title",
+      "box": {
+        "x": 280,
+        "y": 256.859375,
+        "w": 369.5078125,
+        "h": 17.359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Senior Produktdesignerin",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.place",
+      "box": {
+        "x": 280,
+        "y": 275.21875,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Muster GmbH, Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.text",
+      "box": {
+        "x": 280,
+        "y": 292.0546875,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Gestaltung des Bürgerportals; die Abbruchquote im Antrag sank um 38 %.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.period",
+      "box": {
+        "x": 667.6796875,
+        "y": 319.390625,
+        "w": 70.3203125,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2018 – 2021",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.title",
+      "box": {
+        "x": 280,
+        "y": 317.890625,
+        "w": 371.6796875,
+        "h": 17.359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Produktdesignerin",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.place",
+      "box": {
+        "x": 280,
+        "y": 336.25,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel AG, Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.1.text",
+      "box": {
+        "x": 280,
+        "y": 353.0859375,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Aufbau eines Designsystems für zwölf Fachanwendungen.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.2.period",
+      "box": {
+        "x": 667.6796875,
+        "y": 380.421875,
+        "w": 70.3203125,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2016 – 2018",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.2.title",
+      "box": {
+        "x": 280,
+        "y": 378.921875,
+        "w": 371.6796875,
+        "h": 17.359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Junior UX-Designerin",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.2.place",
+      "box": {
+        "x": 280,
+        "y": 397.28125,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Agentur Nord, Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.heading",
+      "box": {
+        "x": 280,
+        "y": 443.1171875,
+        "w": 458,
+        "h": 14.3984375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.96,
+      "align": "left",
+      "upper": true,
+      "runs": [
+        {
+          "text": "Ausbildung",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.period",
+      "box": {
+        "x": 667.6796875,
+        "y": 469.015625,
+        "w": 70.3203125,
+        "h": 15.8359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2013 – 2016",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.title",
+      "box": {
+        "x": 280,
+        "y": 467.515625,
+        "w": 371.6796875,
+        "h": 17.359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "B. A. Kommunikationsdesign",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.place",
+      "box": {
+        "x": 280,
+        "y": 485.875,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Hochschule Musterstadt",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.1.entries.0.text",
+      "box": {
+        "x": 280,
+        "y": 502.7109375,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Abschlussarbeit über barrierefreie Formulare, Note 1,3.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "signed",
+      "box": {
+        "x": 280,
+        "y": 1055.1640625,
+        "w": 458,
+        "h": 15.8359375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Musterstadt, 8. Oktober 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Zwei Zahlen zeigen den Erfolg"
+    ]
+  },
+  {
+    "slot": "kpis.0.value",
+    "lines": [
+      "98 %"
+    ]
+  },
+  {
+    "slot": "kpis.0.label",
+    "lines": [
+      "Verfügbarkeit"
+    ]
+  },
+  {
+    "slot": "kpis.1.value",
+    "lines": [
+      "4,8"
+    ]
+  },
+  {
+    "slot": "kpis.1.label",
+    "lines": [
+      "Kundenbewertung"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

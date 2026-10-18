@@ -1,0 +1,26 @@
+[
+  {
+    "slot": "name",
+    "lines": [
+      "Vorname Nachname"
+    ]
+  },
+  {
+    "slot": "sections.0.heading",
+    "lines": [
+      "Berufserfahrung"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.0.period",
+    "lines": [
+      "2021 – heute"
+    ]
+  },
+  {
+    "slot": "sections.0.entries.0.title",
+    "lines": [
+      "Projektleitung"
+    ]
+  }
+]

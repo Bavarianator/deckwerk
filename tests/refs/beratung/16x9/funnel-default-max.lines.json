@@ -1,0 +1,119 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "stages.0.value",
+    "lines": [
+      "€ 1.234,5"
+    ]
+  },
+  {
+    "slot": "stages.0.label",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "stages.1.value",
+    "lines": [
+      "€ 1.234,5"
+    ]
+  },
+  {
+    "slot": "stages.1.label",
+    "lines": [
+      "Kundenbindung",
+      "verbessert"
+    ]
+  },
+  {
+    "slot": "_conv.1",
+    "lines": [
+      "100 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "stages.2.value",
+    "lines": [
+      "€ 1.234,5"
+    ]
+  },
+  {
+    "slot": "stages.2.label",
+    "lines": [
+      "verbessert deutlich",
+      "durch"
+    ]
+  },
+  {
+    "slot": "_conv.2",
+    "lines": [
+      "100 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "stages.3.value",
+    "lines": [
+      "€ 1.234,5"
+    ]
+  },
+  {
+    "slot": "stages.3.label",
+    "lines": [
+      "deutlich durch",
+      "schnellere"
+    ]
+  },
+  {
+    "slot": "_conv.3",
+    "lines": [
+      "100 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "stages.4.value",
+    "lines": [
+      "€ 1.234,5"
+    ]
+  },
+  {
+    "slot": "stages.4.label",
+    "lines": [
+      "durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "_conv.4",
+    "lines": [
+      "100 % der Vorstufe"
+    ]
+  },
+  {
+    "slot": "takeaway",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert",
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare",
+      "Verantwortung für"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

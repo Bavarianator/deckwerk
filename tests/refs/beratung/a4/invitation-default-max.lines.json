@@ -1,0 +1,89 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere",
+      "Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "host",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "facts.0.label",
+    "lines": [
+      "Wettbewerbsfäh"
+    ]
+  },
+  {
+    "slot": "facts.0.value",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "facts.1.label",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "facts.1.value",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch",
+      "schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "facts.2.label",
+    "lines": [
+      "verbessert"
+    ]
+  },
+  {
+    "slot": "facts.2.value",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im",
+      "Vertrieb und"
+    ]
+  },
+  {
+    "slot": "facts.3.label",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "facts.3.value",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb",
+      "und klare"
+    ]
+  },
+  {
+    "slot": "rsvp",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe"
+    ]
+  }
+]

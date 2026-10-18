@@ -1,0 +1,1351 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 2,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 222.46875,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 88.3984375,
+        "w": 650,
+        "h": 61.546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "verbessert deutlich durch",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "to",
+      "box": {
+        "x": 72,
+        "y": 190.9453125,
+        "w": 364.0625,
+        "h": 31.671875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "meta",
+      "box": {
+        "x": 476.0625,
+        "y": 190.9453125,
+        "w": 245.9375,
+        "h": 31.671875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_h.name",
+      "box": {
+        "x": 72,
+        "y": 244.6171875,
+        "w": 388,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Position",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_h.qty",
+      "box": {
+        "x": 476,
+        "y": 244.6171875,
+        "w": 110,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Menge",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_h.price",
+      "box": {
+        "x": 602,
+        "y": 244.6171875,
+        "w": 120,
+        "h": 15.8359375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Betrag",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.name",
+      "box": {
+        "x": 72,
+        "y": 283.453125,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.detail",
+      "box": {
+        "x": 72,
+        "y": 303.390625,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.qty",
+      "box": {
+        "x": 476,
+        "y": 283.453125,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.0.price",
+      "box": {
+        "x": 602,
+        "y": 283.453125,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.name",
+      "box": {
+        "x": 72,
+        "y": 358.0625,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.detail",
+      "box": {
+        "x": 72,
+        "y": 378,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.qty",
+      "box": {
+        "x": 476,
+        "y": 358.0625,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.1.price",
+      "box": {
+        "x": 602,
+        "y": 358.0625,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.name",
+      "box": {
+        "x": 72,
+        "y": 432.671875,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.detail",
+      "box": {
+        "x": 72,
+        "y": 452.609375,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.qty",
+      "box": {
+        "x": 476,
+        "y": 432.671875,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.2.price",
+      "box": {
+        "x": 602,
+        "y": 432.671875,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.3.name",
+      "box": {
+        "x": 72,
+        "y": 507.28125,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch schnellere Abläufe im Vertrieb und klare",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.3.detail",
+      "box": {
+        "x": 72,
+        "y": 527.21875,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.3.qty",
+      "box": {
+        "x": 476,
+        "y": 507.28125,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.3.price",
+      "box": {
+        "x": 602,
+        "y": 507.28125,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.4.name",
+      "box": {
+        "x": 72,
+        "y": 581.890625,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "durch schnellere Abläufe im Vertrieb und klare Verantwortung",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.4.detail",
+      "box": {
+        "x": 72,
+        "y": 601.828125,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.4.qty",
+      "box": {
+        "x": 476,
+        "y": 581.890625,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.4.price",
+      "box": {
+        "x": 602,
+        "y": 581.890625,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.5.name",
+      "box": {
+        "x": 72,
+        "y": 656.5,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 5,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "schnellere Abläufe im Vertrieb und klare Verantwortung für",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.5.detail",
+      "box": {
+        "x": 72,
+        "y": 676.4375,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 5,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.5.qty",
+      "box": {
+        "x": 476,
+        "y": 656.5,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 5,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.5.price",
+      "box": {
+        "x": 602,
+        "y": 656.5,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 5,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.6.name",
+      "box": {
+        "x": 72,
+        "y": 731.109375,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 6,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Abläufe im Vertrieb und klare Verantwortung für messbare",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.6.detail",
+      "box": {
+        "x": 72,
+        "y": 751.046875,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 6,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.6.qty",
+      "box": {
+        "x": 476,
+        "y": 731.109375,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 6,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.6.price",
+      "box": {
+        "x": 602,
+        "y": 731.109375,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 6,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.7.name",
+      "box": {
+        "x": 72,
+        "y": 805.71875,
+        "w": 388,
+        "h": 17.9375
+      },
+      "build": 7,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.7.detail",
+      "box": {
+        "x": 72,
+        "y": 825.65625,
+        "w": 388,
+        "h": 31.671875
+      },
+      "build": 7,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.7.qty",
+      "box": {
+        "x": 476,
+        "y": 805.71875,
+        "w": 110,
+        "h": 17.9375
+      },
+      "build": 7,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "120 Std.",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "items.7.price",
+      "box": {
+        "x": 602,
+        "y": 805.71875,
+        "w": 120,
+        "h": 17.9375
+      },
+      "build": 7,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12.345,67 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "totals.0.label",
+      "box": {
+        "x": 358,
+        "y": 887.328125,
+        "w": 128.015625,
+        "h": 17.9375
+      },
+      "build": 8,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "totals.0.value",
+      "box": {
+        "x": 641.328125,
+        "y": 887.328125,
+        "w": 80.671875,
+        "h": 17.9375
+      },
+      "build": 8,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "123.456,78 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "totals.1.label",
+      "box": {
+        "x": 358,
+        "y": 911.265625,
+        "w": 157.34375,
+        "h": 17.9375
+      },
+      "build": 8,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kundenbindung verbessert",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "totals.1.value",
+      "box": {
+        "x": 641.328125,
+        "y": 911.265625,
+        "w": 80.671875,
+        "h": 17.9375
+      },
+      "build": 8,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 13,
+      "lineHeightPx": 17.94,
+      "trackingPx": 0,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "123.456,78 €",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "totals.2.label",
+      "box": {
+        "x": 358,
+        "y": 955.203125,
+        "w": 107.578125,
+        "h": 14.875
+      },
+      "build": 8,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 12,
+      "lineHeightPx": 14.88,
+      "trackingPx": -0.09,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "verbessert deutlich",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "totals.2.value",
+      "box": {
+        "x": 647.6796875,
+        "y": 955.203125,
+        "w": 74.3203125,
+        "h": 14.875
+      },
+      "build": 8,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 12,
+      "lineHeightPx": 14.88,
+      "trackingPx": -0.09,
+      "align": "right",
+      "upper": false,
+      "runs": [
+        {
+          "text": "123.456,78 €",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "terms",
+      "box": {
+        "x": 72,
+        "y": 1003.4921875,
+        "w": 650,
+        "h": 47.5078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 714.5546875,
+        "y": 1080.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_panel",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 936,
+        "h": 391.9765625
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#F4F5F6",
+        "alpha": 1
+      },
+      "radius": 2,
+      "ellipse": false
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 96,
+        "y": 80,
+        "w": 888,
+        "h": 35.6328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Eine Abfrage liefert den Wochenumsatz",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#F4F5F6"
+    },
+    {
+      "slot": "code",
+      "box": {
+        "x": 96,
+        "y": 129.6328125,
+        "w": 888,
+        "h": 302.34375
+      },
+      "kind": "text",
+      "font": "body",
+      "fontFace": "Courier New",
+      "role": "small",
+      "sizePx": 24,
+      "lineHeightPx": 33.6,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "// Bestellungen der letzten sieben Tage laden",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "const seit = new Date(Date.now() - 7 * 864e5)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "const res = await fetch(`/api/orders?since=${seit.toISOString()}`)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "if (!res.ok) throw new Error(`HTTP ${res.status}`)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": " ",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470",
+          "breakAfter": true
+        },
+        {
+          "text": "const orders = await res.json()",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "const umsatz = orders.reduce((s, o) => s + o.total, 0)",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "console.log(`${orders.length} Bestellungen, ${umsatz} €`)",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 8,
+      "bg": "#F4F5F6"
+    },
+    {
+      "slot": "note",
+      "box": {
+        "x": 72,
+        "y": 471.9765625,
+        "w": 818.5078125,
+        "h": 35.6328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 27,
+      "lineHeightPx": 35.64,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "reduce summiert die Beträge aller Bestellungen in einem Durchlauf.",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 967.0546875,
+        "y": 1287.203125,
+        "w": 40.9453125,
+        "h": 22.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 19,
+      "lineHeightPx": 22.8,
+      "trackingPx": 0.38,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

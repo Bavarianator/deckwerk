@@ -1,0 +1,34 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Eine Abfrage liefert",
+      "den Wochenumsatz"
+    ]
+  },
+  {
+    "slot": "code",
+    "lines": [
+      "// Bestellungen der letzten sieben Tage laden",
+      "const seit = new Date(Date.now() - 7 * 864e5)",
+      "const res = await fetch(`/api/orders?since=${seit.toISOString()}`)",
+      "if (!res.ok) throw new Error(`HTTP ${res.status}`)",
+      "",
+      "const orders = await res.json()",
+      "const umsatz = orders.reduce((s, o) => s + o.total, 0)",
+      "console.log(`${orders.length} Bestellungen, ${umsatz} €`)"
+    ]
+  },
+  {
+    "slot": "note",
+    "lines": [
+      "reduce summiert die Beträge aller Bestellungen in einem Durchlauf."
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

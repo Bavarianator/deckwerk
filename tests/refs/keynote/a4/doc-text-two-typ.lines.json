@@ -1,0 +1,86 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Projektinfo"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Ortho-Bot startet im",
+      "Herbst an 20 Pilotschulen"
+    ]
+  },
+  {
+    "slot": "lead",
+    "lines": [
+      "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet.",
+      "Die ersten Ergebnisse liegen im März 2027 vor."
+    ]
+  },
+  {
+    "slot": "sections.0.heading",
+    "lines": [
+      "Worum es geht"
+    ]
+  },
+  {
+    "slot": "sections.0.text",
+    "lines": [
+      "Ortho-Bot erkennt typische Fehlerarten",
+      "in freien Texten und übt gezielt die",
+      "passende Regel. Lehrkräfte sehen den",
+      "Fortschritt pro Kind und Klasse."
+    ]
+  },
+  {
+    "slot": "sections.1.heading",
+    "lines": [
+      "Was wir brauchen"
+    ]
+  },
+  {
+    "slot": "sections.1.text",
+    "lines": [
+      "Zwanzig Schulen mit je einer Klasse der",
+      "Jahrgangsstufe 3 oder 4 und eine feste",
+      "Ansprechperson im Kollegium.",
+      "Die Anmeldung ist bis zum 15.",
+      "Oktober möglich."
+    ]
+  },
+  {
+    "slot": "sections.2.heading",
+    "lines": [
+      "Datenschutz"
+    ]
+  },
+  {
+    "slot": "sections.2.text",
+    "lines": [
+      "Alle Daten werden in Deutschland",
+      "verarbeitet. Es gibt keine Klarnamen,",
+      "die Zuordnung läuft über Kürzel",
+      "der Lehrkraft."
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Stand Oktober 2026"
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "So funktioniert es"
+    ]
+  },
+  {
+    "slot": "_n.0",
+    "lines": [
+      "01"
+    ]
+  },
+  {
+    "slot": "steps.0.title",
+    "lines": [
+      "Anmelden"
+    ]
+  },
+  {
+    "slot": "_n.1",
+    "lines": [
+      "02"
+    ]
+  },
+  {
+    "slot": "steps.1.title",
+    "lines": [
+      "Verbinden"
+    ]
+  },
+  {
+    "slot": "_n.2",
+    "lines": [
+      "03"
+    ]
+  },
+  {
+    "slot": "steps.2.title",
+    "lines": [
+      "Loslegen"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

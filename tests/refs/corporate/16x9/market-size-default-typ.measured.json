@@ -1,0 +1,417 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 36.3359375,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Markt",
+          "bold": true,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 95.75
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.84,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Schon 5 % der Grundschulen in",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "DACH tragen ein profitables Geschäft",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_ring.tam",
+      "box": {
+        "x": 72,
+        "y": 226.546875,
+        "w": 387.859375,
+        "h": 387.859375
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#E6ECF6",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ring.sam",
+      "box": {
+        "x": 141.81640625,
+        "y": 366.1796875,
+        "w": 248.2265625,
+        "h": 248.2265625
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#E8F1FF",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_ring.som",
+      "box": {
+        "x": 207.75390625,
+        "y": 498.0546875,
+        "w": 116.3515625,
+        "h": 116.3515625
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#1F5EFF",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_dot.tam",
+      "box": {
+        "x": 523.859375,
+        "y": 251.46875,
+        "w": 22,
+        "h": 22
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#E6ECF6",
+        "alpha": 1
+      },
+      "border": {
+        "color": "#DCE3EE",
+        "width": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "tam.value",
+      "box": {
+        "x": 565.859375,
+        "y": 235.46875,
+        "w": 346.7421875,
+        "h": 75.59375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1,2 Mrd €",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "tam.label",
+      "box": {
+        "x": 565.859375,
+        "y": 315.0625,
+        "w": 346.7421875,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "TAM",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        },
+        {
+          "text": " · Digitale Lernmittel an Schulen in DACH",
+          "bold": false,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.sam",
+      "box": {
+        "x": 523.859375,
+        "y": 384.140625,
+        "w": 22,
+        "h": 22
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#E8F1FF",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "sam.value",
+      "box": {
+        "x": 565.859375,
+        "y": 368.140625,
+        "w": 369.8203125,
+        "h": 75.59375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "180 Mio €",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sam.label",
+      "box": {
+        "x": 565.859375,
+        "y": 447.734375,
+        "w": 369.8203125,
+        "h": 25.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "SAM",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        },
+        {
+          "text": " · Deutsch und Rechtschreibung, Klasse 1–6",
+          "bold": false,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_dot.som",
+      "box": {
+        "x": 523.859375,
+        "y": 516.8125,
+        "w": 22,
+        "h": 22
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#1F5EFF",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "som.value",
+      "box": {
+        "x": 565.859375,
+        "y": 500.8125,
+        "w": 290.65625,
+        "h": 75.59375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "kpi",
+      "sizePx": 72,
+      "lineHeightPx": 75.6,
+      "trackingPx": -2.16,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "9 Mio €",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "som.label",
+      "box": {
+        "x": 565.859375,
+        "y": 580.40625,
+        "w": 290.65625,
+        "h": 25.078125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "SOM",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        },
+        {
+          "text": " · 5 % der Grundschulen bis 2029",
+          "bold": false,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "source",
+      "box": {
+        "x": 72,
+        "y": 632.40625,
+        "w": 1136,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Bildungsbericht 2026, eigene Hochrechnung",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1182.6171875,
+        "y": 677.203125,
+        "w": 25.3828125,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,344 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 1000,
+        "h": 47.875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 42,
+      "lineHeightPx": 47.88,
+      "trackingPx": -0.63,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Der Umzug lohnt sich",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "prosLabel",
+      "box": {
+        "x": 72,
+        "y": 169.875,
+        "w": 540,
+        "h": 31.71875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Dafür",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.pros.0",
+      "box": {
+        "x": 72,
+        "y": 220.1484375,
+        "w": 18,
+        "h": 32
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.pros.0",
+      "box": {
+        "x": 72,
+        "y": 227.1484375,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADq0lEQVR4AezY3U7UQBQH8DNDr4zRQEiMwvoAajR6q8JuICQ+Bl74BEYC3ngjuLyC0fgcuAqKXpgYjUF9AD68EUVjDDHQjv3vsmSBdk+7/didchomu+2ZdmZ+nOm2o0m2tgIC1JaHSIAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABOOn0HMBYsWPjZAQ/fKw6Xp8aelmfEn5+5PlKL+I48F0NBU5Yp2nI9KqUlF6rZjzLv+qfHTUZAKD1Sambik+5yXPsxgC8jZk5rutuyHfi00EHCIzCtFNBAqwAQKCzQ8M3Y5DMeQ2dx2t+cZm3q4kEDIHEV6MShzDNFPIl3ZnH/7hyJshQMCTnjmAEeNrs0ufI5gU69SKKC0cSBUGKAscAoDlBVOIYCyxLEeKGscq4HywMkLCO2kWvLCQaet+xXLE8c6oLxxrALqBo41QN3CiQXU6YocGklSsNgV9m5FhraMa8px3q3i9iXSTXrgwa1TfY7zXilVX5HrM96HxnJC3Obi1QdOY7ErYD3Hx/E8M7pera3Eu2q82pGATvzbmSZSZ2hvU6QGtdFL56fHLuwdSv0D0yoMB0sWRqmRrHEwqEhAqHikKOon0m+yQAJO2LQCDlG8JQtKsEUC+uvRI2PMjyPt+EhG6eXGgI5EOzrQmLomcJkUfcj6nnO405GAtqq134rMCG6Khy+giAaUMa/TyCRAq3YrgUqX85hW1LJFAkL91bkXX4m8G0FIpCjxdAMOhSyw5z2tMN5miQyEE7JC6lUcjDkWEE5IG6mXcTDe2EA4KS2kUBy/kW5OK7/5/b+OgHB2UiQbcDDOjoFwcqdItuBgjImAcIG4SDbhYHyJgXCROpK3e7PtI8BU5aJtOBhbKkC40Gp18Yvr7Vb8Z5lf2D9Q8JyknWU8UOLB8kAMO/6LZ95PyGg2SkkNCI1tVBc/kTHXQzMJUKjYUvBrZXJ68WxpNvLXVIHQKqZbaCahQmvp4cxpdjN1IFwYmeS6bjkwk1DBL3jxzGM9x28q0V8mQOgRkCjk3Q3Tirrw4ol+xS2ZAaEjmG7IEmQL9lGMoe+9ekNG/w6XTIHQ2Hq1tuJqfdXPmmf+Dfyx5+5cwzHEbCiZAwHh28OFtbXZ55Orc7U7G/NL6zhmS8kFyBaMoH4WBShobKkcEyCGUYAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABM+vhnEwDTDAtSUCPn8DwAA//8RmOfQAAAABklEQVQDAHGx3aBDPSAKAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "pros.0",
+      "box": {
+        "x": 106,
+        "y": 219.59375,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mehr Platz",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.pros.1",
+      "box": {
+        "x": 72,
+        "y": 271.265625,
+        "w": 18,
+        "h": 32
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.pros.1",
+      "box": {
+        "x": 72,
+        "y": 278.265625,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#1E7A45\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "name": "check",
+      "color": "#1E7A45",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAADq0lEQVR4AezY3U7UQBQH8DNDr4zRQEiMwvoAajR6q8JuICQ+Bl74BEYC3ngjuLyC0fgcuAqKXpgYjUF9AD68EUVjDDHQjv3vsmSBdk+7/didchomu+2ZdmZ+nOm2o0m2tgIC1JaHSIAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABOOn0HMBYsWPjZAQ/fKw6Xp8aelmfEn5+5PlKL+I48F0NBU5Yp2nI9KqUlF6rZjzLv+qfHTUZAKD1Sambik+5yXPsxgC8jZk5rutuyHfi00EHCIzCtFNBAqwAQKCzQ8M3Y5DMeQ2dx2t+cZm3q4kEDIHEV6MShzDNFPIl3ZnH/7hyJshQMCTnjmAEeNrs0ufI5gU69SKKC0cSBUGKAscAoDlBVOIYCyxLEeKGscq4HywMkLCO2kWvLCQaet+xXLE8c6oLxxrALqBo41QN3CiQXU6YocGklSsNgV9m5FhraMa8px3q3i9iXSTXrgwa1TfY7zXilVX5HrM96HxnJC3Obi1QdOY7ErYD3Hx/E8M7pera3Eu2q82pGATvzbmSZSZ2hvU6QGtdFL56fHLuwdSv0D0yoMB0sWRqmRrHEwqEhAqHikKOon0m+yQAJO2LQCDlG8JQtKsEUC+uvRI2PMjyPt+EhG6eXGgI5EOzrQmLomcJkUfcj6nnO405GAtqq134rMCG6Khy+giAaUMa/TyCRAq3YrgUqX85hW1LJFAkL91bkXX4m8G0FIpCjxdAMOhSyw5z2tMN5miQyEE7JC6lUcjDkWEE5IG6mXcTDe2EA4KS2kUBy/kW5OK7/5/b+OgHB2UiQbcDDOjoFwcqdItuBgjImAcIG4SDbhYHyJgXCROpK3e7PtI8BU5aJtOBhbKkC40Gp18Yvr7Vb8Z5lf2D9Q8JyknWU8UOLB8kAMO/6LZ95PyGg2SkkNCI1tVBc/kTHXQzMJUKjYUvBrZXJ68WxpNvLXVIHQKqZbaCahQmvp4cxpdjN1IFwYmeS6bjkwk1DBL3jxzGM9x28q0V8mQOgRkCjk3Q3Tirrw4ol+xS2ZAaEjmG7IEmQL9lGMoe+9ekNG/w6XTIHQ2Hq1tuJqfdXPmmf+Dfyx5+5cwzHEbCiZAwHh28OFtbXZ55Orc7U7G/NL6zhmS8kFyBaMoH4WBShobKkcEyCGUYAEiBFgwpJBAsQIMGHJIAFiBJiwZJAAMQJMWDJIgBgBJiwZJECMABM+vhnEwDTDAtSUCPn8DwAA//8RmOfQAAAABklEQVQDAHGx3aBDPSAKAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "pros.1",
+      "box": {
+        "x": 106,
+        "y": 270.7109375,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Bessere Lage",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "consLabel",
+      "box": {
+        "x": 668,
+        "y": 169.875,
+        "w": 540,
+        "h": 31.71875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.195,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Dagegen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.cons.0",
+      "box": {
+        "x": 668,
+        "y": 220.1484375,
+        "w": 18,
+        "h": 32
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.cons.0",
+      "box": {
+        "x": 668,
+        "y": 227.1484375,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#B83227\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>",
+      "name": "x",
+      "color": "#B83227",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAD/0lEQVR4Aezay04UQRQG4Kru1h2SeAkx0Y0QcQEYhi0RMCGgb4ELn8CNb2B8BaPxKRCCQUzYmAhEYCFE3OjKC4aYuNDuKeufsZvBqeYwU7eOFpmiL9VT55yP6pnpoSMWfo4VCEDH8jAWgAIQIUB0hxkUgAgBojvMoABECBDdYQYFIEKA6A4zKAARAkR3mEEBiBAgujufQcSA/1q3NtD8yMClhdrgk4XRwceLQ/2XfQOZzkcLaH5g4EwUR68lyhzj7E79VLz2rDY4Ire9PBZGr17nSbQhgzfyEaeTV0tjV3rldtcPLSDeE91nnPfl0TnnF7hgLxZH+ofyfa6WzZh8mTN+viXmxbR+6l7LdserWkDKaJydFXHyspmw8gjjOxELMZmMbXpwLaAkSh/IhL7KdvQhExVJsrI0fG34aIf5LZzSZTiCiS89P9hDnahaQNNr7w94mk4ywfYVSZzLErGCv66iz8gujI1TWjlzZE5Rmk2N7+x81wmmBYTAM5t72zxLJ5RImEmWTjfglM0c5IKckBty1GnaQAiORJAQEsP2kWYByRUO6jAChIFcIbnEQV3GgDCYbSTXOKjJKBAGtIXkAwf1GAfCoKaRfOGgFitAGNgUkk8c1GENCIP/Qer6I4BvHNRgFQgBukWqAg7ytw6EIJ0iVQUHuTsBQqCTIlUJB3k7A0IwEimJV0Ucr5ZdW+HTOsbAWK6aUyAUhQJRqPKyhPFexmXDga1NXnjiOXhu624X686BUBQKRcFqJBzR0jziIAsvQAhcIDFxgG1lE+IAkDhW2e9gpzegojZRrLWv8PZdrvd4Azp8t1K85hQKvBff+eDYYpfjFS9AKBiFM/ldEVmvPAbH4jnksRYOcA6EQlGwEke+5jDVa5JHJKdAx+OwfZ5l4zzNxpXvbp6QnAHROOkE3q3QuIfvuMvOTidAJ8XJk5zx9I+APH7r0jpQpzh5clWZSVaBusWpEpI1IF2cqiBZATKFUwUk40CmcXwjGQWyheMTyRiQbRxfSEaAXOH4QNIGco3jGkkLCPco1uN4WXXhKQT7Fqd8Eh/48qJML5tji5uI1TZ249otfu79HkXcl9iWnGD7UZbemN56u9XWZ3jH7MbuG8RSX+DyvurdoyhxcLHZ/Osa1igZDrEQU4lU8pyT7tY6xXCPohDicx4M67ZPqzzW30sgCc6mcF9i0SfEJ+/3KEa/sjH5JddT2R6JrF5zcVoVAIcrjbVb6zub0c+sJnNp5FPP6mP+71Hc3vswu747J9vd25vvPjYy9fhrxnA+WqeYRwdnoQMQQR2AAhAhQHSHGRSACAGiO8ygAEQIEN1hBgUgQoDoDjMoABECRPf/O4MImLw7AOUSJcvfAAAA//8zLswGAAAABklEQVQDAP9V369C2eZtAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "cons.0",
+      "box": {
+        "x": 702,
+        "y": 219.59375,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Höhere Miete",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_pb.cons.1",
+      "box": {
+        "x": 668,
+        "y": 271.265625,
+        "w": 18,
+        "h": 32
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_pi.cons.1",
+      "box": {
+        "x": 668,
+        "y": 278.265625,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#B83227\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>",
+      "name": "x",
+      "color": "#B83227",
+      "png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAD/0lEQVR4Aezay04UQRQG4Kru1h2SeAkx0Y0QcQEYhi0RMCGgb4ELn8CNb2B8BaPxKRCCQUzYmAhEYCFE3OjKC4aYuNDuKeufsZvBqeYwU7eOFpmiL9VT55yP6pnpoSMWfo4VCEDH8jAWgAIQIUB0hxkUgAgBojvMoABECBDdYQYFIEKA6A4zKAARAkR3mEEBiBAgujufQcSA/1q3NtD8yMClhdrgk4XRwceLQ/2XfQOZzkcLaH5g4EwUR68lyhzj7E79VLz2rDY4Ire9PBZGr17nSbQhgzfyEaeTV0tjV3rldtcPLSDeE91nnPfl0TnnF7hgLxZH+ofyfa6WzZh8mTN+viXmxbR+6l7LdserWkDKaJydFXHyspmw8gjjOxELMZmMbXpwLaAkSh/IhL7KdvQhExVJsrI0fG34aIf5LZzSZTiCiS89P9hDnahaQNNr7w94mk4ywfYVSZzLErGCv66iz8gujI1TWjlzZE5Rmk2N7+x81wmmBYTAM5t72zxLJ5RImEmWTjfglM0c5IKckBty1GnaQAiORJAQEsP2kWYByRUO6jAChIFcIbnEQV3GgDCYbSTXOKjJKBAGtIXkAwf1GAfCoKaRfOGgFitAGNgUkk8c1GENCIP/Qer6I4BvHNRgFQgBukWqAg7ytw6EIJ0iVQUHuTsBQqCTIlUJB3k7A0IwEimJV0Ucr5ZdW+HTOsbAWK6aUyAUhQJRqPKyhPFexmXDga1NXnjiOXhu624X686BUBQKRcFqJBzR0jziIAsvQAhcIDFxgG1lE+IAkDhW2e9gpzegojZRrLWv8PZdrvd4Azp8t1K85hQKvBff+eDYYpfjFS9AKBiFM/ldEVmvPAbH4jnksRYOcA6EQlGwEke+5jDVa5JHJKdAx+OwfZ5l4zzNxpXvbp6QnAHROOkE3q3QuIfvuMvOTidAJ8XJk5zx9I+APH7r0jpQpzh5clWZSVaBusWpEpI1IF2cqiBZATKFUwUk40CmcXwjGQWyheMTyRiQbRxfSEaAXOH4QNIGco3jGkkLCPco1uN4WXXhKQT7Fqd8Eh/48qJML5tji5uI1TZ249otfu79HkXcl9iWnGD7UZbemN56u9XWZ3jH7MbuG8RSX+DyvurdoyhxcLHZ/Osa1igZDrEQU4lU8pyT7tY6xXCPohDicx4M67ZPqzzW30sgCc6mcF9i0SfEJ+/3KEa/sjH5JddT2R6JrF5zcVoVAIcrjbVb6zub0c+sJnNp5FPP6mP+71Hc3vswu747J9vd25vvPjYy9fhrxnA+WqeYRwdnoQMQQR2AAhAhQHSHGRSACAGiO8ygAEQIEN1hBgUgQoDoDjMoABECRPf/O4MImLw7AOUSJcvfAAAA//8zLswGAAAABklEQVQDAP9V369C2eZtAAAAAElFTkSuQmCC"
+    },
+    {
+      "slot": "cons.1",
+      "box": {
+        "x": 702,
+        "y": 270.7109375,
+        "w": 506,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Umzugskosten",
+          "bold": false,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1179.984375,
+        "y": 677.203125,
+        "w": 28.015625,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

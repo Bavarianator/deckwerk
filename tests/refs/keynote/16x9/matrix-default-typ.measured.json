@@ -1,0 +1,574 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 1,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 90.546875,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Priorisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 99.328125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 43.5733,
+      "lineHeightPx": 49.6736,
+      "trackingPx": -1.3072,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Self-Service und Rechnungsprozess bringen",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "den größten Nutzen bei wenig Aufwand",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "y",
+      "box": {
+        "x": 72,
+        "y": 230.125,
+        "w": 796,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "↑ Umsetzbarkeit",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_q.0",
+      "box": {
+        "x": 72,
+        "y": 262.2578125,
+        "w": 396,
+        "h": 174.8046875
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.0",
+      "box": {
+        "x": 72,
+        "y": 274.2578125,
+        "w": 114.3515625,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Später prüfen",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_q.1",
+      "box": {
+        "x": 472,
+        "y": 262.2578125,
+        "w": 396,
+        "h": 174.8046875
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.1",
+      "box": {
+        "x": 730.03125,
+        "y": 274.2578125,
+        "w": 137.96875,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sofort umsetzen",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_q.2",
+      "box": {
+        "x": 72,
+        "y": 441.0625,
+        "w": 396,
+        "h": 174.8046875
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.2",
+      "box": {
+        "x": 72,
+        "y": 579.734375,
+        "w": 87.5625,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Verwerfen",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_q.3",
+      "box": {
+        "x": 472,
+        "y": 441.0625,
+        "w": 396,
+        "h": 174.8046875
+      },
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "quadrants.3",
+      "box": {
+        "x": 766.6171875,
+        "y": 579.734375,
+        "w": 101.3828125,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Groß planen",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_dot.0",
+      "box": {
+        "x": 715.71875,
+        "y": 331.046875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 0,
+      "kind": "box",
+      "fill": {
+        "color": "#3D9BFF",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.0.label",
+      "box": {
+        "x": 572.8125,
+        "y": 355.046875,
+        "w": 160.90625,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Self-Service-Portal",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_dot.1",
+      "box": {
+        "x": 572.4375,
+        "y": 295.6875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 1,
+      "kind": "box",
+      "fill": {
+        "color": "#8E8E93",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.1.label",
+      "box": {
+        "x": 504.75,
+        "y": 319.6875,
+        "w": 153.375,
+        "h": 24.1328125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Rechnungsprozess",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_dot.2",
+      "box": {
+        "x": 365.4765625,
+        "y": 380.5546875,
+        "w": 18,
+        "h": 18
+      },
+      "build": 2,
+      "kind": "box",
+      "fill": {
+        "color": "#8E8E93",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.2.label",
+      "box": {
+        "x": 342.609375,
+        "y": 404.5546875,
+        "w": 63.7421875,
+        "h": 24.1328125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Chatbot",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_dot.3",
+      "box": {
+        "x": 667.953125,
+        "y": 529.0703125,
+        "w": 18,
+        "h": 18
+      },
+      "build": 3,
+      "kind": "box",
+      "fill": {
+        "color": "#8E8E93",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.3.label",
+      "box": {
+        "x": 629.375,
+        "y": 553.0703125,
+        "w": 95.15625,
+        "h": 24.1328125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Neues CRM",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_dot.4",
+      "box": {
+        "x": 269.953125,
+        "y": 543.2109375,
+        "w": 18,
+        "h": 18
+      },
+      "build": 4,
+      "kind": "box",
+      "fill": {
+        "color": "#8E8E93",
+        "alpha": 1
+      },
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "items.4.label",
+      "box": {
+        "x": 233.3671875,
+        "y": 567.2109375,
+        "w": 91.171875,
+        "h": 24.1328125
+      },
+      "build": 4,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Filialumbau",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "x",
+      "box": {
+        "x": 691.3046875,
+        "y": 623.8671875,
+        "w": 176.6953125,
+        "h": 24.1328125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Nutzen für Kunden →",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_take",
+      "box": {
+        "x": 908,
+        "y": 354.265625,
+        "w": 300,
+        "h": 169.5859375
+      },
+      "build": 5,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "takeaway",
+      "box": {
+        "x": 908,
+        "y": 354.265625,
+        "w": 300,
+        "h": 165.5859375
+      },
+      "build": 5,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Zwei Vorhaben liegen klar im Zielquadranten und lassen sich mit bestehenden Teams bis Q2 umsetzen.",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 5,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1184.125,
+        "y": 677.203125,
+        "w": 23.875,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

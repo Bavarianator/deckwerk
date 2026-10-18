@@ -1,0 +1,135 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_mark",
+      "box": {
+        "x": 444,
+        "y": 166.390625,
+        "w": 764,
+        "h": 104
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 190,
+      "lineHeightPx": 155.8,
+      "trackingPx": -4.75,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "“",
+          "bold": true,
+          "italic": false,
+          "color": "#1F5EFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "text",
+      "box": {
+        "x": 444,
+        "y": 292.390625,
+        "w": 764,
+        "h": 174
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "statement",
+      "sizePx": 50,
+      "lineHeightPx": 58,
+      "trackingPx": -1.25,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Seit dem Pilot korrigieren meine",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "Schüler ihre Texte selbst – und",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B",
+          "breakAfter": true
+        },
+        {
+          "text": "verstehen endlich, warum.",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 3,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "author",
+      "box": {
+        "x": 444,
+        "y": 488.390625,
+        "w": 764,
+        "h": 25.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 19,
+      "lineHeightPx": 25.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Julia Hartmann",
+          "bold": true,
+          "italic": false,
+          "color": "#0E1A2B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "role",
+      "box": {
+        "x": 444,
+        "y": 517.46875,
+        "w": 764,
+        "h": 24.1328125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "small",
+      "sizePx": 17,
+      "lineHeightPx": 24.14,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Deutschlehrerin, Grundschule Nord",
+          "bold": false,
+          "italic": false,
+          "color": "#56667D"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

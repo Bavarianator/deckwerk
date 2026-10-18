@@ -1,0 +1,96 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Vorgehen"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Vom Erstgespräch zum Go-live in sechs Wochen"
+    ]
+  },
+  {
+    "slot": "_n.0",
+    "lines": [
+      "01"
+    ]
+  },
+  {
+    "slot": "steps.0.title",
+    "lines": [
+      "Analyse"
+    ]
+  },
+  {
+    "slot": "steps.0.desc",
+    "lines": [
+      "Workshops mit allen",
+      "Fachbereichen"
+    ]
+  },
+  {
+    "slot": "_n.1",
+    "lines": [
+      "02"
+    ]
+  },
+  {
+    "slot": "steps.1.title",
+    "lines": [
+      "Konzept"
+    ]
+  },
+  {
+    "slot": "steps.1.desc",
+    "lines": [
+      "Zielbild und",
+      "Umsetzungsplan"
+    ]
+  },
+  {
+    "slot": "_n.2",
+    "lines": [
+      "03"
+    ]
+  },
+  {
+    "slot": "steps.2.title",
+    "lines": [
+      "Umsetzung"
+    ]
+  },
+  {
+    "slot": "steps.2.desc",
+    "lines": [
+      "Einrichtung und",
+      "Datenübernahme"
+    ]
+  },
+  {
+    "slot": "_n.3",
+    "lines": [
+      "04"
+    ]
+  },
+  {
+    "slot": "steps.3.title",
+    "lines": [
+      "Go-live"
+    ]
+  },
+  {
+    "slot": "steps.3.desc",
+    "lines": [
+      "Schulung und",
+      "Begleitung im Betrieb"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

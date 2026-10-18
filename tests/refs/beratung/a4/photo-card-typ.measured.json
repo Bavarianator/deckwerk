@@ -1,0 +1,120 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "_card",
+      "box": {
+        "x": 72,
+        "y": 88,
+        "w": 640,
+        "h": 210.0234375
+      },
+      "kind": "box",
+      "fill": {
+        "color": "#0B5563",
+        "alpha": 0.97
+      },
+      "radius": 2,
+      "shadow": {
+        "color": "#000000",
+        "alpha": 0.22,
+        "blur": 60,
+        "offsetY": 24
+      },
+      "ellipse": false
+    },
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 116,
+        "y": 128,
+        "w": 40.734375,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vor Ort",
+          "bold": true,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 116,
+        "y": 158.3984375,
+        "w": 552,
+        "h": 61.546875
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jede dritte Schule arbeitet schon",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "digital – der Rest wartet auf Lösungen",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 2,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 116,
+        "y": 235.9453125,
+        "w": 552,
+        "h": 22.078125
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Besuch an der Grundschule Nord, September 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    }
+  ]
+}

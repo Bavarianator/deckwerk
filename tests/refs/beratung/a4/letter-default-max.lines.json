@@ -1,0 +1,202 @@
+[
+  {
+    "slot": "sender",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "senderLine",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "to",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert",
+      "verbessert deutlich durch",
+      "deutlich durch schnellere",
+      "durch schnellere Abläufe im",
+      "schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "info.0.label",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "info.0.value",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "info.1.label",
+    "lines": [
+      "Kundenbindung"
+    ]
+  },
+  {
+    "slot": "info.1.value",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "info.2.label",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "info.2.value",
+    "lines": [
+      "verbessert deutlich durch",
+      "schnellere"
+    ]
+  },
+  {
+    "slot": "info.3.label",
+    "lines": [
+      "deutlich durch"
+    ]
+  },
+  {
+    "slot": "info.3.value",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im"
+    ]
+  },
+  {
+    "slot": "subject",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "salutation",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "body",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare Verantwortung für messbare",
+      "",
+      "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+      "Ergebnisse Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und",
+      "klare Verantwortung für messbare Ergebnisse",
+      "",
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+      "",
+      "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare",
+      "Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "closing",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "signature",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere"
+    ]
+  },
+  {
+    "slot": "_enc",
+    "lines": [
+      "Anlagen"
+    ]
+  },
+  {
+    "slot": "enclosures.0",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "enclosures.1",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "enclosures.2",
+    "lines": [
+      "verbessert deutlich durch schnellere"
+    ]
+  },
+  {
+    "slot": "enclosures.3",
+    "lines": [
+      "deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "enclosures.4",
+    "lines": [
+      "durch schnellere Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "enclosures.5",
+    "lines": [
+      "schnellere Abläufe im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "footer.0",
+    "lines": [
+      "Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert",
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "footer.1",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und",
+      "klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "footer.2",
+    "lines": [
+      "verbessert deutlich durch",
+      "schnellere Abläufe im",
+      "Vertrieb und klare",
+      "Verantwortung für",
+      "messbare"
+    ]
+  },
+  {
+    "slot": "footer.3",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und",
+      "klare Verantwortung für",
+      "messbare Ergebnisse"
+    ]
+  }
+]

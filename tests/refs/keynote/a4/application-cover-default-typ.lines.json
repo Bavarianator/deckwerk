@@ -1,0 +1,76 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Bewerbung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "als Pflegefachkraft in",
+      "der ambulanten Pflege"
+    ]
+  },
+  {
+    "slot": "org",
+    "lines": [
+      "bei der Sozialstation Musterstadt"
+    ]
+  },
+  {
+    "slot": "name",
+    "lines": [
+      "Vorname",
+      "Nachname"
+    ]
+  },
+  {
+    "slot": "contact.0",
+    "lines": [
+      "Musterweg 1"
+    ]
+  },
+  {
+    "slot": "contact.1",
+    "lines": [
+      "12345 Musterstadt"
+    ]
+  },
+  {
+    "slot": "contact.2",
+    "lines": [
+      "Telefon 0123 456789"
+    ]
+  },
+  {
+    "slot": "_toc.label",
+    "lines": [
+      "Inhalt"
+    ]
+  },
+  {
+    "slot": "contents.0",
+    "lines": [
+      "Anschreiben"
+    ]
+  },
+  {
+    "slot": "contents.1",
+    "lines": [
+      "Lebenslauf"
+    ]
+  },
+  {
+    "slot": "contents.2",
+    "lines": [
+      "Examenszeugnis"
+    ]
+  },
+  {
+    "slot": "contents.3",
+    "lines": [
+      "Arbeitszeugnisse"
+    ]
+  }
+]

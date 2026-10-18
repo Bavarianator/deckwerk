@@ -1,0 +1,42 @@
+{
+  "clip-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "corporate"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1080,
+      "h": 1080
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "clip",
+        "content": {
+          "video": "",
+          "hook": "Warum neun von zehn Pitches scheitern",
+          "parts": [
+            {
+              "start": 12.4,
+              "end": 21.8,
+              "focus": 0.5
+            },
+            {
+              "start": 40.1,
+              "end": 52
+            },
+            {
+              "start": 63,
+              "end": 70.5
+            }
+          ],
+          "captions": "wort",
+          "cover": 45.2,
+          "post": "Warum neun von zehn Pitches scheitern\nDer häufigste Fehler steckt in der ersten Minute. So vermeidest du ihn.\n#pitch #startup #gründen"
+        }
+      }
+    ]
+  }
+}

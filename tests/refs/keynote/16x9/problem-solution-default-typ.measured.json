@@ -1,0 +1,446 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 94.125,
+        "h": 16.796875
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Unser Ansatz",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 90.796875,
+        "w": 1000,
+        "h": 116.828125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 51.24,
+      "lineHeightPx": 58.4136,
+      "trackingPx": -1.5372,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Aus drei Wochen Papierweg",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7",
+          "breakAfter": true
+        },
+        {
+          "text": "wird ein Antrag in zehn Minuten",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_card.problem",
+      "box": {
+        "x": 72,
+        "y": 328.015625,
+        "w": 516,
+        "h": 239.5859375
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "problem.heading",
+      "box": {
+        "x": 72,
+        "y": 328.015625,
+        "w": 516,
+        "h": 16.796875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Heute",
+          "bold": true,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "problem.text",
+      "box": {
+        "x": 72,
+        "y": 358.8125,
+        "w": 516,
+        "h": 63.4375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.39,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Anträge wandern per Hauspost",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93",
+          "breakAfter": true
+        },
+        {
+          "text": "durch vier Abteilungen.",
+          "bold": true,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "problem.points.0",
+      "box": {
+        "x": 72,
+        "y": 436.25,
+        "w": 516,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ø 21 Tage Bearbeitung",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "problem.points.1",
+      "box": {
+        "x": 72,
+        "y": 483.3671875,
+        "w": 516,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jeder fünfte Antrag unvollständig",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "problem.points.2",
+      "box": {
+        "x": 72,
+        "y": 530.484375,
+        "w": 516,
+        "h": 33.1171875
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kein Status für Bürger",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_arrow",
+      "box": {
+        "x": 608,
+        "y": 415.8046875,
+        "w": 64,
+        "h": 64
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 50,
+      "ellipse": true
+    },
+    {
+      "slot": "_arrow.icon",
+      "box": {
+        "x": 626,
+        "y": 433.8046875,
+        "w": 28,
+        "h": 28
+      },
+      "build": 1,
+      "kind": "icon",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8E8E93\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-right\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg>",
+      "name": "arrow-right",
+      "color": "#8E8E93",
+      "png": "data:image/png;base64,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"
+    },
+    {
+      "slot": "_card.solution",
+      "box": {
+        "x": 692,
+        "y": 328.015625,
+        "w": 516,
+        "h": 239.5859375
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "solution.heading",
+      "box": {
+        "x": 692,
+        "y": 328.015625,
+        "w": 516,
+        "h": 16.796875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 14,
+      "lineHeightPx": 16.8,
+      "trackingPx": 0.14,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mit dem Portal",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "solution.text",
+      "box": {
+        "x": 692,
+        "y": 358.8125,
+        "w": 516,
+        "h": 63.4375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 26,
+      "lineHeightPx": 31.72,
+      "trackingPx": -0.39,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Bürger stellen den Antrag",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF",
+          "breakAfter": true
+        },
+        {
+          "text": "online, das System prüft sofort.",
+          "bold": true,
+          "italic": false,
+          "color": "#3D9BFF"
+        }
+      ],
+      "lines": 2,
+      "bg": "#111113"
+    },
+    {
+      "slot": "solution.points.0",
+      "box": {
+        "x": 692,
+        "y": 436.25,
+        "w": 516,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Ø 10 Minuten bis zur Eingangsbestätigung",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "solution.points.1",
+      "box": {
+        "x": 692,
+        "y": 483.3671875,
+        "w": 516,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Pflichtfelder verhindern Lücken",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "solution.points.2",
+      "box": {
+        "x": 692,
+        "y": 530.484375,
+        "w": 516,
+        "h": 33.1171875
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Status jederzeit online",
+          "bold": false,
+          "italic": false,
+          "color": "#F5F5F7"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 1184.125,
+        "y": 677.203125,
+        "w": 23.875,
+        "h": 15.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 13,
+      "lineHeightPx": 15.6,
+      "trackingPx": 0.26,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1 / 1",
+          "bold": false,
+          "italic": false,
+          "color": "#8E8E93"
+        }
+      ],
+      "lines": 1,
+      "bg": "#111113"
+    }
+  ]
+}

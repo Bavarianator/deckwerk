@@ -1,0 +1,44 @@
+[
+  {
+    "slot": "name",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "role",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "org",
+    "lines": [
+      "verbessert deutlich durch schnellere"
+    ]
+  },
+  {
+    "slot": "lines.0",
+    "lines": [
+      "deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "lines.1",
+    "lines": [
+      "durch schnellere Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "lines.2",
+    "lines": [
+      "schnellere Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "lines.3",
+    "lines": [
+      "Abläufe im Vertrieb und klare"
+    ]
+  }
+]

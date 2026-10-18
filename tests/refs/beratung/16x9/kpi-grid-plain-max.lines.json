@@ -1,0 +1,106 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Digitalisierung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit steigt",
+      "deutlich durch neue Prozesse im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "kpis.0.value",
+    "lines": [
+      "€ 12,4 M"
+    ]
+  },
+  {
+    "slot": "kpis.0.label",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit",
+      "steigt"
+    ]
+  },
+  {
+    "slot": "kpis.0.delta",
+    "lines": [
+      "+12,5 % ggü."
+    ]
+  },
+  {
+    "slot": "kpis.1.value",
+    "lines": [
+      "€ 12,4 M"
+    ]
+  },
+  {
+    "slot": "kpis.1.label",
+    "lines": [
+      "Kundenzufriedenheit",
+      "steigt deutlich",
+      "durch neue"
+    ]
+  },
+  {
+    "slot": "kpis.1.delta",
+    "lines": [
+      "+12,5 % ggü."
+    ]
+  },
+  {
+    "slot": "kpis.2.value",
+    "lines": [
+      "€ 12,4 M"
+    ]
+  },
+  {
+    "slot": "kpis.2.label",
+    "lines": [
+      "steigt deutlich durch",
+      "neue Prozesse",
+      "im Vertrieb"
+    ]
+  },
+  {
+    "slot": "kpis.2.delta",
+    "lines": [
+      "+12,5 % ggü."
+    ]
+  },
+  {
+    "slot": "kpis.3.value",
+    "lines": [
+      "€ 12,4 M"
+    ]
+  },
+  {
+    "slot": "kpis.3.label",
+    "lines": [
+      "deutlich durch",
+      "neue Prozesse im",
+      "Vertrieb und"
+    ]
+  },
+  {
+    "slot": "kpis.3.delta",
+    "lines": [
+      "+12,5 % ggü."
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit steigt deutlich durch neue Prozesse im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

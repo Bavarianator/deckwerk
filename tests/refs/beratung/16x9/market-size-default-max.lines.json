@@ -1,0 +1,63 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "tam.value",
+    "lines": [
+      "€ 12,3 Mrd"
+    ]
+  },
+  {
+    "slot": "tam.label",
+    "lines": [
+      "TAM · Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "sam.value",
+    "lines": [
+      "€ 1,23 Mrd"
+    ]
+  },
+  {
+    "slot": "sam.label",
+    "lines": [
+      "SAM · verbessert deutlich durch schnellere Abläufe im Vertrieb und"
+    ]
+  },
+  {
+    "slot": "som.value",
+    "lines": [
+      "€ 123 Mio"
+    ]
+  },
+  {
+    "slot": "som.label",
+    "lines": [
+      "SOM · durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

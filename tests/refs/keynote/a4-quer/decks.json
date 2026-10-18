@@ -1,0 +1,114 @@
+{
+  "doc-text-one-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "one",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "doc-text-two-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "doc-text",
+        "variant": "two",
+        "content": {
+          "eyebrow": "Projektinfo",
+          "title": "Ortho-Bot startet im Herbst an 20 Pilotschulen",
+          "lead": "Der Pilot läuft ein Schuljahr lang und wird wissenschaftlich begleitet. Die ersten Ergebnisse liegen im März 2027 vor.",
+          "sections": [
+            {
+              "heading": "Worum es geht",
+              "text": "Ortho-Bot erkennt typische Fehlerarten in freien Texten und übt gezielt die passende Regel. Lehrkräfte sehen den Fortschritt pro Kind und Klasse."
+            },
+            {
+              "heading": "Was wir brauchen",
+              "text": "Zwanzig Schulen mit je einer Klasse der Jahrgangsstufe 3 oder 4 und eine feste Ansprechperson im Kollegium.\nDie Anmeldung ist bis zum 15. Oktober möglich."
+            },
+            {
+              "heading": "Datenschutz",
+              "text": "Alle Daten werden in Deutschland verarbeitet. Es gibt keine Klarnamen, die Zuordnung läuft über Kürzel der Lehrkraft."
+            }
+          ],
+          "source": "Stand Oktober 2026"
+        }
+      }
+    ]
+  },
+  "certificate-default-typ": {
+    "title": "Beispiel",
+    "theme": {
+      "id": "keynote"
+    },
+    "transition": "none",
+    "mode": "click",
+    "size": {
+      "w": 1123,
+      "h": 794
+    },
+    "slides": [
+      {
+        "id": "s1",
+        "layout": "certificate",
+        "content": {
+          "eyebrow": "Teilnahmebescheinigung",
+          "title": "Erste-Hilfe-Kurs",
+          "recipient": "Mara",
+          "text": "hat am 8. Oktober 2026 erfolgreich am Erste-Hilfe-Kurs mit neun Unterrichtseinheiten teilgenommen. Inhalte: Notruf, stabile Seitenlage, Herz-Lungen-Wiederbelebung und der Einsatz eines Defibrillators.",
+          "date": "Musterstadt, 8. Oktober 2026",
+          "signers": [
+            {
+              "name": "Jonas",
+              "role": "Kursleitung"
+            },
+            {
+              "role": "Geschäftsführung"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

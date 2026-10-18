@@ -1,0 +1,506 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 54.1328125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.12,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vorgehen",
+          "bold": true,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 88.3984375,
+        "w": 650,
+        "h": 30.7734375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 27,
+      "lineHeightPx": 30.78,
+      "trackingPx": -0.405,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vom Erstgespräch zum Go-live in sechs Wochen",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.0",
+      "box": {
+        "x": 72,
+        "y": 160.171875,
+        "w": 650,
+        "h": 134.6484375
+      },
+      "build": 0,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.0",
+      "box": {
+        "x": 72,
+        "y": 188.171875,
+        "w": 14.046875,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "01",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.0.title",
+      "box": {
+        "x": 72,
+        "y": 226.0078125,
+        "w": 638,
+        "h": 20.734375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Analyse",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.0.desc",
+      "box": {
+        "x": 72,
+        "y": 260.7421875,
+        "w": 638,
+        "h": 22.078125
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Workshops mit allen Fachbereichen",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.1",
+      "box": {
+        "x": 72,
+        "y": 302.8203125,
+        "w": 650,
+        "h": 134.6484375
+      },
+      "build": 1,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.1",
+      "box": {
+        "x": 72,
+        "y": 330.8203125,
+        "w": 14.046875,
+        "h": 15.8359375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "02",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.1.title",
+      "box": {
+        "x": 72,
+        "y": 368.65625,
+        "w": 638,
+        "h": 20.734375
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Konzept",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.1.desc",
+      "box": {
+        "x": 72,
+        "y": 403.390625,
+        "w": 638,
+        "h": 22.078125
+      },
+      "build": 1,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Zielbild und Umsetzungsplan",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.2",
+      "box": {
+        "x": 72,
+        "y": 445.46875,
+        "w": 650,
+        "h": 134.6484375
+      },
+      "build": 2,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.2",
+      "box": {
+        "x": 72,
+        "y": 473.46875,
+        "w": 14.046875,
+        "h": 15.8359375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "03",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.2.title",
+      "box": {
+        "x": 72,
+        "y": 511.3046875,
+        "w": 638,
+        "h": 20.734375
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Umsetzung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.2.desc",
+      "box": {
+        "x": 72,
+        "y": 546.0390625,
+        "w": 638,
+        "h": 22.078125
+      },
+      "build": 2,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Einrichtung und Datenübernahme",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_card.3",
+      "box": {
+        "x": 72,
+        "y": 588.1171875,
+        "w": 650,
+        "h": 134.6484375
+      },
+      "build": 3,
+      "kind": "box",
+      "radius": 0,
+      "ellipse": false
+    },
+    {
+      "slot": "_n.3",
+      "box": {
+        "x": 72,
+        "y": 616.1171875,
+        "w": 14.046875,
+        "h": 15.8359375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": -0.18,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "04",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.3.title",
+      "box": {
+        "x": 72,
+        "y": 653.953125,
+        "w": 638,
+        "h": 20.734375
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 17,
+      "lineHeightPx": 20.74,
+      "trackingPx": -0.1275,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Go-live",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "steps.3.desc",
+      "box": {
+        "x": 72,
+        "y": 688.6875,
+        "w": 638,
+        "h": 22.078125
+      },
+      "build": 3,
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 16,
+      "lineHeightPx": 22.08,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Schulung und Begleitung im Betrieb",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.title",
+      "box": {
+        "x": 72,
+        "y": 1080.796875,
+        "w": 45,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Beispiel",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "_footer.page",
+      "box": {
+        "x": 714.5546875,
+        "y": 1080.796875,
+        "w": 7.4453125,
+        "h": 14.3984375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "footer",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.24,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "1",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

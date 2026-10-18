@@ -1,0 +1,113 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "_n.0",
+    "lines": [
+      "01"
+    ]
+  },
+  {
+    "slot": "points.0.title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung verbessert deutlich durch schnellere Abläufe"
+    ]
+  },
+  {
+    "slot": "points.0.text",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare",
+      "Ergebnisse Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "_n.1",
+    "lines": [
+      "02"
+    ]
+  },
+  {
+    "slot": "points.1.title",
+    "lines": [
+      "Kundenbindung verbessert deutlich durch schnellere Abläufe im Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "points.1.text",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung"
+    ]
+  },
+  {
+    "slot": "_n.2",
+    "lines": [
+      "03"
+    ]
+  },
+  {
+    "slot": "points.2.title",
+    "lines": [
+      "verbessert deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung"
+    ]
+  },
+  {
+    "slot": "points.2.text",
+    "lines": [
+      "durch schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "_n.3",
+    "lines": [
+      "04"
+    ]
+  },
+  {
+    "slot": "points.3.title",
+    "lines": [
+      "deutlich durch schnellere Abläufe im Vertrieb und klare Verantwortung für"
+    ]
+  },
+  {
+    "slot": "points.3.text",
+    "lines": [
+      "schnellere Abläufe im Vertrieb und klare Verantwortung für messbare Ergebnisse Wettbewerbsfähigkeit",
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "_rec.label",
+    "lines": [
+      "Empfehlung"
+    ]
+  },
+  {
+    "slot": "recommendation",
+    "lines": [
+      "deutlich durch schnellere Abläufe im",
+      "Vertrieb und klare Verantwortung für",
+      "messbare Ergebnisse",
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

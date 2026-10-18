@@ -1,0 +1,87 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Agenda"
+    ]
+  },
+  {
+    "slot": "_num.0",
+    "lines": [
+      "01"
+    ]
+  },
+  {
+    "slot": "items.0.title",
+    "lines": [
+      "Ausgangslage"
+    ]
+  },
+  {
+    "slot": "items.0.desc",
+    "lines": [
+      "Wo wir heute stehen"
+    ]
+  },
+  {
+    "slot": "_num.1",
+    "lines": [
+      "02"
+    ]
+  },
+  {
+    "slot": "items.1.title",
+    "lines": [
+      "Marktchance"
+    ]
+  },
+  {
+    "slot": "items.1.desc",
+    "lines": [
+      "Warum jetzt der richtige",
+      "Zeitpunkt ist"
+    ]
+  },
+  {
+    "slot": "_num.2",
+    "lines": [
+      "03"
+    ]
+  },
+  {
+    "slot": "items.2.title",
+    "lines": [
+      "Unser Plan"
+    ]
+  },
+  {
+    "slot": "items.2.desc",
+    "lines": [
+      "Drei Hebel für Wachstum"
+    ]
+  },
+  {
+    "slot": "_num.3",
+    "lines": [
+      "04"
+    ]
+  },
+  {
+    "slot": "items.3.title",
+    "lines": [
+      "Investition & Ask"
+    ]
+  },
+  {
+    "slot": "items.3.desc",
+    "lines": [
+      "Was wir brauchen"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

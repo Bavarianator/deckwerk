@@ -1,0 +1,105 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 2,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "eyebrow",
+      "box": {
+        "x": 72,
+        "y": 508.9140625,
+        "w": 67.8828125,
+        "h": 24
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 20,
+      "lineHeightPx": 24,
+      "trackingPx": 0.2,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vor Ort",
+          "bold": true,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 546.9140625,
+        "w": 600,
+        "h": 167.578125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 49,
+      "lineHeightPx": 55.86,
+      "trackingPx": -0.735,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Jede dritte Schule arbeitet",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "schon digital – der Rest",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "wartet auf Lösungen",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 3,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 728.4921875,
+        "w": 600,
+        "h": 96.59375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 35,
+      "lineHeightPx": 48.3,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Besuch an der Grundschule Nord, September 2026",
+          "bold": false,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 2,
+      "bg": "#0B5563"
+    }
+  ]
+}

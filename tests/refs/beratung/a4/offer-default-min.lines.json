@@ -1,0 +1,66 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Angebot Webseiten-Relaunch"
+    ]
+  },
+  {
+    "slot": "_h.name",
+    "lines": [
+      "Position"
+    ]
+  },
+  {
+    "slot": "_h.qty",
+    "lines": [
+      "Menge"
+    ]
+  },
+  {
+    "slot": "_h.price",
+    "lines": [
+      "Betrag"
+    ]
+  },
+  {
+    "slot": "items.0.name",
+    "lines": [
+      "Konzept und Design"
+    ]
+  },
+  {
+    "slot": "items.0.qty",
+    "lines": []
+  },
+  {
+    "slot": "items.0.price",
+    "lines": [
+      "4.800 €"
+    ]
+  },
+  {
+    "slot": "totals.0.label",
+    "lines": [
+      "Gesamt"
+    ]
+  },
+  {
+    "slot": "totals.0.value",
+    "lines": [
+      "4.800 €"
+    ]
+  },
+  {
+    "slot": "_footer.title",
+    "lines": [
+      "Beispiel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1"
+    ]
+  }
+]

@@ -1,0 +1,106 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Wettbewerbsfähigkeit Kundenbindung",
+      "verbessert deutlich durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "options.0.name",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "options.1.name",
+    "lines": [
+      "Kundenbindung",
+      "verbessert"
+    ]
+  },
+  {
+    "slot": "_badge.text",
+    "lines": [
+      "Empfehlung"
+    ]
+  },
+  {
+    "slot": "options.2.name",
+    "lines": [
+      "verbessert deutlich"
+    ]
+  },
+  {
+    "slot": "criteria.0",
+    "lines": [
+      "Wettbewerbsfähigkeit"
+    ]
+  },
+  {
+    "slot": "criteria.1",
+    "lines": [
+      "Kundenbindung verbessert"
+    ]
+  },
+  {
+    "slot": "criteria.2",
+    "lines": [
+      "verbessert deutlich durch"
+    ]
+  },
+  {
+    "slot": "criteria.3",
+    "lines": [
+      "deutlich durch schnellere"
+    ]
+  },
+  {
+    "slot": "criteria.4",
+    "lines": [
+      "durch schnellere Abläufe im"
+    ]
+  },
+  {
+    "slot": "criteria.5",
+    "lines": [
+      "schnellere Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "options.0.note",
+    "lines": [
+      "Kundenbindung verbessert",
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb"
+    ]
+  },
+  {
+    "slot": "options.1.note",
+    "lines": [
+      "verbessert deutlich durch",
+      "schnellere Abläufe im",
+      "Vertrieb und klare"
+    ]
+  },
+  {
+    "slot": "options.2.note",
+    "lines": [
+      "deutlich durch schnellere",
+      "Abläufe im Vertrieb und klare",
+      "Verantwortung"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

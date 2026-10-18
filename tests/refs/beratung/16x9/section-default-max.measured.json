@@ -1,0 +1,98 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "number",
+      "box": {
+        "x": 72,
+        "y": 60,
+        "w": 980,
+        "h": 180
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "hero",
+      "sizePx": 200,
+      "lineHeightPx": 180,
+      "trackingPx": -8,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "12",
+          "bold": true,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 1,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "title",
+      "box": {
+        "x": 72,
+        "y": 390.65625,
+        "w": 980,
+        "h": 161.109375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 76,
+      "lineHeightPx": 80.56,
+      "trackingPx": -1.52,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Digitalisierung",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF",
+          "breakAfter": true
+        },
+        {
+          "text": "Kundenzufriedenheit steigt",
+          "bold": true,
+          "italic": false,
+          "color": "#FFFFFF"
+        }
+      ],
+      "lines": 2,
+      "bg": "#0B5563"
+    },
+    {
+      "slot": "subtitle",
+      "box": {
+        "x": 72,
+        "y": 569.765625,
+        "w": 780,
+        "h": 66.234375
+      },
+      "kind": "text",
+      "font": "body",
+      "role": "body",
+      "sizePx": 24,
+      "lineHeightPx": 33.12,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "durch neue Prozesse im Vertrieb und Wachstumsstrategie für internationale Märkte mit messbarem",
+          "bold": false,
+          "italic": false,
+          "color": "#B7C9CE"
+        }
+      ],
+      "lines": 2,
+      "bg": "#0B5563"
+    }
+  ]
+}

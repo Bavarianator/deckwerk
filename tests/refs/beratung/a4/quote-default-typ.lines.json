@@ -1,0 +1,30 @@
+[
+  {
+    "slot": "_mark",
+    "lines": [
+      "“"
+    ]
+  },
+  {
+    "slot": "text",
+    "lines": [
+      "Seit dem Pilot",
+      "korrigieren meine",
+      "Schüler ihre Texte",
+      "selbst – und verstehen",
+      "endlich, warum."
+    ]
+  },
+  {
+    "slot": "author",
+    "lines": [
+      "Julia Hartmann"
+    ]
+  },
+  {
+    "slot": "role",
+    "lines": [
+      "Deutschlehrerin, Grundschule Nord"
+    ]
+  }
+]

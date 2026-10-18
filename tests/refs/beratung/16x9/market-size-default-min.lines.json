@@ -1,0 +1,50 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Der Markt ist groß genug"
+    ]
+  },
+  {
+    "slot": "tam.value",
+    "lines": [
+      "2 Mrd €"
+    ]
+  },
+  {
+    "slot": "tam.label",
+    "lines": [
+      "TAM · Gesamtmarkt"
+    ]
+  },
+  {
+    "slot": "sam.value",
+    "lines": [
+      "400 Mio €"
+    ]
+  },
+  {
+    "slot": "sam.label",
+    "lines": [
+      "SAM · Erreichbar"
+    ]
+  },
+  {
+    "slot": "som.value",
+    "lines": [
+      "20 Mio €"
+    ]
+  },
+  {
+    "slot": "som.label",
+    "lines": [
+      "SOM · Unser Ziel"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

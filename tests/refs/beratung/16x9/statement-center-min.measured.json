@@ -1,0 +1,50 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "text",
+      "box": {
+        "x": 226.4453125,
+        "y": 325,
+        "w": 827.109375,
+        "h": 58
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "statement",
+      "sizePx": 50,
+      "lineHeightPx": 58,
+      "trackingPx": -1,
+      "align": "center",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Kunden bleiben, wenn es ",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        },
+        {
+          "text": "einfach",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        },
+        {
+          "text": " ist.",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

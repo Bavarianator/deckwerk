@@ -1,0 +1,62 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Zwei Pakete"
+    ]
+  },
+  {
+    "slot": "tiers.0.name",
+    "lines": [
+      "Basis"
+    ]
+  },
+  {
+    "slot": "tiers.0.price",
+    "lines": [
+      "19 €"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.0",
+    "lines": [
+      "1 Klasse"
+    ]
+  },
+  {
+    "slot": "tiers.0.features.1",
+    "lines": [
+      "E-Mail-Support"
+    ]
+  },
+  {
+    "slot": "tiers.1.name",
+    "lines": [
+      "Schule"
+    ]
+  },
+  {
+    "slot": "tiers.1.price",
+    "lines": [
+      "149 €"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.0",
+    "lines": [
+      "Alle Klassen"
+    ]
+  },
+  {
+    "slot": "tiers.1.features.1",
+    "lines": [
+      "Schulung"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

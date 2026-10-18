@@ -1,0 +1,36 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Wirkung"
+    ]
+  },
+  {
+    "slot": "label",
+    "lines": [
+      "Mit Ortho-Bot machen",
+      "Kinder nach sechs Monaten",
+      "deutlich weniger Fehler"
+    ]
+  },
+  {
+    "slot": "context",
+    "lines": [
+      "Pilot mit 412 Kindern an 6",
+      "Grundschulen, gleiche Unterrichtszeit",
+      "wie die Vergleichsgruppe."
+    ]
+  },
+  {
+    "slot": "value",
+    "lines": [
+      "−41 %"
+    ]
+  },
+  {
+    "slot": "source",
+    "lines": [
+      "Pilotauswertung 2026"
+    ]
+  }
+]

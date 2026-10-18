@@ -1,0 +1,60 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Partner"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Über 40 Schulen und drei",
+      "Träger arbeiten bereits mit uns"
+    ]
+  },
+  {
+    "slot": "logos.0.name",
+    "lines": [
+      "Stadt Nord"
+    ]
+  },
+  {
+    "slot": "logos.1.name",
+    "lines": [
+      "Bildungswerk",
+      "Süd"
+    ]
+  },
+  {
+    "slot": "logos.2.name",
+    "lines": [
+      "Lernfabrik"
+    ]
+  },
+  {
+    "slot": "logos.3.name",
+    "lines": [
+      "Kreis Mitte"
+    ]
+  },
+  {
+    "slot": "logos.4.name",
+    "lines": [
+      "Grundschule",
+      "am Park"
+    ]
+  },
+  {
+    "slot": "logos.5.name",
+    "lines": [
+      "Schulverbund",
+      "West"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

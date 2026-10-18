@@ -1,0 +1,121 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "name",
+      "box": {
+        "x": 56,
+        "y": 60,
+        "w": 682,
+        "h": 36.4453125
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "h1",
+      "sizePx": 33.75,
+      "lineHeightPx": 36.45,
+      "trackingPx": -0.50625,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Vorname Nachname",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.heading",
+      "box": {
+        "x": 56,
+        "y": 120.4453125,
+        "w": 682,
+        "h": 14.3984375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "eyebrow",
+      "sizePx": 12,
+      "lineHeightPx": 14.4,
+      "trackingPx": 0.96,
+      "align": "left",
+      "upper": true,
+      "runs": [
+        {
+          "text": "Berufserfahrung",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.period",
+      "box": {
+        "x": 56,
+        "y": 144.34375,
+        "w": 140,
+        "h": 15.8359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "body",
+      "role": "label",
+      "sizePx": 12,
+      "lineHeightPx": 15.84,
+      "trackingPx": 0,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "2021 – heute",
+          "bold": false,
+          "italic": false,
+          "color": "#5A6470"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "sections.0.entries.0.title",
+      "box": {
+        "x": 220,
+        "y": 142.84375,
+        "w": 518,
+        "h": 17.359375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h3",
+      "sizePx": 14,
+      "lineHeightPx": 17.36,
+      "trackingPx": -0.105,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Projektleitung",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

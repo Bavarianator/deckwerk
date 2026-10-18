@@ -1,0 +1,72 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "title",
+      "box": {
+        "x": 60,
+        "y": 60,
+        "w": 674,
+        "h": 177.65625
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 90.65,
+      "lineHeightPx": 88.837,
+      "trackingPx": -1.813,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Sommerfest",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B",
+          "breakAfter": true
+        },
+        {
+          "text": "am Freitag",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 2,
+      "bg": "#FFFFFF"
+    },
+    {
+      "slot": "cta",
+      "box": {
+        "x": 60,
+        "y": 1034.3515625,
+        "w": 222.53125,
+        "h": 26.6484375
+      },
+      "build": 0,
+      "kind": "text",
+      "font": "head",
+      "role": "h2",
+      "sizePx": 23.8,
+      "lineHeightPx": 26.656,
+      "trackingPx": -0.1785,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Alle sind eingeladen",
+          "bold": true,
+          "italic": false,
+          "color": "#0B5563"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+[
+  {
+    "slot": "title",
+    "lines": [
+      "Sommerfest",
+      "am Freitag"
+    ]
+  },
+  {
+    "slot": "cta",
+    "lines": [
+      "Alle sind eingeladen"
+    ]
+  }
+]

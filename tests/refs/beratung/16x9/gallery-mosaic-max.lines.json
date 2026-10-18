@@ -1,0 +1,45 @@
+[
+  {
+    "slot": "eyebrow",
+    "lines": [
+      "Digitalisierung"
+    ]
+  },
+  {
+    "slot": "title",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit",
+      "steigt deutlich durch neue Prozesse im"
+    ]
+  },
+  {
+    "slot": "images.0.caption",
+    "lines": [
+      "Digitalisierung Kundenzufriedenheit"
+    ]
+  },
+  {
+    "slot": "images.1.caption",
+    "lines": [
+      "Kundenzufriedenheit steigt deutlich"
+    ]
+  },
+  {
+    "slot": "images.2.caption",
+    "lines": [
+      "steigt deutlich durch neue Prozesse im"
+    ]
+  },
+  {
+    "slot": "images.3.caption",
+    "lines": [
+      "deutlich durch neue Prozesse im Vertrieb"
+    ]
+  },
+  {
+    "slot": "_footer.page",
+    "lines": [
+      "1 / 1"
+    ]
+  }
+]

@@ -1,0 +1,37 @@
+{
+  "fit": {
+    "ok": true,
+    "head": 0,
+    "body": 0,
+    "overflow": []
+  },
+  "els": [
+    {
+      "slot": "name",
+      "box": {
+        "x": 24,
+        "y": 24,
+        "w": 45.34375,
+        "h": 21.59375
+      },
+      "kind": "text",
+      "font": "head",
+      "role": "display",
+      "sizePx": 20,
+      "lineHeightPx": 21.6,
+      "trackingPx": -0.4,
+      "align": "left",
+      "upper": false,
+      "runs": [
+        {
+          "text": "Mara",
+          "bold": true,
+          "italic": false,
+          "color": "#16202B"
+        }
+      ],
+      "lines": 1,
+      "bg": "#FFFFFF"
+    }
+  ]
+}
