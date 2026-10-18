@@ -1,0 +1,18 @@
+[package]
+name = "dw-guide"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+dw-store = { path = "../dw-store" }
+dw-theme = { path = "../dw-theme" }
+dw-tools = { path = "../dw-tools" }
+serde_json.workspace = true
+regex.workspace = true
+
+[features]
+# Pro-Abschnitte (Stream-Paket, Timeline) und Pro-Layouts
+pro = ["dw-tools/pro"]

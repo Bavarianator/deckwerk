@@ -11,6 +11,7 @@ use dw_lint::theme::{BrandGiven, FontInfo, Level, ThemeIssue, ThemeLintOpts};
 use dw_lint::video::{ClipContent, ClipInfo, OtherClip, SlideRef, lint_clip, parts_length};
 use dw_lint::{Issue, LintCtx, LintTheme, Severity};
 use dw_model::{Deck, El, Measured, ThemeRef};
+use dw_store::Store;
 use serde_json::{Map, Value, json};
 
 use crate::catalog::{self, validate_content};
@@ -481,9 +482,37 @@ fn typ_text(t: &LookTyp) -> String {
     )
 }
 
-/// Zuletzt gebaute Decks, neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
 fn recent_looks(t: &Tools, except: Option<&str>) -> Vec<(String, LookTyp)> {
-    let Ok(rd) = std::fs::read_dir(t.ctx.store.root()) else {
+    recent_themes(&t.ctx.store, except)
+        .into_iter()
+        .map(|(title, theme)| (title, look_typ(&theme)))
+        .collect()
+}
+
+/// Zeilen „Zuletzt gebaute Decks“ für den Kernprompt (guide-modules.ts `extras`, dw-guide): Designtyp mit Schrift und Akzent
+pub fn recent_look_lines(store: &Store) -> Vec<String> {
+    recent_themes(store, None)
+        .into_iter()
+        .map(|(title, theme)| {
+            let t = look_typ(&theme);
+            let r = dw_theme::resolve_theme(&theme_ref(&theme), None);
+            format!(
+                "- „{title}“: {}, {}-Titel {} ({}), Grund {}, Bauteile {}, Akzent {}",
+                t.hell,
+                t.schrift,
+                t.gewicht,
+                r.head.font.css,
+                t.grund,
+                t.bauteile,
+                r.c.accent.to_hex()
+            )
+        })
+        .collect()
+}
+
+/// Zuletzt gebaute Decks (Titel, Theme), neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
+fn recent_themes(store: &Store, except: Option<&str>) -> Vec<(String, Value)> {
+    let Ok(rd) = std::fs::read_dir(store.root()) else {
         return vec![];
     };
     let mut files: Vec<(PathBuf, SystemTime)> = rd
@@ -521,7 +550,7 @@ fn recent_looks(t: &Tools, except: Option<&str>) -> Vec<(String, LookTyp)> {
                 .chars()
                 .take(80)
                 .collect();
-            out.push((title, look_typ(&d["theme"])));
+            out.push((title, d["theme"].clone()));
         }
     }
     out

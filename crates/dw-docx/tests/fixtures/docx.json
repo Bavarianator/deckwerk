@@ -1,0 +1,174 @@
+{
+ "title": "Diff & <Test>",
+ "size": {
+  "w": 1280,
+  "h": 720
+ },
+ "head": "IBM Plex Sans",
+ "body": "IBM Plex Sans",
+ "pages": [
+  [
+   {
+    "kind": "text",
+    "slot": "title",
+    "box": {
+     "x": 80,
+     "y": 60,
+     "w": 900,
+     "h": 120
+    },
+    "font": "head",
+    "role": "title",
+    "sizePx": 52.5,
+    "lineHeightPx": 57.75,
+    "trackingPx": -0.5,
+    "align": "left",
+    "upper": false,
+    "lines": 2,
+    "bg": "#ffffff",
+    "runs": [
+     {
+      "text": "Umsatz <wächst> & \"mehr\"\u0007",
+      "bold": true,
+      "italic": false,
+      "color": "#1a2b3c"
+     },
+     {
+      "text": "Zeile 2",
+      "bold": false,
+      "italic": true,
+      "color": "#1a2b3c",
+      "breakAfter": true
+     }
+    ]
+   },
+   {
+    "kind": "box",
+    "slot": "deko",
+    "box": {
+     "x": 0,
+     "y": 0,
+     "w": 10,
+     "h": 10
+    },
+    "radius": 0,
+    "ellipse": false
+   },
+   {
+    "kind": "text",
+    "slot": "foot",
+    "box": {
+     "x": 80,
+     "y": 680,
+     "w": 400,
+     "h": 20
+    },
+    "font": "body",
+    "role": "body",
+    "sizePx": 24,
+    "lineHeightPx": 31.2,
+    "trackingPx": 0,
+    "align": "right",
+    "upper": true,
+    "lines": 1,
+    "bg": "#ffffff",
+    "runs": [
+     {
+      "text": "Quelle",
+      "bold": false,
+      "italic": false,
+      "color": "#1a2b3c",
+      "link": "https://example.org/?a=1&b=2",
+      "underline": true,
+      "sizePx": 12.3,
+      "trackingPx": 1.2
+     }
+    ]
+   },
+   {
+    "kind": "text",
+    "slot": "leer",
+    "box": {
+     "x": 1,
+     "y": 1,
+     "w": 1,
+     "h": 1
+    },
+    "font": "body",
+    "role": "body",
+    "sizePx": 24,
+    "lineHeightPx": 31.2,
+    "trackingPx": 0,
+    "align": "left",
+    "upper": false,
+    "lines": 2,
+    "bg": "#ffffff",
+    "runs": [
+     {
+      "text": "",
+      "bold": false,
+      "italic": false,
+      "color": "#1a2b3c"
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "kind": "text",
+    "slot": "free",
+    "box": {
+     "x": 300.4,
+     "y": 200.6,
+     "w": 500.5,
+     "h": 80
+    },
+    "font": "body",
+    "role": "body",
+    "sizePx": 24,
+    "lineHeightPx": 31.2,
+    "trackingPx": 0,
+    "align": "center",
+    "upper": false,
+    "lines": 2,
+    "bg": "#ffffff",
+    "rot": -30.5,
+    "fontFace": "DM Serif Display",
+    "effect": {
+     "type": "hollow",
+     "color": "#ff0000"
+    },
+    "runs": [
+     {
+      "text": "Kontur",
+      "bold": false,
+      "italic": false,
+      "color": "#1a2b3c"
+     }
+    ]
+   }
+  ]
+ ],
+ "files": [
+  "word/media/bg1.png",
+  "word/media/bg2.png",
+  "[Content_Types].xml",
+  "_rels/.rels",
+  "docProps/core.xml",
+  "word/document.xml",
+  "word/_rels/document.xml.rels",
+  "word/styles.xml",
+  "word/settings.xml",
+  "word/fontTable.xml"
+ ],
+ "parts": {
+  "[Content_Types].xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Default Extension=\"png\" ContentType=\"image/png\"/><Default Extension=\"odttf\" ContentType=\"application/vnd.openxmlformats-officedocument.obfuscatedFont\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/><Override PartName=\"/word/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml\"/><Override PartName=\"/word/settings.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml\"/><Override PartName=\"/word/fontTable.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml\"/><Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/></Types>",
+  "_rels/.rels": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/></Relationships>",
+  "docProps/core.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:title>Diff &#38; &#60;Test&#62;</dc:title><dc:creator>Deckwerk</dc:creator></cp:coreProperties>",
+  "word/document.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\" xmlns:wps=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\"><w:body><w:p><w:pPr><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"20\" w:lineRule=\"exact\"/><w:rPr><w:sz w:val=\"2\"/><w:szCs w:val=\"2\"/></w:rPr></w:pPr><w:r><w:drawing><wp:anchor distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" simplePos=\"0\" relativeHeight=\"1\" behindDoc=\"1\" locked=\"0\" layoutInCell=\"1\" allowOverlap=\"1\"><wp:simplePos x=\"0\" y=\"0\"/><wp:positionH relativeFrom=\"page\"><wp:posOffset>0</wp:posOffset></wp:positionH><wp:positionV relativeFrom=\"page\"><wp:posOffset>0</wp:posOffset></wp:positionV><wp:extent cx=\"12192000\" cy=\"6858000\"/><wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\"/><wp:wrapNone/><wp:docPr id=\"1\" name=\"bg1.png\"/><a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic><pic:nvPicPr><pic:cNvPr id=\"1\" name=\"bg1.png\"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed=\"rId4\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"12192000\" cy=\"6858000\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r><w:r><w:drawing><wp:anchor distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" simplePos=\"0\" relativeHeight=\"2\" behindDoc=\"0\" locked=\"0\" layoutInCell=\"1\" allowOverlap=\"1\"><wp:simplePos x=\"0\" y=\"0\"/><wp:positionH relativeFrom=\"page\"><wp:posOffset>762000</wp:posOffset></wp:positionH><wp:positionV relativeFrom=\"page\"><wp:posOffset>571500</wp:posOffset></wp:positionV><wp:extent cx=\"8701088\" cy=\"1143000\"/><wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\"/><wp:wrapNone/><wp:docPr id=\"2\" name=\"title\"/><a:graphic><a:graphicData uri=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\"><wps:wsp><wps:cNvSpPr txBox=\"1\"/><wps:spPr><a:xfrm rot=\"0\"><a:off x=\"0\" y=\"0\"/><a:ext cx=\"8701088\" cy=\"1143000\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent><w:p><w:pPr><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"866\" w:lineRule=\"exact\"/><w:jc w:val=\"left\"/><w:rPr><w:lang w:val=\"de-DE\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii=\"IBM Plex Sans\" w:hAnsi=\"IBM Plex Sans\" w:cs=\"IBM Plex Sans\"/><w:b/><w:bCs/><w:color w:val=\"1A2B3C\"/><w:spacing w:val=\"-7\"/><w:sz w:val=\"79\"/><w:szCs w:val=\"79\"/><w:lang w:val=\"de-DE\"/></w:rPr><w:t xml:space=\"preserve\">Umsatz &#60;wächst&#62; &#38; &#34;mehr&#34;</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii=\"IBM Plex Sans\" w:hAnsi=\"IBM Plex Sans\" w:cs=\"IBM Plex Sans\"/><w:i/><w:iCs/><w:color w:val=\"1A2B3C\"/><w:spacing w:val=\"-7\"/><w:sz w:val=\"79\"/><w:szCs w:val=\"79\"/><w:lang w:val=\"de-DE\"/></w:rPr><w:t xml:space=\"preserve\">Zeile 2</w:t><w:br/></w:r></w:p></w:txbxContent></wps:txbx><wps:bodyPr rot=\"0\" vert=\"horz\" wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" anchor=\"t\" anchorCtr=\"0\"><a:spAutoFit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r><w:r><w:drawing><wp:anchor distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" simplePos=\"0\" relativeHeight=\"3\" behindDoc=\"0\" locked=\"0\" layoutInCell=\"1\" allowOverlap=\"1\"><wp:simplePos x=\"0\" y=\"0\"/><wp:positionH relativeFrom=\"page\"><wp:posOffset>704850</wp:posOffset></wp:positionH><wp:positionV relativeFrom=\"page\"><wp:posOffset>6477000</wp:posOffset></wp:positionV><wp:extent cx=\"3867150\" cy=\"190500\"/><wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\"/><wp:wrapNone/><wp:docPr id=\"3\" name=\"foot\"/><a:graphic><a:graphicData uri=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\"><wps:wsp><wps:cNvSpPr txBox=\"1\"/><wps:spPr><a:xfrm rot=\"0\"><a:off x=\"0\" y=\"0\"/><a:ext cx=\"3867150\" cy=\"190500\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent><w:p><w:pPr><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"468\" w:lineRule=\"exact\"/><w:jc w:val=\"right\"/><w:rPr><w:lang w:val=\"de-DE\"/></w:rPr></w:pPr><w:hyperlink r:id=\"rId5\"><w:r><w:rPr><w:rFonts w:ascii=\"IBM Plex Sans\" w:hAnsi=\"IBM Plex Sans\" w:cs=\"IBM Plex Sans\"/><w:caps/><w:color w:val=\"1A2B3C\"/><w:spacing w:val=\"18\"/><w:sz w:val=\"18\"/><w:szCs w:val=\"18\"/><w:u w:val=\"single\"/><w:lang w:val=\"de-DE\"/></w:rPr><w:t xml:space=\"preserve\">Quelle</w:t></w:r></w:hyperlink></w:p></w:txbxContent></wps:txbx><wps:bodyPr rot=\"0\" vert=\"horz\" wrap=\"none\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" anchor=\"t\" anchorCtr=\"0\"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r></w:p><w:p><w:pPr><w:pageBreakBefore/><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"20\" w:lineRule=\"exact\"/><w:rPr><w:sz w:val=\"2\"/><w:szCs w:val=\"2\"/></w:rPr></w:pPr><w:r><w:drawing><wp:anchor distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" simplePos=\"0\" relativeHeight=\"4\" behindDoc=\"1\" locked=\"0\" layoutInCell=\"1\" allowOverlap=\"1\"><wp:simplePos x=\"0\" y=\"0\"/><wp:positionH relativeFrom=\"page\"><wp:posOffset>0</wp:posOffset></wp:positionH><wp:positionV relativeFrom=\"page\"><wp:posOffset>0</wp:posOffset></wp:positionV><wp:extent cx=\"12192000\" cy=\"6858000\"/><wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\"/><wp:wrapNone/><wp:docPr id=\"4\" name=\"bg2.png\"/><a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic><pic:nvPicPr><pic:cNvPr id=\"4\" name=\"bg2.png\"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed=\"rId6\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"12192000\" cy=\"6858000\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r><w:r><w:drawing><wp:anchor distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" simplePos=\"0\" relativeHeight=\"5\" behindDoc=\"0\" locked=\"0\" layoutInCell=\"1\" allowOverlap=\"1\"><wp:simplePos x=\"0\" y=\"0\"/><wp:positionH relativeFrom=\"page\"><wp:posOffset>2825556</wp:posOffset></wp:positionH><wp:positionV relativeFrom=\"page\"><wp:posOffset>1910715</wp:posOffset></wp:positionV><wp:extent cx=\"4838771\" cy=\"762000\"/><wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\"/><wp:wrapNone/><wp:docPr id=\"5\" name=\"free\"/><a:graphic><a:graphicData uri=\"http://schemas.microsoft.com/office/word/2010/wordprocessingShape\"><wps:wsp><wps:cNvSpPr txBox=\"1\"/><wps:spPr><a:xfrm rot=\"19770000\"><a:off x=\"0\" y=\"0\"/><a:ext cx=\"4838771\" cy=\"762000\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent><w:p><w:pPr><w:spacing w:before=\"0\" w:after=\"0\" w:line=\"468\" w:lineRule=\"exact\"/><w:jc w:val=\"center\"/><w:rPr><w:lang w:val=\"de-DE\"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii=\"DM Serif Display\" w:hAnsi=\"DM Serif Display\" w:cs=\"DM Serif Display\"/><w:outline/><w:color w:val=\"FF0000\"/><w:sz w:val=\"36\"/><w:szCs w:val=\"36\"/><w:lang w:val=\"de-DE\"/></w:rPr><w:t xml:space=\"preserve\">Kontur</w:t></w:r></w:p></w:txbxContent></wps:txbx><wps:bodyPr rot=\"0\" vert=\"horz\" wrap=\"square\" lIns=\"0\" tIns=\"0\" rIns=\"0\" bIns=\"0\" anchor=\"t\" anchorCtr=\"0\"><a:spAutoFit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r></w:p><w:sectPr><w:pgSz w:w=\"19200\" w:h=\"10800\" w:orient=\"landscape\"/><w:pgMar w:top=\"0\" w:right=\"0\" w:bottom=\"0\" w:left=\"0\" w:header=\"0\" w:footer=\"0\" w:gutter=\"0\"/></w:sectPr></w:body></w:document>",
+  "word/_rels/document.xml.rels": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings\" Target=\"settings.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable\" Target=\"fontTable.xml\"/><Relationship Id=\"rId4\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/bg1.png\"/><Relationship Id=\"rId5\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\" Target=\"https://example.org/?a=1&#38;b=2\" TargetMode=\"External\"/><Relationship Id=\"rId6\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\" Target=\"media/bg2.png\"/></Relationships>",
+  "word/styles.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:styles xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii=\"IBM Plex Sans\" w:hAnsi=\"IBM Plex Sans\" w:cs=\"IBM Plex Sans\" w:eastAsia=\"IBM Plex Sans\"/><w:lang w:val=\"de-DE\"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:before=\"0\" w:after=\"0\"/></w:pPr></w:pPrDefault></w:docDefaults></w:styles>",
+  "word/settings.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:settings xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><w:compat><w:compatSetting w:name=\"compatibilityMode\" w:uri=\"http://schemas.microsoft.com/office/word\" w:val=\"15\"/></w:compat></w:settings>",
+  "word/fontTable.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<w:fonts xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><w:font w:name=\"IBM Plex Sans\"></w:font><w:font w:name=\"DM Serif Display\"></w:font></w:fonts>"
+ }
+}

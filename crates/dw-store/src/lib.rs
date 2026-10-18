@@ -148,10 +148,12 @@ pub fn slug(title: &str) -> String {
 
 fn is_reserved(s: &str) -> bool {
     // assets/versions/out/models sind Ordner des Datenordners (deck_path/export_dir lehnen sie ab)
-    matches!(s, "con" | "prn" | "aux" | "nul" | "assets" | "versions" | "out" | "models")
-        || (s.len() == 4
-            && (s.starts_with("com") || s.starts_with("lpt"))
-            && s.as_bytes()[3].is_ascii_digit())
+    matches!(
+        s,
+        "con" | "prn" | "aux" | "nul" | "assets" | "versions" | "out" | "models"
+    ) || (s.len() == 4
+        && (s.starts_with("com") || s.starts_with("lpt"))
+        && s.as_bytes()[3].is_ascii_digit())
 }
 
 /// Dateiname für Exporte wie engine.ts `slug` und dw-cli: ä→ae, ö→oe, ü→ue, ß→ss, sonst nur a–z/0–9.
@@ -279,7 +281,7 @@ fn utc_offset(_: i64) -> i64 {
 }
 
 /// Ortszeit wie toLocaleString('sv') in ipc.ts, mit „-“ statt „:“ (2026-10-18T14-03-09)
-fn stamp(t: SystemTime) -> String {
+pub fn stamp(t: SystemTime) -> String {
     let s = t.duration_since(UNIX_EPOCH).map_or(0, |d| d.as_secs()) as i64;
     let s = s + utc_offset(s);
     let (days, rem) = (s.div_euclid(86_400), s.rem_euclid(86_400));

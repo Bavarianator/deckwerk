@@ -1,0 +1,26 @@
+[package]
+name = "dw-cli-agent"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-agent = { path = "../dw-agent" }
+dw-guide = { path = "../dw-guide" }
+dw-mcp = { path = "../dw-mcp" }
+dw-tools = { path = "../dw-tools" }
+serde_json.workspace = true
+getrandom = "0.3"
+tokio = { version = "1", features = ["rt", "sync", "time", "macros", "process", "io-util"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+dw-model = { path = "../dw-model" }
+dw-store = { path = "../dw-store" }
+tokio = { version = "1", features = ["rt-multi-thread"] }
+
+[features]
+pro = ["dw-agent/pro", "dw-mcp/pro"]

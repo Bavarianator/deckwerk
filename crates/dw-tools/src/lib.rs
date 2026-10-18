@@ -6,6 +6,7 @@ pub mod catalog;
 pub mod input;
 pub mod meta;
 mod run;
+pub use run::recent_look_lines;
 pub mod schema;
 
 use std::collections::HashMap;

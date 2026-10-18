@@ -46,7 +46,10 @@ impl FontStore {
 
     /// assets/fonts im Repo.
     pub fn default_dir() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/fonts")
+        // DECKWERK_ASSETS (AppImage: $APPDIR/usr/share/deckwerk) statt des Repo-Pfads aus der Bauzeit
+        std::env::var_os("DECKWERK_ASSETS")
+            .map(|d| PathBuf::from(d).join("fonts"))
+            .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/fonts"))
     }
 
     /// Alle .ttf/.otf eines Verzeichnisses (sortiert, damit die Reihenfolge stabil ist).

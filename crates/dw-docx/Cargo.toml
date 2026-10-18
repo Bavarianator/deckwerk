@@ -1,0 +1,16 @@
+[package]
+name = "dw-docx"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+# EmbedFont: dieselbe Schrift-Beschreibung wie der PPTX-Export
+dw-pptx = { path = "../dw-pptx" }
+sha2.workspace = true
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+serde_json.workspace = true

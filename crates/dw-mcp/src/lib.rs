@@ -238,7 +238,11 @@ pub struct Server {
     tools: Arc<Tools>,
     /// …/deck.json, None = noch nie gespeichert
     path: Arc<Mutex<Option<PathBuf>>>,
+    observer: Option<Observer>,
 }
+
+/// Sieht jeden Werkzeugaufruf: (Name, None) davor, (Name, Some(Ergebnis)) danach (Status-Chips im App-Chat, dw-cli-agent)
+pub type Observer = Arc<dyn Fn(&str, Option<&Result<ToolOutput, String>>) + Send + Sync>;
 
 fn json_indent1(v: &Value) -> String {
     let mut out = vec![];
@@ -255,7 +259,13 @@ impl Server {
         Server {
             tools: Arc::new(Tools::new(ctx)),
             path: Arc::default(),
+            observer: None,
         }
+    }
+
+    pub fn with_observer(mut self, f: Observer) -> Server {
+        self.observer = Some(f);
+        self
     }
 
     pub fn tools(&self) -> &Tools {
@@ -305,6 +315,16 @@ impl Server {
 
     /// Ein Werkzeugaufruf (blockiert: Engine und Jobs warten bis 240 s)
     pub fn call(&self, name: &str, args: Value) -> Result<ToolOutput, String> {
+        let Some(f) = &self.observer else {
+            return self.call_inner(name, args);
+        };
+        f(name, None);
+        let r = self.call_inner(name, args);
+        f(name, Some(&r));
+        r
+    }
+
+    fn call_inner(&self, name: &str, args: Value) -> Result<ToolOutput, String> {
         let args = match dw_tools::meta::all()
             .into_iter()
             .find(|m| m.name == name && dw_tools::MCP_TOOLS.contains(&m.name))

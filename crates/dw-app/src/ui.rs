@@ -443,7 +443,9 @@ impl App {
 
     /// Vorlagen = examples/*.json im Repo (später gebündelt)
     fn load_templates(&mut self) {
-        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
+        let dir = std::env::var_os("DECKWERK_ASSETS")
+            .map(|d| PathBuf::from(d).join("examples"))
+            .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples"));
         let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
             .map(|rd| rd.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "json")).collect())
             .unwrap_or_default();

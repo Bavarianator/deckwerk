@@ -1,0 +1,27 @@
+[package]
+name = "dw-agent"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-guide = { path = "../dw-guide" }
+dw-model = { path = "../dw-model" }
+dw-tools = { path = "../dw-tools" }
+serde_json.workspace = true
+regex.workspace = true
+base64 = "0.22"
+futures-util = "0.3"
+tokio = { version = "1", features = ["rt", "sync", "time", "macros"] }
+tokio-util = "0.7"
+# rustls mit ring statt aws-lc: kein cmake, schneller gebaut
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "stream"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+[dev-dependencies]
+dw-store = { path = "../dw-store" }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util"] }
+
+[features]
+pro = ["dw-guide/pro"]

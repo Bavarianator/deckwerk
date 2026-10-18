@@ -1,0 +1,11 @@
+[package]
+name = "dw-merge"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-store = { path = "../dw-store" }
+# preserve_order: Schlüsselreihenfolge wie Object.keys in TS (mine zuerst, dann theirs)
+serde_json = { workspace = true, features = ["preserve_order"] }

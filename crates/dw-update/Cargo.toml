@@ -1,0 +1,15 @@
+[package]
+name = "dw-update"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+dw-net = { path = "../dw-net" }
+sha2.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+# ed25519 aus ring, das rustls über dw-net ohnehin mitbringt
+ring = "0.17"

@@ -1,0 +1,10 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Deckwerk</title>
+<style>body{margin:0;font:17px system-ui,sans-serif;background:#111;color:#eee;display:flex;flex-direction:column;height:100dvh}
+header{padding:16px;color:#a1a1aa}main{flex:1;overflow:auto;padding:0 16px;font-size:21px;line-height:1.45}
+nav{display:flex;gap:10px;padding:16px}button{height:104px;border:0;border-radius:20px;font:600 21px system-ui,sans-serif}
+#p{flex:1;background:#2a2a2e;color:#eee}#x{flex:2;background:#7a86ff;color:#fff}</style>
+<header id=h>Verbinde …</header><main id=m></main><nav><button id=p>Zurück</button><button id=x>Weiter</button></nav>
+<script>const q=location.search
+const s=()=>fetch('/state'+q).then(r=>r.json()).then(r=>{h.textContent='Folie '+(r.i+1)+' von '+r.n+' · '+r.title;m.textContent=r.notes||'Keine Notizen.'},()=>{h.textContent='Keine Verbindung'})
+p.onclick=()=>fetch('/prev'+q,{method:'POST'}).then(s);x.onclick=()=>fetch('/next'+q,{method:'POST'}).then(s)
+setInterval(s,1000);s()</script>

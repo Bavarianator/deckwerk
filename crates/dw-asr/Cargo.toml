@@ -1,0 +1,13 @@
+[package]
+name = "dw-asr"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+# Segment/Word, ffmpeg-Aufruf mit Abbruch, Fehlertyp
+dw-video = { path = "../dw-video" }
+regex.workspace = true
+# lädt vorgebaute Bibliotheken von GitHub (statisch gelinkt), kein C++-Build
+sherpa-onnx = "1.13.8"

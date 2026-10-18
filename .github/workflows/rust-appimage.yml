@@ -1,0 +1,49 @@
+# Native Rust-App (dw-app) als AppImage, nur Branch feat/rust. Ergebnis als Workflow-Artefakt, kein Release.
+name: rust-appimage
+on:
+  push:
+    branches: [feat/rust]
+    paths: ['crates/**', 'assets/**', 'examples/**', 'Cargo.*', '.github/workflows/rust-appimage.yml']
+  workflow_dispatch:
+
+jobs:
+  appimage:
+    runs-on: ubuntu-22.04 # ältere glibc: läuft auf mehr Distributionen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Systempakete
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libxkbcommon-dev libwayland-dev libfontconfig1-dev libfuse2
+      - name: Bauen
+        run: cargo build --release -p dw-app
+      - name: AppImage packen
+        run: |
+          set -e
+          D=AppDir
+          mkdir -p $D/usr/bin $D/usr/share/deckwerk
+          cp target/release/deckwerk-app $D/usr/bin/
+          cp -r assets/fonts examples $D/usr/share/deckwerk/
+          cp assets/icon.png $D/deckwerk.png
+          cat > $D/deckwerk.desktop <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=Deckwerk
+          Exec=deckwerk-app
+          Icon=deckwerk
+          Categories=Office;
+          EOF
+          cat > $D/AppRun <<'EOF'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          export DECKWERK_ASSETS="$HERE/usr/share/deckwerk"
+          exec "$HERE/usr/bin/deckwerk-app" "$@"
+          EOF
+          chmod +x $D/AppRun
+          curl -fsSL -o appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          ARCH=x86_64 ./appimagetool $D Deckwerk-Rust-x86_64.AppImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Deckwerk-Rust-x86_64.AppImage
+          path: Deckwerk-Rust-x86_64.AppImage

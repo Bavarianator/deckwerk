@@ -1,0 +1,17 @@
+[package]
+name = "dw-net"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+url = "2"
+tokio = { version = "1", features = ["net", "time"] }
+# wie dw-agent: rustls mit ring statt aws-lc
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
