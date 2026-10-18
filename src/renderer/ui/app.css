@@ -238,7 +238,15 @@ select.model-select option { background: var(--panel); color: var(--text); }
 .guide { position: absolute; pointer-events: none; background: #ff4fa3; }
 .guide.v { top: 0; bottom: 0; width: 1px; }
 .guide.h { left: 0; right: 0; height: 1px; }
-.guide.own { background: var(--accent); opacity: 0.7; }
+/* eigene Hilfslinien lassen sich greifen: 9 px Trefferfläche, sichtbar ist nur die Linie (::before) */
+.guide.own { pointer-events: auto; background: none; }
+.guide.own::before { content: ''; position: absolute; background: var(--accent); opacity: 0.7; }
+.guide.own.v { width: 9px; margin-left: -4px; cursor: col-resize; }
+.guide.own.v::before { left: 4px; top: 0; bottom: 0; width: 1px; }
+.guide.own.h { height: 9px; margin-top: -4px; cursor: row-resize; }
+.guide.own.h::before { top: 4px; left: 0; right: 0; height: 1px; }
+.guide.own .item-badge { left: 10px; top: 10px; transform: none; }
+.item-sel.drop { outline-width: 3px; }
 .stage-margins { position: absolute; pointer-events: none; outline: 1px dashed var(--accent); opacity: 0.6; } /* ponytail: Ränder fest wie .safe (72/60/72 px), auch in anderen Formaten */
 .marquee { position: absolute; pointer-events: none; border: 1px solid var(--accent); background: var(--accent-soft); }
 .ctx-menu {
