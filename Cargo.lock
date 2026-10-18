@@ -1301,6 +1301,22 @@ name = "dw-color"
 version = "0.1.0"
 
 [[package]]
+name = "dw-daemon"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dw-model",
+ "dw-pdf",
+ "dw-pptx",
+ "dw-raster",
+ "dw-scene",
+ "dw-store",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "dw-lint"
 version = "0.1.0"
 dependencies = [
@@ -1399,6 +1415,17 @@ dependencies = [
  "serde",
  "serde_json",
  "taffy 0.15.0",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "dw-store"
+version = "0.1.0"
+dependencies = [
+ "dw-model",
+ "libc",
+ "serde",
+ "serde_json",
  "thiserror 2.0.21",
 ]
 

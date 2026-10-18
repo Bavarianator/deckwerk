@@ -1,0 +1,22 @@
+[package]
+name = "dw-daemon"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "dw-daemon"
+path = "src/main.rs"
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+dw-store = { path = "../dw-store" }
+dw-scene = { path = "../dw-scene" }
+dw-raster = { path = "../dw-raster" }
+dw-pdf = { path = "../dw-pdf" }
+dw-pptx = { path = "../dw-pptx" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow = "1"
