@@ -174,3 +174,194 @@ fn hanging_quote() {
     assert!((x0 - (72. - 0.4 * 76.)).abs() < 0.5, "{x0}");
     assert_eq!(text(&m, "title").base.bbox.x, 72.);
 }
+
+fn deck_with(
+    layout: &str,
+    variant: &str,
+    sample: &str,
+    edit: impl Fn(&mut serde_json::Value),
+) -> dw_model::Deck {
+    let content = samples::samples(layout)
+        .unwrap()
+        .into_iter()
+        .find(|(n, _)| *n == sample)
+        .unwrap()
+        .1;
+    let mut v = serde_json::to_value(samples::deck(layout, variant, content)).unwrap();
+    edit(&mut v);
+    serde_json::from_value(v).unwrap()
+}
+
+#[test]
+fn all_themes_render() {
+    let mut f = fonts();
+    let ids: Vec<&str> = dw_theme::themes().iter().map(|t| t.id.as_str()).collect();
+    assert_eq!(ids.len(), 20);
+    for id in ids {
+        for (layout, variants, _) in dw_scene::LAYOUTS {
+            for variant in *variants {
+                let deck = deck_with(layout, variant, "typ", |v| v["theme"]["id"] = id.into());
+                let (scene, m) = render_slide(&deck, 0, &mut f)
+                    .unwrap_or_else(|e| panic!("{id} {layout}-{variant}: {e}"));
+                assert!(m.fit.ok, "{id} {layout}-{variant}: {:?}", m.fit);
+                assert!(!scene.nodes.is_empty());
+                // Text in der Theme-Schrift gesetzt (keine leeren Glyphenläufe)
+                let lines = m.els.iter().find_map(|e| match e {
+                    El::Text(t) if t.base.slot == "title" => Some(t.lines),
+                    _ => None,
+                });
+                assert!(
+                    lines.is_some_and(|n| n >= 1),
+                    "{id} {layout}-{variant}: kein Titel"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn theme_levers() {
+    let mut f = fonts();
+    // solid (legacy): Karten mit Fläche, Punkte als Ellipse
+    let deck = deck_with("two-column", "equal", "typ", |v| {
+        v["theme"]["id"] = "corporate".into()
+    });
+    let (_, m) = render_slide(&deck, 0, &mut f).unwrap();
+    let card = m.els.iter().find_map(|e| match e {
+        El::Box(b) if b.base.slot == "_card.left" => Some(b),
+        _ => None,
+    });
+    let card = card.expect("Karte");
+    assert!(card.fill.is_some(), "solid: Karte mit Fläche");
+    assert!(m.els.iter().any(|e| matches!(e, El::Box(b) if b.ellipse)));
+    // beratung (line): Karten ohne Fläche
+    let (_, m) = render("two-column", "equal", "typ", &mut f);
+    assert!(
+        m.els.iter().all(
+            |e| !matches!(e, El::Box(b) if b.fill.is_some() && b.base.slot.starts_with("_card"))
+        )
+    );
+}
+
+#[test]
+fn frame_split() {
+    let mut f = fonts();
+    let deck = deck_with("bullets", "list", "typ", |v| {
+        v["slides"][0]["frame"] = "split".into()
+    });
+    let (_, m) = render_slide(&deck, 0, &mut f).unwrap();
+    assert!(m.fit.ok, "{:?}", m.fit);
+    let title = text(&m, "title");
+    // Titel auf der Akzentfläche links (72 px Rand, 492 px breit), Text in onAccent
+    assert_eq!(title.base.bbox.x, 72.);
+    assert!(title.base.bbox.x + title.base.bbox.w <= 492. - 48. + 0.01);
+    let th = dw_theme::resolve_theme(&deck.theme, None);
+    assert_eq!(title.bg, th.c.fill.unwrap().to_hex().to_uppercase());
+    // Inhalt rechts ab 560 px, Fußzeile ebenso
+    assert!(text(&m, "items.0.text").base.bbox.x >= 560.);
+    assert!(text(&m, "_footer.page").base.bbox.x > 560.);
+}
+
+#[test]
+fn frame_band() {
+    let mut f = fonts();
+    let deck = deck_with("two-column", "rule", "typ", |v| {
+        v["slides"][0]["frame"] = "band".into()
+    });
+    let (scene, m) = render_slide(&deck, 0, &mut f).unwrap();
+    assert!(m.fit.ok, "{:?}", m.fit);
+    let title = text(&m, "title");
+    // Band oben über die volle Breite: Titel 48 px unter der Oberkante, Fläche im Hintergrund
+    assert!(
+        (title.base.bbox.y - 48.).abs() < 0.01,
+        "{:?}",
+        title.base.bbox
+    );
+    let th = dw_theme::resolve_theme(&deck.theme, None);
+    assert_eq!(title.bg, th.c.fill.unwrap().to_hex().to_uppercase());
+    assert!(scene.nodes.iter().any(|n| matches!(n, dw_model::Node::Rect { rect, meta, .. } if !meta.export && rect.x0 == 0. && rect.y0 == 0. && rect.x1 == 1280.)));
+    // band ist für bullets erlaubt, für cover nicht: dort bleibt top
+    let deck = deck_with("cover", "left", "typ", |v| {
+        v["slides"][0]["frame"] = "band".into()
+    });
+    let (_, m) = render_slide(&deck, 0, &mut f).unwrap();
+    assert_eq!(text(&m, "title").base.bbox.x, 72.);
+}
+
+#[test]
+fn frame_center() {
+    let mut f = fonts();
+    let deck = deck_with("bullets", "list", "typ", |v| {
+        v["slides"][0]["frame"] = "center".into()
+    });
+    let (_, m) = render_slide(&deck, 0, &mut f).unwrap();
+    let title = text(&m, "title");
+    let mid = title.base.bbox.x + title.base.bbox.w / 2.;
+    assert!((mid - 640.).abs() < 1., "{:?}", title.base.bbox);
+    assert_eq!(title.align, dw_model::Align::Center);
+}
+
+#[test]
+fn formats() {
+    let mut f = fonts();
+    // Story 720×1280 (social, fmt-narrow): Spalten untereinander, Schrift größer
+    let deck = deck_with("two-column", "rule", "typ", |v| {
+        v["size"] = serde_json::json!({ "w": 720, "h": 1280 })
+    });
+    let (_, m) = render_slide(&deck, 0, &mut f).unwrap();
+    assert!(m.fit.ok, "{:?}", m.fit);
+    let (l, r) = (text(&m, "left.heading"), text(&m, "right.heading"));
+    assert!(
+        r.base.bbox.y > l.base.bbox.y + 50.,
+        "gestapelt: {:?} {:?}",
+        l.base.bbox,
+        r.base.bbox
+    );
+    assert_eq!(text(&m, "title").size_px, 40.); // 42 × 720/750
+    // split wird im Hochformat zum Band oben
+    let deck = deck_with("bullets", "list", "typ", |v| {
+        v["size"] = serde_json::json!({ "w": 1080, "h": 1350 });
+        v["slides"][0]["frame"] = "split".into();
+    });
+    let (_, m) = render_slide(&deck, 0, &mut f).unwrap();
+    let title = text(&m, "title");
+    assert!(
+        title.base.bbox.y < 100. && title.base.bbox.w > 600.,
+        "{:?}",
+        title.base.bbox
+    );
+}
+
+#[test]
+fn wrap_lines_text() {
+    let mut f = fonts();
+    let deck = samples::deck(
+        "cover",
+        "left",
+        serde_json::json!({ "title": "Wie wir den Umsatz in 18 Monaten verdoppeln" }),
+    );
+    let (_, _, lines) = dw_scene::render_slide_lines(&deck, 0, &mut f).unwrap();
+    let title = lines.iter().find(|l| l.slot == "title").unwrap();
+    // balance: zwei gleich lange Zeilen statt „… in 18 Monaten“ / „verdoppeln“
+    assert_eq!(title.lines.len(), 2);
+    assert_eq!(
+        title.lines.join(" "),
+        "Wie wir den Umsatz in 18 Monaten verdoppeln"
+    );
+}
+
+#[test]
+fn signature_and_decor() {
+    let mut f = fonts();
+    // jedes Theme rendert Cover mit Dekor/Signatur ohne Exportknoten im Hintergrund
+    for t in dw_theme::themes() {
+        let deck = deck_with("cover", "left", "typ", |v| {
+            v["theme"]["id"] = t.id.as_str().into()
+        });
+        let (scene, _) = render_slide(&deck, 0, &mut f).unwrap();
+        let bg_nodes = scene.nodes.iter().filter(|n| !n.meta().export).count();
+        if t.decor != dw_theme::Decor::None {
+            assert!(bg_nodes > 0, "{}: Dekor fehlt", t.id);
+        }
+    }
+}

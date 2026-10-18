@@ -2,14 +2,19 @@
 
 use dw_color::Rgb;
 use dw_model::{Align, Glyph, GlyphRun, Run};
+use dw_theme::Role;
 use parley::{
-    Alignment, AlignmentOptions, FontFamily, FontWeight, Layout, LineHeight, PositionedLayoutItem,
-    StyleProperty, TextWrapMode, WhiteSpaceCollapse,
+    Alignment, AlignmentOptions, BreakReason, FontFamily, FontWeight, Layout, LineHeight,
+    PositionedLayoutItem, StyleProperty, TextWrapMode, WhiteSpaceCollapse,
 };
 use taffy::{AvailableSpace, Size};
 
 use crate::fonts::FontStore;
-use crate::theme::Role;
+use crate::wrap::{self, Cand};
+
+fn r3(v: f32) -> f64 {
+    (v as f64 * 1000.).round() / 1000.
+}
 
 pub(crate) fn hex(c: Rgb) -> String {
     format!("#{:02X}{:02X}{:02X}", c.r, c.g, c.b)
@@ -30,6 +35,72 @@ pub(crate) struct Span {
     pub text: String,
     pub bold: bool,
     pub link: Option<String>,
+    /// Einheit einer Kennzahl (.unit)
+    pub unit: bool,
+}
+
+/// Kennzahl → [Einheit vorn, Zahl, Einheit hinten] wie splitUnit (layouts.tsx), z. B. „855 €“ → ["", "855", " €"].
+/// Nur mit Zahl vorn und ohne Ziffern in der Einheit; sonst None.
+pub fn split_unit(v: &str) -> Option<(&str, &str, &str)> {
+    let b = v.as_bytes();
+    let ch = |i: usize| v[i..].chars().next();
+    let ws = |c: Option<char>| c.is_some_and(char::is_whitespace);
+    let digit = |i: usize| b.get(i).is_some_and(u8::is_ascii_digit);
+    let digits = |mut i: usize| {
+        while digit(i) {
+            i += 1;
+        }
+        i
+    };
+    let skip_ws = |i: usize| {
+        if ws(ch(i).filter(|_| i < v.len())) {
+            i + ch(i).unwrap().len_utf8()
+        } else {
+            i
+        }
+    };
+    let mut i = 0;
+    if let Some(c) = ch(0).filter(|c| "€$£¥".contains(*c)) {
+        i = skip_ws(c.len_utf8());
+    }
+    let pre_end = i;
+    if let Some(c) = ch(i).filter(|c| "+-−–±~≈<>".contains(*c)) {
+        i = skip_ws(i + c.len_utf8());
+    }
+    let start_digits = i;
+    i = digits(i);
+    if i == start_digits {
+        return None;
+    }
+    // Tausendergruppen [.,\s]ddd, dann Nachkommastellen, dann Bereich „30–45“
+    while let Some(c) = ch(i).filter(|c| *c == '.' || *c == ',' || c.is_whitespace()) {
+        let j = i + c.len_utf8();
+        if digits(j) != j + 3 {
+            break;
+        }
+        i = j + 3;
+    }
+    if matches!(ch(i), Some('.' | ',')) && digit(i + 1) {
+        i = digits(i + 1);
+    }
+    let mut j = skip_ws(i);
+    if let Some(c) = ch(j).filter(|c| *c == '–' || *c == '-') {
+        j = skip_ws(j + c.len_utf8());
+        if digit(j) {
+            i = digits(j);
+            if matches!(ch(i), Some('.' | ',')) && digit(i + 1) {
+                i = digits(i + 1);
+            }
+        }
+    }
+    let post = &v[i..];
+    if post
+        .chars()
+        .any(|c| c.is_ascii_digit() || c == '*' || c == '[')
+    {
+        return None;
+    }
+    (pre_end > 0 || !post.is_empty()).then(|| (&v[..pre_end], &v[pre_end..i], post))
 }
 
 pub(crate) fn rich(src: &str) -> Vec<Span> {
@@ -42,6 +113,7 @@ pub(crate) fn rich(src: &str) -> Vec<Span> {
                 text: std::mem::take(plain),
                 bold: false,
                 link: None,
+                unit: false,
             });
         }
     };
@@ -60,6 +132,7 @@ pub(crate) fn rich(src: &str) -> Vec<Span> {
                     text: body[..j].to_string(),
                     bold: true,
                     link: None,
+                    unit: false,
                 });
                 i += 4 + j;
                 continue;
@@ -80,6 +153,7 @@ pub(crate) fn rich(src: &str) -> Vec<Span> {
                 text: body[..close].to_string(),
                 bold: false,
                 link: Some(after[..end].to_string()),
+                unit: false,
             });
             i += 1 + close + 2 + end + 1;
             continue;
@@ -99,8 +173,8 @@ pub(crate) struct TextSpec {
     pub slot: String,
     pub build: Option<u32>,
     pub max_lines: Option<u32>,
-    pub text: String, // Rohtext mit Markdown
-    pub family: &'static str,
+    pub text: String,   // Rohtext mit Markdown
+    pub family: String, // CSS-Schriftliste („'Inter', 'IBM Plex Sans'“)
     pub size: f32,
     pub lh: f32, // Faktor
     pub tracking_em: f32,
@@ -109,6 +183,12 @@ pub(crate) struct TextSpec {
     pub link_color: Rgb,
     pub center: bool,
     pub nowrap: bool,
+    /// text-transform: uppercase (lab-caps)
+    pub upper: bool,
+    /// data-face: PPTX-Schrift abweichend von Titel/Text (Mono-Labels, sub-body)
+    pub face: Option<String>,
+    /// Kennzahl: Einheit klein (.unit, 0,45 em, ohne Laufweite), siehe split_unit
+    pub unit: bool,
 }
 
 impl TextSpec {
@@ -120,6 +200,10 @@ impl TextSpec {
     }
     pub fn head(&self) -> bool {
         self.role.head_font()
+    }
+    /// text-wrap: pretty (slide.css .r-body, .r-label, .r-small)
+    pub fn pretty(&self) -> bool {
+        matches!(self.role, Role::Body | Role::Label | Role::Small)
     }
 }
 
@@ -139,13 +223,31 @@ impl TextNode {
     pub fn new(spec: TextSpec, fonts: &mut FontStore) -> TextNode {
         let mut plain = String::new();
         let mut spans = Vec::new();
-        for s in rich(&spec.text) {
+        let parts = match spec.unit.then(|| split_unit(&spec.text)).flatten() {
+            Some((pre, num, post)) => [(pre, true), (num, false), (post, true)]
+                .into_iter()
+                .filter(|(t, _)| !t.is_empty())
+                .map(|(t, unit)| Span {
+                    text: t.to_string(),
+                    bold: false,
+                    link: None,
+                    unit,
+                })
+                .collect(),
+            None => rich(&spec.text),
+        };
+        for mut s in parts {
+            if spec.upper {
+                s.text = s.text.to_uppercase();
+            }
             let start = plain.len();
             plain.push_str(&s.text);
             spans.push((start..plain.len(), s));
         }
         let mut b = fonts.lcx.ranged_builder(&mut fonts.fcx, &plain, 1.0, false); // Zeilen mit exakter line-height wie Chromium
-        b.push_default(StyleProperty::FontFamily(FontFamily::named(spec.family)));
+        b.push_default(StyleProperty::FontFamily(FontFamily::Source(
+            spec.family.clone().into(),
+        )));
         b.push_default(StyleProperty::FontSize(spec.size));
         b.push_default(StyleProperty::LineHeight(LineHeight::FontSizeRelative(
             spec.lh,
@@ -167,6 +269,10 @@ impl TextNode {
             if s.link.is_some() {
                 b.push(StyleProperty::Brush(pack(spec.link_color)), r.clone());
                 b.push(StyleProperty::Underline(true), r.clone());
+            }
+            if s.unit {
+                b.push(StyleProperty::FontSize(spec.size * 0.45), r.clone());
+                b.push(StyleProperty::LetterSpacing(0.), r.clone());
             }
         }
         let mut layout = b.build(&plain);
@@ -216,24 +322,137 @@ impl TextNode {
         }
     }
 
-    /// Endgültiger Umbruch in der Box; Titel mit text-wrap: balance.
+    /// Endgültiger Umbruch in der Box: greedy, dann Titel mit text-wrap: balance, Fließtext mit pretty (wrap.rs).
     pub fn finish(&mut self, w: f32) {
         self.break_at(w);
-        let n = self.layout.len();
-        if self.spec.head() && !self.spec.nowrap && (2..=6).contains(&n) {
-            // schmalste Breite mit gleicher Zeilenzahl (Chromium balanciert bis 6 Zeilen)
-            let (mut lo, mut hi) = (0.0f32, w);
-            for _ in 0..14 {
-                let mid = (lo + hi) / 2.;
-                self.break_at(mid);
-                if self.layout.len() == n {
-                    hi = mid;
-                } else {
-                    lo = mid;
+        let (head, pretty) = (self.spec.head(), self.spec.pretty());
+        if self.spec.nowrap || self.plain.is_empty() || !(head || pretty) {
+            return;
+        }
+        // greedy Zeilen: (Bytebereich, Breite ohne Leerraum am Ende, Absatzende)
+        let lines: Vec<(std::ops::Range<usize>, f32, bool)> = self
+            .layout
+            .lines()
+            .map(|l| {
+                let r = l.break_reason();
+                (
+                    l.text_range(),
+                    Self::line_width(&l),
+                    matches!(r, BreakReason::Explicit | BreakReason::None),
+                )
+            })
+            .collect();
+        if lines.iter().any(|l| l.0.is_empty()) {
+            return; // Leerzeilen (\n\n): Absatzgrenzen wären unklar
+        }
+        let indent = self
+            .layout
+            .lines()
+            .next()
+            .map_or(0., |l| l.metrics().indent);
+        let avail = w;
+        // Absätze = Zeilen bis zum harten Umbruch bzw. Textende
+        let mut windows = Vec::new(); // (erste Zeile, Zeilen, balanciert)
+        let mut a = 0;
+        for (i, l) in lines.iter().enumerate() {
+            if !l.2 {
+                continue;
+            }
+            let n = i + 1 - a;
+            if head && (2..=wrap::MAX_LINES_BALANCE).contains(&n) {
+                windows.push((a, n, true));
+            } else if pretty && n >= 2 {
+                let text = self.plain[l.0.clone()].trim_end();
+                let has_break = !breaks(text).is_empty();
+                if wrap::should_optimize(l.1, avail, has_break) {
+                    let k = n.min(wrap::MAX_LINES_PRETTY);
+                    windows.push((i + 1 - k, k, false));
                 }
             }
-            self.break_at(hi);
+            a = i + 1;
         }
+        if windows.is_empty() {
+            return;
+        }
+        // Positionen aus dem ungebrochenen Satz: je Absatz eine Zeile
+        self.layout.break_all_lines(None);
+        let xs = self.cluster_xs();
+        let mut widths: Vec<Option<f32>> = vec![None; lines.len()];
+        let mut starts: Vec<usize> = lines.iter().map(|l| l.0.start).collect();
+        for (first, n, balanced) in windows {
+            let range = lines[first].0.start..lines[first + n - 1].0.end;
+            let (cands, offs) = candidates(&self.plain, &xs, range);
+            let a0 = if first == 0 { avail - indent } else { avail };
+            let Some(ends) = wrap::optimal(cands.clone(), a0, avail, self.spec.size, balanced, n)
+            else {
+                continue;
+            };
+            let mut s = 0;
+            for (j, &e) in ends.iter().enumerate() {
+                let content = cands[e].if_break - cands[s].no_break;
+                // Breite knapp über der Zeile: greedy bricht genau an der gewählten Stelle
+                widths[first + j] = Some(content + 0.05 + if first + j == 0 { indent } else { 0. });
+                if j > 0 {
+                    starts[first + j] = offs[s];
+                }
+                s = e;
+            }
+        }
+        self.break_lines(w, &widths);
+        let ok = self.layout.len() == starts.len()
+            && self
+                .layout
+                .lines()
+                .zip(&starts)
+                .all(|(l, &s)| l.text_range().start == s);
+        if !ok {
+            self.break_at(w);
+        }
+    }
+
+    /// Umbruch mit eigener Breite je Zeile (None = Boxbreite).
+    fn break_lines(&mut self, w: f32, widths: &[Option<f32>]) {
+        let mut b = self.layout.break_lines();
+        b.state_mut().set_layout_max_advance(f32::INFINITY);
+        let mut i = 0;
+        loop {
+            let max = widths.get(i).copied().flatten().unwrap_or(w + EPS);
+            b.state_mut().set_line_max_advance(max);
+            if b.break_next().is_none() {
+                break;
+            }
+            i += 1;
+        }
+        b.finish();
+        self.layout
+            .align(Alignment::Start, AlignmentOptions::default());
+    }
+
+    /// (Byteanfang, x0, x1, Leerraum) je Cluster; x je Zeile ab 0.
+    fn cluster_xs(&self) -> Vec<(usize, f32, f32, bool)> {
+        let mut out = Vec::new();
+        for line in self.layout.lines() {
+            let mut x = 0.;
+            for run in line.runs() {
+                for c in run.visual_clusters() {
+                    let a = c.advance();
+                    out.push((c.text_range().start, x, x + a, c.is_space_or_nbsp()));
+                    x += a;
+                }
+            }
+        }
+        out
+    }
+
+    /// Zeilentexte (Debug, Umbruchvergleich): ohne Leerraum am Zeilenende.
+    pub fn lines_text(&self) -> Vec<String> {
+        if self.plain.is_empty() {
+            return Vec::new();
+        }
+        self.layout
+            .lines()
+            .map(|l| self.plain[l.text_range()].trim_end().to_string())
+            .collect()
     }
 
     // leerer Text: Chromium setzt keine Zeile, die Box ist 0 hoch
@@ -341,6 +560,7 @@ impl TextNode {
                 && p.underline == underline
                 && p.color == color
                 && p.link == s.link
+                && p.size_px.is_some() == s.unit
             {
                 p.text.push_str(text);
                 return;
@@ -353,8 +573,8 @@ impl TextNode {
                 color,
                 break_after: None,
                 link: s.link.clone(),
-                size_px: None,
-                tracking_px: None,
+                size_px: s.unit.then(|| r3(self.spec.size * 0.45)),
+                tracking_px: s.unit.then_some(0.),
             });
         };
         let end_line = |runs: &mut Vec<Run>| {
@@ -407,9 +627,90 @@ impl TextNode {
     }
 }
 
+/// Umbruchstellen in einem Text (Byteoffset des Zeilenanfangs danach), wie UAX #14 für unsere Texte:
+/// nach Leerraum, nach „-“ vor einem Nicht-Ziffer-Zeichen, nach Gedankenstrich/Schrägstrich-freien BA-Zeichen (– —).
+/// ponytail: nur die Klassen, die in Folientexten vorkommen; volle UAX #14 über parleys Analyse, falls Abweichungen auffallen
+fn breaks(text: &str) -> Vec<usize> {
+    let ch: Vec<(usize, char)> = text.char_indices().collect();
+    let mut out = Vec::new();
+    for k in 1..ch.len() {
+        let (i, c) = ch[k];
+        let (_, p) = ch[k - 1];
+        if c.is_whitespace() {
+            continue;
+        }
+        let word_before = k >= 2 && !ch[k - 2].1.is_whitespace();
+        if p.is_whitespace() && p != '\u{a0}'
+            || (p == '-' && word_before && !c.is_ascii_digit())
+            || (matches!(p, '–' | '—') && word_before)
+        {
+            out.push(i);
+        }
+    }
+    out
+}
+
+/// Kandidaten für wrap::optimal im Bytebereich eines Absatzfensters, dazu der Zeilenanfang je Kandidat.
+fn candidates(
+    plain: &str,
+    xs: &[(usize, f32, f32, bool)],
+    range: std::ops::Range<usize>,
+) -> (Vec<Cand>, Vec<usize>) {
+    let at = |b: usize| xs.iter().position(|c| c.0 >= b).unwrap_or(xs.len());
+    let (i0, i1) = (at(range.start), at(range.end));
+    let base = xs.get(i0).map_or(0., |c| c.1);
+    // Ende des letzten sichtbaren Clusters vor Index i
+    let ink_end = |i: usize| xs[i0..i].iter().rev().find(|c| !c.3).map_or(base, |c| c.2) - base;
+    let mut cands = vec![Cand {
+        no_break: 0.,
+        if_break: 0.,
+        penalty: 0.,
+    }];
+    let mut offs = vec![range.start];
+    let text = &plain[range.clone()];
+    for b in breaks(text) {
+        let j = at(range.start + b);
+        if j >= i1 {
+            continue;
+        }
+        cands.push(Cand {
+            no_break: xs[j].1 - base,
+            if_break: ink_end(j),
+            penalty: 0.,
+        });
+        offs.push(range.start + b);
+    }
+    let end = ink_end(i1);
+    cands.push(Cand {
+        no_break: end,
+        if_break: end,
+        penalty: 0.,
+    });
+    offs.push(range.end);
+    (cands, offs)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn units() {
+        assert_eq!(split_unit("855 €"), Some(("", "855", " €")));
+        assert_eq!(split_unit("€ 12"), Some(("€ ", "12", "")));
+        assert_eq!(split_unit("+12,5 %"), Some(("", "+12,5", " %")));
+        assert_eq!(split_unit("1.200 Mio"), Some(("", "1.200", " Mio")));
+        assert_eq!(split_unit("30–45 Tage"), Some(("", "30–45", " Tage")));
+        assert_eq!(split_unit("Q3"), None);
+        assert_eq!(split_unit("24/7"), None);
+        assert_eq!(split_unit("42"), None);
+    }
+
+    #[test]
+    fn break_opportunities() {
+        assert_eq!(breaks("Q3-Review in 30-45 Tagen"), vec![3, 10, 13, 19]);
+        assert_eq!(breaks("Wort"), Vec::<usize>::new());
+    }
 
     #[test]
     fn rich_parts() {

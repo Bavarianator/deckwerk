@@ -1340,9 +1340,13 @@ dependencies = [
 name = "dw-pptx"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
+ "dw-color",
+ "dw-lint",
  "dw-model",
  "image",
  "quick-xml 0.42.0",
+ "serde",
  "serde_json",
  "thiserror 2.0.21",
  "zip",
