@@ -1,0 +1,78 @@
+/* Pro-Timeline: Lineal, Spuren, Inspector, Ausgabe. Flach, eine Akzentfarbe; Spurkopf-Breite gemeinsam für Lineal und Spuren */
+.tl-ruler, .tl-tracks { --tl-head: 84px; }
+
+/* ---------- Lineal ---------- */
+.tl-ruler { position: sticky; top: 0; z-index: 3; display: flex; height: 26px; background: var(--panel); border-bottom: 1px solid var(--border); user-select: none; }
+.tl-ruler-head { position: sticky; left: 0; z-index: 2; flex: none; width: var(--tl-head); background: var(--panel); }
+.tl-ruler-body { position: relative; flex: none; height: 100%; cursor: pointer; touch-action: none; }
+.tl-ruler-ticks { position: absolute; left: 0; bottom: 0; overflow: visible; }
+.tl-tick-minor { stroke: var(--border-strong); stroke-width: 1; }
+.tl-tick-major { stroke: var(--faint); stroke-width: 1; }
+.tl-ruler-label { position: absolute; top: 1px; padding-left: 3px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; }
+.tl-marker { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--warn); }
+.tl-marker span { position: absolute; left: 3px; bottom: 1px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; font-size: 10px; color: var(--text); white-space: nowrap; }
+.tl-ruler-playhead { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); pointer-events: none; }
+
+/* ---------- Spuren ---------- */
+.tl-tracks { position: relative; user-select: none; }
+.tl-row { display: flex; height: 44px; border-bottom: 1px solid var(--border); }
+.tl-row.audio { height: 40px; }
+.tl-track-head { position: sticky; left: 0; z-index: 2; flex: none; display: flex; align-items: center; gap: 6px; width: var(--tl-head); padding: 0 8px; background: var(--panel); border-right: 1px solid var(--border); }
+.tl-track-head b { min-width: 22px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.tl-track-head button { height: 22px; padding: 0 6px; font-size: 11px; }
+.tl-track-head button[aria-pressed='true'] { color: var(--accent); }
+.tl-lane { position: relative; flex: none; height: 100%; touch-action: none; }
+.tl-row.off .tl-lane { opacity: 0.4; }
+.tl-clip { position: absolute; top: 4px; bottom: 4px; overflow: hidden; border-radius: 4px; background: rgb(22 22 26 / 0.16); cursor: grab; }
+.tl-row.audio .tl-clip { background: rgb(22 22 26 / 0.09); }
+.tl-clip.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.tl-clip.muted { opacity: 0.55; }
+.tl-clip-name { position: absolute; left: 7px; top: 4px; right: 7px; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; color: var(--text); white-space: nowrap; pointer-events: none; }
+.tl-wave { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 60%; pointer-events: none; }
+.tl-wave path { fill: rgb(22 22 26 / 0.22); }
+.tl-clip.on .tl-wave path { fill: var(--accent); opacity: 0.45; }
+.tl-edge { position: absolute; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
+.tl-edge.l { left: 0; }
+.tl-edge.r { right: 0; }
+.tl-clip.on .tl-edge { background: var(--accent); opacity: 0.6; }
+.tl-add { position: sticky; left: 0; display: flex; gap: 4px; width: max-content; padding: 6px 8px; }
+.tl-add button { height: 26px; padding: 0 8px; font-size: 12px; color: var(--muted); }
+.tl-playhead { position: absolute; top: 0; bottom: 0; z-index: 1; width: 0; border-left: 2px solid var(--accent); pointer-events: none; }
+
+/* ---------- Inspector und Ausgabe ---------- */
+.tl-insp, .tl-deliver { display: grid; gap: 6px; padding: 8px 0; }
+.tl-insp h3, .tl-deliver h3 { margin: 10px 0 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.tl-insp h3:first-child, .tl-deliver h3:first-child { margin-top: 0; }
+.tl-field { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 12px; }
+.tl-field > span { color: var(--muted); }
+.tl-field > :is(.kit-select, input[type='number']) { grid-column: 2 / 4; height: 28px; }
+.tl-field input[type='range'] { width: 100%; accent-color: var(--accent); }
+.tl-field output { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--faint); }
+.tl-check { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.tl-insp > button, .tl-keys > button, .tl-measure button { justify-self: start; height: 26px; padding: 0 8px; font-size: 12px; }
+.tl-keys { display: grid; gap: 4px; font-size: 12px; }
+.tl-keys > span { color: var(--muted); }
+.tl-key { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; }
+.tl-key input { min-width: 0; height: 26px; }
+.tl-measure { display: grid; gap: 4px; }
+.tl-measure p { margin: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tl-hint { margin: 0; font-size: 12px; color: var(--faint); }
+.tl-measure .tl-err { color: var(--danger); }
+
+/* ---------- Seiten, Werkzeugleiste, Titel, Export ---------- */
+.tl-pages { display: flex; gap: 2px; border-bottom: 1px solid var(--border); }
+.tl-pages button { height: 30px; padding: 0 10px; font-size: 12.5px; color: var(--muted); border-bottom: 2px solid transparent; border-radius: 0; }
+.tl-pages button[aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
+.tl-page { display: flex; flex-direction: column; gap: 16px; }
+.tl-field > input[type='text'] { grid-column: 2 / 4; min-width: 0; height: 28px; }
+.tl-bar { position: relative; }
+.tl-bar button { height: 26px; padding: 0 8px; }
+.tl-bar button:disabled { opacity: 0.4; }
+.tl-bar-sep { width: 1px; height: 18px; margin: 0 6px; background: var(--border); }
+.tl-help { position: absolute; left: 10px; bottom: 100%; z-index: 5; padding: 10px 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; }
+.tl-help dl { display: grid; gap: 3px; margin: 0; font-size: 12px; }
+.tl-help dl > div { display: grid; grid-template-columns: 110px auto; gap: 8px; }
+.tl-help dt { color: var(--muted); font-variant-numeric: tabular-nums; }
+.tl-help dd { margin: 0; }
+.tl-measure progress { width: 100%; height: 4px; accent-color: var(--accent); }
+.tl-file { overflow-wrap: anywhere; color: var(--muted); }

@@ -1,0 +1,21 @@
+/* ---------- gantt (Projektplan): Labels links, Perioden als Spalten, flach ohne Schatten ---------- */
+.gt { --gt-label: minmax(160px, 24%); position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.fmt-narrow .gt { --gt-label: minmax(110px, 30%); }
+.gt-grid { position: absolute; inset: 0; display: grid; column-gap: 0; pointer-events: none; }
+.gt-cell { grid-row: 1; border-left: 1px solid var(--border); } /* Spaltenraster ohne data-pptx: landet im Hintergrundbild */
+.gt-today-col { grid-row: 1; position: relative; }
+.gt-today { position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: var(--accent); }
+.gt-head, .gt-row { display: grid; align-items: center; column-gap: 0; }
+.gt-head { flex: none; padding-bottom: 12px; }
+.gt-period { grid-row: 1; padding-left: 10px; white-space: nowrap; overflow: hidden; font-variant-numeric: tabular-nums; }
+.gt-period.now { color: var(--accent); font-weight: 700; }
+.gt-rows { position: relative; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
+.gt-row { position: relative; flex: 0 1 52px; padding: 6px 0; } /* schrumpft bis auf den Inhalt, 8 Zeilen passen */
+.gt-row::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--border); }
+.gt-label { grid-column: 1; grid-row: 1; padding-right: 20px; min-width: 0; }
+.gt-label.hl { font-weight: 700; }
+.gt-bar { grid-row: 1; height: 22px; margin: 0 4px; border-radius: min(var(--radius), 4px); background: var(--surface2); }
+.gt-bar.hl { background: var(--fill); }
+.gt-ms-cell { grid-row: 1; display: flex; justify-content: center; }
+.gt-ms { width: 24px; height: 24px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: var(--muted); }
+.gt-ms.hl { background: var(--fill); }

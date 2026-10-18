@@ -1,7 +1,8 @@
-import { BrowserWindow } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
 import { isA4, PRINT_SIZES, sizeOf, type Deck, type Measured, type PrintOptions } from '../shared/deck'
 import { setPrintBoxes } from './pdf-boxes'
+import { toPdfX4 } from './print-pdf'
 
 // Offscreen Chromium windows that render slides with the exact same React code as the app.
 // Render at zoom 2 → 2560x1440 captures (crisp backgrounds), while the CSS layout stays 1280x720.
@@ -166,7 +167,7 @@ export function renderPdf(deck: Deck): Promise<Buffer> {
 // auf ganze pt; ragt die Seite auch nur um Bruchteile darüber hinaus, verkleinert es den ganzen Inhalt (bis auf 2/3). Deshalb Seite
 // in ganzen pt und Endformat = Seite − 2·Beschnitt: weicht höchstens 0,5 pt (0,18 mm) vom Nennmaß ab, der Beschnitt bleibt ringsum gleich.
 const PT = 72 / 25.4 // pt je mm
-export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buffer> {
+export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<{ pdf: Buffer; warning?: string }> {
   const { w, h } = sizeOf(deck)
   const a4 = isA4({ w, h }) // A4 hoch oder quer; die Visitenkarte druckt in ihrer eigenen Größe
   if (opts.size && !a4) throw new Error(`Druckformat ${opts.size.toUpperCase()} geht nur bei A4-Decks (hoch oder quer); dieses Deck ist ${w}×${h} px. Ohne Format wird es in seiner eigenen Größe gedruckt.`)
@@ -176,13 +177,15 @@ export function renderPrintPdf(deck: Deck, opts: PrintOptions = {}): Promise<Buf
   const pageW = Math.round(tw * PT + 2 * bleed), pageH = Math.round(th * PT + 2 * bleed)
   const fx = ((pageW - 2 * bleed) * 4) / 3 / w, fy = ((pageH - 2 * bleed) * 4) / 3 / h // 1 pt = 4/3 CSS-px
   const geo = { pageW, pageH, bleed, fx, fy, bx: (bleed * 4) / 3 / fx, by: (bleed * 4) / 3 / fy }
-  return serial(async () => {
+  const rgb = serial(async () => {
     const win = await host('print')
     fitWindow(win, w, h + 1)
     await call(win, `dw.renderAll(${JSON.stringify(deck)}, ${JSON.stringify(geo)})`)
     const pdf = await win.webContents.printToPDF({ pageSize: { width: pageW / 72, height: pageH / 72 }, printBackground: true, margins: { top: 0, bottom: 0, left: 0, right: 0 }, preferCSSPageSize: true })
     return setPrintBoxes(pdf, bleed)
   })
+  // CMYK außerhalb von serial(): gs braucht die Render-Fenster nicht und hielte sonst das Rendern anderer Folien auf
+  return opts.cmyk ? rgb.then((pdf) => toPdfX4(pdf, join(app.getAppPath(), 'assets/icc/FOGRA39L_coated.icc'))) : rgb.then((pdf) => ({ pdf }))
 }
 
 export function renderOverview(deck: Deck): Promise<Buffer> {

@@ -12,7 +12,10 @@ import { SlideView, loadFonts } from '../slide'
 import { WIN, winOfTtf } from '../../shared/font-win'
 import { ChatLog, ModelSelect, type Msg } from './Chat'
 import { ClipCutter } from './ClipCutter'
+import { TimelineEditor } from './timeline/TimelineEditor'
+import { deliverOf, tlDuration, type TimelineContent } from '../../shared/timeline'
 import { WorkSteps } from './DeckvidWork'
+import { VideoTools } from './VideoTools'
 import { ClipVideo, Strip, captionAt, clipUrl, useClipPlayer } from './clipPlayer'
 import { confirmDialog } from './kit'
 import { PODCAST_EXAMPLES, SourceChips, VIDEO_EXAMPLES, sourceContext, useSource } from './Start'
@@ -78,7 +81,9 @@ interface Props {
   kind: 'video' | 'podcast' // podcast: deck.podcast statt Clip-Folien
   onPodcast: (fn: (ep: Episode) => Episode, tag?: string) => void // auf den aktuellen Stand von deck.podcast
   onSlides: () => void // Ausweg in den normalen Folien-Editor
+  onDeckSheet?: () => void // Sheet „Deck“: Titel, Briefing, Musik
   patchSlide: (i: number, p: Partial<Slide>) => void
+  newTimeline?: () => void // leere Pro-Timeline (Layout schnitt) am Ende anlegen
   delSlide: (i: number) => void
   canUndo: boolean // letzter KI-Zug lässt sich zurücknehmen
   onUndo: () => void
@@ -96,6 +101,7 @@ export function Deckvid(p: Props) {
   const slide = slides[index]
   const clip = isClip(slide) ? slide : null
   const clips = slides.filter(isClip)
+  const cut = slide?.layout === 'schnitt' ? (slide.content as TimelineContent) : null // Pro-Timeline
   const no = (s: Slide) => slides.slice(0, slides.indexOf(s) + 1).filter(isClip).length // Clip-Nummer wie in der Liste
   const here = clip ? where(clip, no(clip)) : undefined
   const { srcs, attach, remove, clear, err } = useSource()
@@ -144,7 +150,7 @@ export function Deckvid(p: Props) {
   }, [slides, cache, size.w, size.h])
 
   useKey((e) => {
-    if (pod || !keysFree(e) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !slides.length) return
+    if (pod || cut || !keysFree(e) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || !slides.length) return
     e.preventDefault()
     p.onSelect(Math.max(0, Math.min(slides.length - 1, index + (e.key === 'ArrowLeft' ? -1 : 1))))
   })
@@ -180,10 +186,11 @@ export function Deckvid(p: Props) {
           {state && <span className={p.status?.error ? 'error' : undefined} role="status">— {state}</span>}
         </div>
         <div className="top-r">
+          {p.onDeckSheet && <button className="plain" disabled={!deck} title="Titel, Briefing und Musik" onClick={p.onDeckSheet}>Deck</button>}
           {!pod && <button className="plain" disabled={!deck} title="Alle Folien mit allen Werkzeugen bearbeiten" onClick={p.onSlides}>Folien-Ansicht</button>}
           <button className="plain" title="Einstellungen" aria-label="Einstellungen" onClick={() => openSettings()}><Settings size={17} /></button>
           <div className="top-export" ref={box}>
-            <button className="pill tint" disabled={!(pod ? ep : clips.length) || !idle} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Share size={14} />Exportieren</button>
+            <button className="pill tint" disabled={!(pod ? ep : clips.length || slides.some((s) => s.layout === 'schnitt')) || !idle} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><Share size={14} />Exportieren</button>
             {menu && (
               <div className="menu material" role="menu">
                 {pod ? <>
@@ -221,6 +228,10 @@ export function Deckvid(p: Props) {
               <span className="dv-thumb" style={{ width: thumbW, aspectRatio: `${size.w} / ${size.h}`, backgroundImage: `url("${clipUrl(s.content.video)}?frame=${s.content.cover ?? s.content.parts[0].start}")`, backgroundPosition: `${(s.content.parts[0].focus ?? 0.5) * 100}% 50%` }} />
               <span><b>{s.content.hook || `Clip ${no(s)}`}</b><small>{mmss(partsLength(s.content.parts))}<Flag xs={issues[s.id]} /></small></span>
             </button>
+          ) : s.layout === 'schnitt' ? (
+            <button key={s.id} className="dv-item" aria-current={i === index} onClick={() => p.onSelect(i)}>
+              <span><b>Timeline</b><small>{mmss(tlDuration(s.content as TimelineContent))}</small></span>
+            </button>
           ) : (
             <button key={s.id} className="dv-item dv-sep" aria-current={i === index} onClick={() => p.onSelect(i)}>{labelOf(s)}</button>
           ))}
@@ -236,6 +247,10 @@ export function Deckvid(p: Props) {
           <ClipStage key={clip.id} clip={clip} n={no(clip)} total={clips.length} here={here!} size={size} deck={deck} accent={deck ? resolveTheme(deck.theme).c.accent : 'var(--accent)'}
             parts={clips.filter((s) => s.content.video === clip.content.video).flatMap((s) => s.content.parts)} cached={cache[clip.content.video] ?? null} issues={issues[clip.id] ?? []} fresh={!!fresh[clip.content.video]}
             busy={busy} onSend={onSend} undo={undo} onCut={() => setCutting(true)} onRemove={() => void removeClip()} onContent={setClip} />
+        ) : cut ? (
+          <section className="dv-main" aria-label="Timeline">
+            <TimelineEditor key={slide!.id} content={cut} onCommit={(c) => p.patchSlide(index, { content: c })} aspect={size.w / size.h} fps={deliverOf(cut).fps} />
+          </section>
         ) : (
           <section className="dv-main" aria-label="Vorschau">
             <div className="dv-empty">
@@ -259,6 +274,7 @@ export function Deckvid(p: Props) {
         )}
 
         <aside className="dv-chat" aria-label="KI">
+          <VideoTools deck={deck} slide={slide} index={index} patchSlide={p.patchSlide} newTimeline={p.newTimeline} />
           <ChatLog className="dv-log" msgs={p.msgs} busy={busy} onSend={onSend} />
           {!p.msgs.length && pod && ep && <p className="dv-hint">Die KI kennt deine Folge. Sag zum Beispiel: „Schneid die Begrüßung raus“ oder „Setz Kapitel“.</p>}
           {!p.msgs.length && !pod && clips.length > 0 && (
@@ -533,7 +549,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
     '--dv-sub-y': wide ? '7%' : size.h / size.w >= 1.6 ? '33%' : '12%',
     '--dv-accent': accent,
     '--dv-ov': `${cq((m * 0.05) / face.win)}cqw`,
-    '--dv-zoom': c.fit === 'blur' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) * (c.parts[player.part]?.zoom ?? 1), // Punch-in mal Stil-Zoom wie im Export
+    '--dv-zoom': c.fit === 'blur' || c.fit === 'split' ? 1 : zoomOf(c.style, cutIndex(c.parts, Math.max(0, player.part))) * (c.parts[player.part]?.zoom ?? 1), // Punch-in mal Stil-Zoom wie im Export
     '--dv-look': LOOK_CSS[c.look ?? 'neutral'] || 'none',
     ...(live && { '--dv-pop': FX.pop, '--dv-pop-ms': `${FX.popMs}ms`, '--dv-fade': `${FX.hookFadeMs}ms`, '--dv-bar': FX.bar }),
   } as CSSProperties
@@ -618,7 +634,7 @@ function ClipStage({ clip, n, total, here, size, accent, deck, parts, cached, is
                 CLIP_STYLES.map((st) => [st, st === 'ruhig' ? 'Ruhig' : 'Lebendig', st === 'ruhig' ? 'Ohne Animation' : 'Wort-Pop, Hook-Einblendung, Fortschrittsbalken, Zoom an Schnitten']))}
               {opt('Pausen', c.pauses ?? 'lassen', (v) => onContent({ pauses: v === 'lassen' ? undefined : v }), [['lassen', 'Lassen'], ['kurz', 'Kürzen', 'Lange Pausen und Füllwörter fallen im Export weg']])}
               {opt('Bild', c.fit ?? 'crop', (v) => onContent({ fit: v === 'crop' ? undefined : v }),
-                [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund']])}
+                [['crop', 'Füllen', 'Bild füllt das Format, Zuschnitt aufs Gesicht'], ['blur', 'Ganz', 'Ganzes Bild auf unscharfem Grund'], ['split', 'Facecam', 'Stream: Kamera oben, Spiel unten (im Export)']])}
               {opt('Ton', c.ton ?? 'original', (v) => onContent({ ton: v === 'original' ? undefined : v }),
                 [['original', 'Original', 'Ton unverändert'], ['klar', 'Klar', 'Sprache aufbereiten: Rauschen weg, gleichmäßig laut (im Export). Nicht bei Musik']])}
               {opt('Look', c.look ?? 'neutral', (v) => onContent({ look: v === 'neutral' ? undefined : v }),

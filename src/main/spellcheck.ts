@@ -2,12 +2,13 @@ import { app, ipcMain, Menu, type BrowserWindow, type MenuItemConstructorOptions
 import { existsSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+import { APP } from '../shared/app-id'
 
 // Rechtschreibprüfung nur im Hauptfenster; die Render-Fenster schalten sie ab, sonst landen Wellenlinien in Exporten.
-// Aus = Marker unter appData/deckwerk (gemeinsam für App und Entwicklung wie setup-done), Standard an.
+// Aus = Marker unter appData/<APP.id> (gemeinsam für App und Entwicklung wie setup-done), Standard an.
 export function setupSpellcheck(win: BrowserWindow) {
   const wc = win.webContents, ses = wc.session
-  const off = join(app.getPath('appData'), 'deckwerk', 'spellcheck-off')
+  const off = join(app.getPath('appData'), APP.id, 'spellcheck-off')
   // macOS nutzt die Systemprüfung und erkennt die Sprache selbst; sonst Hunspell-Wörterbücher (einmaliger Download).
   // Sprachen nur bei eingeschalteter Prüfung setzen: sie stoßen den Download an, und wer sie ausschaltet, soll keinen haben.
   const enable = (on: boolean) => {

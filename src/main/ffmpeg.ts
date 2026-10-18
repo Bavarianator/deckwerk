@@ -124,7 +124,8 @@ export async function probe(file: string): Promise<VideoInfo & { audio: boolean 
   // Dauer steht im Container der fremden Datei: riesige Werte sprengten die Arrays in loudness und der Chunk-Planung
   const duration = +d[1] * 3600 + +d[2] * 60 + +d[3]
   if (duration > 48 * 3600) throw new Error(`Video ist länger als 48 Stunden (${basename(file)}). So lange Videos kann Deckwerk nicht verarbeiten.`)
-  return { duration, w, h, audio }
+  const fps = Number(/, ([\d.]+) fps/.exec((video ?? '').split('\n')[0])?.[1]) || undefined // fehlt bei manchen Containern; variable Bildrate: Mittelwert
+  return { duration, w, h, ...(fps ? { fps } : {}), audio }
 }
 
 /** Je Zeitpunkt (s) ein JPEG in width px Breite (Höhe proportional, gerade); -ss vor -i springt direkt hin. */
@@ -209,10 +210,12 @@ export async function loudness(file: string, onProgress?: (pct: number) => void)
 
 /** Je Zeitpunkt (s) ein rohes bgr24-Bild, side×side: Video seitenverhältnistreu so skaliert, dass die längere Seite = side ist, oben links eingepasst, Rest schwarz (Eingang für YuNet, 640×640 BGR).
  *  Zurückrechnen auf Videopixel: scale = side / max(w, h) (w/h aus probe, also schon gedreht); x_video = x_bild / scale, y_video = y_bild / scale. */
+/** Filter der Standbilder für die Gesichtserkennung: eingepasst, oben links, schwarz aufgefüllt (auch für phoneFrames) */
+export const frameVf = (side: number) => `scale=${side}:${side}:force_original_aspect_ratio=decrease,format=bgr24,pad=${side}:${side}:0:0:black`
 export async function rawFrames(file: string, times: number[], side = 640): Promise<Buffer[]> {
   const out: Buffer[] = []
   for (const t of times) {
-    const raw = await ff(['-ss', String(Math.max(0, t)), '-i', file, '-frames:v', '1', '-vf', `scale=${side}:${side}:force_original_aspect_ratio=decrease,format=bgr24,pad=${side}:${side}:0:0:black`, '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'])
+    const raw = await ff(['-ss', String(Math.max(0, t)), '-i', file, '-frames:v', '1', '-vf', frameVf(side), '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'])
     if (raw.length !== side * side * 3) throw new Error(`Kein Bild bei ${t} s in ${basename(file)} (Video zu kurz?)`)
     out.push(raw)
   }
@@ -235,7 +238,7 @@ export async function contactSheet(file: string, parts: Part[], o: { size: { w: 
     ps.push(p)
     times.push(Math.min(Math.max(0, p.start + (c + partLen(p)) * speedOf(p)), Math.max(0, info.duration - 0.1))) // Clipzeit im part → Quellzeit (Tempo)
   }
-  const blur = o.fit === 'blur' && Math.abs(info.w / info.h - o.size.w / o.size.h) > 0.01
+  const blur = (o.fit === 'blur' || o.fit === 'split') && Math.abs(info.w / info.h - o.size.w / o.size.h) > 0.01 // split: ganzes Bild, damit die Facecam zu sehen ist
   const build = (label: boolean) => {
     const g = times.map((_, i) => {
       const c = cropRect(info, o.size, ps[i].focus)

@@ -16,12 +16,14 @@ export function AgentenSection(_: SectionProps) {
   const [clis, setClis] = useState<CliStatus[] | null>(null)
   const [tools, setTools] = useState<number | null>(null)
   const [copied, setCopied] = useState(-1)
+  const [replaced, setReplaced] = useState<string[]>([]) // Deckwerk Pro hat dort einen Deckwerk-Eintrag ersetzt
   const load = () => window.api.setupStatus().then((s) => setClis(s.clis))
   useEffect(() => { void load() }, [])
 
   const open = clis?.filter((c) => c.found && !c.mcp) ?? [] // gefunden, aber Deckwerk noch nicht eingetragen
-  const install = (cli: ChatCli) => run(cli, async () => { await window.api.setupMcp(cli); await load() })
-  const installAll = () => run('all', async () => { for (const c of open) await window.api.setupMcp(c.id); await load() })
+  const setup = async (cli: ChatCli) => { const note = await window.api.setupMcp(cli); if (note) setReplaced((r) => [...r, note]) }
+  const install = (cli: ChatCli) => run(cli, async () => { await setup(cli); await load() })
+  const installAll = () => run('all', async () => { for (const c of open) await setup(c.id); await load() })
   const test = () => run('test', async () => { setTools(null); setTools(await window.api.setupMcpTest()) })
   const copy = (i: number) => { void navigator.clipboard.writeText(PROMPTS[i]); setCopied(i) }
   const mcp = clis?.filter((c) => c.mcp).map((c) => c.name).join(', ') // wo Deckwerk eingetragen ist
@@ -51,6 +53,7 @@ export function AgentenSection(_: SectionProps) {
           ))}
         </Group>
       )}
+      {replaced.map((n) => <p key={n} className="settings-note" role="status">{n}</p>)}
       <Group label="Verbindung testen">
         <Row ok={tools ? true : undefined} title={tools ? 'Läuft' : 'Server prüfen'}
           action={<button type="button" className="pill" disabled={busy === 'test'} onClick={() => void test()}>{busy === 'test' ? <><Spin />Teste …</> : tools ? 'Erneut testen' : 'Jetzt testen'}</button>}>

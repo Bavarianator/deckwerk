@@ -4,6 +4,7 @@
 import { useContext, useEffect, useRef, useState } from 'react'
 import { ChevronDown, Cloud, CloudAlert, CloudCheck, CloudSync, ExternalLink } from 'lucide-react'
 import type { SyncStatus } from '../../../preload'
+import { APP } from '../../../shared/app-id'
 import { CLOUDS, cloudUrl, type CloudPreset } from '../../../shared/clouds'
 import { confirmDialog } from '../kit'
 import { Group, Head, OpenSettings, Row, Spin, useRun, type SectionProps } from './parts'
@@ -14,7 +15,7 @@ const GRUPPEN: [CloudPreset['kind'], string][] = [['nextcloud', 'Anmelden im Bro
 
 // Womit verbunden: Ordner, Anbieter aus CLOUDS (gleicher Host, {user}/{id} als Platzhalter) oder Host der Adresse
 function ziel(s: SyncStatus): string {
-  if (s.url.startsWith('file:')) return `Ordner ${kurz(decodeURIComponent(new URL(s.url).pathname).replace(/^\/([A-Za-z]:)/, '$1'))}/Deckwerk`
+  if (s.url.startsWith('file:')) return `Ordner ${kurz(decodeURIComponent(new URL(s.url).pathname).replace(/^\/([A-Za-z]:)/, '$1'))}/${APP.home}`
   let host = s.url
   try { host = new URL(s.url).host } catch { /* Adresse so zeigen */ }
   const p = CLOUDS.find((c) => {

@@ -35,8 +35,8 @@ await new Promise<void>((r) => server.listen(0, '127.0.0.1', r))
 const url = `http://127.0.0.1:${(server.address() as { port: number }).port}`
 const s = { url, user: 'anna', pass: 'geheim' }
 
-eq(davBase({ url: 'cloud.example.org', user: 'a b' }), 'https://cloud.example.org/remote.php/dav/files/a%20b/Deckwerk/')
-eq(davBase({ url: 'https://dav.box.com/dav', user: 'x' }), 'https://dav.box.com/dav/Deckwerk/')
+eq(davBase({ url: 'cloud.example.org', user: 'a b' }), 'https://cloud.example.org/remote.php/dav/files/a%20b/DeckwerkPro/')
+eq(davBase({ url: 'https://dav.box.com/dav', user: 'x' }), 'https://dav.box.com/dav/DeckwerkPro/')
 await testSync(s)
 await testSync({ ...s, pass: 'falsch' }).then(() => ok(false, 'falsches Passwort angenommen'), (e) => ok(/abgelehnt/.test(e.message)))
 
@@ -50,7 +50,7 @@ const older = (home: string, rel: string) => utimesSync(join(home, rel), new Dat
 put(A, 'pitch/deck.json', '{"v":1}'); put(A, 'pitch/versions/alt.json', 'x'); put(A, 'assets/foto.png', 'PNG'); put(A, '.setup-done', '')
 put(A, 'fonts/Newsreader/Newsreader-Regular.ttf', 'TTF') // Schrift-Cache lädt jedes Gerät selbst
 eq(await sync(A, s), { up: 2, down: 0, deleted: 0, conflicts: 0, changed: [] })
-ok(!files.has('/remote.php/dav/files/anna/Deckwerk/pitch/versions/alt.json'))
+ok(!files.has('/remote.php/dav/files/anna/DeckwerkPro/pitch/versions/alt.json'))
 ok(![...files.keys()].some((f) => f.includes('/fonts/')))
 eq((await sync(B, s)).changed.sort(), [join(B, "assets/foto.png"), join(B, "pitch/deck.json")])
 eq(get(B, 'pitch/deck.json'), '{"v":1}')
@@ -118,7 +118,7 @@ const schaut: typeof fetch = async (u, i) => {
 eq((await sync(D, s, schaut)).up, 25)
 ok(gemerkt >= 20, `Zwischenstand: ${gemerkt}`)
 ok(!readdirSync(D).includes('.sync-state.json.tmp'))
-for (const k of [...files.keys()]) if (/\/Deckwerk\/(neu|zwei|drei)(\/|$)/.test(k)) files.delete(k) // spätere Blöcke (Löschbremse) zählen die Dateien auf dem Server
+for (const k of [...files.keys()]) if (/\/DeckwerkPro\/(neu|zwei|drei)(\/|$)/.test(k)) files.delete(k) // spätere Blöcke (Löschbremse) zählen die Dateien auf dem Server
 // hängender Server: verständliche Meldung statt einer englischen DOMException
 const hang: typeof fetch = async () => { throw Object.assign(new Error('signal timed out'), { name: 'TimeoutError' }) }
 await sync(A, s, hang).then(() => ok(false, 'Zeitüberschreitung übersehen'), (e) => ok(/antwortet nicht/.test(e.message), e.message))
@@ -140,9 +140,9 @@ let untergeschoben = false, geholt = 0
 const boese: typeof fetch = async (u, i) => {
   if (i?.method === 'GET' && String(u).includes('%5C')) { geholt++; return new Response('BOOM') }
   const r = await fetch(u, i)
-  if (i?.method !== 'PROPFIND' || !String(u).endsWith('/Deckwerk/')) return r
+  if (i?.method !== 'PROPFIND' || !String(u).endsWith('/DeckwerkPro/')) return r
   untergeschoben = true
-  const evil = `<d:response><d:href>/remote.php/dav/files/anna/Deckwerk/x%5C..%5C..%5Cevil.cmd</d:href><d:propstat><d:prop><d:getetag>"e1"</d:getetag><d:getcontentlength>4</d:getcontentlength><d:getlastmodified>${new Date().toUTCString()}</d:getlastmodified><d:resourcetype/></d:prop></d:propstat></d:response>`
+  const evil = `<d:response><d:href>/remote.php/dav/files/anna/DeckwerkPro/x%5C..%5C..%5Cevil.cmd</d:href><d:propstat><d:prop><d:getetag>"e1"</d:getetag><d:getcontentlength>4</d:getcontentlength><d:getlastmodified>${new Date().toUTCString()}</d:getlastmodified><d:resourcetype/></d:prop></d:propstat></d:response>`
   return new Response((await r.text()).replace('</d:multistatus>', `${evil}</d:multistatus>`), { status: r.status })
 }
 await sync(A, s, boese)
@@ -187,20 +187,20 @@ await sync(A, s).then(() => ok(false, 'Bremse greift nicht'), (e) => ok(/angehal
 eq(files.size, before)
 
 // 7) Ordner Deckwerk auf dem Server gelöscht (404) bei vorhandenem Stand → lokal nichts löschen, alles neu hochladen
-for (const f of [...files.keys()]) if (f.includes('/Deckwerk/')) files.delete(f)
-for (const d of [...dirs]) if (d.includes('/Deckwerk')) dirs.delete(d)
+for (const f of [...files.keys()]) if (f.includes('/DeckwerkPro/')) files.delete(f)
+for (const d of [...dirs]) if (d.includes('/DeckwerkPro')) dirs.delete(d)
 const r7 = await sync(B, s)
 eq(r7.deleted, 0)
 ok(existsSync(join(B, 'pitch/deck.json')))
-ok(files.has('/remote.php/dav/files/anna/Deckwerk/pitch/deck.json'))
+ok(files.has('/remote.php/dav/files/anna/DeckwerkPro/pitch/deck.json'))
 
 // 8) Deck-Pfade fremder Geräte auf den lokalen Ordner umleiten
 mkdirSync(join(B, 'assets'), { recursive: true })
 writeFileSync(join(B, 'assets/foto.png'), 'x')
-eq(localAsset('/irgendwo/anders/Deckwerk/assets/foto.png', B), join(B, 'assets/foto.png'))
+eq(localAsset('/irgendwo/anders/DeckwerkPro/assets/foto.png', B), join(B, 'assets/foto.png'))
 eq(localAsset(join(B, 'assets/foto.png'), B), join(B, 'assets/foto.png'))
-eq(localAsset('/x/Deckwerk/../../etc/passwd', B), '/x/Deckwerk/../../etc/passwd')
-eq(localAsset('/x/Deckwerk/assets/fehlt.png', B), '/x/Deckwerk/assets/fehlt.png')
+eq(localAsset('/x/DeckwerkPro/../../etc/passwd', B), '/x/DeckwerkPro/../../etc/passwd')
+eq(localAsset('/x/DeckwerkPro/assets/fehlt.png', B), '/x/DeckwerkPro/assets/fehlt.png')
 
 // 9) Ordner-Ziel (Sync-Ordner von Dropbox & Co.): file:-Adresse, folderFetchFor spielt WebDAV auf der Platte
 const box = join(root, 'Dropbox'), P = join(root, 'pc2'), Q = join(root, 'laptop')
@@ -208,57 +208,57 @@ mkdirSync(box)
 const f = { url: pathToFileURL(box).href, user: '', pass: '' }
 const ff = folderFetchFor(P)
 ok(isFolder(f.url) && isFolder(f.url.replace('file:', 'FILE:')) && !isFolder('cloud.example.org') && !isFolder('https://x/'))
-eq(davBase(f), `${pathToFileURL(box).href}/Deckwerk/`)
-eq(davBase({ url: 'file:///C:/Users/a%20b/Dropbox', user: '' }), 'file:///C:/Users/a%20b/Dropbox/Deckwerk/')
+eq(davBase(f), `${pathToFileURL(box).href}/DeckwerkPro/`)
+eq(davBase({ url: 'file:///C:/Users/a%20b/Dropbox', user: '' }), 'file:///C:/Users/a%20b/Dropbox/DeckwerkPro/')
 await testSync(f, ff)
 await testSync({ ...f, url: pathToFileURL(join(root, 'fehlt')).href }, ff).then(() => ok(false, 'fehlender Ordner angenommen'), (e) => ok(/404/.test(e.message), e.message))
 put(P, 'pitch/deck.json', '{"v":1}'); put(P, 'assets/f & ü.png', 'PNG'); put(P, 'pitch/versions/alt.json', 'x'); older(P, 'pitch/deck.json')
 eq(await sync(P, f, ff), { up: 2, down: 0, deleted: 0, conflicts: 0, changed: [] })
-eq(get(box, 'Deckwerk/pitch/deck.json'), '{"v":1}')
-ok(!existsSync(join(box, 'Deckwerk/pitch/versions')))
-ok(!readdirSync(join(box, 'Deckwerk/pitch')).some((x) => x.endsWith('.part')))
-eq(Math.floor(statSync(join(box, 'Deckwerk/pitch/deck.json')).mtimeMs / 1000), Math.floor(statSync(join(P, 'pitch/deck.json')).mtimeMs / 1000)) // X-OC-Mtime
+eq(get(box, 'DeckwerkPro/pitch/deck.json'), '{"v":1}')
+ok(!existsSync(join(box, 'DeckwerkPro/pitch/versions')))
+ok(!readdirSync(join(box, 'DeckwerkPro/pitch')).some((x) => x.endsWith('.part')))
+eq(Math.floor(statSync(join(box, 'DeckwerkPro/pitch/deck.json')).mtimeMs / 1000), Math.floor(statSync(join(P, 'pitch/deck.json')).mtimeMs / 1000)) // X-OC-Mtime
 eq(await sync(P, f, ff), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] })
 eq((await sync(Q, f, folderFetchFor(Q))).down, 2)
 eq(get(Q, 'assets/f & ü.png'), 'PNG')
 // die Cloud-App bringt eine neuere Fassung in den Ordner → runter
-put(box, 'Deckwerk/pitch/deck.json', '{"v":2}')
+put(box, 'DeckwerkPro/pitch/deck.json', '{"v":2}')
 eq((await sync(P, f, ff)).down, 1)
 eq(get(P, 'pitch/deck.json'), '{"v":2}')
 // Löschen auf der Ordner-Seite und lokal
-rmSync(join(box, 'Deckwerk/assets/f & ü.png'))
+rmSync(join(box, 'DeckwerkPro/assets/f & ü.png'))
 eq((await sync(P, f, ff)).deleted, 1)
 ok(!existsSync(join(P, 'assets/f & ü.png')))
 put(P, 'neu/deck.json', '{}')
 eq((await sync(P, f, ff)).up, 1)
 rmSync(join(P, 'neu'), { recursive: true })
 eq((await sync(P, f, ff)).deleted, 1)
-ok(!existsSync(join(box, 'Deckwerk/neu/deck.json')))
+ok(!existsSync(join(box, 'DeckwerkPro/neu/deck.json')))
 // Konflikt: beide ändern, Ordner-Seite ist neuer → lokale Fassung in versions/
 put(P, 'pitch/deck.json', '{"v":"pc"}'); older(P, 'pitch/deck.json')
-put(box, 'Deckwerk/pitch/deck.json', '{"v":"cloud"}')
+put(box, 'DeckwerkPro/pitch/deck.json', '{"v":"cloud"}')
 eq((await sync(P, f, ff)).conflicts, 1)
 eq(get(P, 'pitch/deck.json'), '{"v":"cloud"}')
 ok(readdirSync(join(P, 'pitch/versions')).some((x) => x.endsWith('-lokal.json') && get(P, `pitch/versions/${x}`) === '{"v":"pc"}'))
 // Systemdateien (desktop.ini, Icon\r) bleiben, wo sie sind; alte .part-Reste im Ordner räumt PROPFIND weg
-put(box, 'Deckwerk/desktop.ini', '[x]'); put(box, 'Deckwerk/pitch/Icon\r', ''); put(P, 'Desktop.ini', '[y]')
-put(box, 'Deckwerk/pitch/.deck.json.abc.part', 'x'); utimesSync(join(box, 'Deckwerk/pitch/.deck.json.abc.part'), new Date(Date.now() - 7_200_000), new Date(Date.now() - 7_200_000))
+put(box, 'DeckwerkPro/desktop.ini', '[x]'); put(box, 'DeckwerkPro/pitch/Icon\r', ''); put(P, 'Desktop.ini', '[y]')
+put(box, 'DeckwerkPro/pitch/.deck.json.abc.part', 'x'); utimesSync(join(box, 'DeckwerkPro/pitch/.deck.json.abc.part'), new Date(Date.now() - 7_200_000), new Date(Date.now() - 7_200_000))
 eq(await sync(P, f, ff), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] })
 eq(await sync(P, f, ff), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] })
 ok(!existsSync(join(P, 'desktop.ini')) && !existsSync(join(P, 'pitch/Icon\r')) && get(P, 'Desktop.ini') === '[y]')
-ok(!existsSync(join(box, 'Deckwerk/pitch/.deck.json.abc.part')))
+ok(!existsSync(join(box, 'DeckwerkPro/pitch/.deck.json.abc.part')))
 // iCloud hat eine Datei ausgelagert (.name.icloud) → abbrechen statt lokal löschen
-put(box, 'Deckwerk/pitch/.deck.json.icloud', ''); rmSync(join(box, 'Deckwerk/pitch/deck.json'))
+put(box, 'DeckwerkPro/pitch/.deck.json.icloud', ''); rmSync(join(box, 'DeckwerkPro/pitch/deck.json'))
 await sync(P, f, ff).then(() => ok(false, 'ausgelagerte iCloud-Datei übersehen'), (e) => ok(/iCloud/.test(e.message), e.message))
 ok(existsSync(join(P, 'pitch/deck.json')))
 // Sync-Ordner zeigt nachträglich per Link auf den Deckwerk-Ordner → jede Anfrage verweigert, auch auf noch nicht vorhandene Pfade
-const evil = join(root, 'evil'); mkdirSync(evil); symlinkSync(P, join(evil, 'Deckwerk'))
+const evil = join(root, 'evil'); mkdirSync(evil); symlinkSync(P, join(evil, 'DeckwerkPro'))
 await sync(P, { ...f, url: pathToFileURL(evil).href }, ff).then(() => ok(false, 'Link auf den Deckwerk-Ordner angenommen'), (e) => ok(/selbst/.test(e.message), e.message))
-await ff(pathToFileURL(join(evil, 'Deckwerk/neu/x.json')).href, { method: 'PUT', body: 'x' }).then(() => ok(false, 'PUT in den Deckwerk-Ordner angenommen'), (e) => ok(/selbst/.test(e.message), e.message))
+await ff(pathToFileURL(join(evil, 'DeckwerkPro/neu/x.json')).href, { method: 'PUT', body: 'x' }).then(() => ok(false, 'PUT in den Deckwerk-Ordner angenommen'), (e) => ok(/selbst/.test(e.message), e.message))
 ok(existsSync(join(P, 'pitch/deck.json')) && !existsSync(join(P, 'neu/x.json')))
 
 // 10) Ordnerwahl: übliche Sync-Ordner finden; Deckwerk nie in sich selbst spiegeln (auch nicht über Links)
-const H = join(root, 'home'), own = join(H, 'Deckwerk')
+const H = join(root, 'home'), own = join(H, 'DeckwerkPro')
 mkdirSync(join(H, 'OneDrive - Firma'), { recursive: true }); mkdirSync(join(H, 'Insync/a@b.de/Google Drive'), { recursive: true }); mkdirSync(own)
 eq(await findFolder('~/OneDrive - *', H), join(H, 'OneDrive - Firma'))
 eq(await findFolder('~/Insync/*/Google Drive', H), join(H, 'Insync/a@b.de/Google Drive'))
@@ -266,12 +266,12 @@ eq(await findFolder('~/Dropbox', H), null)
 eq(await findFolder('G:/Meine Ablage', H), null) // Laufwerke nur unter Windows
 await checkSyncFolder(join(H, 'OneDrive - Firma'), own)
 symlinkSync(H, join(root, 'home-link'))
-mkdirSync(join(root, 'box2')); symlinkSync(own, join(root, 'box2/Deckwerk'))
+mkdirSync(join(root, 'box2')); symlinkSync(own, join(root, 'box2/DeckwerkPro'))
 for (const bad of [H, own, join(root, 'home-link'), join(root, 'box2'), join(root, 'fehlt')])
   await checkSyncFolder(bad, own).then(() => ok(false, `${bad} angenommen`), (e) => ok(/nicht nutzen/.test(e.message), e.message))
 mkdirSync(join(own, 'assets'))
 await checkSyncFolder(join(own, 'assets'), own).then(() => ok(false, 'Ordner im Deckwerk-Ordner angenommen'), (e) => ok(/selbst/.test(e.message), e.message))
-await checkSyncFolder(root, join(root, 'Deckwerk/x/Deckwerk')).then(() => ok(false, 'Ziel über dem Deckwerk-Ordner angenommen'), (e) => ok(/selbst/.test(e.message), e.message))
+await checkSyncFolder(root, join(root, 'DeckwerkPro/x/DeckwerkPro')).then(() => ok(false, 'Ziel über dem Deckwerk-Ordner angenommen'), (e) => ok(/selbst/.test(e.message), e.message))
 
 server.close()
 rmSync(root, { recursive: true, force: true })

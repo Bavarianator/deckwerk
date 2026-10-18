@@ -11,10 +11,13 @@ import { handout } from '../shared/handout'
 import { highlights, type Signals } from '../shared/highlights'
 import { lintDeck } from '../shared/lint'
 import { MAX_PARTS, followParts, snapToScenes, type ClipContent, type Segment, type Transcript } from '../shared/video'
+import type { TimelineContent } from '../shared/timeline'
+import { resolveTheme } from '../shared/themes'
 import type { Engine } from './agent'
+import { dataDir } from './clients'
 import { buildDocx } from './export-docx'
 import { buildPptx, fontsOf } from './export-pptx'
-import { autoFocus, speakerFaces } from './faces'
+import { autoFocus, findCam, speakerFaces } from './faces'
 import { ffmpegBin, frames, loudness, pcm16k, probe, scenes, silences } from './ffmpeg'
 import { renderFilm, renderOverview, renderPdf, renderPrintPdf, renderSlide, warm, type Rendered } from './render'
 import { phoneDevice, phoneMarker } from './phone'
@@ -50,7 +53,8 @@ export function createEngine(): Engine {
 
   // Video-Caches je Datei (Pfad, Größe, Änderungszeit) im Punktordner, der nicht gesynct wird: <key>.t<k>.json je Transkript-Chunk,
   // .d<k>.json je Sprecher-Stück, .em<s>.json je Ereignis-/Musik-Chunk, .signals.json; <key>.transcript.json ist der alte Ganzdatei-Cache (Whisper)
-  const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), models = join(home, 'models')
+  // Caches und Video-Import im eigenen Datenordner (dort sucht tools.ts localVideos), nur die Modelle teilt Pro mit Deckwerk
+  const home = dataDir(), models = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'models')
   const baseOf = async (file: string) => {
     const s = await stat(file)
     return join(home, 'assets', '.video', createHash('sha1').update(file + s.size + s.mtimeMs).digest('hex'))
@@ -172,13 +176,14 @@ export function createEngine(): Engine {
   // übrige parts ohne focus aufs Gesicht. Fehler kosten nur den Zuschnitt (Bildmitte) bzw. die Bildwechsel.
   async function prepareClips(deck: Deck, onProgress: (pct: number) => void): Promise<Deck> {
     const size = sizeOf(deck), slides = [...deck.slides], clips = slides.flatMap((s, i) => (s.layout === 'clip' ? [i] : []))
+    const d = clips.length ? await phoneNow() : null, phone = d ? { serial: d.serial, models } : undefined // Standbilder für Gesichter vom Handy
     for (const [n, i] of clips.entries()) {
       const c = slides[i].content as ClipContent, file = mediaFile(c.video)!
       const warn = (e: unknown) => console.warn(`[video] Folie ${i + 1}: Gesichts- oder Sprechererkennung fehlgeschlagen:`, (e as Error).message)
       try {
         const info = await probe(file)
         let parts = c.parts, cuts: number[] | undefined
-        const crop = c.fit !== 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // sonst ganzes Bild sichtbar, nichts zuzuschneiden
+        const other = Math.abs(info.w / info.h - size.w / size.h) > 0.01, crop = (c.fit ?? 'crop') === 'crop' && other // sonst ganzes Bild sichtbar, nichts zuzuschneiden
         // Blitzbilder gibt es auch bei blur und gleichem Seitenverhältnis: vor dem continue. Wortschutz nur mit gecachtem Transkript, nie neu transkribieren.
         // Mit Zuschnitt die ganzen parts (die Kamerafahrt springt an Wechseln), sonst nur Fenster um die Kanten: Fulltime dekodiert nicht die ganze Stunde
         try {
@@ -197,13 +202,20 @@ export function createEngine(): Engine {
           parts = r.parts, cuts = found
         } catch (e) { console.warn(`[video] Folie ${i + 1}: Bildwechsel nicht erkannt:`, (e as Error).message) }
         slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
+        // split ohne cam: Facecam aus bis zu 8 Bildern der parts; ohne Gesicht zeigt der Export das ganze Bild wie blur
+        if (c.fit === 'split' && !c.cam && other) try {
+          const times = parts.flatMap((p) => [0.25, 0.75].map((q) => Math.min(p.start + q * (p.end - p.start), info.duration - 0.1))).slice(0, 8)
+          const cam = await findCam(file, times, info, phone)
+          if (cam) slides[i] = { ...slides[i], content: { ...(slides[i].content as ClipContent), cam } }
+          else console.info(`[video] Folie ${i + 1}: keine Facecam gefunden, Bild ganz statt geteilt`)
+        } catch (e) { warn(e) }
         if (!crop) continue
         if (c.follow === 'sprecher') try {
           const from = Math.min(...parts.map((p) => p.start)), to = Math.max(...parts.map((p) => p.end))
           const turns = (await speakersOf(file, info.duration, parts.map((p): [number, number] => [p.start, p.end]))).filter((t) => t.end > from && t.start < to)
-          parts = followParts(parts, turns, await speakerFaces(file, turns, info))
+          parts = followParts(parts, turns, await speakerFaces(file, turns, info, phone))
         } catch (e) { warn(e) }
-        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info, { cuts, size }) // auch, wenn follow keine Sprecher-Gesichter fand
+        if (parts.some((p) => p.focus === undefined)) parts = await autoFocus(file, parts, info, { cuts, size, phone }) // auch, wenn follow keine Sprecher-Gesichter fand
         slides[i] = { ...slides[i], content: { ...c, parts, ...(cuts && { cuts }) } }
       } catch (e) { warn(e) } finally { onProgress(Math.floor(((n + 1) / clips.length) * 100)) }
     }
@@ -318,6 +330,26 @@ export function createEngine(): Engine {
         videoRuns.set(key, entry)
         const report = (p: number) => { entry.pct = p; entry.listeners.forEach((l) => l(p)) }
         entry.done = (async () => {
+          // Pro-Timeline: je sichtbare schnitt-Folie eine Datei (mehrere: -01, -02 …); Lautheit und Hinweise kennt export_deck nicht, nur Log
+          const cuts = deck.slides.filter((s) => s.layout === 'schnitt')
+          if (cuts.length) {
+            if (deck.slides.some((x) => x.layout === 'clip')) throw new Error('Timeline und Clip-Folien nicht im selben Deck mischen: Clips per edit_timeline from_clips übernehmen und die Clip-Folien ausblenden.')
+            const { exportTimeline } = await import('./export-timeline'), size = sizeOf(deck), out: string[] = []
+            // Titel und Untertitel in Schrift und Akzent des Deck-Themes, wie beim Clip-Export
+            const style = { ...(await (await import('./export-video')).subFont(deck)), accent: resolveTheme(deck.theme).c.accent }
+            const resolveSrc = (src: string) => { const f = mediaFile(src); if (!f) throw new Error(`Timeline: keine Mediendatei (${src})`); return f }
+            for (const [k, s] of cuts.entries()) {
+              const r = await exportTimeline(s.content as TimelineContent, {
+                out: cuts.length > 1 ? `${base}-${String(k + 1).padStart(2, '0')}` : base, aspect: size.w / size.h, resolve: resolveSrc,
+                onProgress: (f) => report(Math.floor(((k + f) / cuts.length) * 100)),
+                work: join(outDir, `.video-tmp-tl-${process.pid}-${Date.now().toString(36)}`), // wie export-video: nicht /tmp, alte Reste räumt es weg
+                style,
+              })
+              console.info(`[video] Timeline ${k + 1}: ${r.lufs.before.toFixed(1)} → ${r.lufs.after.toFixed(1)} LUFS (Ziel ${r.lufs.target})`, ...r.warnings)
+              out.push(...r.files)
+            }
+            return out
+          }
           const music = musicOf(deck), t = transcriptsOf(deck)
           if (all.film) { // Animation: Szenen Frame für Frame (export-film.ts), ohne Clip-Vorbereitung; die Bilder rendert der PC, kodieren kann das Handy
             if (format === 'clips') throw new Error('Animationen exportieren als ein Video: Format mp4.')
@@ -357,8 +389,9 @@ export function createEngine(): Engine {
       if (format === 'print') {
         // Name nach Druckformat: flyer-a5-druck.pdf, flyer-a4-quer-druck.pdf; ohne Format wie das Deck (flyer-a4-druck.pdf)
         const file = `${print?.size ? join(outDir, `${slug(deck.title)}-${print.size}${sizeOf(deck).w > sizeOf(deck).h ? '-quer' : ''}`) : base}-druck.pdf`
-        await writeFile(file, await renderPrintPdf(deck, print))
-        return [file]
+        const { pdf, warning } = await renderPrintPdf(deck, print)
+        await writeFile(file, pdf)
+        return Object.assign([file], warning ? { warnings: [warning] } : {})
       }
       if (format === 'zip') {
         const zip = new JSZip()

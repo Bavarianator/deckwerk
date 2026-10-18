@@ -1,0 +1,22 @@
+/* Inhalt-Formular im Anpassen-Panel (ContentForm): flach, Gruppen nur über Einzug */
+.content-form { display: grid; gap: 4px; }
+.cf-group { display: grid; }
+.cf-group .cf-group { padding-left: 10px; border-left: 1px solid var(--border); }
+.cf-label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; color: var(--muted); }
+.cf-desc { opacity: 0.75; }
+.cf-note { margin: 0 0 6px; font-size: 12px; }
+.cf-add { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 10px; }
+.cf-add .link, .cf-list > .link { display: inline-flex; align-items: center; gap: 3px; }
+.cf-list { display: grid; gap: 6px; }
+.cf-list > .link { justify-self: start; }
+.cf-list > .link:disabled { opacity: 0.45; cursor: default; }
+.cf-item { display: grid; gap: 4px; }
+.cf-item-head { display: flex; align-items: center; gap: 0; font-size: 12px; color: var(--muted); }
+.cf-item-head > span { flex: 1; }
+.cf-item-head .icon-btn { width: 24px; height: 24px; }
+.cf-row { display: flex; gap: 4px; align-items: center; }
+.cf-media { display: grid; gap: 4px; }
+.cf-media img { max-width: 100%; max-height: 90px; object-fit: contain; justify-self: start; border-radius: 4px; }
+.content-form input[type='number'] { width: 100%; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 6px; padding: 6px 8px; }
+.cf-err { margin: 6px 0 0; padding: 0 0 0 16px; font-size: 12px; color: var(--danger); }
+.cf-panel { padding: 4px 0 8px; border-bottom: 0; } /* im Folien-Abschnitt: ohne eigenen Rand */

@@ -75,6 +75,9 @@ input[type='password'], input[type='text'], select, textarea { background: var(-
 .top-title b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; max-width: 32vw; }
 .top-title span { color: var(--faint); overflow: hidden; text-overflow: ellipsis; max-width: 30vw; }
 .top-title span.error { color: var(--danger); }
+.top-title-btn { display: flex; min-width: 0; padding: 2px 6px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.top-title-btn:hover:not(:disabled) { background: var(--hover); }
+.top-title-btn:disabled { cursor: default; }
 .top-export { position: relative; }
 .top-export .menu { right: 0; top: 38px; }
 
@@ -230,6 +233,18 @@ select.model-select { color: var(--muted); }
 .chart-ed-row select, .chart-ed-row input { width: 180px; height: 30px; }
 .chart-ed-ai { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 0; border-radius: 12px; background: var(--accent-soft); color: #2b2e8c; text-align: left; line-height: 1.45; cursor: pointer; }
 .chart-ed-ai svg { flex: none; margin-top: 2px; color: var(--accent); }
+/* Deckwerk Pro: Excel-Verknüpfung (ExcelLink in ChartEditor.tsx, auch im Inspektor freier Diagramme) */
+.chart-link { display: flex; flex-direction: column; gap: 8px; }
+.chart-link-src { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; font-size: 13px; }
+.chart-link-src b { font-weight: 600; overflow-wrap: anywhere; }
+.chart-link-src > span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.chart-link-src .plain { height: 26px; padding: 0 6px; }
+.chart-link-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.chart-link-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.chart-link-fields input { width: 100%; height: 30px; box-sizing: border-box; }
+.chart-link-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.chart-link-note { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.chart-link-note.error { color: var(--danger); }
 
 /* ---------- Übersicht (Lichttisch) ---------- */
 
@@ -312,6 +327,19 @@ select.model-select { color: var(--muted); }
 .fmt-nav b { color: var(--text); font-weight: 600; }
 .fmt-preview { flex: 1; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; }
 .fmt-cap { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* ---------- Deck (Titel, Briefing, Musik) ---------- */
+
+.dsheet-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); max-width: 1100px; width: 100%; box-sizing: border-box; margin: 0 auto; }
+.dsheet-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+.dsheet-form input[type='text'], .dsheet-form input[type='search'], .dsheet-form textarea { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text); font: inherit; font-size: 14px; font-weight: 400; resize: vertical; }
+.dsheet-form input:focus-visible, .dsheet-form textarea:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.dsheet-music { gap: 12px; padding: 12px 16px; }
+.dsheet-music audio { width: 100%; height: 32px; }
+.dsheet-row { display: flex; align-items: center; gap: 10px; }
+.dsheet-row > input { flex: 1; }
+.dsheet-hit { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.dsheet-hit:last-child { padding-bottom: 0; border-bottom: 0; }
 
 /* ---------- Entstehen ---------- */
 
@@ -517,3 +545,19 @@ button.setup-opt { cursor: pointer; }
 .kit-opt.on .font-pick-probe { color: rgb(255 255 255 / 0.8); }
 /* Schriftwahl im Anpassen-Panel (freie Texte): volle Feldbreite wie die anderen Auswahlen */
 .field > .font-pick { display: block; width: auto; }
+/* Prüfen und Akzent neben den Notizen: kleines Popover über dem Knopf */
+.work-notes-head .lint-panel { position: relative; }
+.work-notes-head .lint-panel button { margin-left: 0; }
+.work-notes-head .lint-pop button { height: auto; min-height: 24px; }
+.lint-pop { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 20; display: flex; flex-direction: column; gap: 6px; width: 380px; max-height: 50vh; overflow: auto; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); box-shadow: 0 12px 32px rgb(22 22 26 / 0.12); color: var(--text); font-size: 13px; }
+.lint-head { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.work-notes-head .lint-head > :last-child { margin-left: auto; }
+.lint-group { display: flex; flex-direction: column; }
+.lint-slide, .lint-item { border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; border-radius: 6px; padding: 4px 6px; }
+.lint-slide { font-weight: 600; }
+.lint-slide:hover, .lint-item:hover { background: var(--hover); }
+.lint-item { display: grid; grid-template-columns: 64px 1fr; gap: 6px; line-height: 1.4; color: var(--muted); }
+.lint-level { color: var(--faint); }
+.lint-item.error .lint-level { color: var(--danger); }
+.accent-pop { width: 240px; }
+.accent-msg { color: var(--muted); }

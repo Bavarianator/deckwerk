@@ -88,7 +88,7 @@ const opened: string[] = []
 const s = await nextcloudLogin(` ${url}/nc/index.php/apps/files/?dir=/ `, { open: (u) => opened.push(u), signal: new AbortController().signal, interval: 10 })
 eq(opened, [`${url}/nc/login/v2/flow/abc`])
 eq(s, { url: `${url}/nc/remote.php/webdav/`, user: 'anna@b.de', pass: 'app-pw' })
-eq(davBase(s), `${url}/nc/remote.php/webdav/Deckwerk/`)
+eq(davBase(s), `${url}/nc/remote.php/webdav/DeckwerkPro/`)
 eq(polls, 3)
 
 mode = 'offen'

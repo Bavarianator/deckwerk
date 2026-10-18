@@ -4,7 +4,7 @@ import { mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } f
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type Anthropic from '@anthropic-ai/sdk'
-import type { RouteInput } from '../src/main/guide-modules'
+import { ruleRoute, type RouteInput } from '../src/main/guide-modules'
 import { routeTask } from '../src/main/router'
 
 process.env.DECKWERK_HOME = mkdtempSync(join(tmpdir(), 'dw-router-')) // ohne die echten Decks des Nutzers (recentLooks)
@@ -176,5 +176,16 @@ assert.ok(!env.includes('VIBE_ACTIVE_MODEL=') || env.includes(`VIBE_ACTIVE_MODEL
 // Haiku: Video-Auftrag mit Gerüst (z. B. Präsentation mit Video) ist kein reiner Video-Auftrag
 r = await routeTask(neu, claude, { run: async () => answer({ modules: ['video', 'layout:clip'], reason: 'x' }) })
 assert.equal(r.video, undefined)
+
+// Stream-Paket: Grafik-Aufträge laden das Gerüst, Video-Aufträge behalten die Video-Module, „Panel“ allein ist kein Stream
+const rr = (text: string) => ruleRoute({ text, hasDeck: false, layoutsInDeck: [], profile: 'slides' } as RouteInput).modules
+assert.ok(rr('Starting Soon und BRB für meinen Twitch-Stream').includes('geruest-stream'))
+assert.ok(rr('Twitch-Panels Über mich und Regeln').includes('layout:panel'))
+assert.ok(rr('Schneide mein OBS Video').includes('video') && !rr('Schneide mein OBS Video').includes('geruest-stream'))
+const vt = rr('Video schneiden und YouTube-Thumbnail dazu')
+assert.ok(vt.includes('video') && vt.includes('geruest-stream'), vt.join())
+assert.ok(!rr('Instagram Thumbnail für Reel').includes('geruest-stream'))
+assert.ok(!rr('Präsentation mit Panel-Diskussion').includes('geruest-stream'))
+assert.ok(rr('Projektplan als Gantt für den Umzug').includes('layout:gantt'))
 
 console.log('check-router: ok')

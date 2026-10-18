@@ -1,12 +1,14 @@
 // IPC zwischen UI und Main: aktuelles Deck, Agent, Speichern/Öffnen, Export, API-Key.
 import { app, BrowserWindow, clipboard, dialog, ipcMain, safeStorage, screen, shell } from 'electron'
+import { createHash, randomUUID } from 'node:crypto'
 import { execFile, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { AUDIO_EXT, AUDIO_FILE, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, VOICES, profileOf, type BrandKit, type Deck, type FilmSettings, type PrintOptions, type VoiceId } from '../shared/deck'
+import { APP } from '../shared/app-id'
+import { AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, PRINT_SIZES, VIDEO_EXT, VIDEO_FILE, VOICES, profileOf, type BrandKit, type Deck, type FilmSettings, type PrintOptions, type VoiceId } from '../shared/deck'
 import { DeckAgent, type AgentEvent, type Engine, type ExportFormat } from './agent'
 import { CLI_NAME, CLIS, CliAgent, findCli, hasFlag, type Cli } from './claude-agent'
 import { AUTO, autoPick, modelOf, routeOf, type ChatModels } from '../shared/models'
@@ -15,7 +17,12 @@ import { routeTask, type RouterVia } from './router'
 import { setRemoteState, startRemote, stopRemote, type RemoteState } from './remote'
 import { SOURCE_EXT, SOURCE_MAX, sourceText } from './source-text'
 import { parseCsv } from '../shared/merge'
-import { assetUrl, BRAND_FILE, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, NO_IMAGE_AI, saveBrand, STYLE_FILE, exportSeries, type Orientation } from './tools'
+import { timelineSchema } from '../shared/layouts-timeline'
+import type { TimelineContent } from '../shared/timeline'
+import { assetUrl, buildTools, defaultBrand, IMAGE_SIZE, IMG_FILE, jobList, localizeDeck, makeImage, mimeOf, NO_IMAGE_AI, saveBrand, exportSeries, type Orientation } from './tools'
+import { activeClient, brandFile, dataDir, listClients, setClient, styleFile } from './clients'
+import { readXlsxRange } from './xlsx-link'
+import { brandFromPotx } from './potx'
 import { APP_DIR, checkUpdate, installUpdate } from './update'
 import { imageStatus, loadImageSettings, saveImageSettings } from './image-settings'
 import { phoneDevice, phoneMarker } from './phone'
@@ -31,7 +38,7 @@ import { recordArm, recordCancel, recordChunk, recordSources, recordStart, recor
 import { synthesize, voiceDirs } from './voice'
 import { peaks, previewMix } from './podcast'
 
-const HOME = join(homedir(), 'Deckwerk')
+const HOME = dataDir() // DECKWERK_HOME: isolierte Tests schreiben nie ins echte ~/DeckwerkPro
 
 // Versionen (Canva „Versionsverlauf“): vor dem Überschreiben den alten Stand nach <deck>/versions/<zeit>.json,
 // höchstens alle 10 min (force: immer), weil der Autosave alle paar Sekunden speichert; die ältesten ab 100 fallen weg.
@@ -58,11 +65,14 @@ async function restore(file: string): Promise<string> {
 
 const ROUTER_NAME: Record<RouterVia['kind'], string> = { api: 'Haiku', claude: 'Haiku', codex: 'Codex', vibe: 'Vibe', none: 'Regeln' }
 
+// Werkzeuge, die das Pro-UI direkt aufrufen darf (tool:run); alles andere bleibt der KI vorbehalten
+const UI_TOOLS = ['import_video', 'transcribe_video', 'video_highlights', 'search_transcript', 'video_frames', 'check_clip', 'find_music', 'propose_looks', 'decorate_slide', 'lint_deck', 'edit_timeline']
+
 export function registerIpc(win: BrowserWindow, engine: Engine): void {
   const keyFile = join(app.getPath('userData'), 'api-key.bin')
   // Einrichtung erledigt: einmal pro Rechner, nicht pro Chromium-Profil. userData wechselt zwischen Entwicklung (deckwerk),
   // installierter App (Deckwerk) und jedem Lauf mit --user-data-dir; dort kam der Assistent sonst jedes Mal neu.
-  const setupFile = join(app.getPath('appData'), 'deckwerk', 'setup-done')
+  const setupFile = join(app.getPath('appData'), APP.id, 'setup-done')
   const setupDone = () => existsSync(setupFile) || existsSync(join(app.getPath('userData'), 'setup-done')) // alte Markierung im Profil
   let deck: Deck | null = null
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
@@ -96,8 +106,8 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   }
   loadImageSettings()
 
-  // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/deckwerk wie image-settings.bin; Lauf beim Start und 5 s nach dem Speichern
-  const syncFile = join(app.getPath('appData'), 'deckwerk', 'sync.bin')
+  // Cloud-Sync (WebDAV): Zugang verschlüsselt unter appData/<APP.id> wie alle Einstellungen (mit Deckwerk geteilt sind nur die Modelle unter ~/Deckwerk/models); Lauf beim Start und 5 s nach dem Speichern
+  const syncFile = join(app.getPath('appData'), APP.id, 'sync.bin')
   let syncCfg: SyncSettings | null = null
   try { if (existsSync(syncFile)) syncCfg = JSON.parse(safeStorage.decryptString(readFileSync(syncFile))) } catch (e) { console.warn('[sync] Zugang nicht lesbar:', e) }
   // Hat der Sync das offene Deck überschrieben, neu laden. ponytail: mit ungesicherten Änderungen gewinnt die lokale Fassung beim nächsten Speichern
@@ -271,7 +281,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     // Vertrauensgrenze: print kommt aus dem Renderer, nur bekannte Größe und Beschnitt 0–5 mm durchlassen
     const size = typeof printIn?.size === 'string' && Object.hasOwn(PRINT_SIZES, printIn.size) ? printIn.size : undefined
     const bleed = typeof printIn?.bleed === 'number' && Number.isFinite(printIn.bleed) ? Math.min(5, Math.max(0, printIn.bleed)) : undefined
-    const print: PrintOptions = { size, bleed }
+    const print: PrintOptions = { size, bleed, cmyk: printIn?.cmyk === true }
     await mkdir(outDir(), { recursive: true })
     let last = -1
     const onProgress = (pct: number) => {
@@ -434,7 +444,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (!src.startsWith('asset://')) throw new Error('Nur eigene Bilddateien lassen sich freistellen')
     const file = localAsset(assetPath(src))
     const { removeBackground } = await import('./bg-remove')
-    const png = await removeBackground(file, join(HOME, 'models'), (pct) => !win.isDestroyed() && win.webContents.send('bg:progress', pct))
+    const png = await removeBackground(file, join(homedir(), 'Deckwerk', 'models'), (pct) => !win.isDestroyed() && win.webContents.send('bg:progress', pct)) // Modelle teilt Pro mit Deckwerk
     await mkdir(assets, { recursive: true })
     const out = join(assets, `freigestellt-${Date.now()}.png`)
     await writeFile(out, png)
@@ -463,6 +473,37 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const tracks = d?.podcast?.tracks
     if (!Array.isArray(tracks) || !tracks.length || !tracks.every((t) => mediaFile(t?.src))) throw new Error('Die Folge hat keine abspielbaren Spuren.')
     return assetUrl(await previewMix(d))
+  })
+  // Wellenform einer Timeline-Quelle, Cache wie die Video-Caches der Engine (assets/.video/<sha1>); null = keine Mediendatei oder ohne Ton
+  ipcMain.handle('timeline:peaks', async (_, src: string) => {
+    if (typeof src !== 'string') return null
+    try {
+      const file = src.startsWith('asset://') ? localAsset(decodeURIComponent(new URL(src).pathname)) : isAbsolute(src) ? resolve(src) : null
+      if (!file || !MEDIA_EXT.test(file)) return null
+      const s = await stat(file)
+      const dir = join(dataDir(), 'assets', '.video', createHash('sha1').update(file + s.size + s.mtimeMs).digest('hex'))
+      return await (await import('./timeline-media')).cachedPeaks(file, dir)
+    } catch { return null }
+  })
+  // Lautheit des Timeline-Mixes (EBU R128); Quellen wie mediaFile im Export: nur eigene Mediendateien. null = keine gültige Timeline
+  let measuring = false // ffmpeg-Messung ist teuer: höchstens eine gleichzeitig
+  ipcMain.handle('timeline:loudness', async (_, input: unknown) => {
+    const r = timelineSchema.safeParse(input)
+    if (!r.success) return null
+    if (measuring) throw new Error('Eine Lautheitsmessung läuft schon.')
+    measuring = true
+    const resolveSrc = (src: string) => {
+      let p: string | null = null
+      try { p = src.startsWith('asset://') ? decodeURIComponent(new URL(src).pathname) : src } catch { /* kaputte URL */ }
+      if (!p || !isAbsolute(p) || !MEDIA_EXT.test(p)) throw new Error(`Timeline: keine Mediendatei (${basename(src)})`)
+      return localAsset(p)
+    }
+    const work = join(HOME, 'out', `.loudness-tmp-${randomUUID()}`) // wie der Export: nicht /tmp
+    try {
+      return await (await import('./export-timeline')).measureTimeline(r.data as TimelineContent, { resolve: resolveSrc, work })
+    } catch (e) {
+      throw new Error(`Lautheit messen fehlgeschlagen: ${(e as Error).message}`)
+    } finally { measuring = false; await rm(work, { recursive: true, force: true }) }
   })
   ipcMain.handle('jobs:list', () => jobList())
   ipcMain.handle('media:pick', async (_, kind: 'video' | 'audio') => {
@@ -521,13 +562,42 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   })
   ipcMain.handle('brand:get', () => defaultBrand() ?? null)
   ipcMain.handle('brand:set', (_e, b: BrandKit) => saveBrand(b))
-  ipcMain.handle('brand:clear', () => rm(BRAND_FILE, { force: true }))
-  ipcMain.handle('style:get', () => readFile(STYLE_FILE, 'utf8').catch(() => ''))
+  // Deckwerk Pro: Firmenvorlage → Brand-Kit-Vorschlag; gespeichert wird erst nach der Übernahme in den Einstellungen
+  ipcMain.handle('brand:potx', async () => {
+    const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'PowerPoint-Vorlage', extensions: ['potx', 'pptx', 'thmx'] }] })
+    const file = r.filePaths[0]
+    return r.canceled || !file ? null : brandFromPotx(file)
+  })
+  // Pfade des aktiven Kunden (clients.ts): Lesen fällt bei kaputtem Marker auf leer zurück, Schreiben meldet den Fehler
+  ipcMain.handle('brand:clear', () => rm(brandFile(), { force: true }))
+  ipcMain.handle('style:get', async () => { try { return await readFile(styleFile(), 'utf8') } catch { return '' } })
   ipcMain.handle('style:set', async (_, text: unknown) => {
     if (typeof text !== 'string') throw new Error('Ungültiger Hausstil.')
     if (text.length > 20_000) throw new Error('Der Hausstil ist zu lang (höchstens 20 000 Zeichen).')
-    await mkdir(dirname(STYLE_FILE), { recursive: true })
-    await writeFile(STYLE_FILE, text)
+    const f = styleFile()
+    await mkdir(dirname(f), { recursive: true })
+    await writeFile(f, text)
+  })
+  // Deckwerk Pro: Kunden (Brand-Kit und Hausstil je Kunde); clientName prüft den Namen und wirft mit Meldung
+  ipcMain.handle('kunden:list', () => ({ list: listClients(), active: activeClient() }))
+  ipcMain.handle('kunden:set', (_, name: unknown) => {
+    if (name !== null && typeof name !== 'string') throw new Error('Ungültiger Kundenname.')
+    setClient(name)
+  })
+  // Deckwerk Pro: Excel-Link. Vertrauensgrenze: link kommt aus dem Renderer (auch aus fremden deck.json), nur eine absolute .xlsx lesen
+  ipcMain.handle('xlsx:pick', async () => {
+    const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Excel-Arbeitsmappe', extensions: ['xlsx'] }] })
+    const file = r.filePaths[0]
+    return r.canceled || !file ? null : file
+  })
+  ipcMain.handle('xlsx:read', (_, link: unknown) => {
+    const { file, sheet, range } = (link && typeof link === 'object' ? link : {}) as Record<string, unknown>
+    if (typeof file !== 'string' || !isAbsolute(file) || !/\.xlsx$/i.test(file)) throw new Error('Die Verknüpfung braucht den vollständigen Pfad einer .xlsx-Datei.')
+    // UNC-/Netzpfad (\\host\share, //host/share): ein fremdes Deck soll unter Windows keinen SMB-Zugriff auslösen
+    if (/^[\\/]{2}/.test(file)) throw new Error('Excel-Dateien auf Netzlaufwerken (\\\\Server\\Freigabe) liest die Verknüpfung nicht; die Datei lokal ablegen.')
+    if (sheet !== undefined && (typeof sheet !== 'string' || sheet.length > 31)) throw new Error('Ungültiger Blattname (höchstens 31 Zeichen).')
+    if (typeof range !== 'string' || range.length > 20) throw new Error('Ungültiger Bereich, erwartet wird z. B. „A1:D5“.')
+    return readXlsxRange({ file, sheet, range })
   })
   ipcMain.handle('app:info', () => ({
     version: app.getVersion(), electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node,
@@ -535,7 +605,7 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
   }))
   ipcMain.handle('update:check', () => checkUpdate(app.getVersion()))
   ipcMain.handle('update:install', async () => {
-    if (!(await checkUpdate(app.getVersion())).canInstall) throw new Error('Diese Installation aktualisiert sich nicht selbst. Im Terminal: deckwerk update')
+    if (!(await checkUpdate(app.getVersion())).canInstall) throw new Error(`Diese Installation aktualisiert sich nicht selbst. Im Terminal: ${APP.id} update`)
     await installUpdate()
     // das alte Verzeichnis ist ersetzt: neu starten, auch wenn die Fenster noch Dateien daraus halten
     app.relaunch({ execPath: join(APP_DIR, 'AppRun'), args: process.argv.slice(1) })
@@ -547,9 +617,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     if (err) throw new Error(err)
   })
   ipcMain.handle('style:open', async () => {
-    await mkdir(HOME, { recursive: true })
-    if (!existsSync(STYLE_FILE)) await writeFile(STYLE_FILE, '# Hausstil\n\n<!-- Gilt für jedes Deck. Eine Vorliebe pro Zeile; die KI ergänzt hier, wenn du „merk dir …“ sagst. -->\n')
-    const err = await shell.openPath(STYLE_FILE)
+    const f = styleFile()
+    await mkdir(dirname(f), { recursive: true })
+    if (!existsSync(f)) await writeFile(f, '# Hausstil\n\n<!-- Gilt für jedes Deck. Eine Vorliebe pro Zeile; die KI ergänzt hier, wenn du „merk dir …“ sagst. -->\n')
+    const err = await shell.openPath(f)
     if (err) throw new Error(err)
   })
   // Katalogschriften für ein Deck laden (offline: Ersatz) → Theme mit fontFiles; die UI übernimmt es nach einer Schriftwahl
@@ -592,6 +663,25 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const out = await find.run({ query: query || undefined, source: 'auto', limit: 5, orientation: 'landscape' })
     const urls = out.text.match(/asset:\/\/local\S+/g) ?? []
     return { urls, note: urls.length ? undefined : out.text }
+  })
+  // Pro-UI: ausgewählte KI-Tools von Hand; Deck-Änderungen laufen wie beim Agenten (dirty, Agent, UI per deck:synced)
+  const running = new Map<string, Promise<unknown>>() // ein Lauf je Tool: Import und Transkription dauern Minuten
+  ipcMain.handle('tool:run', async (_, name: unknown, input: unknown) => {
+    if (typeof name !== 'string' || !UI_TOOLS.includes(name)) throw new Error(`Werkzeug nicht für die Oberfläche freigegeben: ${name}`)
+    if (running.has(name)) throw new Error(`${name} läuft schon. Bitte warten, bis der Lauf fertig ist.`)
+    const t = buildTools({
+      engine, getDeck: () => deck, assetDir: assets, outDir: outDir(), unsplashKey: process.env.UNSPLASH_ACCESS_KEY,
+      setDeck: (d) => { deck = d; dirty = true; agent?.setDeck(d); if (!win.isDestroyed()) win.webContents.send('deck:synced', d) },
+    }).find((x) => x.name === name)
+    if (!t) throw new Error(`Werkzeug nicht für die Oberfläche freigegeben: ${name}`) // z. B. edit_timeline noch nicht gebaut
+    const p = t.inputSchema.safeParse(input)
+    if (!p.success) throw new Error(`Ungültige Eingabe für ${name}: ${p.error.issues.slice(0, 5).map((i) => `${i.path.join('.') || 'Eingabe'}: ${i.message}`).join('; ')}`)
+    const job = t.run(p.data)
+    running.set(name, job)
+    try {
+      const out = await job
+      return { text: out.text, images: (out.images ?? []).map((b) => `data:${mimeOf(b)};base64,${b.toString('base64')}`) }
+    } finally { running.delete(name) }
   })
   // Einfügen-Panel (Canva „Magic Media“): dieselbe Bild-KI wie generate_image, Datei landet unter ~/Deckwerk/assets
   let generating = false
@@ -705,10 +795,10 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     codex: join(process.env.CODEX_HOME ?? join(homedir(), '.codex'), 'config.toml'),
     vibe: join(process.env.VIBE_HOME ?? join(homedir(), '.vibe'), 'config.toml'),
   }
-  // Skill (skills/deckwerk/SKILL.md) für Claude Code und Codex, beide lesen dasselbe Format; Vibe kennt keine Skills.
+  // Skill (skills/<APP.id>/SKILL.md) für Claude Code und Codex, beide lesen dasselbe Format; Vibe kennt keine Skills.
   // Eingerichtet heißt dort: MCP-Eintrag und Skill in genau der Fassung dieser App (nach Updates erneut einrichten)
-  const skillFile = (cli: Cli) => cli === 'vibe' ? null : join(cli === 'claude' ? join(homedir(), '.claude') : dirname(config.codex), 'skills', 'deckwerk', 'SKILL.md')
-  const skill = () => readFileSync(join(app.getAppPath(), 'skills', 'deckwerk', 'SKILL.md'), 'utf8')
+  const skillFile = (cli: Cli) => cli === 'vibe' ? null : join(cli === 'claude' ? join(homedir(), '.claude') : dirname(config.codex), 'skills', APP.id, 'SKILL.md')
+  const skill = () => readFileSync(join(app.getAppPath(), 'skills', APP.id, 'SKILL.md'), 'utf8')
   const skillOk = (cli: Cli) => { const f = skillFile(cli); try { return !f || readFileSync(f, 'utf8') === skill() } catch { return false } }
   // Eingetragen heißt: ein deckwerk-Eintrag mit genau unserem Start-Befehl samt letztem Argument (ein alter Pfad zählt
   // nicht; beim AppImage ist der Befehl immer /bin/sh, der Pfad steht im letzten Argument)
@@ -716,12 +806,30 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     try {
       const text = readFileSync(config[cli], 'utf8')
       if (cli === 'claude') {
-        const e = JSON.parse(text).mcpServers?.deckwerk
+        const e = JSON.parse(text).mcpServers?.[APP.id]
         return e?.command === mcpCmd.command && JSON.stringify(e.args ?? []) === JSON.stringify(mcpCmd.args)
       }
-      const sec = tomlSection(text, cli === 'codex' ? '[mcp_servers.deckwerk]\n' : '[[mcp_servers]]\nname = "deckwerk"\n')
+      const sec = tomlSection(text, cli === 'codex' ? `[mcp_servers.${APP.id}]\n` : `[[mcp_servers]]\nname = "${APP.id}"\n`)
       return sec.includes(`command = ${JSON.stringify(mcpCmd.command)}`) && sec.includes(JSON.stringify(mcpCmd.args.at(-1)))
     } catch { return false } // keine Datei = nicht eingerichtet
+  }
+  // Pro ersetzt Deckwerk in den Agenten (Nutzerentscheidung): beim Einrichten dessen MCP-Eintrag „deckwerk“ und Skill entfernen.
+  // Nur exakt dieser Name; den Skill-Ordner nur, wenn sein Frontmatter name: deckwerk trägt (nie etwas anderes löschen).
+  const OLD = 'deckwerk'
+  const hasOld = (cli: Cli) => {
+    try {
+      const text = readFileSync(config[cli], 'utf8')
+      return cli === 'claude' ? !!JSON.parse(text).mcpServers?.[OLD] : text.includes(cli === 'codex' ? `[mcp_servers.${OLD}]\n` : `[[mcp_servers]]\nname = "${OLD}"\n`)
+    } catch { return false }
+  }
+  const dropOldSkill = async (cli: Cli): Promise<boolean> => {
+    const f = skillFile(cli)
+    if (!f) return false
+    const dir = join(dirname(dirname(f)), OLD)
+    const head = /^---\r?\n([\s\S]*?)\r?\n---/.exec(await readFile(join(dir, 'SKILL.md'), 'utf8'))?.[1] ?? ''
+    if (!/^name:[ \t]*(["']?)deckwerk\1[ \t]*\r?$/m.test(head)) return false
+    await rm(dir, { recursive: true, force: true }) // ein Symlink verschwindet allein, sein Ziel bleibt
+    return true
   }
   const cliArg = (cli: unknown): Cli => {
     if (!CLIS.includes(cli as Cli)) throw new Error(`Unbekanntes Werkzeug: ${String(cli)}`)
@@ -837,25 +945,31 @@ export function registerIpc(win: BrowserWindow, engine: Engine): void {
     const run = (args: string[]) => new Promise<void>((ok, fail) =>
       execFile(bin, args, { timeout: 60_000, windowsHide: true }, (e, _out, err) => (e ? fail(new Error(err.trim() || e.message)) : ok())))
     const { command, args } = mcpCmd
-    const [remove, add] = {
-      claude: [['mcp', 'remove', '-s', 'user', 'deckwerk'], ['mcp', 'add', '-s', 'user', 'deckwerk', '--', command, ...args]],
-      codex: [['mcp', 'remove', 'deckwerk'], ['mcp', 'add', 'deckwerk', '--', command, ...args]],
+    const remove = (id: string) => (cli === 'claude' ? ['mcp', 'remove', '-s', 'user', id] : ['mcp', 'remove', id])
+    const add = {
+      claude: ['mcp', 'add', '-s', 'user', APP.id, '--', command, ...args],
+      codex: ['mcp', 'add', APP.id, '--', command, ...args],
       // --arg=--mcp: mit Leerzeichen hielte Vibe „--mcp“ für eine eigene Option
-      vibe: [['mcp', 'remove', 'deckwerk'], ['mcp', 'add', 'deckwerk', '--transport', 'stdio', '--command', command, ...args.map((a) => `--arg=${a}`),
-        '--startup-timeout-sec', '90', '--tool-timeout-sec', '300']],
+      vibe: ['mcp', 'add', APP.id, '--transport', 'stdio', '--command', command, ...args.map((a) => `--arg=${a}`),
+        '--startup-timeout-sec', '90', '--tool-timeout-sec', '300'],
     }[cli]
-    await run(remove).catch(() => {}) // alter Eintrag mit anderem Pfad
+    await run(remove(APP.id)).catch(() => {}) // alter Eintrag mit anderem Pfad
     await run(add)
+    // Deckwerk erst abmelden, wenn Pro angemeldet ist: scheitert das, bleibt Deckwerk nutzbar
+    const had = hasOld(cli)
+    await run(remove(OLD)).catch(() => {}) // Fehler beim Abmelden von Deckwerk verhindern das Einrichten nicht
+    const skillGone = await dropOldSkill(cli).catch(() => false)
     const f = skillFile(cli)
     if (f) { await mkdir(dirname(f), { recursive: true }); await writeFile(f, skill()) }
     // Electron braucht zum Starten länger als die 10 s, die Codex wartet, und Rendern länger als dessen Tool-Timeout;
     // `codex mcp add` kann beides nicht setzen
     if (cli === 'codex') {
       const text = await readFile(config.codex, 'utf8')
-      const head = '[mcp_servers.deckwerk]\n'
+      const head = `[mcp_servers.${APP.id}]\n`
       if (!tomlSection(text, head).includes('startup_timeout_sec'))
         await writeFile(config.codex, text.replace(head, `${head}startup_timeout_sec = 90\ntool_timeout_sec = 300\n`))
     }
+    return had || skillGone ? `Deckwerk ist in ${CLI_NAME[cli]} jetzt durch Deckwerk Pro ersetzt; die Deckwerk-App bleibt installiert.` : null
   })
   // Verbindung testen wie Claude Code: Server per stdio starten, initialize + tools/list, Anzahl der Werkzeuge zurück
   ipcMain.handle('setup:mcpTest', () => new Promise<number>((ok, fail) => {

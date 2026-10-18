@@ -1,13 +1,15 @@
 // Einstellungen für Bilder (Einstellungen → Bilder): Keys für Mammouth, OpenAI und die Unsplash-Fotosuche, bevorzugter Anbieter, Modell.
-// Verschlüsselt mit safeStorage wie der Anthropic-Key, aber unter appData/deckwerk, damit App und MCP-Server dieselbe Datei
-// lesen (userData wechselt zwischen Entwicklung, installierter App und MCP, siehe setupFile in ipc.ts).
+// Verschlüsselt mit safeStorage wie der Anthropic-Key, aber unter appData/<APP.id>, damit App und MCP-Server dieselbe Datei
+// lesen (userData wechselt zwischen Entwicklung, installierter App und MCP, siehe setupFile in ipc.ts). Nicht mit Deckwerk
+// geteilt: safeStorage verschlüsselt je App mit eigenem Schlüssel, eine gemeinsame Datei wäre für die jeweils andere unlesbar.
 import { app, safeStorage } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
+import { APP } from '../shared/app-id'
 import { IMAGE_PROVIDERS, imageSettings } from './tools'
 
-const file = () => join(app.getPath('appData'), 'deckwerk', 'image-settings.bin')
+const file = () => join(app.getPath('appData'), APP.id, 'image-settings.bin')
 const key = z.string().max(400).nullable().optional()
 const patchSchema = z.object({ mammouth: key, openai: key, unsplash: key, provider: z.enum(IMAGE_PROVIDERS).nullable().optional(), model: z.string().max(80).nullable().optional() }).strict()
 

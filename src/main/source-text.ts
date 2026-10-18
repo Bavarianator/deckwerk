@@ -120,7 +120,7 @@ async function keepImage(name: string, b: Buffer, dir: string): Promise<string> 
 // Zip-Eintrag lesen, aber nicht über 25 MB (Zip-Bombe: die Größenangabe im Archiv kann lügen)
 // JSZips eigener Stream statt nodeStream: läuft auch ohne Node-Streams (Android-WebView); internalStream fehlt in den Typings
 type Streamable = { internalStream(type: 'uint8array'): JSZip.JSZipStreamHelper<Uint8Array> }
-const readCapped = (f: JSZip.JSZipObject) => new Promise<Buffer | null>((ok, fail) => {
+export const readCapped = (f: JSZip.JSZipObject) => new Promise<Buffer | null>((ok, fail) => {
   const parts: Buffer[] = []
   let size = 0
   const s = (f as JSZip.JSZipObject & Streamable).internalStream('uint8array')

@@ -9,14 +9,15 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { promisify } from 'node:util'
 import type { VoiceId } from '../shared/deck'
+import { APP } from '../shared/app-id'
 import { download, httpFetch } from './download'
 
 const exec = promisify(execFile)
 const adbIn = (ms: number, serial: string, ...args: string[]) => exec('adb', ['-s', serial, ...args], { maxBuffer: 1 << 28, timeout: ms })
 const adb = (serial: string, ...args: string[]) => adbIn(30 * 60_000, serial, ...args)
 export const PHONE_DIR = '/data/local/tmp/deckwerk'
-/** Marker unter appData/deckwerk (gemeinsam für App, Entwicklung und MCP-Server wie spellcheck-off): vorhanden = aus. Ohne Marker rechnet ein verbundenes Handy, der PC ist der Rückfall */
-export const phoneMarker = (appData: string) => join(appData, 'deckwerk', 'phone-off')
+/** Marker unter appData/<APP.id> (gemeinsam für App, Entwicklung und MCP-Server wie spellcheck-off): vorhanden = aus. Ohne Marker rechnet ein verbundenes Handy, der PC ist der Rückfall */
+export const phoneMarker = (appData: string) => join(appData, APP.id, 'phone-off')
 
 // sherpa-onnx für Termux (läuft auch per adb shell), fester Release + Prüfsumme. Es braucht libc++_shared.so, die weder dieses
 // noch das App-Paket von sherpa mitbringt: die kommt aus Termux (Pfad und Prüfsumme aus dessen Paketindex, der Pfad wechselt

@@ -2,6 +2,7 @@
 // Klick fügt in die Mitte der Folie ein, Ziehen legt das Element an der Mausposition ab.
 import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Film, icons, ImagePlus, Music, QrCode as QrCodeIcon, Search } from 'lucide-react'
+import { APP } from '../../shared/app-id'
 import { FORMATS, SHAPES, sizeOf, type ChartSpec, type Deck, type FormatId, type Item } from '../../shared/deck'
 import { GRAPHICS, TEXT_PRESETS, newChart, newGraphic, newIcon, newImage, newMedia, newQr, newShape, newTable, newText } from '../../shared/items'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../../shared/layouts'
@@ -175,7 +176,7 @@ export function Elements({ deck, slideId, disabled, onAdd, onAddSlide, pickImage
 
       <section ref={mineRef}>
         <h3>Deine Bilder</h3>
-        {!mine ? <p className="muted small">Lädt …</p> : !mine.length && <p className="muted small">Noch keine eigenen Bilder in ~/Deckwerk/assets.</p>}
+        {!mine ? <p className="muted small">Lädt …</p> : !mine.length && <p className="muted small">Noch keine eigenen Bilder in ~/{APP.home}/assets.</p>}
         <div className="el-mine">
           {mine?.map((u) => (
             <Tile key={u.url} {...tile} make={async () => newImage(u.url, await imageRatio(u.url))} title={u.name} className="el-photo">

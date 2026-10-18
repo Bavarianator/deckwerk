@@ -7,6 +7,7 @@ import { access, mkdir, readdir, readFile, realpath, rename, rm, stat, utimes, w
 import { homedir } from 'node:os'
 import { basename, dirname, join, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { APP } from '../shared/app-id'
 import { isFolder } from './sync'
 
 const etag = (st: Stats) => `"${st.mtimeMs}-${st.size}"`
@@ -39,7 +40,7 @@ export const folderFetchFor = (home: string): typeof fetch => async (input, init
       const names = st.isDirectory() && headers.get('depth') !== '0' ? (await readdir(file)).sort() : []
       // iCloud lagert Dateien als .name.icloud aus; sync.ts sähe sie als entfernt gelöscht und löschte sie lokal
       if (names.some((n) => /^\..+\.icloud$/.test(n)))
-        throw new Error('Cloud-Sync: iCloud hat Dateien im Ordner Deckwerk ausgelagert. Im Finder „Immer auf diesem Mac behalten“ einschalten.')
+        throw new Error(`Cloud-Sync: iCloud hat Dateien im Ordner ${APP.home} ausgelagert. Im Finder „Immer auf diesem Mac behalten“ einschalten.`)
       // hrefs aus der angefragten URL bauen: dann passen sie zur Basis, die sync.ts daraus ableitet
       const kids = await Promise.all(names.map(async (n) => {
         const s = await stat(join(file, n)).catch(() => null) // kaputter Link, gerade gelöscht
@@ -89,7 +90,7 @@ export async function checkSyncFolder(dir: string, home: string): Promise<void> 
   const bad = (why: string) => new Error(`Diesen Ordner kann Deckwerk nicht nutzen: ${why}`)
   if (!(await stat(dir).catch(() => null))?.isDirectory()) throw bad('Es gibt ihn nicht.')
   try { await access(dir, constants.W_OK) } catch { throw bad('Deckwerk darf dort nicht schreiben.') }
-  const target = await realpath(join(dir, 'Deckwerk')).catch(async () => join(await realpath(dir), 'Deckwerk'))
+  const target = await realpath(join(dir, APP.home)).catch(async () => join(await realpath(dir), APP.home))
   const own = await realpath(home).catch(() => home)
   if (inside(target, own) || inside(own, target)) throw bad('Darin läge der Deckwerk-Ordner selbst. Bitte den Ordner der Cloud-App wählen.')
 }

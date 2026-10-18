@@ -5,12 +5,12 @@
 import { execFile, spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs'
-import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, extname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 import { download, httpFetch } from './download'
-import { run } from './ffmpeg'
+import { frameVf, run } from './ffmpeg'
 import { PHONE_DIR, quote } from './phone'
 
 const exec = promisify(execFile)
@@ -151,4 +151,17 @@ export async function phoneFfmpeg(serial: string, args: string[], o: { cwd: stri
     await rm(local, { recursive: true, force: true })
     await adb(serial, 'shell', `rm -rf ${quote(remote)}`).catch(() => {})
   }
+}
+
+/** Standbilder wie rawFrames (bgr24, side×side), dekodiert auf dem Handy: ein Aufruf, je Zeitpunkt ein Eingang mit einem Bild, aneinandergehängt.
+ *  Die Quelle bleibt im Handy-Cache, der Export danach nutzt sie mit. Fehlt ein Bild (Zeit hinter dem Ende), scheitert der Aufruf. */
+export async function phoneFrames(serial: string, models: string, file: string, times: number[], side = 640): Promise<Buffer[]> {
+  const dir = await mkdtemp(join(tmpdir(), 'deckwerk-frames-')), out = join(dir, 'frames.raw'), n = side * side * 3
+  try {
+    const graph = times.map((_, i) => `[${i}:v]trim=end_frame=1,setpts=PTS-STARTPTS,${frameVf(side)},setsar=1[f${i}]`).join(';') + `;${times.map((_, i) => `[f${i}]`).join('')}concat=n=${times.length}:v=1:a=0[v]`
+    await phoneFfmpeg(serial, [...times.flatMap((t) => ['-ss', String(Math.max(0, t)), '-i', file]), '-filter_complex', graph, '-map', '[v]', '-pix_fmt', 'bgr24', '-f', 'rawvideo', out], { cwd: dir, models })
+    const raw = await readFile(out)
+    if (raw.length !== n * times.length) throw new Error(`Handy lieferte ${raw.length / n} statt ${times.length} Bilder aus ${basename(file)}`)
+    return times.map((_, i) => raw.subarray(i * n, (i + 1) * n))
+  } finally { await rm(dir, { recursive: true, force: true }) }
 }

@@ -4,6 +4,7 @@
 import type { FormatId, Profile } from '../shared/deck'
 import { LAYOUTS, LAYOUT_IDS, type LayoutId } from '../shared/layouts'
 import guide from './design-guide.md?raw'
+import { APP } from '../shared/app-id'
 import { buildCatalog, houseStyle, recentLooks } from './tools'
 
 export interface GuideModule { id: string; title: string; kurz: string; text: string; always?: true }
@@ -30,6 +31,7 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['geruest-social', '### Social-Karussell', 'Instagram-Karussell und Story (4:5, 1:1, 9:16): Folge, Textmenge, passende Layouts.'],
   ['geruest-a4', '### A4-Dokumente', 'A4 und Druck: Infoblatt, Angebot, Flyer, Brief, Bewerbung, Lebenslauf, Einladung, Urkunde, Speisekarte, Druckdatei.'],
   ['geruest-visitenkarte', '### Visitenkarte', 'Visitenkarte 85 × 55 mm: Vorder- und Rückseite, Kontaktdaten, Druck.'],
+  ['geruest-stream', '### Stream-Paket', 'Stream-Grafiken: Starting Soon, BRB, Ending, YouTube-Thumbnail, Offline-Banner, Twitch-Panels, PNG-Export.'],
   ['inhalt-layout', '## 4. Inhalt', 'Welches Layout zu welcher Form der Aussage passt.'],
   ['rhythmus', '## 5. Rhythmus', 'Dichte und luftige Folien im Wechsel, Wiederholungen vermeiden.'],
   ['gestaltung', '## 6. Gestaltung', 'Eigenes Design (customTheme): Charakter, Farbe, Grund, Schriftpaar, Struktur, Feinschliff, Theme-Lint, erprobte Richtungen, propose_looks.'],
@@ -45,11 +47,19 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['video', '## 11. Video', 'Video-Schnitt: Shorts/Reels, Fulltime kürzen, Stream-Highlights, Kompilation; Bewertung, Hooks, Regeln für clip.'],
   ['film', '## 12. Animation (Film)', 'Film (Erklärvideo, Live-Demo, Produkt-/Kennzahlen-Video): film, Sprechtext mit [klick], Kamera, Motion-Grafik (keys, draw), capture_page, screen_zooms, Gerüst, Ablauf.'],
   ['podcast', '## 13. Podcast', 'Podcast-Schnitt: Episode (deck.podcast), Spuren, Pausen/Füllwörter/Versprecher, Kapitel, Intro/Outro, MP3-Export.'],
+  ['timeline', '## 14. Timeline', 'Pro-Schnitt (Layout schnitt): mehrere Spuren und Quellen, B-Roll, Farbe, Musik, Ausgabe; Ablauf mit edit_timeline.'],
   ['katalog', '## Layout-Katalog', 'Layouts statt Koordinaten, freie Elemente (items).', true],
   ['katalog-themes', '## Themes', 'Katalog-Themes, Schriften mit Charakter und Schriftkatalog für headFont/bodyFont.'],
   ['katalog-ton', '## Folien-Ton und Dekor', 'tone pro Folie (normal, accent, invert) und Hintergrundmotive.'],
   ['katalog-animationen', '## Animationen', 'Liste der Builds und Übergänge.'],
 ]
+
+// Pro-Abschnitte des Guides: in der Deckwerk-Edition fehlen sie samt Layouts, damit die KI nichts anbietet, was es nicht gibt
+const PRO_MODULES = ['geruest-stream', 'timeline']
+const HEADS = APP.pro ? HEADINGS : HEADINGS.filter(([id]) => !PRO_MODULES.includes(id))
+const proHeads = HEADINGS.filter(([id]) => PRO_MODULES.includes(id)).map(([, h]) => h)
+const GUIDE = APP.pro ? guide.trim() : guide.trim().split(/\n(?=#{1,3} )/).filter((b) => !proHeads.some((h) => b.startsWith(h))).join('\n')
+  .replace('; verlangt die Druckerei CMYK (z. B. print24), `cmyk: true` setzen (PDF/X-4, FOGRA39)', '')
 
 const sizesOf = (id: LayoutId) => (LAYOUTS[id] as { sizes?: FormatId[] }).sizes
 const short = (s: string, n = 110) => (s.length <= n ? s : `${s.slice(0, n).replace(/\s+\S*$/, '')} …`)
@@ -63,7 +73,7 @@ function split(text: string): GuideModule[] {
       const L = LAYOUTS[lay as LayoutId], sizes = sizesOf(lay as LayoutId)
       return { id: `layout:${lay}`, title: L.name, kurz: `${sizes ? `nur Format ${sizes.join('/')} – ` : ''}${short(L.when)}`, text: body }
     }
-    const def = HEADINGS.find(([, h]) => head.startsWith(h))
+    const def = HEADS.find(([, h]) => head.startsWith(h))
     if (!def) throw new Error(`Überschrift ohne Modul-ID: „${head}“ (HEADINGS in guide-modules.ts ergänzen)`)
     return { id: def[0], title: head.replace(/^#+\s*/, ''), kurz: def[2], text: body, ...(def[3] && { always: true as const }) }
   })
@@ -82,8 +92,8 @@ function extras(): GuideModule[] {
 
 // Alle Module in fester Reihenfolge: Guide, Katalog, Arbeitsablauf, Hausstil, zuletzt gebaute Decks
 export function guideModules(): GuideModule[] {
-  const mods = [...split(guide.trim()), ...split(buildCatalog()), ...extras()]
-  const missing = HEADINGS.filter(([id]) => !mods.some((m) => m.id === id)).map(([, h]) => h)
+  const mods = [...split(GUIDE), ...split(buildCatalog()), ...extras()]
+  const missing = HEADS.filter(([id]) => !mods.some((m) => m.id === id)).map(([, h]) => h)
   if (missing.length) throw new Error(`Überschrift fehlt in Guide oder Katalog: ${missing.join(', ')} (HEADINGS in guide-modules.ts anpassen)`)
   return mods
 }
@@ -127,7 +137,7 @@ export function leitfaden(route: Route | undefined): string {
 
 // Voller Guide und voller Katalog (bisheriger Systemprompt): für read_guide in Teilen und als Rückfall
 export function fullPrompt(): string {
-  return [guide.trim(), buildCatalog(), ...extras().map((m) => m.text)].join('\n\n')
+  return [GUIDE, buildCatalog(), ...extras().map((m) => m.text)].join('\n\n')
 }
 
 // Claude Code nimmt Tool-Ergebnisse nur bis zu einer Token-Grenze an (61.000 Zeichen am Stück waren zu viel): Teile an Abschnittsgrenzen
@@ -142,6 +152,7 @@ export function guideParts(max = 20000): string[] {
 
 export const VIDEO_MODULES = ['video', 'layout:clip'] // read_guide topic video
 export const PODCAST_MODULES = ['podcast'] // read_guide topic podcast
+export const TIMELINE_MODULES = ['timeline', 'layout:schnitt'] // read_guide topic timeline; eigenes Thema, video liegt schon knapp unter 20 000 Zeichen
 
 // Regel-Router ohne KI (Rückfall für den Haiku-Router): Layouts nach Format, Abschnitte nach Stichwörtern; lieber ein Modul zu viel
 const SOCIAL_SKIP: LayoutId[] = ['agenda', 'section', 'table'] // Guide „Social-Karussell“: weglassen
@@ -158,6 +169,7 @@ const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
   ['storyline', /storyline|aufbau|gliederung|idee|geschichte|dramaturgie|reihenfolge|roter faden/, ['storyline', 'geruest', 'rhythmus']],
   ['rhythmus', /rhythmus|abwechslung|eintönig|langweilig|luftig|überladen/, ['rhythmus', 'inhalt-layout']],
   ['bewerbung', /bewerbung|lebenslauf|anschreiben|\bcv\b/, ['geruest-a4', 'layout:application-cover', 'layout:letter', 'layout:cv']],
+  ...(APP.pro ? [['gantt', /gantt|projektplan|zeitplan mit phasen/, ['layout:gantt']] as [string, RegExp, string[]]] : []),
 ]
 // Video-Auftrag: Stichwörter, ein angehängtes Video oder clip-Folien im Deck. Shorts, Reels und TikTok sind Video, kein Karussell.
 // Eng gefasst: „Kick-off“, „Quartals-Highlights“, „Schnittstelle“, „Mainstream“ oder „Untertitel“ einer Folie sind kein Video.
@@ -169,9 +181,12 @@ const SCHNITT = /schneid|schnitt|kürzen|kürze\b|kürzt\b|\bcuts?\b|highlight|\
 const POD = /podcast|\bepisode|\bfolge\b|audio|tonspur|\bspuren\b|\.(mp3|wav|m4a|aac|flac|ogg|opus)\b|\bmp3\b/
 const POD_NOT = /\bclips?\b|\bshorts?\b|\breels?\b|tiktok|\bmp4\b|highlight|zusammenschnitt/
 const FOLIEN = /\bdecks?\b|\bfolien?\b|\bseiten?\b/ // spricht der Auftrag von Folien oder Seiten, ist er kein reiner Video-Auftrag
-const VIDEO_DECK: string[] = ['clip', 'section', 'statement'] // Zwischentitel einer Kompilation
+const VIDEO_DECK: string[] = ['clip', 'section', 'statement', 'schnitt'] // Zwischentitel einer Kompilation, Pro-Timeline
+// Pro-Schnitt (Layout schnitt): Mehrspur, Bild-in-Bild, Farbe, Ausgabe. Nicht „Timeline“: so heißt auch das Zeitstrahl-Layout
+const PRO_SCHNITT = /mehrspur|videospur|tonspur|bild-in-bild|b-roll|farbkorrektur|color ?grading|prores|\b4k\b|\blufs\b|überblend|cross ?dissolve/
 const KINDS = {
   karte: /visitenkarte/,
+  stream: /starting soon|\bbrb\b|be right back|obs-?szenen?|twitch.?panels?|panels? (für|fuer) (twitch|stream|kanal)|youtube.?thumbnails?|offline-?banner|stream-?(paket|grafik|bildschirm|screen|banner|szene)/, // eng: „Panel-Diskussion“, „OBS-Video“, „Reel-Thumbnail“ sind kein Stream-Paket
   a4: /\ba4\b|druckerei|druckdatei|drucksache|\bdrucken\b|flyer|plakat|brief(?!ing)|angebot|kostenvoranschlag|infoblatt|one-pager|handzettel|lebenslauf|bewerbung|einladung|save the date|urkunde|zertifikat|bescheinigung|speisekarte|getränkekarte|mittagstisch/,
   social: /instagram|karussell|carousel|social|\bstory\b|stories|linkedin|tiktok|\bpost(s|ing)?\b|1:1|4:5|9:16/,
   slides: /präsentation|vortrag|pitch|keynote|powerpoint|pptx|slides|16:9/,
@@ -180,15 +195,17 @@ const KINDS = {
 export function ruleRoute(input: RouteInput): Route {
   const t = input.text.toLowerCase(), inDeck = input.layoutsInDeck.filter((id): id is LayoutId => id in LAYOUTS)
   // Format: Stichwörter, bei einem Deck auch sein Profil; ohne beides das übergebene Profil
-  const kinds = new Set((Object.keys(KINDS) as (keyof typeof KINDS)[]).filter((k) => KINDS[k].test(t)))
-  const video = VIDEO.test(t) || inDeck.includes('clip')
+  const kinds = new Set((Object.keys(KINDS) as (keyof typeof KINDS)[]).filter((k) => KINDS[k].test(t) && (APP.pro || k !== 'stream')))
+  const pro = APP.pro && (PRO_SCHNITT.test(t) || inDeck.includes('schnitt'))
+  const video = VIDEO.test(t) || inDeck.includes('clip') || pro
   const plain = !kinds.has('slides') && !kinds.has('a4') && !kinds.has('karte') && !FOLIEN.test(t)
   // Reiner Podcast-Auftrag: nur Podcast-Schnitt, schlanker Kernprompt wie bei Video
   if (plain && !inDeck.length && (input.podcast || (POD.test(t) && !POD_NOT.test(t) && !kinds.has('social')))) // Karussell zur neuen Folge bleibt Social
     return { modules: [...PODCAST_MODULES], source: 'regel', reason: 'Regeln: Podcast', video: true }
   // Reiner Video-Auftrag: nur Video-Schnitt und clip (dazu Zwischentitel), kein Gerüst, keine Gestaltung
-  if (video && (!FILM.test(t) || SCHNITT.test(t)) && plain && inDeck.every((id) => VIDEO_DECK.includes(id)))
-    return { modules: [...VIDEO_MODULES, ...VIDEO_DECK.slice(1).map((id) => `layout:${id}`)], source: 'regel', reason: 'Regeln: Video', video: true }
+  if (video && (!FILM.test(t) || SCHNITT.test(t) || pro) && plain && !kinds.has('stream') && inDeck.every((id) => VIDEO_DECK.includes(id)))
+    return { modules: [...VIDEO_MODULES, 'layout:section', 'layout:statement', ...(pro ? TIMELINE_MODULES : [])], source: 'regel', reason: 'Regeln: Video', video: true }
+  if (inDeck.includes('stream-screen') || inDeck.includes('panel')) kinds.add('stream')
   if (input.hasDeck || !kinds.size) kinds.add(input.profile === 'doc' ? (inDeck.includes('business-card') ? 'karte' : 'a4') : input.profile)
   const layouts = new Set<LayoutId>(inDeck)
   const add = (ids: LayoutId[]) => ids.forEach((id) => layouts.add(id))
@@ -196,12 +213,14 @@ export function ruleRoute(input: RouteInput): Route {
   if (kinds.has('social')) add(LAYOUT_IDS.filter((id) => !sizesOf(id) && !SOCIAL_SKIP.includes(id)))
   if (kinds.has('a4')) add([...LAYOUT_IDS.filter((id) => sizesOf(id)?.some((s) => s.startsWith('a4'))), ...DOC_BASIS])
   if (kinds.has('karte')) add(['business-card'])
+  if (kinds.has('stream')) add(['stream-screen', 'panel', 'cover', 'photo', 'statement'])
 
   const mods: string[] = ['geruest']
   if (kinds.has('slides')) mods.push('geruest-praesentation')
   if (kinds.has('social')) mods.push('geruest-social')
   if (kinds.has('a4')) mods.push('geruest-a4')
   if (kinds.has('karte')) mods.push('geruest-visitenkarte')
+  if (kinds.has('stream')) mods.push('geruest-stream')
   mods.push('inhalt-layout', 'text')
   if (!input.hasDeck) {
     mods.push('gestaltung', 'abwechslung', 'stil', 'katalog-themes', 'katalog-ton')
@@ -211,7 +230,7 @@ export function ruleRoute(input: RouteInput): Route {
   }
   const hits = KEYWORDS.filter(([, re]) => re.test(t))
   for (const [, , m] of hits) mods.push(...m)
-  if (video) mods.push(...VIDEO_MODULES) // z. B. Präsentation mit Video
+  if (video) mods.push(...VIDEO_MODULES, ...(pro ? TIMELINE_MODULES : [])) // z. B. Präsentation mit Video
   return {
     modules: [...new Set([...mods, ...[...layouts].map((id) => `layout:${id}`)])],
     source: 'regel',
