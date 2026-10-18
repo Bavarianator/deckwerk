@@ -18,7 +18,9 @@ import { assetPath, localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
 export interface Seg { file: string; dur: number; music?: [number, number, number][]; cues?: Cue[] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music), cues: Untertitel-Zeilen ab Seg-Anfang (fürs SRT)
-export interface Music { file: string; volume?: number } // absoluter Pfad, volume 0–1 (Standard 0,25)
+export interface Music { file: string; volume?: number; gain?: number } // absoluter Pfad, volume 0–1 (Standard 0,25); gain: Angleich der Datei auf MUSIC_LUFS (exportOnce misst)
+// Musikdateien liegen gemessen zwischen −25 und −12 LUFS: ohne Angleich war volume 0,25 je nach Titel kaum hörbar oder fast so laut wie die Sprache (13.10.)
+export const MUSIC_LUFS = -16
 
 // Teilstücke je ffmpeg-Aufruf: je Teilstück ein Input mit eigenem Decoder, und der Filtergraph steht in argv (Linux: max. 128 KiB je Argument).
 // Bis 1080p 20 Decoder gleichzeitig, darüber weniger nach Pixelzahl (max. aus Quelle und Ausgabe), 4K: 5, 8K: 3 – sonst läuft der RAM voll.
@@ -403,7 +405,7 @@ export async function finish(segs: Seg[], out: string, dir: string, o: { loudnor
   // Musikpegel je Ausschnitt (Seg.music): Lautstärke als Ausdruck über die Zeit, sonst feste Zahl
   let off = 0
   const spans = segs.flatMap((x) => { const r = (x.music ?? []).map(([a, b, v]): [number, number, number] => [off + a, off + b, Math.min(1, Math.max(0, v))]); off += x.dur; return r })
-  const vol = Math.min(1, Math.max(0, o.music?.volume ?? DUCK.volume))
+  const vol = Math.min(1, Math.max(0, o.music?.volume ?? DUCK.volume)) * (o.music?.gain ?? 1)
   const graph = (loud: string) => ['-filter_complex', o.music ? `${duckMusic('0:a', '1:a', spans.length ? `${levelExpr(vol, spans)}:eval=frame` : vol, dur, 'mx')};[mx]anull${loud}[a]` : `[0:a]anull${loud}[a]`]
   const music = o.music ? ['-stream_loop', '-1', '-i', resolve(o.music.file)] : []
   const input = ['-f', 'concat', '-safe', '0', '-i', list, ...music]
@@ -515,8 +517,14 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
       if (!(await stat(img).catch(() => null))) throw new Error(`Folie ${i + 1}: Das Bild der Einblendung fehlt (${basename(img)}).`)
     }
   }
-  // Musik vorab einmal anspielen: ffmpegs „Stream specifier [1:a]“ käme erst nach dem Encoden
-  if (o.music) await checkMusic(o.music.file)
+  // Musik vorab einmal anspielen: probe() verlangt eine Videospur, und ffmpegs „Stream specifier [1:a]“ käme erst nach dem Encoden
+  // Dabei die Lautheit messen (erste 3 min reichen, Musik ist gleichmäßig) und auf MUSIC_LUFS angleichen, höchstens ×4 lauter
+  if (o.music) {
+    const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-t', '180', '-i', resolve(o.music.file), '-map', '0:a:0', '-af', 'ebur128', '-f', 'null', '-'])
+    if (r.code !== 0) throw new Error(`Die Musikdatei ${o.music.file} ${/No such file/i.test(r.err) ? 'fehlt' : /matches no streams/i.test(r.err) ? 'hat keine Tonspur' : 'ist nicht lesbar'}.`)
+    const i = Number(/Integrated loudness:\s+I:\s+(-?[\d.]+) LUFS/.exec(r.err)?.[1]) // Zusammenfassung am Ende; -70 = still
+    o = { ...o, music: { ...o.music, gain: Number.isFinite(i) && i > -60 ? Math.min(4, 10 ** ((MUSIC_LUFS - i) / 20)) : 1 } }
+  }
   // Gewählte Auflösung nie über dem größten Quell-Ausschnitt (videoSize); ohne Wahl kein Proben, alles wie bisher
   const sources = deck.videoRes ? (await Promise.all([...new Set(scenes.flatMap(({ i, clip }) => (clip ? [videoPath(clip.video, i + 1)] : [])))].map((f) => probe(f).catch(() => null)))).filter((x) => x !== null) : []
   const size = videoSize(sizeOf(deck), deck.videoRes, sources), accent = resolveTheme(deck.theme).c.accent, short = Math.min(size.w, size.h)
