@@ -8,7 +8,7 @@ import { copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promis
 import { basename, dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Deck } from '../shared/deck'
-import { canonJson, portableDeck, portablePath, sanitize } from '../shared/merge3'
+import { canonJson, isAssetRel, portableDeck, portablePath, sanitize } from '../shared/merge3'
 import { davBase, etagOf, localAsset, parseMultistatus, SHARED_MARKER, type SyncSettings } from './sync'
 
 export type Rolle = 'edit' | 'view'
@@ -179,7 +179,7 @@ export async function guestRemote(z: Zugang, fetchFn: typeof fetch = fetch): Pro
 
 // alle Dateiverweise eines Decks: asset://-URLs (lokal) bzw. relative assets/<name> (fremd, nach sanitize)
 function refs(x: unknown, out = new Set<string>()): Set<string> {
-  if (typeof x === 'string') { if (/^asset:\/\/local\//i.test(x) || /^assets\/[^/]+$/.test(x)) out.add(x) }
+  if (typeof x === 'string') { if (/^asset:\/\/local\//i.test(x) || isAssetRel(x)) out.add(x) }
   else if (x && typeof x === 'object') for (const v of Object.values(x)) refs(v, out)
   return out
 }

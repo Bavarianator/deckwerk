@@ -122,8 +122,11 @@ export function mergeDeck(base: Deck, mine: Deck, theirs: Deck, dir: string): { 
 /** Undo/Redo-Snapshots auf einen fremden Stand umsetzen: jeder Snapshot s → mergeDeck(base, s, theirs, dir).deck */
 export const rebase = (stack: Deck[], base: Deck, theirs: Deck, dir: string): Deck[] => stack.map((s) => mergeDeck(base, s, theirs, dir).deck)
 
-// Felder mit Dateipfaden: Folien (src, image, poster), Brand-Kit (logo, logoDark), eigene Schrift (regular, bold)
-const FILE_KEYS = new Set(['src', 'image', 'poster', 'logo', 'logoDark', 'regular', 'bold'])
+// Felder mit Dateipfaden: Folien (src, image, poster), Videos (clip.video, Einblendung video), Brand-Kit (logo, logoDark), eigene Schrift
+// (regular, bold), Excel-Link (file; nie ein Asset, fällt also immer weg: der Link gilt nur auf dem eigenen Rechner)
+const FILE_KEYS = new Set(['src', 'image', 'poster', 'video', 'logo', 'logoDark', 'regular', 'bold', 'file'])
+/** relativer Asset-Name aus einem fremden Stand: genau assets/<name>, ohne / \\ und .., Endung aus MEDIA_EXT (sonst schriebe join() unter Windows mit assets/..\\..\\x außerhalb des Deck-Ordners) */
+export const isAssetRel = (s: string) => /^assets\/[^/\\]+$/.test(s) && !s.includes('..') && MEDIA_EXT.test(s)
 // so, wie ein URL-Parser den Anfang liest: Tab/Zeilenumbruch fallen überall weg, Steuerzeichen und Leerzeichen vorn
 const urlStart = (s: string) => s.replace(/[\t\n\r]/g, '').replace(/^[\x00-\x20]+/, '')
 
@@ -137,6 +140,6 @@ export function sanitize(raw: unknown): Deck {
     // fremde lokale Dateien (Zugangsdaten, private Fotos) nie anfassen; „File: Bericht“ als Text bleibt
     if (/^(asset|file):\S/i.test(u)) return ''
     if (!FILE_KEYS.has(key) || !u || /^data:/i.test(u)) return s
-    return /^assets\/[^/\\]+$/.test(s) && !s.includes('..') && MEDIA_EXT.test(s) ? s : ''
+    return isAssetRel(s) ? s : ''
   }) as Deck
 }
