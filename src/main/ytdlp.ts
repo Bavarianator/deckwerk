@@ -15,11 +15,13 @@ const VERSION = '2026.08.19'
 const BUILDS: Record<string, { name: string; sha256: string }> = {
   'linux-x64': { name: 'yt-dlp_linux', sha256: '58162f9bfdc27458ea47bfcb311cf47028f17d8154a8bf7d689861d46399230a' },
   'darwin-arm64': { name: 'yt-dlp_macos', sha256: '0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202' },
+  'win32-x64': { name: 'yt-dlp.exe', sha256: '66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a' },
 }
 
 /** Umgebung für fremde Programme ohne API-Schlüssel: yt-dlp führt YouTubes Player-JS in Node aus. */
 export function slimEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
-  const keep = /^(PATH|HOME|LANG|LC_\w+|XDG_\w+|TMPDIR|https?_proxy|no_proxy)$/i
+  // Windows: ohne SystemRoot startet Python (yt-dlp.exe) nicht, ohne TEMP/TMP kann es sich nicht entpacken
+  const keep = /^(PATH|HOME|LANG|LC_\w+|XDG_\w+|TMPDIR|https?_proxy|no_proxy|SYSTEMROOT|WINDIR|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA)$/i
   return { ...Object.fromEntries(Object.entries(process.env).filter(([k]) => keep.test(k))), ...extra }
 }
 
@@ -31,7 +33,12 @@ export function runTool(bin: string, args: string[], env: NodeJS.ProcessEnv, onL
     let err = '', rest = '', stalled = false, timer: NodeJS.Timeout | undefined
     const alive = () => {
       clearTimeout(timer)
-      timer = setTimeout(() => { stalled = true; try { process.kill(-p.pid!, 'SIGTERM') } catch { p.kill('SIGTERM') } }, stallMs)
+      timer = setTimeout(() => {
+        stalled = true
+        // Windows kennt keine Prozessgruppen: den Baum per taskkill beenden, p.kill ließe das ffmpeg von yt-dlp weiterlaufen
+        if (process.platform === 'win32') spawn('taskkill', ['/pid', String(p.pid), '/T', '/F'], { windowsHide: true }).on('error', () => p.kill())
+        else try { process.kill(-p.pid!, 'SIGTERM') } catch { p.kill('SIGTERM') }
+      }, stallMs)
     }
     alive()
     p.stdout.on('data', (c: Buffer) => { alive(); const ls = (rest + c).split(/[\r\n]+/); rest = ls.pop()!; ls.forEach(onLine) })
@@ -58,7 +65,7 @@ async function locate(models: string): Promise<string> {
   if ((await version('yt-dlp')) >= VERSION) return 'yt-dlp'
   const build = BUILDS[`${process.platform}-${process.arch}`]
   if (!build) throw new Error('yt-dlp fehlt. Bitte yt-dlp installieren (z. B. über den Paketmanager) und den Import noch einmal starten.')
-  const file = join(models, `yt-dlp-${VERSION}`)
+  const file = join(models, `yt-dlp-${VERSION}${process.platform === 'win32' ? '.exe' : ''}`) // ohne .exe findet CreateProcess die Datei nicht
   if (existsSync(file) && (await version(file))) return file
   await rm(file, { force: true })
   await mkdir(models, { recursive: true })

@@ -12,6 +12,7 @@ const VERSION = '1.56.5'
 const BUILDS: Record<string, { name: string; sha256: string }> = {
   'linux-x64': { name: 'Linux-x64', sha256: 'f2bcee00d0e6da759d97c23767345634cb9cdb10cdff96cfa96f97983d51bf55' },
   'darwin-arm64': { name: 'MacOSArm64', sha256: '17a0182f83689a0ae429f48cf03c26f1701eed7edcd787fa3d261898a6023d76' },
+  'win32-x64': { name: 'Windows-x64', sha256: '8b1b0695f2b1b6bf0d2535fab4b84032951cded8cf4078dfdf4d58e391c813a0' },
 }
 /** VOD-ID aus einem Link twitch.tv/videos/<id>, sonst null. */
 export const twitchVodId = (url: string): string | null => /^(?:https?:\/\/)?(?:[\w-]+\.)?twitch\.tv\/videos\/(\d+)(?:[/?#]|$)/i.exec(url)?.[1] ?? null
@@ -19,14 +20,15 @@ export const twitchVodId = (url: string): string | null => /^(?:https?:\/\/)?(?:
 async function locate(models: string): Promise<string> {
   const build = BUILDS[`${process.platform}-${process.arch}`]
   if (!build) throw new Error(`Twitch-Chat: TwitchDownloaderCLI gibt es nicht für ${process.platform}-${process.arch}.`)
-  const dir = join(models, `twitch-downloader-${VERSION}`), file = join(dir, 'TwitchDownloaderCLI')
+  const exe = `TwitchDownloaderCLI${process.platform === 'win32' ? '.exe' : ''}` // so heißt sie auch im Windows-Archiv
+  const dir = join(models, `twitch-downloader-${VERSION}`), file = join(dir, exe)
   if (existsSync(file)) return file // erscheint nur per rename, also vollständig
   await mkdir(dir, { recursive: true })
   const tmp = `${file}.${process.pid}` // je Prozess, rename ersetzt atomar (wie ffmpeg.ts)
   try {
     console.log('[twitch] lade TwitchDownloaderCLI', VERSION)
     await download(`https://github.com/lay295/TwitchDownloader/releases/download/${VERSION}/TwitchDownloaderCLI-${VERSION}-${build.name}.zip`, build.sha256, `${tmp}.zip`)
-    const entry = (await JSZip.loadAsync(await readFile(`${tmp}.zip`))).file('TwitchDownloaderCLI')
+    const entry = (await JSZip.loadAsync(await readFile(`${tmp}.zip`))).file(exe)
     if (!entry) throw new Error('TwitchDownloaderCLI fehlt im geladenen Archiv.')
     await pipeline(entry.nodeStream(), createWriteStream(tmp))
     await chmod(tmp, 0o755)

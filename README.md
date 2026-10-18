@@ -20,7 +20,9 @@ Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwe
 
 ## Installation
 
-Deckwerk läuft unter Linux (x86_64) und unter Windows in WSL. Für macOS gibt es eine eigene Fassung: [deckwerk-macos](https://github.com/Bavarianator/deckwerk-macos). Auf dem Mac leitet der Befehl unten automatisch dorthin weiter.
+Deckwerk läuft unter Linux (x86_64), macOS (Apple Silicon) und als Vorschau unter Windows (x64). Alle drei kommen aus diesem Repo und aus denselben Releases.
+
+### Linux
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install.sh | sh
@@ -56,6 +58,26 @@ Das klont den neuesten Release-Tag nach `~/deckwerk` (anderer Ordner: `DECKWERK_
 **Sandbox:** Erlaubt das System keine User-Namespaces (etwa Ubuntu 24.04 mit AppArmor-Sperre), startet Deckwerk ohne Chromium-Sandbox, statt gar nicht. Wer das nicht möchte, gibt die Namespaces frei (`sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0`) oder richtet ein AppArmor-Profil ein.
 
 </details>
+
+### macOS
+
+Mac mit Apple Silicon (M1 oder neuer) und macOS 12 oder neuer. Im Terminal:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install-mac.sh | sh
+```
+
+Das Skript lädt `Deckwerk-arm64.dmg` aus dem neuesten Release, kopiert Deckwerk nach `/Applications`, trägt es als MCP-Server in Claude Code, Codex und Vibe ein und startet es. Derselbe Befehl aktualisiert später, eine bestimmte Version: `… | sh -s v0.2.0`.
+
+Die App ist nicht von Apple notarisiert. Per `curl` geladen trägt sie keine Quarantäne-Markierung, macOS fragt deshalb nicht nach. Das umgeht die Gatekeeper-Prüfung bewusst, lies das kurze Skript vorher: [install-mac.sh](scripts/install-mac.sh). Alternativ die DMG aus den [Releases](https://github.com/Bavarianator/deckwerk/releases/latest) laden, Deckwerk in „Programme“ ziehen und beim ersten Start unter Systemeinstellungen → Datenschutz & Sicherheit „Trotzdem öffnen“ wählen. Für den PDF-Import: `brew install poppler`.
+
+Entfernen: `/Applications/Deckwerk.app` in den Papierkorb, dazu `claude mcp remove -s user deckwerk` (ebenso bei `vibe` und `codex`). `~/Deckwerk` mit deinen Decks bleibt.
+
+### Windows (Vorschau)
+
+`Deckwerk-Setup-x64.exe` aus den [Releases](https://github.com/Bavarianator/deckwerk/releases/latest) laden und starten. Es installiert für deinen Benutzer ohne Admin-Rechte, mit Eintrag im Startmenü und auf dem Desktop. Das Setup ist nicht signiert: Windows SmartScreen warnt, dann „Weitere Informationen“ → „Trotzdem ausführen“. Updates installierst du genauso über das neue Setup.
+
+Die Windows-Fassung ist im Aufbau. Folien bauen, gestalten und exportieren sowie der MCP-Server laufen. Der Chat über Claude Code, Codex und Vibe und einige Video-Funktionen sind unter Windows noch nicht fertig. Mit einem Anthropic-API-Key funktioniert der Chat.
 
 ## Erste Schritte
 
@@ -249,13 +271,16 @@ npm run typecheck
 npm run build
 ```
 
-Unter Wayland hängt Chromiums PDF-Druck, deshalb starten alle Skripte Electron mit `--ozone-platform=x11`.
+Unter Wayland hängt Chromiums PDF-Druck, deshalb starten alle Skripte Electron mit `--ozone-platform=x11` (macOS und Windows ignorieren den Schalter).
 
 | Befehl | Zweck |
 |---|---|
 | `npm run render examples/pitch.json` | Deck rendern → `exports/<slug>.pptx`, `.docx`, `.pdf`, `.zip`, `<slug>/NN.png` und Lint-Report |
 | `npm run check:layouts` | Stresstest: jedes Layout × Variante × Beispiel × Theme (dauert rund eine Stunde) |
 | `npm run dist:linux` | AppImage bauen → `dist/Deckwerk-x86_64.AppImage` |
+| `npm run dist:mac` | DMG bauen → `dist/Deckwerk-arm64.dmg` (nur auf einem Mac) |
+| `npm run install:mac` | App auf dem Mac bauen und direkt nach `/Applications` legen |
+| `npm run dist:win` | Setup bauen → `dist/Deckwerk-Setup-x64.exe` (nur unter Windows) |
 | `npm run smoke` | KI-Werkzeuge und MCP-Server gegen eine Mock-Engine (ohne Electron, ohne API-Key) |
 | `npm run mcp:e2e` | MCP-Server Ende-zu-Ende gegen die echte Engine; `E2E_HEADLESS=1` ohne Bildschirm wie Vibe und Codex, `E2E_APP=<AppRun>` gegen das Paket |
 | `npm run smoke:claude` | App-Chat über Claude Code gegen eine Mock-Engine, samt Sperre für Shell und Dateien (braucht den Login, vier kleine Anfragen). `DECKWERK_CLI=vibe` oder `codex` testet die anderen CLIs |
@@ -264,7 +289,11 @@ Unter Wayland hängt Chromiums PDF-Druck, deshalb starten alle Skripte Electron 
 
 Kleinere Selbsttests stehen als Kommentar im Kopf der jeweiligen Datei unter `scripts/check-*.ts`, `scripts/story-check.ts` und `scripts/validate-examples.ts`.
 
-GitHub Actions prüft jeden Push (`.github/workflows/ci.yml`): Typecheck, Smoke-Tests, Selbsttests, Rendern und Export, den MCP-Server mit und ohne Bildschirm, das AppImage und den Installer mit dieser App. Ein Tag `v*` baut das AppImage und hängt es an den Release (`release.yml`). Der Installer holt immer den neuesten Release.
+GitHub Actions prüft jeden Push (`.github/workflows/ci.yml`): Typecheck, Smoke-Tests, Selbsttests, Rendern und Export, den MCP-Server mit und ohne Bildschirm, das AppImage und den Installer mit dieser App. `mac.yml` und `windows.yml` bauen bei jedem Push auf master und jedem Pull Request die DMG auf einem Apple-Silicon-Mac bzw. das Setup unter Windows und prüfen das fertige Paket: Fenster (Screenshot im Artefakt „Pruefung“), Export eines Beispiel-Decks, MCP-Server, native Module. Ein Tag `v*` hängt AppImage (`release.yml`), DMG und Setup an denselben Release. Der Build bricht ab, wenn Tag und Version in `package.json` nicht zusammenpassen. Die Installer holen immer den neuesten Release.
+
+Plattformabhängiges steht per `process.platform` im Code. Die Tastenkürzel in der Oberfläche (Strg → ⌘, Dateimanager → Finder bzw. Explorer) schreibt `electron.vite.config.ts` beim Bauen um. Zum Prüfen unter Linux: `DW_PLATFORM=darwin npm run build`.
+
+**Notarisieren (macOS):** Mit einem Apple Developer Program signiert und notarisiert `mac.yml` automatisch, sobald diese Repository-Secrets gesetzt sind: `MAC_CERT_P12_BASE64` (Zertifikat „Developer ID Application“ als .p12, base64), `MAC_CERT_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`. Ohne sie wird ad hoc signiert.
 
 ### Aufbau
 

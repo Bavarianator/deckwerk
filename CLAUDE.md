@@ -17,12 +17,14 @@ npm run check:layouts       # Stresstest Layout × Variante × Beispiel × Theme
 npm run smoke:claude        # App-Chat über echtes `claude -p` (kostet Anfragen); DECKWERK_CLI=codex|vibe
 npm run verify:pptx -- exports/<slug>.pptx   # PPTX gegen LibreOffice-Rendering (README „PPTX-Treue-Check“)
 npm run dist:linux          # AppImage
+npm run dist:mac            # DMG (nur auf macOS; baut sonst mac.yml in CI)
+npm run dist:win            # NSIS-Setup (nur unter Windows; baut sonst windows.yml in CI)
 ```
 
 - Einzelne Selbsttests (`scripts/check-*.ts`, `story-check.ts`, `validate-examples.ts`, `agent-smoke.ts`) tragen ihren Aufruf als Kommentar in der ersten Zeile: mit esbuild bündeln, dann mit node ausführen. Wird `design-guide.md` mitgebündelt, braucht esbuild `--loader:.md=text`.
-- Alle Skripte starten Electron mit `--ozone-platform=x11`, weil Chromiums PDF-Druck unter Wayland hängt.
+- Alle Skripte starten Electron mit `--ozone-platform=x11`, weil Chromiums PDF-Druck unter Wayland hängt. macOS und Windows ignorieren den Schalter.
 - `electron-vite build` leert `out/`. Dort keine Logs oder Testbündel ablegen. Arbeiten andere Sessions parallel, baue und teste in einer Kopie im Scratchpad (`src/`, `examples/` kopieren, `node_modules` verlinken).
-- CI (`.github/workflows/ci.yml`): typecheck, smoke, Selbsttests, render, mcp:e2e mit und ohne Bildschirm, AppImage-Größe, Installer.
+- CI (`.github/workflows/ci.yml`): typecheck, smoke, Selbsttests, render, mcp:e2e mit und ohne Bildschirm, AppImage-Größe, Installer. `mac.yml` und `windows.yml` bauen DMG bzw. Setup und prüfen das fertige Paket (Fenster, Export, MCP, native Module). Ein Tag `v*` hängt AppImage, DMG und Setup an denselben Release.
 
 ## Architektur
 
@@ -60,6 +62,11 @@ Jedes ändernde Tool antwortet mit Autofit und Lint pro Folie; daran korrigiert 
 - Alle Fenster sind sandboxed, Navigation ist gesperrt.
 - `asset://` und der PPTX-Export laden nur Dateien, deren Endung auf `MEDIA_EXT` (`src/shared/deck.ts`) passt. Neue Medientypen dort ergänzen.
 
+**Plattformen**: Linux (x64), macOS (arm64) und Windows (x64, im Aufbau) aus einem Stand.
+- Verhalten per `process.platform` im Code, kein Patchen beim Bauen. Ausnahme: Tastenkürzel- und Dateimanager-Texte im Renderer (Strg → ⌘, Finder/Explorer) schreibt ein Vite-Transform in `electron.vite.config.ts` zur Build-Zeit um; `DW_PLATFORM=darwin` simuliert das unter Linux.
+- Native Module (onnxruntime, sherpa-onnx) je Plattform in `build.linux/mac/win.files` von `package.json`.
+- asset-URLs nur über `assetPath` (`sync.ts`) zurück in Pfade wandeln, sonst bricht der Laufwerksbuchstabe (`/C:/…`). Kindprozesse mit `windowsHide: true`, sonst blitzt unter Windows ein Konsolenfenster auf.
+
 **Ablage und Einstellungen**:
 - Brand-Kit (Farben, Schriften, Logo) in `~/Deckwerk/brand.json`: `create_deck` wendet es an, solange `brand` nicht gesetzt ist (`defaultBrand()` in `tools.ts`); `DECKWERK_HOME` setzt es in Tests um.
 - Decks liegen unter `~/Deckwerk/<titel>/deck.json`, alte Stände in `versions/`. Bilder liegen in `~/Deckwerk/assets/`.
@@ -78,6 +85,6 @@ Der Nutzer lehnt den „KI-Look“ ab. Gestaltet wird zurückhaltend: flach, lin
 - Oft arbeiten mehrere Claude-Sessions gleichzeitig und uncommittet in diesem Checkout.
 - Vor Änderungen an fremden Baustellen `git status` und `git diff` ansehen und gezielt editieren statt Dateien neu zu schreiben.
 - Commits nur auf Wunsch und mit expliziter Dateiliste.
-- macOS lebt im Fork `deckwerk-macos`, der per `macify.mjs` an Ankertexten patcht (z. B. `findCli`). Plattformabhängige Stellen nur mit Rücksicht darauf ändern.
+- macOS und Windows werden aus diesem Repo gebaut, der frühere Fork `deckwerk-macos` ist abgelöst. Plattformabhängige Stellen siehe „Plattformen“.
 - Laufende Test-Instanzen über ihren `--remote-debugging-port` beenden, nicht per `pkill -f`.
 - AppImages nie nach `/tmp` entpacken: Läuft das tmpfs voll, entstehen still 0-Byte-Dateien.
