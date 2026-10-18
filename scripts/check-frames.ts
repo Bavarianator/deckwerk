@@ -1,4 +1,4 @@
-// Film-Renderer in Electron (Seek, Kamera, Zähler, Tippen, Video, Frames/s): npx electron-vite build && npx esbuild scripts/check-frames.ts --bundle --platform=node --format=cjs --external:electron --log-level=warning --outfile=out/main/check-frames.cjs && DECKWERK_HOME=${TMPDIR:-/tmp}/check-frames ./node_modules/.bin/electron out/main/check-frames.cjs --ozone-platform=x11
+// Film-Renderer in Electron (Seek, Kamera, Zähler, Tippen, Video, Motion-Grafik, Frames/s): npx electron-vite build && npx esbuild scripts/check-frames.ts --bundle --platform=node --format=cjs --external:electron --log-level=warning --outfile=out/main/check-frames.cjs && DECKWERK_HOME=${TMPDIR:-/tmp}/check-frames ./node_modules/.bin/electron out/main/check-frames.cjs --ozone-platform=x11
 // (Bündel in out/main, damit render.ts den Renderer unter ../renderer/index.html findet)
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
@@ -31,6 +31,19 @@ const deck: Deck = {
     { id: 's3', layout: 'kpi-grid', build: 'fade', content: { title: 'Zahlen', kpis: [{ value: '42 %', label: 'a' }, { value: '3,2 Mio.', label: 'b' }, { value: '+12', label: 'c' }, { value: 'Q3', label: 'd' }] } },
     { id: 's4', layout: 'statement', build: 'none', content: { text: 'Video' }, items: [{ id: 'vid', kind: 'video', src: `file://${video}`, x: 0, y: 0, w: 640, h: 360 }] },
     { id: 's5', layout: 'statement', build: 'none', content: { text: 'Defekt' }, items: [{ id: 'kaputt', kind: 'video', src: `file://${home}/fehlt.webm`, x: 0, y: 0, w: 640, h: 360 }] },
+    { id: 's6', layout: 'statement', build: 'none', content: { text: 'Bewegung' },
+      items: [
+        { id: 'move', kind: 'shape', shape: 'rect', x: 100, y: 40, w: 100, h: 60, fill: '#00FF00', keys: [{ step: 1, x: 700 }, { step: 2, y: 120, w: 200, h: 30 }] },
+        { id: 'spring', kind: 'shape', shape: 'rect', x: 100, y: 200, w: 100, h: 60, fill: '#0000FF', keys: [{ step: 1, x: 700, ease: 'feder' }] },
+        { id: 'fade', kind: 'shape', shape: 'rect', x: 100, y: 560, w: 100, h: 60, fill: '#FF00FF', keys: [{ step: 1, opacity: 0, ease: 'linear' }] },
+        { id: 'paint', kind: 'shape', shape: 'rect', x: 300, y: 560, w: 100, h: 60, fill: '#FFFF00', keys: [{ step: 1, fill: '#00FFFF' }] },
+        { id: 'paint2', kind: 'shape', shape: 'diamond', x: 500, y: 540, w: 100, h: 100, fill: '#FFFF00', keys: [{ step: 1, fill: '#00FFFF' }] }, // SVG-fill
+      ] },
+    { id: 's7', layout: 'statement', build: 'none', content: { text: 'Wachsen' },
+      items: [
+        { id: 'bars', kind: 'chart', x: 700, y: 60, w: 500, h: 360, spec: { type: 'bar', categories: ['a', 'b', 'c'], series: [{ name: 'Umsatz', values: [2, 3, 5] }] } }, // c in Akzentfarbe
+        text('mark', 'Ein **Wort**', 80, 520, '#222222', { w: 600, anim: 'fade', animStart: 'with' }),
+      ] },
   ],
 }
 
@@ -54,7 +67,7 @@ function find(img: Electron.NativeImage, rgb: number[]) {
   }
   return { n, x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 }
 }
-const GREEN = [0, 255, 0], MAGENTA = [255, 0, 255]
+const GREEN = [0, 255, 0], MAGENTA = [255, 0, 255], BLUE = [0, 0, 255], YELLOW = [255, 255, 0], CYAN = [0, 255, 255]
 
 async function main() {
   // 1) Aufbau, Element per Klick-Takt, Kamera, Tippen; dazu die ganze Szene mit 30 fps in 1920 px für die Frames/s
@@ -129,6 +142,45 @@ async function main() {
   const t4 = Date.now()
   await renderFilm(deck, 4, { width: 1280, plan: () => ({ beats: [0], times: [0, 0.5, 1, 1.5, 2] }) }, () => {})
   assert.ok(Date.now() - t4 < 4000, `defektes Video bremst: ${Date.now() - t4} ms für 5 Frames`)
+
+  // 5) Motion-Grafik: Bewegung je Takt (weich, Feder), Größe um die Mitte, Deckkraft und Füllung (Hintergrund und SVG)
+  const kb: Electron.NativeImage[] = []
+  let kt: number[] = []
+  await renderFilm(deck, 5, {
+    width: 1280,
+    plan: (s) => {
+      near(s.steps[1], 0.8, 0.01, 'Takt 1 = Key 800 ms')
+      const { beats: b, dur: d } = sceneTimeline({ ...s, lead: 0 })
+      return { beats: b, times: (kt = [b[1] - 0.05, b[1] + 0.4, b[2] - 0.02, d]) }
+    },
+  }, (_, img) => void kb.push(img))
+  const [k0, k1, k2, k3] = kb, at = (img: Electron.NativeImage, rgb: number[]) => find(img, rgb)
+  near(at(k0, GREEN).x, 100, 2, 'vor Takt 1: Rechteck links')
+  assert.ok(at(k1, GREEN).x > 250 && at(k1, GREEN).x < 550, `weich zur Hälfte: x ${at(k1, GREEN).x}`)
+  assert.ok(at(k1, BLUE).x > 700 + 15, `Feder schwingt über das Ziel: x ${at(k1, BLUE).x} (t ${kt[1].toFixed(2)})`)
+  near(at(k2, BLUE).x, 700, 4, 'Feder am Ende von Takt 1 am Ziel')
+  near(at(k2, GREEN).x, 700, 2, 'Ende Takt 1: Rechteck rechts')
+  near(at(k2, GREEN).y, 40, 2, 'Ende Takt 1: y unverändert')
+  const g = at(k3, GREEN)
+  assert.deepEqual([g.x, g.y, g.w, g.h].map(Math.round), [700, 120, 200, 30], `Takt 2: x bleibt, y/w/h neu: ${[g.x, g.y, g.w, g.h]}`)
+  assert.ok(at(k0, MAGENTA).n > 5000 && at(k3, MAGENTA).n === 0, `opacity-Key: ${at(k0, MAGENTA).n} → ${at(k3, MAGENTA).n} px`)
+  assert.ok(at(k0, YELLOW).n > 8000 && at(k0, CYAN).n === 0, `vor dem fill-Key gelb: ${at(k0, YELLOW).n} px`)
+  assert.ok(at(k3, YELLOW).n === 0 && at(k3, CYAN).n > 8000, `fill-Key (Rechteck und Raute): gelb ${at(k3, YELLOW).n}, cyan ${at(k3, CYAN).n} px`)
+
+  // 6) Diagramm wächst ab Takt 0 in 1,2 s; Textmarker zieht sich nach dem Aufbau (fade 500 ms) unter dem **Wort** auf
+  const cb: Electron.NativeImage[] = [], words: number[][] = []
+  await renderFilm(deck, 6, { width: 1280, plan: (s) => ({ beats: [0], times: [0, 0.2, 0.45, sceneTimeline({ ...s, lead: 0 }).dur] }) }, async (_, img) => {
+    cb.push(img)
+    words.push(await js<number[]>(`(() => { const s = document.querySelector('[data-item="mark"] strong').getBoundingClientRect(), r = document.querySelector('.slide').getBoundingClientRect(); return [s.left - r.left, s.top - r.top, s.width, s.height].map((v) => v * 1280 / r.width) })()`))
+  })
+  const accent = await js<string>(`getComputedStyle(document.querySelector('.slide')).getPropertyValue('--accent').trim()`)
+  const ACC = [1, 3, 5].map((i) => parseInt(accent.slice(i, i + 2), 16))
+  const bar = (img: Electron.NativeImage) => find(img.crop({ x: 700, y: 60, width: 500, height: 360 }), ACC).n
+  assert.ok(bar(cb[3]) > 5000 && bar(cb[1]) < bar(cb[3]) / 2, `Balken bei 0,2 s niedriger als am Ende: ${bar(cb[1])} < ${bar(cb[3])} px`)
+  const [wx, wy, ww, wh] = words[3], under = (img: Electron.NativeImage) => find(img.crop({ x: Math.round(wx), y: Math.round(wy + wh * 0.8), width: Math.round(ww), height: Math.round(wh * 0.25) }), ACC)
+  assert.equal(under(cb[0]).n, 0, 'Marker am Anfang: keine Akzentpixel unter dem Wort')
+  assert.equal(under(cb[2]).n, 0, 'Marker erst nach dem Aufbau')
+  assert.ok(under(cb[3]).n > 100 && under(cb[3]).w > ww - 6, `Marker am Ende: ${under(cb[3]).n} px, Breite ${under(cb[3]).w} von ${ww.toFixed(0)}`)
 
   console.log(`frames ok – toBitmap: ${order}, ${fps.toFixed(1)} Frames/s bei ${W}×1080 (${n - probes.length} Frames, Szene ${dur.toFixed(2)} s)`)
 }
