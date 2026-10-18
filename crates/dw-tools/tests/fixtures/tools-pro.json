@@ -1,0 +1,5562 @@
+{
+ "agent": [
+  "create_deck",
+  "update_deck",
+  "add_slides",
+  "update_slide",
+  "reorder_slides",
+  "delete_slides",
+  "decorate_slide",
+  "render_slides",
+  "propose_looks",
+  "render_overview",
+  "lint_deck",
+  "search_icons",
+  "read_guide",
+  "find_images",
+  "generate_image",
+  "export_deck",
+  "import_video",
+  "video_highlights",
+  "transcribe_video",
+  "search_transcript",
+  "video_frames",
+  "check_clip",
+  "capture_page",
+  "screen_zooms",
+  "create_episode",
+  "edit_episode",
+  "edit_timeline",
+  "find_music",
+  "remember"
+ ],
+ "chat": [
+  "create_deck",
+  "update_deck",
+  "add_slides",
+  "update_slide",
+  "reorder_slides",
+  "delete_slides",
+  "decorate_slide",
+  "render_slides",
+  "propose_looks",
+  "render_overview",
+  "lint_deck",
+  "search_icons",
+  "read_guide",
+  "find_images",
+  "generate_image",
+  "export_deck",
+  "import_video",
+  "video_highlights",
+  "transcribe_video",
+  "search_transcript",
+  "video_frames",
+  "check_clip",
+  "capture_page",
+  "screen_zooms",
+  "create_episode",
+  "edit_episode",
+  "edit_timeline",
+  "find_music",
+  "remember",
+  "plan_storyline",
+  "ask_user"
+ ],
+ "mcp": [
+  {
+   "name": "create_deck",
+   "description": "Neues Deck anlegen (ersetzt ein vorhandenes). Briefing, Theme oder Brand-Kit, Titel; mit film ein Film (Erklärvideo, Live-Demo) statt einer Präsentation.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 80
+     },
+     "brief": {
+      "type": "object",
+      "properties": {
+       "audience": {
+        "type": "string",
+        "maxLength": 120
+       },
+       "goal": {
+        "type": "string",
+        "maxLength": 200
+       },
+       "tone": {
+        "type": "string",
+        "maxLength": 60
+       }
+      },
+      "required": [
+       "audience",
+       "goal",
+       "tone"
+      ]
+     },
+     "theme": {
+      "default": "beratung",
+      "description": "Katalog-Theme; wird ignoriert, wenn customTheme gesetzt ist",
+      "type": "string",
+      "enum": [
+       "beratung",
+       "keynote",
+       "schweiz",
+       "redaktion",
+       "zen",
+       "plakat",
+       "magazin",
+       "neomono",
+       "pastell",
+       "corporate",
+       "midnight",
+       "editorial",
+       "graphite",
+       "ocean",
+       "swiss",
+       "forest",
+       "sunrise",
+       "atelier",
+       "signal",
+       "noir"
+      ]
+     },
+     "customTheme": {
+      "description": "Eigenes Design für genau dieses Deck (Standard). Vorgehen und Regeln im Design-Guide §6",
+      "type": "object",
+      "properties": {
+       "name": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 40,
+        "description": "Name, z. B. \"Nordlicht Finance\""
+       },
+       "bg": {
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "description": "Grund: fast neutrales Weiß, höchstens ein Hauch Tönung (#FAFAF8, #F5F3EE, #EFF2EE) oder tiefer Dunkelton (Nachtblau #121D33, Tannengrün #13251C, Aubergine, Graphit). Mitteltöne, Creme und Pastell lehnt der Theme-Lint ab. Kräftige Farbgründe nur mit vivid (Stil mutig)."
+       },
+       "text": {
+        "description": "Textfarbe; weglassen = automatisch passend",
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$"
+       },
+       "accent": {
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$",
+        "description": "Hauptakzent mit Charakter (Zahlen, Hervorhebungen, Akzentflächen); wird bei Bedarf für Kontrast nachgedunkelt/aufgehellt"
+       },
+       "accent2": {
+        "description": "Zweitfarbe für Vergleichsserien und Duotone; weglassen = neutrales Grau (empfohlen: eine Akzentfarbe reicht)",
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$"
+       },
+       "headFont": {
+        "type": "string",
+        "maxLength": 60,
+        "description": "Titelschrift: gebündelte Schrift oder Familie aus dem Schriftkatalog"
+       },
+       "bodyFont": {
+        "type": "string",
+        "maxLength": 60,
+        "description": "Textschrift (Sans empfohlen)"
+       },
+       "radius": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 28,
+        "description": "Eckenradius in px: 0–4 empfohlen; über 8 wirkt es schnell generiert"
+       },
+       "decor": {
+        "type": "string",
+        "enum": [
+         "none",
+         "blobs",
+         "glow",
+         "rings",
+         "grid",
+         "stripe",
+         "dots"
+        ],
+        "description": "Hintergrundmotiv; none empfohlen. blobs/glow (unscharfe Farbkreise) nur auf ausdrücklichen Wunsch"
+       },
+       "texture": {
+        "description": "feine Papierkörnung, nur auf Wunsch",
+        "type": "string",
+        "enum": [
+         "grain"
+        ]
+       },
+       "titleSize": {
+        "description": "large = Plakat-Titel (Vortrag, Swiss, Editorial); huge = übergroße Titel, nur im Stil mutig; normal = sachlich (Chef-Update, viele Daten)",
+        "type": "string",
+        "enum": [
+         "normal",
+         "large",
+         "huge"
+        ]
+       },
+       "titleWeight": {
+        "description": "regular wirkt edel und redaktionell (am besten mit Serif und titleSize large), bold sachlich und kräftig",
+        "type": "string",
+        "enum": [
+         "regular",
+         "bold"
+        ]
+       },
+       "rule": {
+        "description": "feine Linie: over = Kopflinie über dem Titel (Swiss, Redaktion), under = Trennlinie unter dem Kopf (Beratung), none = pur",
+        "type": "string",
+        "enum": [
+         "none",
+         "over",
+         "under"
+        ]
+       },
+       "sectionTone": {
+        "description": "Kapiteltrenner: accent = Akzentfläche (Standard), invert = Hell/Dunkel getauscht, normal = nur große Typo auf dem Grund",
+        "type": "string",
+        "enum": [
+         "normal",
+         "accent",
+         "invert"
+        ]
+       },
+       "vivid": {
+        "description": "nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf Papier- bzw. Dunkeltöne zu dämpfen; Textfarbe kommt automatisch mit Kontrast",
+        "type": "boolean"
+       },
+       "labelFont": {
+        "description": "mono = Eyebrow und Fußzeile in IBM Plex Mono (Magazin, Tech); body = Textschrift (Standard)",
+        "type": "string",
+        "enum": [
+         "body",
+         "mono"
+        ]
+       },
+       "elements": {
+        "description": "Bauteile (Design-Guide §6): line = offen, Kopflinien statt Kästen, kurze Striche als Marker (Standard, redaktionell, Beratung); plain = nur Typografie und Weißraum, keine Linien, große leichte Nummern (Keynote, Zen, Tech); solid = Akzentflächen für Hervorhebungen, nur im Stil mutig",
+        "type": "string",
+        "enum": [
+         "line",
+         "plain",
+         "solid"
+        ]
+       },
+       "field": {
+        "description": "Farbe großer Flächen (Kapitel, split/band, heroTone field); weglassen = accent. Nur als eigene Stimme, z. B. Signalgelb zu schwarzem Akzent",
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$"
+       },
+       "headWeight": {
+        "description": "Titelgewicht, schlägt titleWeight; gebündelte Schriften nur 400/700",
+        "type": "number",
+        "enum": [
+         300,
+         400,
+         500,
+         600,
+         700,
+         800,
+         900
+        ]
+       },
+       "headTracking": {
+        "description": "Laufweite der Titel in em: −0.02 bis −0.04 für große Grotesk-Titel, sonst weglassen",
+        "type": "number",
+        "minimum": -0.05,
+        "maximum": 0.02
+       },
+       "leading": {
+        "description": "Zeilenabstand: tight = dicht (große Titel), open = luftig (Lesetext, Zen)",
+        "type": "string",
+        "enum": [
+         "tight",
+         "normal",
+         "open"
+        ]
+       },
+       "labels": {
+        "description": "caps = Eyebrow und Fußzeile in Versalien",
+        "type": "string",
+        "enum": [
+         "sentence",
+         "caps"
+        ]
+       },
+       "margin": {
+        "description": "Ränder: generous = mehr Luft, asymmetric = breiter Bundsteg links (editorial)",
+        "type": "string",
+        "enum": [
+         "standard",
+         "generous",
+         "asymmetric"
+        ]
+       },
+       "measure": {
+        "description": "Satzbreite: narrow ≈ 760 px (ruhig, nicht mit titleSize huge), wide = volle Breite",
+        "type": "string",
+        "enum": [
+         "narrow",
+         "standard",
+         "wide"
+        ]
+       },
+       "signature": {
+        "description": "Genau ein wiederkehrendes Element statt Deko: rule = Haarlinie über dem Titel, edge = Farbkante am Folienrand, passepartout = Rahmenlinie mit Abstand",
+        "type": "object",
+        "properties": {
+         "kind": {
+          "type": "string",
+          "enum": [
+           "none",
+           "rule",
+           "edge",
+           "passepartout"
+          ]
+         },
+         "color": {
+          "type": "string",
+          "enum": [
+           "accent",
+           "field",
+           "text"
+          ]
+         },
+         "size": {
+          "description": "px: Linienstärke bzw. Kantenbreite",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 24
+         },
+         "length": {
+          "description": "rule: 64 px oder volle Satzbreite",
+          "type": "string",
+          "enum": [
+           "short",
+           "full"
+          ]
+         },
+         "side": {
+          "description": "edge",
+          "type": "string",
+          "enum": [
+           "left",
+           "top"
+          ]
+         }
+        },
+        "required": [
+         "kind"
+        ]
+       },
+       "heroTone": {
+        "description": "Titel- und Schlussfolie: field = Farbfläche, invert = Hell/Dunkel getauscht, normal = Grund",
+        "type": "string",
+        "enum": [
+         "normal",
+         "field",
+         "invert"
+        ]
+       },
+       "chart": {
+        "description": "Diagrammfarben: focus = Akzent + Grau (Standard), tonal = Akzent in Helligkeitsstufen, duo = zwei Akzente (mit accent2)",
+        "type": "string",
+        "enum": [
+         "focus",
+         "duo",
+         "tonal"
+        ]
+       },
+       "images": {
+        "description": "ein Bildstil fürs ganze Deck: natural, mono (hält uneinheitliche Fotos zusammen), duotone (Stil mutig)",
+        "type": "string",
+        "enum": [
+         "natural",
+         "mono",
+         "duotone"
+        ]
+       }
+      },
+      "required": [
+       "name",
+       "bg",
+       "accent",
+       "headFont",
+       "bodyFont",
+       "radius",
+       "decor"
+      ]
+     },
+     "brand": {
+      "description": "Brand-Kit; weglassen = das gespeicherte Brand-Kit des Nutzers (~/DeckwerkPro/brand.json), falls es eines gibt; null = ohne Marke",
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "primary": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Markenfarbe #RRGGBB"
+         },
+         "secondary": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         "logo": {
+          "description": "Pfad zum Logo (aus find_images)",
+          "type": "string"
+         },
+         "logoDark": {
+          "description": "Logo für dunklen Grund; fehlt es, gilt logo",
+          "type": "string"
+         },
+         "headFont": {
+          "description": "Headline-Schrift; Office: Arial, Calibri, Georgia; alle übrigen werden eingebettet, siehe customTheme.headFont",
+          "type": "string",
+          "maxLength": 60
+         },
+         "bodyFont": {
+          "description": "Schrift für Fließtext",
+          "type": "string",
+          "maxLength": 60
+         },
+         "lock": {
+          "description": "Brand-Lock; setzt nur der Nutzer in den Einstellungen, nie selbst setzen",
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "primary"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "transition": {
+      "default": "fade",
+      "type": "string",
+      "enum": [
+       "none",
+       "fade",
+       "push",
+       "morph",
+       "dissolve",
+       "wipe",
+       "cover",
+       "split",
+       "circle",
+       "zoom",
+       "slide",
+       "stack",
+       "color"
+      ]
+     },
+     "mode": {
+      "default": "click",
+      "description": "click = Vortrag (Builds per Klick), auto = Selbstlauf",
+      "type": "string",
+      "enum": [
+       "click",
+       "auto"
+      ]
+     },
+     "motion": {
+      "description": "Bewegungsstil wie Canva „Magic Animate“: none = keine Aufbauten, calm = nur Einblenden (Vorstand, Behörde), standard = Layout-Standard, lively = Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom (Pitch, Event)",
+      "type": "string",
+      "enum": [
+       "none",
+       "calm",
+       "standard",
+       "lively"
+      ]
+     },
+     "style": {
+      "type": "string",
+      "enum": [
+       "sachlich",
+       "mutig"
+      ],
+      "description": "Gestaltungsstil, beim Anlegen immer setzen (Design-Guide §6 „Stil des Decks“). Nach Anlass: mutig für Vortrag, Schule/Unterricht, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social; sachlich für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot. Steht im Kontext „Deck-Stil: …“ oder wünscht der Nutzer einen Stil, gilt der. mutig = kräftige Farbgründe, Plakat-Typo, mehr Farbflächen, markante Bilder."
+     },
+     "format": {
+      "description": "Folienformat; weglassen = 16:9-Präsentation",
+      "type": "string",
+      "enum": [
+       "16:9",
+       "4:3",
+       "1:1",
+       "4:5",
+       "9:16",
+       "a4",
+       "a4-quer",
+       "og",
+       "visitenkarte",
+       "panel"
+      ]
+     },
+     "tune": {
+      "type": "object",
+      "properties": {
+       "titleSize": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "normal",
+           "large",
+           "huge"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "headWeight": {
+        "anyOf": [
+         {
+          "type": "number",
+          "enum": [
+           300,
+           400,
+           500,
+           600,
+           700,
+           800,
+           900
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "headTracking": {
+        "anyOf": [
+         {
+          "type": "number",
+          "minimum": -0.05,
+          "maximum": 0.02
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "leading": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "tight",
+           "normal",
+           "open"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "labels": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "sentence",
+           "caps"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "labelFont": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "body",
+           "mono"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "margin": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "standard",
+           "generous",
+           "asymmetric"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "measure": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "narrow",
+           "standard",
+           "wide"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "rule": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "none",
+           "over",
+           "under"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "elements": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "line",
+           "plain",
+           "solid"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "signature": {
+        "anyOf": [
+         {
+          "type": "object",
+          "properties": {
+           "kind": {
+            "type": "string",
+            "enum": [
+             "none",
+             "rule",
+             "edge",
+             "passepartout"
+            ]
+           },
+           "color": {
+            "type": "string",
+            "enum": [
+             "accent",
+             "field",
+             "text"
+            ]
+           },
+           "size": {
+            "description": "px: Linienstärke bzw. Kantenbreite",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24
+           },
+           "length": {
+            "description": "rule: 64 px oder volle Satzbreite",
+            "type": "string",
+            "enum": [
+             "short",
+             "full"
+            ]
+           },
+           "side": {
+            "description": "edge",
+            "type": "string",
+            "enum": [
+             "left",
+             "top"
+            ]
+           }
+          },
+          "required": [
+           "kind"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "heroTone": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "normal",
+           "field",
+           "invert"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "field": {
+        "anyOf": [
+         {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "chart": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "focus",
+           "duo",
+           "tonal"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "images": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "natural",
+           "mono",
+           "duotone"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       }
+      },
+      "description": "Struktur-Tokens über dem Theme, auch über Katalog-Themes (Felder und Wirkung wie in customTheme). Wird mit dem Bestand gemischt; null entfernt einen Wert"
+     },
+     "film": {
+      "description": "Film statt Präsentation (Live-Demo, Erklärvideo): jede sichtbare Folie wird eine Szene mit Aufbau, Sprecherstimme (voice je Folie), Kamera und Demo-Layouts code/screen; export_deck mp4 rendert sie. read_guide Modul film",
+      "type": "object",
+      "properties": {
+       "voice": {
+        "description": "Sprecherstimme, lokal erzeugt: de = Deutsch (Standard), en = Englisch. Gesprochen wird jede Szene mit Sprechertext (voice der Folie); ohne Sprechertext läuft sie nach Aufbau und Lesezeit",
+        "type": "string",
+        "enum": [
+         "de",
+         "en"
+        ]
+       },
+       "speed": {
+        "description": "Sprechtempo 0.8–1.3, 1 = normal",
+        "type": "number"
+       },
+       "captions": {
+        "description": "satz = Untertitel ins Video eingebrannt, aus = nur .srt daneben (Standard)",
+        "type": "string",
+        "enum": [
+         "satz",
+         "aus"
+        ]
+       }
+      }
+     },
+     "override": {
+      "description": "Nur auf ausdrücklichen Wunsch des Nutzers: Begründung (z. B. Markenvorgabe), warum ein vom Theme-Lint abgelehntes Design so bleiben soll; Fehler werden dann zu Hinweisen",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+     }
+    },
+    "required": [
+     "title"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "update_deck",
+   "description": "Titel, Theme, Feinschliff (tune), Brand-Kit, Übergang, Modus, Briefing, Hintergrundmusik (Video) oder Film-Einstellungen (film) des Decks ändern.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 80
+     },
+     "brief": {
+      "type": "object",
+      "properties": {
+       "audience": {
+        "type": "string"
+       },
+       "goal": {
+        "type": "string"
+       },
+       "tone": {
+        "type": "string"
+       }
+      }
+     },
+     "theme": {
+      "description": "Katalog-Theme; entfernt ein eigenes Theme",
+      "type": "string",
+      "enum": [
+       "beratung",
+       "keynote",
+       "schweiz",
+       "redaktion",
+       "zen",
+       "plakat",
+       "magazin",
+       "neomono",
+       "pastell",
+       "corporate",
+       "midnight",
+       "editorial",
+       "graphite",
+       "ocean",
+       "swiss",
+       "forest",
+       "sunrise",
+       "atelier",
+       "signal",
+       "noir"
+      ]
+     },
+     "customTheme": {
+      "description": "Eigenes Theme setzen oder einzelne Werte ändern (Rest bleibt); null = zurück zum Katalog-Theme",
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 40,
+          "description": "Name, z. B. \"Nordlicht Finance\""
+         },
+         "bg": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Grund: fast neutrales Weiß, höchstens ein Hauch Tönung (#FAFAF8, #F5F3EE, #EFF2EE) oder tiefer Dunkelton (Nachtblau #121D33, Tannengrün #13251C, Aubergine, Graphit). Mitteltöne, Creme und Pastell lehnt der Theme-Lint ab. Kräftige Farbgründe nur mit vivid (Stil mutig)."
+         },
+         "text": {
+          "description": "Textfarbe; weglassen = automatisch passend",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         "accent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Hauptakzent mit Charakter (Zahlen, Hervorhebungen, Akzentflächen); wird bei Bedarf für Kontrast nachgedunkelt/aufgehellt"
+         },
+         "accent2": {
+          "description": "Zweitfarbe für Vergleichsserien und Duotone; weglassen = neutrales Grau (empfohlen: eine Akzentfarbe reicht)",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         "headFont": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Titelschrift: gebündelte Schrift oder Familie aus dem Schriftkatalog"
+         },
+         "bodyFont": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Textschrift (Sans empfohlen)"
+         },
+         "radius": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 28,
+          "description": "Eckenradius in px: 0–4 empfohlen; über 8 wirkt es schnell generiert"
+         },
+         "decor": {
+          "type": "string",
+          "enum": [
+           "none",
+           "blobs",
+           "glow",
+           "rings",
+           "grid",
+           "stripe",
+           "dots"
+          ],
+          "description": "Hintergrundmotiv; none empfohlen. blobs/glow (unscharfe Farbkreise) nur auf ausdrücklichen Wunsch"
+         },
+         "texture": {
+          "description": "feine Papierkörnung, nur auf Wunsch",
+          "type": "string",
+          "enum": [
+           "grain"
+          ]
+         },
+         "titleSize": {
+          "description": "large = Plakat-Titel (Vortrag, Swiss, Editorial); huge = übergroße Titel, nur im Stil mutig; normal = sachlich (Chef-Update, viele Daten)",
+          "type": "string",
+          "enum": [
+           "normal",
+           "large",
+           "huge"
+          ]
+         },
+         "titleWeight": {
+          "description": "regular wirkt edel und redaktionell (am besten mit Serif und titleSize large), bold sachlich und kräftig",
+          "type": "string",
+          "enum": [
+           "regular",
+           "bold"
+          ]
+         },
+         "rule": {
+          "description": "feine Linie: over = Kopflinie über dem Titel (Swiss, Redaktion), under = Trennlinie unter dem Kopf (Beratung), none = pur",
+          "type": "string",
+          "enum": [
+           "none",
+           "over",
+           "under"
+          ]
+         },
+         "sectionTone": {
+          "description": "Kapiteltrenner: accent = Akzentfläche (Standard), invert = Hell/Dunkel getauscht, normal = nur große Typo auf dem Grund",
+          "type": "string",
+          "enum": [
+           "normal",
+           "accent",
+           "invert"
+          ]
+         },
+         "vivid": {
+          "description": "nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf Papier- bzw. Dunkeltöne zu dämpfen; Textfarbe kommt automatisch mit Kontrast",
+          "type": "boolean"
+         },
+         "labelFont": {
+          "description": "mono = Eyebrow und Fußzeile in IBM Plex Mono (Magazin, Tech); body = Textschrift (Standard)",
+          "type": "string",
+          "enum": [
+           "body",
+           "mono"
+          ]
+         },
+         "elements": {
+          "description": "Bauteile (Design-Guide §6): line = offen, Kopflinien statt Kästen, kurze Striche als Marker (Standard, redaktionell, Beratung); plain = nur Typografie und Weißraum, keine Linien, große leichte Nummern (Keynote, Zen, Tech); solid = Akzentflächen für Hervorhebungen, nur im Stil mutig",
+          "type": "string",
+          "enum": [
+           "line",
+           "plain",
+           "solid"
+          ]
+         },
+         "field": {
+          "description": "Farbe großer Flächen (Kapitel, split/band, heroTone field); weglassen = accent. Nur als eigene Stimme, z. B. Signalgelb zu schwarzem Akzent",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         "headWeight": {
+          "description": "Titelgewicht, schlägt titleWeight; gebündelte Schriften nur 400/700",
+          "type": "number",
+          "enum": [
+           300,
+           400,
+           500,
+           600,
+           700,
+           800,
+           900
+          ]
+         },
+         "headTracking": {
+          "description": "Laufweite der Titel in em: −0.02 bis −0.04 für große Grotesk-Titel, sonst weglassen",
+          "type": "number",
+          "minimum": -0.05,
+          "maximum": 0.02
+         },
+         "leading": {
+          "description": "Zeilenabstand: tight = dicht (große Titel), open = luftig (Lesetext, Zen)",
+          "type": "string",
+          "enum": [
+           "tight",
+           "normal",
+           "open"
+          ]
+         },
+         "labels": {
+          "description": "caps = Eyebrow und Fußzeile in Versalien",
+          "type": "string",
+          "enum": [
+           "sentence",
+           "caps"
+          ]
+         },
+         "margin": {
+          "description": "Ränder: generous = mehr Luft, asymmetric = breiter Bundsteg links (editorial)",
+          "type": "string",
+          "enum": [
+           "standard",
+           "generous",
+           "asymmetric"
+          ]
+         },
+         "measure": {
+          "description": "Satzbreite: narrow ≈ 760 px (ruhig, nicht mit titleSize huge), wide = volle Breite",
+          "type": "string",
+          "enum": [
+           "narrow",
+           "standard",
+           "wide"
+          ]
+         },
+         "signature": {
+          "description": "Genau ein wiederkehrendes Element statt Deko: rule = Haarlinie über dem Titel, edge = Farbkante am Folienrand, passepartout = Rahmenlinie mit Abstand",
+          "type": "object",
+          "properties": {
+           "kind": {
+            "type": "string",
+            "enum": [
+             "none",
+             "rule",
+             "edge",
+             "passepartout"
+            ]
+           },
+           "color": {
+            "type": "string",
+            "enum": [
+             "accent",
+             "field",
+             "text"
+            ]
+           },
+           "size": {
+            "description": "px: Linienstärke bzw. Kantenbreite",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24
+           },
+           "length": {
+            "description": "rule: 64 px oder volle Satzbreite",
+            "type": "string",
+            "enum": [
+             "short",
+             "full"
+            ]
+           },
+           "side": {
+            "description": "edge",
+            "type": "string",
+            "enum": [
+             "left",
+             "top"
+            ]
+           }
+          },
+          "required": [
+           "kind"
+          ]
+         },
+         "heroTone": {
+          "description": "Titel- und Schlussfolie: field = Farbfläche, invert = Hell/Dunkel getauscht, normal = Grund",
+          "type": "string",
+          "enum": [
+           "normal",
+           "field",
+           "invert"
+          ]
+         },
+         "chart": {
+          "description": "Diagrammfarben: focus = Akzent + Grau (Standard), tonal = Akzent in Helligkeitsstufen, duo = zwei Akzente (mit accent2)",
+          "type": "string",
+          "enum": [
+           "focus",
+           "duo",
+           "tonal"
+          ]
+         },
+         "images": {
+          "description": "ein Bildstil fürs ganze Deck: natural, mono (hält uneinheitliche Fotos zusammen), duotone (Stil mutig)",
+          "type": "string",
+          "enum": [
+           "natural",
+           "mono",
+           "duotone"
+          ]
+         }
+        }
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "brand": {
+      "description": "null entfernt das Brand-Kit",
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "primary": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Markenfarbe #RRGGBB"
+         },
+         "secondary": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         "logo": {
+          "description": "Pfad zum Logo (aus find_images)",
+          "type": "string"
+         },
+         "logoDark": {
+          "description": "Logo für dunklen Grund; fehlt es, gilt logo",
+          "type": "string"
+         },
+         "headFont": {
+          "description": "Headline-Schrift; Office: Arial, Calibri, Georgia; alle übrigen werden eingebettet, siehe customTheme.headFont",
+          "type": "string",
+          "maxLength": 60
+         },
+         "bodyFont": {
+          "description": "Schrift für Fließtext",
+          "type": "string",
+          "maxLength": 60
+         },
+         "lock": {
+          "description": "Brand-Lock; setzt nur der Nutzer in den Einstellungen, nie selbst setzen",
+          "type": "boolean"
+         }
+        },
+        "required": [
+         "primary"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "transition": {
+      "type": "string",
+      "enum": [
+       "none",
+       "fade",
+       "push",
+       "morph",
+       "dissolve",
+       "wipe",
+       "cover",
+       "split",
+       "circle",
+       "zoom",
+       "slide",
+       "stack",
+       "color"
+      ]
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "click",
+       "auto"
+      ]
+     },
+     "motion": {
+      "description": "Bewegungsstil wie Canva „Magic Animate“: none = keine Aufbauten, calm = nur Einblenden (Vorstand, Behörde), standard = Layout-Standard, lively = Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom (Pitch, Event)",
+      "type": "string",
+      "enum": [
+       "none",
+       "calm",
+       "standard",
+       "lively"
+      ]
+     },
+     "style": {
+      "type": "string",
+      "enum": [
+       "sachlich",
+       "mutig"
+      ],
+      "description": "Gestaltungsstil, beim Anlegen immer setzen (Design-Guide §6 „Stil des Decks“). Nach Anlass: mutig für Vortrag, Schule/Unterricht, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social; sachlich für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot. Steht im Kontext „Deck-Stil: …“ oder wünscht der Nutzer einen Stil, gilt der. mutig = kräftige Farbgründe, Plakat-Typo, mehr Farbflächen, markante Bilder."
+     },
+     "shuffle": {
+      "description": "Farbvariante des Themes wie Canva „Stile mischen“: 0 = Original, 1 = Akzente getauscht, 2 = Hell/Dunkel getauscht, 3 = beides, 4/5 = getönter Grund",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5
+     },
+     "fonts": {
+      "description": "Schriftpaar [Titel, Text] über das Theme legen; null = Theme-Schriften",
+      "anyOf": [
+       {
+        "type": "array",
+        "items": [
+         {
+          "type": "string",
+          "maxLength": 60
+         },
+         {
+          "type": "string",
+          "maxLength": 60
+         }
+        ],
+        "additionalItems": false,
+        "minItems": 2,
+        "maxItems": 2
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "format": {
+      "description": "Magic Resize: Deck in ein anderes Format bringen; freie Elemente werden mitskaliert, Layouts ordnen sich neu an. Danach render_overview prüfen.",
+      "type": "string",
+      "enum": [
+       "16:9",
+       "4:3",
+       "1:1",
+       "4:5",
+       "9:16",
+       "a4",
+       "a4-quer",
+       "og",
+       "visitenkarte",
+       "panel"
+      ]
+     },
+     "music": {
+      "description": "Hintergrundmusik im Video-Export (mp4, clips), leise unter allem, weicht der Sprache automatisch; nur auf Wunsch oder bei Kompilationen. null = entfernen",
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "src": {
+          "type": "string",
+          "minLength": 1,
+          "description": "asset://-Pfad aus find_music oder absoluter Pfad einer Audiodatei"
+         },
+         "volume": {
+          "description": "0–1, Standard 0,25; dezent bleiben",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+         },
+         "credit": {
+          "description": "Nachweis aus find_music (bei CC BY Pflicht), zusätzlich in die Notes der letzten Folie",
+          "type": "string",
+          "maxLength": 300
+         }
+        },
+        "required": [
+         "src"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "videoRes": {
+      "description": "Auflösung im Video-Export (mp4, clips): Standard 1080p; 4k/8k nur auf Wunsch (8K ≈ 16× Rechenzeit von 1080p), nie größer als die Quelle; null = Standard",
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "720p",
+         "1080p",
+         "1440p",
+         "4k",
+         "8k"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "tune": {
+      "type": "object",
+      "properties": {
+       "titleSize": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "normal",
+           "large",
+           "huge"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "headWeight": {
+        "anyOf": [
+         {
+          "type": "number",
+          "enum": [
+           300,
+           400,
+           500,
+           600,
+           700,
+           800,
+           900
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "headTracking": {
+        "anyOf": [
+         {
+          "type": "number",
+          "minimum": -0.05,
+          "maximum": 0.02
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "leading": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "tight",
+           "normal",
+           "open"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "labels": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "sentence",
+           "caps"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "labelFont": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "body",
+           "mono"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "margin": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "standard",
+           "generous",
+           "asymmetric"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "measure": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "narrow",
+           "standard",
+           "wide"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "rule": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "none",
+           "over",
+           "under"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "elements": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "line",
+           "plain",
+           "solid"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "signature": {
+        "anyOf": [
+         {
+          "type": "object",
+          "properties": {
+           "kind": {
+            "type": "string",
+            "enum": [
+             "none",
+             "rule",
+             "edge",
+             "passepartout"
+            ]
+           },
+           "color": {
+            "type": "string",
+            "enum": [
+             "accent",
+             "field",
+             "text"
+            ]
+           },
+           "size": {
+            "description": "px: Linienstärke bzw. Kantenbreite",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 24
+           },
+           "length": {
+            "description": "rule: 64 px oder volle Satzbreite",
+            "type": "string",
+            "enum": [
+             "short",
+             "full"
+            ]
+           },
+           "side": {
+            "description": "edge",
+            "type": "string",
+            "enum": [
+             "left",
+             "top"
+            ]
+           }
+          },
+          "required": [
+           "kind"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "heroTone": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "normal",
+           "field",
+           "invert"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "field": {
+        "anyOf": [
+         {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "chart": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "focus",
+           "duo",
+           "tonal"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "images": {
+        "anyOf": [
+         {
+          "type": "string",
+          "enum": [
+           "natural",
+           "mono",
+           "duotone"
+          ]
+         },
+         {
+          "type": "null"
+         }
+        ]
+       }
+      },
+      "description": "Struktur-Tokens über dem Theme, auch über Katalog-Themes (Felder und Wirkung wie in customTheme). Wird mit dem Bestand gemischt; null entfernt einen Wert"
+     },
+     "film": {
+      "description": "Film-Einstellungen setzen oder einzelne ändern (Rest bleibt); null = kein Film mehr (wieder Präsentation). read_guide Modul film",
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "voice": {
+          "description": "de, en; null = Standard (de)",
+          "anyOf": [
+           {
+            "type": "string",
+            "enum": [
+             "de",
+             "en"
+            ]
+           },
+           {
+            "type": "null"
+           }
+          ]
+         },
+         "speed": {
+          "description": "Sprechtempo 0.8–1.3, 1 = normal",
+          "type": "number"
+         },
+         "captions": {
+          "description": "satz = Untertitel ins Video eingebrannt, aus = nur .srt daneben (Standard)",
+          "type": "string",
+          "enum": [
+           "satz",
+           "aus"
+          ]
+         }
+        }
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "override": {
+      "description": "Nur auf ausdrücklichen Wunsch des Nutzers: Begründung (z. B. Markenvorgabe), warum ein vom Theme-Lint abgelehntes Design so bleiben soll; Fehler werden dann zu Hinweisen",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "add_slides",
+   "description": "Folien im Batch anhängen (oder an Position `at` einfügen). Gibt pro Folie Autofit und Lint zurück – Fehler müssen behoben werden.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "slides": {
+      "minItems": 1,
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "layout": {
+         "type": "string",
+         "enum": [
+          "cover",
+          "agenda",
+          "section",
+          "statement",
+          "bullets",
+          "two-column",
+          "image-text",
+          "kpi-grid",
+          "chart",
+          "timeline",
+          "process",
+          "closing",
+          "photo",
+          "gallery",
+          "quote",
+          "blank",
+          "summary",
+          "options",
+          "matrix",
+          "table",
+          "big-number",
+          "doc-text",
+          "offer",
+          "flyer",
+          "flyer-back",
+          "icon-grid",
+          "pros-cons",
+          "problem-solution",
+          "team",
+          "pricing",
+          "funnel",
+          "market-size",
+          "logos",
+          "application-cover",
+          "certificate",
+          "invitation",
+          "letter",
+          "business-card",
+          "stream-screen",
+          "panel",
+          "cv",
+          "menu",
+          "clip",
+          "schnitt",
+          "code",
+          "screen",
+          "gantt"
+         ]
+        },
+        "variant": {
+         "type": "string"
+        },
+        "content": {
+         "type": "object",
+         "propertyNames": {
+          "type": "string"
+         },
+         "additionalProperties": {},
+         "description": "Inhalt nach dem Schema des Layouts (siehe Katalog)"
+        },
+        "build": {
+         "type": "string",
+         "enum": [
+          "none",
+          "fade",
+          "list",
+          "stagger",
+          "wipe",
+          "zoom-kpi",
+          "pan",
+          "pop",
+          "words",
+          "photo"
+         ],
+         "description": "Animations-Preset; weglassen = Default des Layouts"
+        },
+        "transition": {
+         "type": "string",
+         "enum": [
+          "none",
+          "fade",
+          "push",
+          "morph",
+          "dissolve",
+          "wipe",
+          "cover",
+          "split",
+          "circle",
+          "zoom",
+          "slide",
+          "stack",
+          "color"
+         ],
+         "description": "Übergang zu dieser Folie; weglassen = Deck-Übergang. Praktisch nur für morph: wörtlich gleicher Text, dasselbe Foto oder derselbe Platz im Layout wandert von der vorigen Folie herüber (Design-Guide §8). In Video-Decks (MP4): fade, dissolve u. a. = echte Überblendung zur vorigen Folie, color = über Schwarz, none = harter Schnitt zwischen zwei Clips (Zwischentitel blenden dann über Schwarz); gezielt an Zwischentiteln, Orts- oder Kapitelwechseln (Guide §11)"
+        },
+        "tone": {
+         "description": "Folien-Ton; weglassen = Standard des Layouts",
+         "type": "string",
+         "enum": [
+          "normal",
+          "accent",
+          "invert"
+         ]
+        },
+        "decor": {
+         "description": "Dekor-Motiv; weglassen = Standard des Themes",
+         "type": "string",
+         "enum": [
+          "none",
+          "blobs",
+          "glow",
+          "rings",
+          "grid",
+          "stripe",
+          "dots"
+         ]
+        },
+        "frame": {
+         "description": "Komposition: top = Titel oben (Standard), split = Titel auf Akzentfläche links, band = Titel im Farbband oben, center = Kopf zentriert. Nur die im Katalog genannten Frames des Layouts.",
+         "type": "string",
+         "enum": [
+          "top",
+          "split",
+          "band",
+          "center"
+         ]
+        },
+        "notes": {
+         "description": "Speaker Notes",
+         "type": "string",
+         "maxLength": 1500
+        },
+        "items": {
+         "description": "Freie Elemente über dem Layout (px auf 1280×720). Nur für Layout blank oder wenn der Nutzer frei gestalten will.",
+         "maxItems": 60,
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "id": {
+            "description": "weglassen = neu; vorhandene ID = dieses Element ersetzen",
+            "type": "string",
+            "maxLength": 40
+           },
+           "kind": {
+            "type": "string",
+            "enum": [
+             "text",
+             "shape",
+             "image",
+             "icon",
+             "chart",
+             "video",
+             "audio",
+             "qr",
+             "graphic",
+             "table"
+            ],
+            "description": "qr: text = URL; graphic: handgezeichnete Deko (graphic = Name), Farbe über color; table: cells, Schrift über size/color, Linien über stroke"
+           },
+           "group": {
+            "description": "gleiche ID = Gruppe (zusammen verschieben/skalieren)",
+            "type": "string",
+            "maxLength": 40
+           },
+           "x": {
+            "type": "number",
+            "minimum": -1280,
+            "maximum": 2560
+           },
+           "y": {
+            "type": "number",
+            "minimum": -720,
+            "maximum": 1440
+           },
+           "w": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 3000
+           },
+           "h": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 3000,
+            "description": "Text: wird aus dem Inhalt berechnet, trotzdem angeben"
+           },
+           "rot": {
+            "type": "number",
+            "minimum": -360,
+            "maximum": 360
+           },
+           "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+           },
+           "locked": {
+            "type": "boolean"
+           },
+           "anim": {
+            "description": "Auftritt beim Präsentieren wie in Canva (je ein Klick): typewriter/ascend nur für Text, breathe pulsiert ohne Klick, draw zeichnet Linie, Pfeil, Umriss oder Icon. Design-Guide §8",
+            "type": "string",
+            "enum": [
+             "none",
+             "fade",
+             "float",
+             "pan",
+             "drift",
+             "pop",
+             "zoom",
+             "tumble",
+             "stomp",
+             "baseline",
+             "wipe",
+             "typewriter",
+             "ascend",
+             "breathe",
+             "draw"
+            ]
+           },
+           "animDir": {
+            "description": "Richtung der Bewegung bei pan, drift, wipe, float (Standard: pan/drift/wipe nach rechts, float nach oben)",
+            "type": "string",
+            "enum": [
+             "right",
+             "left",
+             "up",
+             "down"
+            ]
+           },
+           "animSpeed": {
+            "description": "Tempo der Animation; weglassen = normal",
+            "type": "string",
+            "enum": [
+             "slow",
+             "fast"
+            ]
+           },
+           "animStart": {
+            "description": "Start wie in PowerPoint: click = bei Klick, with = mit vorherigem, after = nach vorherigem; weglassen = je ein Klick (Selbstlauf: nacheinander). Nicht für breathe",
+            "type": "string",
+            "enum": [
+             "click",
+             "with",
+             "after"
+            ]
+           },
+           "animDelay": {
+            "description": "Verzögerung vor dem Auftritt in Sekunden. Nicht für breathe",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10
+           },
+           "keys": {
+            "description": "Nur im Film: Bewegung je Takt, zu Beginn von step gleitet das Element auf diese Werte (px wie x/y/w/h). Präsentation und PowerPoint zeigen die Grundlage. read_guide Modul film",
+            "maxItems": 12,
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "step": {
+               "type": "integer",
+               "minimum": 0,
+               "maximum": 20,
+               "description": "Takt (0 = Szenenbeginn, [klick] im Sprechertext = nächster)"
+              },
+              "x": {
+               "type": "number",
+               "minimum": -2000,
+               "maximum": 4000
+              },
+              "y": {
+               "type": "number",
+               "minimum": -2000,
+               "maximum": 4000
+              },
+              "w": {
+               "type": "number",
+               "exclusiveMinimum": 0,
+               "maximum": 4000
+              },
+              "h": {
+               "type": "number",
+               "exclusiveMinimum": 0,
+               "maximum": 4000
+              },
+              "rot": {
+               "type": "number",
+               "minimum": -720,
+               "maximum": 720
+              },
+              "opacity": {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 1
+              },
+              "fill": {
+               "type": "string",
+               "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "color": {
+               "type": "string",
+               "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "ease": {
+               "description": "weich (Standard), feder = federt leicht über das Ziel (sparsam), linear",
+               "type": "string",
+               "enum": [
+                "weich",
+                "feder",
+                "linear"
+               ]
+              },
+              "ms": {
+               "description": "Dauer, Standard 800",
+               "type": "number",
+               "minimum": 100,
+               "maximum": 5000
+              }
+             },
+             "required": [
+              "step"
+             ]
+            }
+           },
+           "text": {
+            "type": "string",
+            "maxLength": 600
+           },
+           "font": {
+            "description": "head/body = Theme-Schrift, sonst Schriftname wie customTheme.headFont",
+            "type": "string",
+            "maxLength": 60
+           },
+           "size": {
+            "description": "Schriftgröße in px (1 px = 0,75 pt)",
+            "type": "number",
+            "minimum": 8,
+            "maximum": 400
+           },
+           "color": {
+            "description": "Text- oder Iconfarbe; weglassen = Theme",
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+           },
+           "bold": {
+            "type": "boolean"
+           },
+           "italic": {
+            "type": "boolean"
+           },
+           "underline": {
+            "type": "boolean"
+           },
+           "upper": {
+            "type": "boolean"
+           },
+           "list": {
+            "description": "Aufzählung: jede Zeile des Texts ein Punkt bzw. nummeriert",
+            "type": "string",
+            "enum": [
+             "bullet",
+             "number"
+            ]
+           },
+           "effect": {
+            "description": "Texteffekt: shadow, lift (weicher Schatten), hollow (nur Kontur), neon (Leuchten)",
+            "type": "string",
+            "enum": [
+             "none",
+             "shadow",
+             "lift",
+             "hollow",
+             "neon"
+            ]
+           },
+           "effectColor": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+           },
+           "align": {
+            "type": "string",
+            "enum": [
+             "left",
+             "center",
+             "right"
+            ]
+           },
+           "lineHeight": {
+            "type": "number",
+            "minimum": 0.7,
+            "maximum": 3
+           },
+           "spacing": {
+            "type": "number",
+            "minimum": -0.1,
+            "maximum": 0.5
+           },
+           "shape": {
+            "type": "string",
+            "enum": [
+             "rect",
+             "ellipse",
+             "triangle",
+             "diamond",
+             "hexagon",
+             "star",
+             "arrow",
+             "line",
+             "chevron",
+             "pentagon",
+             "trapezoid",
+             "parallelogram",
+             "rtTriangle",
+             "octagon",
+             "donut",
+             "plus",
+             "heart",
+             "star4",
+             "star6",
+             "star8",
+             "star12"
+            ]
+           },
+           "lineStart": {
+            "type": "string",
+            "enum": [
+             "none",
+             "arrow",
+             "triangle",
+             "dot"
+            ]
+           },
+           "lineEnd": {
+            "description": "Linienenden der Form line: arrow = offene Spitze, triangle = gefüllt, dot = Punkt",
+            "type": "string",
+            "enum": [
+             "none",
+             "arrow",
+             "triangle",
+             "dot"
+            ]
+           },
+           "from": {
+            "type": "string",
+            "maxLength": 40
+           },
+           "to": {
+            "description": "nur Form line: IDs zweier Elemente; die Linie verbindet sie und wandert beim Verschieben mit (Konnektor), x/y/w egal",
+            "type": "string",
+            "maxLength": 40
+           },
+           "dash": {
+            "description": "Strichart von Linie oder Umriss",
+            "type": "string",
+            "enum": [
+             "solid",
+             "dash",
+             "dot"
+            ]
+           },
+           "fill": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+           },
+           "fill2": {
+            "description": "Verlauf zu dieser Farbe (Rechteck/Ellipse)",
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+           },
+           "gradAngle": {
+            "description": "Winkel des Verlaufs in Grad, Standard 135",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 360
+           },
+           "stroke": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+           },
+           "strokeW": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 40
+           },
+           "radius": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 400
+           },
+           "shadow": {
+            "type": "boolean"
+           },
+           "src": {
+            "description": "asset://-Pfad aus find_images",
+            "type": "string"
+           },
+           "look": {
+            "type": "string",
+            "enum": [
+             "natural",
+             "duotone",
+             "mono"
+            ]
+           },
+           "mask": {
+            "description": "Bildrahmen (Form)",
+            "type": "string",
+            "enum": [
+             "circle",
+             "arch",
+             "hexagon",
+             "diamond",
+             "octagon",
+             "star",
+             "heart"
+            ]
+           },
+           "adjust": {
+            "description": "Bildanpassung in Prozent",
+            "type": "object",
+            "properties": {
+             "bright": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+             },
+             "contrast": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+             },
+             "sat": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+             },
+             "blur": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+             }
+            }
+           },
+           "round": {
+            "type": "boolean"
+           },
+           "flipX": {
+            "type": "boolean"
+           },
+           "crop": {
+            "description": "Bildausschnitt in Anteilen; w/h des Elements sollte zum Ausschnitt passen",
+            "type": "object",
+            "properties": {
+             "x": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+             },
+             "y": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+             },
+             "w": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 1
+             },
+             "h": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 1
+             }
+            },
+            "required": [
+             "x",
+             "y",
+             "w",
+             "h"
+            ]
+           },
+           "alt": {
+            "description": "Alternativtext: was das Bild zeigt (Screenreader, PPTX)",
+            "type": "string",
+            "maxLength": 250
+           },
+           "link": {
+            "description": "Klickziel: https://… oder #N = Sprung zu Folie N",
+            "type": "string",
+            "maxLength": 500,
+            "pattern": "^(https?:\\/\\/|mailto:|#\\d+$)"
+           },
+           "poster": {
+            "type": "string"
+           },
+           "autoplay": {
+            "type": "boolean"
+           },
+           "loop": {
+            "type": "boolean"
+           },
+           "muted": {
+            "type": "boolean"
+           },
+           "icon": {
+            "description": "lucide-Name in kebab-case",
+            "type": "string",
+            "maxLength": 40
+           },
+           "graphic": {
+            "description": "Deko-Grafik: squiggle, swoosh, scribble, arrow, burst, waves, sparkle, blob (siehe GRAPHICS)",
+            "type": "string",
+            "maxLength": 20
+           },
+           "spec": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "bar",
+               "hbar",
+               "stacked",
+               "waterfall",
+               "line",
+               "donut"
+              ]
+             },
+             "categories": {
+              "minItems": 1,
+              "maxItems": 24,
+              "type": "array",
+              "items": {
+               "type": "string"
+              }
+             },
+             "series": {
+              "minItems": 1,
+              "maxItems": 6,
+              "type": "array",
+              "items": {
+               "type": "object",
+               "properties": {
+                "name": {
+                 "type": "string"
+                },
+                "values": {
+                 "type": "array",
+                 "items": {
+                  "type": "number"
+                 }
+                }
+               },
+               "required": [
+                "name",
+                "values"
+               ]
+              }
+             },
+             "unit": {
+              "type": "string",
+              "maxLength": 12
+             },
+             "link": {
+              "description": "Excel-Quelle (Deckwerk Pro); setzt die App, nie die KI",
+              "type": "object",
+              "properties": {
+               "file": {
+                "type": "string"
+               },
+               "sheet": {
+                "type": "string"
+               },
+               "range": {
+                "type": "string",
+                "pattern": "^\\$?[A-Z]{1,3}\\$?\\d+:\\$?[A-Z]{1,3}\\$?\\d+$"
+               }
+              },
+              "required": [
+               "file",
+               "range"
+              ]
+             }
+            },
+            "required": [
+             "type",
+             "categories",
+             "series"
+            ]
+           },
+           "cells": {
+            "description": "nur table: Zeilen mit gleich vielen Zellen, erste Zeile = Kopfzeile; Zahlen stehen rechtsbündig. h ergibt sich aus dem Inhalt",
+            "minItems": 1,
+            "maxItems": 16,
+            "type": "array",
+            "items": {
+             "minItems": 1,
+             "maxItems": 8,
+             "type": "array",
+             "items": {
+              "type": "string",
+              "maxLength": 200
+             }
+            }
+           }
+          },
+          "required": [
+           "kind",
+           "x",
+           "y",
+           "w",
+           "h"
+          ]
+         }
+        },
+        "bg": {
+         "type": "object",
+         "properties": {
+          "color": {
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "image": {
+           "description": "asset://-Pfad",
+           "type": "string"
+          },
+          "gradient": {
+           "description": "Verlauf von → nach",
+           "type": "array",
+           "items": [
+            {
+             "type": "string",
+             "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            {
+             "type": "string",
+             "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+           ],
+           "additionalItems": false,
+           "minItems": 2,
+           "maxItems": 2
+          },
+          "angle": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 360
+          }
+         },
+         "description": "Eigener Folienhintergrund statt Theme"
+        },
+        "voice": {
+         "type": "string",
+         "maxLength": 1500,
+         "description": "Nur Film-Decks: Sprechertext der Szene in ganzen Sätzen, höchstens ~40 Wörter; [klick] startet den nächsten Takt (Aufbau, Mauszeiger, Kamera) mit dem folgenden Satz. read_guide Modul film"
+        },
+        "duration": {
+         "type": "number",
+         "minimum": 1,
+         "maximum": 120,
+         "description": "Nur Film-Decks: Szenenlänge in s; weglassen = aus Stimme, Aufbau und Lesezeit (die Stimme wird nie abgeschnitten)"
+        },
+        "camera": {
+         "maxItems": 8,
+         "type": "array",
+         "items": {
+          "type": "object",
+          "properties": {
+           "step": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20,
+            "description": "Takt, mit dem die Kamera fährt (0 = Szenenbeginn)"
+           },
+           "box": {
+            "description": "[x, y, w, h] als Anteile der Folie (0,0 = oben links): dieser Ausschnitt bleibt ganz sichtbar; weglassen = zurück zur ganzen Folie",
+            "type": "array",
+            "items": [
+             {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+             },
+             {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+             },
+             {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1
+             },
+             {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1
+             }
+            ],
+            "additionalItems": false,
+            "minItems": 4,
+            "maxItems": 4
+           }
+          },
+          "required": [
+           "step"
+          ]
+         },
+         "description": "Nur Film-Decks: Kamerafahrt je Takt (0,8 s weich), sparsam: 1–2 Fahrten auf das, worüber die Stimme gerade spricht. read_guide Modul film"
+        }
+       },
+       "required": [
+        "layout",
+        "content"
+       ]
+      }
+     },
+     "at": {
+      "description": "Einfügeposition (0-basiert); weglassen = ans Ende",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+     }
+    },
+    "required": [
+     "slides"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "update_slide",
+   "description": "Eine Folie ändern: Inhalt (Patch, wird mit dem Bestand gemischt), Layout, Variante, Build, Notes, Ausblenden, im Film Sprechertext, Dauer und Kamera. Gibt Autofit und Lint zurück.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "layout": {
+      "description": "Layout wechseln; dann content vollständig mitgeben",
+      "type": "string",
+      "enum": [
+       "cover",
+       "agenda",
+       "section",
+       "statement",
+       "bullets",
+       "two-column",
+       "image-text",
+       "kpi-grid",
+       "chart",
+       "timeline",
+       "process",
+       "closing",
+       "photo",
+       "gallery",
+       "quote",
+       "blank",
+       "summary",
+       "options",
+       "matrix",
+       "table",
+       "big-number",
+       "doc-text",
+       "offer",
+       "flyer",
+       "flyer-back",
+       "icon-grid",
+       "pros-cons",
+       "problem-solution",
+       "team",
+       "pricing",
+       "funnel",
+       "market-size",
+       "logos",
+       "application-cover",
+       "certificate",
+       "invitation",
+       "letter",
+       "business-card",
+       "stream-screen",
+       "panel",
+       "cv",
+       "menu",
+       "clip",
+       "schnitt",
+       "code",
+       "screen",
+       "gantt"
+      ]
+     },
+     "variant": {
+      "type": [
+       "string",
+       "null"
+      ]
+     },
+     "tone": {
+      "description": "null = Standard des Layouts",
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "normal",
+         "accent",
+         "invert"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "decor": {
+      "description": "null = Standard des Themes",
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "none",
+         "blobs",
+         "glow",
+         "rings",
+         "grid",
+         "stripe",
+         "dots"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "frame": {
+      "description": "Komposition: top = Titel oben (Standard), split = Titel auf Akzentfläche links, band = Titel im Farbband oben, center = Kopf zentriert. Nur die im Katalog genannten Frames des Layouts.",
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "top",
+         "split",
+         "band",
+         "center"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "content": {
+      "description": "Nur geänderte Felder; Arrays werden komplett ersetzt",
+      "type": "object",
+      "propertyNames": {
+       "type": "string"
+      },
+      "additionalProperties": {}
+     },
+     "build": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "none",
+         "fade",
+         "list",
+         "stagger",
+         "wipe",
+         "zoom-kpi",
+         "pan",
+         "pop",
+         "words",
+         "photo"
+        ],
+        "description": "Animations-Preset; weglassen = Default des Layouts"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "transition": {
+      "description": "null = Deck-Übergang",
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "none",
+         "fade",
+         "push",
+         "morph",
+         "dissolve",
+         "wipe",
+         "cover",
+         "split",
+         "circle",
+         "zoom",
+         "slide",
+         "stack",
+         "color"
+        ],
+        "description": "Übergang zu dieser Folie; weglassen = Deck-Übergang. Praktisch nur für morph: wörtlich gleicher Text, dasselbe Foto oder derselbe Platz im Layout wandert von der vorigen Folie herüber (Design-Guide §8). In Video-Decks (MP4): fade, dissolve u. a. = echte Überblendung zur vorigen Folie, color = über Schwarz, none = harter Schnitt zwischen zwei Clips (Zwischentitel blenden dann über Schwarz); gezielt an Zwischentiteln, Orts- oder Kapitelwechseln (Guide §11)"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "notes": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 1500
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "items": {
+      "description": "Ersetzt alle freien Elemente der Folie (vorhandene IDs mitgeben, um sie zu behalten); null = alle entfernen",
+      "anyOf": [
+       {
+        "maxItems": 60,
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "id": {
+           "description": "weglassen = neu; vorhandene ID = dieses Element ersetzen",
+           "type": "string",
+           "maxLength": 40
+          },
+          "kind": {
+           "type": "string",
+           "enum": [
+            "text",
+            "shape",
+            "image",
+            "icon",
+            "chart",
+            "video",
+            "audio",
+            "qr",
+            "graphic",
+            "table"
+           ],
+           "description": "qr: text = URL; graphic: handgezeichnete Deko (graphic = Name), Farbe über color; table: cells, Schrift über size/color, Linien über stroke"
+          },
+          "group": {
+           "description": "gleiche ID = Gruppe (zusammen verschieben/skalieren)",
+           "type": "string",
+           "maxLength": 40
+          },
+          "x": {
+           "type": "number",
+           "minimum": -1280,
+           "maximum": 2560
+          },
+          "y": {
+           "type": "number",
+           "minimum": -720,
+           "maximum": 1440
+          },
+          "w": {
+           "type": "number",
+           "minimum": 1,
+           "maximum": 3000
+          },
+          "h": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 3000,
+           "description": "Text: wird aus dem Inhalt berechnet, trotzdem angeben"
+          },
+          "rot": {
+           "type": "number",
+           "minimum": -360,
+           "maximum": 360
+          },
+          "opacity": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 1
+          },
+          "locked": {
+           "type": "boolean"
+          },
+          "anim": {
+           "description": "Auftritt beim Präsentieren wie in Canva (je ein Klick): typewriter/ascend nur für Text, breathe pulsiert ohne Klick, draw zeichnet Linie, Pfeil, Umriss oder Icon. Design-Guide §8",
+           "type": "string",
+           "enum": [
+            "none",
+            "fade",
+            "float",
+            "pan",
+            "drift",
+            "pop",
+            "zoom",
+            "tumble",
+            "stomp",
+            "baseline",
+            "wipe",
+            "typewriter",
+            "ascend",
+            "breathe",
+            "draw"
+           ]
+          },
+          "animDir": {
+           "description": "Richtung der Bewegung bei pan, drift, wipe, float (Standard: pan/drift/wipe nach rechts, float nach oben)",
+           "type": "string",
+           "enum": [
+            "right",
+            "left",
+            "up",
+            "down"
+           ]
+          },
+          "animSpeed": {
+           "description": "Tempo der Animation; weglassen = normal",
+           "type": "string",
+           "enum": [
+            "slow",
+            "fast"
+           ]
+          },
+          "animStart": {
+           "description": "Start wie in PowerPoint: click = bei Klick, with = mit vorherigem, after = nach vorherigem; weglassen = je ein Klick (Selbstlauf: nacheinander). Nicht für breathe",
+           "type": "string",
+           "enum": [
+            "click",
+            "with",
+            "after"
+           ]
+          },
+          "animDelay": {
+           "description": "Verzögerung vor dem Auftritt in Sekunden. Nicht für breathe",
+           "type": "number",
+           "minimum": 0,
+           "maximum": 10
+          },
+          "keys": {
+           "description": "Nur im Film: Bewegung je Takt, zu Beginn von step gleitet das Element auf diese Werte (px wie x/y/w/h). Präsentation und PowerPoint zeigen die Grundlage. read_guide Modul film",
+           "maxItems": 12,
+           "type": "array",
+           "items": {
+            "type": "object",
+            "properties": {
+             "step": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Takt (0 = Szenenbeginn, [klick] im Sprechertext = nächster)"
+             },
+             "x": {
+              "type": "number",
+              "minimum": -2000,
+              "maximum": 4000
+             },
+             "y": {
+              "type": "number",
+              "minimum": -2000,
+              "maximum": 4000
+             },
+             "w": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 4000
+             },
+             "h": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 4000
+             },
+             "rot": {
+              "type": "number",
+              "minimum": -720,
+              "maximum": 720
+             },
+             "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+             },
+             "fill": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+             },
+             "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+             },
+             "ease": {
+              "description": "weich (Standard), feder = federt leicht über das Ziel (sparsam), linear",
+              "type": "string",
+              "enum": [
+               "weich",
+               "feder",
+               "linear"
+              ]
+             },
+             "ms": {
+              "description": "Dauer, Standard 800",
+              "type": "number",
+              "minimum": 100,
+              "maximum": 5000
+             }
+            },
+            "required": [
+             "step"
+            ]
+           }
+          },
+          "text": {
+           "type": "string",
+           "maxLength": 600
+          },
+          "font": {
+           "description": "head/body = Theme-Schrift, sonst Schriftname wie customTheme.headFont",
+           "type": "string",
+           "maxLength": 60
+          },
+          "size": {
+           "description": "Schriftgröße in px (1 px = 0,75 pt)",
+           "type": "number",
+           "minimum": 8,
+           "maximum": 400
+          },
+          "color": {
+           "description": "Text- oder Iconfarbe; weglassen = Theme",
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "bold": {
+           "type": "boolean"
+          },
+          "italic": {
+           "type": "boolean"
+          },
+          "underline": {
+           "type": "boolean"
+          },
+          "upper": {
+           "type": "boolean"
+          },
+          "list": {
+           "description": "Aufzählung: jede Zeile des Texts ein Punkt bzw. nummeriert",
+           "type": "string",
+           "enum": [
+            "bullet",
+            "number"
+           ]
+          },
+          "effect": {
+           "description": "Texteffekt: shadow, lift (weicher Schatten), hollow (nur Kontur), neon (Leuchten)",
+           "type": "string",
+           "enum": [
+            "none",
+            "shadow",
+            "lift",
+            "hollow",
+            "neon"
+           ]
+          },
+          "effectColor": {
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "align": {
+           "type": "string",
+           "enum": [
+            "left",
+            "center",
+            "right"
+           ]
+          },
+          "lineHeight": {
+           "type": "number",
+           "minimum": 0.7,
+           "maximum": 3
+          },
+          "spacing": {
+           "type": "number",
+           "minimum": -0.1,
+           "maximum": 0.5
+          },
+          "shape": {
+           "type": "string",
+           "enum": [
+            "rect",
+            "ellipse",
+            "triangle",
+            "diamond",
+            "hexagon",
+            "star",
+            "arrow",
+            "line",
+            "chevron",
+            "pentagon",
+            "trapezoid",
+            "parallelogram",
+            "rtTriangle",
+            "octagon",
+            "donut",
+            "plus",
+            "heart",
+            "star4",
+            "star6",
+            "star8",
+            "star12"
+           ]
+          },
+          "lineStart": {
+           "type": "string",
+           "enum": [
+            "none",
+            "arrow",
+            "triangle",
+            "dot"
+           ]
+          },
+          "lineEnd": {
+           "description": "Linienenden der Form line: arrow = offene Spitze, triangle = gefüllt, dot = Punkt",
+           "type": "string",
+           "enum": [
+            "none",
+            "arrow",
+            "triangle",
+            "dot"
+           ]
+          },
+          "from": {
+           "type": "string",
+           "maxLength": 40
+          },
+          "to": {
+           "description": "nur Form line: IDs zweier Elemente; die Linie verbindet sie und wandert beim Verschieben mit (Konnektor), x/y/w egal",
+           "type": "string",
+           "maxLength": 40
+          },
+          "dash": {
+           "description": "Strichart von Linie oder Umriss",
+           "type": "string",
+           "enum": [
+            "solid",
+            "dash",
+            "dot"
+           ]
+          },
+          "fill": {
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "fill2": {
+           "description": "Verlauf zu dieser Farbe (Rechteck/Ellipse)",
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "gradAngle": {
+           "description": "Winkel des Verlaufs in Grad, Standard 135",
+           "type": "number",
+           "minimum": 0,
+           "maximum": 360
+          },
+          "stroke": {
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "strokeW": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 40
+          },
+          "radius": {
+           "type": "number",
+           "minimum": 0,
+           "maximum": 400
+          },
+          "shadow": {
+           "type": "boolean"
+          },
+          "src": {
+           "description": "asset://-Pfad aus find_images",
+           "type": "string"
+          },
+          "look": {
+           "type": "string",
+           "enum": [
+            "natural",
+            "duotone",
+            "mono"
+           ]
+          },
+          "mask": {
+           "description": "Bildrahmen (Form)",
+           "type": "string",
+           "enum": [
+            "circle",
+            "arch",
+            "hexagon",
+            "diamond",
+            "octagon",
+            "star",
+            "heart"
+           ]
+          },
+          "adjust": {
+           "description": "Bildanpassung in Prozent",
+           "type": "object",
+           "properties": {
+            "bright": {
+             "type": "number",
+             "minimum": -100,
+             "maximum": 100
+            },
+            "contrast": {
+             "type": "number",
+             "minimum": -100,
+             "maximum": 100
+            },
+            "sat": {
+             "type": "number",
+             "minimum": -100,
+             "maximum": 100
+            },
+            "blur": {
+             "type": "number",
+             "minimum": 0,
+             "maximum": 100
+            }
+           }
+          },
+          "round": {
+           "type": "boolean"
+          },
+          "flipX": {
+           "type": "boolean"
+          },
+          "crop": {
+           "description": "Bildausschnitt in Anteilen; w/h des Elements sollte zum Ausschnitt passen",
+           "type": "object",
+           "properties": {
+            "x": {
+             "type": "number",
+             "minimum": 0,
+             "maximum": 1
+            },
+            "y": {
+             "type": "number",
+             "minimum": 0,
+             "maximum": 1
+            },
+            "w": {
+             "type": "number",
+             "minimum": 0.01,
+             "maximum": 1
+            },
+            "h": {
+             "type": "number",
+             "minimum": 0.01,
+             "maximum": 1
+            }
+           },
+           "required": [
+            "x",
+            "y",
+            "w",
+            "h"
+           ]
+          },
+          "alt": {
+           "description": "Alternativtext: was das Bild zeigt (Screenreader, PPTX)",
+           "type": "string",
+           "maxLength": 250
+          },
+          "link": {
+           "description": "Klickziel: https://… oder #N = Sprung zu Folie N",
+           "type": "string",
+           "maxLength": 500,
+           "pattern": "^(https?:\\/\\/|mailto:|#\\d+$)"
+          },
+          "poster": {
+           "type": "string"
+          },
+          "autoplay": {
+           "type": "boolean"
+          },
+          "loop": {
+           "type": "boolean"
+          },
+          "muted": {
+           "type": "boolean"
+          },
+          "icon": {
+           "description": "lucide-Name in kebab-case",
+           "type": "string",
+           "maxLength": 40
+          },
+          "graphic": {
+           "description": "Deko-Grafik: squiggle, swoosh, scribble, arrow, burst, waves, sparkle, blob (siehe GRAPHICS)",
+           "type": "string",
+           "maxLength": 20
+          },
+          "spec": {
+           "type": "object",
+           "properties": {
+            "type": {
+             "type": "string",
+             "enum": [
+              "bar",
+              "hbar",
+              "stacked",
+              "waterfall",
+              "line",
+              "donut"
+             ]
+            },
+            "categories": {
+             "minItems": 1,
+             "maxItems": 24,
+             "type": "array",
+             "items": {
+              "type": "string"
+             }
+            },
+            "series": {
+             "minItems": 1,
+             "maxItems": 6,
+             "type": "array",
+             "items": {
+              "type": "object",
+              "properties": {
+               "name": {
+                "type": "string"
+               },
+               "values": {
+                "type": "array",
+                "items": {
+                 "type": "number"
+                }
+               }
+              },
+              "required": [
+               "name",
+               "values"
+              ]
+             }
+            },
+            "unit": {
+             "type": "string",
+             "maxLength": 12
+            },
+            "link": {
+             "description": "Excel-Quelle (Deckwerk Pro); setzt die App, nie die KI",
+             "type": "object",
+             "properties": {
+              "file": {
+               "type": "string"
+              },
+              "sheet": {
+               "type": "string"
+              },
+              "range": {
+               "type": "string",
+               "pattern": "^\\$?[A-Z]{1,3}\\$?\\d+:\\$?[A-Z]{1,3}\\$?\\d+$"
+              }
+             },
+             "required": [
+              "file",
+              "range"
+             ]
+            }
+           },
+           "required": [
+            "type",
+            "categories",
+            "series"
+           ]
+          },
+          "cells": {
+           "description": "nur table: Zeilen mit gleich vielen Zellen, erste Zeile = Kopfzeile; Zahlen stehen rechtsbündig. h ergibt sich aus dem Inhalt",
+           "minItems": 1,
+           "maxItems": 16,
+           "type": "array",
+           "items": {
+            "minItems": 1,
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+             "type": "string",
+             "maxLength": 200
+            }
+           }
+          }
+         },
+         "required": [
+          "kind",
+          "x",
+          "y",
+          "w",
+          "h"
+         ]
+        }
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "bg": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         "image": {
+          "description": "asset://-Pfad",
+          "type": "string"
+         },
+         "gradient": {
+          "description": "Verlauf von → nach",
+          "type": "array",
+          "items": [
+           {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+           },
+           {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+           }
+          ],
+          "additionalItems": false,
+          "minItems": 2,
+          "maxItems": 2
+         },
+         "angle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 360
+         }
+        },
+        "description": "Eigener Folienhintergrund statt Theme"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "hidden": {
+      "description": "true = Folie ausblenden (fehlt beim Präsentieren und in PDF, PNG, Word, Handout; in PowerPoint versteckt), false = wieder einblenden",
+      "type": "boolean"
+     },
+     "voice": {
+      "description": "Nur Film-Decks: Sprechertext ersetzen, [klick] = nächster Takt; null = ohne Stimme",
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 1500,
+        "description": "Nur Film-Decks: Sprechertext der Szene in ganzen Sätzen, höchstens ~40 Wörter; [klick] startet den nächsten Takt (Aufbau, Mauszeiger, Kamera) mit dem folgenden Satz. read_guide Modul film"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "duration": {
+      "anyOf": [
+       {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 120,
+        "description": "Nur Film-Decks: Szenenlänge in s; weglassen = aus Stimme, Aufbau und Lesezeit (die Stimme wird nie abgeschnitten)"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "camera": {
+      "anyOf": [
+       {
+        "maxItems": 8,
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "step": {
+           "type": "integer",
+           "minimum": 0,
+           "maximum": 20,
+           "description": "Takt, mit dem die Kamera fährt (0 = Szenenbeginn)"
+          },
+          "box": {
+           "description": "[x, y, w, h] als Anteile der Folie (0,0 = oben links): dieser Ausschnitt bleibt ganz sichtbar; weglassen = zurück zur ganzen Folie",
+           "type": "array",
+           "items": [
+            {
+             "type": "number",
+             "minimum": 0,
+             "maximum": 1
+            },
+            {
+             "type": "number",
+             "minimum": 0,
+             "maximum": 1
+            },
+            {
+             "type": "number",
+             "minimum": 0.1,
+             "maximum": 1
+            },
+            {
+             "type": "number",
+             "minimum": 0.1,
+             "maximum": 1
+            }
+           ],
+           "additionalItems": false,
+           "minItems": 4,
+           "maxItems": 4
+          }
+         },
+         "required": [
+          "step"
+         ]
+        },
+        "description": "Nur Film-Decks: Kamerafahrt je Takt (0,8 s weich), sparsam: 1–2 Fahrten auf das, worüber die Stimme gerade spricht. read_guide Modul film"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "reorder_slides",
+   "description": "Reihenfolge setzen: vollständige Liste aller Folien-IDs in neuer Reihenfolge.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "order": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "order"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "delete_slides",
+   "description": "Folien löschen.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "ids": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "ids"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "decorate_slide",
+   "description": "Nur auf ausdrücklichen Wunsch des Nutzers oder im Deck-Stil mutig (wirkt sonst generiert). Canva-Akzent auf eine Layout-Folie setzen, ohne Koordinaten: Sticker, Form oder Icon in einer freien Ecke. Die Engine sucht dort freien Platz, der nichts überdeckt. Höchstens ein Akzent pro Folie, nur auf luftigen Folien (cover, statement, section, big-number, quote, closing).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "accent": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "kind": {
+          "type": "string",
+          "enum": [
+           "shape",
+           "icon",
+           "graphic"
+          ]
+         },
+         "graphic": {
+          "description": "handgezeichnet: sparkle = Funkeln, squiggle = Kringel, burst = Strahlen, blob = Klecks, arrow, scribble, swoosh, waves",
+          "type": "string",
+          "enum": [
+           "squiggle",
+           "swoosh",
+           "scribble",
+           "arrow",
+           "burst",
+           "waves",
+           "sparkle",
+           "blob"
+          ]
+         },
+         "shape": {
+          "description": "star12 = Siegel/Sticker, star4 = Funkeln, donut = Ring",
+          "type": "string",
+          "enum": [
+           "star12",
+           "star8",
+           "star4",
+           "donut",
+           "plus",
+           "heart",
+           "ellipse"
+          ]
+         },
+         "icon": {
+          "description": "lucide-Name, z. B. \"sparkles\"",
+          "type": "string",
+          "maxLength": 40
+         },
+         "zone": {
+          "type": "string",
+          "enum": [
+           "top-right",
+           "bottom-right",
+           "bottom-left",
+           "top-left"
+          ]
+         },
+         "size": {
+          "default": "m",
+          "type": "string",
+          "enum": [
+           "s",
+           "m",
+           "l"
+          ]
+         },
+         "color": {
+          "description": "weglassen = Zweitakzent des Themes",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+         },
+         "rot": {
+          "type": "number",
+          "minimum": -45,
+          "maximum": 45
+         }
+        },
+        "required": [
+         "kind",
+         "zone"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "null entfernt den Akzent"
+     }
+    },
+    "required": [
+     "id",
+     "accent"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "render_slides",
+   "description": "PNG-Vorschau einzelner Folien (Standard 1024 px breit). Nur geänderte Folien anfordern, Bilder kosten Tokens. Film-Decks: mit at (Sekunden ab Szenenbeginn) Frames der Zeitachse wie im MP4 (Takte, Stimme, Kamera, Mauszeiger, Tippen), um Timing und Kamera zu prüfen; läuft gerade ein Video-Export, warten die Frames auf ihn (eine Render-Warteschlange).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "ids": {
+      "minItems": 1,
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "width": {
+      "default": 1024,
+      "type": "integer",
+      "minimum": 320,
+      "maximum": 1280
+     },
+     "at": {
+      "description": "Zeitpunkte in s ab Szenenbeginn, z. B. [0, 3, 7]: je Zeitpunkt ein Frame, hinter dem Ende das letzte; mit at höchstens 2 ids",
+      "minItems": 1,
+      "maxItems": 6,
+      "type": "array",
+      "items": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 600
+      }
+     }
+    },
+    "required": [
+     "ids"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "propose_looks",
+   "description": "Zwei bis drei deutlich verschiedene Looks zur Auswahl rendern (je Cover, Kennzahlen, Diagramm, Kapiteltrenner). Für neue Decks, vor create_deck. Der Nutzer wählt; danach create_deck mit genau diesem customTheme bzw. Katalog-Theme.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "looks": {
+      "minItems": 2,
+      "maxItems": 3,
+      "type": "array",
+      "items": {
+       "anyOf": [
+        {
+         "type": "string",
+         "enum": [
+          "beratung",
+          "keynote",
+          "schweiz",
+          "redaktion",
+          "zen",
+          "plakat",
+          "magazin",
+          "neomono",
+          "pastell"
+         ]
+        },
+        {
+         "type": "object",
+         "properties": {
+          "name": {
+           "type": "string",
+           "minLength": 2,
+           "maxLength": 40,
+           "description": "Name, z. B. \"Nordlicht Finance\""
+          },
+          "bg": {
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$",
+           "description": "Grund: fast neutrales Weiß, höchstens ein Hauch Tönung (#FAFAF8, #F5F3EE, #EFF2EE) oder tiefer Dunkelton (Nachtblau #121D33, Tannengrün #13251C, Aubergine, Graphit). Mitteltöne, Creme und Pastell lehnt der Theme-Lint ab. Kräftige Farbgründe nur mit vivid (Stil mutig)."
+          },
+          "text": {
+           "description": "Textfarbe; weglassen = automatisch passend",
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "accent": {
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$",
+           "description": "Hauptakzent mit Charakter (Zahlen, Hervorhebungen, Akzentflächen); wird bei Bedarf für Kontrast nachgedunkelt/aufgehellt"
+          },
+          "accent2": {
+           "description": "Zweitfarbe für Vergleichsserien und Duotone; weglassen = neutrales Grau (empfohlen: eine Akzentfarbe reicht)",
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "headFont": {
+           "type": "string",
+           "maxLength": 60,
+           "description": "Titelschrift: gebündelte Schrift oder Familie aus dem Schriftkatalog"
+          },
+          "bodyFont": {
+           "type": "string",
+           "maxLength": 60,
+           "description": "Textschrift (Sans empfohlen)"
+          },
+          "radius": {
+           "type": "integer",
+           "minimum": 0,
+           "maximum": 28,
+           "description": "Eckenradius in px: 0–4 empfohlen; über 8 wirkt es schnell generiert"
+          },
+          "decor": {
+           "type": "string",
+           "enum": [
+            "none",
+            "blobs",
+            "glow",
+            "rings",
+            "grid",
+            "stripe",
+            "dots"
+           ],
+           "description": "Hintergrundmotiv; none empfohlen. blobs/glow (unscharfe Farbkreise) nur auf ausdrücklichen Wunsch"
+          },
+          "texture": {
+           "description": "feine Papierkörnung, nur auf Wunsch",
+           "type": "string",
+           "enum": [
+            "grain"
+           ]
+          },
+          "titleSize": {
+           "description": "large = Plakat-Titel (Vortrag, Swiss, Editorial); huge = übergroße Titel, nur im Stil mutig; normal = sachlich (Chef-Update, viele Daten)",
+           "type": "string",
+           "enum": [
+            "normal",
+            "large",
+            "huge"
+           ]
+          },
+          "titleWeight": {
+           "description": "regular wirkt edel und redaktionell (am besten mit Serif und titleSize large), bold sachlich und kräftig",
+           "type": "string",
+           "enum": [
+            "regular",
+            "bold"
+           ]
+          },
+          "rule": {
+           "description": "feine Linie: over = Kopflinie über dem Titel (Swiss, Redaktion), under = Trennlinie unter dem Kopf (Beratung), none = pur",
+           "type": "string",
+           "enum": [
+            "none",
+            "over",
+            "under"
+           ]
+          },
+          "sectionTone": {
+           "description": "Kapiteltrenner: accent = Akzentfläche (Standard), invert = Hell/Dunkel getauscht, normal = nur große Typo auf dem Grund",
+           "type": "string",
+           "enum": [
+            "normal",
+            "accent",
+            "invert"
+           ]
+          },
+          "vivid": {
+           "description": "nur im Stil mutig: bg als kräftiger Farbgrund übernehmen (z. B. Signalgelb, Tiefblau, Ziegelrot) statt ihn auf Papier- bzw. Dunkeltöne zu dämpfen; Textfarbe kommt automatisch mit Kontrast",
+           "type": "boolean"
+          },
+          "labelFont": {
+           "description": "mono = Eyebrow und Fußzeile in IBM Plex Mono (Magazin, Tech); body = Textschrift (Standard)",
+           "type": "string",
+           "enum": [
+            "body",
+            "mono"
+           ]
+          },
+          "elements": {
+           "description": "Bauteile (Design-Guide §6): line = offen, Kopflinien statt Kästen, kurze Striche als Marker (Standard, redaktionell, Beratung); plain = nur Typografie und Weißraum, keine Linien, große leichte Nummern (Keynote, Zen, Tech); solid = Akzentflächen für Hervorhebungen, nur im Stil mutig",
+           "type": "string",
+           "enum": [
+            "line",
+            "plain",
+            "solid"
+           ]
+          },
+          "field": {
+           "description": "Farbe großer Flächen (Kapitel, split/band, heroTone field); weglassen = accent. Nur als eigene Stimme, z. B. Signalgelb zu schwarzem Akzent",
+           "type": "string",
+           "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "headWeight": {
+           "description": "Titelgewicht, schlägt titleWeight; gebündelte Schriften nur 400/700",
+           "type": "number",
+           "enum": [
+            300,
+            400,
+            500,
+            600,
+            700,
+            800,
+            900
+           ]
+          },
+          "headTracking": {
+           "description": "Laufweite der Titel in em: −0.02 bis −0.04 für große Grotesk-Titel, sonst weglassen",
+           "type": "number",
+           "minimum": -0.05,
+           "maximum": 0.02
+          },
+          "leading": {
+           "description": "Zeilenabstand: tight = dicht (große Titel), open = luftig (Lesetext, Zen)",
+           "type": "string",
+           "enum": [
+            "tight",
+            "normal",
+            "open"
+           ]
+          },
+          "labels": {
+           "description": "caps = Eyebrow und Fußzeile in Versalien",
+           "type": "string",
+           "enum": [
+            "sentence",
+            "caps"
+           ]
+          },
+          "margin": {
+           "description": "Ränder: generous = mehr Luft, asymmetric = breiter Bundsteg links (editorial)",
+           "type": "string",
+           "enum": [
+            "standard",
+            "generous",
+            "asymmetric"
+           ]
+          },
+          "measure": {
+           "description": "Satzbreite: narrow ≈ 760 px (ruhig, nicht mit titleSize huge), wide = volle Breite",
+           "type": "string",
+           "enum": [
+            "narrow",
+            "standard",
+            "wide"
+           ]
+          },
+          "signature": {
+           "description": "Genau ein wiederkehrendes Element statt Deko: rule = Haarlinie über dem Titel, edge = Farbkante am Folienrand, passepartout = Rahmenlinie mit Abstand",
+           "type": "object",
+           "properties": {
+            "kind": {
+             "type": "string",
+             "enum": [
+              "none",
+              "rule",
+              "edge",
+              "passepartout"
+             ]
+            },
+            "color": {
+             "type": "string",
+             "enum": [
+              "accent",
+              "field",
+              "text"
+             ]
+            },
+            "size": {
+             "description": "px: Linienstärke bzw. Kantenbreite",
+             "type": "integer",
+             "minimum": 1,
+             "maximum": 24
+            },
+            "length": {
+             "description": "rule: 64 px oder volle Satzbreite",
+             "type": "string",
+             "enum": [
+              "short",
+              "full"
+             ]
+            },
+            "side": {
+             "description": "edge",
+             "type": "string",
+             "enum": [
+              "left",
+              "top"
+             ]
+            }
+           },
+           "required": [
+            "kind"
+           ]
+          },
+          "heroTone": {
+           "description": "Titel- und Schlussfolie: field = Farbfläche, invert = Hell/Dunkel getauscht, normal = Grund",
+           "type": "string",
+           "enum": [
+            "normal",
+            "field",
+            "invert"
+           ]
+          },
+          "chart": {
+           "description": "Diagrammfarben: focus = Akzent + Grau (Standard), tonal = Akzent in Helligkeitsstufen, duo = zwei Akzente (mit accent2)",
+           "type": "string",
+           "enum": [
+            "focus",
+            "duo",
+            "tonal"
+           ]
+          },
+          "images": {
+           "description": "ein Bildstil fürs ganze Deck: natural, mono (hält uneinheitliche Fotos zusammen), duotone (Stil mutig)",
+           "type": "string",
+           "enum": [
+            "natural",
+            "mono",
+            "duotone"
+           ]
+          }
+         },
+         "required": [
+          "name",
+          "bg",
+          "accent",
+          "headFont",
+          "bodyFont",
+          "radius",
+          "decor"
+         ]
+        }
+       ]
+      },
+      "description": "Eigene Entwürfe für dieses Thema (Design-Guide §6): einer hell und sachlich, einer dunkel oder plakativ, ein dritter als Überraschung (unerwartet, aber aus dem Thema begründet); sie unterscheiden sich in Struktur (Serif/Sans, titleSize, rule, sectionTone, labelFont, signature, margin/measure, heroTone, field), nicht nur in der Farbe. Ein Katalog-Theme ist erlaubt, im Stil mutig auch plakat/magazin/neomono/pastell."
+     },
+     "override": {
+      "description": "Nur auf ausdrücklichen Wunsch des Nutzers: Begründung (z. B. Markenvorgabe), warum ein vom Theme-Lint abgelehntes Design so bleiben soll; Fehler werden dann zu Hinweisen",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+     }
+    },
+    "required": [
+     "looks"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "render_overview",
+   "description": "Kontaktbogen aller Folien als ein Bild – der Art-Director-Blick auf Rhythmus, Konsistenz und Dichte.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "lint_deck",
+   "description": "Alle Probleme des Decks (Fehler müssen weg, Warnungen sind Ermessen).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "search_icons",
+   "description": "Lucide-Icons suchen (kebab-case-Namen für das Feld `icon`).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "description": "englischer Begriff, z. B. \"shield\", \"chart\""
+     },
+     "limit": {
+      "default": 20,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50
+     }
+    },
+    "required": [
+     "query"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "read_guide",
+   "description": "Design-Guide und Layout-Katalog nachladen. `module`: Modul-IDs aus dem Index, z. B. [\"storyline\", \"geruest-a4\", \"gestaltung\", \"layout:kpi-grid\"]; `layout:<id>` liefert Felder und JSON-Schema eines Layouts (vor add_slides/update_slide laden, Felder nie raten). Ohne Eingabe: der Index aller Module. `part` 1, 2, …: der vollständige Guide samt Katalog in Teilen. Für reine Video-Aufträge genügt `topic: \"video\"`, für Podcasts `topic: \"podcast\"`.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "module": {
+      "description": "Modul-IDs aus dem Index, z. B. \"stil\", \"layout:chart\"",
+      "maxItems": 60,
+      "type": "array",
+      "items": {
+       "type": "string",
+       "maxLength": 60
+      }
+     },
+     "part": {
+      "description": "vollständiger Guide in Teilen: 1, 2, … (die Antwort nennt die Anzahl)",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+     },
+     "topic": {
+      "description": "video = Video-Schnitt (Guide §11) und das Layout clip, kurz für module [\"video\", \"layout:clip\"]; podcast = Podcast-Schnitt (Guide §13), kurz für module [\"podcast\"]; timeline = Pro-Schnitt (Guide §14) und das Layout schnitt",
+      "type": "string",
+      "enum": [
+       "video",
+       "podcast",
+       "timeline"
+      ]
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "find_images",
+   "description": "Bilder finden: eigene Dateien im Asset-Ordner, Fotos aus dem Netz (Unsplash mit Key, sonst Openverse: freie Bilder von Wikimedia Commons, Flickr u. a., ohne Key) oder ein Bild direkt per `url` (Link vom Nutzer oder aus der Websuche; asset://-Pfade aus dem Material des Nutzers zeigt es nur an). Eigene Dateien kommen neueste zuerst. Treffer werden heruntergeladen und als Vorschau mitgeliefert. Rückgabe: asset://-Pfade für `image.src`, mit Maßen, Lizenz und Bildnachweis für die Notes. Setze `image.focus` nach dem Vorschaubild (wo Gesicht oder Motiv sitzt), wenn es nicht mittig ist.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "description": "lokal: Teil des Dateinamens; Netz: englische Suchbegriffe, z. B. \"teacher classroom\"",
+      "type": "string",
+      "maxLength": 80
+     },
+     "source": {
+      "default": "auto",
+      "description": "auto = lokal, ohne lokalen Treffer aus dem Netz (Unsplash, sonst Openverse); web = Openverse",
+      "type": "string",
+      "enum": [
+       "auto",
+       "local",
+       "unsplash",
+       "web"
+      ]
+     },
+     "url": {
+      "description": "Bild direkt von dieser Adresse übernehmen. Nur Bilder, die der Nutzer genannt hat oder die verwendet werden dürfen (freie Lizenz, eigene Website); Quelle in die Notes. Auch asset://-Pfade aus Quellmaterial oder Anhängen des Nutzers, um sie vor dem Einbauen anzusehen",
+      "type": "string",
+      "maxLength": 2000,
+      "format": "uri"
+     },
+     "limit": {
+      "default": 3,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+     },
+     "orientation": {
+      "default": "landscape",
+      "description": "Unsplash: landscape für Vollbild/Cover/Galerie, portrait für Porträts (quote) und Hochformat-Decks (4:5, 9:16, A4), squarish für Kacheln und Quadrat-Decks",
+      "type": "string",
+      "enum": [
+       "landscape",
+       "portrait",
+       "squarish"
+      ]
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "generate_image",
+   "description": "Bild per KI erzeugen (Szene, Stimmung, Illustration, ruhige Bildfläche), wenn find_images nichts Passendes liefert oder der Nutzer es will. Dauert 20–120 s und kostet: alle Bilder des Plans in einer Antwort gleichzeitig anfordern (sie laufen parallel), erst einen Bildplan machen (2–5 Schlüsselfolien wie Cover, Kapitelwechsel, Höhepunkt, Abschluss) und einen Stilsatz, der wörtlich an jeden Prompt kommt. Nie für echte Personen, Logos, Marken, echte Produkte oder Orte des Nutzers (das wären Fälschungen), Diagramme oder Text. Kein KI-Look (Neon, Roboter, Glühbirnen, glänzendes 3D). Regeln im Design-Guide §6 „KI-Bilder“. Rückgabe: asset://-Pfad für `image.src` plus Vorschau.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "prompt": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 1500,
+      "description": "Englisch, in dieser Reihenfolge: Motiv und Handlung, Umgebung, Ausschnitt mit ruhiger Fläche für den Titel (z. B. \"subject on the right, calm empty left half\"), Licht und Stimmung, Stilsatz des Decks mit Theme-Farben als Wort plus Hex, zum Schluss \"no text, no letters, no logos, no watermark\". Konkrete Szene statt abstraktem Begriff."
+     },
+     "orientation": {
+      "default": "landscape",
+      "description": "landscape für cover, photo, closing und gallery; square für image-text, section und big-number; portrait für Hochformat-Decks (4:5, 9:16, A4), sonst selten",
+      "type": "string",
+      "enum": [
+       "landscape",
+       "portrait",
+       "square"
+      ]
+     },
+     "provider": {
+      "description": "nur auf Wunsch des Nutzers; weglassen = der erste eingerichtete (Mammouth, OpenAI, Codex)",
+      "type": "string",
+      "enum": [
+       "mammouth",
+       "openai",
+       "codex"
+      ]
+     }
+    },
+    "required": [
+     "prompt"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "export_deck",
+   "description": "Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, mit cmyk PDF/X-4 in CMYK, wenn die Druckerei CMYK verlangt (z. B. print24) – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien-transition fade, dissolve, push, slide, wipe, circle, zoom, split, cover, stack = echte Überblendung zwischen zwei Folien (auch Clip ↔ Zwischentitel), color = über Schwarz, none und morph = harter Schnitt zwischen zwei Clip-Folien (Zwischentitel blenden dann über Schwarz); Video-Decks mit transition none anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips (je Clip eine clip-Folie, fade oder dissolve); Schnitte innerhalb eines Clips blenden automatisch über: Jump-Cuts 0,13 s, ein neuer Moment (Sprung ab 20 s in der Quelle) 0,5 s, part.transition ändert das je Schnitt). Effekte je Ausschnitt (sparsam): speed (Zeitlupe/Zeitraffer, Ton ohne Tonhöhenänderung, Untertitel laufen mit), volume (Originalton, 0 = stumm), music (Musikpegel mit weichen Rampen, nur mit deck.music); zoom (Punch-in 1.1–1.2 an der Pointe), freeze (Standbild nur am Satzende); overlays = Text, Bauchbinde (einmal je Person beim ersten Auftritt), Titel, Zahl, Liste, Zitat, Markierung, Abspann (letzte 8 s), Bild, Video oder ausgeblendete Folie (Bild-in-Bild oder pos voll als B-Roll, 2–6 s) oder Verpixeln, höchstens eine zur Zeit; look (einer je Video, auto für flaue Handy-Aufnahmen), stabil (nur bei Verwackeln), captionPos, chat (Chat-Replay bei Stream-Highlights, Namen nur auf Wunsch). Keine Sticker oder Emojis. Untertitel kommen zusätzlich als .srt neben das MP4. Ist ein Android-Handy per USB-Debugging verbunden, rechnet es die Clips automatisch etwa fünfmal so schnell mit, der PC ist nur der Rückfall. fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). mp3/m4a = Podcast nur Ton, auf −16 LUFS gebracht, mit Kapitelmarken (dazu .chapters.json daneben): aus der Episode (create_episode/edit_episode) oder bei Video-Decks aus den Clip-Folien („Als Podcast“, nur eine Quelle). Video- und Podcast-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h; Auflösung per update_deck videoRes, 4K ab H.265, nie größer als die Quelle): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>. Film-Decks (create_deck film): mp4 rendert jede sichtbare Folie als animierte Szene mit Stimme, Kamera und Untertiteln (film.captions); clips gibt es dort nicht.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "format": {
+      "type": "string",
+      "enum": [
+       "pptx",
+       "docx",
+       "pdf",
+       "png",
+       "zip",
+       "md",
+       "print",
+       "clips",
+       "mp4",
+       "mp3",
+       "m4a"
+      ]
+     },
+     "size": {
+      "description": "nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks",
+      "type": "string",
+      "enum": [
+       "a2",
+       "a3",
+       "a4",
+       "a5",
+       "a6"
+      ]
+     },
+     "bleed": {
+      "description": "nur print: Beschnitt in mm (Standard 3)",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 5
+     },
+     "cmyk": {
+      "description": "nur print: PDF/X-4 in CMYK (FOGRA39) für Druckereien, die CMYK verlangen; braucht Ghostscript ab 10.05",
+      "type": "boolean"
+     },
+     "rows": {
+      "description": "Serienbrief: je Zeile eine Datei, {{Spalte}} im Deck wird ersetzt",
+      "minItems": 1,
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "propertyNames": {
+        "type": "string"
+       },
+       "additionalProperties": {
+        "type": "string"
+       }
+      }
+     },
+     "formats": {
+      "description": "nur clips und mp4, Stapel-Export: dasselbe Video zusätzlich in diesen Formaten (Dateien mit Format im Namen); Fokus aufs Gesicht wird je Format neu berechnet, Deck bleibt unverändert",
+      "minItems": 1,
+      "maxItems": 4,
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "9:16",
+        "1:1",
+        "4:5",
+        "16:9"
+       ]
+      }
+     }
+    },
+    "required": [
+     "format"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "import_video",
+   "description": "Video per Link laden (YouTube, Twitch, Kick und andere Seiten, die yt-dlp kennt), bis 1080p, dazu Kapitel und bei ehemaligen Livestreams auf YouTube und Twitch der Chat (Signal für video_highlights). Nur Material, an dem der Nutzer die Rechte hat (eigener Kanal, eigener Stream, Erlaubnis) oder das frei lizenziert ist; im Zweifel nachfragen statt laden. Laufende Livestreams gehen erst nach dem Ende als Aufzeichnung. Lange Downloads laufen im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit derselben url auf. Rückgabe: asset://-Pfad für die Video-Tools und clip.video. Ohne url: listet die Videos, die schon auf diesem PC liegen (früher per Link geladen, Asset-Ordner, Videos, Downloads) – so zuerst nachsehen, wenn der Nutzer ein Video oder einen Stream ohne Anhang und Link meint. Ablauf: read_guide topic video.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "description": "Link zum Video oder zur Aufzeichnung (VOD); weglassen = Videos auflisten, die schon auf diesem PC liegen",
+      "type": "string",
+      "maxLength": 2000,
+      "format": "uri"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "video_highlights",
+   "description": "Für lange Videos und Streams (ab ~10 min): findet die stärksten Momente aus Lautheit, Chat-Ausbrüchen (Chat aus import_video), Lachen und Jubel sowie der YouTube-Heatmap, ohne das ganze Video zu transkribieren. Liefert je Kandidat ein Zeitfenster mit Score und Grund. Läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit demselben video auf. Danach nur die besten Fenster mit transcribe_video (from/to) transkribieren, video_frames als Kontaktabzug, dann Shorts oder Zusammenschnitt bauen. Für ein langes Video (z. B. 12 min) minutes setzen: genug Fenster dafür. Ablauf: read_guide topic video.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "video": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Quellvideo oder Audiodatei (Podcast): asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad"
+     },
+     "overview": {
+      "description": "true = statt der Kandidaten eine Zeile je 90 s (Signale, Anfang des Gesagten): grober Überblick langer Videos",
+      "type": "boolean"
+     },
+     "minutes": {
+      "description": "Ziellänge eines langen Videos in Minuten (z. B. 12): liefert genug Fenster dafür statt 8 für Shorts",
+      "type": "number",
+      "minimum": 1,
+      "maximum": 60
+     }
+    },
+    "required": [
+     "video"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "transcribe_video",
+   "description": "Transkribiert ein Video oder Audio (Podcast: mp3, wav, m4a …) lokal (Parakeet für 25 europäische Sprachen; bei Sprachen außerhalb Europas, z. B. Japanisch, Türkisch, Arabisch, lang setzen – dann Whisper). Ist ein Android-Handy per USB-Debugging verbunden, rechnet automatisch das Handy (etwa fünfmal so schnell), sonst der PC. Wer erkennt, steht in jeder Antwort („Spracherkennung: Handy (…)“ oder „PC (…)“) – darauf antworten, wenn der Nutzer fragt. Liefert je Segment eine Zeile „[s12] 61.2–66.8 Text“ (Sekunden im Video), mit speakers „[s12] S1 61.2–66.8 Text“. from/to bestimmen, welcher Bereich transkribiert und gezeigt wird; schon erkannte Stücke kommen aus dem Cache. Beim ersten Mal lädt Deckwerk das Sprachmodell (~670 MB); die Erkennung dauert auf schnellen Rechnern etwa die halbe Länge des Bereichs, auf langsamen auch länger als das Video – deshalb bei langen Videos nur die nötigen Bereiche transkribieren. Sie läuft im Hintergrund: meldet das Tool „läuft noch“, rufe es gleich noch einmal mit denselben Eingaben auf. Bereiche über 10 min (ohne from/to: das ganze Video) nur mit all: true (Fulltime oder langes Video aus einer Quelle bis ~45 min), sonst erst video_highlights (overview: true), dann nur die Fenster transkribieren. Momente 4 × 0–25 bewerten (Hook: die ersten 2 s halten; Bogen bis zum Payoff; Wert; Teilbarkeit), nur ≥ 70 nehmen; steht für sich allein, Ende auf einem abgeschlossenen Satz. Schnitte nur an Segmentgrenzen (nie mitten im Satz), Füllsätze, Abschweifungen und die unter dem Transkript gelisteten Neuansätze (verworfene Anläufe) über mehrere parts herausschneiden. Abläufe für Short, ganzes Video, Stream und Kompilation: read_guide topic video.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "video": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Quellvideo oder Audiodatei (Podcast): asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad"
+     },
+     "from": {
+      "description": "Bereich ab dieser Sekunde: nur er wird transkribiert und gezeigt (Highlight-Fenster, lange Transkripte seitenweise)",
+      "type": "number",
+      "minimum": 0
+     },
+     "to": {
+      "description": "Bereich bis zu dieser Sekunde",
+      "type": "number",
+      "minimum": 0
+     },
+     "lang": {
+      "description": "Sprache als ISO-639-1-Code (de, en, ja …). Weglassen = Parakeet, der nur die 25 europäischen Sprachen kennt; bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) lang setzen – dann Whisper. Bei nicht deutschem Video lang immer setzen: Ist in den Einstellungen „Deutsch schnell“ gewählt, nimmt es ohne lang das rein deutsche Modell",
+      "type": "string",
+      "pattern": "^[a-z]{2}$"
+     },
+     "speakers": {
+      "description": "true = Sprecher unterscheiden (S1, S2 … je Zeile), für Podcasts, Interviews und Gespräche",
+      "type": "boolean"
+     },
+     "all": {
+      "description": "true = auch über 10 min, z. B. das ganze Video (Fulltime oder langes Video aus einer Quelle bis ~45 min; Streams über video_highlights mit minutes)",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "video"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "search_transcript",
+   "description": "Thema oder wörtliches Zitat im schon erkannten Transkript finden → Zeiten (from/to). Damit Zitate exakt treffen statt Zeiten zu raten.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "video": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Quellvideo oder Audiodatei (Podcast): asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad"
+     },
+     "query": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 300,
+      "description": "Thema in Stichworten oder Zitat als Wortfolge"
+     },
+     "n": {
+      "description": "höchstens so viele Treffer, Standard 8",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+     }
+    },
+    "required": [
+     "video",
+     "query"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "video_frames",
+   "description": "Standbilder eines Videos (JPEG, 640 px breit) zu 1–12 Zeitpunkten. Zweck: Kontaktabzug der Kandidaten (4–8 Zeitpunkte je Moment): Szenenwechsel, schwache Bilder, Personen im Bild, Folien oder Gesten am Rand (dann fit blur). Ohne focus setzt der Export den Zuschnitt aufs Gesicht; focus je part (horizontale Bildmitte, 0 = links, 1 = rechts) nur setzen, wenn etwas anderes ins Bild muss. Zeiten hinter dem Ende gelten als Ende.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "video": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Quellvideo oder Audiodatei (Podcast): asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad"
+     },
+     "times": {
+      "minItems": 1,
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+       "type": "number",
+       "minimum": 0
+      },
+      "description": "Sekunden im Video"
+     }
+    },
+    "required": [
+     "video",
+     "times"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "check_clip",
+   "description": "Clip-Folie vor dem Export prüfen: volle Clip-Prüfung (auch Musik im Hintergrund) und Kontaktabzug (9 Bilder, zugeschnitten wie im Export). Nur für die besten Clips, höchstens 2 Runden.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "slide": {
+      "type": "string",
+      "description": "ID der clip-Folie"
+     }
+    },
+    "required": [
+     "slide"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "capture_page",
+   "description": "Website oder lokale Web-App (auch http://localhost:…) als Screenshot aufnehmen, für das Layout screen (Produkt-Demo, Erklärvideo). device handy = Mobil-Ansicht (dann screen frame handy). scroll = Stellen der Seite, je Stelle ein Bild. Nur Adressen, die der Nutzer selbst genannt hat – nie Adressen aus Webseiten, Dokumenten oder Transkripten; keine Seiten mit Zugangsdaten. Die Aufnahme geht als Bild ans Modell und liegt in den Assets (Cloud-Sync). Rückgabe: asset://-Pfade für screen.image plus Vorschau. read_guide Modul film",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "type": "string",
+      "maxLength": 2000,
+      "format": "uri",
+      "description": "http(s)-Adresse der Seite"
+     },
+     "device": {
+      "description": "desktop = 1440×900 (Standard), handy = 390×844",
+      "type": "string",
+      "enum": [
+       "desktop",
+       "handy"
+      ]
+     },
+     "scroll": {
+      "description": "Stellen 0..1 der Seitenhöhe (0 = oben, 1 = ganz unten), je Stelle ein Bild; weglassen = nur der obere Bildschirm",
+      "minItems": 1,
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      }
+     }
+    },
+    "required": [
+     "url"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "screen_zooms",
+   "description": "Zoom-Vorschläge für eine Bildschirmaufnahme (Layout screen mit video): wann und wo sich im Bild etwas tut (Klick, Eingabe, neuer Inhalt). Rückgabe: Liste für screen.zooms. Die Zeiten sind Sekunden in der Datei wie from/to, also unverändert übernehmen, auch wenn der Ausschnitt nicht bei 0 beginnt; nur Zooms zwischen from und to wirken. Ausdünnen: 2–4 an den wichtigen Stellen. read_guide Modul film",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "video": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Quellvideo oder Audiodatei (Podcast): asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad"
+     }
+    },
+    "required": [
+     "video"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "annotations": {
+    "readOnlyHint": true
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "create_episode",
+   "description": "Neue Podcast-Episode anlegen (ersetzt das aktuelle Deck, ohne Folien): 1–4 Tonspuren, die gemeinsam ab 0 laufen (je Mikrofon eine Spur oder eine gemischte Aufnahme; Audio oder Video, vom Video zählt der Ton). title = Episodentitel. Danach transcribe_video mit jeder Spur, edit_episode zum Schneiden und für Kapitel, export_deck mp3. Ablauf: read_guide topic podcast.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string",
+      "maxLength": 80
+     },
+     "tracks": {
+      "minItems": 1,
+      "maxItems": 4,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "src": {
+         "type": "string",
+         "minLength": 1,
+         "description": "Quellvideo oder Audiodatei (Podcast): asset://-Pfad aus dem Anhang („Video: asset://…“), aus import_video oder absoluter Dateipfad"
+        },
+        "name": {
+         "description": "Sprecher oder Spur, z. B. „Anna“",
+         "type": "string",
+         "maxLength": 40
+        }
+       },
+       "required": [
+        "src"
+       ]
+      }
+     },
+     "ton": {
+      "type": "string",
+      "enum": [
+       "original",
+       "klar",
+       "stark"
+      ],
+      "description": "klar (Standard) = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser); stark = dazu kräftiger entrauschen (Lüfter, Raumhall); original = unverändert"
+     }
+    },
+    "required": [
+     "title",
+     "tracks"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "edit_episode",
+   "description": "Podcast-Episode des Decks schneiden und einrichten; alle Eingaben optional, ohne Eingaben = Zustand zeigen. Zeiten in Quellzeit (wie im Transkript). clean bereinigt automatisch (Pausen, Füllwörter, Versprecher) und rechnet dabei nur die angegebenen Gründe neu (fillers: false nimmt die Füllwort-Schnitte zurück), alle anderen Schnitte bleiben; cut/uncut schneiden von Hand; chapters ersetzt die Kapitel. Nie mitten im Satz schneiden, Inhalt nicht umstellen. Die Pausensuche läuft im Hintergrund: meldet das Tool „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen. Ablauf: read_guide topic podcast.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "clean": {
+      "type": "object",
+      "properties": {
+       "pauses": {
+        "description": "längere Pausen auf diese Länge in s kürzen, üblich 0.6; false = Pausen wieder ungekürzt",
+        "anyOf": [
+         {
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 5
+         },
+         {
+          "type": "boolean",
+          "const": false
+         }
+        ]
+       },
+       "fillers": {
+        "description": "Füllwörter (äh, ähm …) herausschneiden; braucht das Transkript der Spuren",
+        "type": "boolean"
+       },
+       "retakes": {
+        "description": "Versprecher und verworfene Neuansätze herausschneiden; braucht das Transkript",
+        "type": "boolean"
+       }
+      }
+     },
+     "cut": {
+      "description": "Bereiche herausschneiden; Kanten in einem Wort rasten auf dessen Rand",
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "start": {
+         "type": "number",
+         "minimum": 0
+        },
+        "end": {
+         "type": "number",
+         "minimum": 0
+        }
+       },
+       "required": [
+        "start",
+        "end"
+       ]
+      }
+     },
+     "uncut": {
+      "description": "Bereiche wiederherstellen: überlappende Schnitte fallen weg oder werden gekürzt",
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "start": {
+         "type": "number",
+         "minimum": 0
+        },
+        "end": {
+         "type": "number",
+         "minimum": 0
+        }
+       },
+       "required": [
+        "start",
+        "end"
+       ]
+      }
+     },
+     "sfx": {
+      "description": "Soundeffekte (ersetzt die Liste, [] = keine): Datei aus find_music kurz; sparsam, nur auf Wunsch",
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "src": {
+         "type": "string",
+         "minLength": 1
+        },
+        "at": {
+         "type": "number",
+         "minimum": 0,
+         "description": "Quellsekunde"
+        },
+        "gain": {
+         "description": "dB",
+         "type": "number",
+         "minimum": -24,
+         "maximum": 12
+        }
+       },
+       "required": [
+        "src",
+        "at"
+       ]
+      }
+     },
+     "intro": {
+      "description": "Jingle vor der Sprache (find_music kurz), null = entfernen",
+      "anyOf": [
+       {
+        "type": "string",
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "outro": {
+      "description": "Jingle nach der Sprache, null = entfernen",
+      "anyOf": [
+       {
+        "type": "string",
+        "minLength": 1
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "chapters": {
+      "description": "Kapitel (ersetzt die Liste): erstes bei 0, 3–8 je Stunde, Titel kurz",
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "at": {
+         "type": "number",
+         "minimum": 0,
+         "description": "Quellsekunde"
+        },
+        "title": {
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 80
+        }
+       },
+       "required": [
+        "at",
+        "title"
+       ]
+      }
+     },
+     "ton": {
+      "type": "string",
+      "enum": [
+       "original",
+       "klar",
+       "stark"
+      ],
+      "description": "klar (Standard) = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser); stark = dazu kräftiger entrauschen (Lüfter, Raumhall); original = unverändert"
+     },
+     "tracks": {
+      "maxItems": 4,
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "index": {
+         "type": "integer",
+         "minimum": 0,
+         "maximum": 3,
+         "description": "0 = erste Spur"
+        },
+        "name": {
+         "type": "string",
+         "maxLength": 40
+        },
+        "gain": {
+         "description": "dB",
+         "type": "number",
+         "minimum": -12,
+         "maximum": 12
+        },
+        "mute": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "index"
+       ]
+      }
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "edit_timeline",
+   "description": "Pro-Schnitt: Timeline einer schnitt-Folie mit Ops bearbeiten, in kleinen Batches (bis ~10 Ops). Regeln: Zeiten in Sekunden, auf Bilder gerundet; at = Lage auf der Timeline, in/out = Sekunden im Quellvideo; Spuren von unten nach oben (höhere Videospur liegt darüber); je Spur keine Überlappung; Bilder und Logos als Clip auf V2+ mit box [x, y, Breite]; Musik auf eigene Audiospur; grade zurückhaltend. Ops: split, trim, move, lift, ripple_delete, add_clip, add_track, set (Clip-Felder wie grade, volume, keys, eq, box, src, fade [Anfang, Ende] und xfade = Überblendung vom Vorgänger), from_clips (übernimmt alle sichtbaren clip-Folien; schnitt- und clip-Folien gehören nicht in ein Deck, Lint schnitt-mix), deliver (res, fps, codec, lufs: −14 Streaming, −16 Podcast, −23 Rundfunk), subs_from_transcript (clip; Transkript vorher mit transcribe_video), marker. Bricht eine Op ab, bleibt die Folie unverändert („Op n: …“). Ablauf: read_guide topic timeline.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "slide": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991
+       }
+      ],
+      "description": "ID oder Nummer (ab 1) der schnitt-Folie"
+     },
+     "ops": {
+      "minItems": 1,
+      "maxItems": 50,
+      "type": "array",
+      "items": {
+       "oneOf": [
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "split"
+          },
+          "clip": {
+           "type": "string"
+          },
+          "t": {
+           "type": "number",
+           "minimum": 0,
+           "description": "Timeline-Sekunde"
+          }
+         },
+         "required": [
+          "op",
+          "clip",
+          "t"
+         ]
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "trim"
+          },
+          "clip": {
+           "type": "string"
+          },
+          "edge": {
+           "type": "string",
+           "enum": [
+            "in",
+            "out"
+           ]
+          },
+          "t": {
+           "type": "number",
+           "minimum": 0,
+           "description": "Timeline-Sekunde"
+          },
+          "ripple": {
+           "description": "true = spätere Clips der Spur rücken mit",
+           "type": "boolean"
+          }
+         },
+         "required": [
+          "op",
+          "clip",
+          "edge",
+          "t"
+         ]
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "move"
+          },
+          "clip": {
+           "type": "string"
+          },
+          "at": {
+           "type": "number",
+           "minimum": 0,
+           "description": "Timeline-Sekunde"
+          },
+          "track": {
+           "description": "andere Spur gleicher Art",
+           "type": "string"
+          }
+         },
+         "required": [
+          "op",
+          "clip",
+          "at"
+         ]
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "lift"
+          },
+          "clip": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "op",
+          "clip"
+         ],
+         "description": "entfernen, Lücke bleibt"
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "ripple_delete"
+          },
+          "clip": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "op",
+          "clip"
+         ],
+         "description": "entfernen, Spätere rücken nach"
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "add_clip"
+          },
+          "track": {
+           "type": "string"
+          },
+          "clip": {
+           "type": "object",
+           "properties": {
+            "id": {
+             "type": "string",
+             "minLength": 1,
+             "description": "eindeutige Clip-ID, z. B. c1"
+            },
+            "src": {
+             "type": "string",
+             "description": "Quelldatei: asset://-Pfad oder absoluter Pfad"
+            },
+            "at": {
+             "type": "number",
+             "minimum": 0,
+             "description": "Lage auf der Zeitachse (s)"
+            },
+            "in": {
+             "type": "number",
+             "minimum": 0,
+             "description": "Quellsekunde Anfang"
+            },
+            "out": {
+             "type": "number",
+             "minimum": 0,
+             "description": "Quellsekunde Ende"
+            },
+            "speed": {
+             "description": "Tempo, Standard 1",
+             "type": "number",
+             "minimum": 0.25,
+             "maximum": 4
+            },
+            "volume": {
+             "description": "Pegel 0..2, Standard 1",
+             "type": "number",
+             "minimum": 0,
+             "maximum": 2
+            },
+            "keys": {
+             "description": "Pegel-Stützpunkte [Quellsekunde, dB]",
+             "maxItems": 100,
+             "type": "array",
+             "items": {
+              "type": "array",
+              "items": [
+               {
+                "type": "number",
+                "minimum": 0
+               },
+               {
+                "type": "number",
+                "minimum": -60,
+                "maximum": 12
+               }
+              ],
+              "additionalItems": false,
+              "minItems": 2,
+              "maxItems": 2
+             }
+            },
+            "eq": {
+             "description": "EQ in dB bei 100 Hz, 1 kHz, 8 kHz",
+             "type": "object",
+             "properties": {
+              "low": {
+               "type": "number",
+               "minimum": -12,
+               "maximum": 12
+              },
+              "mid": {
+               "type": "number",
+               "minimum": -12,
+               "maximum": 12
+              },
+              "high": {
+               "type": "number",
+               "minimum": -12,
+               "maximum": 12
+              }
+             }
+            },
+            "grade": {
+             "description": "Farbe: lift/gamma/gain je [r, g, b], sat, temp",
+             "type": "object",
+             "properties": {
+              "lift": {
+               "type": "array",
+               "items": [
+                {
+                 "type": "number",
+                 "minimum": -0.5,
+                 "maximum": 0.5
+                },
+                {
+                 "type": "number",
+                 "minimum": -0.5,
+                 "maximum": 0.5
+                },
+                {
+                 "type": "number",
+                 "minimum": -0.5,
+                 "maximum": 0.5
+                }
+               ],
+               "additionalItems": false,
+               "minItems": 3,
+               "maxItems": 3
+              },
+              "gamma": {
+               "type": "array",
+               "items": [
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                }
+               ],
+               "additionalItems": false,
+               "minItems": 3,
+               "maxItems": 3
+              },
+              "gain": {
+               "type": "array",
+               "items": [
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                }
+               ],
+               "additionalItems": false,
+               "minItems": 3,
+               "maxItems": 3
+              },
+              "sat": {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 2
+              },
+              "temp": {
+               "type": "number",
+               "minimum": -1,
+               "maximum": 1
+              }
+             }
+            },
+            "mute": {
+             "type": "boolean"
+            },
+            "fit": {
+             "description": "crop füllt das Bild (Standard), contain zeigt alles",
+             "type": "string",
+             "enum": [
+              "crop",
+              "contain"
+             ]
+            },
+            "focus": {
+             "description": "horizontaler Bildmittelpunkt bei crop",
+             "type": "number",
+             "minimum": 0,
+             "maximum": 1
+            },
+            "box": {
+             "description": "Bild-in-Bild [x, y, Breite] als Anteile (V2+)",
+             "type": "array",
+             "items": [
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 1
+              },
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 1
+              },
+              {
+               "type": "number",
+               "minimum": 0.05,
+               "maximum": 1
+              }
+             ],
+             "additionalItems": false,
+             "minItems": 3,
+             "maxItems": 3
+            },
+            "fade": {
+             "description": "Ein-/Ausblenden [Anfang, Ende] in s",
+             "type": "array",
+             "items": [
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 10
+              },
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 10
+              }
+             ],
+             "additionalItems": false,
+             "minItems": 2,
+             "maxItems": 2
+            },
+            "xfade": {
+             "description": "Überblendung vom Clip direkt davor (s), mittig über dem Schnitt",
+             "type": "number",
+             "minimum": 0,
+             "maximum": 5
+            }
+           },
+           "required": [
+            "src",
+            "at",
+            "in",
+            "out"
+           ]
+          }
+         },
+         "required": [
+          "op",
+          "track",
+          "clip"
+         ]
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "add_track"
+          },
+          "kind": {
+           "type": "string",
+           "enum": [
+            "video",
+            "audio"
+           ]
+          }
+         },
+         "required": [
+          "op",
+          "kind"
+         ],
+         "description": "neue Spur ganz oben"
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "set"
+          },
+          "clip": {
+           "type": "string"
+          },
+          "patch": {
+           "type": "object",
+           "properties": {
+            "src": {
+             "type": "string",
+             "description": "Quelldatei: asset://-Pfad oder absoluter Pfad"
+            },
+            "at": {
+             "type": "number",
+             "minimum": 0,
+             "description": "Lage auf der Zeitachse (s)"
+            },
+            "in": {
+             "type": "number",
+             "minimum": 0,
+             "description": "Quellsekunde Anfang"
+            },
+            "out": {
+             "type": "number",
+             "minimum": 0,
+             "description": "Quellsekunde Ende"
+            },
+            "speed": {
+             "description": "Tempo, Standard 1",
+             "type": "number",
+             "minimum": 0.25,
+             "maximum": 4
+            },
+            "volume": {
+             "description": "Pegel 0..2, Standard 1",
+             "type": "number",
+             "minimum": 0,
+             "maximum": 2
+            },
+            "keys": {
+             "description": "Pegel-Stützpunkte [Quellsekunde, dB]",
+             "maxItems": 100,
+             "type": "array",
+             "items": {
+              "type": "array",
+              "items": [
+               {
+                "type": "number",
+                "minimum": 0
+               },
+               {
+                "type": "number",
+                "minimum": -60,
+                "maximum": 12
+               }
+              ],
+              "additionalItems": false,
+              "minItems": 2,
+              "maxItems": 2
+             }
+            },
+            "eq": {
+             "description": "EQ in dB bei 100 Hz, 1 kHz, 8 kHz",
+             "type": "object",
+             "properties": {
+              "low": {
+               "type": "number",
+               "minimum": -12,
+               "maximum": 12
+              },
+              "mid": {
+               "type": "number",
+               "minimum": -12,
+               "maximum": 12
+              },
+              "high": {
+               "type": "number",
+               "minimum": -12,
+               "maximum": 12
+              }
+             }
+            },
+            "grade": {
+             "description": "Farbe: lift/gamma/gain je [r, g, b], sat, temp",
+             "type": "object",
+             "properties": {
+              "lift": {
+               "type": "array",
+               "items": [
+                {
+                 "type": "number",
+                 "minimum": -0.5,
+                 "maximum": 0.5
+                },
+                {
+                 "type": "number",
+                 "minimum": -0.5,
+                 "maximum": 0.5
+                },
+                {
+                 "type": "number",
+                 "minimum": -0.5,
+                 "maximum": 0.5
+                }
+               ],
+               "additionalItems": false,
+               "minItems": 3,
+               "maxItems": 3
+              },
+              "gamma": {
+               "type": "array",
+               "items": [
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                }
+               ],
+               "additionalItems": false,
+               "minItems": 3,
+               "maxItems": 3
+              },
+              "gain": {
+               "type": "array",
+               "items": [
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                },
+                {
+                 "type": "number",
+                 "minimum": 0.5,
+                 "maximum": 2
+                }
+               ],
+               "additionalItems": false,
+               "minItems": 3,
+               "maxItems": 3
+              },
+              "sat": {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 2
+              },
+              "temp": {
+               "type": "number",
+               "minimum": -1,
+               "maximum": 1
+              }
+             }
+            },
+            "mute": {
+             "type": "boolean"
+            },
+            "fit": {
+             "description": "crop füllt das Bild (Standard), contain zeigt alles",
+             "type": "string",
+             "enum": [
+              "crop",
+              "contain"
+             ]
+            },
+            "focus": {
+             "description": "horizontaler Bildmittelpunkt bei crop",
+             "type": "number",
+             "minimum": 0,
+             "maximum": 1
+            },
+            "box": {
+             "description": "Bild-in-Bild [x, y, Breite] als Anteile (V2+)",
+             "type": "array",
+             "items": [
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 1
+              },
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 1
+              },
+              {
+               "type": "number",
+               "minimum": 0.05,
+               "maximum": 1
+              }
+             ],
+             "additionalItems": false,
+             "minItems": 3,
+             "maxItems": 3
+            },
+            "fade": {
+             "description": "Ein-/Ausblenden [Anfang, Ende] in s",
+             "type": "array",
+             "items": [
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 10
+              },
+              {
+               "type": "number",
+               "minimum": 0,
+               "maximum": 10
+              }
+             ],
+             "additionalItems": false,
+             "minItems": 2,
+             "maxItems": 2
+            },
+            "xfade": {
+             "description": "Überblendung vom Clip direkt davor (s), mittig über dem Schnitt",
+             "type": "number",
+             "minimum": 0,
+             "maximum": 5
+            }
+           }
+          }
+         },
+         "required": [
+          "op",
+          "clip",
+          "patch"
+         ],
+         "description": "Felder eines Clips setzen (grade, volume, box, src …)"
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "from_clips"
+          }
+         },
+         "required": [
+          "op"
+         ],
+         "description": "Inhalt durch alle sichtbaren clip-Folien des Decks ersetzen (hintereinander auf v1)"
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "deliver"
+          },
+          "res": {
+           "type": "number",
+           "enum": [
+            720,
+            1080,
+            1440,
+            2160
+           ]
+          },
+          "fps": {
+           "type": "number",
+           "minimum": 10,
+           "maximum": 120
+          },
+          "codec": {
+           "type": "string",
+           "enum": [
+            "h264",
+            "h264-10",
+            "prores",
+            "dnxhr"
+           ]
+          },
+          "lufs": {
+           "type": "number",
+           "minimum": -30,
+           "maximum": -9
+          }
+         },
+         "required": [
+          "op"
+         ],
+         "description": "Ausgabe setzen"
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "subs_from_transcript"
+          },
+          "clip": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "op",
+          "clip"
+         ],
+         "description": "Untertitel aus dem Transkript der Clip-Quelle (in–out), ersetzt die Untertitel in der Clip-Zeit"
+        },
+        {
+         "type": "object",
+         "properties": {
+          "op": {
+           "type": "string",
+           "const": "marker"
+          },
+          "t": {
+           "type": "number",
+           "minimum": 0,
+           "description": "Timeline-Sekunde"
+          },
+          "name": {
+           "type": "string",
+           "maxLength": 60
+          }
+         },
+         "required": [
+          "op",
+          "t",
+          "name"
+         ]
+        }
+       ]
+      }
+     }
+    },
+    "required": [
+     "slide",
+     "ops"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "find_music",
+   "description": "Freie Hintergrundmusik für Video-Exporte und Podcasts suchen und laden (Openverse: nur CC0, Public Domain und CC BY). Nur auf Wunsch des Nutzers oder bei Kompilationen; dezent und instrumental, nie laut unter Sprache (das Ducking unter Sprache macht der Export). query = suchen, id = Titel aus der Trefferliste laden. Danach update_deck mit music: { src, credit }; den Nachweis zusätzlich in die Notes der letzten Folie. kurz = Soundeffekte und Jingles unter 30 s statt Musikbetten, für Podcast-Intro/-Outro und Effekte (edit_episode intro, outro, sfx); Nachweis dann in die Shownotes.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "description": "englische Suchbegriffe: Stimmung, Genre, Instrument, z. B. \"calm piano instrumental\"",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 80
+     },
+     "id": {
+      "description": "Openverse-ID aus der Trefferliste: lädt diesen Titel",
+      "type": "string",
+      "maxLength": 64
+     },
+     "kurz": {
+      "description": "true = Soundeffekte und Jingles unter 30 s (Podcast-Intro/-Outro, Effekte) statt Musikbetten",
+      "type": "boolean"
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "remember",
+   "description": "Dauerhafte Vorliebe des Nutzers in den Hausstil schreiben; gilt für alle künftigen Decks (Tonfall, Anrede, Farben, Dinge, die er nicht will). Nur bei ausdrücklichem Wunsch („merk dir …“, „immer …“, „nie …“) oder wenn er dieselbe Korrektur zum zweiten Mal verlangt. Ein kurzer Satz pro Aufruf.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "note": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200
+     }
+    },
+    "required": [
+     "note"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "get_deck",
+   "description": "Aktuelles Deck als JSON (IDs, Layouts, Inhalte) – zum Nachsehen, was gerade drin ist.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "save_deck",
+   "description": "Deck als deck.json speichern (~/DeckwerkPro/<titel>/deck.json, danach dorthin; ein neues Deck per create_deck bekommt beim Speichern einen eigenen Ordner). Die App kann die Datei öffnen.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "description": "Ordnername statt Titel-Slug",
+      "type": "string",
+      "maxLength": 60
+     }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  },
+  {
+   "name": "open_deck",
+   "description": "Vorhandene deck.json laden und weiterbearbeiten.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Pfad zur deck.json (absolut oder relativ zu ~/DeckwerkPro)"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "$schema": "http://json-schema.org/draft-07/schema#"
+   },
+   "execution": {
+    "taskSupport": "forbidden"
+   }
+  }
+ ],
+ "intro": "# Deckwerk: Präsentationen aus einem Layout-Katalog\nDu wählst Layouts und füllst ihre Felder; Positionen, Schriftgrößen und Farben setzt die Engine. Setze nie Koordinaten.\n\n**Lade vor der Arbeit mit `read_guide` die Module, die der Auftrag braucht.** Der Index steht unten (kommt er gekürzt an: `read_guide` ohne Eingabe). Neues Deck zum Beispiel: `read_guide({ module: [\"storyline\", \"geruest-praesentation\", \"inhalt-layout\", \"gestaltung\", \"stil\", \"abwechslung\", \"text\", \"katalog-themes\", \"layout:cover\", \"layout:kpi-grid\"] })`. Für andere Formate das passende Gerüst (geruest-social, geruest-a4, geruest-visitenkarte, geruest-stream), dazu jedes Layout, das du nutzt, als `layout:<id>`; bei Änderungen nur die betroffenen Module. Ohne das Schema eines Layouts rätst du Felder.\n\nAblauf: Briefing klären → Storyline als Liste der Titel → `propose_looks` oder direkt `create_deck` mit eigenem Design → `add_slides` in Batches von 4–6 Folien, Rückmeldungen (Autofit, Lint) sofort beheben → `render_overview` und `lint_deck`, schwächste Folien verbessern → `save_deck`.\n\nKernregeln:\n- Eine Botschaft pro Folie; die Titel allein erzählen die Geschichte. Datenfolien: Aussage als Satz (max. ~80 Zeichen); Bühnenfolien (statement, big-number, photo) kurz, auch ein Wort oder eine Frage.\n- Zurückhaltung statt Deko: keine Karten-Raster, keine Icons als Schmuck, keine Verläufe oder Sticker. Hierarchie über Größe und Weißraum, eine Akzentfarbe.\n- Auf 4 Inhaltsfolien mindestens eine luftige Folie (statement, big-number, photo).\n- Höchstens ~40 Wörter pro Folie, Details in die Speaker Notes.\n- Stil (`style` in create_deck) nach Anlass wählen: mutig für Vortrag, Schule, Event, Kampagne; sachlich für Chef-Update, Antrag, Bericht. Neue Decks im Designtyp nicht wie die letzten (Modul abwechslung)."
+}

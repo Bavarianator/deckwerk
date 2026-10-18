@@ -56,9 +56,27 @@ pub enum Cmd {
     Render {
         slide: usize,
     },
-    /// Export als Job; `out` muss im Datenordner liegen, ohne = Ordner des Decks bzw. <Datenordner>/out
+    /// Folien eines mitgeschickten Decks messen (KI-Werkzeuge halten ihr Deck selbst): je Folie Messung oder Fehler
+    Measure {
+        deck: Box<Deck>,
+        slides: Vec<usize>,
+    },
+    /// PNG je Folie, `width` px breit
+    Png {
+        deck: Box<Deck>,
+        slides: Vec<usize>,
+        width: u32,
+    },
+    /// Kontaktbogen aller Folien als ein PNG (1600 px breit)
+    Overview {
+        deck: Box<Deck>,
+    },
+    /// Export als Job; `out` muss im Datenordner liegen, ohne = Ordner des Decks bzw. <Datenordner>/out.
+    /// Mit `deck` dieses statt des offenen Decks (ohne Ordner: Ziel <Datenordner>/out)
     Export {
         formats: Vec<ExportFormat>,
+        #[serde(default)]
+        deck: Option<Box<Deck>>,
         #[serde(default)]
         out: Option<PathBuf>,
         #[serde(default)]
@@ -98,6 +116,12 @@ pub enum Reply {
     },
     Measured {
         measured: Measured,
+    },
+    Measures {
+        measured: Vec<Result<Measured, String>>,
+    },
+    Images {
+        png: Vec<Vec<u8>>,
     },
     Job {
         id: u64,
@@ -373,17 +397,46 @@ impl Daemon {
                 let (_, measured) = inner.render(&deck, slide)?;
                 Reply::Measured { measured }
             }
+            Cmd::Measure { deck, slides } => Reply::Measures {
+                measured: slides
+                    .iter()
+                    .map(|&i| inner.render(&deck, i).map(|v| v.1))
+                    .collect(),
+            },
+            Cmd::Png {
+                deck,
+                slides,
+                width,
+            } => {
+                let scale = width as f32 / deck.size().w as f32;
+                let png = slides
+                    .iter()
+                    .map(|&i| {
+                        let (scene, _) = inner.render(&deck, i)?;
+                        dw_raster::render_png(&scene, scale, &Default::default())
+                            .map_err(|e| e.to_string())
+                    })
+                    .collect::<Result<_, String>>()?;
+                Reply::Images { png }
+            }
+            Cmd::Overview { deck } => Reply::Images {
+                png: vec![overview(&deck, &|d, i| inner.render(d, i))?],
+            },
             Cmd::Export {
                 formats,
+                deck: given,
                 out,
                 timeout_s,
             } => {
                 if formats.is_empty() {
                     return Err("keine Formate".into());
                 }
-                let (deck, path) = {
-                    let o = lock(&inner.open);
-                    (o.deck.clone().ok_or_else(no_deck)?, o.path.clone())
+                let (deck, path) = match given {
+                    Some(d) => (*d, None),
+                    None => {
+                        let o = lock(&inner.open);
+                        (o.deck.clone().ok_or_else(no_deck)?, o.path.clone())
+                    }
                 };
                 let deck_dir = path
                     .as_deref()
@@ -394,6 +447,12 @@ impl Daemon {
                     Some(o) => store.export_dir(&o).map_err(err)?,
                     None if path.is_some() => deck_dir.clone(),
                     None => store.export_dir(&store.root().join("out")).map_err(err)?,
+                };
+                // ungespeichertes Deck: relative Medien gegen das Exportziel (der Datenordner selbst gilt nicht als Deck-Ordner)
+                let deck_dir = if path.is_some() {
+                    deck_dir
+                } else {
+                    out.clone()
                 };
                 let timeout = timeout_s
                     .map_or(jobs::DEFAULT_TIMEOUT, Duration::from_secs)
@@ -423,6 +482,37 @@ impl Daemon {
             Cmd::Subscribe | Cmd::Shutdown => return Err("nur über den Socket".into()),
         })
     }
+}
+
+/// Kontaktbogen wie das Fenster #overview (main.tsx): 4 Spalten auf dunklem Grund, auf 1600 px Breite skaliert.
+/// ponytail: ohne Beschriftung unter den Kacheln (Nummer · Layout · ID), die nennt der Werkzeugtext.
+fn overview(deck: &Deck, render: &export::RenderFn<'_>) -> Result<Vec<u8>, String> {
+    if deck.slides.is_empty() {
+        return Err("Das Deck hat keine Folien.".into());
+    }
+    let k = 1600.0 / 1280.0; // 4 × 296 + 3 × 16 + 2 × 24 = 1280 CSS-px
+    let (tile, gap, pad) = ((296.0 * k) as u32, (16.0 * k) as u32, (24.0 * k) as u32);
+    let size = deck.size();
+    let th = (tile as f64 * size.h / size.w).round() as u32;
+    let rows = deck.slides.len().div_ceil(4) as u32;
+    let (w, h) = (1600, 2 * pad + rows * th + (rows - 1) * gap);
+    let mut img = image::RgbaImage::from_pixel(w, h, image::Rgba([0x15, 0x17, 0x1c, 255]));
+    for i in 0..deck.slides.len() {
+        let (scene, _) = render(deck, i)?;
+        let t = dw_raster::render_rgba(&scene, tile as f32 / size.w as f32, &Default::default())
+            .map_err(|e| e.to_string())?;
+        let (c, r) = ((i % 4) as u32, (i / 4) as u32);
+        image::imageops::overlay(
+            &mut img,
+            &t,
+            (pad + c * (tile + gap)) as i64,
+            (pad + r * (th + gap)) as i64,
+        );
+    }
+    let mut out = std::io::Cursor::new(vec![]);
+    img.write_to(&mut out, image::ImageFormat::Png)
+        .map_err(|e| e.to_string())?;
+    Ok(out.into_inner())
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -818,9 +908,27 @@ mod tests {
             c.command(&Cmd::Render { slide: 0 }).unwrap(),
             Reply::Measured { .. }
         ));
+        // mitgeschicktes Deck (KI-Werkzeuge): Messung je Folie, PNG, Kontaktbogen
+        let Reply::Measures { measured } = c
+            .command(&Cmd::Measure {
+                deck: deck.clone(),
+                slides: vec![0, 99],
+            })
+            .unwrap()
+        else {
+            panic!("keine Messungen")
+        };
+        assert!(measured[0].is_ok() && measured[1].is_err());
+        let mut one = deck.clone();
+        one.slides.truncate(1); // cover: in dw-scene schon portiert
+        let Reply::Images { png } = c.command(&Cmd::Overview { deck: one }).unwrap() else {
+            panic!("kein Kontaktbogen")
+        };
+        assert!(png[0].starts_with(&[0x89, b'P', b'N', b'G']));
         assert!(matches!(
             c.command(&Cmd::Export {
                 formats: vec![ExportFormat::Png],
+                deck: None,
                 out: Some("/etc".into()),
                 timeout_s: None
             })
@@ -833,6 +941,7 @@ mod tests {
         let Reply::Job { id } = c
             .command(&Cmd::Export {
                 formats,
+                deck: None,
                 out: None,
                 timeout_s: None,
             })
