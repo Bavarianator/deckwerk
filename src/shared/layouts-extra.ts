@@ -272,12 +272,12 @@ const clip = z.object({
     .refine((o) => !o.box || o.art === 'verpixeln' || o.art === 'markierung', 'box nur bei art verpixeln oder markierung')
     .refine((o) => o.box === undefined || (o.box[0] + o.box[2] <= 1.001 && o.box[1] + o.box[3] <= 1.001), 'box ragt aus dem Bild'))
     .max(30).refine((xs) => xs.filter((o) => o.image || o.video || o.slide).length <= MAX_MEDIA, `höchstens ${MAX_MEDIA} Einblendungen mit Bild, Video oder Folie je Clip`).optional()
-    .describe('Einblendungen über dem Video (nur im MP4 und in der Vorschau): Text, Bild, Video, Folie, Verpixeln oder eine art für einen Quellbereich, blendet weich ein und aus; sichtbar nur dort, wo der Bereich im Clip vorkommt'),
-  look: z.enum(VIDEO_LOOKS).optional().describe('Farblook des ganzen Clips: neutral (Standard, unverändert), warm, kuehl, kontrast (kräftiger), matt (weich, gedämpft), sw (Schwarzweiß), auto (Helligkeit und Kontrast der Quelle ausgleichen, für zu dunkle oder flaue Handy-Aufnahmen); einer je Video, für alle Clip-Folien gleich'),
+    .describe('Einblendungen über dem Video (nur im MP4): Text, Bild, Video, Folie, Verpixeln oder eine art für einen Quellbereich; sichtbar nur dort, wo der Bereich im Clip vorkommt'),
+  look: z.enum(VIDEO_LOOKS).optional().describe('Farblook des ganzen Clips: neutral (Standard), warm, kuehl, kontrast (kräftiger), matt (weich, gedämpft), sw (Schwarzweiß), auto (gleicht dunkle oder flaue Aufnahmen aus); einer je Video, für alle Clip-Folien gleich'),
   stabil: z.boolean().optional().describe('true = Verwackeln glätten (Handy aus der Hand, Gehen); nur im Export, kostet Zeit; nie bei Stativ oder Bildschirmaufnahme'),
   captionPos: z.enum(CAPTION_POS).optional().describe('Lage der Untertitel: unten (Standard), mitte, oben – wenn unten Wichtiges im Bild steht (Tafel, Formel, Produkt)'),
   chat: z.object({ pos: z.enum(['links', 'rechts']).optional(), zeilen: z.number().int().min(3).max(8).optional(), namen: z.boolean().optional().describe('nur auf Wunsch') })
-    .optional().describe('Chat-Replay aus dem Import (YouTube, Twitch) einblenden (Stream-Highlights)'),
+    .optional().describe('Chat-Replay einblenden (Stream-Highlights)'),
   post: z.string().max(2200).optional().describe('Text zum Posten (Export: .txt neben dem MP4): Zeile 1 Titel (≤ 100 Zeichen), dann 1–2 Sätze Beschreibung, dann 3–5 Hashtags; Sprache des Videos, kein Clickbait, keine Emoji-Ketten'),
   // knapp beschrieben: Modul video + layout:clip muss unter 20 000 Zeichen bleiben (mcp-smoke)
   sfx: z.array(z.object({ src: z.string().min(1), at: z.number().min(0), gain: z.number().min(-24).max(12).optional() })).max(30).optional()
