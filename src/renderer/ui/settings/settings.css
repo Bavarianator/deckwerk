@@ -69,5 +69,6 @@
 .settings-logo.dark { padding: 6px 10px; border-radius: 8px; background: #16161a; } /* Logo für dunklen Grund auf dunkel zeigen */
 .settings-haus { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
 .settings-style { width: 100%; min-height: 180px; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 10px; font-family: inherit; font-size: 13.5px; line-height: 1.5; resize: vertical; }
+.settings-kunde { width: 100%; max-width: 320px; height: 32px; margin-top: 6px; box-sizing: border-box; }
 .settings-page kbd { padding: 1px 6px; border-radius: 5px; background: var(--hover); font-family: inherit; font-size: 11.5px; font-weight: 600; color: var(--text); }
 

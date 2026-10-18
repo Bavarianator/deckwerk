@@ -2,7 +2,7 @@
 import { deepStrictEqual as eq, ok, throws } from 'node:assert'
 import { pathToFileURL } from 'node:url'
 import type { Deck, Slide } from '../src/shared/deck'
-import { canonJson, merge3, mergeDeck, portableDeck, portablePath, rebase, sanitize } from '../src/shared/merge3'
+import { canonJson, isAssetRel, merge3, mergeDeck, portableDeck, portablePath, rebase, sanitize } from '../src/shared/merge3'
 
 const dir = '/home/anna/Gemeinsam/Pitch Ä'
 const url = (abs: string) => `asset://local${pathToFileURL(abs).pathname}` // wie assetUrl in tools.ts
@@ -175,6 +175,11 @@ fall(() => {
   eq([b.content.title, b.content.image.src, b.content.text, b.content.quote, b.bg!.image], ['', '', '', 'Datei: file:///x', ''])
   eq([s.theme.brand!.logo, s.theme.brand!.logoDark, s.theme.customFont!.regular, s.theme.customFont!.bold], ['assets/logo.svg', '', 'assets/f.ttf', ''])
   eq(Object.keys(sanitize(JSON.parse('{"theme":{"id":"x"},"slides":[{"id":"a","content":{"__proto__":{"x":1}}}]}')).slides[0].content), [])
+  // Videopfade (clip.video, Einblendung video) und Excel-Link: fremde absolute Pfade landeten sonst im MP4-Export bzw. würden gelesen
+  const v = sanitize(JSON.parse(JSON.stringify(deck(slide('v', { video: '/home/u/privat.mp4', parts: [], overlays: [{ video: 'assets/b.mp4' }, { video: 'C:\\Users\\u\\x.mp4' }], chart: { link: { file: '/home/u/Zahlen.xlsx', range: 'A1:B2' } } })))))
+  eq([v.slides[0].content.video, v.slides[0].content.overlays[0].video, v.slides[0].content.overlays[1].video, v.slides[0].content.chart.link.file], ['', 'assets/b.mp4', '', ''])
+  // relative Asset-Namen: kein \ (Windows-Trenner), kein .., Endung aus MEDIA_EXT (gilt für sanitize und die Bilder-Liste in mitarbeit.ts)
+  eq(['assets/x.png', 'assets/..\\..\\x.png', 'assets/a\\b.png', 'assets/../x.png', 'assets/x.exe', 'assets/sub/x.png'].map(isAssetRel), [true, false, false, false, false, false])
   throws(() => sanitize({ theme: { id: 'x' } }), /deck\.json/)
   throws(() => sanitize({ slides: [] }), /deck\.json/)
   throws(() => sanitize({ theme: { id: 'x' }, slides: [{ id: 3 }] }), /Folie/)

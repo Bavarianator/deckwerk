@@ -1,9 +1,10 @@
 // Diagramm-Daten direkt an der Folie: Typ, Tabelle (Kategorien × Datenreihen), Hervorhebung, Einheit.
 // Werte mit Komma oder Punkt; „Aus Excel einfügen“ liest Tabulator-getrennten Text aus der Zwischenablage.
-import { useLayoutEffect, useRef, useState } from 'react'
+import { APP } from '../../shared/app-id'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Select } from './kit'
-import { Sparkles, X } from 'lucide-react'
-import type { ChartSpec } from '../../shared/deck'
+import { LoaderCircle, RefreshCw, Sparkles, X } from 'lucide-react'
+import type { ChartLink, ChartSpec } from '../../shared/deck'
 
 const TYPES: [ChartSpec['type'], string][] = [['line', 'Linie'], ['bar', 'Säulen'], ['hbar', 'Balken'], ['stacked', 'Gestapelt'], ['donut', 'Ring'], ['waterfall', 'Wasserfall']]
 const num = (s: string) => { const v = parseFloat(s.replace(/\s/g, '').replace(',', '.')); return Number.isFinite(v) ? v : 0 }
@@ -11,14 +12,17 @@ const fmt = (v: number) => String(v).replace('.', ',')
 
 interface Props {
   spec: ChartSpec
+  free: boolean // freies Element (items.ts) statt Layout-Diagramm: andere Grenzen
   rect: { left: number; top: number; width: number; height: number }
   busy: boolean
-  onChange: (spec: ChartSpec) => void
+  onChange: (spec: ChartSpec, own?: boolean) => void // own: eigener Undo-Schritt
   onCheck: () => void // KI prüft Titel und Kernaussage gegen die neuen Daten
   onClose: () => void
 }
 
-export function ChartEditor({ spec, rect, busy, onChange, onCheck, onClose }: Props) {
+export function ChartEditor({ spec, free, rect, busy: busyProp, onChange, onCheck, onClose }: Props) {
+  const [linking, setLinking] = useState(false) // Excel wird gelesen: Tabelle sperren, das Ergebnis ersetzt sie gleich
+  const busy = busyProp || linking
   const box = useRef<HTMLElement>(null)
   const [pos, setPos] = useState({ left: 0, top: 0 })
   // rechts neben dem Diagramm, sonst über dessen rechten Rand; nie aus dem Fenster
@@ -71,11 +75,12 @@ export function ChartEditor({ spec, rect, busy, onChange, onCheck, onClose }: Pr
         ))}
         <div className="chart-ed-acts">
           <button className="plain tint" disabled={busy} onClick={() => set({ categories: [...spec.categories, `Neu ${spec.categories.length + 1}`], series: spec.series.map((s) => ({ ...s, values: [...s.values, 0] })) })}>+ Zeile</button>
-          <button className="plain tint" disabled={busy || spec.series.length >= 4} onClick={() => set({ series: [...spec.series, { name: `Reihe ${spec.series.length + 1}`, values: spec.categories.map(() => 0) }] })}>+ Datenreihe</button>
+          <button className="plain tint" disabled={busy || spec.series.length >= (free ? 6 : 4)} onClick={() => set({ series: [...spec.series, { name: `Reihe ${spec.series.length + 1}`, values: spec.categories.map(() => 0) }] })}>+ Datenreihe</button>
           <span />
           <button className="plain" disabled={busy} onClick={paste}>Aus Excel einfügen</button>
         </div>
       </div>
+      <ExcelLink spec={spec} busy={busyProp} free={free} onChange={(s) => onChange(s, true)} onWorking={setLinking} />
 
       <div className="chart-ed-row">
         <span>Hervorheben</span>
@@ -93,5 +98,104 @@ export function ChartEditor({ spec, rect, busy, onChange, onCheck, onClose }: Pr
         <Sparkles size={15} />Passen Titel und Kernaussage noch? Deckwerk prüft es.
       </button>
     </section>
+  )
+}
+
+// Deckwerk Pro: Werte aus einem Bereich einer .xlsx (src/main/xlsx-link.ts). „Aktualisieren“ liest neu, „Verknüpfung lösen“ behält die Werte.
+// Grenzen wie in den zod-Schemas (layouts.ts: Diagramm auf der Folie, items.ts: freies Element); deck:set prüft nicht, spätere KI-Änderungen schon.
+type Data = Pick<ChartSpec, 'categories' | 'series'>
+function overLimit(d: Data, free: boolean): string | null {
+  const [minC, maxC, maxS] = free ? [1, 24, 6] : [2, 12, 4]
+  const where = free ? 'Ein freies Diagramm' : 'Ein Diagramm auf der Folie'
+  if (d.categories.length < minC) return `Der Bereich braucht mindestens ${minC} Kategorien.`
+  if (d.categories.length > maxC) return `Der Bereich hat ${d.categories.length} Kategorien. ${where} fasst höchstens ${maxC}.`
+  if (d.series.length > maxS) return `Der Bereich hat ${d.series.length} Datenreihen. ${where} fasst höchstens ${maxS}.`
+  if (free) return null
+  const cat = d.categories.find((c) => c.length > 14)
+  if (cat) return `Die Kategorie „${cat}“ ist länger als 14 Zeichen. Kürze sie in Excel.`
+  const s = d.series.find((x) => x.name.length > 24)
+  return s ? `Der Reihenname „${s.name}“ ist länger als 24 Zeichen. Kürze ihn in Excel.` : null
+}
+const errText = (e: unknown) => (e instanceof Error ? e.message : String(e)).replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
+const fileName = (f: string) => f.split(/[\\/]/).pop()
+
+// Je Diagramm eine eigene Instanz: Aufrufer setzen einen key (Folie + Slot bzw. Element-id), sonst hinge ein Formular am falschen Diagramm
+// Excel-Verknüpfung gibt es nur in Deckwerk Pro; in Deckwerk bleibt ein vorhandener link im Deck unangetastet
+export const ExcelLink = APP.pro ? ExcelLinkPro : () => null
+function ExcelLinkPro({ spec, busy, free = false, onChange, onWorking }: { spec: ChartSpec; busy: boolean; free?: boolean; onChange: (spec: ChartSpec) => void; onWorking?: (on: boolean) => void }) {
+  const [form, setForm] = useState<ChartLink | null>(null) // Datei gewählt, Blatt und Bereich fehlen noch
+  const [err, setErr] = useState('')
+  const [warn, setWarn] = useState<string[]>([])
+  const [working, setWorking] = useState(false)
+  const off = busy || working
+  // Nach dem Lesen zählt der Stand von dann, nicht der vom Klick; ist die Instanz weg (anderes Diagramm, geschlossen), wird verworfen
+  const now = useRef({ spec, onChange })
+  now.current = { spec, onChange }
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  const linked = useRef<HTMLButtonElement>(null)
+  const focusLinked = useRef(false)
+  useEffect(() => { if (focusLinked.current && linked.current) { linked.current.focus(); focusLinked.current = false } })
+  const busyFor = (on: boolean) => { setWorking(on); onWorking?.(on) }
+  // Fehler oder zu großer Bereich: nichts speichern, die bisherigen Werte bleiben
+  const read = async (link: ChartLink) => {
+    busyFor(true)
+    setErr('')
+    setWarn([])
+    try {
+      const d = await window.api.xlsxRead(link)
+      if (!alive.current) return
+      const bad = overLimit(d, free)
+      if (bad) setErr(bad)
+      else {
+        now.current.onChange({ ...now.current.spec, categories: d.categories, series: d.series, link })
+        focusLinked.current = !!form
+        setForm(null)
+        setWarn(d.warnings)
+      }
+    } catch (e) { if (alive.current) setErr(errText(e)) }
+    if (alive.current) busyFor(false)
+  }
+  const pick = async () => { const file = await window.api.xlsxPick(); if (file && alive.current) { setErr(''); setForm({ range: '', ...form, file }) } }
+  // Schema chartLink verlangt „A1:D5“: groß, ohne Leerzeichen
+  const range = (form?.range ?? '').replace(/\s+/g, '').toUpperCase()
+  const submit = () => form && range && void read({ file: form.file, sheet: form.sheet?.trim() || undefined, range })
+  const notes = <>
+    {warn.map((w) => <p key={w} className="chart-link-note" role="status">{w}</p>)}
+    {err && <p className="chart-link-note error" role="alert">{err}</p>}
+  </>
+  const l = spec.link
+
+  if (form) return (
+    <div className="chart-link">
+      <span className="chart-link-src"><b>{fileName(form.file)}</b><button className="plain tint" disabled={off} onClick={() => void pick()}>Andere Datei …</button></span>
+      <div className="chart-link-fields">
+        <label>Blatt<input value={form.sheet ?? ''} placeholder="Erstes Blatt" disabled={off} onChange={(e) => setForm({ ...form, sheet: e.target.value })} /></label>
+        <label>Bereich<input value={form.range} placeholder="A1:D5" autoFocus disabled={off} onChange={(e) => setForm({ ...form, range: e.target.value })} onKeyDown={(e) => { if (e.key === 'Enter') submit() }} /></label>
+      </div>
+      <p className="chart-link-note">Erste Zeile: Kategorien. Erste Spalte: Namen der Datenreihen.</p>
+      <span className="chart-link-acts">
+        <button className="pill tint" disabled={off || !range} onClick={submit}>{working && <LoaderCircle size={13} className="spin" />}Verknüpfen</button>
+        <button className="plain" disabled={working} onClick={() => { setForm(null); setErr('') }}>Abbrechen</button>
+      </span>
+      {notes}
+    </div>
+  )
+  if (l) return (
+    <div className="chart-link">
+      <span className="chart-link-src" title={l.file}><b>{fileName(l.file)}</b><span>{l.sheet ? `${l.sheet} · ` : ''}{l.range}</span></span>
+      <span className="chart-link-acts">
+        <button ref={linked} className="plain tint" disabled={off} onClick={() => void read(l)}>{working ? <LoaderCircle size={13} className="spin" /> : <RefreshCw size={13} />}Aktualisieren</button>
+        <button className="plain" disabled={off} onClick={() => { onChange({ ...spec, link: undefined }); setErr(''); setWarn([]) }}>Verknüpfung lösen</button>
+      </span>
+      <p className="chart-link-note">„Aktualisieren“ ersetzt die Werte in der Tabelle durch die aus Excel.</p>
+      {notes}
+    </div>
+  )
+  return (
+    <div className="chart-link">
+      <span className="chart-link-acts"><button className="plain" disabled={off} onClick={() => void pick()}>Mit Excel verknüpfen …</button></span>
+      {notes}
+    </div>
   )
 }

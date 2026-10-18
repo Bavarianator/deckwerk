@@ -3,12 +3,13 @@
 // führt der Renderer dreiseitig zusammen (src/shared/merge3.ts), geschrieben wird nur mit If-Match auf den bekannten Stand.
 // So gibt es keinen Server, und keine Änderung geht verloren. Der normale Sync lässt geteilte Ordner in Ruhe (SHARED_MARKER).
 // Electron-frei wie sync.ts. Selbsttests: scripts/check-merge3.ts (Zusammenführen), scripts/check-sync.ts 3d (Sync lässt geteilte Ordner in Ruhe)
+import { APP } from '../shared/app-id'
 import { existsSync } from 'node:fs'
 import { copyFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Deck } from '../shared/deck'
-import { canonJson, portableDeck, portablePath, sanitize } from '../shared/merge3'
+import { canonJson, isAssetRel, portableDeck, portablePath, sanitize } from '../shared/merge3'
 import { davBase, etagOf, localAsset, parseMultistatus, SHARED_MARKER, type SyncSettings } from './sync'
 
 export type Rolle = 'edit' | 'view'
@@ -33,7 +34,8 @@ const unb64u = (s: string) => new TextDecoder().decode(Uint8Array.from(atob(s.re
 // ---------- Links ----------
 
 /** Link für die Website (website/src/pages/teilen.astro): Zugangsdaten nur im #-Teil, der nie an den Webserver geht */
-export const linkOf = (z: Zugang) => `${SITE}#d=${b64u(JSON.stringify({ v: 1, ...z }))}`
+// a=pro: die Website öffnet den Link per deckwerk-pro:// in Deckwerk Pro statt in Deckwerk
+export const linkOf = (z: Zugang) => `${SITE}#d=${b64u(JSON.stringify({ v: 1, ...z }))}${APP.pro ? '&a=pro' : ''}`
 
 /** Website-Link, deckwerk://teilen?d=… oder der rohe Nextcloud-Link …/s/TOKEN (Rolle dann „edit“, ein 403 stuft herunter) */
 export function parseLink(text: string): Zugang | null {
@@ -179,7 +181,7 @@ export async function guestRemote(z: Zugang, fetchFn: typeof fetch = fetch): Pro
 
 // alle Dateiverweise eines Decks: asset://-URLs (lokal) bzw. relative assets/<name> (fremd, nach sanitize)
 function refs(x: unknown, out = new Set<string>()): Set<string> {
-  if (typeof x === 'string') { if (/^asset:\/\/local\//i.test(x) || /^assets\/[^/]+$/.test(x)) out.add(x) }
+  if (typeof x === 'string') { if (/^asset:\/\/local\//i.test(x) || isAssetRel(x)) out.add(x) }
   else if (x && typeof x === 'object') for (const v of Object.values(x)) refs(v, out)
   return out
 }

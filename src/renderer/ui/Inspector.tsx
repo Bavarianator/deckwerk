@@ -1,16 +1,20 @@
 // Anpassen-Panel: gewählte freie Elemente und die Einstellungen der Folie (inkl. Hintergrund).
 // Deck-weite Einstellungen (Theme, Übergang, Ablauf, Marke) stehen im Look, die Notizen unter der Folie.
-import { useEffect, useState, type ReactNode } from 'react'
+import { APP } from '../../shared/app-id'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ImagePlus, Scissors, X } from 'lucide-react'
 import { BUILDS, DECORS, TONES, TRANSITIONS, sizeOf, transitionOf, transitionSpeedOf, type BuildPreset, type Transition, type DecorId, type Deck, type FrameId, type Item, type Slide, type Tone } from '../../shared/deck'
 import { ClipCutter } from './ClipCutter'
 import { FontPicker, ensureFonts } from './FontPicker'
+import { ContentForm } from './ContentForm'
+import { layoutIdsFor } from './Elements'
 import { GradAngle, ItemInspector } from './ItemInspector'
 import { LayersPanel } from './LayersPanel'
 import { TRANSITION } from './LookSheet'
 import { Select } from './kit'
 import { SlideLooks } from './SlideLooks'
 import { LAYOUTS, type LayoutId } from '../../shared/layouts'
+import { switchLayout } from '../../shared/layout-switch'
 import { extract, eyebrowRules } from '../measure'
 import { THEMES, mix, themeFromSpec } from '../../shared/themes'
 import { colorsOf, elsToItems, recolor } from '../../shared/items'
@@ -53,6 +57,13 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
   const [cutting, setCutting] = useState(false)
   const clip = slide?.layout === 'clip' && slide.content?.video && slide.content.parts?.length ? slide : null // Schneiden nur mit Quellvideo und Ausschnitten
   useEffect(() => { if (!clip) setCutting(false) }, [!clip]) // KI hat Layout oder Video geändert: nicht beim nächsten Clip von selbst öffnen
+  // Hinweis gilt nur für den Stand direkt nach dem Wechsel; jede Bearbeitung des Inhalts blendet ihn aus
+  const [lost, setLost] = useState<{ content: unknown; names: string[] }>()
+  const video = slide?.layout === 'clip' || slide?.layout === 'schnitt'
+  // Undo: Entwürfe eines Felds und sein finaler Stand bilden einen Schritt, danach beginnt ein neuer
+  const step = useRef(0)
+  // Clip und Timeline brauchen ein Quellvideo: nicht per Wechsel anbieten
+  const layoutIds = layoutIdsFor(deck).filter((id) => id === slide?.layout || (id !== 'clip' && id !== 'schnitt'))
 
   return (
     <aside className="inspector">
@@ -63,6 +74,12 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
           <section className="grow">
             <h3>Folie {index + 1} · {def?.name ?? slide.layout}</h3>
             {clip && <button type="button" className="btn wide" title="Ausschnitte von Hand nachschneiden" onClick={() => setCutting(true)}><Scissors size={14} /> Schneiden</button>}
+            {APP.pro && (
+            <details className="layers-panel cf-panel">
+              <summary>Inhalt</summary>
+              <ContentForm key={slide.id} slide={slide} onPatch={(content, final) => { patchSlide(index, { content }, `content-${slide.id}-${step.current}`); if (final) step.current++ }} />
+            </details>
+            )}
             {(def?.variants || def?.frames) && <SlideLooks deck={deck} index={index} patchSlide={patchSlide} />}
             {slide.layout !== 'blank' && (
               <button type="button" className="btn wide" title="Alle Texte, Formen, Bilder und Icons der Folie werden frei verschiebbar wie in Canva. Rückgängig mit Strg+Z."
@@ -71,6 +88,22 @@ export function Inspector({ deck, index, disabled, patchSlide, pickImage, picked
                   if (root) patchSlide(index, { layout: 'blank', variant: undefined, frame: undefined, content: {}, items: [...elsToItems([...eyebrowRules(root), ...extract(root)]), ...items] })
                 }}>In freie Elemente umwandeln</button>
             )}
+            {APP.pro && <>
+            <Field label="Layout">
+              <Select value={slide.layout} disabled={video} title={video ? 'Video-Folien behalten ihr Layout' : undefined} onChange={(e) => {
+                const to = e.target.value as LayoutId
+                if (to === slide.layout) return
+                const r = switchLayout(slide, to)
+                const frames = LAYOUTS[to].frames as FrameId[] | undefined
+                patchSlide(index, { layout: to, content: r.content, variant: undefined, frame: slide.frame && frames?.includes(slide.frame) ? slide.frame : undefined })
+                setLost({ content: r.content, names: r.lost })
+              }}>
+                {layoutIds.map((id) => <option key={id} value={id}>{LAYOUTS[id].name}</option>)}
+              </Select>
+            </Field>
+            {video && <p className="muted cf-note">Video-Folien behalten ihr Layout.</p>}
+            {lost && lost.content === slide.content && lost.names.length > 0 && <p className="muted cf-note">Nicht übernommen: {lost.names.join(', ')}. Rückgängig mit Strg+Z.</p>}
+            </>}
             {def?.variants && (
               <Field label="Variante">
                 <Select value={slide.variant ?? def.variants[0]} onChange={(e) => patchSlide(index, { variant: e.target.value })}>

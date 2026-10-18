@@ -93,7 +93,7 @@ cover (Hook: Versprechen oder Frage, höchstens ~8 Wörter) → 4–7 Folien mit
   - Ein starkes Foto (`find_images` mit orientation landscape für top, portrait für full): Variante top = Foto oben, full = Foto vollflächig mit Text unten (nur wenn die untere Bildhälfte ruhig ist, sonst top). Ohne Foto typografisch; mit `tone` accent oder invert wird der Flyer farbig. Mehrere Entwürfe = mehrere Seiten mit verschiedenen Varianten, der Nutzer wählt.
   - `flyer-back`: Programm, Leistungen oder Preise als `items` (head = Uhrzeit, Stichwort oder Preis), Eckdaten als `facts` (Wann, Wo, Eintritt), dieselbe Handlung und derselbe QR wie vorn, Impressum und Bildnachweis in `legal`.
   - Druck: Text hält ≥ 24 px Rand (Lint `frame`), passend zum Sicherheitsabstand der Druckereien; nichts Wichtiges an den Rand. Die Warnung `print-res` (nur A4) meldet Fotos unter 250 ppi: Ein Querformat-Foto (2560 px) als Vollbild hat nur ~146 ppi, ein Hochformat ~310 ppi. Bei `full` also `find_images` mit portrait; sonst größeres Bild oder kleiner einsetzen.
-  - Druckdatei: `export_deck` mit `format: "print"` (PDF für die Druckerei, `…-druck.pdf`). Seite = Endformat + Beschnitt (`bleed`, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm), ohne Schnittmarken; randabfallende Fotos laufen gespiegelt in den Beschnitt. `size` skaliert die A4-Seiten verlustfrei (a5 häufigster Flyer, a3 oder a2 Plakat, a6 Postkarte). `print-res` rechnet in A4: Auf a3 sinkt die Auflösung auf 71 %, auf a2 auf die Hälfte; für Plakate also nur sehr große Fotos (lange Kante ab ca. 4100 px für a3, 5800 px für a2) oder typografisch gestalten. Farben bleiben RGB: Die Druckereien wandeln selbst nach CMYK, leuchtende Akzente werden matter (print24 verlangt CMYK); bei großer Auflage Probedruck raten. Die Seitenzahl muss zur Bestellung passen (1 oder 2): nicht gewählte Entwürfe vorher löschen.
+  - Druckdatei: `export_deck` mit `format: "print"` (PDF für die Druckerei, `…-druck.pdf`). Seite = Endformat + Beschnitt (`bleed`, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm), ohne Schnittmarken; randabfallende Fotos laufen gespiegelt in den Beschnitt. `size` skaliert die A4-Seiten verlustfrei (a5 häufigster Flyer, a3 oder a2 Plakat, a6 Postkarte). `print-res` rechnet in A4: Auf a3 sinkt die Auflösung auf 71 %, auf a2 auf die Hälfte; für Plakate also nur sehr große Fotos (lange Kante ab ca. 4100 px für a3, 5800 px für a2) oder typografisch gestalten. Farben bleiben RGB: Die Druckereien wandeln selbst nach CMYK, leuchtende Akzente werden matter; verlangt die Druckerei CMYK (z. B. print24), `cmyk: true` setzen (PDF/X-4, FOGRA39). Bei großer Auflage Probedruck raten. Die Seitenzahl muss zur Bestellung passen (1 oder 2): nicht gewählte Entwürfe vorher löschen.
   - Word: `export_deck` mit `docx`, wenn der Nutzer selbst weiterschreiben will (z. B. einen Ort nachtragen). Jede Seite wird eine Word-Seite, Text steht in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme liegen als Hintergrundbild darunter.
   - Serienbrief (Urkunden, Namensschilder, Einladungen für eine Namensliste): ein Exemplar bauen, wechselnde Angaben als `{{Spalte}}` setzen (z. B. `{{Name}}`) und `export_deck` mit `rows` (je Person ein Objekt mit denselben Spaltennamen) aufrufen; jede Zeile wird eine eigene Datei im Ordner `serie-<format>`.
 - **Brief:** `letter` (nur A4 hoch) setzt einen Geschäftsbrief nach DIN 5008 für den Fensterumschlag. Anschrift (`to`, höchstens 6 Zeilen) in der Reihenfolge Firma oder Name, Straße, PLZ Ort; Datum und Zeichen in `info`; der Betreff ist eine Aussage ohne „Betreff:“, der Text steht in kurzen Absätzen auf einer Seite, Anlagen in `enclosures`. Absenderdaten (Anschrift, Kontakt, Bank im `footer`) nie erfinden: fehlen sie, Platzhalter wie „[Straße Nr.]“ und nachfragen. Zum Weiterschreiben `export_deck` mit `docx`.
@@ -112,6 +112,10 @@ cover (Hook: Versprechen oder Frage, höchstens ~8 Wörter) → 4–7 Folien mit
 ### Visitenkarte
 
 **Visitenkarte (Format `visitenkarte`, 85 × 55 mm):** zwei Seiten `business-card` mit demselben content: Seite 1 variant front (Name und Funktion oben, Organisation und höchstens 4 Kontaktzeilen unten), Seite 2 variant back (Logo aus dem Brand-Kit, sonst Organisation groß, dazu `claim` und optional `qr`), die Rückseite gern mit `tone` accent. Nur der Name steht größer als 12 px; eine Angabe pro Zeile, ohne Icons oder Kürzel davor. Kontaktdaten nie erfinden: Platzhalter in eckigen Klammern („[Telefon]“) und nachfragen. `qr` nur mit echter, kurzer URL. Druckdatei mit `export_deck` und `format: "print"` (Endformat + Beschnitt wie beim Flyer, ohne `size`).
+
+### Stream-Paket
+
+**Stream-Grafiken für Twitch und YouTube (16:9, OBS-Szene):** ein Deck im Format 16:9 mit `stream-screen` je Variante: start („Gleich geht's los“, `time` = Startzeit), pause („Kurze Pause“, `time` = Rückkehr), ende („Danke fürs Zuschauen“, `handle` als Aufruf zum Folgen, `time` = nächster Stream). Dazu das YouTube-Thumbnail als `cover` oder `photo` mit Gesicht und 3–5 großen Wörtern (im Kleinbild lesbar, nicht den Videotitel wiederholen) und ein Offline-Banner (`statement` oder `cover`: Kanalname, Sendezeiten). `handle`, Sendezeiten und Thema nie erfinden: Platzhalter in eckigen Klammern und nachfragen. Twitch-Panels als eigenes Deck im Format `panel` (320 × 160): je Panel eine Seite `panel` mit 1–2 Wörtern. Ein Theme für alles, damit Szenen, Thumbnail und Panels zusammengehören; keine Neon-Rahmen, Verläufe oder Sticker. Export mit `export_deck` format png (Szenen 1920 × 1080 in OBS skalieren).
 
 ## 4. Inhalt → Layout
 
@@ -604,3 +608,30 @@ Ein Video-Deck aus einer Quelle (Clip-Folien) exportiert `export_deck` mit `mp3`
 - Zurückhaltung bei Effekten wie bei den Folien: kein Effekt-Gewitter, höchstens ein kurzer Jingle als Intro/Outro und wenige Soundeffekte an Themenwechseln. Musik unter Sprache nur auf Wunsch, dezent (`update_deck` `music`).
 - `ton`: `klar` (Standard) für Sprache, `stark` bei Rauschen oder Hall, `original` bei Musik.
 - Spuren nicht lauter oder leiser drehen, außer eine ist deutlich aus dem Rahmen (`tracks` `gain` in dB); stumm (`mute`) nur für eine kaputte Spur.
+
+## 14. Timeline
+
+Das Layout `schnitt` (Pro) ist ein Mehrspur-Schnitt: eine Folie = eine Timeline mit Video- und Audiospuren, mehreren Quellen, Farbe, Ton und Ausgabe. Bearbeitet wird sie mit `edit_timeline` (Ops), nicht durch Neuschreiben des Inhalts.
+
+**Wann `schnitt` statt `clip`:** mehrere Quellen gleichzeitig im Bild, B-Roll oder Bild-in-Bild über dem Sprecher, Logo oder Bild über eine Strecke, Farbkorrektur je Clip, Musik oder Sprechertext auf eigener Spur, Ausgabe in 4K, ProRes/DNxHR oder mit Rundfunk-Lautheit. Für Shorts, Fulltime und Stream-Highlights bleibt `clip` der schnellere Weg. `schnitt`- und `clip`-Folien nie im selben Deck (Lint `schnitt-mix`).
+
+**Ablauf:**
+1. Material wie bei `clip`: `import_video`, `transcribe_video` (bei langen Quellen erst `video_highlights`), `search_transcript`, `video_frames`.
+2. `create_deck` im Format, dann `add_slides` mit `layout: "schnitt"` (Spuren und erste Clips) – oder, wenn schon clip-Folien gebaut sind, eine schnitt-Folie anlegen und `edit_timeline` mit `{ op: "from_clips" }`. Die Antwort nennt, was nicht übernommen wurde; die clip-Folien danach entfernen.
+3. `edit_timeline` mit Ops in kleinen Batches (bis ~10): `split`, `trim`, `move`, `lift`, `ripple_delete`, `add_clip`, `add_track`, `set` (grade, volume, keys, eq, box …), `marker`, `deliver`, `subs_from_transcript`.
+4. Nach jedem Batch die Rückmeldung lesen (Länge, Spuren, Lint) und Fehler sofort beheben.
+5. `export_deck` mit `mp4`; daneben entstehen Schnittliste (.xml) und Untertitel (.srt).
+
+**Regeln:**
+- Zeiten in Sekunden; die Engine rundet auf Bilder. `at` = Lage auf der Timeline, `in`/`out` = Sekunden im Quellvideo. Schnitte an Satzgrenzen aus dem Transkript, nie mitten im Wort.
+- Spuren von unten nach oben: `v1` trägt den durchgehenden Hauptstrang ohne Lücken (Lücke = Schwarzbild), höhere Videospuren liegen darüber. Je Spur keine Überlappung.
+- B-Roll auf `v2` ganzflächig (ohne `box`), 2–6 s, Ton meist `mute`. Bild-in-Bild, Bilder und Logos als Clip auf V2+ mit `box` [x, y, Breite] als Anteile, klein und in einer Ecke.
+- Musik auf eine eigene Audiospur, dezent (`volume` 0,2–0,4), unter Sprache mit `keys` absenken; Sprache bleibt vorn.
+- Farbe zurückhaltend und einheitlich, Presets bevorzugen: warm `{ temp: 0.5 }`, kühl `{ temp: -0.5 }`, kontrast `{ lift: [-0.057, -0.057, -0.057], gain: [1.06, 1.06, 1.06], sat: 1.15 }`, matt `{ lift: [0.064, 0.064, 0.064], gain: [0.94, 0.94, 0.94], sat: 0.85 }`, sw `{ lift: [-0.038, -0.038, -0.038], gain: [1.04, 1.04, 1.04], sat: 0 }`. Ein Look je Video; eigene Werte nur zum Angleichen verschiedener Kameras, in kleinen Schritten.
+- Ausgabe (`deliver`): Standard 1080, 30 fps, h264, −14 LUFS. Lautheit nach Ziel: −14 Streaming und Social, −16 Podcast, −23 Rundfunk (EBU R128). ProRes/DNxHR nur für die Weiterverarbeitung im Schnittprogramm, 4K (2160) nur bei 4K-Material.
+- Untertitel: `subs_from_transcript` je Clip auf `v1` (vorher `transcribe_video` für `in`–`out`).
+
+- Blenden sparsam: harte Schnitte sind der Standard. `xfade` (s) am späteren Clip überblendet vom direkt anschließenden Vorgänger, mittig über dem Schnitt, 0,5–1 s, nur bei Zeit- oder Ortswechsel; beide Clips brauchen dafür Material über den Schnitt hinaus (Lint meldet fehlendes). `fade` [Anfang, Ende] in s blendet Bild und Ton ein bzw. aus: am Anfang und Ende des Videos 0,5–1 s, Musik am Ende 2–3 s.
+- Text-Einblendungen (`overlays`, Timeline-Sekunden) und Untertitel (`subs`) werden ins Bild gebrannt. Bauchbinde mit Name beim ersten Auftritt einer Person, sonst nur auf Wunsch; höchstens eine Einblendung gleichzeitig.
+
+**Grenzen:** Keine Keyframes für Lage und Größe (Bild-in-Bild steht fest), keine Effekte außer Farbe.

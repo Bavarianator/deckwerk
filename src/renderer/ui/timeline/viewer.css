@@ -1,0 +1,3 @@
+/* Vorschau: Rahmen zum Ziehen von Bild-in-Bild (V2+) */
+.tl-pip { position: absolute; outline: 1px solid var(--accent); cursor: move; touch-action: none; }
+.tl-pip i { position: absolute; right: -5px; bottom: -5px; width: 10px; height: 10px; background: var(--accent); cursor: nwse-resize; }

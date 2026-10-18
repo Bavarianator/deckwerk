@@ -8,6 +8,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
+import { APP } from '../shared/app-id'
 import type { Deck } from '../shared/deck'
 import type { Engine } from './agent'
 import { corePrompt } from './guide-modules'
@@ -24,7 +25,7 @@ export interface McpOptions {
 const INTRO = `# Deckwerk: Präsentationen aus einem Layout-Katalog
 Du wählst Layouts und füllst ihre Felder; Positionen, Schriftgrößen und Farben setzt die Engine. Setze nie Koordinaten.
 
-**Lade vor der Arbeit mit \`read_guide\` die Module, die der Auftrag braucht.** Der Index steht unten (kommt er gekürzt an: \`read_guide\` ohne Eingabe). Neues Deck zum Beispiel: \`read_guide({ module: ["storyline", "geruest-praesentation", "inhalt-layout", "gestaltung", "stil", "abwechslung", "text", "katalog-themes", "layout:cover", "layout:kpi-grid"] })\`. Für andere Formate das passende Gerüst (geruest-social, geruest-a4, geruest-visitenkarte), dazu jedes Layout, das du nutzt, als \`layout:<id>\`; bei Änderungen nur die betroffenen Module. Ohne das Schema eines Layouts rätst du Felder.
+**Lade vor der Arbeit mit \`read_guide\` die Module, die der Auftrag braucht.** Der Index steht unten (kommt er gekürzt an: \`read_guide\` ohne Eingabe). Neues Deck zum Beispiel: \`read_guide({ module: ["storyline", "geruest-praesentation", "inhalt-layout", "gestaltung", "stil", "abwechslung", "text", "katalog-themes", "layout:cover", "layout:kpi-grid"] })\`. Für andere Formate das passende Gerüst (geruest-social, geruest-a4, geruest-visitenkarte, geruest-stream), dazu jedes Layout, das du nutzt, als \`layout:<id>\`; bei Änderungen nur die betroffenen Module. Ohne das Schema eines Layouts rätst du Felder.
 
 Ablauf: Briefing klären → Storyline als Liste der Titel → \`propose_looks\` oder direkt \`create_deck\` mit eigenem Design → \`add_slides\` in Batches von 4–6 Folien, Rückmeldungen (Autofit, Lint) sofort beheben → \`render_overview\` und \`lint_deck\`, schwächste Folien verbessern → \`save_deck\`.
 
@@ -36,12 +37,12 @@ Kernregeln:
 - Stil (\`style\` in create_deck) nach Anlass wählen: mutig für Vortrag, Schule, Event, Kampagne; sachlich für Chef-Update, Antrag, Bericht. Neue Decks im Designtyp nicht wie die letzten (Modul abwechslung).`
 
 export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServer {
-  const home = opts.home ?? join(homedir(), 'Deckwerk')
+  const home = opts.home ?? join(homedir(), APP.home)
   let deck: Deck | null = opts.deck ?? null
   let path: string | null = null // …/deck.json, null = noch nie gespeichert
   const outDir = () => (path ? dirname(path) : join(home, 'out'))
 
-  const server = new McpServer({ name: 'deckwerk', version: '0.1.0' }, { instructions: `${INTRO}\n\n${corePrompt()}` })
+  const server = new McpServer({ name: APP.id, version: '0.1.0' }, { instructions: `${INTRO}\n\n${corePrompt()}` })
 
   const tools: ToolDef[] = [
     ...buildTools({
@@ -66,7 +67,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
     },
     {
       name: 'save_deck',
-      description: 'Deck als deck.json speichern (~/Deckwerk/<titel>/deck.json, danach dorthin; ein neues Deck per create_deck bekommt beim Speichern einen eigenen Ordner). Die App kann die Datei öffnen.',
+      description: `Deck als deck.json speichern (~/${APP.home}/<titel>/deck.json, danach dorthin; ein neues Deck per create_deck bekommt beim Speichern einen eigenen Ordner). Die App kann die Datei öffnen.`,
       inputSchema: z.object({ name: z.string().max(60).optional().describe('Ordnername statt Titel-Slug') }),
       async run(i: { name?: string }) {
         if (!deck) throw new Error('Es gibt noch kein Deck zum Speichern.')
@@ -78,7 +79,7 @@ export function createMcpServer(engine: Engine, opts: McpOptions = {}): McpServe
     {
       name: 'open_deck',
       description: 'Vorhandene deck.json laden und weiterbearbeiten.',
-      inputSchema: z.object({ path: z.string().describe('Pfad zur deck.json (absolut oder relativ zu ~/Deckwerk)') }),
+      inputSchema: z.object({ path: z.string().describe(`Pfad zur deck.json (absolut oder relativ zu ~/${APP.home})`) }),
       async run(i: { path: string }) {
         const file = resolve(home, i.path)
         const d = JSON.parse(await readFile(file, 'utf8'))

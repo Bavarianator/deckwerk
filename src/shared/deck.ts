@@ -1,3 +1,4 @@
+import { APP } from './app-id'
 import type { Episode } from './podcast'
 // pan, pop, words: Canva-Seitenanimationen (Schwenken, Pop, Wort für Wort)
 // photo: Canva „Foto-Zoom“ – randlose Fotos zoomen langsam, Text blendet ein
@@ -40,6 +41,7 @@ export interface BrandKit {
   logoDark?: string // Logo für dunklen Grund (Theme dark); fehlt es, gilt logo
   headFont?: string // FontName aus src/shared/themes.ts
   bodyFont?: string // FontName für Fließtext
+  lock?: boolean // Brand-Lock (Pro): Abweichungen von Markenfarben und -schriften sind Lint-Fehler
 }
 
 // Eigenes Theme, das die KI pro Deck entwirft. Aus wenigen Vorgaben leitet resolveTheme die volle Palette ab
@@ -231,8 +233,11 @@ export const FORMATS = {
   'a4-quer': { name: 'A4 Querformat', w: 1123, h: 794 },
   'og': { name: 'Link-Vorschau 1200×630', w: 1200, h: 630 },
   'visitenkarte': { name: 'Visitenkarte 85×55 mm', w: 321, h: 208 }, // Druck: Endformat = Größe bei 96 dpi
+  'panel': { name: 'Twitch-Panel 320×160', w: 320, h: 160 }, // Stream-Paket (Pro); PNG kommt doppelt so groß
 } as const
 export type FormatId = keyof typeof FORMATS
+// panel (Stream-Paket) bietet nur Pro an; Decks in diesem Format liest auch Deckwerk (sizeOf/profileOf kennen es)
+export const FORMAT_IDS = (Object.keys(FORMATS) as FormatId[]).filter((id) => APP.pro || id !== 'panel')
 export interface Size { w: number; h: number }
 // Kürzel für Dateinamen (4x5, a4 …); Sondergrößen als 800x600. 16:9 bleibt leer, damit die Namen wie bisher heißen.
 export const formatSuffix = (size: Size | undefined): string => {
@@ -246,9 +251,10 @@ export const sizeOf = (deck: Pick<Deck, 'size'> | null | undefined): Size => dec
 // Druck-PDF (Export „print“): Seite = Endformat + Beschnitt ringsum, TrimBox/BleedBox gesetzt, keine Schnittmarken.
 // Beschnitt je Druckerei: Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm (Stand 10/2026).
 // Farben bleiben RGB (Chromium kann kein CMYK); diese Druckereien wandeln selbst, print24 verlangt CMYK.
+// cmyk (Deckwerk Pro): danach per Ghostscript ≥ 10.05 als PDF/X-4 in CMYK mit Output-Intent FOGRA39 (src/main/print-pdf.ts).
 // size skaliert A4-Seiten (hoch oder quer, Verhältnis 1:√2) verlustfrei auf ein anderes A-Format (A2 = Plakat, A6 = Postkarte); weglassen = Foliengröße.
 export const PRINT_SIZES = { a2: [420, 594], a3: [297, 420], a4: [210, 297], a5: [148, 210], a6: [105, 148] } as const // mm, hochkant
-export interface PrintOptions { size?: keyof typeof PRINT_SIZES; bleed?: number } // bleed in mm (0–5), Standard 3
+export interface PrintOptions { size?: keyof typeof PRINT_SIZES; bleed?: number; cmyk?: boolean } // bleed in mm (0–5), Standard 3
 
 const is = (s: Size, f: Size) => s.w === f.w && s.h === f.h
 export const isA4 = (s: Size) => is(s, FORMATS.a4) || is(s, FORMATS['a4-quer'])
@@ -406,7 +412,11 @@ export interface ChartSpec {
   unit?: string
   highlight?: string // Kategorie oder Serie mit der Aussage; Rest grau (src/shared/charts.ts)
   annotate?: 'cagr' | 'delta' // automatisch berechnete Beschriftung erster → letzter Wert
+  link?: ChartLink // Deckwerk Pro: Werte stammen aus einer Excel-Datei, „Aktualisieren“ liest sie neu (src/main/xlsx-link.ts)
 }
+// Excel-Verknüpfung eines Diagramms: Datei (.xlsx, absoluter Pfad), Blatt (fehlt = erstes) und Bereich wie „A1:D5“ – erste Zeile Kategorien, erste Spalte Reihennamen.
+// Die Werte bleiben im Deck, fehlt die Datei (anderer Rechner), bleibt das Diagramm, wie es ist.
+export interface ChartLink { file: string; sheet?: string; range: string }
 
 export interface Overflow { slot: string; overPx: number; kind: 'height' | 'width' | 'lines' }
 

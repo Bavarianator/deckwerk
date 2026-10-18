@@ -5,6 +5,7 @@ import { homedir } from 'node:os'
 import Anthropic from '@anthropic-ai/sdk'
 import { betaZodTool } from '@anthropic-ai/sdk/helpers/beta/zod'
 import type { BetaMessageParam, BetaToolResultContentBlockParam, BetaContentBlockParam } from '@anthropic-ai/sdk/resources/beta/messages/messages'
+import { APP } from '../shared/app-id'
 import { FORMATS, type Deck, type FormatId, type Measured, type PrintOptions } from '../shared/deck'
 import type { Issue } from '../shared/lint'
 import type { Part, Transcript, VideoInfo } from '../shared/video'
@@ -22,7 +23,7 @@ export interface Engine {
   renderPng(deck: Deck, indices: number[], width?: number): Promise<Buffer[]> // PNG pro Folie (default 1024 px breit)
   renderOverview(deck: Deck): Promise<Buffer> // Kontaktbogen aller Folien, 1 PNG
   lint(deck: Deck): Promise<Issue[]>
-  exportDeck(deck: Deck, format: ExportFormat, outDir: string, print?: PrintOptions, onProgress?: (pct: number) => void): Promise<string[]> // print nur bei format 'print'; onProgress nur bei mp4/clips
+  exportDeck(deck: Deck, format: ExportFormat, outDir: string, print?: PrintOptions, onProgress?: (pct: number) => void): Promise<string[] & { warnings?: string[] }> // print nur bei format 'print'; onProgress nur bei mp4/clips; warnings z. B. Gesamtfarbauftrag im CMYK-Druck
   thumbnail?(img: Buffer, width: number): Buffer | null // JPEG-Vorschau eines Bildes ohne Rendern; null = Format unbekannt (WebP)
   video?: VideoTools // fehlt in den Mock-Engines der Smoke-Tests
   // Feature „Animation“ (Deck.film, src/shared/film.ts); fehlen in den Mock-Engines
@@ -159,8 +160,8 @@ export class DeckAgent {
       engine: opts.engine,
       getDeck: () => this.deck,
       setDeck: (deck) => { this.deck = deck; opts.onEvent({ type: 'deck', deck }) },
-      assetDir: opts.assetDir ?? `${homedir()}/Deckwerk/assets`,
-      outDir: opts.outDir ?? `${homedir()}/Deckwerk/out`,
+      assetDir: opts.assetDir ?? `${homedir()}/${APP.home}/assets`,
+      outDir: opts.outDir ?? `${homedir()}/${APP.home}/out`,
       unsplashKey: opts.unsplashKey ?? process.env.UNSPLASH_ACCESS_KEY,
       ask: (q) => opts.onEvent({ type: 'ask', ...q }),
       storyline: (slides) => opts.onEvent({ type: 'storyline', slides }),

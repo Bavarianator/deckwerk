@@ -3,6 +3,8 @@ import type { BuildPreset, Deck, FormatId, FrameId, Slide, Tone } from './deck'
 import { EXTRA_LAYOUTS, FOCI, LOOKS, photo } from './layouts-extra' // Foto-Schema liegt dort, weil beide Kataloge es brauchen
 import { DEMO_LAYOUTS } from './layouts-demo'
 export { FOCI, LOOKS, photo }
+import { PRO_LAYOUTS } from './layouts-pro'
+import { APP } from './app-id'
 
 // Layout catalog without React: schemas + knowledge for the AI + samples.
 // Components live in src/renderer/layouts.tsx (same ids). Samples feed three things:
@@ -109,6 +111,12 @@ const kpiGrid = z.object({
   source,
 })
 
+// Deckwerk Pro: Excel-Verknüpfung (ChartLink in deck.ts), auch für freie Diagramme in items.ts
+export const chartLink = z.object({
+  file: z.string(),
+  sheet: z.string().optional(),
+  range: z.string().regex(/^\$?[A-Z]{1,3}\$?\d+:\$?[A-Z]{1,3}\$?\d+$/),
+}).optional().describe('Excel-Quelle (Deckwerk Pro); setzt die App, nie die KI')
 const chartSpec = z.object({
   type: z.enum(['bar', 'hbar', 'stacked', 'waterfall', 'line', 'donut']).describe(
     'bar: Vergleich weniger Werte · hbar: Ranking, absteigend sortiert, lange Namen · stacked: Zusammensetzung · ' +
@@ -119,6 +127,7 @@ const chartSpec = z.object({
   unit: z.string().max(8).optional(),
   highlight: z.string().max(24).optional().describe('Name der Kategorie oder Serie, die die Aussage des Titels trägt: nur sie bekommt Farbe, der Rest wird grau. Fast immer setzen.'),
   annotate: z.enum(['cagr', 'delta']).optional().describe('Automatisch berechnete Beschriftung vom ersten zum letzten Wert der Fokus-Serie: cagr = jährliche Wachstumsrate (Kategorien sind Jahre), delta = Veränderung absolut und relativ'),
+  link: chartLink,
 })
 const chart = z.object({
   eyebrow,
@@ -377,6 +386,7 @@ export const LAYOUTS = {
   }),
   ...EXTRA_LAYOUTS,
   ...DEMO_LAYOUTS,
+  ...PRO_LAYOUTS,
 } satisfies Record<string, LayoutDef<any>>
 
 export type LayoutId = keyof typeof LAYOUTS
@@ -423,4 +433,6 @@ export function buildOf(deck: Deck, i: number): BuildPreset {
   if (deck.motion === 'lively') return def === 'none' ? (s.layout === 'blank' ? 'none' : 'fade') : def === 'fade' && s.layout !== 'statement' && s.layout !== 'quote' ? 'stagger' : def
   return def
 }
-export const LAYOUT_IDS = Object.keys(LAYOUTS) as LayoutId[]
+// Pro-Layouts sind in beiden Editionen registriert, damit Pro-Decks in Deckwerk lesbar bleiben; angeboten (Katalog, KI, Einfügen) nur in Pro
+export const PRO_LAYOUT_IDS: string[] = ['gantt', 'stream-screen', 'panel', 'schnitt']
+export const LAYOUT_IDS = (Object.keys(LAYOUTS) as LayoutId[]).filter((id) => APP.pro || !PRO_LAYOUT_IDS.includes(id))

@@ -41,7 +41,7 @@ ${index}
 ## Regeln
 - Nur IDs aus dem Index, genau so geschrieben.
 - Großzügig bei Layouts, die zu Format und Anlass passen: lieber ein Layout zu viel als eines, das fehlt. Layouts mit „nur Format …“ nur in diesem Format.
-- Immer das Gerüst zum Format: geruest plus geruest-praesentation, geruest-social, geruest-a4 oder geruest-visitenkarte.
+- Immer das Gerüst zum Format: geruest plus geruest-praesentation, geruest-social, geruest-a4 oder geruest-visitenkarte; Stream-Grafiken (Starting Soon, BRB, OBS-Szenen, Thumbnail, Twitch-Panels) geruest-stream mit layout:stream-screen und layout:panel.
 - Neues Deck: gestaltung, abwechslung, stil, katalog-themes, katalog-ton; bei mehreren Folien oder Seiten auch storyline und rhythmus.
 - Bestehendes Deck und kleine Änderung: wenige Module, nur was der Auftrag berührt.
 - animation und katalog-animationen nur, wenn es um Bewegung, Übergänge oder Animation der Folien geht.
@@ -51,6 +51,7 @@ ${index}
 - Texte ändern, übersetzen, kürzen, Notizen: text und deck-auftraege.
 - Reiner Video-Auftrag (Video schneiden oder kürzen, Short, Reel, Stream-Highlights, Zusammenschnitt, Untertitel, MP4): nur video und layout:clip, bei Zwischentiteln layout:section und layout:statement; kein Gerüst, keine Gestaltung, keine Storyline. Präsentation mit Video: das Übliche plus video und layout:clip.
 - Reiner Podcast-Auftrag (Aufnahme, Audio, Folge oder Episode schneiden, Pausen und Füllwörter raus, Kapitel, Intro/Outro, MP3): nur podcast; Reels oder Shorts aus einem Podcast sind Video.
+- Pro-Schnitt (mehrere Spuren oder Quellen gleichzeitig, Bild-in-Bild, B-Roll, Farbkorrektur, Musik auf eigener Spur, 4K/ProRes, Rundfunk-Lautheit, Folie schnitt): video, timeline und layout:schnitt.
 - reason: ein kurzer Satz auf Deutsch.
 ${auto
     ? '\n## Modell\nWähle auch model und effort: opus für neue Decks, Umbauten, Quellmaterial und anspruchsvolle Aufträge (effort high); sonnet für gezielte Änderungen an einem bestehenden Deck (effort medium, low für Tippfehler und Kleinigkeiten).'

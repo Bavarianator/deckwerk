@@ -1,0 +1,15 @@
+/* Video-Werkzeuge über dem Chat (Deckvid): flach, ohne Kästen, wie deckvid.css */
+.vt { flex: none; max-height: 55%; overflow-y: auto; padding: 8px 16px 10px; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.vt summary { padding: 4px 0; color: var(--muted); font-weight: 600; cursor: pointer; }
+.vt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.vt-row .pill { height: 28px; padding: 0 10px; font-size: 12px; }
+.vt-row input { flex: 1; min-width: 0; height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--r); background: transparent; color: inherit; font-size: 12.5px; }
+.vt-msg { margin: 8px 0 0; color: var(--muted); }
+.vt-msg.err { color: var(--danger); }
+.vt-out { margin-top: 10px; }
+.vt-text { color: var(--muted); font-size: 12px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.vt-hit { display: block; width: 100%; padding: 3px 6px; margin: 1px -6px; border: 0; border-radius: 6px; background: transparent; color: var(--text, inherit); font: inherit; text-align: left; white-space: pre-wrap; cursor: pointer; }
+.vt-hit:hover { background: var(--hover); }
+.vt-imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; margin-top: 8px; }
+.vt-imgs img { width: 100%; border-radius: 4px; }
+.vt-msg .plain { margin-left: 8px; font-size: 12px; }

@@ -9,18 +9,28 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { MEDIA_EXT, VIDEO_FILE, sizeOf, transitionOf, type Deck, type Size } from '../shared/deck'
 import { resolveTheme } from '../shared/themes'
 import { snapToWords } from '../shared/clip-lint'
-import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM, clipSpans, freezeOf, joinOf, cutFrames, clipWords, cropRect, cues, fillerQuiet, outSize, videoSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type Look, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, ovPos } from '../shared/video'
-import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, isArt, cropFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
+import { CUT, DUCK, FX, MAX_PARTS, MIN_PAUSE, OVERLAY_W, PAD, STILL, XFADE, ZOOM, clipSpans, freezeOf, joinOf, cutFrames, clipWords, cropRect, splitRects, cues, fillerQuiet, outSize, videoSize, partLen, partsLength, speedOf, tighten, type Captions, type ClipContent, type Look, type ClipStyle, type Cue, type Fit, type Overlay, type Part, type Pauses, type Quiet, type Transcript, snapToScenes, zoomOf, cutIndex, ovPos } from '../shared/video'
+import { HOOK_FADE, KEN_BURNS, LOOK_FILTER, POP, artEvents, autoLook, isArt, cropFilter, splitFilter, hookBox, levelExpr, progressBar, srt } from './video-fx'
 import { ffmpegBin, hasEncoder, probe, run, runFfmpeg, silences } from './ffmpeg'
 import { chatAss, type ChatMsg, type ChatOpts } from './chat-overlay'
 import { phoneFfmpeg } from './phone-ffmpeg'
+import { APP } from '../shared/app-id'
+import { clipMarks, xmeml, type Scene } from './export-xmeml'
 import { assetPath, localAsset } from './sync'
 
 export interface SubFont { name: string; files: Buffer[]; bold: boolean } // name = Family in der TTF; files landen in <Job-Ordner>/fonts (fontsdir)
-export interface Seg { file: string; dur: number; music?: [number, number, number][]; cues?: Cue[] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music), cues: Untertitel-Zeilen ab Seg-Anfang (fürs SRT)
+export interface Seg { file: string; dur: number; music?: [number, number, number][]; cues?: Cue[]; xml?: Scene[] } // Zwischenstand (mkv), Länge in s, Musikpegel [von, bis, pegel] ab Seg-Anfang (nur parts mit music), cues: Untertitel-Zeilen ab Seg-Anfang (fürs SRT), xml: Clip-Szenen ab Seg-Anfang (Schnittliste, an der ersten Seg der Szene)
 export interface Music { file: string; volume?: number; gain?: number } // absoluter Pfad, volume 0–1 (Standard 0,25); gain: Angleich der Datei auf MUSIC_LUFS (exportOnce misst)
 // Musikdateien liegen gemessen zwischen −25 und −12 LUFS: ohne Angleich war volume 0,25 je nach Titel kaum hörbar oder fast so laut wie die Sprache (13.10.)
 export const MUSIC_LUFS = -16
+/** Musik einmal anspielen und ihre Lautheit messen (erste 3 min reichen, Musik ist gleichmäßig) → gain auf MUSIC_LUFS, höchstens ×4.
+ *  Vorab, weil probe() eine Videospur verlangt und ffmpegs „Stream specifier [1:a]“ erst nach dem Encoden käme. */
+export async function withMusicGain(m: Music): Promise<Music> {
+  const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-t', '180', '-i', resolve(m.file), '-map', '0:a:0', '-af', 'ebur128', '-f', 'null', '-'])
+  if (r.code !== 0) throw new Error(`Die Musikdatei ${m.file} ${/No such file/i.test(r.err) ? 'fehlt' : /matches no streams/i.test(r.err) ? 'hat keine Tonspur' : 'ist nicht lesbar'}.`)
+  const i = Number(/Integrated loudness:\s+I:\s+(-?[\d.]+) LUFS/.exec(r.err)?.[1]) // Zusammenfassung am Ende; -70 = still
+  return { ...m, gain: Number.isFinite(i) && i > -60 ? Math.min(4, 10 ** ((MUSIC_LUFS - i) / 20)) : 1 }
+}
 
 // Teilstücke je ffmpeg-Aufruf: je Teilstück ein Input mit eigenem Decoder, und der Filtergraph steht in argv (Linux: max. 128 KiB je Argument).
 // Bis 1080p 20 Decoder gleichzeitig, darüber weniger nach Pixelzahl (max. aus Quelle und Ausgabe), 4K: 5, 8K: 3 – sonst läuft der RAM voll.
@@ -197,7 +207,7 @@ export async function chatOf(file: string): Promise<ChatMsg[]> {
   const chat = await json(meta.chat)
   return Array.isArray(chat) ? chat.filter((c) => Number.isFinite(c?.t) && typeof c.x === 'string' && ['n', 'c'].every((k) => c[k] === undefined || typeof c[k] === 'string')) : []
 }
-export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos']; chat?: ChatOpts & { msgs: ChatMsg[] }; sfx?: { file: string; at: number; gain?: number }[] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image; sfx: file absolut, at = Sekunde im fertigen Clip
+export interface ClipJob { file: string; parts: Part[]; hook?: string; captions: Captions; transcript: Transcript | null; size: Size; font: SubFont; accent: string; loudnorm?: boolean; pauses?: Pauses; fit?: Fit; style?: ClipStyle; cuts?: number[]; ton?: ClipContent['ton']; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: ClipContent['captionPos']; cam?: ClipContent['cam']; chat?: ChatOpts & { msgs: ChatMsg[] }; sfx?: { file: string; at: number; gain?: number }[] } // overlays: image/video als aufgelöster Pfad, slide schon als PNG in image; sfx: file absolut, at = Sekunde im fertigen Clip
 /** Jeder ffmpeg-Schritt des Exports: auf dem Handy, wenn eins mitrechnet (gleiche Parameter, damit -c:v copy beim Verbinden passt); scheitert es, rechnet der PC */
 export const ffx = (args: string[], ro: { cwd: string; duration?: number; onProgress?: (pct: number) => void }, phone?: Phone) => {
   if (!phone || phone.failed) return runFfmpeg(args, ro)
@@ -246,7 +256,9 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     return r.freeze && j < all.length - 1 ? { ...r, freeze: undefined } : r
   }))
   const parts = padParts(split.map((p, i) => (p.freeze && split[i + 1] && Math.abs(split[i + 1].start - p.end) < 1e-3 ? { ...p, freeze: undefined } : p)), info.duration, job.cuts), joined = seamless(parts), total = partsLength(parts), { size } = job
-  const blur = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01 // gleiches Seitenverhältnis: blur = crop
+  // gleiches Seitenverhältnis: blur und split = crop; split ohne erkannte Facecam (cam) zeigt das ganze Bild wie blur
+  const other = Math.abs(info.w / info.h - size.w / size.h) > 0.01, cam = job.fit === 'split' && other ? job.cam : undefined
+  const blur = (job.fit === 'blur' || (job.fit === 'split' && !cam)) && other
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2)) // Grund klein weichzeichnen, dann hochskalieren: billig und weich
   const captions = job.transcript && job.captions !== 'aus' ? job.captions : null
   const live = job.style === 'lebendig', look = await lookFilter(job)
@@ -290,10 +302,10 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
       // Standbild: F Frames des letzten bewegten Bilds halten, dazu der Vorlauf der Blende danach (die blendet aus dem Standbild, nicht aus der Quelle nach dem Ende)
       const fz = freezeOf(p), F = Math.round(fz * 30), h1 = hv[i + 1] ?? 0
       const end = F ? `trim=end_frame=${Math.max(1, frames - F - h1)},tpad=stop_mode=clone:stop=${frames - Math.max(1, frames - F - h1)}` : `trim=end_frame=${frames}`
-      const fit = blur
+      const fit = cam ? splitFilter(splitRects(info, size, cam, p.focus), size, i) : blur
         ? `split[b${i}][f${i}];[b${i}]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g${i}];` +
           `[f${i}]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h${i}];[g${i}][h${i}]overlay=(W-w)/2:(H-h)/2`
-        : cropFilter(c, size, (job.fit === 'blur' ? 1 : zoomOf(job.style, cutIndex(parts, k))) * pz, p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
+        : cropFilter(c, size, (job.fit === 'blur' || job.fit === 'split' ? 1 : zoomOf(job.style, cutIndex(parts, k))) * pz, p.track ? { src: info, keys: p.track, start: p.start - before * sp[i] } : undefined) // k über alle Gruppen; start = Anfang der Eingabe (mit Vorlauf); Zoom wechselt nur an echten Schnitten, nie bei blur
       // Ton ab p.start − a0: die Eingabe beginnt beim längeren Bild-Vorlauf (before)
       // Tempo nach dem Zuschnitt im Quellbereich, dann Lautstärke des Originaltons
       const vol = p.volume !== undefined && p.volume !== 1 ? `volume=${Math.min(2, Math.max(0, p.volume))},` : ''
@@ -361,7 +373,7 @@ export async function clipSegs(job: ClipJob, name: string, dir: string, o: SegOp
     const ro = { cwd: dir, duration: dur, onProgress: onProgress && ((pct: number) => onProgress(Math.floor(((done + (dur * pct) / 100) / total) * 100))) }
     await ffx(args, ro, o.phone)
     const music = ps.flatMap((p, i): [number, number, number][] => (p.music === undefined ? [] : [[at[i], at[i + 1], p.music]]))
-    segs.push({ file, dur, ...(music.length ? { music } : {}), ...(words.length ? { cues: cues(words, 'satz') } : {}) }) // SRT (nur mit Untertiteln, captions ≠ aus und Transkript da) immer in Zeilen, auch bei wort
+    segs.push({ file, dur, ...(music.length ? { music } : {}), ...(words.length ? { cues: cues(words, 'satz') } : {}), ...(first ? { xml: [{ at: 0, src: job.file, info, parts, marks: clipMarks(job.hook, job.overlays, parts) }] } : {}) }) // SRT (nur mit Untertiteln, captions ≠ aus und Transkript da) immer in Zeilen, auch bei wort
     done += dur
   }
   return segs
@@ -377,7 +389,8 @@ export async function encodeCover(job: ClipJob, t: number | undefined, out: stri
   const focus = !tr?.length ? p.focus : k < 0 ? tr[tr.length - 1][1] : k === 0 ? tr[0][1] : tr[k - 1][1] + ((tr[k][1] - tr[k - 1][1]) * (at - tr[k - 1][0])) / (tr[k][0] - tr[k - 1][0])
   const { size } = job, hook = job.hook?.trim(), name = basename(out).replace(/\.\w+$/, ''), look = await lookFilter(job)
   const [bw, bh] = [size.w, size.h].map((v) => Math.max(2, Math.round(v / 24) * 2))
-  const fit = job.fit === 'blur' && Math.abs(info.w / info.h - size.w / size.h) > 0.01
+  const other = Math.abs(info.w / info.h - size.w / size.h) > 0.01, cam = job.fit === 'split' && other ? job.cam : undefined
+  const fit = cam ? splitFilter(splitRects(info, size, cam, focus), size) : (job.fit === 'blur' || job.fit === 'split') && other
     ? `split[b][f];[b]scale=${bw}:${bh}:force_original_aspect_ratio=increase,crop=${bw}:${bh},boxblur=4,lutyuv=y=val*0.55,scale=${size.w}:${size.h}[g];` +
       `[f]scale=${size.w}:${size.h}:force_original_aspect_ratio=decrease:force_divisible_by=2[h];[g][h]overlay=(W-w)/2:(H-h)/2`
     : cropFilter(cropRect(info, size, focus), size)
@@ -404,8 +417,10 @@ export async function finish(segs: Seg[], out: string, dir: string, o: { loudnor
   await writeFile(join(dir, list), segs.map((s) => `file '${basename(s.file)}'`).join('\n'))
   // Musikpegel je Ausschnitt (Seg.music): Lautstärke als Ausdruck über die Zeit, sonst feste Zahl
   let off = 0
-  const spans = segs.flatMap((x) => { const r = (x.music ?? []).map(([a, b, v]): [number, number, number] => [off + a, off + b, Math.min(1, Math.max(0, v))]); off += x.dur; return r })
-  const vol = Math.min(1, Math.max(0, o.music?.volume ?? DUCK.volume)) * (o.music?.gain ?? 1)
+  // gain (Angleich der Datei) wirkt wie bei volume auch auf die Pegel je Ausschnitt, sonst springt der Pegel an deren Grenzen
+  const gain = o.music?.gain ?? 1
+  const spans = segs.flatMap((x) => { const r = (x.music ?? []).map(([a, b, v]): [number, number, number] => [off + a, off + b, Math.min(1, Math.max(0, v)) * gain]); off += x.dur; return r })
+  const vol = Math.min(1, Math.max(0, o.music?.volume ?? DUCK.volume)) * gain
   const graph = (loud: string) => ['-filter_complex', o.music ? `${duckMusic('0:a', '1:a', spans.length ? `${levelExpr(vol, spans)}:eval=frame` : vol, dur, 'mx')};[mx]anull${loud}[a]` : `[0:a]anull${loud}[a]`]
   const music = o.music ? ['-stream_loop', '-1', '-i', resolve(o.music.file)] : []
   const input = ['-f', 'concat', '-safe', '0', '-i', list, ...music]
@@ -424,7 +439,8 @@ export async function joinSegs(a: Seg, b: Seg, transition: string, out: string, 
     '-map', '[v]', '-map', '[a]', ...video(preset, hevc), ...PCM, out], { cwd: dir }, phone)
   const music = [...(a.music ?? []), ...(b.music ?? []).map(([x, y, v]): [number, number, number] => [x + off, y + off, v])]
   const subs = [...(a.cues ?? []), ...(b.cues ?? []).map((c) => ({ ...c, start: c.start + off, end: c.end + off }))]
-  return { file: out, dur: a.dur + b.dur - d / 30, ...(music.length ? { music } : {}), ...(subs.length ? { cues: subs } : {}) }
+  const xml = [...(a.xml ?? []), ...(b.xml ?? []).map((s) => ({ ...s, at: s.at + off }))]
+  return { file: out, dur: a.dur + b.dur - d / 30, ...(music.length ? { music } : {}), ...(subs.length ? { cues: subs } : {}), ...(xml.length ? { xml } : {}) }
 }
 
 /** Eine Clip-Szene fertig als MP4 (Zwischenstände + Endschritt). Gibt die Länge (s) zurück. */
@@ -517,14 +533,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
       if (!(await stat(img).catch(() => null))) throw new Error(`Folie ${i + 1}: Das Bild der Einblendung fehlt (${basename(img)}).`)
     }
   }
-  // Musik vorab einmal anspielen: probe() verlangt eine Videospur, und ffmpegs „Stream specifier [1:a]“ käme erst nach dem Encoden
-  // Dabei die Lautheit messen (erste 3 min reichen, Musik ist gleichmäßig) und auf MUSIC_LUFS angleichen, höchstens ×4 lauter
-  if (o.music) {
-    const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-nostats', '-t', '180', '-i', resolve(o.music.file), '-map', '0:a:0', '-af', 'ebur128', '-f', 'null', '-'])
-    if (r.code !== 0) throw new Error(`Die Musikdatei ${o.music.file} ${/No such file/i.test(r.err) ? 'fehlt' : /matches no streams/i.test(r.err) ? 'hat keine Tonspur' : 'ist nicht lesbar'}.`)
-    const i = Number(/Integrated loudness:\s+I:\s+(-?[\d.]+) LUFS/.exec(r.err)?.[1]) // Zusammenfassung am Ende; -70 = still
-    o = { ...o, music: { ...o.music, gain: Number.isFinite(i) && i > -60 ? Math.min(4, 10 ** ((MUSIC_LUFS - i) / 20)) : 1 } }
-  }
+  if (o.music) o = { ...o, music: await withMusicGain(o.music) }
   // Gewählte Auflösung nie über dem größten Quell-Ausschnitt (videoSize); ohne Wahl kein Proben, alles wie bisher
   const sources = deck.videoRes ? (await Promise.all([...new Set(scenes.flatMap(({ i, clip }) => (clip ? [videoPath(clip.video, i + 1)] : [])))].map((f) => probe(f).catch(() => null)))).filter((x) => x !== null) : []
   const size = videoSize(sizeOf(deck), deck.videoRes, sources), accent = resolveTheme(deck.theme).c.accent, short = Math.min(size.w, size.h)
@@ -562,8 +571,14 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
     }
     // Untertitel aller Zwischenstände auf der Achse der Ausgabedatei (Standbilder und Folienblenden stecken in Seg.dur)
     const subsOf = (segs: Seg[]) => { let off = 0; return segs.flatMap((x) => { const r = (x.cues ?? []).map((c) => ({ ...c, start: c.start + off, end: c.end + off })); off += x.dur; return r }) }
-    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string, phone?: Phone, subs: Cue[] = []) => {
+    // Schnittliste (.xml für Premiere/Resolve) aus den Clip-Szenen auf derselben Achse; ein Fehler kostet nur die Schnittliste
+    const extras = async (name: string, to: string, cover?: { job: ClipJob; t?: number }, post?: string, phone?: Phone, segs: Seg[] = []) => {
+      const subs = subsOf(segs)
       if (subs.length) { await writeFile(join(dir, `${name}.srt`), srt(subs), 'utf8'); moves.push([join(dir, `${name}.srt`), `${to}.srt`]) }
+      let off = 0
+      const scenes = segs.flatMap((x) => { const r = (x.xml ?? []).map((s) => ({ ...s, at: s.at + off })); off += x.dur; return r })
+      if (scenes.length && APP.pro) await Promise.resolve().then(() => writeFile(join(dir, `${name}.xml`), xmeml({ name: basename(to), size, duration: off, scenes }), 'utf8')).then(
+        () => moves.push([join(dir, `${name}.xml`), `${to}.xml`]), (e: Error) => console.warn(`[video] Schnittliste ${basename(to)}.xml fehlgeschlagen:`, e.message))
       if (cover) await encodeCover(cover.job, cover.t, join(dir, `${name}.jpg`), dir, phone).then(
         () => moves.push([join(dir, `${name}.jpg`), `${to}.jpg`]), (e: Error) => console.warn(`[video] Titelbild ${basename(to)}.jpg fehlgeschlagen:`, e.message))
       if (post?.trim()) { await writeFile(join(dir, `${name}.txt`), post, 'utf8'); moves.push([join(dir, `${name}.txt`), `${to}.txt`]) }
@@ -578,7 +593,7 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         if (!transcript && captions !== 'aus') console.warn(`[video] Kein Transkript für ${file}: Clip ohne Untertitel (erst transcribe_video aufrufen)`)
         const overlays = clip.overlays && await Promise.all(clip.overlays.map(async (x, j) => (x.image ? { ...x, image: videoPath(x.image, i + 1, 'image') }
           : x.video ? { ...x, video: videoPath(x.video, i + 1, 'video') } : x.slide ? { ...x, image: await slidePng(x.slide - 1, `einblendung-${n2(k + 1)}-${n2(j + 1)}.png`) } : x)))
-        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays, look: clip.look, stabil: clip.stabil, captionPos: clip.captionPos, sfx: sfxOf(clip, i + 1) }
+        job = { file, parts: clip.parts, hook: clip.hook, captions, transcript, size, font, accent, pauses: clip.pauses, fit: clip.fit, style: clip.style, cuts: clip.cuts, ton: clip.ton, overlays, look: clip.look, stabil: clip.stabil, captionPos: clip.captionPos, cam: clip.cam, sfx: sfxOf(clip, i + 1) }
         if (clip.chat) {
           const msgs = await chatOf(file)
           if (msgs.length) job.chat = { ...clip.chat, msgs }
@@ -599,17 +614,16 @@ async function exportOnce(deck: Deck, target: string, format: 'mp4' | 'clips', t
         await Promise.all([a, b].map((x) => rm(x.file, { force: true })))
       }
       if (format === 'mp4') { all.push(...segs); continue }
-      const subs = subsOf(segs)
       await finish(segs, join(dir, `${name}.mp4`), dir, { loudnorm: true, music: o.music, phone: o.phone, hevc, onProgress: step(weights[k] * 0.2) })
       await Promise.all(segs.map((x) => rm(x.file, { force: true }))) // Zwischenstände sofort weg: bei langen Exporten sonst viele GB
       done += weights[k] * 0.2
       moves.push([join(dir, `${name}.mp4`), `${base}-${n2(k + 1)}.mp4`])
-      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post, o.phone, subs)
+      await extras(name, `${base}-${n2(k + 1)}`, { job: job!, t: clip!.cover }, clip!.post, o.phone, segs)
     }
     if (format === 'mp4') {
       await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: true, music: o.music, phone: o.phone, hevc, onProgress: step(sum * 0.2) })
       moves.push([join(dir, 'gesamt.mp4'), `${base}.mp4`])
-      await extras('gesamt', base, first.cover, first.post, o.phone, subsOf(all))
+      await extras('gesamt', base, first.cover, first.post, o.phone, all)
     }
     for (const [from, to] of moves) await rename(from, to) // Job-Ordner liegt neben dem Ziel, also im selben Dateisystem
     onProgress(100)

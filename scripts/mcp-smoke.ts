@@ -1,6 +1,7 @@
 // MCP-Server gegen Mock-Engine über einen In-Memory-Transport: Tools gelistet, Fehler als isError, Bilder, save/open.
 // Aufruf: npx esbuild scripts/mcp-smoke.ts --bundle --platform=node --format=esm --loader:.md=text --outfile=out/mcp-smoke.mjs && node out/mcp-smoke.mjs
 import assert from 'node:assert/strict'
+import { APP } from '../src/shared/app-id'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -34,7 +35,7 @@ const names = listed.map((t) => t.name).sort()
 // ohne readOnlyHint führt Claude Code Aufrufe nacheinander aus (4 KI-Bilder dauerten so über 6 min)
 assert.equal(listed.find((t) => t.name === 'generate_image')?.annotations?.readOnlyHint, true)
 assert.equal(listed.find((t) => t.name === 'add_slides')?.annotations?.readOnlyHint, undefined, 'Deck-Änderungen bleiben seriell')
-assert.equal(names.length, 31)
+assert.equal(names.length, APP.pro ? 32 : 31)
 assert.ok(names.includes('add_slides') && names.includes('save_deck'))
 // read_guide in Teilen unter Claude Codes Token-Grenze, zusammen der volle Systemprompt
 const parts = guideParts()
@@ -45,7 +46,11 @@ const vg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'vi
 const pg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'podcast' } })) as { content: { text: string }[] }).content[0].text
 assert.ok(pg.startsWith('## 13. Podcast') && pg.includes('create_episode') && !pg.includes('## 11.') && pg.length < 20000, pg.slice(0, 200))
 // 21 000 statt 20 000: clip.sfx (Podcast-Zweig) kam dazu; read_guide gibt bis 30 000 Zeichen am Stück aus
-assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 20000, `Video-Guide ${vg.length} Zeichen`)
+assert.ok(vg.startsWith('## 11. Video') && vg.includes('\n### clip ') && !vg.includes('## 1.') && vg.length < 21000, `Video-Guide ${vg.length} Zeichen`)
+if (APP.pro) {
+  const tg = ((await client.callTool({ name: 'read_guide', arguments: { topic: 'timeline' } })) as { content: { text: string }[] }).content[0].text
+  assert.ok(tg.startsWith('## 14. Timeline') && tg.includes('\n### schnitt ') && tg.length < 20000, tg.slice(0, 200))
+}
 
 type Res = { content: { type: string; text?: string }[]; isError?: boolean }
 const call = (name: string, args: Record<string, unknown> = {}) => client.callTool({ name, arguments: args }) as Promise<Res>

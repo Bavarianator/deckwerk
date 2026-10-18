@@ -1,0 +1,146 @@
+---
+name: deckwerk-pro
+description: Präsentationen mit Deckwerk Pro bauen oder überarbeiten – Folien, Decks, Vorträge, Pitches, Chef-Updates, Schulungen, Handouts, Instagram-Karussells, A4-Dokumente, Angebote, Flyer, Plakate, Briefe, Lebensläufe, Einladungen, Urkunden, Speisekarten und Visitenkarten – und als PowerPoint (PPTX), PDF oder PNG exportieren; dazu Videos schneiden – Shorts und Reels, gekürzte Fassungen, Stream-Highlights und Zusammenschnitte, auch per Link von YouTube, Twitch oder Kick – und als MP4 exportieren; dazu Podcasts schneiden – Pausen, Füllwörter, Versprecher entfernen, Kapitel, Intro/Outro, Soundeffekte, als MP3; dazu animierte Erklärvideos, Produkt- und Live-Demo-Videos, Tutorials und Kennzahlen-Videos aus Folien mit Sprecherstimme. Nutzen, sobald jemand eine Präsentation, Folien, ein Deck, slides, a presentation oder eine pptx erstellen, aus einem Dokument oder Repo machen, verbessern, kürzen oder exportieren will oder eine deck.json öffnet, oder wenn jemand aus Videos oder Streams Clips, Shorts, Reels, Highlights oder einen Zusammenschnitt machen will, oder einen Podcast schneiden will, oder wenn jemand ein Erklärvideo, eine Demo oder ein animiertes Video mit Sprecher will. Arbeitet mit den MCP-Werkzeugen des Servers deckwerk-pro (create_deck, add_slides, …).
+---
+
+# Deckwerk: Präsentationen, die man dem Chef zeigen kann
+
+Deckwerk baut Folien aus einem festen Layout-Katalog. Deine Aufgabe sind Storyline, eine Botschaft pro Folie, die Wahl des Layouts und knapper Text. Positionen, Schriftgrößen und Farben setzt die Engine; sie misst jede Folie und meldet Probleme zurück. Setze nie Koordinaten und erfinde keine Layouts.
+
+## 0. Voraussetzung
+
+Die Werkzeuge kommen vom MCP-Server `deckwerk-pro` (in Claude Code `mcp__deckwerk-pro__…`). Fehlen sie, ist Deckwerk Pro nicht eingetragen. Dann sag dem Nutzer: in der App Deckwerk Pro Einstellungen (Zahnrad) → Agenten → „In Claude Code einrichten“ bzw. „In Codex einrichten“, danach eine neue Sitzung starten. Baue die Präsentation nicht stattdessen per Skript, HTML oder python-pptx nach.
+
+Pro-Funktionen: Excel-Verknüpfungen von Diagrammen (`link`) setzt nur die App, nie du; `export_deck` `print` mit `cmyk: true` liefert PDF/X-4 in CMYK; neben jedem Clip-MP4 liegt eine `.xml` für Premiere und Resolve; Kunden (Brand-Kit und Hausstil je Kunde) wählt der Nutzer in den Einstellungen.
+
+## 1. Zuerst den Guide lesen
+
+Der Guide besteht aus Modulen. Die Server-Anweisungen enthalten Grundregeln und einen Index (fehlt er, `read_guide` ohne Eingabe). Lade dann mit `read_guide({ module: [...] })` die Module, die der Auftrag braucht: das Gerüst des Formats (`geruest-praesentation`, `geruest-social`, `geruest-a4`, `geruest-visitenkarte`, `geruest-stream`), bei neuen Decks `storyline`, `inhalt-layout`, `gestaltung`, `stil`, `abwechslung`, `text`, `katalog-themes`, und jedes Layout, das du nutzt, als `layout:<id>` mit Feldern und Schema. Brauchst du später mehr (Animation, Fotos, weitere Layouts), lade es nach, bevor du es nutzt. Ohne Schema rätst du Felder (Schemafehler). Für reine Video-Aufträge genügt `read_guide({ topic: "video" })` (Video-Schnitt und das Layout `clip`), für Podcasts `read_guide({ topic: "podcast" })` (Podcast-Schnitt).
+
+## 2. Briefing und Material
+
+- Höchstens 2–3 Rückfragen: Zielgruppe, Ziel oder Entscheidung, Umfang und Anlass. Fehlt etwas, triff eine sinnvolle Annahme und nenne sie.
+- **Format:** Standard ist 16:9. Für Instagram (Karussell 4:5 oder 1:1, Story 9:16) oder Druck (A4) beim Anlegen `create_deck` mit `format` aufrufen; Gerüst und Textmenge stehen im Guide §3 (Karussell, A4-Dokument mit `doc-text`/`offer`, Flyer mit `flyer`; beidseitig `flyer` + `flyer-back`). Weitere Drucksachen auf A4 hoch: `letter` (Brief nach DIN 5008), `cv` (Lebenslauf), `invitation` (Einladung), `menu` (Speisekarte); `certificate` (Urkunde) auf `a4-quer`; `business-card` im Format `visitenkarte` (zwei Seiten: front und back).
+- **Quellmaterial:** Nennt der Nutzer Dateien (Bericht, README, Tabelle, Notizen), lies sie selbst und übernimm nur belegte Zahlen. Fehlt eine Zahl, nimm einen deutlich markierten Platzhalter und liste ihn am Ende auf. Nie stillschweigend erfinden.
+- **Vorhandenes Deck:** `open_deck` mit dem Pfad, dann `get_deck`. Gezielt mit `update_slide` ändern statt neu bauen.
+
+## 3. Idee, dann Storyline
+
+Erst die Idee (Guide §2 „Die Idee“): Entwickle drei Leitideen (naheliegend, überraschend, gewagt), verwirf die naheliegende und nimm die stärkste, die zum Publikum passt. Mögliche Zutaten:
+- ein Bild für das Ganze
+- ein Einstieg mit Haken statt Agenda
+- greifbare Vergleiche für Zahlen
+- konkrete Beispiele aus dem Material
+- ein Perspektivwechsel (Sicht des Kunden, Brief aus 2030, ein Tag im Leben von …)
+- eine Serie von Ein-Satz-Folien als Schlagfolge
+- Kapiteltrenner als Frage
+- ein mutiger Höhepunkt (im Stil mutig zwei bis drei)
+- ein Schluss, der den Anfang in Sprache oder Motiv aufgreift (nicht mit demselben Foto)
+
+Nenne die Idee in einem Satz. Mutig sein heißt hier: in Idee, Sprache und Dramaturgie, nicht in Deko. Beim Chef-Update bleibt sie leise.
+
+Dann zeige die Storyline als nummerierte Liste der Titel im Chat (Datenfolien als Aussage-Satz, Bühnenfolien kurz):
+- Datenfolien tragen die Kernaussage als ganzen Satz mit höchstens ~80 Zeichen, möglichst mit Zahl oder konkretem Ergebnis. Bühnenfolien (statement, big-number, photo) kurz, dazu eine kurze Behauptung oder Frage: Titel in Form und Länge mischen.
+- Test: Wer nur die Titel liest, versteht Argument und Empfehlung.
+- Gerüst nach Anlass (Guide §3), Empfehlung früh (Pyramidenprinzip).
+- Bei großen Decks auf ein OK warten, bei klarem Auftrag direkt weiterbauen.
+
+## 4. Look
+
+- Ohne Vorgabe: `propose_looks` mit drei eigenen Entwürfen: einem hellen, sachlichen, einem dunklen oder plakativen und einem Überraschungsentwurf, der unerwartet, aber aus dem Thema begründet ist. Sie sollen sich in der Struktur unterscheiden (Serif/Sans, titleSize, rule, sectionTone, labelFont, elements für die Bauteile: line, plain, solid nur im Stil mutig; sparsam auch signature, margin/measure, heroTone, field), nicht nur in der Farbe. Jedes Design trägt eine unerwartete Entscheidung (Guide §6). Im Stil mutig sind auch `plakat`, `magazin`, `neomono` und `pastell` Kandidaten. Lass den Nutzer wählen. Gibt er Marke, Farben oder Theme vor, rufe direkt `create_deck` auf.
+- **Brand-Kit:** Hat der Nutzer in Deckwerk eine Marke (Farben, Schriften, Logo) gespeichert, wendet `create_deck` sie automatisch an und nennt das im Ergebnis. Dann Akzentfarbe und Schriften nicht überschreiben; `brand: null` nur auf ausdrücklichen Wunsch. Der Hausstil ergänzt die Marke (Ton, Anrede), die Marke bestimmt Farbe und Schrift.
+- `create_deck` mit genau dem gewählten `customTheme`. Die Vorschau im Ergebnis wie ein Art Director prüfen.
+- **Theme-Lint:** Eigene Designs mit Klischee-Palette, Creme/Pastell- oder Mittelton-Grund, Neon-Akzent oder Standardschrift generierter Designs lehnen die Werkzeuge mit konkreter Korrektur ab: korrigieren und erneut aufrufen. `override` mit Begründung nur, wenn der Nutzer es ausdrücklich so will (z. B. Markenfarbe). „Theme-Hinweise“ im Ergebnis abwägen.
+- **Feinschliff:** `tune` in `create_deck`/`update_deck` legt Struktur-Tokens (z. B. `margin`, `signature`, `heroTone`) über jedes Theme, auch über Katalog-Themes; `null` entfernt einen Wert (Guide §6 „Feinschliff“).
+- **Stil des Decks** (`style` in `create_deck`/`update_deck`): Ohne Vorgabe wählst du ihn beim Anlegen nach Anlass und nennst die Wahl in einem Halbsatz. Eine Vorgabe des Nutzers hat Vorrang; bestehende Decks nur auf Wunsch umstellen.
+  - **Mutig** für Vortrag, Schule, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social-Karussell oder wenn der Nutzer „mutiger“, „plakativ“ bzw. „verspielter“ will. Dann erlaubt Guide §6 „Stil des Decks“ kräftigen Farbgrund (`vivid`), Plakat-Typo, mehr Farbflächen und markante Bilder.
+  - **Sachlich** für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot: Zurückhaltung statt Deko. Eine Akzentfarbe, Hierarchie über Größe und Weißraum. Sticker, Blobs, Verläufe und Icons als Schmuck nur auf ausdrücklichen Wunsch.
+- **Abwechslung:** Ein neues Deck unterscheidet sich im Designtyp (Grund neutral/getönt/dunkel, Serif/Sans, Titelgewicht, Bauteile line/plain) von den zuletzt gebauten Decks (Guide §6 „Abwechslung“), außer bei einer Serie oder mit Brand-Kit.
+
+## 5. Bilder
+
+- **Bildplan:** 2–5 Folien tragen ein Bild (Cover, Kapitelwechsel, Höhepunkt, Abschluss), nicht jede.
+- **Variante `side`** (cover, closing, photo): Foto rechts auf 7/12, Text links ohne Verlauf; nimm sie, wenn das Foto keine ruhige Fläche hat. Vollbild mit Verlauf höchstens einmal pro Deck.
+- **Erst suchen:** `find_images` (eigene Bilder, freie Fotos).
+- **Dann erzeugen:** `generate_image` nur nach Guide §6 „KI-Bilder“:
+  - ein Stilsatz für alle Bilder
+  - alle Bilder des Plans in einer Antwort gleichzeitig anfordern
+  - nie echte Personen, Logos, Marken oder Produkte des Nutzers
+  - kein KI-Look
+- Bildnachweis bzw. „Bild: KI-generiert“ in die Notes, `focus` nach der Vorschau setzen.
+
+## 6. Folien bauen
+
+- `add_slides` in Etappen von 4–6 Folien. Jede Antwort meldet Autofit und Lint pro Folie.
+  - **Fehler sofort beheben:** Text kürzen, Folie teilen oder das Feld nach dem Katalog korrigieren.
+  - **Warnungen bewusst entscheiden:**
+    - `sparse` (wirkt leer): mehr Substanz (Zahl, Beispiel, Beleg), ein Foto, eine luftigere Form (statement, big-number) oder mit der Nachbarfolie zusammenlegen.
+    - `density` (zu viel Text): kürzen, der Rest kommt in die Notes.
+    - `monotone`, `rhythm`, `cards`, `breath`: Komposition (`frame`), Ton (`tone`) oder Layout wechseln.
+    - `ki-sprache`, `ki-muster`: Floskel oder Muster umschreiben, konkret statt glatt (Guide §7 „Klingt nach KI“).
+    - `mut`: einen mutigen Moment einbauen, z. B. `statement`/`big-number` Variante `poster` (Guide §6 „Mut wie ein Mensch“).
+    - `ornament`: Eyebrow nur auf Cover und wo es Orientierung gibt (Kapitel, Stand), sonst weglassen.
+    - `echo`: Schluss zeigt das Cover-Foto; anderes Motiv oder ohne Foto, den Bogen über Sprache oder Motiv schlagen.
+    - `titel-formel`: Titel mischen (Bühnenfolien ein Wort oder kurzer Satz, eine Behauptung ≤ 5 Wörter, eine Frage).
+- **Rhythmus:** Auf je vier Inhaltsfolien kommt eine luftige (statement, big-number, photo). Kapiteltrenner und Höhepunkt mit `tone` absetzen.
+- **Diagramme** immer mit `highlight`; die Aussage steht im Titel, nicht im Chart.
+- **Speaker Notes** zu jeder Inhaltsfolie: 2–4 Sätze, die der Redner sagt.
+- **Animation:** ein Übergangstyp pro Deck, höchstens ein Build pro Folie, Morph nur gezielt (Guide §8).
+
+## 7. Prüfen, höchstens drei Runden
+
+1. `lint_deck` muss 0 Fehler melden.
+2. `render_overview` wie ein Art Director ansehen: Erzählen die Titel die Geschichte? Stimmt der Rhythmus aus dicht und luftig? Wirkt eine Folie leer oder überladen? Passen die Fotos zusammen?
+3. Die schwächsten 1–3 Folien gezielt verbessern. Details mit `render_slides` prüfen.
+
+## 8. Abschluss
+
+- `save_deck` speichert nach `~/DeckwerkPro/<titel>/deck.json`. Nenne den Pfad; der Nutzer öffnet die Datei in der App Deckwerk Pro (Doppelklick auf `deck.json`) und kann dort weiterarbeiten.
+- Exportieren nur auf Wunsch: `export_deck` mit `pptx`, `docx` (Word: Text bearbeitbar, Gestaltung als Hintergrundbild), `pdf`, `png`, `zip` (alle Bilder plus PDF in einer Datei, für Karussells) oder `md` (Handout). Pfade nennen; bei Nicht-16:9 tragen die Dateien das Format im Namen (`-4x5`, `-a4`).
+- Drucksachen für die Druckerei: `export_deck` mit `format: "print"` (`…-druck.pdf`, Endformat plus Beschnitt `bleed`, Standard 3 mm). A4-Decks skaliert `size` verlustfrei: a2/a3 = Plakat, a5 = Flyer, a6 = Postkarte oder Einladung; die Visitenkarte druckt in ihrer eigenen Größe. Vorher nicht gewählte Entwürfe löschen, damit die Seitenzahl (1 oder 2) zur Bestellung passt. Farben bleiben RGB, außer mit `cmyk: true` (PDF/X-4, FOGRA39; wenn die Druckerei CMYK verlangt); bei großer Auflage Probedruck raten. Lint `print-res` (Foto unter 250 ppi) vorher beheben.
+- Serien (Urkunden, Namensschilder, Einladungen für mehrere Personen): ein Exemplar mit `{{Spalte}}` in den Texten bauen und `export_deck` mit `rows` aufrufen (je Person ein Objekt, Schlüssel = Spaltennamen); je Zeile entsteht eine Datei in `serie-<format>`.
+- Kurzer Bericht: Folienzahl, Storyline in einem Satz, getroffene Annahmen und was der Nutzer ersetzen muss (Zahlen, Zitate, Fotos).
+
+## 9. Video schneiden
+
+Will der Nutzer aus Videos Shorts, eine gekürzte Fassung, Stream-Highlights oder einen Zusammenschnitt, gilt Guide §11 „Video“. Eine Folie im Layout `clip` ist ein Video aus Ausschnitten. Meldet ein Video-Tool „läuft noch“, gleich noch einmal mit denselben Eingaben aufrufen.
+- **Material:** asset://-Pfad aus dem Anhang, absoluter Pfad, schon auf dem PC (`import_video` ohne `url` listet sie, zuerst so nachsehen) oder per Link `import_video` (YouTube, Twitch, Kick). Nur Material, an dem der Nutzer die Rechte hat oder das frei lizenziert ist; laufende Livestreams erst nach dem Ende.
+- **Sprache:** Ohne `lang` transkribiert Parakeet, das nur 25 europäische Sprachen kennt. Bei Sprachen außerhalb Europas (z. B. Japanisch, Türkisch, Arabisch) `lang` setzen – dann Whisper.
+- **Short/Reel (9:16):** `transcribe_video` → 3–5 stärkste Momente (Hook in den ersten 3 s, ohne Vorwissen verständlich, Bogen bis zum Payoff, zitierfähig, abgeschlossenes Ende), je ideal 55–75 s (hart 20–90), Schnitte nur an Segmentgrenzen, gelistete Neuansätze herausschneiden → `video_frames` als Kontaktabzug → `create_deck` `format: "9:16"`, `transition: "none"`, je Short eine `clip`-Folie (`hook` ≤ 70 Zeichen ohne Clickbait und Emojis, `captions` `wort`, `style` `lebendig`, `fit` `crop` mit Auto-Zuschnitt aufs Gesicht oder `blur` bei Folien und Gesten am Rand, `split` bei Streams mit Facecam (Kamera oben, Spiel unten), `follow` `sprecher` bei mehreren Personen, `ton` `klar` bei Sprache aus Handy/Webcam, `cover` = Quellsekunde fürs Titelbild aus dem Kontaktabzug, `post` = Titel ≤ 100 Zeichen, 1–2 Sätze, 3–5 Hashtags) → `export_deck` `clips` (je Short MP4, Cover .jpg, Post-Text .txt), optional `formats: ["1:1", "16:9"]` für weitere Plattformen.
+- **Auswahl:** Kandidaten 4 × 0–25 bewerten (Hook, Bogen, Wert, Teilbarkeit), nur ≥ 70 nehmen; Shorts ideal 55–75 s (hart 20–90), steht für sich allein, keine doppelten Aussagen, lieber 4–8 gute als 2. Details Guide §11.
+- **Grob → fein:** `video_highlights` mit `overview: true`, dann nur die besten Fenster transkribieren; Stellen per `search_transcript` (Thema oder Zitat).
+- **Selbstkontrolle:** Clip-Prüfung in der `add_slides`-Antwort beheben; vor dem Export `check_clip` für die besten Clips, Kontaktabzug ansehen, höchstens 2 Runden.
+- **Ganzes Video kürzen (16:9):** `transcribe_video` mit `all: true` → eine `clip`-Folie je Quelle mit allen behaltenen Ausschnitten in Reihenfolge (bis 100), Neuansätze herausschneiden, `pauses` `kurz`, `ton` `klar` bei Sprache (nie bei Musik), `captions` `satz` oder `aus` → `export_deck` `mp4`.
+- **Stream (2–8 h) und Videos über 10 min:** `video_highlights` → nur die besten Fenster mit `transcribe_video` `from`/`to` → Kontaktabzug → Shorts, auf Wunsch ein 16:9-Zusammenschnitt.
+- **Langes Video aus Stream (z. B. 12 min, „eins mit allem Wichtigen“; Standard bei „Highlights“ ohne Format):** Quelle bis ~45 min `transcribe_video` mit `all: true`, länger `video_highlights` mit `minutes` und die Fenster per `from`/`to` → eine `clip`-Folie mit allen Momenten als `parts` in Reihenfolge (bis 100), `pauses` `kurz`, `captions` `satz` → `export_deck` `mp4`; mehrere Folien nur bei gewünschten Zwischentiteln.
+- **Kompilation:** je Quelle eine `clip`-Folie, dazwischen ruhige Zwischentitel (`section`, `statement`), `transition` `fade` oder `dissolve` (echte Überblendung im MP4) nur dort und an Ortswechseln; Musik dezent über `find_music` und `update_deck` `music`, CC-BY-Nachweis in die Notes der letzten Folie → `export_deck` `mp4`.
+- **Effekte (sparsam):** je Ausschnitt `speed` (Zeitlupe für den Höhepunkt einer Aktion, Zeitraffer ohne Sprache), `volume`/`music` (Montage: `volume` 0, `music` 0.8), `transition` am Schnitt nur an Orts-/Szenenwechseln (weglassen = automatische Blende); `zoom` 1.1–1.2 an der Pointe, `freeze` nur am Satzende; `overlays` höchstens eine zur Zeit, nie das Gesagte: Bauchbinde einmal je Person beim ersten Auftritt, `titel` an Kapiteln, `zahl`, `liste` (Punkte nacheinander), `zitat` (Kernsatz), `markierung` (Rahmen um ein Detail, `box`), `abspann` (letzte 8 s), Bild-in-Bild oder B-Roll (`pos` `voll`, 2–6 s, nicht in den ersten 3 s eines Shorts), Diagramm als ausgeblendete Folie (`update_slide` `hidden: true`, dann `slide`), `verpixeln` für Daten Dritter; ein `look` je Video; bei Stream-Highlights `chat: {}` (Chat-Replay, Namen nur auf Wunsch). Keine Sticker oder Emojis. Untertitel kommen auch als .srt. Details Guide §11 „Effekte“.
+- **Pro-Schnitt (Mehrspur):** Bei mehreren Quellen gleichzeitig, B-Roll oder Bild-in-Bild, Farbkorrektur, Musik auf eigener Spur oder Ausgabe 4K/ProRes/Rundfunk-Lautheit eine Folie im Layout `schnitt` statt `clip`-Folien (nie beide in einem Deck). Erst `read_guide({ topic: "timeline" })`, dann `add_slides` mit `layout: "schnitt"` oder `edit_timeline` mit `from_clips`, danach `edit_timeline` mit Ops in kleinen Batches (Zeiten in Sekunden, `at` = Timeline, `in`/`out` = Quelle), Lint der Antwort beheben, `export_deck` `mp4`.
+
+## 10. Animation (Erklärvideo, Live-Demo)
+
+Will der Nutzer ein Erklärvideo, eine Produkt- oder Live-Demo, ein Tutorial oder ein Kennzahlen-Video, gilt Guide §12 „Animation“ (`read_guide` Modul `film`, dazu `layout:screen`/`layout:code` und die übrigen genutzten Layouts). Ein Deck mit `film` (`create_deck`/`update_deck`: `voice` de/en, `speed` 0,8–1,3, `captions` satz/aus) ist ein Film, jede sichtbare Folie eine Szene.
+- **Gerüst 30–90 s:** Hook ≤ 3 s, Problem, Demo/Lösung in 2–4 Szenen, Beleg, Handlungsaufruf; 4–10 s je Szene. Format 16:9, für Reels 9:16 mit `captions` `satz`.
+- **Idee und Texte zuerst:** Leitidee, dann Titel und Sprechtext je Szene im Chat. Szene: `voice` (1–2 kurze gesprochene Sätze, Titel ≠ Sprechtext, `[klick]` startet den nächsten Aufbauschritt), `duration` nur wenn nötig, `camera: [{ step, box: [x,y,w,h] }]` (Anteile; 1–2 Fahrten, nur auf das Gesagte).
+- **Demo:** Website oder lokale App per `capture_page` → Layout `screen` mit `cursor`/`zoom` auf den Klickpunkt. Bildschirmaufnahme macht der Nutzer in der App („Bildschirm aufnehmen“, Animations-Ansicht); mit dem Pfad `screen_zooms` → `screen`-Szenen mit `video` + `from`/`to` und `zooms`.
+- **Code:** Layout `code` (Variante `terminal`), `focus` statt Riesenblöcke, mehrere kurze Szenen.
+- **Motion-Grafik** (Ablauf, wachsende Zahl, Titel- oder Logo-Szene, Vorher–Nachher): Layout `blank` mit freien Elementen, Auftritt über `anim` (`draw` zeichnet Linien, Pfeile, Umrisse, Icons), Bewegung je Takt über `keys: [{ step, x?, y?, w?, h?, rot?, opacity?, fill?, ease? }]`, nur im Film. 1–3 bewegte Elemente je Takt, `ease` `feder` sparsam.
+- **Prüfen:** `render_slides` mit `at: [Sekunden]` an 2–3 Stellen je kritischer Szene, `lint_deck` (`film-…`: Sprechtext > 40 Wörter, `duration` kürzer als Stimme, Kamera, Tippen), dann `export_deck` `mp4` (Stimme, .srt, bei `captions` `satz` eingebrannt; Musik über `find_music`/`music`).
+- Zurückhaltend wie die Folien: ein Übergangstyp, keine Effekt-Parade.
+
+## 11. Podcast schneiden
+
+Will der Nutzer eine Aufnahme als Podcast schneiden, gilt Guide §13 „Podcast“. Die Episode braucht keine Folien.
+- **Ablauf:** Audio aus dem Anhang → `create_episode` (`title`, `tracks` 1–4, je Mikrofon eine Spur) → `transcribe_video` mit jeder Spur, `all: true` (je Spur ein Sprecher), `speakers: true` nur bei mehreren Sprechern auf einer Spur → `edit_episode` mit `clean: { pauses: 0.6, fillers: true, retakes: true }` („läuft noch“ = gleich noch einmal) → Kapitel aus den Themenwechseln (`search_transcript`; erstes bei 0, 3–8 je Stunde, kurze Titel) per `edit_episode` `chapters` → `export_deck` `mp3` (Kapitel in der Datei, `.chapters.json` daneben).
+- **Nachbessern:** `edit_episode` mit `cut`/`uncut` (Quellzeit, rastet an Wortgrenzen); ohne Eingaben zeigt es Zustand und Prüfung.
+- **Regeln:** nie mitten im Satz schneiden, Inhalt nicht umstellen, Füllwörter nicht übertreiben (natürliche Sprache bleibt). Intro, Outro und Soundeffekte nur auf Wunsch und sparsam (`find_music` mit `kurz: true`, dann `edit_episode` `intro`/`outro`/`sfx`). Die Lautheit macht die Engine.
+
+## Häufige Fehler
+
+- Themen-Titel („Marktanalyse“) statt einer Aussage.
+- Felder raten statt aus dem Katalog nehmen.
+- Freie Elemente (`items`) mit Koordinaten ohne Not; sie sind nur für Layout `blank` oder auf Wunsch des Nutzers da; Tabellen mit Titel besser als Layout `table`, eine freie Tabelle (`kind:'table'`, `cells`) nur auf `blank` oder auf Wunsch (höchstens ~6 × 4).
+- Zwei Botschaften auf einer Folie, weil „es noch draufpasst“.
+- Erfundene Zahlen ohne Hinweis; runde Zahlen ohne Quelle statt echter mit Quelle und Stand.
+- Alle Titel als gleich lange Satz-Zweizeiler; Executive Summary und KPI-Reihe als Pflichtteile statt nach Inhalt.
+- Empfehlung erst auf der letzten Folie, „Danke für Ihre Aufmerksamkeit“ statt nächster Schritte.

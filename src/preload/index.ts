@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { BrandKit, CustomFont, Deck, FilmSettings, PrintOptions, ThemeRef } from '../shared/deck'
+import type { BrandKit, ChartLink, CustomFont, Deck, FilmSettings, PrintOptions, ThemeRef } from '../shared/deck'
 import type { VoiceTiming } from '../shared/film'
 import type { ChatModels } from '../shared/models'
 import type { AgentEvent } from '../main/agent'
@@ -8,6 +8,7 @@ import type { Signals, Highlight } from '../shared/highlights'
 import type { Transcript } from '../shared/video'
 import type { Anwesend, LiveStatus, Rolle } from '../main/mitarbeit'
 import type { TeilenStatus } from '../main/gemeinsam'
+import type { XlsxRange } from '../main/xlsx-link'
 
 export type { Anwesend, LiveStatus, Rolle, SyncStatus, TeilenStatus }
 
@@ -102,11 +103,17 @@ const api = {
   podcastPeaks: (src: string): Promise<{ duration: number; rate: number; data: number[] } | null> => invoke('podcast:peaks', src),
   /** Vorschau aller Podcast-Spuren ungeschnitten → asset://-URL */
   podcastPreview: (deck: Deck): Promise<string> => invoke('podcast:preview', deck),
+  /** Wellenform einer Timeline-Quelle (Spitzen 0–255, 100 je Sekunde); null = keine Mediendatei oder ohne Ton */
+  timelinePeaks: (src: string): Promise<Uint8Array | null> => invoke('timeline:peaks', src),
+  /** Lautheit des Timeline-Mixes: integriert (LUFS), True Peak (dBTP), Lautheitsbereich (LU); null = ungültige Timeline */
+  timelineLoudness: (tl: unknown): Promise<{ i: number; tp: number; lra: number } | null> => invoke('timeline:loudness', tl),
+  /** ausgewähltes KI-Tool direkt ausführen (Freigabeliste UI_TOOLS in ipc.ts); images = data:-URLs */
+  runTool: (name: string, input: unknown): Promise<{ text: string; images: string[] }> => invoke('tool:run', name, input),
   /** Lange Video-Jobs im Main (Import, Highlights, Transkript, Export) mit Fortschritt */
   jobs: (): Promise<{ key: string; name: string; pct: number; done: boolean; where?: string }[]> => invoke('jobs:list'),
   /** print = PDF für die Druckerei (Endformat + Beschnitt), nur mit print-Optionen sinnvoll */
   /** alle erzeugten Dateien (bei 'clips' mehrere); mp3/m4a = Podcast (nur Ton, mit Kapiteln) */
-  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips' | 'mp3' | 'm4a', print?: PrintOptions): Promise<string[]> => invoke('deck:export', format, print),
+  exportDeck: (format: 'pptx' | 'docx' | 'pdf' | 'png' | 'zip' | 'md' | 'print' | 'mp4' | 'clips' | 'mp3' | 'm4a', print?: PrintOptions): Promise<string[] & { warnings?: string[] }> => invoke('deck:export', format, print),
   /** Fortschritt eines Video- oder Ton-Exports in % */
   onExportProgress(cb: (pct: number) => void): () => void {
     const h = (_: unknown, pct: number) => cb(pct)
@@ -196,8 +203,17 @@ const api = {
   /** Brand-Kit des Nutzers (~/Deckwerk/brand.json), das jedes neue Deck per KI bekommt; null = keines gespeichert */
   getBrand: (): Promise<BrandKit | null> => invoke('brand:get'),
   setBrand: (b: BrandKit): Promise<void> => invoke('brand:set', b),
+  /** Deckwerk Pro: Firmenvorlage (.potx/.pptx/.thmx) wählen → Brand-Kit-Vorschlag (nicht gespeichert) und übersprungene Schriften; null = abgebrochen */
+  brandFromPotx: (): Promise<{ kit: BrandKit; skipped: string[] } | null> => invoke('brand:potx'),
   /** Standard-Brand-Kit löschen (brand.json); bestehende Decks behalten ihres */
   clearBrand: (): Promise<void> => invoke('brand:clear'),
+  /** Deckwerk Pro: Kunden mit eigenem Brand-Kit und Hausstil; active = null heißt eigene Marke */
+  clients: (): Promise<{ list: string[]; active: string | null }> => invoke('kunden:list'),
+  /** Kunden aktiv setzen (legt ihn bei Bedarf an), null = eigene Marke; wirft bei ungültigem Namen mit Meldung */
+  setClient: (name: string | null): Promise<void> => invoke('kunden:set', name),
+  /** Deckwerk Pro: .xlsx wählen → absoluter Pfad oder null; xlsxRead liest den verknüpften Bereich (Fehler mit Meldung) */
+  xlsxPick: (): Promise<string | null> => invoke('xlsx:pick'),
+  xlsxRead: (link: ChartLink): Promise<XlsxRange> => invoke('xlsx:read', link),
   /** ~/Deckwerk/hausstil.md im Standard-Editor öffnen (legt sie bei Bedarf an) */
   openStyle: (): Promise<void> => invoke('style:open'),
   /** Hausstil lesen ('' = keiner) und ganz ersetzen */
@@ -220,7 +236,8 @@ const api = {
   setAsrModel: (m: 'parakeet' | 'de-schnell'): Promise<void> => invoke('asr:set-model', m),
   /** Einrichtung: KI-Zugang und Deckwerk-MCP in Claude Code, Codex und Vibe */
   setupStatus: (): Promise<{ key: boolean; clis: CliStatus[] }> => invoke('setup:status'),
-  setupMcp: (cli: ChatCli): Promise<void> => invoke('setup:mcp', cli),
+  /** Rückgabe: Hinweis für die Rückmeldung, wenn dabei Deckwerk (MCP „deckwerk“, Skill) ersetzt wurde, sonst null */
+  setupMcp: (cli: ChatCli): Promise<string | null> => invoke('setup:mcp', cli),
   /** Einträge fürs Modell-Dropdown: Claude, Vibe, Codex (je nachdem, was installiert ist) */
   chatModels: (): Promise<ChatModels> => invoke('chat:models'),
   /** Einrichtung abgeschlossen oder übersprungen: erscheint nicht mehr von selbst */

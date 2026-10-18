@@ -8,7 +8,7 @@ import { sizeOf, transitionOf, type Deck, type Slide } from '../shared/deck'
 import { FPS, sceneTimeline, type VoiceTiming } from '../shared/film'
 import { resolveTheme } from '../shared/themes'
 import { XFADE, outSize, type Cue } from '../shared/video'
-import { PCM, assSubs, ffx, finish, joinSegs, phoneFault, presetFor, subFont, video, videoPath, type Music, type Phone, type Seg } from './export-video'
+import { PCM, assSubs, ffx, finish, joinSegs, phoneFault, withMusicGain, presetFor, subFont, video, videoPath, type Music, type Phone, type Seg } from './export-video'
 import { probe } from './ffmpeg'
 import { renderFilm, type FilmScene } from './render'
 import { srt } from './video-fx'
@@ -123,7 +123,7 @@ export async function exportFilm(deck: Deck, target: string, o: { voiceOf: (slid
       done += w
     }
     // stummer Film: nichts anzugleichen, und loudnorm macht aus Stille unter 3 s NaN (AAC bricht ab)
-    await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: sound, music: o.music, phone: o.phone, onProgress: (p) => onProgress(Math.min(99, Math.floor(((sum + (sum * 0.2 * p) / 100) / total) * 100))) })
+    await finish(all, join(dir, 'gesamt.mp4'), dir, { loudnorm: sound, music: o.music && await withMusicGain(o.music), phone: o.phone, onProgress: (p) => onProgress(Math.min(99, Math.floor(((sum + (sum * 0.2 * p) / 100) / total) * 100))) })
     let off = 0
     const subs = all.flatMap((x) => { const r = (x.cues ?? []).map((c) => ({ ...c, start: c.start + off, end: c.end + off })); off += x.dur; return r })
     if (subs.length) await writeFile(join(dir, 'gesamt.srt'), srt(subs), 'utf8')

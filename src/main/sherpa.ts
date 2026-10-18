@@ -13,6 +13,7 @@ import { setPriority } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
 import type { VoiceId } from '../shared/deck'
+import { APP } from '../shared/app-id'
 import type { Segment } from '../shared/video'
 import { download } from './download'
 import { ensurePhone } from './phone'
@@ -37,8 +38,8 @@ const FC_DE = 'https://huggingface.co/csukuangfj/sherpa-onnx-nemo-transducer-stt
 // Verworfen: Meta Omnilingual-300M (kleingeschrieben, ohne Satzzeichen, langsamer).
 export type AsrModel = 'parakeet' | 'de-schnell'
 export const ASR_DIR: Record<AsrModel, string> = { parakeet: 'parakeet-ultra', 'de-schnell': 'fc-de' }
-/** Gewähltes Modell unter appData/deckwerk (gemeinsam für App, Entwicklung und MCP-Server wie phone-off): Inhalt „de-schnell“, sonst Parakeet */
-export const asrModelFile = (appData: string) => join(appData, 'deckwerk', 'asr-model')
+/** Gewähltes Modell unter appData/<APP.id> (gemeinsam für App, Entwicklung und MCP-Server wie phone-off): Inhalt „de-schnell“, sonst Parakeet */
+export const asrModelFile = (appData: string) => join(appData, APP.id, 'asr-model')
 export function asrModelOf(appData: string): AsrModel {
   try { return readFileSync(asrModelFile(appData), 'utf8').trim() === 'de-schnell' ? 'de-schnell' : 'parakeet' } catch { return 'parakeet' }
 }

@@ -1,0 +1,11 @@
+.mx { display: flex; gap: 8px; padding: 8px; overflow-x: auto; align-items: stretch }
+.mx-strip { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px; padding: 6px 4px; border-left: 1px solid var(--line, rgba(128,128,128,.25)) }
+.mx-strip.off .mx-fader { opacity: .4 }
+.mx-name { font-size: 12px; font-weight: 600 }
+.mx-db { font-size: 11px; font-variant-numeric: tabular-nums; opacity: .7 }
+.mx-fader { writing-mode: vertical-lr; direction: rtl; -webkit-appearance: slider-vertical; appearance: slider-vertical; width: 20px; height: 120px; accent-color: var(--accent, #3b82f6) }
+.mx-mute { font: inherit; font-size: 11px; padding: 2px 6px; background: none; color: inherit; border: 1px solid var(--line, rgba(128,128,128,.4)); border-radius: 4px; cursor: pointer }
+.mx-mute[aria-pressed='true'] { background: var(--accent, #3b82f6); border-color: var(--accent, #3b82f6); color: #fff }
+.mx-master { margin-left: auto }
+.mx-meter { position: relative; width: 12px; height: 120px; background: rgba(128,128,128,.2); border-radius: 2px; overflow: hidden }
+.mx-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--accent, #3b82f6) }

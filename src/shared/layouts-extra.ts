@@ -5,6 +5,7 @@ import { z } from 'zod'
 import type { LayoutDef } from './layouts'
 import { MASKS } from './deck'
 import { CAPTION_POS, CUT_TRANSITIONS, FREEZE, MAX_MEDIA, MAX_PARTS, OVERLAY_ARTS, OVERLAY_POS, SPEED, VIDEO_LOOKS, ZOOM } from './video'
+import { timelineSchema } from './layouts-timeline'
 
 // Foto: dasselbe Objekt in allen Layouts. Ein einfacher String wird als { src } akzeptiert (ältere Decks).
 export const FOCI = ['center', 'top', 'bottom', 'left', 'right'] as const
@@ -242,7 +243,7 @@ const clip = z.object({
   hook: z.string().max(70).optional().describe('Einstiegszeile oben in den ersten Sekunden: macht neugierig, ohne Clickbait'),
   captions: z.enum(['wort', 'satz', 'aus']).optional().describe('Untertitel aus dem Transkript (nur im MP4): wort = wenige Wörter, aktuelles Wort in Akzentfarbe (Standard); satz = ganze Zeilen; aus'),
   pauses: z.enum(['kurz', 'lassen']).optional().describe('Sprechpausen (nur im MP4): kurz = Pausen ab 0,6 s auf 0,3 s kürzen, der Clip wirkt zügiger; lassen = unverändert (Standard)'),
-  fit: z.enum(['crop', 'blur']).optional().describe('Bild im Format: crop = Bild füllt das Format, Zuschnitt um focus (Standard); blur = ganzes Bild mittig auf unscharfem Grund, wenn Gesten oder Folien am Rand wichtig sind'),
+  fit: z.enum(['crop', 'blur', 'split']).optional().describe('crop = füllt das Format, Zuschnitt um focus (Standard); blur = ganzes Bild auf unscharfem Grund (Gesten, Folien am Rand); split = Facecam oben, Spiel unten (Streams)'),
   follow: z.enum(['sprecher']).optional().describe('sprecher = Zuschnitt folgt dem, der gerade spricht (Podcast, Gespräch); nur bei mehreren Personen im Bild'),
   style: z.enum(['ruhig', 'lebendig']).optional().describe('Animation im Export: ruhig (Standard, ohne Animation und ohne Zoom) oder lebendig (Wort-Pop, Hook mit Einblendung, Fortschrittsbalken, leichter Zoom-Wechsel nur bei einem neuen Moment, nie an Jump-Cuts) – lebendig für Shorts/Reels, ruhig für Vorträge und Fulltime'),
   ton: z.enum(['klar', 'original']).optional().describe('Ton im Export: klar = Sprache aufbereiten (Entrauschen, Kompressor, De-Esser) für Talking Head, Podcast, Handy-/Webcam-Ton; original = unverändert (Standard)'),
@@ -350,6 +351,17 @@ const businessCard = z.object({
   lines: z.array(z.string().min(1).max(36)).max(4).optional().describe('0–4 Kontaktzeilen, eine Angabe pro Zeile ohne Icons oder Kürzel davor: Telefon, E-Mail, Web, Adresse. Nie erfinden'),
   claim: z.string().max(60).optional().describe('ein Satz zur Leistung, steht nur auf der Rückseite'),
   qr: flyer.shape.qr.describe('vollständige, kurze URL mit https:// für den QR-Code auf der Rückseite (Webseite, Kontaktseite); je kürzer, desto gröber das Muster und desto sicherer der Scan'),
+})
+
+// Stream-Paket (Pro): Bildschirm für OBS-Szenen (Starting Soon, BRB, Ending) und Twitch-Panel-Überschrift
+const streamScreen = z.object({
+  title: z.string().min(2).max(40).describe('kurz und groß, z. B. „Gleich geht\'s los“, „Kurze Pause“, „Danke fürs Zuschauen“'),
+  subtitle: z.string().max(80).optional().describe('Thema des Streams, z. B. „Wir bauen ein Haus in Minecraft“'),
+  handle: z.string().max(40).optional().describe('Kanal oder Socials, z. B. „twitch.tv/name“; bei ende groß als Aufruf zum Folgen'),
+  time: z.string().max(12).optional().describe('Uhrzeit ohne Zusatz, z. B. „20:00“: Start (start), Rückkehr (pause) oder nächster Stream (ende)'),
+})
+const panel = z.object({
+  label: z.string().min(2).max(20).describe('1–2 Wörter, z. B. „Über mich“, „Regeln“, „Discord“, „Zeitplan“'),
 })
 
 // Lebenslauf (A4 hoch): Stationen und Kenntnisse nur als Text. Die Gesamtzahl der Stationen begrenzt, was auf eine Seite passt.
@@ -790,6 +802,22 @@ export const EXTRA_LAYOUTS = {
       max: { name: words(32), role: words(40, 1), org: words(40, 2), lines: rep(4, (i) => words(36, i + 3)), claim: words(60, 4), qr: 'https://example.com/kontakt' },
     },
   }),
+  'stream-screen': L({
+    id: 'stream-screen', name: 'Stream-Bildschirm', variants: ['start', 'pause', 'ende'],
+    when: 'Stream-Paket in 16:9 (OBS-Szene): Bildschirm vor dem Stream (start, „Starting Soon“), in der Pause (pause, „BRB“) und am Ende (ende). title kurz wie ein Zuruf, subtitle = Thema des Streams, handle = Kanal oder Socials, time = Startzeit, Rückkehr bzw. nächster Stream. Je Variante eine Folie mit demselben handle; als PNG exportieren.',
+    schema: streamScreen, defaultBuild: 'fade', footer: false,
+    samples: {
+      min: { title: 'Pause' },
+      typ: { title: 'Gleich geht\'s los', subtitle: 'Wir bauen heute die Brücke über den Fluss fertig', handle: 'twitch.tv/name', time: '20:00' },
+      max: { title: words(40), subtitle: words(80), handle: words(40, 1), time: '20:00 Uhr' },
+    },
+  }),
+  panel: L({
+    id: 'panel', name: 'Twitch-Panel', sizes: ['panel'],
+    when: 'Nur Format panel (320 × 160): Überschrift eines Twitch-Panels unter dem Stream. Eine Seite je Panel, label mit 1–2 Wörtern (Über mich, Regeln, Discord, Zeitplan); den Text darunter schreibt der Streamer in Twitch selbst. Alle Panels in einem Deck und Theme, als PNG exportieren.',
+    schema: panel, defaultBuild: 'none', footer: false,
+    samples: { min: { label: 'FAQ' }, typ: { label: 'Über mich' }, max: { label: words(20) } },
+  }),
   cv: L({
     id: 'cv', name: 'Lebenslauf (A4)', variants: ['side', 'plain'], sizes: ['a4'],
     when: 'Nur A4 hoch: Lebenslauf (CV, Bewerbung). Name, Berufsbezeichnung, Kurzprofil, Kontakt, Stationen in Abschnitten (Berufserfahrung, Ausbildung …) und Kenntnisse als Text. Stationen antichronologisch, Zeitraum knapp („2021 – heute“), title = Funktion oder Abschluss, place = Arbeitgeber oder Hochschule mit Ort, text höchstens ein Satz mit Ergebnis. Variante side (Standard) = schmale Seitenspalte mit Foto, Kontakt und Kenntnissen; plain = tabellarisch wie in Deutschland üblich, Zeitraum links, Foto rechts neben dem Namen. Foto optional (in Deutschland üblich, nicht Pflicht). Passt es nicht auf eine Seite: zweite cv-Seite ohne Foto, Profil und Kontakt. In einer Bewerbung folgt der Lebenslauf auf das Anschreiben (letter), Name wie auf Deckblatt und Anschreiben; signed = Ort und Datum klein am Seitenende (optional, nur auf der letzten cv-Seite).',
@@ -864,6 +892,34 @@ export const EXTRA_LAYOUTS = {
       min: { video: '', parts: [{ start: 0, end: 4 }] },
       typ: { video: '', hook: 'Warum neun von zehn Pitches scheitern', parts: [{ start: 12.4, end: 21.8, focus: 0.5 }, { start: 40.1, end: 52 }, { start: 63, end: 70.5 }], captions: 'wort', cover: 45.2, post: 'Warum neun von zehn Pitches scheitern\nDer häufigste Fehler steckt in der ersten Minute. So vermeidest du ihn.\n#pitch #startup #gründen' },
       max: { video: '', hook: words(70), parts: rep(MAX_PARTS, (i) => ({ start: i * 10, end: i * 10 + 8, focus: 1 })), captions: 'satz', fit: 'blur', follow: 'sprecher', style: 'lebendig', ton: 'klar', cover: 5, post: words(2200), sfx: rep(30, (i) => ({ src: '/sfx/piep.wav', at: i * 20, gain: -6 })) },
+    },
+  }),
+  schnitt: L({
+    id: 'schnitt', name: 'Video-Schnitt (Pro)',
+    when: 'Mehrspuriger Schnitt mit mehreren Quellen, Bild-in-Bild, Musik, Farbkorrektur, Ton-EQ und Ausgabe bis 4K/ProRes; eine Folie = eine Timeline, nicht mit clip-Folien mischen. Ablauf: read_guide § Timeline.',
+    sizes: ['9:16', '4:5', '1:1', '16:9'], schema: timelineSchema, defaultBuild: 'none', footer: false,
+    samples: {
+      min: { tracks: [{ id: 'v1', kind: 'video', clips: [{ id: 'c1', src: '', at: 0, in: 0, out: 4 }] }] },
+      typ: {
+        tracks: [
+          { id: 'v1', kind: 'video', clips: [{ id: 'c1', src: '', at: 0, in: 12, out: 24, grade: { gamma: [1.05, 1.05, 1.05], sat: 1.1, temp: 0.1 } }, { id: 'c2', src: '', at: 12, in: 3, out: 15 }] },
+          { id: 'v2', kind: 'video', clips: [{ id: 'c3', src: '', at: 4, in: 0, out: 8, box: [0.62, 0.06, 0.32] }] },
+          { id: 'a1', kind: 'audio', clips: [{ id: 'c4', src: '', at: 0, in: 0, out: 24, volume: 0.4, eq: { low: -3 } }] },
+        ],
+        overlays: [{ start: 1, end: 5, art: 'bauchbinde', text: 'Anna Berger', sub: 'Leitung Vertrieb' }],
+      },
+      max: {
+        tracks: [
+          { id: 'v1', kind: 'video', clips: rep(40, (i) => ({ id: `k${i}`, src: '', at: i * 6, in: i * 2, out: i * 2 + 6, grade: { lift: [-0.02, 0, 0.02] as [number, number, number], sat: 1.2 } })) },
+          { id: 'v2', kind: 'video', clips: rep(20, (i) => ({ id: `b${i}`, src: '', at: i * 12, in: 0, out: 5, box: [0.6, 0.05, 0.35] as [number, number, number] })) },
+          { id: 'a1', kind: 'audio', clips: rep(4, (i) => ({ id: `m${i}`, src: '', at: i * 60, in: 0, out: 60, volume: 0.5, keys: [[0, -6], [58, -20]] as [number, number][], eq: { low: -2, mid: 1, high: 2 } })) },
+          { id: 'a2', kind: 'audio', clips: rep(24, (i) => ({ id: `s${i}`, src: '', at: i * 10, in: i * 10, out: i * 10 + 9 })) },
+        ],
+        overlays: rep(20, (i) => ({ start: i * 12, end: i * 12 + 4, art: 'text' as const, text: words(120, i) })),
+        subs: rep(120, (i) => ({ start: i * 2, end: i * 2 + 1.8, text: words(200, i) })),
+        captions: 'satz', markers: rep(40, (i) => ({ t: i * 6, name: words(60, i) })),
+        deliver: { res: 2160, fps: 25, codec: 'prores', lufs: -16 },
+      },
     },
   }),
 } satisfies Record<string, LayoutDef<any>>

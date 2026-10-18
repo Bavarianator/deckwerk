@@ -7,6 +7,7 @@ import { app } from 'electron'
 import { embedFonts, type EmbedFont } from './embed-fonts'
 import { webpSize } from './tools'
 import { MEDIA_EXT, animStartOf, morphKey, morphNames, sizeOf, transitionOf, transitionSpeedOf, type BoxEl, type MorphEl, type BuildPreset, type ItemAnim, type ChartEl, type TableEl, type Deck, type El, type FontFiles, type ImgEl, type Measured, type Run, type TextEl } from '../shared/deck'
+import { APP } from '../shared/app-id'
 import { fontInfo } from '../shared/font-catalog'
 import { LAYOUTS, buildOf } from '../shared/layouts'
 import { FONTS, duotoneOf, resolveTheme, withTone, type FontName, type FontRef, type Theme } from '../shared/themes'
@@ -272,7 +273,7 @@ export async function buildPptx(deck: Deck, slides: ExportSlide[]): Promise<Buff
   pptx.defineLayout({ name: 'DECKWERK', width: sizeOf(deck).w / 96, height: sizeOf(deck).h / 96 })
   pptx.layout = 'DECKWERK'
   pptx.title = deck.title
-  pptx.author = 'Deckwerk'
+  pptx.author = APP.name
   pptx.theme = { headFontFace: t.head.pptx, bodyFontFace: t.body.pptx }
 
   const anims: SlideAnim[] = []

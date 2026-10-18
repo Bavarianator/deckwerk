@@ -2,6 +2,7 @@
 // Jede Wahl gilt sofort (Undo-fähig), „Abbrechen“ stellt den Stand beim Öffnen wieder her.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Sparkles, X } from 'lucide-react'
+import { APP } from '../../shared/app-id'
 import { MOTIONS, TRANSITIONS, sizeOf, type AnimSpeed, type BrandKit, type Deck, type Motion, type ThemeTune, type Transition } from '../../shared/deck'
 import { FONT_PAIRS, THEMES, resolveTheme, themeFromSpec } from '../../shared/themes'
 import { SlideView } from '../slide'
@@ -9,6 +10,7 @@ import { OWN_DESIGN } from './Chat'
 import { FontPicker, ensureFonts } from './FontPicker'
 import { playTransition } from './PresentScreen'
 import { Select } from './kit'
+import { ThemeEditor } from './ThemeEditor'
 
 const BOLD = 'Gestalte das Deck im Stil mutig neu (Design-Guide §6 „Stil des Decks“): ein eigenes mutiges Design, dann die Folien mit mehr Farbflächen, Plakat-Typo und starken Bildern überarbeiten. Aussagen und Zahlen bleiben.'
 const PROPOSE = 'Schlage mir 3 eigene Looks für dieses Deck vor, passend zu Thema und Publikum und deutlich verschieden in Struktur, nicht nur in der Farbe.'
@@ -31,7 +33,7 @@ const SPACE: TuneRow[] = [
   ['images', 'Bilder', 'Fotos einheitlich: Originalfarben, schwarzweiß oder in Theme-Farben', [['natural', 'Natürlich'], ['mono', 'Schwarzweiß'], ['duotone', 'Duotone']]],
   ['chart', 'Diagramme', 'Fokus = eine Reihe in der Akzentfarbe, Rest grau; Zwei Farben = Akzent und Zweitfarbe; Tonal = Abstufungen einer Farbe', [['focus', 'Fokus'], ['duo', 'Zwei Farben'], ['tonal', 'Tonal']]],
 ]
-// nur diese Schlüssel zählt und entfernt das Panel; weitere (headTracking, rule, elements, labelFont) setzt die KI und bleiben
+// nur diese Schlüssel zählt und entfernt das Panel; headTracking, rule, elements, labelFont stehen im Eigenen Theme (ThemeEditor)
 const OFFERED: (keyof ThemeTune)[] = [...[...TYPO, ...SPACE].map(([k]) => k), 'field']
 
 export const TRANSITION: Record<Transition, string> = {
@@ -65,14 +67,17 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
     return () => ro.disconnect()
   }, [deck.size?.w, deck.size?.h, inner >= 0]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // eigenes Theme (von der KI angelegt) bleibt als erster Eintrag wählbar
+  // eigenes Theme (von der KI oder im Editor angelegt) bleibt als erster Eintrag wählbar, mit dem letzten Stand
+  const own0 = useRef(orig.theme)
+  if (deck.theme.custom) own0.current = deck.theme
+  const mine = own0.current
   // alte Themes nur, wenn das Deck gerade eins nutzt; mutige nur im Stil mutig
-  const ids = [...(orig.theme.custom ? ['custom'] : []), ...THEMES.filter((t) => (!t.legacy && (!t.mutig || deck.style === 'mutig')) || t.id === orig.theme.id).map((t) => t.id)]
+  const ids = [...(mine.custom ? ['custom'] : []), ...THEMES.filter((t) => (!t.legacy && (!t.mutig || deck.style === 'mutig')) || t.id === orig.theme.id).map((t) => t.id)]
   const at = Math.max(0, ids.indexOf(deck.theme.custom ? 'custom' : deck.theme.id))
   // Gestaltung (tune) liegt über jedem Theme und bleibt beim Blättern, ebenso geladene Katalogschriften (Marke, eigenes Design)
   const { fontFiles } = deck.theme
-  const themeRef = (id: string) => (id === 'custom' ? { ...orig.theme, brand: deck.theme.brand, tune: deck.theme.tune, fontFiles } : { id, brand: deck.theme.brand, tune: deck.theme.tune, fontFiles })
-  const themeOf = (id: string) => (id === 'custom' ? themeFromSpec(orig.theme.custom!, fontFiles) : THEMES.find((t) => t.id === id) ?? THEMES[0])
+  const themeRef = (id: string) => (id === 'custom' ? { ...mine, brand: deck.theme.brand, tune: deck.theme.tune, fontFiles } : { id, brand: deck.theme.brand, tune: deck.theme.tune, fontFiles })
+  const themeOf = (id: string) => (id === 'custom' ? themeFromSpec(mine.custom!, fontFiles) : THEMES.find((t) => t.id === id) ?? THEMES[0])
   const pick = (i: number) => patchDeck({ theme: themeRef(ids[(i + ids.length) % ids.length]) }, 'look-theme')
   const preview = (i: number) => ({ ...deck, theme: themeRef(ids[(i + ids.length) % ids.length]) })
 
@@ -107,7 +112,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   }
   // Gestaltung: Standard je Hebel = was das Theme ohne Feinschliff macht (eigene Designs bringen eigene Werte mit)
   const tune = deck.theme.tune ?? {}
-  const own = ids[at] === 'custom' ? orig.theme.custom : undefined
+  const own = ids[at] === 'custom' ? mine.custom : undefined
   const plain = resolveTheme({ ...deck.theme, tune: undefined }) // mit Marken- und Mischschriften, ohne Feinschliff
   const scale = plain.headScale ?? 1
   const std: Record<TuneKey, string | number> = {
@@ -138,6 +143,20 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
   const userToggle = useRef(false) // das initiale open (tuneOpen) löst auch toggle aus, soll aber nicht scrollen
   const field = own?.field ?? plain.c.accent // Standard der Flächenfarbe ist die Akzentfarbe
 
+  // Looks nebeneinander ohne KI: propose_looks rendert je Look Cover, Kennzahlen, Diagramm und Kapitel. Die Trios unterscheiden
+  // sich in mindestens 4 Strukturmerkmalen (Prüfung im Werkzeug); die Bilder kommen in der Reihenfolge der Eingabe
+  const [looks, setLooks] = useState<{ ids: string[]; images: string[]; text: string } | null>(null)
+  const [proposing, setProposing] = useState(false)
+  const canPropose = APP.pro && typeof window.api.runTool === 'function'
+  const propose = async () => {
+    const trio = deck.style === 'mutig' ? ['plakat', 'magazin', 'neomono'] : ['beratung', 'keynote', 'redaktion']
+    setProposing(true)
+    try { setLooks({ ids: trio, ...(await window.api.runTool('propose_looks', { looks: trio })) }) }
+    catch (e) { setLooks({ ids: [], images: [], text: (e as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') }) }
+    finally { setProposing(false) }
+  }
+
+  const editStep = useRef(0)
   const cancel = () => {
     const { builds, ...rest } = orig
     patchDeck({ ...rest, slides: deck.slides.map((s) => ({ ...s, build: builds.get(s.id) })) }) // auch Magic Animate zurück
@@ -192,9 +211,23 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
             <Sparkles size={15} />Looks für dieses Deck vorschlagen
           </button>
           <button className="plain tint look-own" disabled={busy} onClick={() => { if (onAsk(OWN_DESIGN)) onClose() }}>
-            <Sparkles size={15} />{orig.theme.custom ? 'Neues eigenes Design entwerfen' : 'Eigenes Design entwerfen lassen'}
+            <Sparkles size={15} />{mine.custom ? 'Neues eigenes Design entwerfen' : 'Eigenes Design entwerfen lassen'}
           </button>
+          {canPropose && <button className="plain tint look-own" disabled={proposing} onClick={() => void propose()}>{proposing ? 'Rendert …' : 'Looks vergleichen'}</button>}
         </div>
+        {looks && (
+          <div className="look-row" role="group" aria-label="Looks zur Auswahl">
+            {looks.images.map((src, k) => (
+              <button key={looks.ids[k]} className="plain" title={`${themeOf(looks.ids[k]).name} übernehmen`}
+                onClick={() => { patchDeck({ theme: themeRef(looks.ids[k]) }, 'look-theme'); setLooks(null) }}>
+                <img src={src} alt={themeOf(looks.ids[k]).name} style={{ display: 'block', width: 280 }} />
+                <small>{themeOf(looks.ids[k]).name}</small>
+              </button>
+            ))}
+            {!looks.images.length && <span className="muted">{looks.text}</span>}
+            <button className="plain tint" onClick={() => setLooks(null)}>Schließen</button>
+          </div>
+        )}
       </div>
       <div className="look-dots">
         <button className="look-arrow" aria-label="Vorheriges Theme" onClick={() => pick(at - 1)}><ChevronLeft size={15} /></button>
@@ -280,6 +313,17 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
             {tuned > 0 && <button className="plain tint" onClick={() => setTune(Object.fromEntries(OFFERED.map((k) => [k, undefined])))}>Zurücksetzen</button>}
           </p>
         </details>
+        {APP.pro && (
+        <details className="look-tune">
+          <summary>
+            <ChevronRight size={15} className="look-tune-chev" aria-hidden />
+            <b>Eigenes Theme</b>
+            <span>{deck.theme.custom ? `${deck.theme.custom.name}: Farben, Schriften, Bauteile von Hand` : 'Vom aktuellen Theme aus Farben, Schriften und Bauteile von Hand setzen'}</span>
+          </summary>
+          {/* Vorschau während des Ziehens im selben Undo-Schritt; erst das Loslassen schließt ihn ab */}
+          <ThemeEditor deck={deck} onTheme={(theme, final) => { patchDeck({ theme }, `look-edit-${editStep.current}`); if (final) editStep.current++ }} />
+        </details>
+        )}
         <div className="look-row">
           <div className="look-group">
             <b>Markenfarben</b>
@@ -315,7 +359,7 @@ export function LookSheet({ deck, busy, patchDeck, pickImage, onAsk, onClose }: 
           </div>
           <div className="look-group">
             <b>Brand-Kit</b>
-            <button className="pill" disabled={!brand} title="Marke dieses Decks für jedes neue Deck der KI speichern (~/Deckwerk/brand.json)"
+            <button className="pill" disabled={!brand} title={`Marke dieses Decks für jedes neue Deck der KI speichern (~/${APP.home}/brand.json)`}
               onClick={() => void window.api.setBrand(brand!).then(() => setSaved(brand!))}>Als Standard speichern</button>
             <button className="pill" disabled={!saved} title="Gespeicherte Marke auf dieses Deck anwenden"
               onClick={() => saved && setBrandFonts(saved)}>Standard übernehmen</button>

@@ -5,12 +5,14 @@ import { createHash, randomBytes } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { mkdir, readdir, rename, rm } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path'
+import { basename, dirname, extname, isAbsolute, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, VOICES, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type FilmSettings } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FORMAT_IDS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, formatSuffix, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, VOICES, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type FilmSettings, type ChartSpec } from '../shared/deck'
+import { APP } from '../shared/app-id'
+import { activeClient, brandFile, dataDir, styleFile } from './clients'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
 import { LAYOUTS, LAYOUT_IDS, buildOf, type LayoutId } from '../shared/layouts'
 import { CATALOG_THEMES, FONT_NAMES, FONTS, THEMES, resolveTheme, type FontName } from '../shared/themes'
@@ -27,9 +29,13 @@ import { fillDeck, placeholders } from '../shared/merge'
 import { retakes } from '../shared/retakes'
 import { LONG_VIDEO, joinOf, mmss, partsLength, transcriptLines, type ClipContent, type Transcript } from '../shared/video'
 import { autoCuts, editedLength, mergeTracks, normCuts, episodeSchema, episodeSummary, lintEpisode, snapCut, toEdited, type Cut, type CutWhy, type Episode, type Span } from '../shared/podcast'
+import { CODECS, RESOLUTIONS, TL, clipEnd, deliverOf, snapFrame, tlAt, tlDuration, type Sub, type TimelineContent } from '../shared/timeline'
+import { applyOps, lintTimeline, type TLOp } from '../shared/timeline-edit'
+import { fromClips } from '../shared/timeline-from-clips'
+import { timelineSchema } from '../shared/layouts-timeline'
 import type { Engine, ExportFormat, VideoTools } from './agent'
 import { findCli } from './claude-agent' // dieselbe Suche wie für den Chat
-import { guideIndex, guideModules, guideParts, PODCAST_MODULES, VIDEO_MODULES } from './guide-modules'
+import { guideIndex, guideModules, guideParts, PODCAST_MODULES, TIMELINE_MODULES, VIDEO_MODULES } from './guide-modules'
 import { contactSheet } from './ffmpeg'
 import { fetchMusic, findMusic } from './music'
 import { assetPath, localAsset } from './sync'
@@ -47,13 +53,28 @@ export interface ToolContext {
   storyline?(slides: { title: string; layout: string }[]): void // nur im App-Chat: geplante Folien für die Entstehen-Ansicht
   choice?(c: { question: string; options: { label: string; image: string }[] }): void // nur im App-Chat: Auswahl-Karten (image = PNG als data:-URL)
 }
-// Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt
-export const STYLE_FILE = join(homedir(), 'Deckwerk', 'hausstil.md')
-export const houseStyle = () => { try { return readFileSync(STYLE_FILE, 'utf8').trim() } catch { return '' } }
+// Hausstil (Canva „Memory Library“): Vorlieben des Nutzers für alle Decks, von Hand oder per remember gepflegt.
+// Pfade je Aufruf (clients.ts): Der aktive Kunde kann wechseln, während App oder MCP-Prozess laufen.
+// Lesen fällt bei kaputtem Kunden-Marker still auf nichts zurück; Schreiben wirft, damit nie die Agenturdatei überschrieben wird.
+export const houseStyle = () => { try { return readFileSync(styleFile(), 'utf8').trim() } catch { return '' } }
 // Brand-Kit des Nutzers für jedes neue Deck (Farben, Schriften, Logo); DECKWERK_HOME: Tests
-export const BRAND_FILE = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'brand.json')
-export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(BRAND_FILE, 'utf8'))) } catch { return undefined } }
-export const saveBrand = (b: BrandKit) => { mkdirSync(dirname(BRAND_FILE), { recursive: true }); writeFileSync(BRAND_FILE, JSON.stringify(b, null, 2)) }
+export const defaultBrand = (): BrandKit | undefined => { try { return brand.parse(JSON.parse(readFileSync(brandFile(), 'utf8'))) } catch { return undefined } }
+export const saveBrand = (b: BrandKit) => { const f = brandFile(); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, JSON.stringify(b, null, 2)) }
+// Systemprompt und MCP-Anweisungen tragen den Hausstil vom Gesprächsbeginn (start = damals aktiver Kunde); seitdem kann der Nutzer
+// den Kunden gewechselt haben, auch zurück auf keinen. create_deck und read_guide nennen deshalb den jetzt geltenden Hausstil,
+// sobald ein Kunde im Spiel ist; ohne Kunde damals und jetzt ''. full = Hausstil mitliefern, sonst nur der Hinweis.
+const STYLE_MAX = 4000
+function clientStyle(start: string | null, full = true): string {
+  const c = activeClient()
+  if (!c && !start) return ''
+  const label = c ? `Kunde: ${c}. Hausstil des Kunden` : 'Kein Kunde aktiv – eigener Hausstil', s = houseStyle()
+  if (!s) return `\n${label}: keiner; ein Hausstil aus der Einleitung gilt nicht.`
+  if (!full) return `\n${label}: der oben stehende; er ersetzt den Hausstil aus der Einleitung.`
+  const cut = s.length > STYLE_MAX ? `${s.slice(0, STYLE_MAX).trimEnd()}… (gekürzt, vollständig: read_guide module ["hausstil"])` : s
+  return `\n${label} (ersetzt den Hausstil aus der Einleitung):\n${cut}`
+}
+const HOUSE_HEAD = '## Hausstil des Nutzers' // Überschrift des Moduls hausstil (guide-modules.ts extras)
+const withClient = (start: string | null, text: string, asked = false) => { const n = (asked || text.includes(HOUSE_HEAD)) && clientStyle(start, false); return n ? `${text}\n${n}` : text }
 
 export interface ToolOutput { text: string; images?: Buffer[] } // PNG oder JPEG, siehe mimeOf
 export const mimeOf = (b: Buffer): 'image/png' | 'image/jpeg' => (b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : 'image/png')
@@ -78,7 +99,7 @@ export interface ToolDef<S extends z.ZodType = z.ZodType> {
   readOnly?: true // ändert das Deck nicht: Claude Code führt solche Aufrufe parallel aus, alle anderen strikt nacheinander
 }
 
-const format = z.enum(Object.keys(FORMATS) as [FormatId, ...FormatId[]]).describe(Object.entries(FORMATS).map(([k, f]) => `${k} = ${f.name} (${f.w}×${f.h})`).join(', '))
+const format = z.enum(FORMAT_IDS as [FormatId, ...FormatId[]]).describe(FORMAT_IDS.map((k) => `${k} = ${FORMATS[k].name} (${FORMATS[k].w}×${FORMATS[k].h})`).join(', '))
 const THEME_IDS = THEMES.map((t) => t.id) as [string, ...string[]]
 const layoutId = z.enum(LAYOUT_IDS as [LayoutId, ...LayoutId[]])
 const build = z.enum(BUILDS).describe('Animations-Preset; weglassen = Default des Layouts')
@@ -90,6 +111,7 @@ const brand = z.object({
   logoDark: z.string().optional().describe('Logo für dunklen Grund; fehlt es, gilt logo'),
   headFont: fontName.optional().describe('Headline-Schrift; Office: Arial, Calibri, Georgia; alle übrigen werden eingebettet, siehe customTheme.headFont'),
   bodyFont: fontName.optional().describe('Schrift für Fließtext'),
+  lock: z.boolean().optional().describe('Brand-Lock; setzt nur der Nutzer in den Einstellungen, nie selbst setzen'),
 })
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 const deckStyle = z.enum(['sachlich', 'mutig']).describe('Gestaltungsstil, beim Anlegen immer setzen (Design-Guide §6 „Stil des Decks“). Nach Anlass: mutig für Vortrag, Schule/Unterricht, Verein, Event, Kampagne, Kultur, Marketing, Produktvorstellung, Social; sachlich für Chef-Update, Entscheidungsvorlage, Antrag, Bericht, Finanzen, Projektstatus, A4-Dokument, Angebot. Steht im Kontext „Deck-Stil: …“ oder wünscht der Nutzer einen Stil, gilt der. mutig = kräftige Farbgründe, Plakat-Typo, mehr Farbflächen, markante Bilder.')
@@ -128,9 +150,9 @@ export const sameLook = (a: LookTyp, b: LookTyp) => a.hell === b.hell && a.schri
 const typText = (t: LookTyp) => `${t.hell}, ${t.schrift}-Titel ${t.gewicht}, Grund ${t.grund}, Bauteile ${{ line: 'Linie', plain: 'frei', solid: 'Fläche' }[t.bauteile]}`
 // Zuletzt gebaute Decks, neueste zuerst; Decks mit Brand-Kit zählen nicht (dort ist der Look vorgegeben)
 export function recentLooks(except?: string): { title: string; typ: LookTyp }[] {
-  const home = process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
+  const home = dataDir()
   let dirs: string[]
-  try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models'].includes(d)) } catch { return [] }
+  try { dirs = readdirSync(home).filter((d) => !d.startsWith('.') && !['versions', 'out', 'assets', 'models', 'kunden'].includes(d)) } catch { return [] }
   const files = dirs.flatMap((d) => { const f = join(home, d, 'deck.json'); try { return [{ f, t: statSync(f).mtimeMs }] } catch { return [] } }).sort((a, b) => b.t - a.t)
   const out: { title: string; typ: LookTyp }[] = []
   for (const { f } of files.slice(0, 12)) { // begrenzt: mit Brand-Kit zählt kein Deck, sonst würde jede deck.json gelesen
@@ -279,8 +301,10 @@ export function newSlideId(deck: Deck): string {
 
 // Feinsatz rekursiv über alle Strings; Quellen, Links und Symbolnamen bleiben unberührt
 const NO_TYPESET = new Set(['src', 'image', 'url', 'href', 'link', 'poster', 'icon', 'qr', 'focus', 'video', 'code']) // code: Quelltext („"“ → „„“ bräche ihn)
+// ganz unberührt, auch Objekte (Excel-Link unter link: Pfad und Blatt)
 const typesetDeep = (v: unknown, key?: string): unknown =>
-  typeof v === 'string' ? (key && NO_TYPESET.has(key) ? v : typeset(v))
+  key && NO_TYPESET.has(key) ? v
+    : typeof v === 'string' ? typeset(v)
     : Array.isArray(v) ? v.map((x) => typesetDeep(x, key))
     : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, typesetDeep(x, k)]))
     : v
@@ -299,6 +323,7 @@ export function validateContent(layout: string, content: unknown, where: string)
       if (typeof c.video === 'string' && isAbsolute(c.video)) c.video = assetUrl(c.video)
       for (const o of (c as Partial<ClipContent>).overlays ?? []) if (o.image && isAbsolute(o.image)) o.image = assetUrl(o.image)
     }
+    if (layout === 'schnitt') for (const t of (c as unknown as TimelineContent).tracks) for (const k of t.clips) if (isAbsolute(k.src)) k.src = assetUrl(k.src)
     return c
   }
   const { $schema: _, ...schema } = json as Record<string, unknown>
@@ -322,6 +347,23 @@ function strayKeys(s: JsonSchema, v: unknown, path: string): string[] {
     return Object.entries(v).flatMap(([k, x]) => (k in s.properties! ? strayKeys(s.properties![k], x, `${path}${k}.`) : [`${path}${k} (erlaubt: ${Object.keys(s.properties!).join(', ')})`]))
   if (s.items && Array.isArray(v)) return v.flatMap((x) => strayKeys(s.items!, x, `${path}[].`))
   return []
+}
+
+// Excel-Link (Deckwerk Pro) setzt nur die App: link aus KI-Eingaben verwerfen, den Bestand behalten (content.chart der Folie,
+// spec freier Elemente mit derselben id). Hinweis, wenn die KI verknüpfte Werte geändert hat, sonst ''.
+function keepLinks(s: Slide, old?: Slide): string {
+  const notes: string[] = []
+  const keep = (now: ChartSpec | undefined, was: ChartSpec | undefined) => {
+    if (!now || now === was) return // unverändert übernommen (items ohne Änderung)
+    delete now.link
+    if (!was?.link) return
+    now.link = was.link
+    if (JSON.stringify([now.categories, now.series]) !== JSON.stringify([was.categories, was.series]))
+      notes.push(`Diagramm ist mit Excel verknüpft (${basename(was.link.file)}); „Aktualisieren“ in der App überschreibt die Werte aus der Datei.`)
+  }
+  keep(s.content?.chart, old?.content?.chart)
+  for (const it of s.items ?? []) keep(it.spec, old?.items?.find((o) => o.id === it.id)?.spec)
+  return notes.map((n) => `${n}\n`).join('')
 }
 
 // Markiert ausgeblendete Folien in jeder Auflistung für die KI
@@ -540,9 +582,34 @@ function intersect(a: Span[], b: Span[]): Span[] {
 // Schnitt c ohne den Bereich a–b (uncut): fällt weg, wird gekürzt oder zerfällt in zwei
 const minus = (c: Cut, a: number, b: number): Cut[] => (b <= c.start || a >= c.end ? [c] : [...(a > c.start ? [{ ...c, end: a }] : []), ...(b < c.end ? [{ ...c, start: b }] : [])])
 
+// Ops für edit_timeline: Felder wie im Layout-Schema schnitt (ohne dessen Refinements, die partial/omit nicht erlauben); Gesamtprüfung danach
+const tlClipShape = z.object(timelineSchema.shape.tracks.element.shape.clips.element.shape)
+const tlT = z.number().min(0).describe('Timeline-Sekunde')
+const tlOp = z.discriminatedUnion('op', [
+  z.object({ op: z.literal('split'), clip: z.string(), t: tlT }),
+  z.object({ op: z.literal('trim'), clip: z.string(), edge: z.enum(['in', 'out']), t: tlT, ripple: z.boolean().optional().describe('true = spätere Clips der Spur rücken mit') }),
+  z.object({ op: z.literal('move'), clip: z.string(), at: tlT, track: z.string().optional().describe('andere Spur gleicher Art') }),
+  z.object({ op: z.literal('lift'), clip: z.string() }).describe('entfernen, Lücke bleibt'),
+  z.object({ op: z.literal('ripple_delete'), clip: z.string() }).describe('entfernen, Spätere rücken nach'),
+  z.object({ op: z.literal('add_clip'), track: z.string(), clip: tlClipShape.partial({ id: true }) }),
+  z.object({ op: z.literal('add_track'), kind: z.enum(['video', 'audio']) }).describe('neue Spur ganz oben'),
+  z.object({ op: z.literal('set'), clip: z.string(), patch: tlClipShape.omit({ id: true }).partial() }).describe('Felder eines Clips setzen (grade, volume, box, src …)'),
+  z.object({ op: z.literal('from_clips') }).describe('Inhalt durch alle sichtbaren clip-Folien des Decks ersetzen (hintereinander auf v1)'),
+  z.object({ op: z.literal('deliver'), res: z.literal(RESOLUTIONS).optional(), fps: z.number().min(TL.fps.min).max(TL.fps.max).optional(), codec: z.enum(CODECS).optional(), lufs: z.number().min(TL.lufs.min).max(TL.lufs.max).optional() }).describe('Ausgabe setzen'),
+  z.object({ op: z.literal('subs_from_transcript'), clip: z.string() }).describe('Untertitel aus dem Transkript der Clip-Quelle (in–out), ersetzt die Untertitel in der Clip-Zeit'),
+  z.object({ op: z.literal('marker'), t: tlT, name: z.string().max(60) }),
+])
+
+const PRO_TOOLS = ['edit_timeline'] // nur in Deckwerk Pro
+// Pro-Felder eines Tool-Schemas: in der Deckwerk-Edition fehlen sie (die KI sieht sie nicht); der Typ bleibt für den Code gleich
+function proFields<T extends z.ZodObject>(s: T, keys: string[]): T {
+  return APP.pro ? s : (s.omit(Object.fromEntries(keys.map((k) => [k, true])) as never) as unknown as T)
+}
+
 export function buildTools(ctx: ToolContext): ToolDef[] {
   // Speichern für Theme- und Folienänderungen: braucht das Deck andere Katalogschriften als vorher (Theme, freie Texte), lädt
   // withDeckFonts sie (offline: Ersatz) und trägt fontFiles ein. Liefert den Hinweis fürs Ergebnis, sonst ''.
+  const start = activeClient() // entsteht mit dem Prompt (agent.ts, claude-agent.ts, mcp.ts)
   const put = async (deck: Deck, fresh = false): Promise<string> => {
     const prev = ctx.getDeck()
     let notes: string[] = []
@@ -550,7 +617,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     ctx.setDeck(deck)
     return notes.length ? `Schriften: ${notes.join('; ')}\n` : ''
   }
-  return [
+  return ([
     tool({
       name: 'create_deck',
       description: 'Neues Deck anlegen (ersetzt ein vorhandenes). Briefing, Theme oder Brand-Kit, Titel; mit film ein Film (Erklärvideo, Live-Demo) statt einer Präsentation.',
@@ -559,7 +626,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         brief: z.object({ audience: z.string().max(120), goal: z.string().max(200), tone: z.string().max(60) }).optional(),
         theme: z.enum(THEME_IDS).default(THEME_IDS[0]).describe('Katalog-Theme; wird ignoriert, wenn customTheme gesetzt ist'),
         customTheme: themeSpec.optional().describe('Eigenes Design für genau dieses Deck (Standard). Vorgehen und Regeln im Design-Guide §6'),
-        brand: brand.nullable().optional().describe('Brand-Kit; weglassen = das gespeicherte Brand-Kit des Nutzers (~/Deckwerk/brand.json), falls es eines gibt; null = ohne Marke'),
+        brand: brand.nullable().optional().describe(`Brand-Kit; weglassen = das gespeicherte Brand-Kit des Nutzers (~/${APP.home}/brand.json), falls es eines gibt; null = ohne Marke`),
         transition: z.enum(TRANSITIONS).default('fade'),
         mode: z.enum(['click', 'auto']).default('click').describe('click = Vortrag (Builds per Klick), auto = Selbstlauf'),
         motion: z.enum(MOTIONS).optional().describe('Bewegungsstil wie Canva „Magic Animate“: none = keine Aufbauten, calm = nur Einblenden (Vorstand, Behörde), standard = Layout-Standard, lively = Karten nacheinander, Zahlen zoomen, Fotos mit Foto-Zoom (Pitch, Event)'),
@@ -570,11 +637,12 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         override,
       }),
       async run(i) {
+        if (i.brand !== undefined && APP.pro && defaultBrand()?.lock) throw new Error('Die Marke des Nutzers ist gesperrt (Brand-Lock). brand weglassen, dann gilt sie.')
         const deck: Deck = { title: typeset(i.title), brief: i.brief, theme: { id: i.customTheme ? 'custom' : i.theme, brand: i.brand === undefined ? defaultBrand() : i.brand ?? undefined, custom: i.customTheme && { ...i.customTheme, elements: i.customTheme.elements ?? 'line' }, tune: mergeTune(undefined, i.tune) }, transition: i.transition, mode: i.mode, motion: i.motion === 'standard' ? undefined : i.motion, style: i.style ?? (!i.customTheme && THEMES.find((t) => t.id === i.theme)?.mutig ? 'mutig' : undefined), slides: [], ...(i.format && i.format !== '16:9' && { size: { w: FORMATS[i.format].w, h: FORMATS[i.format].h } }), ...(i.film && { film: filmOf(i.film) }) }
         const hints = deck.theme.custom ? checkTheme(lintFor({ ...deck.theme.custom, ...deck.theme.tune }, deck.theme.brand, i.override), 'customTheme') + shadowed(i.customTheme, deck.theme.tune) : ''
         const fonts = await put(deck, true)
         const rep = deck.theme.brand ? '' : repeats(lookTyp(deck.theme), recentLooks(deck.title))
-        return { text: `${hints}${fonts}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.film ? `, Film ${deck.film.voice ? `mit Stimme ${deck.film.voice}` : 'ohne Stimme'}` : ''}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}`, images: await themePreview(ctx, deck) }
+        return { text: `${hints}${fonts}${rep && `Hinweis: Dieses Design ${rep}\n`}Deck "${deck.title}" angelegt (Theme ${deck.theme.custom ? `eigenes: ${deck.theme.custom.name}` : deck.theme.id}, Übergang ${deck.transition}, Modus ${deck.mode}, Stil ${deck.style ?? 'nicht gewählt (gilt als sachlich; nach Anlass wählen, Design-Guide §6)'}${deck.film ? `, Film ${deck.film.voice ? `mit Stimme ${deck.film.voice}` : 'ohne Stimme'}` : ''}${deck.theme.brand ? `, Brand-Kit des Nutzers angewendet${deck.theme.brand.logo ? `, Logo ${deck.theme.brand.logo} auf Titel- und Schlussfolie (A4: Seite 1)` : ''}` : ''}). ${PREVIEW_HINT}${clientStyle(start)}`, images: await themePreview(ctx, deck) }
       },
     }),
     tool({
@@ -606,6 +674,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       }),
       async run(i) {
         const deck = needDeck(ctx)
+        if (i.brand !== undefined && APP.pro && deck.theme.brand?.lock) throw new Error('Die Marke ist gesperrt (Brand-Lock). Farben, Schriften und Logo ändert nur der Nutzer in den Einstellungen.')
         // Neues eigenes Design (keins vorher oder neuer Name): Bauteile line; Korrekturen an einem alten Design behalten seine Bauteile
         const fresh = !deck.theme.custom || (!!i.customTheme?.name && i.customTheme.name !== deck.theme.custom.name)
         // Lint-Stand vor dem Aufruf: alte Fehler (Decks von vor dem Theme-Lint) blockieren keine Korrekturen und keinen Feinschliff;
@@ -659,7 +728,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           voice: s.voice?.trim() ? typeset(s.voice) : undefined, duration: s.duration, camera: s.camera,
           content: validateContent(s.layout, s.content, `slides[${k}]`),
         }))
-        for (const s of fresh) { s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
+        for (const s of fresh) { keepLinks(s); s.id = newSlideId(deck); deck.slides.push(s) } // push nur für die ID-Vergabe
         deck.slides.splice(-fresh.length, fresh.length)
         const at = Math.min(i.at ?? deck.slides.length, deck.slides.length)
         deck.slides.splice(at, 0, ...fresh)
@@ -691,7 +760,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       async run(i) {
         const deck = needDeck(ctx)
         const idx = indexOf(deck, i.id)
-        const s = deck.slides[idx]
+        const s = deck.slides[idx], old = { ...s }
         const layout = i.layout ?? s.layout
         const merged = i.layout && i.layout !== s.layout ? (i.content ?? {}) : { ...s.content, ...i.content }
         checkFrame(layout, i.frame === undefined ? s.frame : (i.frame ?? undefined), `Folie ${i.id}`) // vor jeder Änderung
@@ -710,8 +779,9 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.voice !== undefined) s.voice = i.voice ? typeset(i.voice) : undefined
         if (i.duration !== undefined) s.duration = i.duration ?? undefined
         if (i.camera !== undefined) s.camera = i.camera ?? undefined
+        const linked = keepLinks(s, old)
         const fonts = await put(deck)
-        return { text: fonts + await report(ctx, deck, [idx]) }
+        return { text: fonts + linked + await report(ctx, deck, [idx]) }
       },
     }),
     tool({
@@ -889,10 +959,11 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       inputSchema: z.object({
         module: z.array(z.string().max(60)).max(60).optional().describe('Modul-IDs aus dem Index, z. B. "stil", "layout:chart"'),
         part: z.number().int().min(1).optional().describe('vollständiger Guide in Teilen: 1, 2, … (die Antwort nennt die Anzahl)'),
-        topic: z.enum(['video', 'podcast']).optional().describe('video = Video-Schnitt (Guide §11) und das Layout clip, kurz für module ["video", "layout:clip"]; podcast = Podcast-Schnitt (Guide §12), kurz für module ["podcast"]'),
+        topic: z.enum(['video', 'podcast', 'timeline']).optional().describe(`video = Video-Schnitt (Guide §11) und das Layout clip, kurz für module ["video", "layout:clip"]; podcast = Podcast-Schnitt (Guide §13), kurz für module ["podcast"]${APP.pro ? '; timeline = Pro-Schnitt (Guide §14) und das Layout schnitt' : ''}`),
       }),
       async run(i) {
-        if (i.topic) i = { ...i, module: [...(i.topic === 'video' ? VIDEO_MODULES : PODCAST_MODULES), ...(i.module ?? [])] }
+        if (i.topic === 'timeline' && !APP.pro) throw new Error('timeline (Mehrspur-Schnitt) gibt es nur in Deckwerk Pro.')
+        if (i.topic) i = { ...i, module: [...({ video: VIDEO_MODULES, podcast: PODCAST_MODULES, timeline: TIMELINE_MODULES } as const)[i.topic], ...(i.module ?? [])] }
         if (i.module?.length) {
           const all = guideModules(), unknown = i.module.filter((id) => !all.some((m) => m.id === id))
           // Claude Code verwirft zu lange Tool-Ergebnisse: was nicht mehr passt, in einem weiteren Aufruf
@@ -902,11 +973,11 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
             if (text && text.length + m.text.length > 30000) rest.push(m.id)
             else text += (text ? '\n\n' : '') + m.text
           }
-          return { text: [text, rest.length && `Nicht mehr in dieser Antwort, bitte erneut anfordern: ${rest.join(', ')}`, unknown.length && `Unbekannte Module: ${unknown.join(', ')} (Index: read_guide ohne Eingabe)`].filter(Boolean).join('\n\n') }
+          return { text: withClient(start, [text, rest.length && `Nicht mehr in dieser Antwort, bitte erneut anfordern: ${rest.join(', ')}`, unknown.length && `Unbekannte Module: ${unknown.join(', ')} (Index: read_guide ohne Eingabe)`].filter(Boolean).join('\n\n'), i.module.includes('hausstil')) }
         }
         if (i.part) {
           const parts = guideParts(), k = Math.min(i.part, parts.length)
-          return { text: `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}` }
+          return { text: withClient(start, `Teil ${k} von ${parts.length}\n\n${parts[k - 1]}${k < parts.length ? `\n\nWeiter: read_guide mit part ${k + 1}.` : ''}`) }
         }
         return { text: guideIndex() }
       },
@@ -953,13 +1024,15 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
     }),
     tool({
       name: 'export_deck',
-      description: 'Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, print24 verlangt CMYK – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien-transition fade, dissolve, push, slide, wipe, circle, zoom, split, cover, stack = echte Überblendung zwischen zwei Folien (auch Clip ↔ Zwischentitel), color = über Schwarz, none und morph = harter Schnitt zwischen zwei Clip-Folien (Zwischentitel blenden dann über Schwarz); Video-Decks mit transition none anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips (je Clip eine clip-Folie, fade oder dissolve); Schnitte innerhalb eines Clips blenden automatisch über: Jump-Cuts 0,13 s, ein neuer Moment (Sprung ab 20 s in der Quelle) 0,5 s, part.transition ändert das je Schnitt). Effekte je Ausschnitt (sparsam): speed (Zeitlupe/Zeitraffer, Ton ohne Tonhöhenänderung, Untertitel laufen mit), volume (Originalton, 0 = stumm), music (Musikpegel mit weichen Rampen, nur mit deck.music); zoom (Punch-in 1.1–1.2 an der Pointe), freeze (Standbild nur am Satzende); overlays = Text, Bauchbinde (einmal je Person beim ersten Auftritt), Titel, Zahl, Liste, Zitat, Markierung, Abspann (letzte 8 s), Bild, Video oder ausgeblendete Folie (Bild-in-Bild oder pos voll als B-Roll, 2–6 s) oder Verpixeln, höchstens eine zur Zeit; look (einer je Video, auto für flaue Handy-Aufnahmen), stabil (nur bei Verwackeln), captionPos, chat (Chat-Replay bei Stream-Highlights, Namen nur auf Wunsch). Keine Sticker oder Emojis. Untertitel kommen zusätzlich als .srt neben das MP4. Ist ein Android-Handy per USB-Debugging verbunden, rechnet es die Clips automatisch etwa fünfmal so schnell mit, der PC ist nur der Rückfall. fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). mp3/m4a = Podcast nur Ton, auf −16 LUFS gebracht, mit Kapitelmarken (dazu .chapters.json daneben): aus der Episode (create_episode/edit_episode) oder bei Video-Decks aus den Clip-Folien („Als Podcast“, nur eine Quelle). Video- und Podcast-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h; Auflösung per update_deck videoRes, 4K ab H.265, nie größer als die Quelle): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>. Film-Decks (create_deck film): mp4 rendert jede sichtbare Folie als animierte Szene mit Stimme, Kamera und Untertiteln (film.captions); clips gibt es dort nicht.',
-      inputSchema: z.object({
+      description: `Deck exportieren: pptx (editierbar, mit Animationen), docx (Word: eine Seite pro Folie, Text in bearbeitbaren Textfeldern, Fotos, Flächen und Diagramme als Hintergrundbild; für Flyer und A4-Dokumente, die der Nutzer in Word weiterbearbeiten will), pdf (pixelgenau), png (eine Datei pro Folie), zip (alle PNG plus PDF in einer Datei, z. B. Social-Karussell), md (Handout: Titel, Inhalte, Notizen), print (PDF für die Druckerei, Datei …-druck.pdf: Seite = Endformat + Beschnitt ringsum, Standard 3 mm; Flyeralarm 1 mm, Saxoprint/Onlineprinters 2 mm, WIRmachenDRUCK 3 mm; ohne Schnittmarken, randabfallende Fotos laufen gespiegelt in den Beschnitt; Farben RGB, die genannten Druckereien wandeln selbst nach CMYK, ${APP.pro ? 'mit cmyk PDF/X-4 in CMYK, wenn die Druckerei CMYK verlangt (z. B. print24)' : 'print24 verlangt CMYK'} – dem Nutzer bei großer Auflage einen Probedruck raten), clips (je Folie im Layout clip ein Short als eigene MP4 mit Hook und Untertiteln; die Untertitel kommen aus dem Transkript, also vorher transcribe_video für die Ausschnitte aufrufen) oder mp4 (das ganze Deck als ein Video: Clip-Folien mit ihren Ausschnitten, bis 100 je Folie, z. B. ein ganzes Video gekürzt (Fulltime); andere Folien als Standbild von 3 s, z. B. Zwischentitel; Folien-transition fade, dissolve, push, slide, wipe, circle, zoom, split, cover, stack = echte Überblendung zwischen zwei Folien (auch Clip ↔ Zwischentitel), color = über Schwarz, none und morph = harter Schnitt zwischen zwei Clip-Folien (Zwischentitel blenden dann über Schwarz); Video-Decks mit transition none anlegen und Übergänge gezielt setzen: Zwischentitel, Orts- oder Kapitelwechsel, Zusammenschnitt mehrerer Clips (je Clip eine clip-Folie, fade oder dissolve); Schnitte innerhalb eines Clips blenden automatisch über: Jump-Cuts 0,13 s, ein neuer Moment (Sprung ab 20 s in der Quelle) 0,5 s, part.transition ändert das je Schnitt). Effekte je Ausschnitt (sparsam): speed (Zeitlupe/Zeitraffer, Ton ohne Tonhöhenänderung, Untertitel laufen mit), volume (Originalton, 0 = stumm), music (Musikpegel mit weichen Rampen, nur mit deck.music); zoom (Punch-in 1.1–1.2 an der Pointe), freeze (Standbild nur am Satzende); overlays = Text, Bauchbinde (einmal je Person beim ersten Auftritt), Titel, Zahl, Liste, Zitat, Markierung, Abspann (letzte 8 s), Bild, Video oder ausgeblendete Folie (Bild-in-Bild oder pos voll als B-Roll, 2–6 s) oder Verpixeln, höchstens eine zur Zeit; look (einer je Video, auto für flaue Handy-Aufnahmen), stabil (nur bei Verwackeln), captionPos, chat (Chat-Replay bei Stream-Highlights, Namen nur auf Wunsch). Keine Sticker oder Emojis. Untertitel kommen zusätzlich als .srt neben das MP4. Ist ein Android-Handy per USB-Debugging verbunden, rechnet es die Clips automatisch etwa fünfmal so schnell mit, der PC ist nur der Rückfall. fit blur zeigt das ganze Bild auf unscharfem Grund statt es zuzuschneiden. Hintergrundmusik aus update_deck music (find_music) läuft in jeder Video-Datei leise mit und weicht der Sprache automatisch (Ducking). mp3/m4a = Podcast nur Ton, auf −16 LUFS gebracht, mit Kapitelmarken (dazu .chapters.json daneben): aus der Episode (create_episode/edit_episode) oder bei Video-Decks aus den Clip-Folien („Als Podcast“, nur eine Quelle). Video- und Podcast-Exporte laufen im Hintergrund (1080p auf langsamen Rechnern mit ~10 fps, 1 h Video ≈ 2–3 h; Auflösung per update_deck videoRes, 4K ab H.265, nie größer als die Quelle): meldet das Tool „läuft noch“, gleich noch einmal aufrufen. Dateinamen tragen bei Nicht-16:9 das Format (…-4x5, …-a4). Serienbrief (Urkunden, Namensschilder, Einladungen): {{Spalte}} in die Texte setzen und rows übergeben, dann entsteht je Zeile eine Datei im Ordner serie-<format>. Film-Decks (create_deck film): mp4 rendert jede sichtbare Folie als animierte Szene mit Stimme, Kamera und Untertiteln (film.captions); clips gibt es dort nicht.`,
+      inputSchema: proFields(z.object({
         format: z.enum(['pptx', 'docx', 'pdf', 'png', 'zip', 'md', 'print', 'clips', 'mp4', 'mp3', 'm4a']),
         size: z.enum(Object.keys(PRINT_SIZES) as [keyof typeof PRINT_SIZES, ...(keyof typeof PRINT_SIZES)[]]).optional().describe('nur print und nur bei A4-Decks: verlustfrei auf ein anderes A-Format skalieren (a2 = Plakat, a3, a5, a6 = Postkarte); weglassen = Format des Decks'),
         bleed: z.number().min(0).max(5).optional().describe('nur print: Beschnitt in mm (Standard 3)'),
+        cmyk: z.boolean().optional().describe('nur print: PDF/X-4 in CMYK (FOGRA39) für Druckereien, die CMYK verlangen; braucht Ghostscript ab 10.05'),
         rows: z.array(z.record(z.string(), z.string())).min(1).max(500).optional().describe('Serienbrief: je Zeile eine Datei, {{Spalte}} im Deck wird ersetzt'),
-      }),
+        formats: z.array(z.enum(['9:16', '1:1', '4:5', '16:9'])).min(1).max(4).optional().describe('nur clips und mp4, Stapel-Export: dasselbe Video zusätzlich in diesen Formaten (Dateien mit Format im Namen); Fokus aufs Gesicht wird je Format neu berechnet, Deck bleibt unverändert'),
+      }), ['cmyk', 'formats']),
       async run(i) {
         const deck = needDeck(ctx)
         const audio = i.format === 'mp3' || i.format === 'm4a'
@@ -968,14 +1041,27 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           if (!srcs.size) throw new Error('Kein Podcast im Deck: erst create_episode mit den Tonspuren (oder ein Video-Deck mit clip-Folien).')
           if (srcs.size > 1) throw new Error(`Als Podcast geht ein Video-Deck nur mit einer Quelle, hier sind es ${srcs.size}. Stattdessen create_episode mit den Tonspuren.`)
         } else if (!deck.slides.length && !(audio && deck.podcast)) throw new Error('Das Deck hat noch keine Folien.')
-        const print = { size: i.size, bleed: i.bleed }
+        const print = { size: i.size, bleed: i.bleed, cmyk: i.cmyk }
         if (i.rows) return { text: `Exportiert (${i.format}):\n${(await exportSeries(ctx.engine, deck, i.rows, i.format, ctx.outDir, print)).join('\n')}` }
-        const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck])).digest('hex')}` // geändertes Deck = neuer Export
+        const video = i.format === 'mp4' || i.format === 'clips'
+        if (i.formats && !video) throw new Error('formats gibt es nur für clips und mp4.')
+        // Stapel-Export: Kopien in weiteren Formaten, ungespeichert; das eigene Format nicht doppelt. Auto-Fokus rechnet prepareClips je Kopie neu
+        const extra = [...new Set(i.formats ?? [])].map((f) => ({ w: FORMATS[f].w, h: FORMATS[f].h })).filter((sz) => formatSuffix(sz) !== formatSuffix(deck.size))
+        const decks = [deck, ...extra.map((size) => ({ ...structuredClone(deck), size }))]
+        const key = `export:${createHash('sha1').update(JSON.stringify([i.format, print, ctx.outDir, deck, extra])).digest('hex')}` // geändertes Deck = neuer Export
         // ein Ausstieg des Handys (phoneFault) gilt nur für den laufenden Export, nicht für einen neuen: dessen Start setzt den Grund erst zurück
-        const where = i.format === 'mp4' || i.format === 'clips' ? await ctx.engine.video?.device?.(jobs.has(key) ? 'export' : undefined).catch(() => undefined) : undefined
-        const r = await job(key, (onProgress) => ctx.engine.exportDeck(deck, i.format, ctx.outDir, print, onProgress), where)
+        const where = video ? await ctx.engine.video?.device?.(jobs.has(key) ? 'export' : undefined).catch(() => undefined) : undefined
+        const r = await job(key, async (onProgress) => {
+          const out: string[] = [], warnings: string[] = []
+          for (const [k, d] of decks.entries()) {
+            const files = await ctx.engine.exportDeck(d, i.format, ctx.outDir, print, (p) => onProgress(Math.floor(((k + p / 100) / decks.length) * 100)))
+            out.push(...files)
+            warnings.push(...(files.warnings ?? []))
+          }
+          return { files: out, warnings }
+        }, where)
         if (!('value' in r)) return { text: [stillRunning('Export', r.pct), where && `Export rechnet: ${where} (scheitert das Handy, rechnet der PC weiter)`].filter(Boolean).join('\n') }
-        const notes: string[] = []
+        const notes = [...r.value.warnings]
         if (where) notes.push(`Gerechnet: ${(await ctx.engine.video?.device?.('export').catch(() => undefined)) ?? where}`) // nach dem Export neu: ein Ausstieg des Handys steht mit Grund da
         if (i.format === 'mp4') { // wie xf/fades in export-video.ts: XFADE außer color überblendet; color und Zwischentitel ohne Überblendung über Schwarz; sonst hart
           const shown = { ...deck, slides: visibleSlides(deck) }, still = (k: number) => shown.slides[k].layout !== 'clip' || shown.slides[k - 1].layout !== 'clip'
@@ -983,6 +1069,8 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
           const x = ts.filter(({ t, still }) => joinOf(t, still) === 'blend').length, b = ts.filter(({ t, still }) => joinOf(t, still) === 'schwarz').length
           notes.push(`Folienwechsel: ${x} mit Überblendung, ${b} über Schwarz, ${ts.length - x - b} harte Schnitte (Folien-transition; innerhalb eines Clips blenden die Schnitte automatisch über, part.transition je Schnitt)`)
         }
+        if (extra.length && deck.slides.some((s) => s.layout === 'clip' && (s.content as ClipContent).overlays?.some((o) => o.slide !== undefined)))
+          notes.push('Eingeblendete Folien (overlays slide) sind im Deck-Format gestaltet und werden in den anderen Formaten gestreckt; dort besser Text-Einblendungen nutzen')
         if ((i.format === 'mp4' || i.format === 'clips' || audio) && deck.music?.src && musicMissing(deck.music.src))
           notes.push('Musik nicht gefunden – ohne Musik exportiert, Nachweis aus den Notes entfernen')
         // wie export-video.ts: clips = je Short immer ein Cover, .txt nur mit post; mp4 = aus der ersten Clip-Folie mit cover/post
@@ -992,7 +1080,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         if (i.format === 'mp4' && cs.some((c) => c.cover != null || c.post?.trim()))
           notes.push('Neben der MP4: Cover (.jpg) und Post-Text (.txt, mit post) aus der ersten Clip-Folie mit cover/post')
         if (audio && deck.podcast?.chapters?.length) notes.push(`Kapitel: ${deck.podcast.chapters.length} Marken in der Datei, dazu .chapters.json daneben (Podcast-Hoster)`)
-        return { text: [`Exportiert (${i.format}):`, ...r.value, ...notes].join('\n') }
+        return { text: [`Exportiert (${i.format}):`, ...r.value.files, ...notes].join('\n') }
       },
     }),
     tool({
@@ -1296,6 +1384,66 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       },
     }),
     tool({
+      name: 'edit_timeline',
+      description: 'Pro-Schnitt: Timeline einer schnitt-Folie mit Ops bearbeiten, in kleinen Batches (bis ~10 Ops). Regeln: Zeiten in Sekunden, auf Bilder gerundet; at = Lage auf der Timeline, in/out = Sekunden im Quellvideo; Spuren von unten nach oben (höhere Videospur liegt darüber); je Spur keine Überlappung; Bilder und Logos als Clip auf V2+ mit box [x, y, Breite]; Musik auf eigene Audiospur; grade zurückhaltend. Ops: split, trim, move, lift, ripple_delete, add_clip, add_track, set (Clip-Felder wie grade, volume, keys, eq, box, src, fade [Anfang, Ende] und xfade = Überblendung vom Vorgänger), from_clips (übernimmt alle sichtbaren clip-Folien; schnitt- und clip-Folien gehören nicht in ein Deck, Lint schnitt-mix), deliver (res, fps, codec, lufs: −14 Streaming, −16 Podcast, −23 Rundfunk), subs_from_transcript (clip; Transkript vorher mit transcribe_video), marker. Bricht eine Op ab, bleibt die Folie unverändert („Op n: …“). Ablauf: read_guide topic timeline.',
+      inputSchema: z.object({
+        slide: z.union([z.string(), z.number().int().min(1)]).describe('ID oder Nummer (ab 1) der schnitt-Folie'),
+        ops: z.array(tlOp).min(1).max(50),
+      }),
+      async run(i) {
+        const deck = needDeck(ctx)
+        const idx = typeof i.slide === 'number' ? i.slide - 1 : indexOf(deck, i.slide), s = deck.slides[idx]
+        if (!s) throw new Error(`Folie ${i.slide} gibt es nicht (${deck.slides.length} Folien).`)
+        if (s.layout !== 'schnitt') throw new Error(`Folie ${i.slide} ist keine schnitt-Folie (${s.layout}). Erst add_slides mit layout schnitt.`)
+        const notes: string[] = []
+        let tl = structuredClone(s.content) as unknown as TimelineContent
+        for (const [k, o] of i.ops.entries()) {
+          const fps = deliverOf(tl).fps
+          try {
+            if (o.op === 'from_clips') {
+              const clips = visibleSlides(deck).filter((x) => x.layout === 'clip')
+              if (!clips.length) throw new Error('keine sichtbaren clip-Folien im Deck')
+              const r = fromClips(clips as unknown as { content: ClipContent }[], fps)
+              tl = { ...r.tl, ...(tl.deliver && { deliver: tl.deliver }) }
+              notes.push(`${clips.length} clip-Folien übernommen${r.dropped.length ? `; nicht übernommen: ${r.dropped.join(', ')}` : ''}. Die clip-Folien sind noch im Deck: Lint schnitt-mix meldet sie, nach Prüfung der Timeline ausblenden bzw. mit delete_slides entfernen.`)
+            } else if (o.op === 'deliver') {
+              const { op: _, ...d } = o
+              tl = { ...tl, deliver: { ...tl.deliver, ...d } }
+            } else if (o.op === 'marker') {
+              tl = { ...tl, markers: [...(tl.markers ?? []), { t: snapFrame(o.t, fps), name: o.name }].sort((a, b) => a.t - b.t) }
+            } else if (o.op === 'subs_from_transcript') {
+              const c = tl.tracks.flatMap((t) => t.clips).find((x) => x.id === o.clip)
+              if (!c) throw new Error(`Clip ${o.clip} nicht gefunden`)
+              const file = clipFile(c.src), tr = file ? (await ctx.engine.video?.cached?.(file))?.transcript : null
+              if (!tr) throw new Error(`Kein Transkript für ${c.src} – erst transcribe_video (from=${c.in} to=${c.out})`)
+              const a = c.at, e = clipEnd(c)
+              const subs: Sub[] = tr.segments.filter((x) => x.end > c.in && x.start < c.out && x.text.trim()).map((x) => ({
+                start: snapFrame(tlAt(c, Math.max(x.start, c.in)), fps), end: snapFrame(tlAt(c, Math.min(x.end, c.out)), fps), text: x.text.trim().slice(0, 200),
+              })).filter((x) => x.end > x.start)
+              tl = { ...tl, subs: [...(tl.subs ?? []).filter((x) => x.end <= a || x.start >= e), ...subs].sort((x, y) => x.start - y.start) }
+              notes.push(`${subs.length} Untertitel aus dem Transkript für Clip ${c.id}`)
+            } else tl = applyOps(tl, [o as TLOp], fps)
+          } catch (e) {
+            throw new Error(`Op ${k + 1} (${o.op}): ${(e as Error).message.replace(/^Op 1 \([^)]*\): /, '')}`)
+          }
+        }
+        const r = timelineSchema.safeParse(tl)
+        if (!r.success) throw new Error(`Timeline nach den Ops ungültig, Folie unverändert:\n${z.prettifyError(r.error)}`)
+        s.content = validateContent('schnitt', tl, `Folie ${s.id}`)
+        const fonts = await put(deck)
+        tl = s.content as unknown as TimelineContent
+        const tracks = tl.tracks.map((t) => `${t.id} (${t.kind === 'video' ? 'Video' : 'Audio'}, ${t.clips.length} ${t.clips.length === 1 ? 'Clip' : 'Clips'})`).join(', ')
+        // statt report(): Autofit sagt bei einer Timeline nichts, und die Regel schnitt im Deck-Lint ist lintTimeline (hier direkt, auch ohne Engine)
+        const own = lintTimeline(tl, deliverOf(tl).fps).map((x) => `  - [${x.level === 'error' ? 'error' : 'warn'}] schnitt: ${x.msg}`)
+        const rest = await ctx.engine.lint(deck).then((xs) => xs.filter((x) => x.slide === idx && x.rule !== 'schnitt'), () => [])
+        const errors = own.filter((x) => x.includes('[error]')).length + rest.filter((x) => x.severity === 'error').length
+        const mixed = deck.slides.some((x) => x.layout === 'clip' && !x.hidden) && !notes.some((n) => n.includes('schnitt-mix'))
+        return { text: [fonts + `Folie ${idx + 1} (${s.id}, schnitt)${hid(s)}: ${errors ? `${errors} FEHLER` : 'OK'} · Timeline ${mmss(tlDuration(tl))} · Spuren: ${tracks}`,
+          ...own, ...(rest.length ? [fmtIssues(rest)] : []), ...notes,
+          ...(mixed ? ['Hinweis: clip-Folien im Deck – schnitt und clip nicht mischen (Lint schnitt-mix): Timeline per from_clips füllen, dann die clip-Folien entfernen.'] : [])].join('\n') }
+      },
+    }),
+    tool({
       name: 'find_music',
       description: 'Freie Hintergrundmusik für Video-Exporte und Podcasts suchen und laden (Openverse: nur CC0, Public Domain und CC BY). Nur auf Wunsch des Nutzers oder bei Kompilationen; dezent und instrumental, nie laut unter Sprache (das Ducking unter Sprache macht der Export). query = suchen, id = Titel aus der Trefferliste laden. Danach update_deck mit music: { src, credit }; den Nachweis zusätzlich in die Notes der letzten Folie. kurz = Soundeffekte und Jingles unter 30 s statt Musikbetten, für Podcast-Intro/-Outro und Effekte (edit_episode intro, outro, sfx); Nachweis dann in die Shownotes.',
       inputSchema: z.object({
@@ -1321,10 +1469,11 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
       description: 'Dauerhafte Vorliebe des Nutzers in den Hausstil schreiben; gilt für alle künftigen Decks (Tonfall, Anrede, Farben, Dinge, die er nicht will). Nur bei ausdrücklichem Wunsch („merk dir …“, „immer …“, „nie …“) oder wenn er dieselbe Korrektur zum zweiten Mal verlangt. Ein kurzer Satz pro Aufruf.',
       inputSchema: z.object({ note: z.string().min(3).max(200) }),
       async run(i) {
+        const f = styleFile() // zuerst: wirft bei kaputtem Kunden-Marker, statt in den Hausstil der Agentur zu schreiben
         if (houseStyle().includes(i.note.trim())) return { text: 'Steht schon im Hausstil.' }
-        mkdirSync(dirname(STYLE_FILE), { recursive: true })
-        appendFileSync(STYLE_FILE, `- ${i.note.trim()}\n`)
-        return { text: `Gemerkt (${STYLE_FILE}). Gilt ab jetzt für jedes Deck; sag dem Nutzer kurz Bescheid.` }
+        mkdirSync(dirname(f), { recursive: true })
+        appendFileSync(f, `- ${i.note.trim()}\n`)
+        return { text: `Gemerkt (${f}). Gilt ab jetzt für jedes Deck; sag dem Nutzer kurz Bescheid.` }
       },
     }),
     ...(ctx.storyline ? [tool({
@@ -1348,7 +1497,7 @@ export function buildTools(ctx: ToolContext): ToolDef[] {
         return { text: 'Frage angezeigt. Beende jetzt den Turn und warte auf die Antwort.' }
       },
     })] : []),
-  ] as ToolDef[]
+  ] as ToolDef[]).filter((t) => APP.pro || !PRO_TOOLS.includes(t.name))
 }
 
 // Unsplash: suchen, die besten `limit` Fotos (1080 px) nach assetDir laden, Download melden (API-Bedingung), Thumbs zurückgeben.

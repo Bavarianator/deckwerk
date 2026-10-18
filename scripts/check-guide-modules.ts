@@ -63,6 +63,11 @@ for (const t of ['Motion-Grafik zu unserem Ablauf', 'Animierte Infografik für L
 for (const t of ['Nutze ein Video auf meinem PC und schneide es', 'Mach 3 Reels für Instagram aus meinem Podcast', 'Highlights aus meinem Twitch-Stream'])
   assert.deepEqual([vroute(t).modules, vroute(t).video], [['video', 'layout:clip', 'layout:section', 'layout:statement'], true], t)
 assert.equal(vroute('Untertitel größer', { layoutsInDeck: ['clip', 'section'], hasDeck: true }).video, true, 'Video-Deck')
+// Pro-Schnitt: Stichwort oder schnitt-Folie im Deck → zusätzlich §12 und layout:schnitt; Zeitstrahl-Layout „timeline“ ist kein Schnitt
+assert.deepEqual(vroute('B-Roll über mein Video legen').modules, ['video', 'layout:clip', 'layout:section', 'layout:statement', 'timeline', 'layout:schnitt'])
+assert.deepEqual([vroute('Musik leiser', { layoutsInDeck: ['schnitt'], hasDeck: true }).video, vroute('Musik leiser', { layoutsInDeck: ['schnitt'], hasDeck: true }).modules.includes('layout:schnitt')], [true, true])
+assert.ok(!route('Folie mit Timeline der Meilensteine').has('timeline'))
+assert.ok(vroute('Weiche Überblendung zwischen den Szenen im Video').modules.includes('timeline'))
 r = route('Präsentation über unser Produkt mit eingebettetem Video')
 assert.ok(r.has('video') && r.has('layout:clip') && r.has('geruest-praesentation') && r.has('layout:cover'))
 assert.equal(vroute('Präsentation mit Video').video, undefined)

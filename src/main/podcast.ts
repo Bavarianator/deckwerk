@@ -3,7 +3,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { existsSync, writeFileSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
-import { homedir } from 'node:os'
+import { dataDir } from './clients'
 import { basename, dirname, join, resolve } from 'node:path'
 import type { Deck } from '../shared/deck'
 import { LUFS, deckToEpisode, editedLength, inCut, keepRanges, normCuts, toEdited, type Episode } from '../shared/podcast'
@@ -15,7 +15,7 @@ const XF = 1 // Überblendung Intro/Outro (s)
 const SEAM = 0.01 // Blende an jeder Schnittnaht (s) gegen Knackser
 const FMT = 'aformat=sample_rates=48000:channel_layouts=stereo'
 const sec = (s: number) => s.toFixed(3)
-const home = () => process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
+const home = dataDir
 // Caches im selben Punktordner wie die Video-Caches der Engine (baseOf in engine.ts), nicht gesynct
 const cacheBase = async (file: string) => {
   const s = await stat(file)

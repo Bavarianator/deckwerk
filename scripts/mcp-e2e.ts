@@ -3,6 +3,7 @@
 // E2E_HEADLESS=1: ohne DISPLAY über scripts/deckwerk.sh, so wie Vibe und Codex den Server starten.
 // E2E_APP=<AppRun oder AppImage>: das Linux-Paket mit demselben sh-Aufruf wie mcpCmd in src/main/ipc.ts.
 import assert from 'node:assert/strict'
+import { APP } from '../src/shared/app-id'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -31,7 +32,7 @@ const call = async (name: string, args: Record<string, unknown> = {}) => {
 const t0 = Date.now()
 const lap = (what: string) => console.log(`${String(Date.now() - t0).padStart(6)} ms  ${what}`)
 
-assert.equal((await client.listTools()).tools.length, 31)
+assert.equal((await client.listTools()).tools.length, APP.pro ? 32 : 31)
 await call('create_deck', { title: 'E2E Test', theme: 'corporate', brand: { primary: '#0A7C66' } })
 let r = await call('add_slides', { slides: [
   { layout: 'cover', content: { eyebrow: 'E2E', title: 'Der MCP-Server rendert echte Folien', subtitle: 'Offscreen-Chromium im Electron-Main-Prozess' }, notes: 'Testfolie' },

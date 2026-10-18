@@ -6,7 +6,9 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { APP } from '../shared/app-id'
 import { MEDIA_EXT, profileOf, VIDEO_FILE } from '../shared/deck'
+import { dataDir } from './clients'
 import type { createEngine } from './engine'
 import { setupSpellcheck } from './spellcheck'
 import { guardMedia } from './record'
@@ -25,6 +27,8 @@ if (process.platform === 'darwin') process.env.PATH = [process.env.PATH, '/opt/h
 
 // Linux-Paket (AppImage) ohne Startskript: unter Wayland hängt printToPDF, deshalb einmal über XWayland neu starten.
 // Nur die App; CLI und MCP bekommen die Flags über ihren Aufruf (MCP-Eintrag in ipc.ts wählt x11 oder headless).
+// Pro aus dem Quellcode (dev:pro, --mcp): eigenes userData wie die installierte Pro-App, nicht das von Deckwerk (package.json name)
+if (APP.pro && !app.isPackaged) app.setPath('userData', join(app.getPath('appData'), APP.id))
 const argv0 = process.argv
 if (process.platform === 'linux' && app.isPackaged && process.env.WAYLAND_DISPLAY && !argv0.some((a) => a.startsWith('--ozone-platform'))
   && !['--mcp', '--render', '--check'].some((f) => argv0.includes(f))) {
@@ -56,7 +60,7 @@ async function frameSlot<T>(fn: () => Promise<T>): Promise<T> {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1600, height: 960, minWidth: 1200, minHeight: 760, backgroundColor: '#ffffff', title: 'Deckwerk',
+    width: 1600, height: 960, minWidth: 1200, minHeight: 760, backgroundColor: '#ffffff', title: APP.name,
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true },
   })
   win.removeMenu() // keine native Menüleiste (File/Edit/View) unter Linux/Windows; macOS behält sein App-Menü
@@ -101,7 +105,7 @@ app.whenReady().then(async () => {
       try {
         const t = Math.round(Math.min(48 * 3600, Math.max(0, Number(frame) || 0)) * 10) / 10 // fremde deck.json: keine Fantasiezeiten im Cache-Namen
         const st = await stat(file)
-        const dir = join(process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk'), 'assets', '.video')
+        const dir = join(dataDir(), 'assets', '.video')
         const jpg = join(dir, `${createHash('sha1').update(`${file}|${st.size}|${st.mtimeMs}`).digest('hex')}-${t}.jpg`)
         let buf: Uint8Array | undefined = await readFile(jpg).catch(() => undefined)
         if (!buf) {
@@ -143,8 +147,8 @@ app.whenReady().then(async () => {
   if (!cli && !argv.includes('--mcp')) {
     // Zweiter Klick aufs Symbol holt das offene Fenster nach vorn statt einer zweiten Instanz (CLI/MCP dürfen parallel laufen)
     if (!app.requestSingleInstanceLock()) return app.quit()
-    // Links der Website (deckwerk://teilen?d=…, gemeinsam.ts) öffnen die App; unter Linux trägt der Desktop-Eintrag das Schema ein
-    if (app.isPackaged) app.setAsDefaultProtocolClient('deckwerk')
+    // Links der Website (<APP.scheme>://teilen?d=…, gemeinsam.ts) öffnen die App; je Edition ein eigenes Schema, sonst landen sie in der anderen
+    if (app.isPackaged) app.setAsDefaultProtocolClient(APP.scheme)
     const win = createWindow()
     setupSpellcheck(win)
     guardMedia(win) // Bildschirm/Mikrofon nur während einer angeforderten Aufnahme (record.ts)

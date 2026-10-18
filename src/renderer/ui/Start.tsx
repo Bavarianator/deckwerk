@@ -6,7 +6,7 @@ import { AUDIO_FILE, FORMATS, VIDEO_FILE, profileOf, type Deck, type FormatId, t
 import { SlideView } from '../slide'
 import { ModelSelect } from './Chat'
 import { Select } from './kit'
-import { Logo } from './Logo'
+import { Logo, Wordmark } from './Logo'
 import { CloudButton } from './settings/CloudSection'
 
 // Angehängte Dateien (Start und KI-Leiste): Text geht nur an die KI, der Chat zeigt Wunsch und Dateinamen
@@ -135,7 +135,7 @@ const PODCAST_HINT = 'Folge aufräumen: Pausen, Füllwörter, Versprecher, Kapit
 // Filter über Decks und Vorlagen; Video = Deck mit Videoclip (wie hasClip in App.tsx)
 const KINDS = [['alle', 'Alle'], ['folien', 'Folien'], ['druck', 'Drucksachen'], ['social', 'Social'], ['video', 'Videos'], ['podcast', 'Podcasts']] as const
 type Kind = (typeof KINDS)[number][0]
-const kindOf = (d: Deck): Kind => d.podcast ? 'podcast' : d.slides.some((s) => s.layout === 'clip') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
+const kindOf = (d: Deck): Kind => d.podcast ? 'podcast' : d.slides.some((s) => s.layout === 'clip' || s.layout === 'schnitt') ? 'video' : ({ slides: 'folien', doc: 'druck', social: 'social' } as const)[profileOf(d)]
 
 // „Gibt es schon ähnlich“: grober Abgleich gleicher Wortanfänge (6 Zeichen) zwischen Wunsch und Titel/Folientiteln
 const STOP = new Set(['erstelle', 'gestalte', 'mache', 'bitte', 'einen', 'eine', 'einem', 'einer', 'unser', 'unsere', 'unseren', 'unserem', 'über',
@@ -239,7 +239,7 @@ export function Start({ onSubmit, model, onModel, onBlank, onOpen, onOpenPath, o
   return (
     <div className="home">
       <header className="top">
-        <div className="home-brand"><Logo size={22} />Deckwerk</div>
+        <div className="home-brand"><Logo size={22} /><Wordmark /></div>
         <span />
         <div className="top-r">
           <button className="plain tint" onClick={onOpen}>Deck öffnen …</button>

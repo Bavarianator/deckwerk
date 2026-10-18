@@ -1,4 +1,5 @@
 // Arbeitsansicht: Folienübersicht | Folie mit Notizen und KI-Leiste | Panel „Einfügen“ oder „Anpassen“ (ausblendbar).
+import { APP } from '../../shared/app-id'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { fmtSec, speakSec } from '../../shared/handout'
@@ -11,6 +12,8 @@ import type { Msg } from './Chat'
 import { Elements } from './Elements'
 import { Filmstrip } from './Filmstrip'
 import { InsertSearch } from './InsertSearch'
+import { AccentPicker } from './AccentPicker'
+import { LintPanel } from './LintPanel'
 import { Inspector } from './Inspector'
 import { ObjectBar } from './ObjectBar'
 import { Stage } from './Stage'
@@ -85,10 +88,11 @@ export function EditorScreen(p: Props) {
     return [...new Set([c.text, c.accent, c.accent2, c.muted])]
   }, [JSON.stringify(p.deck?.theme)]) // eslint-disable-line react-hooks/exhaustive-deps
   const patchItem = (id: string, q: Partial<Item>, tag?: string) => p.onItems((l) => l.map((it) => (it.id === id ? { ...it, ...q } : it)), tag)
-  const setSpec = (s: ChartSpec) => {
+  // own: eigener Undo-Schritt (Excel verknüpfen, aktualisieren, lösen), sonst verschmelzen Eingaben in der Tabelle
+  const setSpec = (s: ChartSpec, own?: boolean) => {
     if (!slide) return
-    if (item) patchItem(item.id, { spec: s }, `chart-${item.id}`)
-    else p.patchSlide(p.index, { content: { ...slide.content, chart: s } }, `chart-${slide.id}`)
+    if (item) patchItem(item.id, { spec: s }, own ? undefined : `chart-${item.id}`)
+    else p.patchSlide(p.index, { content: { ...slide.content, chart: s } }, own ? undefined : `chart-${slide.id}`)
   }
 
   return (
@@ -101,7 +105,7 @@ export function EditorScreen(p: Props) {
       <div className="work-center" onPointerDownCapture={(e) => { if ((e.target as HTMLElement).closest('.stage-canvas')) setDragging(true) }}>
         {spec && t?.rect && closed !== t.slot && !dragging && (
           <ChartEditor
-            spec={spec} rect={t.rect} busy={p.busy} onChange={setSpec} onClose={() => setClosed(t.slot ?? null)}
+            key={`${slide?.id}:${t.slot}`} spec={spec} free={!!item} rect={t.rect} busy={p.busy} onChange={setSpec} onClose={() => setClosed(t.slot ?? null)}
             onCheck={() => p.onSend('Ich habe die Daten des Diagramms geändert. Passen Titel und Kernaussage noch dazu? Wenn nicht, passe sie an.', t.context)}
           />
         )}
@@ -123,6 +127,8 @@ export function EditorScreen(p: Props) {
               <button type="button" className="plain tint" disabled={p.busy} onClick={() => p.onSend(`Schreibe die Sprechernotizen für Folie ${p.index + 1} neu: was ich dazu sage, 30–60 Sekunden, frei gesprochen, ohne den Folientext zu wiederholen. Ändere nur notes.`)}>
                 <Sparkles size={13} />{slide.notes?.trim() ? 'Überarbeiten' : 'Schreiben lassen'}
               </button>
+              {APP.pro && <><AccentPicker slideId={slide.id} disabled={p.busy} />
+              <LintPanel order={p.deck!.slides.map((s) => s.id).join()} disabled={p.busy} onSelect={p.onSelect} /></>}
             </div>
             <textarea
               id="slide-notes"

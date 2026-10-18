@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { download } from '../src/main/download'
-import { MAX_SPEED, autoFocus, cameraPath, detect, faceX, speakerFaces } from '../src/main/faces'
+import { MAX_SPEED, autoFocus, cameraPath, detect, faceX, pickFace, speakerFaces, type Face } from '../src/main/faces'
 import { probe, rawFrames, runFfmpeg } from '../src/main/ffmpeg'
 import { cropFilter, zoomCrop } from '../src/main/video-fx'
 import { cropRect } from '../src/shared/video'
@@ -79,6 +79,14 @@ async function main() {
   const dir = mkdtempSync(join(base, 'check-faces-'))
   try {
     await checkTrack(dir)
+    // Tracking: bleibt bei der Person nahe prev, auch wenn eine andere größer ist; ohne prev oder zu weit weg das größte Gesicht
+    const face = (x: number, w: number): Face => ({ x, y: 0, w, h: w, score: 1, mouth: [0, 0, 0, 0] })
+    const near = face(100, 80), large = face(1000, 200)
+    assert.equal(pickFace([near, large], 140, 1280), near)
+    assert.equal(pickFace([near, large], null, 1280), large)
+    assert.equal(pickFace([near, large], 600, 1280), large, 'weiter als GAP: neu wählen')
+    assert.equal(pickFace([], 140, 1280), null)
+    console.log('check-faces: Tracking ok')
     if (process.env.DW_ONLY_TRACK) return
     if (process.env.DW_NET !== '1') return console.log('check-faces: Modellteil übersprungen (DW_NET=1 lädt Modell und Testbild)')
     const jpg = join(dir, 'selfie.jpg'), selfie = join(dir, 'selfie.mp4'), black = join(dir, 'schwarz.mp4'), talk = join(dir, 'gespraech.mp4')

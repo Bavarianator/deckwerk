@@ -1,0 +1,17 @@
+/* Farbseite: flach, eine Akzentfarbe; nur das Rad selbst zeigt die Farbtöne (R rechts, G oben links, B unten links) */
+.tl-color { display: flex; flex-direction: column; gap: 12px; }
+.tl-color-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tl-color-bar .tl-field { flex: 1 1 200px; grid-template-columns: 48px minmax(0, 1fr); }
+.tl-color-bar button[aria-pressed='true'] { color: var(--accent); }
+.tl-color-wheels { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px; }
+.tl-cwheel { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.tl-cwheel > b { font-size: 12px; font-weight: 600; color: var(--muted); }
+.tl-cwheel .tl-field { width: 100%; grid-template-columns: auto minmax(0, 1fr) auto; }
+.tl-cwheel-disc { position: relative; width: 100%; max-width: 140px; aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--border-strong); cursor: crosshair; touch-action: none; overflow: hidden; }
+.tl-cwheel-disc::before { content: ''; position: absolute; inset: 0; border-radius: 50%; opacity: 0.35;
+  background: conic-gradient(from 90deg, #f00, #f0f, #00f, #0ff, #0f0, #ff0, #f00); }
+.tl-cwheel-disc::after { content: ''; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: var(--faint); }
+.tl-cwheel-disc:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tl-cwheel-disc i { position: absolute; z-index: 1; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: var(--bg); box-shadow: 0 0 0 2px var(--accent); pointer-events: none; }
+.tl-color-scopes { display: flex; flex-direction: column; gap: 6px; }
+.tl-color-err { color: var(--danger); }
