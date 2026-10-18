@@ -168,9 +168,19 @@ export function resizeDeck(deck: Deck, format: FormatId | Size): Deck {
   const from = sizeOf(deck)
   const sx = to.w / from.w, sy = to.h / from.h, k = Math.min(sx, sy)
   const r = (v: number) => Math.round(v * 100) / 100
+  type Box = Pick<Item, 'x' | 'y' | 'w' | 'h'>
+  const place = (b: Box): Box => { const w = b.w * k, h = b.h * k; return { x: r((b.x + b.w / 2) * sx - w / 2), y: r((b.y + b.h / 2) * sy - h / 2), w: r(w), h: r(h) } }
   const fit = (it: Item): Item => {
-    const w = it.w * k, h = it.h * k
-    const out: Item = { ...it, x: r((it.x + it.w / 2) * sx - w / 2), y: r((it.y + it.h / 2) * sy - h / 2), w: r(w), h: r(h) }
+    const out: Item = { ...it, ...place(it) }
+    if (it.keys) { // Ziel je Takt aus dem bis dahin gültigen Stand umrechnen (fehlende Werte bleiben), sonst landet es neben der Folie
+      let cur: Box = it
+      out.keys = [...it.keys].sort((a, b) => a.step - b.step).map((key) => {
+        cur = { x: key.x ?? cur.x, y: key.y ?? cur.y, w: key.w ?? cur.w, h: key.h ?? cur.h }
+        const f = place(cur), n = { ...key }
+        for (const p of ['x', 'y', 'w', 'h'] as const) if (key[p] !== undefined) n[p] = f[p]
+        return n
+      })
+    }
     if (it.size) out.size = r(it.size * k)
     if (it.strokeW) out.strokeW = r(it.strokeW * k)
     if (it.radius) out.radius = r(it.radius * k)

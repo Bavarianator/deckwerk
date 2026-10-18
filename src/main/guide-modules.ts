@@ -43,7 +43,7 @@ const HEADINGS: [id: string, heading: string, kurz: string, always?: true][] = [
   ['deck-auftraege', '### Aufträge fürs ganze Deck', 'Übersetzen, Notizen, Kürzen, als Text zusammenfassen, Rechtschreibung.'],
   ['fehler', '## 10. Häufige Fehler', 'Was oft schiefgeht.', true],
   ['video', '## 11. Video', 'Video-Schnitt: Shorts/Reels, Fulltime kürzen, Stream-Highlights, Kompilation; Bewertung, Hooks, Regeln für clip.'],
-  ['film', '## 12. Animation (Film)', 'Film (Erklärvideo, Live-Demo, Produkt-/Kennzahlen-Video): film, Sprechtext mit [klick], Kamera, capture_page, screen_zooms, Gerüst, Ablauf.'],
+  ['film', '## 12. Animation (Film)', 'Film (Erklärvideo, Live-Demo, Produkt-/Kennzahlen-Video): film, Sprechtext mit [klick], Kamera, Motion-Grafik (keys, draw), capture_page, screen_zooms, Gerüst, Ablauf.'],
   ['podcast', '## 13. Podcast', 'Podcast-Schnitt: Episode (deck.podcast), Spuren, Pausen/Füllwörter/Versprecher, Kapitel, Intro/Outro, MP3-Export.'],
   ['katalog', '## Layout-Katalog', 'Layouts statt Koordinaten, freie Elemente (items).', true],
   ['katalog-themes', '## Themes', 'Katalog-Themes, Schriften mit Charakter und Schriftkatalog für headFont/bodyFont.'],
@@ -147,7 +147,7 @@ export const PODCAST_MODULES = ['podcast'] // read_guide topic podcast
 const SOCIAL_SKIP: LayoutId[] = ['agenda', 'section', 'table'] // Guide „Social-Karussell“: weglassen
 const DOC_BASIS: LayoutId[] = ['cover', 'bullets', 'image-text', 'kpi-grid', 'chart', 'table', 'timeline', 'quote'] // Seiten zwischen A4-Dokumenten
 const DATA = ['inhalt-layout', 'layout:chart', 'layout:kpi-grid', 'layout:table', 'layout:big-number']
-const FILM = /erklärvideo|erklärfilm|demo-video|produktvideo|live-demo|produktdemo|app-demo|tutorial|screencast|bildschirmaufnahme|kennzahlen-video|animiertes video|explainer/ // Film aus Szenen (Modul film), kein Videoschnitt
+const FILM = /erklärvideo|erklärfilm|demo-video|produktvideo|live-demo|produktdemo|app-demo|tutorial|screencast|bildschirmaufnahme|kennzahlen-video|animiertes video|explainer|motion[- ]?gra(fik|phics?)|animierte (info)?grafik/ // Film aus Szenen (Modul film), kein Videoschnitt
 const KEYWORDS: [name: string, re: RegExp, modules: string[]][] = [
   ['animation', /animation|animier|übergang|morph|\bbuild|einblend|bewegung|selbstlauf/, ['animation', 'katalog-animationen']],
   ['film', FILM, ['film', 'layout:screen', 'layout:code']],
