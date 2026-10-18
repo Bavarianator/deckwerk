@@ -52,7 +52,7 @@ const ITEM_MOTION: Record<Exclude<ItemAnim, 'none'>, { kf: Keyframe[]; ms: numbe
   // steigt hinter einer gedachten Linie (der eigenen Unterkante) auf: Ausschnitt bleibt auf der Endposition stehen
   baseline: { kf: [{ translate: '0 100%', clipPath: 'inset(-100% 0 100% 0)' }, { translate: '0 0', clipPath: 'inset(0 0 0 0)' }], ms: 600 },
   wipe: { kf: KF.wipe, ms: 500 },
-  draw: { kf: KF.wipe, ms: 800 },
+  draw: { kf: KF.wipe, ms: 800 }, // Rückfall, wenn es nichts zu zeichnen gibt (drawItem)
   typewriter: { kf: [{ opacity: 0 }, { opacity: 1 }], ms: 1 },
   ascend: { kf: [{ opacity: 0, translate: '0 .5em' }, { opacity: 1, translate: '0 0' }], ms: 400 },
   breathe: { kf: [{ scale: '1' }, { scale: '1.04' }], ms: 1200 },
@@ -67,12 +67,37 @@ const motionOf = (anim: Exclude<ItemAnim, 'none'>, dir?: AnimDir): Keyframe[] =>
   return ITEM_MOTION[anim].kf
 }
 
+// Zeichnen wie evolvePath in Remotion, nur für Formen und Icons aus SVG-Strichen: jeder Strich wächst über stroke-dashoffset,
+// mehrere nacheinander (Icons), Füllung blendet im letzten Drittel ein, Linienenden (LineSvg) zum Schluss. pathLength 1 statt
+// getTotalLength, weil non-scaling-stroke (Formen, Grafiken) Striche in Bildschirm-px misst; Lücke 2 statt 1 und ±1,01,
+// damit runde Kappen am Start keinen Punkt zeigen. Der Schluss-Keyframe fehlt: am Ende gilt wieder der eigene Stil ohne Dasharray.
+// null: nichts zu zeichnen (Text, Bild, Rechteck/Ellipse als div, gestrichelt, Fläche ohne Umriss) → Wischen
+const DRAW_GAP = 60
+function drawItem(el: HTMLElement, delay: number, dir: AnimDir | undefined, f: number): Animation[] | null {
+  if (el.dataset.pptx !== 'icon' && el.dataset.pptx !== 'box') return null
+  const geo = [...el.querySelectorAll<SVGGeometryElement>('path, line, polyline, polygon, circle, rect, ellipse')]
+  const ends = el.dataset.shape === 'line' ? geo.filter((g) => g.tagName !== 'line') : []
+  const strokes = geo.filter((g) => !ends.includes(g))
+  if (!strokes.length || strokes.some((g) => { const c = getComputedStyle(g); return c.stroke === 'none' || c.strokeDasharray !== 'none' })) return null
+  const ms = 800 * f, total = ms + (strokes.length - 1) * DRAW_GAP * f, from = dir === 'left' ? -1.01 : 1.01
+  return [
+    ...strokes.map((g, k) => {
+      g.setAttribute('pathLength', '1')
+      return g.animate([{ strokeDasharray: '1 2', strokeDashoffset: from, fillOpacity: 0 }, { fillOpacity: 0, offset: 2 / 3 }, { strokeDasharray: '1 2', strokeDashoffset: 0, offset: 0.999 }],
+        { duration: ms, delay: delay + k * DRAW_GAP * f, easing: SOFT, fill: 'both' })
+    }),
+    ...ends.map((e) => e.animate(KF.fade, { duration: 200 * f, delay: delay + total - 200 * f, easing: EASE, fill: 'both' })),
+  ]
+}
+
 // Ein Element auftreten lassen (Präsentieren und Vorschau im Editor). Liefert die Animationen, pausiert nichts.
 // Richtung und Tempo kommen aus data-anim-dir/-speed, die Vorschau reicht sie direkt (der State ist noch nicht gerendert).
 export function animateItem(el: HTMLElement, anim: ItemAnim, delay = 0, dir = el.dataset.animDir as AnimDir | undefined, speed = el.dataset.animSpeed as AnimSpeed | undefined): Animation[] {
   if (anim === 'none') return []
   const m = ITEM_MOTION[anim], f = speed ? SPEED[speed] : 1, kf = motionOf(anim, dir)
   if (anim === 'breathe') return [el.animate(kf, { duration: m.ms * f, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out' })]
+  const drawn = anim === 'draw' && drawItem(el, delay, dir, f)
+  if (drawn) return drawn
   const parts = anim === 'typewriter' || anim === 'ascend' ? [...el.querySelectorAll<HTMLElement>('.dw-part')] : []
   if (!parts.length) return [el.animate(m.ms > 1 ? kf : KF.fade, { duration: Math.max(m.ms, 500) * f, delay, easing: m.easing ?? EASE, fill: 'both' })]
   return parts.map((p, k) => p.animate(kf, { duration: m.ms * f, delay: delay + k * GAP[anim as keyof typeof GAP] * f, easing: EASE, fill: 'both' }))
