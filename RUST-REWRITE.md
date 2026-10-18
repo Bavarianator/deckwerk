@@ -42,6 +42,8 @@ Stand 17.10.2026. Ausgewertet wurden Deckwerk `f2bcddc` (Branch `feat/mensch-sta
 | 7 | **Editionen statt Fork:** Cargo-Feature `pro` + `Edition` | Pro und Deckwerk driften heute auseinander (54 Pro-Dateien, ~5 500 Zeilen). |
 | 8 | **Strangler-Migration:** Kern zuerst per napi-rs in Electron, abgesichert durch Differenztests; Folien-Engine gegen Chromium-Referenzen; Slint-App zuletzt | Jede Phase liefert lauffähige Software, nichts wird blind ersetzt. |
 
+**Vorgabe für die Oberfläche (Nutzer, 18.10.2026):** Die native App **sieht aus wie die heutige Electron-App und funktioniert genauso**: gleiche Ansichten, gleiche Anordnung, gleiche Bedienwege, Tastenkürzel und Texte. Farben, Abstände und Schriften kommen aus `shell.css`, `app.css`, `kit.css`. Neu gestaltet wird nichts; Verbesserungen (Tempo, Barrierefreiheit, Tastaturbedienung) ändern das Aussehen nicht. **Deckwerk Pro bekommt seine Pro-Oberfläche** wie heute in deckwerk-pro: eigene Startseite, Timeline-Editor mit Mixer, Farbseite, Scopes und Deliver, Video-Werkzeuge, Theme-Editor, Inhaltsformular, Deck-Blatt und Lint-Panel. Die Basis-Edition zeigt diese Teile nicht (§5.5, mit `P` markierte Zeilen).
+
 **Bleibt außerhalb von Rust:** ffmpeg und ffprobe, yt-dlp, TwitchDownloaderCLI, die ONNX-Modelle (laufen über Rust-Bindings), die CLIs claude/codex/vibe, `design-guide.md`, die SKILL.md-Dateien und (optional) poppler für PDF-Quellen.
 
 **Phasen:** P0 Spikes → P1 Kern per napi → P2 Folien-Engine → P3 Exporte → P4 Daemon/KI/MCP → P5 Medien/Video/Podcast/Timeline → P6 Slint-App + Editionen → P7 Electron abschalten (§12).
@@ -523,6 +525,8 @@ Aufwand: **S** < 1 Tag, **M** 1–3 Tage, **L** > 3 Tage (eine erfahrene Person,
 | `App.tsx` (478) | dw-app::shell (Screens, Undo, Autosave) | L | Undo als Patch-Historie (§8) |
 
 ### 5.5 `src/renderer/ui/` (Oberfläche) → `dw-app` (Slint)
+
+**Maßstab ist die Electron-App:** Jede Ansicht wird 1:1 nachgebaut – Aussehen (Farben, Abstände, Schriften, Symbole aus `shell.css`/`app.css`/`kit.css` und den Komponenten-CSS) und Verhalten (Abläufe, Kürzel, Kontextmenüs, Drag and Drop, Texte). Abnahme je Ansicht per Screenshot-Vergleich alt ↔ neu. **Pro-UI:** Die mit `P` markierten Komponenten (Stand deckwerk-pro `307a4b5`, u. a. Pro-Startseite, `timeline/*`, `VideoTools`, `ThemeEditor`, `ContentForm`, `DeckSheet`, `LintPanel`, `AccentPicker`) bilden die Pro-Oberfläche und erscheinen nur in der Pro-Edition (Feature `pro`).
 
 | Komponente (Zeilen) | Slint-Modul | Aufwand | Hinweis |
 |---|---|---|---|
