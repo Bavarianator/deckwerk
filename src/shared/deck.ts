@@ -1,3 +1,4 @@
+import { APP } from './app-id'
 import type { Episode } from './podcast'
 // pan, pop, words: Canva-Seitenanimationen (Schwenken, Pop, Wort für Wort)
 // photo: Canva „Foto-Zoom“ – randlose Fotos zoomen langsam, Text blendet ein
@@ -235,6 +236,8 @@ export const FORMATS = {
   'panel': { name: 'Twitch-Panel 320×160', w: 320, h: 160 }, // Stream-Paket (Pro); PNG kommt doppelt so groß
 } as const
 export type FormatId = keyof typeof FORMATS
+// panel (Stream-Paket) bietet nur Pro an; Decks in diesem Format liest auch Deckwerk (sizeOf/profileOf kennen es)
+export const FORMAT_IDS = (Object.keys(FORMATS) as FormatId[]).filter((id) => APP.pro || id !== 'panel')
 export interface Size { w: number; h: number }
 // Kürzel für Dateinamen (4x5, a4 …); Sondergrößen als 800x600. 16:9 bleibt leer, damit die Namen wie bisher heißen.
 export const formatSuffix = (size: Size | undefined): string => {

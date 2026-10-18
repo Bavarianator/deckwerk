@@ -2,11 +2,11 @@
 // genau eines → auch „Dieses Deck umwandeln“ (Undo-Schritt). Vorschau live am zuletzt gewählten Format.
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
-import { FORMATS, sizeOf, type Deck, type FormatId } from '../../shared/deck'
+import { FORMATS, FORMAT_IDS, sizeOf, type Deck, type FormatId } from '../../shared/deck'
 import { resizeDeck } from '../../shared/items'
 import { SlideView } from '../slide'
 
-const IDS = Object.keys(FORMATS) as FormatId[]
+const IDS = FORMAT_IDS
 const HINT: Partial<Record<FormatId, string>> = {
   '1:1': 'LinkedIn, Instagram', '4:5': 'Instagram-Feed', '9:16': 'Story, Reel', a4: 'Handout zum Ausdrucken', 'a4-quer': 'Ausdruck quer', og: 'Vorschau in E-Mail und Chat', visitenkarte: 'Druck mit Beschnitt',
 }

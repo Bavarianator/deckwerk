@@ -2,7 +2,7 @@ import { differenceCiede2000, wcagContrast } from 'culori'
 import type { Box, BoxEl, Deck, El, FormatId, Gradient, ImgEl, Measured, TextEl } from './deck'
 import { FORMATS, itemClicks, morphKey, morphNames, profileOf, sizeOf, transitionOf } from './deck'
 import { APP } from './app-id'
-import { LAYOUTS, buildOf } from './layouts'
+import { LAYOUTS, LAYOUT_IDS, buildOf } from './layouts'
 import { lintFilm } from './film-lint'
 import { FONTS, marginsOf, resolveTheme, type FontName } from './themes'
 import { deliverOf, type TimelineContent } from './timeline'
@@ -103,7 +103,7 @@ export function lintSlide(deck: Deck, i: number, m: Measured): Issue[] {
 
   const def = LAYOUTS[s.layout as keyof typeof LAYOUTS]
   if (!def) {
-    add('error', 'layout', `Unbekanntes Layout "${s.layout}". Erlaubt: ${Object.keys(LAYOUTS).join(', ')}`)
+    add('error', 'layout', `Unbekanntes Layout "${s.layout}". Erlaubt: ${LAYOUT_IDS.join(', ')}`)
     return out
   }
   const sizes = (def as { sizes?: FormatId[] }).sizes

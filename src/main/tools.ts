@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url'
 import { z } from 'zod'
 import { converter } from 'culori'
 import { icons } from 'lucide-react'
-import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, formatSuffix, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, VOICES, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type FilmSettings, type ChartSpec } from '../shared/deck'
+import { BUILDS, CHART_STRATEGIES, DECORS, FORMATS, FORMAT_IDS, FRAMES, HEAD_WEIGHTS, HERO_TONES, IMAGE_STYLES, LABELS, LEADINGS, MARGINS, MEASURES, MOTIONS, PRINT_SIZES, SIGNATURES, formatSuffix, sizeOf, TONES, TRANSITIONS, TUNE_KEYS, itemClicks, transitionOf, AUDIO_EXT, AUDIO_FILE, MEDIA_EXT, VIDEO_EXT, VIDEO_FILE, VOICES, visibleSlides, type BrandKit, type Deck, type Measured, type FormatId, type FrameId, type Item, type Slide, type ThemeRef, type ThemeSpec, type ThemeTune, type PrintOptions, type FilmSettings, type ChartSpec } from '../shared/deck'
 import { APP } from '../shared/app-id'
 import { activeClient, brandFile, dataDir, styleFile } from './clients'
 import { fontName, GRAPHICS, itemSchema, newId, resizeDeck } from '../shared/items'
@@ -99,7 +99,7 @@ export interface ToolDef<S extends z.ZodType = z.ZodType> {
   readOnly?: true // ändert das Deck nicht: Claude Code führt solche Aufrufe parallel aus, alle anderen strikt nacheinander
 }
 
-const format = z.enum(Object.keys(FORMATS) as [FormatId, ...FormatId[]]).describe(Object.entries(FORMATS).map(([k, f]) => `${k} = ${f.name} (${f.w}×${f.h})`).join(', '))
+const format = z.enum(FORMAT_IDS as [FormatId, ...FormatId[]]).describe(FORMAT_IDS.map((k) => `${k} = ${FORMATS[k].name} (${FORMATS[k].w}×${FORMATS[k].h})`).join(', '))
 const THEME_IDS = THEMES.map((t) => t.id) as [string, ...string[]]
 const layoutId = z.enum(LAYOUT_IDS as [LayoutId, ...LayoutId[]])
 const build = z.enum(BUILDS).describe('Animations-Preset; weglassen = Default des Layouts')

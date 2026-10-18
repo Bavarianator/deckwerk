@@ -40,7 +40,9 @@ const laden = `${base}laden/`
     h1.textContent = f.n.trim() ? `„${f.n}“ wurde mit dir geteilt` : 'Eine Präsentation wurde mit dir geteilt'
     zeile.textContent = `${f.r === 'edit' ? 'Du kannst mitarbeiten.' : 'Du kannst die Präsentation ansehen.'} Geteilt über ${f.host}`
     // Eigene Schemata reichen Fragmente nicht zuverlässig durch, daher als Query
-    document.querySelector<HTMLAnchorElement>('#oeffnen')!.href = `deckwerk://teilen?d=${f.d}`
+    const auf = document.querySelector<HTMLAnchorElement>('#oeffnen')!
+    auf.href = `${f.scheme}://teilen?d=${f.d}`
+    if (f.scheme === 'deckwerk-pro') auf.textContent = 'In Deckwerk Pro öffnen'
     document.getElementById('kopieren')!.dataset.copy = location.href
     zeigen('geteilt')
   } else {

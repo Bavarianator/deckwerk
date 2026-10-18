@@ -197,5 +197,5 @@ export function registerGemeinsam(win: BrowserWindow, ctx: GemeinsamCtx) {
   }
 }
 
-/** deckwerk://teilen?d=… aus der Kommandozeile (Protokoll-Handler) */
-export const linkArg = (argv: string[]) => argv.find((a) => /^deckwerk:\/\//i.test(a)) ?? null
+/** <APP.scheme>://teilen?d=… aus der Kommandozeile (Protokoll-Handler) */
+export const linkArg = (argv: string[]) => argv.find((a) => a.toLowerCase().startsWith(`${APP.scheme}://`)) ?? null
