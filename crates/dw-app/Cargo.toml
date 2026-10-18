@@ -1,0 +1,33 @@
+[package]
+name = "dw-app"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+# dw-cli heißt schon `deckwerk`: gleicher Name im Workspace überschreibt sich im geteilten target/
+[[bin]]
+name = "deckwerk-app"
+path = "src/main.rs"
+
+[dependencies]
+dw-model = { path = "../dw-model" }
+dw-store = { path = "../dw-store" }
+dw-daemon = { path = "../dw-daemon" }
+dw-scene = { path = "../dw-scene" }
+dw-raster = { path = "../dw-raster" }
+dw-theme = { path = "../dw-theme" }
+dw-lint = { path = "../dw-lint" }
+dw-edit = { path = "../dw-edit" }
+dw-canvas = { path = "../dw-canvas" }
+# wie dw-app-spike: femtovg auf wgpu 30 (teilt das Device mit vello aus dw-canvas), winit für IME
+slint = { version = "1.18", features = ["renderer-femtovg-wgpu", "unstable-wgpu-30", "unstable-winit-030"] }
+kurbo.workspace = true
+rfd.workspace = true
+serde_json.workspace = true
+anyhow = "1"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[build-dependencies]
+slint-build = "1.18"

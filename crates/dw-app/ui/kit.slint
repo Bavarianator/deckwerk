@@ -1,0 +1,520 @@
+// Tokens und Bausteine aus shell.css, app.css und kit.css (Werte 1:1 übernommen, Namen wie die CSS-Klassen).
+
+export global Pal {
+    out property <color> bg: #f2f2f4;
+    out property <color> panel: #ffffff;
+    out property <color> panel-2: #f7f7f8;
+    out property <color> hover: #16161a0f;      // rgb(22 22 26 / 0.06)
+    out property <color> hover-2: #16161a1a;    // .pill:hover 0.1
+    out property <color> border: #16161a14;     // 0.08
+    out property <color> border-strong: #16161a24; // 0.14
+    out property <color> text: #16161a;
+    out property <color> muted: #5e5e66;
+    out property <color> faint: #6e6e76;
+    out property <color> accent: #4f52d9;
+    out property <color> accent-hover: #4346c4;
+    out property <color> accent-soft: #eeeffd;
+    out property <color> danger: #c4312b;
+    out property <color> ok: #1f8a4c;
+    out property <color> warn: #f5a524;
+    // .material ist rgb(255 255 255 / 0.86) mit Weichzeichner dahinter; Slint kann keinen Hintergrund weichzeichnen,
+    // halbdurchsichtig schiene der Text darunter scharf durch: deckend weiß
+    out property <color> material: #ffffff;
+}
+
+// .plain: flacher Knopf (Höhe 32, Polster 0 10, Radius 8, Abstand 6); on = .plain.on, tint = .plain.tint
+export component Plain inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <length> icon-size: 17px;
+    in property <bool> on;
+    in property <bool> tint;
+    in property <bool> enabled: true;
+    in property <length> font-size: 13px;
+    in property <string> label: text;
+    in property <length> pad: 10px;
+    callback clicked();
+    height: 32px;
+    min-width: row.preferred-width;
+    border-radius: 8px;
+    opacity: enabled ? 1 : 0.4;
+    background: on ? Pal.accent-soft : (ta.has-hover && enabled ? Pal.hover : transparent);
+    accessible-role: button;
+    accessible-label: label;
+    accessible-action-default => { if (enabled) { clicked(); } }
+    row := HorizontalLayout {
+        padding-left: root.pad;
+        padding-right: root.pad;
+        spacing: 6px;
+        alignment: center;
+        if root.icon.width > 0: Image {
+            source: root.icon;
+            width: root.icon-size;
+            height: root.icon-size;
+            y: (parent.height - self.height) / 2;
+            colorize: root.on || root.tint ? Pal.accent : Pal.text;
+        }
+        if root.text != "": Text {
+            text: root.text;
+            font-size: root.font-size;
+            color: root.on || root.tint ? Pal.accent : Pal.text;
+            vertical-alignment: center;
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// .pill: Kapsel (Höhe 32, Polster 0 14, 500); tint = Hauptaktion (600, weiß)
+export component Pill inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <length> icon-size: 12px;
+    in property <bool> tint;
+    in property <bool> enabled: true;
+    in property <length> font-size: 13px;
+    in property <int> weight: tint ? 600 : 500;
+    in property <length> pad: 14px;
+    callback clicked();
+    height: 32px;
+    min-width: row.preferred-width;
+    border-radius: self.height / 2;
+    opacity: enabled ? 1 : 0.4;
+    background: tint ? (ta.has-hover && enabled ? Pal.accent-hover : Pal.accent) : (ta.has-hover && enabled ? Pal.hover-2 : Pal.hover);
+    accessible-role: button;
+    accessible-label: text;
+    accessible-action-default => { if (enabled) { clicked(); } }
+    row := HorizontalLayout {
+        padding-left: root.pad;
+        padding-right: root.pad;
+        spacing: 6px;
+        alignment: center;
+        if root.icon.width > 0: Image {
+            source: root.icon;
+            width: root.icon-size;
+            height: root.icon-size;
+            y: (parent.height - self.height) / 2;
+            colorize: root.tint ? white : Pal.text;
+        }
+        Text {
+            text: root.text;
+            font-size: root.font-size;
+            color: root.tint ? white : Pal.text;
+            font-weight: root.weight;
+            vertical-alignment: center;
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// .round: runder Senden-Knopf (36 px, Akzent, deaktiviert 0.3)
+export component Round inherits Rectangle {
+    in property <bool> enabled: true;
+    in property <string> label;
+    in property <length> icon-size: 18px;
+    callback clicked();
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    opacity: enabled ? 1 : 0.3;
+    background: ta.has-hover && enabled ? Pal.accent-hover : Pal.accent;
+    accessible-role: button;
+    accessible-label: label;
+    Image {
+        source: @image-url("icons/arrow-up.svg");
+        width: root.icon-size;
+        height: root.icon-size;
+        colorize: white;
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// .icon-btn: 30 px, transparent, gedämpft
+export component IconBtn inherits Rectangle {
+    in property <image> icon;
+    in property <string> label;
+    in property <bool> enabled: true;
+    in property <length> size: 30px;
+    in property <length> icon-size: 13px;
+    in property <color> fg: Pal.muted;
+    in property <color> fill: transparent;
+    callback clicked();
+    width: size;
+    height: size;
+    border-radius: 4px;
+    opacity: enabled ? 1 : 0.4;
+    background: ta.has-hover && enabled && fill == transparent ? Pal.hover : fill;
+    accessible-role: button;
+    accessible-label: label;
+    Image {
+        source: root.icon;
+        width: root.icon-size;
+        height: root.icon-size;
+        colorize: ta.has-hover && root.fill == transparent ? Pal.text : root.fg;
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// .btn: Rahmenknopf (30 px, Rahmen border-strong, Grund panel-2, Radius 6, 500)
+export component Btn inherits Rectangle {
+    in property <string> text;
+    in property <bool> enabled: true;
+    callback clicked();
+    height: 30px;
+    min-width: t.preferred-width + 24px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: Pal.border-strong;
+    opacity: enabled ? 1 : 0.4;
+    background: ta.has-hover && enabled ? Pal.hover : Pal.panel-2;
+    accessible-role: button;
+    accessible-label: text;
+    t := Text {
+        text: root.text;
+        font-weight: 500;
+        color: Pal.text;
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// .seg: Segmentschalter; Knöpfe 28 px hoch, gedrückt = weiß mit Schatten und 600
+export component Seg inherits Rectangle {
+    in property <[string]> options;
+    in property <[image]> icons;
+    in property <int> current;
+    in property <length> pad: 14px;
+    in property <bool> enabled: true;
+    callback changed(int);
+    height: 32px;
+    min-width: row.preferred-width;
+    border-radius: 9px;
+    background: Pal.hover;
+    opacity: enabled ? 1 : 0.4;
+    row := HorizontalLayout {
+        padding: 2px;
+        spacing: 2px;
+        for o[i] in root.options: Rectangle {
+            min-width: inner.preferred-width;
+            border-radius: 7px;
+            background: i == root.current ? Pal.panel : transparent;
+            drop-shadow-blur: i == root.current ? 3px : 0;
+            drop-shadow-offset-y: 1px;
+            drop-shadow-color: i == root.current ? #16161a1f : transparent;
+            accessible-role: button;
+            accessible-label: o;
+            inner := HorizontalLayout {
+                padding-left: root.pad;
+                padding-right: root.pad;
+                spacing: 6px;
+                alignment: center;
+                if i < root.icons.length: Image {
+                    source: root.icons[i];
+                    width: 15px;
+                    height: 15px;
+                    y: (parent.height - self.height) / 2;
+                    colorize: i == root.current && root.pad > 10px ? Pal.accent : Pal.muted;
+                }
+                if root.pad > 10px: Text {
+                    text: o;
+                    font-weight: i == root.current ? 600 : 400;
+                    color: Pal.text;
+                    vertical-alignment: center;
+                }
+            }
+            TouchArea {
+                enabled: root.enabled;
+                mouse-cursor: pointer;
+                clicked => { root.changed(i); }
+            }
+        }
+    }
+}
+
+// .kit-select: Dropdown (32 px, Rahmen border-strong, Radius 8); ghost = kompakt ohne Rahmen (28 px, 12 px)
+export component Select inherits Rectangle {
+    in property <[string]> options;
+    in property <int> current;
+    in property <bool> ghost;
+    in property <string> prefix; // nur im Knopf, z. B. „Format: “
+    in property <bool> enabled: true;
+    in property <string> label;
+    callback changed(int);
+    height: ghost ? 28px : 32px;
+    min-width: ghost ? row.preferred-width : 0px;
+    preferred-width: ghost ? row.preferred-width : 200px;
+    horizontal-stretch: ghost ? 0 : 1;
+    border-radius: 8px;
+    border-width: ghost ? 0 : 1px;
+    border-color: ta.has-hover ? #16161a3d : Pal.border-strong;
+    background: ghost ? Pal.hover : (ta.has-hover && enabled ? Pal.panel-2 : Pal.panel);
+    opacity: enabled ? 1 : 0.6;
+    accessible-role: combobox;
+    accessible-label: label;
+    accessible-value: root.current >= 0 && root.current < root.options.length ? root.options[root.current] : "";
+    row := HorizontalLayout {
+        padding-left: root.ghost ? 8px : 12px;
+        padding-right: root.ghost ? 8px : 10px;
+        spacing: 8px;
+        HorizontalLayout {
+            horizontal-stretch: 1;
+            if root.prefix != "": Text {
+                text: root.prefix;
+                font-size: root.ghost ? 12px : 13px;
+                color: Pal.muted;
+                vertical-alignment: center;
+            }
+            Text {
+                text: root.current >= 0 && root.current < root.options.length ? root.options[root.current] : "";
+                font-size: root.ghost ? 12px : 13px;
+                color: Pal.text;
+                vertical-alignment: center;
+                overflow: elide;
+                horizontal-stretch: 1;
+            }
+        }
+        Image {
+            source: @image-url("icons/chevron-down.svg");
+            width: 14px;
+            height: 14px;
+            y: (parent.height - self.height) / 2;
+            colorize: Pal.muted;
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { menu.show(); }
+    }
+    menu := PopupWindow {
+        x: 0;
+        y: root.height + 4px;
+        width: max(root.width, 180px);
+        close-policy: close-on-click-outside;
+        Rectangle {
+            border-radius: 12px;
+            background: #fffffff5;
+            border-width: 1px;
+            border-color: Pal.border;
+            drop-shadow-blur: 40px;
+            drop-shadow-offset-y: 16px;
+            drop-shadow-color: #16161a1f;
+            VerticalLayout {
+                padding: 4px;
+                spacing: 1px;
+                for o[i] in root.options: Rectangle {
+                    height: 32px;
+                    border-radius: 8px;
+                    background: ota.has-hover || i == root.current ? Pal.hover : transparent;
+                    Text {
+                        x: 10px;
+                        text: o;
+                        color: Pal.text;
+                        vertical-alignment: center;
+                        height: parent.height;
+                    }
+                    ota := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            menu.close();
+                            root.changed(i);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// input[type=text] / textarea: Grund panel, Rahmen border-strong, Radius 6, Polster 6 8; Fokus = Akzentrahmen.
+// bare: randlos (Notizen, Wunschfelder)
+export component Input inherits Rectangle {
+    in-out property <string> text;
+    in property <string> placeholder;
+    in property <bool> multiline;
+    in property <bool> bare;
+    in property <length> rows-height: 72px;
+    in property <length> font-size: 13px;
+    in property <color> fg: Pal.text;
+    in property <string> label;
+    in property <bool> enabled: true;
+    out property <bool> focused: ti.has-focus;
+    // jede Änderung holt den Fokus (Taste „/“ aus dem Fenster heraus)
+    in property <int> focus-tick;
+    changed focus-tick => { ti.focus(); }
+    callback edited(string);
+    callback accepted(string);
+    callback key(KeyEvent) -> EventResult;
+    public function focus-input() { ti.focus(); }
+    public function clear() { ti.text = ""; }
+    height: multiline ? rows-height : (bare ? 36px : 30px);
+    border-radius: 6px;
+    border-width: bare ? 0 : 1px;
+    border-color: ti.has-focus ? Pal.accent : Pal.border-strong;
+    background: bare ? transparent : Pal.panel;
+    clip: true;
+    accessible-role: text-input;
+    accessible-label: label;
+    accessible-value: text;
+    property <length> px: bare ? 0px : 8px;
+    property <length> py: bare ? 0px : 6px;
+    TouchArea {
+        mouse-cursor: MouseCursor.text;
+        clicked => { ti.focus(); }
+    }
+    if root.text == "" && root.placeholder != "": Text {
+        x: root.px;
+        y: root.multiline ? root.py : (parent.height - self.height) / 2;
+        width: parent.width - 2 * root.px;
+        text: root.placeholder;
+        font-size: root.font-size;
+        color: Pal.faint;
+        wrap: root.multiline ? word-wrap : no-wrap;
+        overflow: elide;
+    }
+    ti := TextInput {
+        x: root.px;
+        y: root.multiline ? root.py : (parent.height - self.height) / 2;
+        width: parent.width - 2 * root.px;
+        height: root.multiline ? parent.height - 2 * root.py : self.preferred-height;
+        text <=> root.text;
+        enabled: root.enabled;
+        single-line: !root.multiline;
+        wrap: root.multiline ? word-wrap : no-wrap;
+        font-size: root.font-size;
+        color: root.fg;
+        selection-background-color: #4f52d940;
+        edited => { root.edited(self.text); }
+        accepted => { root.accepted(self.text); }
+        key-pressed(e) => { root.key(e) }
+    }
+}
+
+// .field: Beschriftung (12 px, gedämpft) über dem Steuerelement
+export component Field inherits VerticalLayout {
+    in property <string> label;
+    spacing: 5px;
+    padding-bottom: 10px;
+    Text {
+        text: root.label;
+        font-size: 12px;
+        color: Pal.muted;
+    }
+    @children
+}
+
+// Eintrag in .menu (32 px, Hover Akzent/weiß) bzw. .ctx-menu (Hover grau, Kürzel rechts)
+export component MenuItem inherits Rectangle {
+    in property <string> text;
+    in property <string> kbd;
+    in property <bool> enabled: true;
+    in property <bool> danger;
+    in property <bool> ctx;
+    callback clicked();
+    height: ctx ? 30px : 32px;
+    border-radius: ctx ? 5px : 8px;
+    background: ta.has-hover && enabled ? (ctx ? Pal.hover : Pal.accent) : transparent;
+    accessible-role: button;
+    accessible-label: text;
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 16px;
+        Text {
+            text: root.text;
+            // deaktiviert über die Schriftfarbe statt opacity: die Ebene schiene sonst durch das Menü
+            color: !root.enabled ? #16161a66 : ta.has-hover && !root.ctx ? white : root.danger ? Pal.danger : Pal.text;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        if root.kbd != "": Text {
+            text: root.kbd;
+            font-size: 11px;
+            color: Pal.faint;
+            vertical-alignment: center;
+        }
+    }
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component MenuSep inherits Rectangle {
+    height: 9px;
+    Rectangle {
+        x: 8px;
+        width: parent.width - 16px;
+        height: 1px;
+        background: Pal.border;
+    }
+}
+
+// .material: Fläche für Menüs, Blasen und die KI-Kapsel
+export component Material inherits Rectangle {
+    in property <length> radius: 12px;
+    border-radius: radius;
+    background: Pal.material;
+    border-width: 1px;
+    border-color: Pal.border;
+    drop-shadow-blur: 40px;
+    drop-shadow-offset-y: 16px;
+    drop-shadow-color: #16161a1f;
+}
+
+// Kopf eines Vollbild-Blatts (Look, Einstellungen): links Abbrechen/Zurück, Titel mittig, rechts Fertig
+export component SheetTop inherits Rectangle {
+    in property <string> title;
+    in property <string> back: "Abbrechen";
+    in property <image> back-icon;
+    in property <bool> line;
+    callback back-clicked();
+    callback done();
+    height: 52px;
+    background: Pal.bg;
+    Plain {
+        x: 10px;
+        width: self.min-width;
+        text: root.back;
+        icon: root.back-icon;
+        icon-size: 16px;
+        tint: true;
+        clicked => { root.back-clicked(); }
+    }
+    Text {
+        text: root.title;
+        font-weight: 600;
+        color: Pal.text;
+    }
+    Pill {
+        x: parent.width - self.width - 14px;
+        width: self.min-width;
+        text: "Fertig";
+        tint: true;
+        clicked => { root.done(); }
+    }
+    if root.line: Rectangle {
+        y: parent.height - 1px;
+        height: 1px;
+        background: Pal.border;
+    }
+}

@@ -1,0 +1,1916 @@
+// Deckwerk-Oberfläche wie die Electron-App (src/renderer/ui): Start.tsx, EditorScreen.tsx mit TopBar, Filmstrip, Stage,
+// Notizen, AskBar und Inspector, LookSheet, Settings, PresentScreen. Werte aus shell.css/app.css/kit.css.
+// Logik in Rust (src/ui.rs); hier nur Anzeige und Rückrufe.
+
+import { ScrollView, ListView } from "std-widgets.slint";
+import { Pal, Plain, Pill, Round, IconBtn, Btn, Seg, Select, Input, Field, MenuItem, MenuSep, Material, SheetTop } from "kit.slint";
+import "../../../assets/fonts/Inter-Regular.ttf";
+import "../../../assets/fonts/Inter-Bold.ttf";
+
+export { Pal }
+
+export struct DeckCard {
+    title: string,
+    sub: string,
+    image: image,
+    has-image: bool,
+    x: length,
+    y: length,
+    cover-h: length,
+}
+
+export struct Thumb {
+    image: image,
+    has-image: bool,
+    hidden: bool,
+    label: string, // Layout noch nicht portiert: Name statt Bild
+}
+
+export struct FormRow {
+    kind: string, // text long number bool group list item add
+    label: string,
+    value: string,
+    depth: int,
+    item: bool,
+    can-up: bool,
+    can-down: bool,
+}
+
+export struct ThemeCard {
+    name: string,
+    image: image,
+    has-image: bool,
+}
+
+export struct SRect {
+    x: float,
+    y: float,
+    w: float,
+    h: float,
+}
+
+export struct ChatMsg {
+    me: bool,
+    text: string,
+}
+
+// Logo (assets/logo.svg) und Schriftzug wie Logo.tsx/Wordmark
+component Brand inherits HorizontalLayout {
+    in property <bool> pro;
+    spacing: 9px;
+    padding-left: 10px;
+    Image {
+        source: @image-url("../../../assets/logo.svg");
+        width: 22px;
+        height: 22px;
+        y: (parent.height - self.height) / 2;
+    }
+    Text {
+        text: "Deckwerk";
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: -0.15px;
+        color: Pal.text;
+        vertical-alignment: center;
+    }
+    if root.pro: Text {
+        text: "Pro";
+        font-size: 15px;
+        color: Pal.muted;
+        vertical-alignment: center;
+    }
+}
+
+// Inhaltsfeld (ContentForm.tsx): Beschriftung, Eingabe, ↑ ↓ ✕ bei Listeneinträgen
+component FieldRow inherits VerticalLayout {
+    in property <FormRow> data;
+    callback edited(string);
+    callback action(string);
+    spacing: 5px;
+    padding-left: data.depth * 10px;
+    if data.kind == "text" || data.kind == "long" || data.kind == "number" || data.kind == "item": HorizontalLayout {
+        spacing: 0px;
+        Text {
+            text: data.label;
+            font-size: 12px;
+            color: Pal.muted;
+            font-weight: data.kind == "item" ? 600 : 400;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        if data.item: IconBtn {
+            icon: @image-url("icons/arrow-up.svg");
+            label: "Nach oben";
+            size: 22px;
+            enabled: data.can-up;
+            clicked => { action("up"); }
+        }
+        if data.item: IconBtn {
+            icon: @image-url("icons/arrow-down.svg");
+            label: "Nach unten";
+            size: 22px;
+            enabled: data.can-down;
+            clicked => { action("down"); }
+        }
+        if data.item: IconBtn {
+            icon: @image-url("icons/x.svg");
+            label: "Entfernen";
+            size: 22px;
+            clicked => { action("remove"); }
+        }
+    }
+    if data.kind == "text" || data.kind == "number": Input {
+        text: data.value;
+        label: data.label;
+        edited(t) => { edited(t); }
+    }
+    if data.kind == "long": Input {
+        text: data.value;
+        label: data.label;
+        multiline: true;
+        rows-height: 64px;
+        edited(t) => { edited(t); }
+    }
+    if data.kind == "bool": HorizontalLayout {
+        spacing: 8px;
+        Rectangle {
+            width: 34px;
+            height: 20px;
+            border-radius: 10px;
+            background: data.value == "true" ? Pal.accent : Pal.border-strong;
+            Rectangle {
+                x: data.value == "true" ? 16px : 2px;
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                background: white;
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { edited(data.value == "true" ? "false" : "true"); }
+            }
+        }
+        Text {
+            text: data.label;
+            color: Pal.text;
+            vertical-alignment: center;
+        }
+    }
+    if data.kind == "group": Text {
+        text: data.label;
+        font-size: 12px;
+        font-weight: 600;
+        color: Pal.muted;
+    }
+    if data.kind == "list": HorizontalLayout {
+        Text {
+            text: data.label;
+            font-size: 12px;
+            color: Pal.muted;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+    }
+    if data.kind == "list" || data.kind == "add": HorizontalLayout {
+        alignment: start;
+        // .link mit Plus: „+ Eintrag“ bzw. „+ Feldname“
+        Rectangle {
+            height: 22px;
+            width: lt.preferred-width + 18px;
+            accessible-role: button;
+            accessible-label: lt.text;
+            Image {
+                x: 0;
+                source: @image-url("icons/plus.svg");
+                width: 12px;
+                height: 12px;
+                colorize: lta.has-hover ? Pal.text : Pal.muted;
+            }
+            lt := Text {
+                x: 16px;
+                text: data.kind == "list" ? "Eintrag" : data.label;
+                font-size: 12px;
+                color: lta.has-hover ? Pal.text : Pal.muted;
+            }
+            lta := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { action(data.kind == "list" ? "list-add" : "add"); }
+            }
+        }
+    }
+}
+
+export component PresentWindow inherits Window {
+    title: "Präsentation";
+    background: black;
+    preferred-width: 1280px;
+    preferred-height: 720px;
+    in property <image> image;
+    in property <string> note;
+    callback nav(int);
+    callback leave();
+    public function focus-keys() { keys.focus(); }
+    keys := FocusScope {
+        key-pressed(e) => {
+            if (e.text == Key.RightArrow || e.text == " " || e.text == Key.PageDown || e.text == Key.DownArrow || e.text == Key.Return) { root.nav(1); return accept; }
+            if (e.text == Key.LeftArrow || e.text == Key.PageUp || e.text == Key.UpArrow || e.text == Key.Backspace) { root.nav(-1); return accept; }
+            if (e.text == Key.Home) { root.nav(-100000); return accept; }
+            if (e.text == Key.End) { root.nav(100000); return accept; }
+            if (e.text == Key.Escape) { root.leave(); return accept; }
+            reject
+        }
+        TouchArea {
+            pointer-event(e) => {
+                if (e.kind == PointerEventKind.down && e.button == PointerEventButton.left) { root.nav(1); }
+                if (e.kind == PointerEventKind.down && e.button == PointerEventButton.right) { root.nav(-1); }
+            }
+        }
+        Image {
+            width: parent.width;
+            height: parent.height;
+            source: root.image;
+            image-fit: contain;
+        }
+        if root.note != "": Text {
+            text: root.note;
+            color: #ffffff99;
+            font-size: 18px;
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: root.screen == "editor" && root.deck-title != "" ? root.deck-title + " – " + root.edition : root.edition;
+    preferred-width: 1440px;
+    preferred-height: 900px;
+    min-width: 960px;
+    min-height: 640px;
+    background: Pal.bg;
+    default-font-family: "Inter";
+    default-font-size: 13px;
+
+    in property <string> edition: "Deckwerk";
+    in property <bool> pro;
+    in-out property <string> screen: "start";
+
+    // ---------- Start ----------
+    in property <[DeckCard]> decks;
+    in property <length> shelf-h;
+    in property <[DeckCard]> templates;
+    in property <length> tpl-h;
+    in property <string> more-text;
+    in property <string> start-error;
+    in property <[string]> models: ["Auto"];
+    in-out property <int> model-index;
+    in property <[string]> format-options;
+    in property <int> format-index;
+    in property <int> paper-index: -1;
+    in property <string> blank-text: "Leer beginnen und frei gestalten";
+    in-out property <string> home-text;
+    in-out property <string> query;
+    in-out property <length> start-scroll;
+    in property <int> kind-index;
+    callback start-submit(string);
+    callback pick-format(int);
+    callback pick-paper(int);
+    callback chip(int);
+    callback blank();
+    callback open-dialog();
+    callback open-deck(int);
+    callback open-template(int);
+    callback toggle-all();
+    callback find(string, int);
+    callback shelf-width(length);
+    callback open-settings();
+
+    // ---------- Editor ----------
+    in property <string> deck-title;
+    in property <string> state-text;
+    in property <bool> state-error;
+    in property <bool> can-undo;
+    in property <bool> can-redo;
+    in-out property <bool> nav: true;
+    in-out property <string> panel;
+    in-out property <string> view: "slide";
+    in property <[Thumb]> thumbs;
+    in property <int> current;
+    in property <image> stage-image;
+    in property <string> stage-placeholder;
+    in property <float> slide-w: 1280;
+    in property <float> slide-h: 720;
+    in property <string> notes;
+    in property <string> notes-time;
+    in property <string> hint;
+    in property <int> hint-level;
+    in property <[string]> lint;
+    in property <string> slide-head;
+    in property <[string]> layouts;
+    in property <int> layout-index;
+    in property <[string]> variants;
+    in property <int> variant-index;
+    in property <[string]> frames;
+    in property <int> frame-index;
+    in property <[string]> tones;
+    in property <int> tone-index;
+    in property <[string]> decors;
+    in property <int> decor-index;
+    in property <[FormRow]> rows;
+    in property <string> form-note;
+    in-out property <bool> content-open: true;
+    in property <[ChatMsg]> chat;
+    in property <string> bubble;
+    in property <string> bubble-kind; // ok | error
+    in-out property <bool> history-open;
+    in-out property <bool> export-open;
+    property <int> ask-tick;
+    callback home();
+    callback look();
+    callback export(string);
+    callback present(bool);
+    callback undo();
+    callback redo();
+    callback save();
+    callback select-slide(int);
+    callback slide-op(string, int);
+    callback move-slide(int, int);
+    callback pick-layout(int);
+    callback pick-variant(int);
+    callback pick-frame(int);
+    callback pick-tone(int);
+    callback pick-decor(int);
+    callback field-edited(int, string);
+    callback field-action(int, string);
+    callback notes-edited(string);
+    callback notes-ai();
+    callback ask(string);
+    callback bubble-close();
+    // Text auf der Folie (dw-edit): Auswahl, Cursor, Markierung in Folienpixeln
+    in property <bool> sel-visible;
+    in property <SRect> sel;
+    in property <bool> editing;
+    in property <bool> caret-visible;
+    in property <SRect> caret;
+    in property <[SRect]> sel-rects;
+    in property <[SRect]> compose-rects;
+    callback stage-pointer(int, float, float, bool);
+    callback edit-key(string, bool, bool, bool) -> bool;
+
+    // ---------- Look ----------
+    in property <[ThemeCard]> look-themes;
+    in property <int> look-index;
+    in property <string> look-name;
+    in property <string> look-desc;
+    in property <string> look-sub;
+    in property <image> look-preview;
+    callback look-pick(int);
+    callback look-done();
+    callback look-cancel();
+
+    // ---------- Einstellungen ----------
+    in-out property <int> settings-page;
+    in property <string> data-dir;
+    in property <int> edition-index;
+    in property <string> version;
+    callback settings-done();
+    callback set-edition(int);
+
+    // ---------- Blätter ----------
+    in-out property <bool> keys-open;
+    in property <string> soon-title;
+    in-out property <bool> soon-open;
+    in property <string> confirm-title;
+    in property <string> confirm-text;
+    in property <string> confirm-ok;
+    in-out property <bool> confirm-open;
+    callback confirmed();
+
+    property <int> ctx-index;
+    property <length> ctx-x;
+    property <length> ctx-y;
+    property <float> zoom: -1; // -1 = einpassen
+
+    public function focus-keys() { keys.focus(); }
+
+    keys := FocusScope {
+        key-pressed(e) => {
+            if (root.screen == "editor" && root.edit-key(e.text, e.modifiers.control, e.modifiers.shift, e.modifiers.alt)) { return accept; }
+            if (root.screen == "editor" && root.edit-key(e.text, e.modifiers.control, e.modifiers.shift, e.modifiers.alt)) { return accept; }
+            if (e.text == Key.Escape) {
+                if (root.keys-open) { root.keys-open = false; return accept; }
+                if (root.soon-open) { root.soon-open = false; return accept; }
+                if (root.confirm-open) { root.confirm-open = false; return accept; }
+                if (root.history-open) { root.history-open = false; return accept; }
+                if (root.panel == "insert") { root.panel = ""; return accept; }
+                if (root.screen == "look") { root.look-cancel(); return accept; }
+                if (root.screen == "settings") { root.settings-done(); return accept; }
+            }
+            if (root.screen != "editor") { return reject; }
+            if (e.modifiers.control && (e.text == "s" || e.text == "S")) { root.save(); return accept; }
+            if (e.modifiers.control && (e.text == "z" || e.text == "Z")) { if (e.modifiers.shift) { root.redo(); } else { root.undo(); } return accept; }
+            if (e.modifiers.control && (e.text == "y" || e.text == "Y")) { root.redo(); return accept; }
+            if (e.modifiers.control && (e.text == "d" || e.text == "D")) { root.slide-op("duplicate", root.current); return accept; }
+            if (e.text == Key.F5) { root.present(e.modifiers.shift); return accept; }
+            if (e.text == "/") { root.ask-tick += 1; return accept; }
+            if (e.text == "?") { root.keys-open = true; return accept; }
+            if (e.text == Key.Delete) { root.slide-op("delete", root.current); return accept; }
+            if (e.text == Key.LeftArrow || e.text == Key.UpArrow || e.text == Key.PageUp) { root.select-slide(max(0, root.current - 1)); return accept; }
+            if (e.text == Key.RightArrow || e.text == Key.DownArrow || e.text == Key.PageDown) { root.select-slide(min(root.thumbs.length - 1, root.current + 1)); return accept; }
+            if (e.modifiers.control && (e.text == "+" || e.text == "=")) { root.zoom = min(4, (root.zoom < 0 ? 1 : root.zoom) + 0.1); return accept; }
+            if (e.modifiers.control && e.text == "-") { root.zoom = max(0.1, (root.zoom < 0 ? 1 : root.zoom) - 0.1); return accept; }
+            if (e.modifiers.control && e.text == "0") { root.zoom = -1; return accept; }
+            reject
+        }
+
+        // ================= Startbildschirm (Start.tsx) =================
+        if root.screen == "start": Rectangle {
+            background: Pal.panel;
+            home := ScrollView {
+                content-y <=> root.start-scroll;
+                property <length> main-h: max(640px, self.visible-height - 52px);
+                property <length> side: max(24px, (self.visible-width - 1024px) / 2);
+                property <bool> has-decks: root.decks.length + root.templates.length > 0;
+                content-height: 52px + main-h + (has-decks ? 92px : 0) + (root.decks.length > 0 ? 32px + 31px + root.shelf-h + (root.more-text != "" ? 56px : 0) + 40px : 0) + (root.templates.length > 0 ? 32px + 31px + root.tpl-h + 40px : 0);
+                changed visible-width => { root.shelf-width(min(1024px, self.visible-width - 48px)); }
+                init => { root.shelf-width(min(1024px, self.visible-width - 48px)); }
+                VerticalLayout {
+                    alignment: start;
+                    // .top (Start: weiß)
+                    Rectangle {
+                        height: 52px;
+                        background: Pal.panel;
+                        HorizontalLayout {
+                            padding-left: 10px;
+                            padding-right: 14px;
+                            padding-top: 10px;
+                            padding-bottom: 10px;
+                            spacing: 2px;
+                            Brand { pro: root.pro; }
+                            Rectangle { }
+                            Plain { text: "Deck öffnen …"; tint: true; clicked => { root.open-dialog(); } }
+                            Plain { icon: @image-url("icons/cloud.svg"); label: "Cloud"; clicked => { root.settings-page = 1; root.open-settings(); } }
+                            Plain { icon: @image-url("icons/settings.svg"); label: "Einstellungen"; clicked => { root.settings-page = 0; root.open-settings(); } }
+                        }
+                    }
+                    // .home-main
+                    Rectangle {
+                        height: home.main-h;
+                        background: Pal.panel;
+                        VerticalLayout {
+                            alignment: center;
+                            padding-left: 24px;
+                            padding-right: 24px;
+                            padding-top: 48px;
+                            padding-bottom: 48px;
+                            spacing: 0px;
+                            Text {
+                                text: "Was möchtest du zeigen?";
+                                font-size: clamp(home.visible-width * 0.05, 40px, 60px);
+                                font-weight: 700;
+                                letter-spacing: -0.035 * self.font-size;
+                                color: Pal.text;
+                                horizontal-alignment: center;
+                            }
+                            Rectangle { height: 18px; }
+                            HorizontalLayout {
+                                alignment: center;
+                                Text {
+                                    width: min(640px, home.visible-width - 48px);
+                                    text: "Ein Satz genügt. Deckwerk denkt sich die Geschichte aus, gestaltet die Folien und prüft jede einzelne.";
+                                    font-size: 19px;
+                                    color: Pal.muted;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: center;
+                                }
+                            }
+                            Rectangle { height: 40px; }
+                            // .home-field
+                            HorizontalLayout {
+                                alignment: center;
+                                field := Rectangle {
+                                    width: min(720px, home.visible-width - 48px);
+                                    height: 128px;
+                                    border-radius: 22px;
+                                    background: Pal.panel;
+                                    border-width: 1px;
+                                    border-color: #16161a1a;
+                                    drop-shadow-blur: 40px;
+                                    drop-shadow-offset-y: 16px;
+                                    drop-shadow-color: #16161a14;
+                                    // Fokus: Ring 4 px rgb(79 82 217 / 0.12)
+                                    if wish.focused: Rectangle {
+                                        x: -4px;
+                                        y: -4px;
+                                        width: parent.width + 8px;
+                                        height: parent.height + 8px;
+                                        border-radius: 26px;
+                                        border-width: 4px;
+                                        border-color: #4f52d91f;
+                                    }
+                                    wish := Input {
+                                        x: 22px;
+                                        y: 18px;
+                                        width: parent.width - 22px - 12px - 10px;
+                                        height: 54px;
+                                        bare: true;
+                                        multiline: true;
+                                        font-size: 18px;
+                                        text <=> root.home-text;
+                                        placeholder: "Zum Beispiel: Quartalsbericht für die Geschäftsführung, 8 Folien, Fokus auf Wachstum";
+                                        label: "Worum geht es in deiner Präsentation?";
+                                        key(e) => {
+                                            if (e.text == Key.Return && !e.modifiers.shift) { root.start-submit(root.home-text); return accept; }
+                                            reject
+                                        }
+                                    }
+                                    HorizontalLayout {
+                                        x: 22px;
+                                        y: parent.height - 12px - 36px;
+                                        width: parent.width - 22px - 12px;
+                                        height: 36px;
+                                        spacing: 8px;
+                                        Select {
+                                            ghost: true;
+                                            y: 4px;
+                                            options: root.models;
+                                            current: root.model-index;
+                                            label: "Modell";
+                                            changed(i) => { root.model-index = i; }
+                                        }
+                                        Select {
+                                            ghost: true;
+                                            y: 4px;
+                                            prefix: "Format: ";
+                                            options: root.format-options;
+                                            current: root.format-index;
+                                            label: "Format";
+                                            changed(i) => { root.pick-format(i); }
+                                        }
+                                        Plain {
+                                            y: 2px;
+                                            text: "Datei";
+                                            icon: @image-url("icons/paperclip.svg");
+                                            icon-size: 16px;
+                                            clicked => { root.start-submit(""); }
+                                        }
+                                        if root.start-error != "": Text {
+                                            text: root.start-error;
+                                            color: Pal.danger;
+                                            vertical-alignment: center;
+                                            overflow: elide;
+                                        }
+                                        Rectangle { horizontal-stretch: 1; }
+                                        Round {
+                                            label: "Deck erstellen";
+                                            enabled: root.home-text != "";
+                                            clicked => { root.start-submit(root.home-text); }
+                                        }
+                                    }
+                                }
+                            }
+                            Rectangle { height: 30px; }
+                            // .home-papers: Format-Regal
+                            HorizontalLayout {
+                                alignment: center;
+                                if !root.pro: Seg {
+                                    pad: 12px;
+                                    options: ["Präsentation", "Dokument", "Brief", "Flyer", "Urkunde", "Social-Post", "Story", "Visitenkarte"];
+                                    icons: [@image-url("icons/presentation.svg"), @image-url("icons/file-text.svg"), @image-url("icons/mail.svg"), @image-url("icons/newspaper.svg"), @image-url("icons/award.svg"), @image-url("icons/square-user.svg"), @image-url("icons/smartphone.svg"), @image-url("icons/id-card.svg")];
+                                    current: root.paper-index;
+                                    changed(i) => { root.pick-paper(i); }
+                                }
+                                // Pro-Weiche: Video, Animation und Podcast gibt es nur in Deckwerk Pro
+                                if root.pro: Seg {
+                                    pad: 12px;
+                                    options: ["Präsentation", "Dokument", "Brief", "Flyer", "Urkunde", "Social-Post", "Story", "Visitenkarte", "Video", "Animation", "Podcast"];
+                                    icons: [@image-url("icons/presentation.svg"), @image-url("icons/file-text.svg"), @image-url("icons/mail.svg"), @image-url("icons/newspaper.svg"), @image-url("icons/award.svg"), @image-url("icons/square-user.svg"), @image-url("icons/smartphone.svg"), @image-url("icons/id-card.svg"), @image-url("icons/clapperboard.svg"), @image-url("icons/monitor-play.svg"), @image-url("icons/mic.svg")];
+                                    current: root.paper-index;
+                                    changed(i) => { root.pick-paper(i); }
+                                }
+                            }
+                            Rectangle { height: 22px; }
+                            // .home-chips
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 10px;
+                                for c[i] in ["Pitch für ein Schul-Start-up", "Projektstatus für die Geschäftsführung", "Strategie 2027 fürs Vertriebsteam", "Flyer für ein Sommerfest"]: Pill {
+                                    text: c;
+                                    height: 34px;
+                                    pad: 16px;
+                                    weight: 400;
+                                    font-size: 13.5px;
+                                    clicked => { root.chip(i); wish.focus-input(); }
+                                }
+                            }
+                            Rectangle { height: 14px; }
+                            HorizontalLayout {
+                                alignment: center;
+                                Plain { text: root.blank-text; tint: true; clicked => { root.blank(); } }
+                            }
+                        }
+                    }
+                    // .home-find
+                    if home.has-decks: Rectangle {
+                        height: 92px;
+                        background: Pal.bg;
+                        HorizontalLayout {
+                            padding-left: home.side;
+                            padding-right: home.side;
+                            padding-top: 28px;
+                            padding-bottom: 28px;
+                            spacing: 12px;
+                            Rectangle {
+                                width: min(340px, home.visible-width - 48px);
+                                height: 36px;
+                                border-radius: 10px;
+                                border-width: 1px;
+                                border-color: q.focused ? Pal.accent : Pal.border;
+                                background: Pal.panel;
+                                Image {
+                                    x: 12px;
+                                    source: @image-url("icons/search.svg");
+                                    width: 16px;
+                                    height: 16px;
+                                    colorize: Pal.muted;
+                                }
+                                q := Input {
+                                    x: 36px;
+                                    width: parent.width - 48px;
+                                    height: 32px;
+                                    bare: true;
+                                    font-size: 14px;
+                                    text <=> root.query;
+                                    placeholder: "Decks und Vorlagen durchsuchen";
+                                    label: "Decks und Vorlagen durchsuchen";
+                                    edited(t) => { root.find(t, root.kind-index); }
+                                }
+                            }
+                            Rectangle { }
+                            Seg {
+                                options: root.pro ? ["Alle", "Folien", "Drucksachen", "Social", "Videos", "Podcasts"] : ["Alle", "Folien", "Drucksachen", "Social"];
+                                current: root.kind-index;
+                                changed(i) => { root.find(root.query, i); }
+                            }
+                        }
+                    }
+                    // .home-recent: „Zuletzt“
+                    if root.decks.length > 0: Rectangle {
+                        height: 32px + 31px + root.shelf-h + (root.more-text != "" ? 56px : 0) + 40px;
+                        background: Pal.bg;
+                        Text {
+                            x: home.side;
+                            y: 32px;
+                            text: root.query != "" || root.kind-index > 0 ? "Deine Decks · " + root.decks.length : "Zuletzt";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Pal.muted;
+                        }
+                        for d[i] in root.decks: Rectangle {
+                            x: home.side + d.x;
+                            y: 32px + 31px + d.y;
+                            width: 232px;
+                            height: d.cover-h + 60px;
+                            accessible-role: button;
+                            accessible-label: d.title;
+                            Rectangle {
+                                y: dta.has-hover ? -2px : 0px;
+                                height: d.cover-h;
+                                border-radius: 8px;
+                                clip: true;
+                                background: Pal.panel;
+                                drop-shadow-blur: 24px;
+                                drop-shadow-offset-y: 10px;
+                                drop-shadow-color: #16161a1f;
+                                if d.has-image: Image {
+                                    width: parent.width;
+                                    height: parent.height;
+                                    source: d.image;
+                                    image-fit: cover;
+                                }
+                            }
+                            Text {
+                                y: d.cover-h + 12px;
+                                width: parent.width;
+                                text: d.title;
+                                font-size: 13.5px;
+                                font-weight: 600;
+                                color: Pal.text;
+                                overflow: elide;
+                            }
+                            Text {
+                                x: 0;
+                                y: d.cover-h + 33px;
+                                width: parent.width;
+                                text: d.sub;
+                                font-size: 12.5px;
+                                color: Pal.muted;
+                            }
+                            dta := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.open-deck(i); }
+                            }
+                        }
+                        if root.more-text != "": Plain {
+                            x: home.side;
+                            y: 32px + 31px + root.shelf-h + 24px;
+                            text: root.more-text;
+                            tint: true;
+                            clicked => { root.toggle-all(); }
+                        }
+                    }
+                    // „Mit einer Vorlage beginnen“
+                    if root.templates.length > 0: Rectangle {
+                        height: 32px + 31px + root.tpl-h + 40px;
+                        background: Pal.bg;
+                        Text {
+                            x: home.side;
+                            y: 32px;
+                            text: root.query != "" || root.kind-index > 0 ? "Vorlagen · " + root.templates.length : "Mit einer Vorlage beginnen";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Pal.muted;
+                        }
+                        for d[i] in root.templates: Rectangle {
+                            x: home.side + d.x;
+                            y: 32px + 31px + d.y;
+                            width: 232px;
+                            height: d.cover-h + 60px;
+                            accessible-role: button;
+                            accessible-label: d.title;
+                            Rectangle {
+                                y: tta.has-hover ? -2px : 0px;
+                                height: d.cover-h;
+                                border-radius: 8px;
+                                clip: true;
+                                background: Pal.panel;
+                                drop-shadow-blur: 24px;
+                                drop-shadow-offset-y: 10px;
+                                drop-shadow-color: #16161a1f;
+                                if d.has-image: Image {
+                                    width: parent.width;
+                                    height: parent.height;
+                                    source: d.image;
+                                    image-fit: cover;
+                                }
+                            }
+                            Text {
+                                y: d.cover-h + 12px;
+                                width: parent.width;
+                                text: d.title;
+                                font-size: 13.5px;
+                                font-weight: 600;
+                                color: Pal.text;
+                                overflow: elide;
+                            }
+                            Text {
+                                x: 0;
+                                y: d.cover-h + 33px;
+                                width: parent.width;
+                                text: d.sub;
+                                font-size: 12.5px;
+                                color: Pal.muted;
+                            }
+                            tta := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.open-template(i); }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ================= Editor (EditorScreen.tsx) =================
+        if root.screen == "editor": Rectangle {
+            background: Pal.bg;
+            // TopBar.tsx: links Übersicht/Decks/Ansicht, Titel mittig, rechts Werkzeuge
+            top := Rectangle {
+                y: 0;
+                height: 52px;
+                topl := HorizontalLayout {
+                    x: 10px;
+                    width: self.preferred-width;
+                    padding-top: 10px;
+                    padding-bottom: 10px;
+                    spacing: 2px;
+                    Plain { icon: @image-url("icons/panel-left.svg"); icon-size: 18px; label: "Folienübersicht ein- oder ausblenden"; enabled: root.view == "slide"; clicked => { root.nav = !root.nav; } }
+                    Plain { text: "Decks"; icon: @image-url("icons/chevron-left.svg"); icon-size: 16px; tint: true; clicked => { root.home(); } }
+                    Seg {
+                        pad: 7px;
+                        options: ["Einzelne Folie", "Übersicht aller Folien"];
+                        icons: [@image-url("icons/rectangle-horizontal.svg"), @image-url("icons/layout-grid.svg")];
+                        current: root.view == "slide" ? 0 : 1;
+                        changed(i) => { root.view = i == 0 ? "slide" : "grid"; }
+                    }
+                }
+                // .top: Grid minmax(max-content, 1fr) | auto | minmax(max-content, 1fr): mittig, wenn Platz ist
+                title := HorizontalLayout {
+                    property <length> avail: parent.width - 24px - topl.width - topr.width - 24px;
+                    width: max(0px, min(self.preferred-width, avail));
+                    x: max(10px + topl.width + 12px, min((parent.width - self.width) / 2, parent.width - 14px - topr.width - 12px - self.width));
+                    spacing: 6px;
+                    alignment: center;
+                    Text {
+                        text: root.deck-title;
+                        font-weight: 600;
+                        color: Pal.text;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                    if root.state-text != "": Text {
+                        text: "— " + root.state-text;
+                        color: root.state-error ? Pal.danger : Pal.faint;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                }
+                topr := HorizontalLayout {
+                    x: parent.width - self.preferred-width - 14px;
+                    width: self.preferred-width;
+                    padding-top: 10px;
+                    padding-bottom: 10px;
+                    spacing: 2px;
+                    if root.view == "grid": Plain { text: "Neue Folie"; icon: @image-url("icons/plus.svg"); clicked => { root.slide-op("add", root.current); } }
+                    if root.view == "slide": Plain { text: "Einfügen"; icon: @image-url("icons/plus.svg"); on: root.panel == "insert"; clicked => { root.panel = root.panel == "insert" ? "" : "insert"; } }
+                    if root.view == "slide": Plain { text: "Anpassen"; icon: @image-url("icons/sliders-horizontal.svg"); on: root.panel == "format"; clicked => { root.panel = root.panel == "format" ? "" : "format"; } }
+                    Plain { icon: @image-url("icons/cloud.svg"); label: "Cloud"; clicked => { root.settings-page = 1; root.open-settings(); } }
+                    Plain { icon: @image-url("icons/keyboard.svg"); label: "Tastenkürzel (?)"; clicked => { root.keys-open = true; } }
+                    Plain { icon: @image-url("icons/settings.svg"); label: "Einstellungen"; clicked => { root.settings-page = 0; root.open-settings(); } }
+                    Plain { text: "Look"; icon: @image-url("icons/palette.svg"); clicked => { root.look(); } }
+                    export-btn := Plain {
+                        text: "Exportieren";
+                        icon: @image-url("icons/share.svg");
+                        clicked => { root.export-open = !root.export-open; }
+                    }
+                    Rectangle { width: 6px; }
+                    Pill {
+                        text: "Präsentieren";
+                        icon: @image-url("icons/play.svg");
+                        tint: true;
+                        clicked => { root.present(false); }
+                    }
+                }
+            }
+
+            // Arbeitsfläche: Folienübersicht | Mitte | Panel
+            work := Rectangle {
+                y: 52px;
+                height: parent.height - 52px;
+                property <length> nav-w: root.nav && root.view == "slide" ? 214px : 0px;
+                property <length> panel-w: root.panel == "format" && root.view == "slide" ? 312px : 0px;
+
+                // .work-nav + .filmstrip (Filmstrip.tsx)
+                if root.nav && root.view == "slide": ListView {
+                    x: 0;
+                    width: 214px;
+                    height: parent.height;
+                    for t[i] in root.thumbs: Rectangle {
+                        property <length> th: 160px * root.slide-h / root.slide-w;
+                        height: th + 10px + (i == 0 ? 8px : 0px) + (i == root.thumbs.length - 1 ? 24px + 100px : 0px);
+                        Rectangle {
+                            y: i == 0 ? 8px : 0px;
+                            height: parent.th;
+                            Text {
+                                x: 8px;
+                                y: 1px;
+                                width: 22px;
+                                text: i + 1;
+                                font-size: 11px;
+                                font-weight: i == root.current ? 700 : 500;
+                                color: i == root.current ? Pal.accent : Pal.faint;
+                                horizontal-alignment: right;
+                            }
+                            if i == root.current: Rectangle {
+                                x: 36px - 4.5px;
+                                y: -4.5px;
+                                width: 160px + 9px;
+                                height: parent.height + 9px;
+                                border-radius: 10px;
+                                border-width: 2.5px;
+                                border-color: Pal.accent;
+                            }
+                            slide := Rectangle {
+                                x: 36px;
+                                width: 160px;
+                                border-radius: 6px;
+                                clip: true;
+                                background: Pal.panel;
+                                border-width: i == root.current ? 0px : 1px;
+                                border-color: Pal.border;
+                                opacity: t.hidden ? 0.4 : 1;
+                                if t.has-image: Image {
+                                    width: parent.width;
+                                    height: parent.height;
+                                    source: t.image;
+                                    image-fit: fill;
+                                }
+                                if t.label != "": Text {
+                                    width: parent.width - 16px;
+                                    text: t.label;
+                                    font-size: 11px;
+                                    color: Pal.faint;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: center;
+                                }
+                                if t.hidden: Image {
+                                    x: 4px;
+                                    y: 4px;
+                                    source: @image-url("icons/eye-off.svg");
+                                    width: 11px;
+                                    height: 11px;
+                                    colorize: Pal.faint;
+                                }
+                            }
+                            fta := TouchArea {
+                                x: 0;
+                                mouse-cursor: pointer;
+                                clicked => { root.select-slide(i); root.focus-keys(); }
+                                pointer-event(e) => {
+                                    // Ziehen sortiert um (Filmstrip.tsx onDrop)
+                                    if (e.kind == PointerEventKind.up && e.button == PointerEventButton.left) {
+                                        if (abs(self.mouse-y - self.pressed-y) > parent.height / 2) {
+                                            root.move-slide(i, round((self.mouse-y - self.pressed-y) / (parent.height + 10px)));
+                                        }
+                                    }
+                                    if (e.kind == PointerEventKind.down && e.button == PointerEventButton.right) {
+                                        root.select-slide(i);
+                                        root.ctx-index = i;
+                                        root.ctx-x = min(self.absolute-position.x + self.mouse-x, root.width - 240px);
+                                        root.ctx-y = min(self.absolute-position.y + self.mouse-y, root.height - 230px);
+                                        ctx-menu.show();
+                                    }
+                                }
+                            }
+                            // .thumb-acts: Duplizieren und Löschen beim Überfahren
+                            if fta.has-hover: HorizontalLayout {
+                                x: 36px + 160px - 6px - self.preferred-width;
+                                y: 6px;
+                                width: self.preferred-width;
+                                height: 22px;
+                                spacing: 2px;
+                                IconBtn {
+                                    icon: @image-url("icons/copy.svg");
+                                    label: "Folie duplizieren";
+                                    size: 22px;
+                                    icon-size: 12px;
+                                    fg: white;
+                                    fill: #000000a6;
+                                    clicked => { root.slide-op("duplicate", i); }
+                                }
+                                IconBtn {
+                                    icon: @image-url("icons/trash-2.svg");
+                                    label: "Folie löschen";
+                                    size: 22px;
+                                    icon-size: 12px;
+                                    fg: white;
+                                    fill: #000000a6;
+                                    enabled: root.thumbs.length > 1;
+                                    clicked => { root.slide-op("delete", i); }
+                                }
+                            }
+                        }
+                        // .thumb-add: gestrichelt, 60 × 90, mittig
+                        if i == root.thumbs.length - 1: Rectangle {
+                            x: 36px + (160px - 60px) / 2;
+                            y: parent.th + 10px + (i == 0 ? 8px : 0px);
+                            width: 60px;
+                            height: 90px;
+                            border-radius: 6px;
+                            border-width: 1px;
+                            border-color: ata.has-hover ? Pal.accent : Pal.border-strong;
+                            accessible-role: button;
+                            accessible-label: "Leere Folie hinzufügen";
+                            Image {
+                                source: @image-url("icons/plus.svg");
+                                width: 18px;
+                                height: 18px;
+                                colorize: ata.has-hover ? Pal.accent : Pal.muted;
+                            }
+                            ata := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.slide-op("add-blank", root.thumbs.length - 1); }
+                            }
+                        }
+                    }
+                }
+
+                // .work-center
+                mid := Rectangle {
+                    x: work.nav-w;
+                    width: parent.width - work.nav-w - work.panel-w;
+                    visible: root.view == "slide";
+                    property <length> notes-h: root.notes-time != "" || root.notes != "" ? 24px + 50px : 24px + 50px;
+                    property <length> dock-h: 92px;
+                    // .stage: Polster 20 32 8
+                    stage := Rectangle {
+                        y: 0;
+                        height: parent.height - mid.notes-h - mid.dock-h;
+                        clip: true;
+                        property <float> fit: max(0.05, min((self.width - 64px) / 1px / root.slide-w, (self.height - 28px) / 1px / root.slide-h));
+                        property <float> f: root.zoom < 0 ? fit : root.zoom;
+                        Rectangle {
+                            x: (parent.width - self.width) / 2;
+                            y: 20px + max(0px, (parent.height - 28px - self.height) / 2);
+                            width: root.slide-w * stage.f * 1px;
+                            height: root.slide-h * stage.f * 1px;
+                            border-radius: 10px;
+                            background: Pal.panel;
+                            drop-shadow-blur: 40px;
+                            drop-shadow-offset-y: 12px;
+                            drop-shadow-color: #16161a1a;
+                            clip: true;
+                            Image {
+                                width: parent.width;
+                                height: parent.height;
+                                source: root.stage-image;
+                                image-fit: fill;
+                            }
+                            // Klick wählt, Doppelklick bearbeitet den Text (Koordinaten in Folienpixeln)
+                            TouchArea {
+                                mouse-cursor: root.editing ? MouseCursor.text : MouseCursor.default;
+                                pointer-event(e) => {
+                                    if (e.button == PointerEventButton.left && e.kind == PointerEventKind.down) {
+                                        root.focus-keys();
+                                        root.stage-pointer(0, self.mouse-x / 1px / stage.f, self.mouse-y / 1px / stage.f, e.modifiers.shift);
+                                    }
+                                    if (e.button == PointerEventButton.left && e.kind == PointerEventKind.up) {
+                                        root.stage-pointer(2, self.mouse-x / 1px / stage.f, self.mouse-y / 1px / stage.f, false);
+                                    }
+                                }
+                                moved => {
+                                    if (self.pressed) { root.stage-pointer(1, self.mouse-x / 1px / stage.f, self.mouse-y / 1px / stage.f, false); }
+                                }
+                                double-clicked => {
+                                    root.stage-pointer(3, self.mouse-x / 1px / stage.f, self.mouse-y / 1px / stage.f, false);
+                                }
+                            }
+                            for r in root.sel-rects: Rectangle {
+                                x: r.x * stage.f * 1px;
+                                y: r.y * stage.f * 1px;
+                                width: r.w * stage.f * 1px;
+                                height: r.h * stage.f * 1px;
+                                background: #7a86ff59;
+                            }
+                            for r in root.compose-rects: Rectangle {
+                                x: r.x * stage.f * 1px;
+                                y: (r.y + r.h) * stage.f * 1px - 2px;
+                                width: r.w * stage.f * 1px;
+                                height: 1.5px;
+                                background: #7a86ff;
+                            }
+                            // .stage-sel: Rahmen in --on-slide (#7a86ff), auch auf dunklen Themes sichtbar
+                            if root.sel-visible: Rectangle {
+                                x: root.sel.x * stage.f * 1px - 3px;
+                                y: root.sel.y * stage.f * 1px - 3px;
+                                width: root.sel.w * stage.f * 1px + 6px;
+                                height: root.sel.h * stage.f * 1px + 6px;
+                                border-radius: 3px;
+                                border-width: root.editing ? 1px : 1.5px;
+                                border-color: #7a86ff;
+                            }
+                            if root.editing && root.caret-visible: Rectangle {
+                                x: root.caret.x * stage.f * 1px;
+                                y: root.caret.y * stage.f * 1px;
+                                width: max(1px, root.caret.w * stage.f * 1px);
+                                height: root.caret.h * stage.f * 1px;
+                                background: #7a86ff;
+                            }
+                            if root.stage-placeholder != "": Text {
+                                width: parent.width - 48px;
+                                text: root.stage-placeholder;
+                                font-size: 16px;
+                                color: Pal.muted;
+                                wrap: word-wrap;
+                                horizontal-alignment: center;
+                            }
+                        }
+                        // .zoom-pill
+                        Material {
+                            radius: 999px;
+                            x: parent.width - self.width - 20px;
+                            y: parent.height - self.height - 12px;
+                            width: zr.preferred-width;
+                            height: 32px;
+                            zr := HorizontalLayout {
+                                padding: 2px;
+                                Plain { icon: @image-url("icons/minus.svg"); icon-size: 14px; pad: 8px; height: 28px; label: "Verkleinern"; clicked => { root.zoom = max(0.1, stage.f - 0.1); } }
+                                Plain { text: round(stage.f * 100) + " %"; pad: 8px; height: 28px; label: "Einpassen"; clicked => { root.zoom = -1; } }
+                                Plain { icon: @image-url("icons/plus.svg"); icon-size: 14px; pad: 8px; height: 28px; label: "Vergrößern"; clicked => { root.zoom = min(4, stage.f + 0.1); } }
+                            }
+                        }
+                    }
+                    // .work-notes
+                    Rectangle {
+                        y: stage.height;
+                        x: (parent.width - self.width) / 2;
+                        width: min(960px, parent.width - 64px);
+                        height: mid.notes-h;
+                        HorizontalLayout {
+                            y: 6px;
+                            height: 24px;
+                            spacing: 10px;
+                            Text { text: "Notizen"; font-size: 12px; font-weight: 600; color: Pal.faint; vertical-alignment: center; }
+                            if root.notes-time != "": Text { text: root.notes-time; font-size: 12px; color: Pal.faint; vertical-alignment: center; }
+                            Rectangle { horizontal-stretch: 1; }
+                            Plain {
+                                height: 24px;
+                                font-size: 12px;
+                                icon-size: 13px;
+                                icon: @image-url("icons/sparkles.svg");
+                                text: root.notes != "" ? "Überarbeiten" : "Schreiben lassen";
+                                tint: true;
+                                clicked => { root.notes-ai(); }
+                            }
+                        }
+                        Input {
+                            y: 32px;
+                            height: 46px;
+                            bare: true;
+                            multiline: true;
+                            font-size: 15px;
+                            fg: Pal.muted;
+                            text: root.notes;
+                            placeholder: "Was du zu dieser Folie sagst …";
+                            label: "Notizen";
+                            edited(t) => { root.notes-edited(t); }
+                        }
+                    }
+                    // .dock: Blase und Kapsel (AskBar.tsx)
+                    Rectangle {
+                        y: parent.height - mid.dock-h;
+                        height: mid.dock-h;
+                        cap := Material {
+                            radius: 30px;
+                            x: (parent.width - self.width) / 2;
+                            y: 8px;
+                            width: min(720px, parent.width - 48px);
+                            height: 60px;
+                            if cap-input.focused: Rectangle {
+                                x: -4px;
+                                y: -4px;
+                                width: parent.width + 8px;
+                                height: parent.height + 8px;
+                                border-radius: 34px;
+                                border-width: 4px;
+                                border-color: #4f52d91f;
+                            }
+                            HorizontalLayout {
+                                padding-left: 18px;
+                                padding-right: 12px;
+                                spacing: 10px;
+                                Image {
+                                    source: @image-url("icons/sparkles.svg");
+                                    width: 20px;
+                                    height: 20px;
+                                    y: (parent.height - self.height) / 2;
+                                    colorize: Pal.accent;
+                                }
+                                cap-input := Input {
+                                    focus-tick: root.ask-tick;
+                                    y: 12px;
+                                    height: 36px;
+                                    horizontal-stretch: 1;
+                                    bare: true;
+                                    font-size: 15px;
+                                    placeholder: "Sag Deckwerk, was sich ändern soll";
+                                    label: "Wunsch an die KI";
+                                    accepted(t) => { if (t != "") { root.ask(t); self.clear(); } }
+                                }
+                                Plain { y: 14px; icon: @image-url("icons/paperclip.svg"); icon-size: 16px; label: "Dateien anhängen"; clicked => { root.ask(""); } }
+                                Plain { y: 14px; icon: @image-url("icons/history.svg"); icon-size: 16px; label: "Verlauf"; on: root.history-open; enabled: root.chat.length > 0; clicked => { root.history-open = !root.history-open; } }
+                                Select { y: 16px; ghost: true; options: root.models; current: root.model-index; label: "Modell"; changed(i) => { root.model-index = i; } }
+                                Round { y: 12px; icon-size: 17px; label: "Senden (Enter)"; enabled: cap-input.text != ""; clicked => { root.ask(cap-input.text); cap-input.clear(); } }
+                            }
+                        }
+                    }
+                    // .bubble über der Kapsel
+                    if root.bubble != "" && !root.history-open: Material {
+                        radius: 20px;
+                        x: (parent.width - self.width) / 2;
+                        y: parent.height - mid.dock-h - 10px - self.height;
+                        width: min(bl.preferred-width, min(760px, parent.width - 48px));
+                        height: max(40px, bl.preferred-height);
+                        bl := HorizontalLayout {
+                            padding-left: 14px;
+                            padding-right: 6px;
+                            padding-top: 6px;
+                            padding-bottom: 6px;
+                            spacing: 10px;
+                            Rectangle {
+                                width: 20px;
+                                height: 20px;
+                                y: (parent.height - self.height) / 2;
+                                border-radius: 10px;
+                                background: root.bubble-kind == "error" ? Pal.danger : Pal.ok;
+                                Image {
+                                    source: root.bubble-kind == "error" ? @image-url("icons/x.svg") : @image-url("icons/check.svg");
+                                    width: 12px;
+                                    height: 12px;
+                                    colorize: white;
+                                }
+                            }
+                            Text {
+                                text: root.bubble;
+                                font-size: 13.5px;
+                                color: root.bubble-kind == "error" ? Pal.danger : Pal.text;
+                                vertical-alignment: center;
+                                wrap: word-wrap;
+                                max-width: 600px;
+                            }
+                            Plain { text: "Verlauf"; clicked => { root.history-open = true; } }
+                            Plain { icon: @image-url("icons/x.svg"); icon-size: 14px; label: "Schließen"; clicked => { root.bubble-close(); } }
+                        }
+                    }
+                    // .history: Verlauf
+                    if root.history-open: Material {
+                        radius: 18px;
+                        x: (parent.width - self.width) / 2;
+                        y: parent.height - 92px - self.height;
+                        width: min(560px, parent.width - 48px);
+                        height: min(hl.preferred-height + 52px, 480px);
+                        clip: true;
+                        Rectangle {
+                            height: 48px;
+                            y: 0;
+                            Text { x: 16px; text: "Verlauf"; font-weight: 600; color: Pal.text; }
+                            Plain {
+                                x: parent.width - self.width - 8px;
+                                icon: @image-url("icons/x.svg");
+                                icon-size: 15px;
+                                label: "Verlauf schließen";
+                                clicked => { root.history-open = false; }
+                            }
+                            Rectangle { y: parent.height - 1px; height: 1px; background: Pal.border; }
+                        }
+                        ScrollView {
+                            y: 48px;
+                            height: parent.height - 48px;
+                            hl := VerticalLayout {
+                                padding: 14px;
+                                padding-left: 16px;
+                                padding-right: 16px;
+                                spacing: 10px;
+                                for m in root.chat: HorizontalLayout {
+                                    alignment: m.me ? end : start;
+                                    Rectangle {
+                                        border-radius: 14px;
+                                        background: m.me ? Pal.hover : transparent;
+                                        HorizontalLayout {
+                                            padding: m.me ? 10px : 0px;
+                                            Text {
+                                                text: m.text;
+                                                wrap: word-wrap;
+                                                color: Pal.text;
+                                                max-width: 440px;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Lichttisch (Overview.tsx): alle Folien
+                if root.view == "grid": grid := ScrollView {
+                    property <int> cols: max(1, floor((self.visible-width - 128px + 20px) / 232px));
+                    property <length> th: 212px * root.slide-h / root.slide-w;
+                    content-height: ceil(root.thumbs.length / cols) * (th + 9px + 18px + 22px) + 24px + 120px;
+                    for t[i] in root.thumbs: Rectangle {
+                        x: 64px + mod(i, parent.cols) * 232px;
+                        y: 24px + floor(i / parent.cols) * (parent.th + 9px + 18px + 22px);
+                        width: 212px;
+                        height: parent.th + 27px;
+                        if i == root.current: Rectangle {
+                            x: -5px;
+                            y: -5px;
+                            width: parent.width + 10px;
+                            height: grid.th + 10px;
+                            border-radius: 10px;
+                            border-width: 2.5px;
+                            border-color: Pal.accent;
+                        }
+                        Rectangle {
+                            y: 0;
+                            height: grid.th;
+                            border-radius: 7px;
+                            clip: true;
+                            background: Pal.panel;
+                            drop-shadow-blur: 16px;
+                            drop-shadow-offset-y: 6px;
+                            drop-shadow-color: #16161a1a;
+                            opacity: t.hidden ? 0.4 : 1;
+                            if t.has-image: Image { width: parent.width; height: parent.height; source: t.image; image-fit: fill; }
+                        }
+                        Text {
+                            y: grid.th + 9px;
+                            text: i + 1;
+                            font-size: 12px;
+                            color: i == root.current ? Pal.accent : Pal.muted;
+                            font-weight: i == root.current ? 600 : 400;
+                        }
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.select-slide(i); }
+                            double-clicked => { root.select-slide(i); root.view = "slide"; }
+                        }
+                    }
+                }
+
+                // .work-panel „Anpassen“ (Inspector.tsx)
+                if root.panel == "format" && root.view == "slide": Rectangle {
+                    x: parent.width - 312px;
+                    width: 300px;
+                    height: parent.height - 12px;
+                    border-radius: 16px;
+                    background: Pal.panel;
+                    drop-shadow-blur: 32px;
+                    drop-shadow-offset-y: 12px;
+                    drop-shadow-color: #16161a14;
+                    clip: true;
+                    ScrollView {
+                        VerticalLayout {
+                            alignment: start;
+                            // section: Folie N · Layout
+                            VerticalLayout {
+                                padding-left: 14px;
+                                padding-right: 14px;
+                                padding-top: 14px;
+                                padding-bottom: 16px;
+                                spacing: 0px;
+                                Text {
+                                    text: root.slide-head;
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    letter-spacing: 0.66px;
+                                    color: Pal.muted;
+                                }
+                                Rectangle { height: 12px; }
+                                // Prüfung: Autofit und Lint dieser Folie
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    padding-bottom: 4px;
+                                    Rectangle {
+                                        width: 8px;
+                                        height: 8px;
+                                        y: 5px;
+                                        border-radius: 4px;
+                                        background: root.hint-level == 0 ? Pal.ok : root.hint-level == 1 ? Pal.warn : Pal.danger;
+                                    }
+                                    Text {
+                                        text: root.hint;
+                                        font-size: 12px;
+                                        color: Pal.muted;
+                                        wrap: word-wrap;
+                                        horizontal-stretch: 1;
+                                    }
+                                }
+                                for l in root.lint: Text {
+                                    text: "· " + l;
+                                    font-size: 12px;
+                                    color: Pal.faint;
+                                    wrap: word-wrap;
+                                }
+                                Rectangle { height: 10px; }
+                                // details.cf-panel „Inhalt“ (ContentForm.tsx)
+                                Rectangle {
+                                    height: 28px;
+                                    HorizontalLayout {
+                                        spacing: 6px;
+                                        Image {
+                                            source: @image-url("icons/chevron-right.svg");
+                                            width: 12px;
+                                            height: 12px;
+                                            y: (parent.height - self.height) / 2;
+                                            transform-rotation: root.content-open ? 90deg : 0deg;
+                                            colorize: Pal.muted;
+                                        }
+                                        Text {
+                                            text: "INHALT";
+                                            font-size: 11px;
+                                            font-weight: 600;
+                                            letter-spacing: 0.66px;
+                                            color: Pal.muted;
+                                            vertical-alignment: center;
+                                            horizontal-stretch: 1;
+                                        }
+                                    }
+                                    TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { root.content-open = !root.content-open; }
+                                    }
+                                }
+                                if root.content-open && root.form-note != "": Text {
+                                    text: root.form-note;
+                                    font-size: 12px;
+                                    color: Pal.muted;
+                                    wrap: word-wrap;
+                                }
+                                if root.content-open: VerticalLayout {
+                                    spacing: 10px;
+                                    padding-top: 6px;
+                                    padding-bottom: 12px;
+                                    for r[i] in root.rows: FieldRow {
+                                        data: r;
+                                        edited(t) => { root.field-edited(i, t); }
+                                        action(a) => { root.field-action(i, a); }
+                                    }
+                                }
+                                Field {
+                                    label: "Layout";
+                                    Select { options: root.layouts; current: root.layout-index; label: "Layout"; changed(i) => { root.pick-layout(i); } }
+                                }
+                                if root.variants.length > 0: Field {
+                                    label: "Variante";
+                                    Select { options: root.variants; current: root.variant-index; label: "Variante"; changed(i) => { root.pick-variant(i); } }
+                                }
+                                if root.frames.length > 1: Field {
+                                    label: "Komposition";
+                                    Select { options: root.frames; current: root.frame-index; label: "Komposition"; changed(i) => { root.pick-frame(i); } }
+                                }
+                                Field {
+                                    label: "Ton";
+                                    Select { options: root.tones; current: root.tone-index; label: "Ton"; changed(i) => { root.pick-tone(i); } }
+                                }
+                                Field {
+                                    label: "Dekor";
+                                    Select { options: root.decors; current: root.decor-index; label: "Dekor"; changed(i) => { root.pick-decor(i); } }
+                                }
+                            }
+                            Rectangle { height: 1px; background: Pal.border; }
+                        }
+                    }
+                }
+
+                // .work-panel.insert: schwebt unter dem Knopf
+                if root.panel == "insert" && root.view == "slide": Rectangle {
+                    x: parent.width - 240px - 480px;
+                    y: 4px;
+                    width: 480px;
+                    height: 140px;
+                    border-radius: 20px;
+                    background: Pal.panel;
+                    border-width: 1px;
+                    border-color: Pal.border;
+                    drop-shadow-blur: 64px;
+                    drop-shadow-offset-y: 24px;
+                    drop-shadow-color: #16161a2e;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 8px;
+                        Text { text: "Einfügen"; font-size: 13px; font-weight: 600; color: Pal.text; }
+                        Text {
+                            text: "Text, Formen, Bilder, Icons, Diagramme und Tabellen kommen mit dem neuen Folien-Editor. Bis dahin legst du Folien links mit + an.";
+                            color: Pal.muted;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+
+            // .top-export .menu: Klick daneben schließt
+            if root.export-open: TouchArea {
+                clicked => { root.export-open = false; }
+            }
+            if root.export-open: Material {
+                x: parent.width - 14px - 120px - 6px - 180px;
+                y: 46px;
+                width: 180px;
+                height: em.preferred-height;
+                em := VerticalLayout {
+                    padding: 4px;
+                    MenuItem { text: "PowerPoint (.pptx)"; clicked => { root.export-open = false; root.export("pptx"); } }
+                    MenuItem { text: "Word (.docx)"; enabled: false; }
+                    MenuItem { text: "PDF"; clicked => { root.export-open = false; root.export("pdf"); } }
+                    MenuItem { text: "Bilder (.png)"; clicked => { root.export-open = false; root.export("png"); } }
+                    MenuItem { text: "Bilder + PDF (.zip)"; enabled: false; }
+                    MenuItem { text: "Handout (.md)"; enabled: false; }
+                    MenuSep { }
+                    MenuItem { text: "Serienbrief (CSV) …"; enabled: false; }
+                    MenuItem { text: "Anderes Format …"; enabled: false; }
+                    MenuItem { text: "Versionsverlauf …"; enabled: false; }
+                }
+            }
+
+            // .ctx-menu der Folienleiste
+            ctx-menu := PopupWindow {
+                x: root.ctx-x;
+                y: root.ctx-y;
+                width: 230px;
+                close-policy: close-on-click-outside;
+                Rectangle {
+                    border-radius: 8px;
+                    background: Pal.panel;
+                    border-width: 1px;
+                    border-color: Pal.border-strong;
+                    drop-shadow-blur: 24px;
+                    drop-shadow-offset-y: 8px;
+                    drop-shadow-color: #16161a26;
+                    VerticalLayout {
+                        padding: 4px;
+                        MenuItem { ctx: true; text: "Neue Folie danach"; clicked => { ctx-menu.close(); root.slide-op("add-blank", root.ctx-index); } }
+                        MenuItem { ctx: true; text: "Duplizieren"; kbd: "Strg+D"; clicked => { ctx-menu.close(); root.slide-op("duplicate", root.ctx-index); } }
+                        MenuItem { ctx: true; text: root.ctx-index < root.thumbs.length && root.thumbs[root.ctx-index].hidden ? "Einblenden" : "Folie ausblenden"; clicked => { ctx-menu.close(); root.slide-op("hide", root.ctx-index); } }
+                        MenuSep { }
+                        MenuItem { ctx: true; danger: true; text: "Löschen"; kbd: "Entf"; enabled: root.thumbs.length > 1; clicked => { ctx-menu.close(); root.slide-op("delete", root.ctx-index); } }
+                    }
+                }
+            }
+        }
+
+        // ================= Look (LookSheet.tsx, vereinfacht) =================
+        if root.screen == "look": Rectangle {
+            background: Pal.bg;
+            SheetTop {
+                y: 0;
+                title: "Look";
+                back-clicked => { root.look-cancel(); }
+                done => { root.look-done(); }
+            }
+            VerticalLayout {
+                y: 52px;
+                height: parent.height - 52px;
+                alignment: start;
+                spacing: 0px;
+                Text {
+                    text: root.look-sub;
+                    font-size: 15px;
+                    color: Pal.muted;
+                    horizontal-alignment: center;
+                }
+                Rectangle { height: 14px; }
+                HorizontalLayout {
+                    alignment: center;
+                    Rectangle {
+                        property <float> f: min(440 / root.slide-w, 250 / root.slide-h);
+                        width: root.slide-w * f * 1px;
+                        height: root.slide-h * f * 1px;
+                        border-radius: 10px;
+                        clip: true;
+                        background: Pal.panel;
+                        drop-shadow-blur: 40px;
+                        drop-shadow-offset-y: 12px;
+                        drop-shadow-color: #16161a1a;
+                        Image { width: parent.width; height: parent.height; source: root.look-preview; image-fit: fill; }
+                    }
+                }
+                Rectangle { height: 18px; }
+                Text {
+                    text: root.look-name;
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: Pal.text;
+                    horizontal-alignment: center;
+                }
+                Rectangle { height: 6px; }
+                Text {
+                    text: root.look-desc;
+                    font-size: 15px;
+                    color: Pal.muted;
+                    horizontal-alignment: center;
+                }
+                Rectangle { height: 28px; }
+                // Theme-Leiste
+                strip := ScrollView {
+                    height: 112px;
+                    property <length> tw: 112px;
+                    property <length> tth: tw * root.slide-h / root.slide-w;
+                    content-width: root.look-themes.length * 116px + 40px;
+                    for t[i] in root.look-themes: Rectangle {
+                        x: 20px + max(0px, (strip.visible-width - 40px - root.look-themes.length * 116px) / 2) + i * 116px;
+                        y: 4px;
+                        width: strip.tw;
+                        height: 100px;
+                        if i == root.look-index: Rectangle {
+                            x: -3px;
+                            y: -3px;
+                            width: parent.width + 6px;
+                            height: min(64px, strip.tth) + 6px;
+                            border-radius: 7px;
+                            border-width: 2px;
+                            border-color: Pal.accent;
+                        }
+                        Rectangle {
+                            y: 0;
+                            height: min(64px, strip.tth);
+                            border-radius: 4px;
+                            clip: true;
+                            background: Pal.panel;
+                            border-width: 1px;
+                            border-color: Pal.border;
+                            if t.has-image: Image { width: parent.width; height: parent.height; source: t.image; image-fit: cover; }
+                        }
+                        Text {
+                            y: min(64px, strip.tth) + 8px;
+                            width: parent.width;
+                            text: t.name;
+                            font-size: 12px;
+                            font-weight: i == root.look-index ? 600 : 400;
+                            color: i == root.look-index ? Pal.text : Pal.muted;
+                            horizontal-alignment: center;
+                            overflow: elide;
+                        }
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.look-pick(i); }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ================= Einstellungen (settings/Settings.tsx, vereinfacht) =================
+        if root.screen == "settings": Rectangle {
+            background: Pal.bg;
+            SheetTop {
+                y: 0;
+                title: "Einstellungen";
+                back: "Zurück";
+                back-icon: @image-url("icons/chevron-left.svg");
+                line: true;
+                back-clicked => { root.settings-done(); }
+                done => { root.settings-done(); }
+            }
+            // linke Navigation
+            Rectangle {
+                x: 0;
+                y: 52px;
+                width: 220px;
+                height: parent.height - 52px;
+                background: Pal.panel-2;
+                Rectangle { x: parent.width - 1px; width: 1px; background: Pal.border; }
+                VerticalLayout {
+                    padding: 10px;
+                    padding-top: 18px;
+                    spacing: 0px;
+                    alignment: start;
+                    for n[i] in ["KI-Zugang", "Cloud", "Bilder", "Marke", "Agenten", "Allgemein"]: Rectangle {
+                        height: 36px;
+                        border-radius: 8px;
+                        background: i == root.settings-page ? Pal.accent-soft : (nta.has-hover ? Pal.hover : transparent);
+                        border-width: i == root.settings-page ? 2px : 0px;
+                        border-color: Pal.accent;
+                        accessible-role: tab;
+                        accessible-label: n;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            spacing: 10px;
+                            Image {
+                                source: i == 0 ? @image-url("icons/sparkles.svg") : i == 1 ? @image-url("icons/cloud.svg") : i == 2 ? @image-url("icons/image.svg") : i == 3 ? @image-url("icons/palette.svg") : i == 4 ? @image-url("icons/square-terminal.svg") : @image-url("icons/info.svg");
+                                width: 16px;
+                                height: 16px;
+                                y: (parent.height - self.height) / 2;
+                                colorize: i == root.settings-page ? Pal.accent : Pal.text;
+                            }
+                            Text {
+                                text: n;
+                                font-size: 14px;
+                                font-weight: i == root.settings-page ? 600 : 400;
+                                color: i == root.settings-page ? Pal.accent : Pal.text;
+                                vertical-alignment: center;
+                            }
+                        }
+                        nta := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.settings-page = i; }
+                        }
+                    }
+                }
+            }
+            ScrollView {
+                x: 220px;
+                y: 52px;
+                width: parent.width - 220px;
+                height: parent.height - 52px;
+                VerticalLayout {
+                    padding-left: 56px;
+                    padding-right: 56px;
+                    padding-top: 40px;
+                    spacing: 0px;
+                    alignment: start;
+                    x: 0;
+                    width: min(720px + 112px, parent.width);
+                    Text {
+                        text: root.settings-page == 0 ? "KI-Zugang" : root.settings-page == 1 ? "Cloud" : root.settings-page == 2 ? "Bilder" : root.settings-page == 3 ? "Marke" : root.settings-page == 4 ? "Agenten" : "Allgemein";
+                        font-size: 22px;
+                        font-weight: 600;
+                        color: Pal.text;
+                    }
+                    Rectangle { height: 10px; }
+                    Text {
+                        text: root.settings-page == 0 ? "Deckwerk denkt mit einer KI, die du schon hast oder schnell einrichtest. Ein Zugang reicht."
+                            : root.settings-page == 5 ? "Datenordner, Edition und Version."
+                            : "Dieser Bereich kommt in einem der nächsten Schritte in die native App.";
+                        font-size: 14px;
+                        color: Pal.muted;
+                        wrap: word-wrap;
+                    }
+                    Rectangle { height: 24px; }
+                    if root.settings-page == 0: Rectangle {
+                        height: 64px;
+                        border-radius: 16px;
+                        background: Pal.panel;
+                        drop-shadow-blur: 24px;
+                        drop-shadow-offset-y: 8px;
+                        drop-shadow-color: #16161a0f;
+                        HorizontalLayout {
+                            padding-left: 20px;
+                            padding-right: 20px;
+                            spacing: 12px;
+                            Rectangle {
+                                width: 24px;
+                                height: 24px;
+                                y: (parent.height - self.height) / 2;
+                                border-radius: 12px;
+                                border-width: 1.5px;
+                                border-color: Pal.border-strong;
+                            }
+                            Text {
+                                text: "Noch nicht verbunden. Die KI wird in einem der nächsten Schritte angebunden.";
+                                font-size: 14px;
+                                color: Pal.text;
+                                vertical-alignment: center;
+                                wrap: word-wrap;
+                                horizontal-stretch: 1;
+                            }
+                        }
+                    }
+                    if root.settings-page == 0: VerticalLayout {
+                        padding-top: 36px;
+                        spacing: 12px;
+                        Text { text: "Modell"; font-size: 15px; font-weight: 600; color: Pal.text; }
+                        Text {
+                            text: "Das Modell bestimmt auch, ob der Chat über Claude, Vibe oder Codex läuft. Du kannst es an der KI-Leiste jederzeit wechseln.";
+                            color: Pal.muted;
+                            wrap: word-wrap;
+                        }
+                        Rectangle {
+                            height: 4 * 56px + 36px;
+                            border-radius: 16px;
+                            background: Pal.panel;
+                            clip: true;
+                            drop-shadow-blur: 24px;
+                            drop-shadow-offset-y: 8px;
+                            drop-shadow-color: #16161a0f;
+                            VerticalLayout {
+                                Rectangle {
+                                    height: 36px;
+                                    Text { x: 16px; text: "CLAUDE"; font-size: 11px; font-weight: 600; letter-spacing: 0.66px; color: Pal.muted; }
+                                    Rectangle { y: parent.height - 1px; height: 1px; background: Pal.border; }
+                                }
+                                for m[i] in [["Auto", "Deckwerk wählt je Auftrag: gründlich für neue Decks, schnell für Änderungen"], ["Opus", "Am gründlichsten, für große Decks"], ["Sonnet", "Ausgewogen"], ["Haiku", "Am schnellsten, für kleine Änderungen"]]: Rectangle {
+                                    height: 56px;
+                                    background: i == root.model-index ? Pal.accent-soft : transparent;
+                                    HorizontalLayout {
+                                        padding-left: 16px;
+                                        spacing: 14px;
+                                        Rectangle {
+                                            width: 22px;
+                                            height: 22px;
+                                            y: (parent.height - self.height) / 2;
+                                            border-radius: 11px;
+                                            background: i == root.model-index ? Pal.ok : transparent;
+                                            border-width: i == root.model-index ? 0 : 1.5px;
+                                            border-color: Pal.border-strong;
+                                            if i == root.model-index: Image { source: @image-url("icons/check.svg"); width: 12px; height: 12px; colorize: white; }
+                                        }
+                                        VerticalLayout {
+                                            alignment: center;
+                                            Text { text: m[0]; font-size: 14px; font-weight: 600; color: Pal.text; }
+                                            Text { text: m[1]; color: Pal.muted; }
+                                        }
+                                    }
+                                    TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { root.model-index = i; }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if root.settings-page == 5: VerticalLayout {
+                        spacing: 14px;
+                        Field {
+                            label: "Datenordner";
+                            Text { text: root.data-dir; color: Pal.text; wrap: word-wrap; }
+                        }
+                        Field {
+                            label: "Edition";
+                            HorizontalLayout {
+                                alignment: start;
+                                Seg {
+                                    options: ["Deckwerk", "Deckwerk Pro"];
+                                    current: root.edition-index;
+                                    changed(i) => { root.set-edition(i); }
+                                }
+                            }
+                        }
+                        Field {
+                            label: "Version";
+                            Text { text: root.version; color: Pal.text; }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ================= Blätter über allem =================
+        // ShortcutSheet.tsx (nur, was die native App schon kann)
+        if root.keys-open: Rectangle {
+            background: #16161a33;
+            TouchArea { clicked => { root.keys-open = false; } }
+            Material {
+                radius: 16px;
+                width: 520px;
+                height: kl.preferred-height;
+                background: Pal.panel;
+                TouchArea { }
+                kl := VerticalLayout {
+                    padding: 22px;
+                    spacing: 8px;
+                    HorizontalLayout {
+                        Text { text: "Tastenkürzel"; font-size: 17px; font-weight: 600; color: Pal.text; vertical-alignment: center; horizontal-stretch: 1; }
+                        Plain { icon: @image-url("icons/x.svg"); icon-size: 15px; label: "Schließen"; clicked => { root.keys-open = false; } }
+                    }
+                    Text { text: "ALLGEMEIN"; font-size: 11px; font-weight: 600; letter-spacing: 0.66px; color: Pal.muted; }
+                    for k in [["Strg+S", "Speichern"], ["Strg+Z", "Rückgängig"], ["Strg+Umschalt+Z oder Strg+Y", "Wiederholen"], ["/", "Wunsch an die KI"], ["?", "Diese Übersicht"], ["F5", "Präsentieren ab Folie 1"], ["Umschalt+F5", "Präsentieren ab dieser Folie"], ["← → bzw. Bild↑ Bild↓", "Folie wechseln"], ["Strg+Plus/Minus", "Zoomen"], ["Strg+0", "Einpassen"]]: HorizontalLayout {
+                        Text { text: k[1]; color: Pal.text; horizontal-stretch: 1; }
+                        Text { text: k[0]; color: Pal.faint; }
+                    }
+                    Text { text: "FOLIENLEISTE"; font-size: 11px; font-weight: 600; letter-spacing: 0.66px; color: Pal.muted; }
+                    for k in [["Rechtsklick", "Folienmenü"], ["Strg+D", "Duplizieren"], ["Entf", "Löschen"]]: HorizontalLayout {
+                        Text { text: k[1]; color: Pal.text; horizontal-stretch: 1; }
+                        Text { text: k[0]; color: Pal.faint; }
+                    }
+                    Text { text: "PRÄSENTIEREN"; font-size: 11px; font-weight: 600; letter-spacing: 0.66px; color: Pal.muted; }
+                    for k in [["→ / Leertaste / Klick", "Weiter"], ["← / Rechtsklick", "Zurück"], ["Pos1 / Ende", "Erste / letzte Folie"], ["Esc", "Beenden"]]: HorizontalLayout {
+                        Text { text: k[1]; color: Pal.text; horizontal-stretch: 1; }
+                        Text { text: k[0]; color: Pal.faint; }
+                    }
+                }
+            }
+        }
+
+        // „Kommt bald“ (Pro-Oberflächen)
+        if root.soon-open: Rectangle {
+            background: #16161a33;
+            TouchArea { clicked => { root.soon-open = false; } }
+            Material {
+                radius: 16px;
+                width: 440px;
+                height: sl.preferred-height;
+                background: Pal.panel;
+                TouchArea { }
+                sl := VerticalLayout {
+                    padding: 22px;
+                    spacing: 12px;
+                    Text { text: root.soon-title; font-size: 17px; font-weight: 600; color: Pal.text; }
+                    Text {
+                        text: root.soon-title + " kommt bald in die native App. Die Technik dafür steht schon, die Oberfläche folgt in einem der nächsten Schritte.";
+                        color: Pal.muted;
+                        wrap: word-wrap;
+                    }
+                    HorizontalLayout {
+                        alignment: end;
+                        Pill { text: "OK"; tint: true; clicked => { root.soon-open = false; } }
+                    }
+                }
+            }
+        }
+
+        // confirmDialog (kit.tsx)
+        if root.confirm-open: Rectangle {
+            background: #16161a33;
+            TouchArea { clicked => { root.confirm-open = false; } }
+            Material {
+                radius: 16px;
+                width: 400px;
+                height: cl.preferred-height;
+                background: Pal.panel;
+                TouchArea { }
+                cl := VerticalLayout {
+                    padding: 22px;
+                    spacing: 10px;
+                    Text { text: root.confirm-title; font-size: 17px; font-weight: 600; color: Pal.text; }
+                    Text { text: root.confirm-text; color: Pal.muted; wrap: word-wrap; }
+                    HorizontalLayout {
+                        alignment: end;
+                        spacing: 8px;
+                        padding-top: 8px;
+                        Pill { text: "Abbrechen"; clicked => { root.confirm-open = false; } }
+                        Rectangle {
+                            height: 32px;
+                            width: ct.preferred-width + 28px;
+                            border-radius: 16px;
+                            background: cta.has-hover ? #a92a25 : Pal.danger;
+                            ct := Text { text: root.confirm-ok; color: white; font-weight: 600; }
+                            cta := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.confirm-open = false; root.confirmed(); }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
