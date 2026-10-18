@@ -386,7 +386,7 @@ Künftig:
 4. **OutputIntent:** krilla schreibt OutputIntents bisher nur für PDF/A (`configure/validate.rs:285`). Für PDF/X-4 wird nachträglich per lopdf ein `OutputIntent` mit `S /GTS_PDFX`, eingebettetem FOGRA39-Profil, `OutputConditionIdentifier` und `/GTS_PDFXVersion (PDF/X-4)` im Info-Dictionary ergänzt. Eine Alternative ist ein kleiner Upstream-Patch an krilla (Validator `PdfX4`).
 5. **TrimBox/BleedBox** direkt über `PageSettings` (krilla `page.rs:120,136`), der Regex-Patch entfällt.
 6. **Farbauftrag** wird exakt je Fläche aus den CMYK-Werten der Szene berechnet, ohne Raster. Bei Bildern dient das Maximum der Pixel-Summen. Warnung über 300 % wie heute (`tacWarning`), aber als Lint-Befund mit Slot statt Konsolenausgabe.
-7. **Prüfung:** veraPDF (PDF/X-4-Profil) und gs als optionaler Gegencheck in der CI. Weitere Profile (PSO Coated v3/FOGRA51, in PRO.md gewünscht) kommen per ICC-Datei hinzu.
+7. **Prüfung:** veraPDF prüft nur PDF/A und PDF/UA, **nicht PDF/X**. Für PDF/X-4 gibt es keinen freien Validator: In der CI prüfen gs (rendert in CMYK, `-sDEVICE=inkcov`), qpdf `--check` und ein Strukturtest (OutputIntent GTS_PDFX, GTS_PDFXVersion, kein DeviceRGB). Die Normprüfung macht ein kommerzielles Werkzeug (z. B. callas pdfToolbox) oder die Druckerei. Weitere Profile (PSO Coated v3/FOGRA51, in PRO.md gewünscht) kommen per ICC-Datei hinzu.
 
 **Ergebnis:** Kein externes Binary, kein 10-Minuten-Timeout, keine stille Warnungslücke, gleiche Glyphen wie im Bildschirm-PDF. Auch PDF/X-1a (Roadmap PRO.md:82) ist so machbar (keine Transparenz → Flattening nötig, späterer Schritt).
 
@@ -848,7 +848,7 @@ Priorisiert nach Schwere. Jeder Befund nennt Ort, Problem und Lösung im Rust-De
 | Vorschau = PNG = PDF | Chromium-Layout, Druck-Skalierung, Spiegel-Beschnitt | eine Szene für alle Ausgaben | Pixel-Diff Editor-Snapshot ↔ PNG ↔ PDF-Raster = 0 |
 | Autofit-Tempo | bis 16 DOM-Layouts, serielle Queue | parley-Messung mit Cache, parallel je Folie | ms je Folie (Ziel < 5 ms typisch), Deck mit 30 Folien < 0,5 s |
 | Echte Texte im PDF | Chromium-PDF (Text vorhanden, aber Druckskalierung) | krilla mit Subsetting, Links, Outline aus Kapiteln, optional PDF/UA | veraPDF PDF/UA-1 |
-| Druck-PDF | RGB oder gs-CMYK (extern, ≥ 10.05) | PDF/X-4 nativ, reines K für schwarzen Text, exakter Farbauftrag, echte Beschnitterweiterung | veraPDF PDF/X-4, TAC-Test |
+| Druck-PDF | RGB oder gs-CMYK (extern, ≥ 10.05) | PDF/X-4 nativ, reines K für schwarzen Text, exakter Farbauftrag, echte Beschnitterweiterung | gs/qpdf/Strukturtest für PDF/X-4 (veraPDF kann kein PDF/X), TAC-Test |
 | PPTX-Treue | 5 ZIP-Durchläufe, Regex-Patches, Icons als PNG | ein Generator, SVG-Icons, eindeutige IDs, Sektionen immer | `verify:pptx` (LibreOffice), Abnahmefolie in echtem PowerPoint |
 | Diagramme | chart.js in der Vorschau, nativ in PPTX, Optik weicht ab (README Pro: „sehen leicht anders aus“) | eigene Diagramm-Szene mit derselben Parametrisierung wie das PPTX-Diagramm | Nebeneinander-Vergleich je Typ |
 | Morph in der Präsentation | View Transitions (nur Chromium) | Szenen-Interpolation wie PowerPoint (byObject) | gleiche Zuordnung `morphNames` in App und PPTX |
@@ -976,7 +976,7 @@ Priorisiert nach Schwere. Jeder Befund nennt Ort, Problem und Lösung im Rust-De
 2. **Snapshot-Tests** mit insta für PPTX-XML-Teile (normalisiert), DOCX, PDF-Struktur, ffmpeg-Filtergraphen, Tool-Schemas und Tool-Berichte.
 3. **Differenztests TS ↔ Rust** (nur während der Migration): Die alte App (Node) und dw-napi bekommen dieselben Eingaben (`examples/*.json`, Samples, Fixtures) und müssen gleiche Ausgaben liefern: Lint-Befunde, `resolveTheme`, `morphNames`, `autoCuts`, `clipSegs`, Graphen.
 4. **Layout-Referenzen aus Chromium** (§4.6).
-5. **Treue-Tests:** `deckwerk verify` rendert die PPTX mit LibreOffice (Flatpak, Gelasio-Alias wie heute) und vergleicht mit dw-raster. PDF wird mit hayro bzw. pdftoppm gerastert und gegen die PNG verglichen. veraPDF prüft PDF/A, PDF/UA und PDF/X-4.
+5. **Treue-Tests:** `deckwerk verify` rendert die PPTX mit LibreOffice (Flatpak, Gelasio-Alias wie heute) und vergleicht mit dw-raster. PDF wird mit hayro bzw. pdftoppm gerastert und gegen die PNG verglichen. veraPDF prüft PDF/A und PDF/UA; PDF/X-4 per gs/qpdf und Strukturtest (siehe §4.4).
 6. **E2E:** `dw-mcp` gegen einen echten Daemon (headless), App-Smoke per Slint-Testing-Backend (`i-slint-backend-testing`), Klickpfade Start → Deck → Export.
 7. **Opt-in** (`#[ignore]`, nächtlich): Netz (yt-dlp, Openverse, Unsplash), Modelle (sherpa, Whisper, YuNet, BiRefNet), `claude -p`.
 8. **Stresstest** `deckwerk check` (Layout × Variante × Beispiel × Theme × Format) ersetzt `npm run check:layouts`. Parallel, weil kein Chromium: Ziel < 5 min statt ~1 h.
@@ -1002,7 +1002,7 @@ Priorisiert nach Schwere. Jeder Befund nennt Ort, Problem und Lösung im Rust-De
 
 - Matrix Linux (ubuntu-24.04), macOS (arm64) und Windows (x64): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test --workspace`, beide Editionen (`--features pro`).
 - Render-Job: `deckwerk render examples/pitch.json` → PPTX/PDF/PNG + Lint, Artefakte hochladen.
-- Treue-Job (Linux): LibreOffice + veraPDF.
+- Treue-Job (Linux): LibreOffice + veraPDF (PDF/A, PDF/UA) + gs/qpdf (PDF/X-4).
 - Größenbudget je Paket, Installer-Test (installieren → `deckwerk mcp` → deinstallieren), wie heute.
 - Während der Migration läuft die alte CI (`npm run …`) parallel weiter, bis P7.
 
@@ -1014,7 +1014,7 @@ Grober Aufwand für eine Person in Vollzeit mit KI-Unterstützung. Die Zahlen si
 
 | Phase | Umfang | Ergebnis | Abnahme | Aufwand |
 |---|---|---|---|---|
-| **P0 Spikes** | (a) `dw-scene` für `cover`, `bullets`, `two-column` in 16:9 und A4; (b) Slint-Fenster mit vello-Canvas, Zoom, Auswahl, Inline-Texteditor mit IME (Wayland, X11, macOS, Windows); (c) krilla-PDF/X-4 mit lcms2; (d) gstreamer-Video in Slint-Textur; (e) dw-pptx für die drei Layouts | Entscheidungsvorlage Slint ↔ iced, Machbarkeit Rendern ohne Browser | (a) Referenzvergleich §4.6 grün für 3 Layouts × min/typ/max; (b) Tippen mit Umlauten und IME ohne Verzögerung, 60 fps bei Zoom; (c) veraPDF PDF/X-4 bestanden; (d) 1080p30 flüssig; (e) LibreOffice-Vergleich wie heute. **Abbruchkriterium:** Scheitert (a) oder (b) grundsätzlich, wird Plan B geprüft (§13) | 3–4 Wochen |
+| **P0 Spikes** | (a) `dw-scene` für `cover`, `bullets`, `two-column` in 16:9 und A4; (b) Slint-Fenster mit vello-Canvas, Zoom, Auswahl, Inline-Texteditor mit IME (Wayland, X11, macOS, Windows); (c) krilla-PDF/X-4 mit lcms2; (d) gstreamer-Video in Slint-Textur; (e) dw-pptx für die drei Layouts | Entscheidungsvorlage Slint ↔ iced, Machbarkeit Rendern ohne Browser | (a) Referenzvergleich §4.6 grün für 3 Layouts × min/typ/max; (b) Tippen mit Umlauten und IME ohne Verzögerung, 60 fps bei Zoom; (c) PDF/X-4-Strukturtest + gs-CMYK-Rendering bestanden; (d) 1080p30 flüssig; (e) LibreOffice-Vergleich wie heute. **Abbruchkriterium:** Scheitert (a) oder (b) grundsätzlich, wird Plan B geprüft (§13) | 3–4 Wochen |
 | **P1 Kern per napi** | dw-model, dw-color, dw-theme, dw-lint, dw-typo, dw-merge; dw-napi bindet sie in Electron ein und ersetzt die TS-Fassungen schrittweise | Electron-App läuft mit Rust-Kern | Differenztests grün, `npm run smoke`, Selbsttests grün | 3–4 Wochen |
 | **P2 Folien-Engine** | alle 41 + Pro-Layouts, Varianten, Frames, Formate, freie Elemente, Icons, QR, Diagramme, Tabellen, Masken, Effekte; Referenzen erzeugen | `deckwerk render` erzeugt PNG ohne Chromium | §4.6: alle Kombinationen grün, Stresstest grün | 8–12 Wochen |
 | **P3 Exporte** | dw-pptx, dw-docx, dw-pdf (inkl. Druck, Beschnitt, PDF/X-4), dw-raster, dw-md, Schriften/EOT | alle Exporte aus Rust; Electron nutzt sie per napi | verify:pptx, check-docx, PDF/X-4, Abnahmefolie in PowerPoint | 5–7 Wochen |
@@ -1028,6 +1028,18 @@ Grober Aufwand für eine Person in Vollzeit mit KI-Unterstützung. Die Zahlen si
 **Feature-Politik während der Migration:** Neue Funktionen kommen nur noch, wenn sie im Rust-Kern landen (ab P1 für Logik, ab P2 für Layouts). Für Fixes in der alten App gilt die Regel: erst prüfen, ob die Stelle schon portiert ist.
 
 ---
+
+### 12.1 Stand P0 (18.10.2026, Branch `feat/rust`)
+
+| Spike | Ergebnis |
+|---|---|
+| (a) Folien-Engine ohne Browser | **bestanden.** `dw-scene` trifft Chromium bei 27/27 Folien (cover, bullets, two-column × alle Varianten × min/typ/max): gleiche Autofit-Stufe, Zeilenzahl, Schriftgröße, Zeilenhöhe, Boxen ≤ 1 px. `text-wrap: pretty/balance` als Nachbildung von Blinks ScoreLineBreaker. Danach auf alle 20 Themes, alle Frames und Formate erweitert; 446 Chromium-Referenzen für 43 Layouts liegen in `tests/refs/`. |
+| (b) Slint-Editor | **teilweise.** Slint-Fenster mit echten Folien, Auswahl per Hit-Test, Textbearbeitung über ein Slint-Overlay, Live-Neusatz und atomares Speichern laufen (`crates/dw-app-spike`). Zwei Befunde: (1) Rastern über vello_cpu → Bild kostet im Release geschätzt 150–250 ms je Folie (1×), zu langsam für flüssiges Tippen – der Editor braucht `renderer-vello`/wgpu oder Teil-Neurastern. (2) Das Overlay nutzt Slint-Text statt parley und bricht anders um; die Lösung ist ein parley-Editor auf dem Canvas mit eigenem Caret und IME-Preedit (größtes UI-Risiko, §13). Echte IME-Komposition unter Wayland ist noch per Hand zu prüfen. |
+| (c) PDF/X-4 ohne Ghostscript | **bestanden** (Strukturtest, gs-CMYK-Rendering, qpdf): FOGRA39-OutputIntent, schwarzer Text als reines K, Trim/Bleed nativ; PDF ↔ PNG mittlere Abweichung 0,44/255. |
+| (d) gstreamer-Video in Slint | offen. |
+| (e) Eigener PPTX-Generator | **bestanden** und vollständig: Text, Formen, Bilder, Tabellen, Übergänge inkl. Morph, Animationen, Sektionen, Agenda-Links, native Diagramme mit xlsx, Masken, Effekte, Medien, EOT-Schriften; Differenztests gleich TS. |
+
+Zusätzlich fertig: `dw-model`, `dw-color`, `dw-theme` (129/129 Themes, 467/467 Token-Sätze gleich TS), `dw-lint` (alle Prüfregeln, > 4 400 Fälle gleich TS), `dw-raster`, `dw-pdf`, `dw-cli` (`deckwerk render`: PNG, PDF, PPTX für ein Deck in 0,6 s ohne Electron). Deckwerk und Deckwerk Pro sind auf `feat/rust` in einem Code vereint (Pro als Edition `DW_EDITION=pro`), alle Feature-Branches und liegengebliebene Arbeit sind integriert.
 
 ## 13. Risiken und offene Entscheidungen
 
