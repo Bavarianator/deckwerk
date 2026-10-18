@@ -6,6 +6,58 @@ Den KI-Zugang liefert der Login deines Agenten-CLIs (Claude Code, Codex oder Mis
 
 Website: [bavarianator.github.io/deckwerk](https://bavarianator.github.io/deckwerk/) (Quelle in `website/`, Folienbilder neu erzeugen mit `npm run folien` dort)
 
+## Deckwerk in Rust (Branch `feat/rust`, im Aufbau)
+
+Auf diesem Branch entsteht Deckwerk ein zweites Mal: als native Rust-App ohne Electron, ohne Chromium und ohne Webview. Deckwerk und Deckwerk Pro werden dabei eine einzige App. Die Electron-App bleibt, bis die Rust-App alles kann. Der vollständige Plan mit allen Befunden, Zeilenangaben und Crate-Versionen steht in [`RUST-REWRITE.md`](RUST-REWRITE.md).
+
+### Warum
+
+Deckwerk rendert jede Folie heute in einem versteckten Chromium-Fenster. Das funktioniert, ist aber die Wurzel der meisten Probleme:
+
+- **Vorschau und Export laufen auf getrennten Wegen.** Der Editor zeigt das DOM, das PNG kommt aus `capturePage`, das PDF aus `printToPDF`, die PowerPoint aus pptxgenjs plus mehreren Durchgängen mit Regex-Patches am XML. Jeder Weg rundet anders. Dafür gibt es Krücken: eine Sequenznummer in jedem Snapshot, weil `capturePage` sonst alte Bilder liefert; ein 721 px hohes Fenster; das Flag `--ozone-platform=x11`, weil der PDF-Druck unter Wayland hängt.
+- **Autofit ist langsam.** Ein Durchgang geht bis zu 16 Stufen der Typo-Skala durch, jede mit einem vollen DOM-Layout. Jede Änderung misst neu und schickt das ganze Deck per IPC hin und her.
+- **Zu viel Speicher für einen Rechner mit 7 GB.** App, MCP-Server und CLI haben je eine eigene Engine. Die Spracherkennung lädt ihr Modell (1,3–1,5 GB) dann mehrfach. Exporte laufen ohne Sperre parallel, Jobs existieren nur im jeweiligen Prozess.
+- **Drei Codebasen statt einer.** Deckwerk Pro ist ein Fork mit rund 5 500 eigenen Zeilen, der auseinanderdriftet. macOS und Windows sind weitere Forks, die per Skript an Ankertexten patchen (`macify.mjs`, `winify.mjs`).
+- **Schwachstellen, die sich im alten Aufbau schwer schließen lassen:** XML per String-Ersetzung, drei unterschiedliche SSRF-Prüfungen, nicht atomares Speichern, Bearer-Vergleich ohne konstante Zeit. Die Liste steht in `RUST-REWRITE.md` §7.
+
+### Was sich ändert
+
+- **Eine eigene Folien-Engine (`dw-scene`)** setzt die Folien mit taffy (Flex/Grid) und parley (Text, Silbentrennung mit hypher). Die Folien nutzen nur zahmes CSS, das sich vollständig nachbauen lässt. Ergebnis ist ein Szenengraph mit denselben gemessenen Elementen wie heute (`Measured`).
+- **Alle Ausgaben kommen aus derselben Szene:** der Editor über die Grafikkarte (vello auf wgpu), PNG per vello_cpu, PDF per krilla mit echtem Text und PDF/X-4 in CMYK ohne Ghostscript, PowerPoint aus einem eigenen OOXML-Generator in einem Durchgang. Vorschau, PNG und PDF sind damit pixelgleich, und die Krücken oben fallen weg.
+- **Autofit misst am Text-Layout statt am DOM.** Ein Neusatz der Folie dauert 3–10 ms.
+- **Ein Engine-Daemon (`dw-daemon`)** bedient App, MCP-Server und CLI gemeinsam: ein geladenes Modell, eine Job-Warteschlange mit Abbruch, Sperren über Prozesse hinweg, atomares Speichern.
+- **Editionen statt Forks:** Pro ist ein Cargo-Feature, macOS und Windows sind `cfg(target_os)` im selben Code.
+- **Die Oberfläche bleibt dieselbe.** Die native App (Slint) sieht aus und funktioniert wie die Electron-App: gleiche Ansichten, Bedienwege, Tastenkürzel und Texte. Pro bekommt seine Pro-Oberfläche mit Timeline, Mixer, Farbseite, Scopes und Ausgabe.
+- **Was nicht nach Rust geht:** ffmpeg/ffprobe, yt-dlp, die ONNX-Modelle (laufen über Rust-Bindings), die CLIs claude/codex/vibe, `design-guide.md` und die Skills.
+
+Jedes Crate wird gegen die TypeScript-Fassung geprüft: Generatoren unter `crates/*/tests/gen/` erzeugen aus dem TS-Code Fixtures, und die Rust-Tests müssen dieselben Ergebnisse liefern.
+
+### Stand
+
+| Bereich | Crates | Stand |
+|---|---|---|
+| Datenmodell, Themes, Farbe, Lint | `dw-model`, `dw-theme`, `dw-color`, `dw-lint` | fertig, Differenztests gleich TS |
+| Folien-Engine | `dw-scene`, `dw-raster` | Engine fertig; auf diesem Branch 3 Layouts (cover, bullets, two-column), die übrigen Gruppen sind in Arbeit |
+| Exporte | `dw-pdf`, `dw-pptx` | PDF und PowerPoint; Word, ZIP und Markdown fehlen noch |
+| Daemon, Ablage, CLI | `dw-daemon`, `dw-store`, `dw-cli` | fertig |
+| KI-Werkzeuge und MCP | `dw-tools`, `dw-mcp` | alle Werkzeuge wie in TS, MCP über stdio und lokales HTTP mit Bearer |
+| Video, Podcast, Timeline | `dw-video`, `dw-podcast`, `dw-timeline`, `dw-phone` | Logik und Export; das Handy rechnet Clip-Export und Spracherkennung per adb |
+| Editor-Kern | `dw-edit`, `dw-canvas` | Rich-Text auf der Folie mit IME, Auswahl, Ziehen, Drehen, Einrasten, Undo; Zeichnen über die Grafikkarte |
+| App | `dw-app` | Start, Editor, Inspector, Notizen, KI-Leiste, Look, Einstellungen, Export, Präsentieren |
+| In Arbeit | `dw-timeline-ui`, `dw-film`, `dw-agent`, `dw-cli-agent`, `dw-guide` | Pro-Timeline-Oberfläche, Animations-Filme (Remotion-Art), Chat |
+
+Noch nicht da: die meisten Layouts, der Chat in der App, Ebenen und Animation im Inspector, Spracherkennung, KI-Routing und die Installer. Für die tägliche Arbeit ist weiterhin die Electron-App gedacht.
+
+### Bauen und starten
+
+```sh
+cargo run --release -p dw-app --bin deckwerk-app            # die App
+cargo run --release -p dw-app --bin deckwerk-app -- --cpu   # ohne Grafikkarte (Software-Renderer)
+cargo test --workspace                                      # alle Tests inkl. Differenztests gegen TS
+```
+
+Rust ab 1.92. Exporte brauchen ffmpeg, die Video-Wiedergabe der Pro-Timeline GStreamer.
+
 ## Was Deckwerk kann
 
 - **Aus einem Satz ein Deck.** Storyline nach dem Pyramidenprinzip, Action Titles, 40 Layouts, Diagramme und Animationen. Jede Folie wird gerendert und geprüft: Überlauf, Kontrast, Struktur, Eintönigkeit.
