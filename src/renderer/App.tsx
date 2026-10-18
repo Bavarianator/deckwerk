@@ -417,7 +417,7 @@ export default function App() {
         <Deckvid
           deck={deck} index={index} msgs={msgs} busy={busy} status={status} saved={saved} path={path} model={model} onModel={pickModel}
           exporting={videoBusy.current} // Ref genügt: Start, Fortschritt und Ende setzen den Status und rendern damit neu
-          onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport} onSlides={() => setSlidesView(true)}
+          onSend={send} onAbort={abort} onSelect={setSel} onHome={actions.onNew} onExport={actions.onExport} onRes={(videoRes) => patchDeck({ videoRes })} onSlides={() => setSlidesView(true)}
           patchSlide={patchSlide} delSlide={delSlide} canUndo={canUndoTurn} onUndo={undoTurn}
           kind={hasPod || podMode ? 'podcast' : 'video'} onPodcast={(fn, tag) => commit((d) => (d.podcast ? { ...d, podcast: fn(d.podcast) } : d), tag)}
         />

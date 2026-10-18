@@ -52,7 +52,8 @@ export type ClipStyle = 'ruhig' | 'lebendig'
 // ton: klar = Sprachkette (Hochpass, Entrauschen, Kompressor, De-Esser) für Sprache aus Handy/Webcam; original = unverändert (Standard); bei Musik nie klar
 // cover: Quellsekunde fürs Titelbild (Export legt es als .jpg neben das MP4), post: Text zum Posten – Titel in der ersten Zeile, dann Beschreibung und Hashtags (.txt)
 // look: Farblook; stabil: Verwackeln glätten (deshake, nur Export); captionPos: Lage der Untertitel (oben/mitte, wenn unten Wichtiges steht)
-export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: (typeof CAPTION_POS)[number]; sfx?: { src: string; at: number; gain?: number }[] } // sfx: at = Sekunde im fertigen Clip, gain dB
+// chat: Chat-Replay aus dem Import einblenden (main/chat-overlay.ts), Namen nur mit namen: true
+export interface ClipContent { video: string; parts: Part[]; hook?: string; captions?: Captions; pauses?: Pauses; fit?: Fit; follow?: 'sprecher'; style?: ClipStyle; cuts?: number[]; cover?: number; post?: string; ton?: 'klar' | 'original'; overlays?: Overlay[]; look?: Look; stabil?: boolean; captionPos?: (typeof CAPTION_POS)[number]; chat?: { pos?: 'links' | 'rechts'; zeilen?: number; namen?: boolean }; sfx?: { src: string; at: number; gain?: number }[] } // sfx: at = Sekunde im fertigen Clip, gain dB
 export type Quiet = [start: number, end: number] // Stille im Quellvideo (silencedetect)
 export interface Cue { start: number; end: number; words: Word[] }
 
@@ -247,10 +248,24 @@ export function followParts(parts: Part[], turns: Turn[], speakerX: Map<number, 
 
 const even = (n: number) => Math.max(2, Math.round(n / 2) * 2)
 
-/** Ausgabegröße eines Decks im MP4: 1,5-fach (9:16 → 1080×1920), längere Seite höchstens 3840 px (fremde deck.json), gerade Maße für yuv420p. */
-export const outSize = (size: { w: number; h: number }) => {
-  const k = Math.min(1.5, 3840 / Math.max(size.w, size.h))
+/** Wählbare Auflösung im Video-Export (deck.videoRes): kurze Seite in px */
+export const VIDEO_RES = { '720p': 720, '1080p': 1080, '1440p': 1440, '4k': 2160, '8k': 4320 } as const
+export type VideoRes = keyof typeof VIDEO_RES
+
+/** Ausgabegröße eines Decks im MP4: ohne res 1,5-fach (9:16 → 1080×1920), längere Seite höchstens 3840 px (fremde deck.json);
+ *  mit res kurze Seite nach VIDEO_RES, längere höchstens 7680 px. Gerade Maße für yuv420p. */
+export const outSize = (size: { w: number; h: number }, res?: VideoRes) => {
+  const k = res && VIDEO_RES[res] ? Math.min(VIDEO_RES[res] / Math.min(size.w, size.h), 7680 / Math.max(size.w, size.h)) : Math.min(1.5, 3840 / Math.max(size.w, size.h))
   return { w: even(size.w * k), h: even(size.h * k) }
+}
+
+/** Ausgabegröße mit Wahl res, nie hochskaliert: höchstens der größte Quell-Ausschnitt im Zielformat (cropRect), aber nie unter dem Standard (outSize ohne res).
+ *  Also min(Wahl, max(Standard, Quelle)); ohne res oder ohne Videoquellen (nur Standbilder) wie outSize. */
+export function videoSize(size: { w: number; h: number }, res: VideoRes | undefined, sources: { w: number; h: number }[]) {
+  const want = outSize(size, res), base = outSize(size)
+  if (!res || !sources.length || base.w >= want.w) return want
+  const f = Math.max(...sources.map((s) => { const c = cropRect(s, want); return Math.min(c.w / want.w, c.h / want.h) }))
+  return f >= 1 ? want : f * want.w <= base.w ? base : { w: even(want.w * f), h: even(want.h * f) }
 }
 
 /** Ausschnitt der Quelle (px), der das Zielformat füllt: horizontal um focus, vertikal mittig. */

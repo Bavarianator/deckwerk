@@ -1,15 +1,27 @@
 // Feature „Animation“: eine Szene Frame für Frame wie bei Remotion. filmPrepare legt alle Animationen der Folie pausiert an
 // (dieselben wie beim Präsentieren, prepare()), seek(t) setzt sie auf die Szenenzeit t (s); ein Takt ist ein Klick-Schritt.
 // Nur im Film: Kamerafahrt (slide.camera), Mauszeiger mit Klick-Welle und Zoom (.dw-cursor), hochzählende Zahlen (big-number,
-// kpi-grid), Tippen in Layout-Elementen (data-anim="typewriter"), Videos je Frame gespult und Bildschirm-Zoom (data-zooms).
+// kpi-grid), Tippen in Layout-Elementen (data-anim="typewriter"), Videos je Frame gespult und Bildschirm-Zoom (data-zooms),
+// Motion-Grafik: Bewegung freier Elemente je Takt (Item.keys), wachsende Diagramme, Textmarker unter **Wörtern**.
 // Nutzer: Film-Host (main.tsx → render.ts renderFilm) und der Player der App.
-import type { Deck } from '../shared/deck'
+import { Chart } from 'chart.js'
+import type { Deck, Ease } from '../shared/deck'
 import { buildOf } from '../shared/layouts'
 import { sceneTimeline, zoomAt, type ScreenZoom } from '../shared/film'
 import { prepare } from './ui/PresentScreen'
+import { rgba } from './slide'
 
 const SOFT = 'cubic-bezier(.65,0,.35,1)' // weich an- und auslaufend
 const CAMERA_MS = 800, CURSOR_MS = 700, RIPPLE_MS = 450, COUNT_MS = 1200, SEEK_TIMEOUT = 2000
+const KEY_MS = 800, GROW_MS = 1200, MARK_MS = 500
+// Feder wie spring() in Remotion (Masse 1, Steifigkeit 100, Dämpfung 13: Dämpfungsgrad 0,65, 6,8 % Überschwingen) als CSS linear()
+// mit 40 Stützpunkten; die Dauer reicht, bis die Hüllkurve auf 0,5 % gefallen ist, der Gipfel liegt bei gut der Hälfte
+const FEDER = (() => {
+  const z = 0.65, wd = Math.sqrt(1 - z * z), T = Math.log(200) / z
+  const x = (t: number) => 1 - Math.exp(-z * t) * (Math.cos(wd * t) + (z / wd) * Math.sin(wd * t))
+  return `linear(${Array.from({ length: 40 }, (_, i) => (i < 39 ? +x((i / 39) * T).toFixed(4) : 1)).join(', ')})`
+})()
+const EASING: Record<Ease, string> = { weich: SOFT, feder: FEDER, linear: 'linear' }
 
 export interface FilmScene {
   steps: number[] // Länge jedes Takts in s (Ende seiner letzten Animation, inkl. Verzögerung)
@@ -63,6 +75,7 @@ function numberNode(el: HTMLElement) {
 }
 
 const targetOf = (a: Animation) => (a.effect as KeyframeEffect | null)?.target as HTMLElement | null | undefined
+const delayOf = (a: Animation) => Number(a.effect!.getTiming().delay ?? 0), endOf = (a: Animation) => Number(a.effect!.getComputedTiming().endTime)
 // Lage von el in px innerhalb von root ohne Transforms (Aufbau-Animationen skalieren den Container anfangs)
 function offsetIn(el: HTMLElement, root: HTMLElement) {
   let x = 0, y = 0
@@ -84,6 +97,13 @@ export function filmPrepare(root: HTMLElement, deck: Deck, index: number): FilmS
   root.querySelectorAll<HTMLElement>('[data-anim="typewriter"]').forEach((el) => el.querySelector('.dw-part') || splitLetters(el))
   const words = root.innerText.split(/\s+/).filter(Boolean).length
   const steps = prepare(root, preset, 'click', new Set(), slide.items)
+  const built = steps.map((s) => [...s]) // nur der Aufbau: daraus der Auftritt von Zahlen, Diagrammen und Markern
+  // Auftritt von el: erster Takt, dessen Aufbau el, ein Kind oder einen Container bewegt (sonst Takt 0), und diese Animationen
+  const entry = (el: HTMLElement) => {
+    const touches = (a: Animation) => { const t = targetOf(a); return !!t && t !== root && (t === el || el.contains(t) || t.contains(el)) }
+    const k = built.findIndex((s) => s.some(touches))
+    return { k: Math.max(0, k), own: k < 0 ? [] : built[k].filter(touches) }
+  }
   const add = (k: number, a: Animation) => {
     while (steps.length <= k) steps.push([]) // Takte nur für Kamera oder Mauszeiger
     a.pause()
@@ -98,15 +118,77 @@ export function filmPrepare(root: HTMLElement, deck: Deck, index: number): FilmS
   const counters = [...root.querySelectorAll<HTMLElement>('.bign-value, .kpis .kpi-value')].flatMap((el) => {
     const hit = numberNode(el)
     if (!hit) return []
-    const touches = (a: Animation) => { const t = targetOf(a); return !!t && t !== root && (t === el || el.contains(t) || t.contains(el)) }
-    const k = steps.findIndex((s) => s.some(touches))
-    const own = k < 0 ? [] : steps[k].filter(touches)
-    const start = own.length ? Math.min(...own.map((a) => Number(a.effect!.getTiming().delay ?? 0))) : 0
-    const end = own.length ? Math.max(...own.map((a) => Number(a.effect!.getComputedTiming().endTime))) : COUNT_MS
+    const { k, own } = entry(el)
+    const start = own.length ? Math.min(...own.map(delayOf)) : 0
+    const end = own.length ? Math.max(...own.map(endOf)) : COUNT_MS
     const carrier = el.animate([], { duration: Math.max(1, end - start), delay: start, easing: 'ease-out', fill: 'both' })
-    add(Math.max(0, k), carrier)
+    add(k, carrier)
     return [{ ...hit, num: parseNum(hit.raw), carrier }]
   })
+
+  // Diagramme wachsen ab ihrem Auftritt in 1,2 s: Balken von 0 auf ihren Wert (Wertachse fest, sonst wüchse sie mit), Linien von
+  // links (Ausschnitt; die Achse unten bleibt stehen), Torte und Ring über den Winkel. Träger wie beim Zähler, seek setzt die Werte.
+  const charts = [...root.querySelectorAll<HTMLCanvasElement>('.chart > canvas')].flatMap((canvas) => {
+    const chart = Chart.getChart(canvas)
+    if (!chart) return []
+    chart.resize() // nach autofit: Achsen, wie sie am Ende stehen
+    const ax = chart.options.indexAxis === 'y' ? 'x' : 'y', { k, own } = entry(canvas.parentElement!)
+    const carrier = canvas.animate([], { duration: GROW_MS, delay: own.length ? Math.min(...own.map(delayOf)) : 0, easing: SOFT, fill: 'both' })
+    add(k, carrier)
+    const type = (chart.config as { type?: string }).type, scale = chart.scales[ax]
+    return [{ canvas, chart, type, ax, carrier, data: chart.data.datasets.map((d) => d.data), lim: [scale?.min, scale?.max], p: undefined as number | undefined }]
+  })
+  const grow = (c: (typeof charts)[number], p: number) => { // p = 1: Originalzustand
+    const { chart } = c
+    if (c.type === 'line') {
+      const a = chart.chartArea, x = a.left + p * (chart.width - a.left)
+      return void (c.canvas.style.clipPath = p < 1 ? `polygon(0 0, ${x}px 0, ${x}px ${a.bottom}px, 100% ${a.bottom}px, 100% 100%, 0 100%)` : '')
+    }
+    if (c.type === 'doughnut') {
+      const ds = chart.data.datasets[0] as { circumference?: number } | undefined
+      if (ds) p < 1 ? (ds.circumference = 360 * p) : delete ds.circumference
+    } else {
+      chart.data.datasets.forEach((d, i) => (d.data = p < 1 ? c.data[i].map((v) => (Array.isArray(v) ? [v[0], v[0] + (v[1] - v[0]) * p] : (v as number) * p)) as typeof d.data : c.data[i]))
+      const s = (chart.config.options?.scales as Record<string, { min?: number; max?: number }> | undefined)?.[c.ax]
+      if (s) p < 1 ? Object.assign(s, { min: c.lim[0], max: c.lim[1] }) : (delete s.min, delete s.max) // Waterfall: [Basis, Spitze]
+    }
+    chart.update('none')
+  }
+
+  // Textmarker: **Wörter** bekommen nach dem Aufbau ihres Texts einen schmalen Unterstrich in der Akzentfarbe, der sich von links aufzieht
+  for (const s of root.querySelectorAll<HTMLElement>('[data-pptx="text"] strong')) {
+    const { k, own } = entry(s.closest<HTMLElement>('[data-pptx="text"]')!)
+    style(s, { backgroundImage: 'linear-gradient(var(--accent), var(--accent))', backgroundRepeat: 'no-repeat', backgroundPosition: '0 100%' })
+    add(k, s.animate([{ backgroundSize: '0% .07em' }, { backgroundSize: '100% .07em' }], { duration: MARK_MS, delay: Math.max(0, ...own.map(endOf)), easing: SOFT, fill: 'both' }))
+  }
+
+  // Motion-Grafik (Item.keys): je Key eine Fahrt ab Beginn seines Takts. Ohne Start-Keyframe beginnt sie dort, wo der vorige Key
+  // (oder der Aufbau) das Element gelassen hat; fehlende Werte bleiben. Lage und Größe über translate/scale um die Mitte (wie die
+  // Drehung des Elements), so stimmen x/y/w/h am Ende genau. Füllung: Rechteck/Ellipse als Hintergrund, übrige Formen als SVG-fill.
+  // ponytail: gedrehtes Element mit ungleich skalierter Breite/Höhe wird geschert (scale wirkt vor der Grunddrehung); dann width/height animieren
+  for (const it of slide.items ?? []) {
+    const el = it.keys?.length ? root.querySelector<HTMLElement>(`[data-item="${CSS.escape(it.id)}"]`) : null
+    if (!el) continue
+    const W = el.offsetWidth, H = el.offsetHeight, alpha = it.opacity ?? 1, box = { x: it.x, y: it.y, w: it.w, h: it.h }
+    const shape = it.kind === 'shape' ? it.shape ?? 'rect' : undefined
+    const paint = shape === 'rect' || shape === 'ellipse' ? el : shape && shape !== 'line' ? el.querySelector('path') : null
+    for (const key of [...it.keys!].sort((a, b) => a.step - b.step)) {
+      const f: Keyframe = {}, opts = { duration: key.ms ?? KEY_MS, easing: EASING[key.ease ?? 'weich'], fill: 'forwards' as const }
+      const has = (...ps: ('x' | 'y' | 'w' | 'h')[]) => ps.some((p) => key[p] !== undefined)
+      if (has('x', 'y', 'w', 'h')) {
+        for (const p of ['x', 'y', 'w', 'h'] as const) box[p] = key[p] ?? box[p]
+        const sx = it.w ? box.w / it.w : 1, sy = it.h ? box.h / it.h : 1
+        f.translate = `${box.x - it.x + (W * (sx - 1)) / 2}px ${box.y - it.y + (H * (sy - 1)) / 2}px`
+        if (has('w', 'h')) f.scale = `${sx} ${sy}`
+      }
+      if (key.rot !== undefined) f.rotate = `${key.rot - (it.rot ?? 0)}deg`
+      // Deckkraft wie Item.opacity; steckt die Grund-Deckkraft in der Füllfarbe (Formen), gilt sie relativ dazu
+      if (key.opacity !== undefined) f.opacity = Math.min(1, key.opacity / (el.style.opacity ? 1 : alpha || 1))
+      if (key.color) f.color = key.color
+      if (Object.keys(f).length) add(key.step, el.animate([f], opts))
+      if (key.fill && paint) add(key.step, paint.animate([{ [paint === el ? 'backgroundColor' : 'fill']: alpha < 1 ? rgba(key.fill, alpha) : key.fill }], opts))
+    }
+  }
 
   // Mauszeiger: Fahrt je Ziel ab Beginn seines Takts, Klick-Welle danach; zoom fährt die Kamera mit und vergrößert um den Zielpunkt
   const shots = new Map<number, { box?: Box; ms: number }>() // Kamera je Takt
@@ -172,6 +254,10 @@ export function filmPrepare(root: HTMLElement, deck: Deck, index: number): FilmS
         const p = c.carrier.effect?.getComputedTiming().progress ?? 0
         c.node.data = c.text.slice(0, c.at) + formatNum(c.num.value * p, c.num) + c.text.slice(c.at + c.raw.length)
       }
+      for (const c of charts) {
+        const p = c.carrier.effect?.getComputedTiming().progress ?? 0
+        if (p !== c.p) grow(c, (c.p = p))
+      }
       await Promise.all(videos.map((v) => {
         // defekt oder nicht ladbar: seeked käme nie, jeder Frame wartete sonst SEEK_TIMEOUT
         if (v.error || v.readyState === 0) return void (broken.has(v) || (broken.add(v), console.warn(`[film] Video lädt nicht, bleibt stehen: ${v.currentSrc || v.src}`)))
@@ -193,6 +279,7 @@ export function filmPrepare(root: HTMLElement, deck: Deck, index: number): FilmS
     dispose() {
       root.getAnimations({ subtree: true }).forEach((a) => a.cancel())
       counters.forEach((c) => (c.node.data = c.text))
+      charts.forEach((c) => c.p !== undefined && Chart.getChart(c.canvas) === c.chart && grow(c, 1)) // nach chart.destroy() nichts mehr
       extras.forEach((e) => e.remove())
       styles.forEach((css, el) => (el.style.cssText = css))
     },

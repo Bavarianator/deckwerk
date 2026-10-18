@@ -1,6 +1,6 @@
-// Canvas: Folie in der Mitte (eingepasst oder gezoomt). Freie Elemente wie in Canva: klicken, ziehen, an Kanten und
-// Mitten einrasten, skalieren, drehen, Mehrfachauswahl (Umschalt oder Rahmen aufziehen), Doppelklick bearbeitet Text,
-// Rechtsklick öffnet das Kontextmenü, Dateien per Drag & Drop. Layout-Elemente anklicken → KI-Leiste.
+// Canvas: Folie in der Mitte (eingepasst oder gezoomt). Freie Elemente wie in Canva: klicken, ziehen (Alt: Kopie ziehen), an
+// Kanten und Mitten einrasten, skalieren, drehen, Mehrfachauswahl (Umschalt oder Rahmen aufziehen), Doppelklick bearbeitet Text,
+// Rechtsklick öffnet das Kontextmenü, Dateien per Drag & Drop (Bild auf Bild ersetzt es). Layout-Elemente anklicken → KI-Leiste.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as RPE } from 'react'
 import { LoaderCircle, Minus, Plus, TriangleAlert } from 'lucide-react'
 import { sizeOf, type Box, type Deck, type Item, type Measured, type Slide } from '../../shared/deck'
@@ -45,9 +45,11 @@ const TEXT_FLAG: Record<string, 'bold' | 'italic' | 'underline' | 'upper'> = { b
 const TEXT_ALIGN: Record<string, Item['align']> = { '⇧l': 'left', '⇧c': 'center', '⇧r': 'right' }
 const TEXT_SIZE: Record<string, number> = { '⇧Comma': 1 / 1.1, '⇧Period': 1.1 }
 const HANDLES: [number, number][] = [[-1, -1], [0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0]]
+// Wird ein Bild gezogen (Datei oder Foto-Kachel aus dem Panel)? Beim Darüberziehen sind nur die Typen lesbar, nicht die Daten
+const carriesImage = (t: DataTransfer) => [...t.items].some((i) => i.type.startsWith('image/')) || (t.types.includes('text/uri-list') && !t.types.includes('Files'))
 
 type Drag =
-  | { kind: 'move'; ids: string[]; start: Map<string, Geo>; x0: number; y0: number; moved: boolean; click?: string }
+  | { kind: 'move'; ids: string[]; start: Map<string, Geo>; x0: number; y0: number; moved: boolean; click?: string; tag?: string } // tag: Alt-Kopie
   | { kind: 'resize'; id: string; g: Geo; hx: number; hy: number; x0: number; y0: number; size?: number }
   | { kind: 'rotate'; id: string; g: Geo; cx: number; cy: number }
   | { kind: 'marquee'; x0: number; y0: number; x1: number; y1: number; target: EventTarget; add: boolean }
@@ -55,6 +57,7 @@ type Drag =
   | { kind: 'crop-pan'; x0: number; y0: number; full: Box }
   | { kind: 'crop-size'; hx: number; hy: number; x0: number; y0: number; box: Box }
   | { kind: 'detach'; slot: string; x0: number; y0: number; cx: number; cy: number } // Layout-Text gegriffen: Klick oder Ziehen?
+  | { kind: 'guide'; axis: 'x' | 'y'; i: number } // eigene Hilfslinie verschieben
 
 export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItems, patchSlide, onEdit, onTarget }: Props) {
   const box = useRef<HTMLDivElement>(null)
@@ -69,6 +72,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
   const [guides, setGuides] = useState<{ x: number[]; y: number[] }>({ x: [], y: [] })
   const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; at: { x: number; y: number } } | null>(null)
+  const [over, setOver] = useState<string | null>(null) // Bild, auf das gerade ein Bild gezogen wird (wird ersetzt)
   // Ansicht wie in Canva: sichere Ränder (.safe in slide.css) und eigene Hilfslinien (Folien-px, nur in dieser Sitzung)
   const [margins, setMargins] = useState(() => { try { return localStorage.getItem('dw.margins') === '1' } catch { return false } })
   useEffect(() => { try { localStorage.setItem('dw.margins', margins ? '1' : '') } catch { /* nur für diese Sitzung */ } }, [margins])
@@ -252,6 +256,16 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     canvas.current!.setPointerCapture(e.pointerId)
   }
 
+  // Eigene Hilfslinie greifen: ohne Rahmen-Auswahl, die Auswahl bleibt
+  const startGuide = (e: RPE, axis: 'x' | 'y', i: number) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    e.preventDefault()
+    setMenu(null)
+    drag.current = { kind: 'guide', axis, i }
+    canvas.current!.setPointerCapture(e.pointerId)
+  }
+
   const startHandle = (e: RPE, kind: 'resize' | 'rotate', hx = 0, hy = 0) => {
     e.stopPropagation()
     e.preventDefault()
@@ -269,6 +283,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     const d = drag.current
     if (!d) return
     const p = toSlide(e.clientX, e.clientY)
+    if (d.kind === 'guide') return setLines((l) => ({ ...l, [d.axis]: l[d.axis].map((v, j) => (j === d.i ? Math.round(p[d.axis]) : v)) }))
     if (d.kind === 'marquee') {
       d.x1 = p.x, d.y1 = p.y
       if (Math.hypot(d.x1 - d.x0, d.y1 - d.y0) * k > 4) setMarquee({ x: Math.min(d.x0, d.x1), y: Math.min(d.y0, d.y1), w: Math.abs(d.x1 - d.x0), h: Math.abs(d.y1 - d.y0) })
@@ -324,12 +339,22 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     if (d.kind === 'move') {
       let dx = p.x - d.x0, dy = p.y - d.y0
       if (!d.moved && Math.hypot(dx, dy) * k < 3) return
+      // Alt wie in Canva: die Kopie wird gezogen, das Original bleibt stehen. Einfügen und Ablegen teilen den Tag = ein Undo-Schritt
+      const orig = !d.moved && e.altKey ? items.filter((it) => d.start.has(it.id)) : []
+      if (orig.length) {
+        const copies = cloneItems(orig, 0)
+        d.start = new Map(copies.map((c, i) => [c.id, d.start.get(orig[i].id)!]))
+        d.ids = [...d.start.keys()]
+        d.click = undefined
+        d.tag = `alt-${copies[0].id}`
+        add(copies, d.tag)
+      }
       d.moved = true
       if (e.shiftKey) Math.abs(dx) > Math.abs(dy) ? (dy = 0) : (dx = 0) // Umschalt: nur waagrecht oder senkrecht
       const all = [...d.start.values()]
       const bx = Math.min(...all.map((g) => g.x)) + dx, by = Math.min(...all.map((g) => g.y)) + dy
       const bb = { x: bx, y: by, w: Math.max(...all.map((g) => g.x + g.w)) + dx - bx, h: Math.max(...all.map((g) => g.y + g.h)) + dy - by }
-      const s = e.altKey ? { dx: 0, dy: 0, guides: { x: [], y: [] } } : snap(bb, d.ids) // Alt: ohne Einrasten
+      const s = e.ctrlKey || e.metaKey ? { dx: 0, dy: 0, guides: { x: [], y: [] } } : snap(bb, d.ids) // Strg/⌘: ohne Einrasten
       dx += s.dx, dy += s.dy
       setGuides(s.guides)
       const next: Record<string, Geo> = {}
@@ -365,6 +390,10 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
     drag.current = null
     setGuides({ x: [], y: [] })
     if (!d || d.kind === 'crop-pan' || d.kind === 'crop-size') return
+    if (d.kind === 'guide') return setLines((l) => { // aus der Folie gezogen: Hilfslinie löschen
+      const v = l[d.axis][d.i]
+      return v < 0 || v > (d.axis === 'x' ? W : H) ? { ...l, [d.axis]: l[d.axis].filter((_, j) => j !== d.i) } : l
+    })
     if (d.kind === 'detach') { // nicht gezogen: Text bearbeiten, Cursor an die Klickstelle
       canvas.current?.querySelector<HTMLElement>(`.stage-slide [data-slot="${CSS.escape(d.slot)}"]`)?.focus()
       const r = document.caretRangeFromPoint(d.cx, d.cy)
@@ -398,11 +427,12 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
       if (d.kind === 'resize' && d.size && d.hx && d.hy) out.size = Math.max(6, Math.round(d.size * (g.w / d.g.w)))
       if (d.kind === 'gresize' && it.kind === 'text' && d.hx && d.hy) out.size = Math.max(6, Math.round((it.size ?? 32) * (g.w / d.start.get(it.id)!.w))) // Ecke: Schrift mit
       return out
-    }))
+    }), d.kind === 'move' ? d.tag : undefined)
   }
 
   // Element unter dem Zeiger (Klicks nach Pointer-Capture landen sonst beim Canvas)
   const itemAt = (x: number, y: number) => document.elementsFromPoint(x, y).map((el) => el.closest<HTMLElement>('.stage-slide [data-item]')).find(Boolean)?.dataset.item
+  const imageAt = (x: number, y: number) => { const it = byId(itemAt(x, y) ?? ''); return it?.kind === 'image' && !it.locked ? it.id : undefined }
   const onDbl = (e: React.MouseEvent) => {
     const id = itemAt(e.clientX, e.clientY)
     const it = id && byId(id)
@@ -440,7 +470,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
 
   // ---------- Tastatur, Zwischenablage, Kontextmenü ----------
 
-  const add = useCallback((list: Item[]) => { onItems((all) => [...all, ...list]); onSel(list.map((it) => it.id)) }, [onItems, onSel])
+  const add = useCallback((list: Item[], tag?: string) => { onItems((all) => [...all, ...list], tag); onSel(list.map((it) => it.id)) }, [onItems, onSel])
   const act = useCallback((what: 'copy' | 'cut' | 'paste' | 'duplicate' | 'delete' | 'lock' | 'group' | 'ungroup' | Order) => {
     const chosen = items.filter((it) => sel.includes(it.id))
     setMenu(null)
@@ -541,11 +571,18 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
   // Dateien aus dem Dateimanager oder Elemente aus dem Seitenpanel fallen lassen
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault()
+    setOver(null)
     if (busy || !slide) return
     const p = toSlide(e.clientX, e.clientY)
     const center = (it: Item): Item => ({ ...it, x: Math.round(p.x - it.w / 2), y: Math.round(p.y - it.h / 2) })
     const json = e.dataTransfer.getData('application/x-deckwerk-item')
     if (json) return add([center(JSON.parse(json))])
+    // Bilddateien und Foto-Kacheln des Panels (die ziehen ihr <img>, kommen also als URL). Bild auf ein freies Bild ersetzt
+    // dessen Bild wie in Canva; Rahmen, Maske und Anpassungen bleiben, der Zuschnitt gehörte zum alten Bild
+    const imgs = [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/')).map((f) => assetOf(window.api.pathOf(f)))
+    imgs.push(...e.dataTransfer.getData('text/uri-list').split(/\r?\n/).filter((u) => u.startsWith('asset://')))
+    const into = imgs.length ? imageAt(e.clientX, e.clientY) : undefined
+    if (into) return onItems((l) => l.map((it) => (it.id === into ? { ...it, src: imgs[0], crop: undefined } : it)))
     const media = [...e.dataTransfer.files].filter((f) => /^(video|audio)\//.test(f.type))
     for (const f of media) {
       const src = assetOf(window.api.pathOf(f))
@@ -553,9 +590,7 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
       const poster = kind === 'video' ? await videoPoster(src).catch(() => undefined) : undefined
       add([center(newMedia(kind, src, poster?.ratio, poster?.src))])
     }
-    const imgs = [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/'))
-    const made = await Promise.all(imgs.map(async (f, i) => {
-      const src = assetOf(window.api.pathOf(f))
+    const made = await Promise.all(imgs.map(async (src, i) => {
       const it = center(newImage(src, await imageRatio(src)))
       return { ...it, x: it.x + i * 24, y: it.y + i * 24 }
     }))
@@ -601,7 +636,8 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
               className="stage-canvas" ref={canvas} style={{ width: w, height: h }}
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
               onDoubleClick={onDbl} onContextMenu={onContext}
-              onDragOver={(e) => e.preventDefault()} onDrop={onDrop}
+              onDragOver={(e) => { e.preventDefault(); setOver((carriesImage(e.dataTransfer) && imageAt(e.clientX, e.clientY)) || null) }}
+              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(null) }} onDrop={onDrop}
             >
               <div className={`stage-slide ${busy ? 'busy' : ''}`} onFocus={(e) => {
                 const el = (e.target as HTMLElement).closest<HTMLElement>('[data-slot]:not([data-slot^="_"]):not([data-item])')
@@ -668,8 +704,15 @@ export const Stage = memo(function Stage({ deck, index, busy, sel, onSel, onItem
                 </>
               )}
               {margins && <div className="stage-margins" style={{ left: 72 * k, top: 60 * k, width: (W - 144) * k, height: (H - 132) * k }} />}
-              {lines.x.map((x) => <div key={`lx${x}`} className="guide v own" style={{ left: x * k }} />)}
-              {lines.y.map((y) => <div key={`ly${y}`} className="guide h own" style={{ top: y * k }} />)}
+              {(['x', 'y'] as const).flatMap((a) => lines[a].map((v, i) => v >= 0 && v <= (a === 'x' ? W : H) && ( // außerhalb: wird beim Loslassen gelöscht
+                <div key={`l${a}${i}`} className={`guide own ${a === 'x' ? 'v' : 'h'}`} style={a === 'x' ? { left: v * k } : { top: v * k }} onPointerDown={(e) => startGuide(e, a, i)}>
+                  {drag.current?.kind === 'guide' && drag.current.axis === a && drag.current.i === i && <span className="item-badge">{v} px</span>}
+                </div>
+              )))}
+              {over && byId(over) && (() => { // Bild wird darauf gezogen: Ziel hervorheben, es wird ersetzt
+                const g = geoOf(byId(over)!)
+                return <div className="item-sel drop" style={{ left: g.x * k, top: g.y * k, width: g.w * k, height: g.h * k, transform: g.rot ? `rotate(${g.rot}deg)` : undefined }} />
+              })()}
               {guides.x.map((x) => <div key={`gx${x}`} className="guide v" style={{ left: x * k }} />)}
               {guides.y.map((y) => <div key={`gy${y}`} className="guide h" style={{ top: y * k }} />)}
               {marquee && <div className="marquee" style={{ left: marquee.x * k, top: marquee.y * k, width: marquee.w * k, height: marquee.h * k }} />}

@@ -6,13 +6,13 @@ import { Logo } from '../Logo'
 import { Befehl, Group, Head, MAC, Ok, Row, Spin, TERMINAL, useRun, type SectionProps } from './parts'
 
 const OS: Record<string, string> = { linux: 'Linux', darwin: 'macOS', win32: 'Windows' } // app:info liefert „linux x64“
-// macOS-Ausgabe (eigenes Repo, nur der laufende Stand „latest“ ohne Versionsnummer): kein Versionsvergleich, ihr Installer aktualisiert
 // Spracherkennungs-Modell (sherpa.ts); „Schnell“ gilt nur für Deutsch, andere Sprachen erkennt weiter Parakeet
 const ASR_MODELS = [
   { id: 'parakeet', name: 'Spracherkennung: Genau', hint: 'Parakeet Ultra, 25 Sprachen. Standard.' },
   { id: 'de-schnell', name: 'Spracherkennung: Schnell', hint: 'Nur Deutsch, etwa dreimal so schnell, für sehr lange Videos und langsame Rechner. Schreibt Zahlen als Wörter und verhört sich öfter. Lädt einmalig rund 140 MB.' },
 ] as const
-const MAC_UPDATE = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk-macos/main/install.sh | sh'
+// macOS: kein Versionsvergleich, der Installer holt die DMG des neuesten Releases
+const MAC_UPDATE = 'curl -fsSL https://raw.githubusercontent.com/Bavarianator/deckwerk/master/scripts/install-mac.sh | sh'
 
 export function AllgemeinSection({ go }: SectionProps) {
   const [info, setInfo] = useState<AppInfo | null>(null)
@@ -47,6 +47,7 @@ export function AllgemeinSection({ go }: SectionProps) {
           {!upd ? 'Deckwerk fragt nur auf Knopfdruck bei GitHub nach, nie von selbst.'
             : !upd.newer ? `Du hast die neueste Version (${upd.current}).`
             : upd.canInstall ? `Version ${upd.latest} ist da. Deckwerk ersetzt sich selbst und startet neu, deine Decks bleiben.`
+            : info?.platform.startsWith('win32') ? `Version ${upd.latest} ist da. Lade Deckwerk-Setup-x64.exe aus den Releases auf GitHub und installiere darüber, deine Decks bleiben.`
             : <>Version {upd.latest} ist da. Im Terminal aktualisierst du mit <code>deckwerk update</code>.</>}
         </Row>}
         {err && <p className="error" role="alert">{err}</p>}

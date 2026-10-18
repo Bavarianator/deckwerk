@@ -10,10 +10,11 @@ import { createGunzip } from 'node:zlib'
 import { cropRect, partLen, partsLength, speedOf, type Fit, type Part, type Quiet, type VideoInfo } from '../shared/video'
 import { download } from './download'
 
-// Statische Builds mit libass und libx264 (ffmpeg-static, GPL); darwin-arm64 für den Mac-Fork
+// Statische Builds mit libass und libx264 (ffmpeg-static, GPL); sha256 über die .gz, wie geladen
 const BUILDS: Record<string, { url: string; sha256: string }> = {
   'linux-x64': { url: 'https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffmpeg-linux-x64.gz', sha256: 'bfe8a8fc511530457b528c48d77b5737527b504a3797a9bc4866aeca69c2dffa' },
   'darwin-arm64': { url: 'https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffmpeg-darwin-arm64.gz', sha256: '8923876afa8db5585022d7860ec7e589af192f441c56793971276d450ed3bbfa' },
+  'win32-x64': { url: 'https://github.com/eugeneware/ffmpeg-static/releases/download/b6.1.1/ffmpeg-win32-x64.gz', sha256: '8883a3dffbd0a16cf4ef95206ea05283f78908dbfb118f73c83f4951dcc06d77' },
 }
 
 const home = () => process.env.DECKWERK_HOME ?? join(homedir(), 'Deckwerk')
@@ -58,7 +59,7 @@ async function locate(): Promise<string> {
   if (await usable('ffmpeg')) return 'ffmpeg'
   const build = BUILDS[`${process.platform}-${process.arch}`]
   if (!build) throw new Error('ffmpeg fehlt. Bitte ffmpeg mit libass und libx264 installieren (z. B. über den Paketmanager) und den Export noch einmal starten.')
-  const file = join(home(), 'models', 'ffmpeg-6.1.1')
+  const file = join(home(), 'models', `ffmpeg-6.1.1${process.platform === 'win32' ? '.exe' : ''}`) // ohne .exe findet CreateProcess die Datei nicht
   if (existsSync(file) && (await usable(file))) return file
   await rm(file, { force: true }) // halb geladen oder beschädigt: einmal neu laden
   await mkdir(dirname(file), { recursive: true })
@@ -80,6 +81,13 @@ async function locate(): Promise<string> {
 let bin: Promise<string> | undefined
 /** Pfad zu einem ffmpeg mit libass und libx264: aus dem PATH, sonst einmalig geladen. Ergebnis gemerkt, Fehler nicht. */
 export const ffmpegBin = () => (bin ??= locate().catch((e) => { bin = undefined; throw e }))
+
+const encoders = new Map<string, Promise<boolean>>()
+/** Ob das ffmpeg (ffmpegBin) den Encoder name kennt, z. B. libx265; gemerkt */
+export function hasEncoder(name: string): Promise<boolean> {
+  if (!encoders.has(name)) encoders.set(name, ffmpegBin().then((b) => run(b, ['-hide_banner', '-encoders'])).then((r) => new RegExp(`\\s${name}\\s`).test(r.out.toString()), () => false))
+  return encoders.get(name)!
+}
 
 async function ff(args: string[], o: RunOpts = {}) {
   const r = await run(await ffmpegBin(), ['-hide_banner', '-nostdin', '-y', ...args], o)

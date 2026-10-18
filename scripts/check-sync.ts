@@ -149,6 +149,24 @@ await sync(A, s, boese)
 ok(untergeschoben && geholt === 0, `heruntergeladen: ${geholt}`)
 ok(!readdirSync(A).some((f) => f.includes('\\')))
 
+// 3d) geteiltes Deck (mitarbeit.json): schreibt nur der Live-Abgleich. Der normale Sync holt nur Fehlendes, lädt nie hoch, löscht nie
+const E = join(root, 'besitzer'), F = join(root, 'zweitgeraet')
+const dav = (rel: string, body: string) => fetch(`${url}/remote.php/dav/files/anna/Deckwerk/${rel}`, { method: 'PUT', body, headers: { Authorization: `Basic ${Buffer.from('anna:geheim').toString('base64')}` } })
+put(E, 'team/deck.json', '{"v":1}')
+eq((await sync(E, s)).up, 1)
+put(E, 'team/mitarbeit.json', '{"v":1}'); await dav('team/mitarbeit.json', '{"v":1}') // legt mitarbeit.ts beim Teilen an
+await dav('team/deck.json', '{"v":"gast"}') // ein Gast speichert …
+put(E, 'team/deck.json', '{"v":"besitzer"}') // … und der Besitzer zugleich (neuer, gewönne sonst)
+eq(await sync(E, s), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] })
+eq(files.get('/remote.php/dav/files/anna/Deckwerk/team/deck.json')!.body.toString(), '{"v":"gast"}')
+eq(get(E, 'team/deck.json'), '{"v":"besitzer"}')
+eq((await sync(F, s)).changed.filter((x) => x.includes('/team/')).sort(), [join(F, 'team/deck.json'), join(F, 'team/mitarbeit.json')]) // weiteres Gerät: Erstbezug
+put(F, 'team/deck.json', '{"v":"zweit"}'); rmSync(join(E, 'team/deck.json'))
+eq(await sync(F, s), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] })
+eq(await sync(E, s), { up: 0, down: 0, deleted: 0, conflicts: 0, changed: [] })
+eq(files.get('/remote.php/dav/files/anna/Deckwerk/team/deck.json')!.body.toString(), '{"v":"gast"}')
+for (const k of [...files.keys()]) if (k.includes('/Deckwerk/team/')) files.delete(k)
+
 // 4) Löschen wandert mit
 rmSync(join(B, 'assets/foto.png'))
 eq((await sync(B, s)).deleted, 1)

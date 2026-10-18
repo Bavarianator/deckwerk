@@ -6,8 +6,10 @@ import type { AgentEvent } from '../main/agent'
 import type { SyncStatus } from '../main/sync'
 import type { Signals, Highlight } from '../shared/highlights'
 import type { Transcript } from '../shared/video'
+import type { Anwesend, LiveStatus, Rolle } from '../main/mitarbeit'
+import type { TeilenStatus } from '../main/gemeinsam'
 
-export type { SyncStatus }
+export type { Anwesend, LiveStatus, Rolle, SyncStatus, TeilenStatus }
 
 /** Agenten-CLI, über das der Chat ohne API-Key läuft und in das sich Deckwerk als MCP-Server einträgt */
 export type ChatCli = 'claude' | 'codex' | 'vibe'
@@ -41,8 +43,8 @@ const invoke = (channel: string, ...args: unknown[]): Promise<any> =>
 
 const api = {
   state: (): Promise<AppState> => invoke('state'),
-  /** Lokale Änderung (Edit, Inspector, Undo) an Main und Agent melden */
-  setDeck: (deck: Deck): Promise<void> => invoke('deck:set', deck),
+  /** Lokale Änderung (Edit, Inspector, Undo) an Main und Agent melden; ack = fremder Stand eines geteilten Decks ist eingearbeitet */
+  setDeck: (deck: Deck, ack?: { etag: string; konflikte: number }): Promise<void> => invoke('deck:set', deck, ack),
   newDeck: (): Promise<void> => invoke('deck:new'),
   /** null = Dialog abgebrochen */
   open: (): Promise<AppState | null> => invoke('deck:open'),
@@ -91,7 +93,7 @@ const api = {
   /** Vorlagen für den Startbildschirm; zum Bearbeiten per saveCopy kopieren */
   templates: (): Promise<Deck[]> => invoke('templates:list'),
   /** zuletzt geänderte Decks unter ~/Deckwerk, neueste zuerst */
-  recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck }[]> => invoke('decks:recent', limit),
+  recent: (limit?: number): Promise<{ path: string; title: string; mtime: number; deck: Deck; geteilt: boolean }[]> => invoke('decks:recent', limit),
   /** speichert nach ~/Deckwerk/<name>/deck.json, liefert den Pfad */
   save: (): Promise<string> => invoke('deck:save'),
   /** Cache-Daten eines Videos (asset://-URL oder Pfad), rechnet nie; null = kein erlaubtes Video */
@@ -252,6 +254,41 @@ const api = {
   },
   /** absoluter Pfad einer per Drag & Drop abgelegten Datei */
   pathOf: (file: File): string => webUtils.getPathForFile(file),
+  /** Gemeinsam bearbeiten (src/main/gemeinsam.ts): Links des offenen Decks, anlegen, ändern, beenden; Gast: verlassen */
+  teilenStatus: (): Promise<TeilenStatus> => invoke('teilen:status'),
+  teilen: (rolle: Rolle, ablauf: string | null): Promise<TeilenStatus> => invoke('teilen:create', rolle, ablauf),
+  teilenAendern: (id: string, p: { rolle?: Rolle; ablauf?: string | null }): Promise<TeilenStatus> => invoke('teilen:update', id, p),
+  teilenBeenden: (id: string): Promise<TeilenStatus> => invoke('teilen:end', id),
+  teilenVerlassen: (): Promise<void> => invoke('teilen:leave'),
+  /** geteilten Link öffnen (Website-Link, deckwerk://, Nextcloud-Link): lädt das Deck herunter bzw. öffnet die vorhandene Kopie */
+  openLink: (text: string): Promise<AppState> => invoke('link:open', text),
+  /** auf welcher Folie ich bin (für die Anwesenheit der anderen) */
+  liveFolie: (id: string | null): Promise<void> => invoke('live:folie', id),
+  profil: (): Promise<{ name: string; vorschlag: string }> => invoke('profil:get'),
+  setProfil: (name: string): Promise<void> => invoke('profil:set', name),
+  /** fremder Stand des offenen geteilten Decks: zusammenführen, dann setDeck(merged, { etag, konflikte }) */
+  onLiveRemote(cb: (r: { path: string; base: Deck; theirs: Deck; etag: string }) => void): () => void {
+    const h = (_: unknown, r: { path: string; base: Deck; theirs: Deck; etag: string }) => cb(r)
+    ipcRenderer.on('live:remote', h)
+    return () => void ipcRenderer.off('live:remote', h)
+  },
+  /** null = das offene Deck ist nicht geteilt */
+  onLiveStatus(cb: (s: LiveStatus | null) => void): () => void {
+    const h = (_: unknown, s: LiveStatus | null) => cb(s)
+    ipcRenderer.on('live:status', h)
+    return () => void ipcRenderer.off('live:status', h)
+  },
+  onPresence(cb: (p: Anwesend[]) => void): () => void {
+    const h = (_: unknown, p: Anwesend[]) => cb(p)
+    ipcRenderer.on('live:presence', h)
+    return () => void ipcRenderer.off('live:presence', h)
+  },
+  /** ein Link von außen (deckwerk://) ließ sich nicht öffnen */
+  onLinkError(cb: (text: string) => void): () => void {
+    const h = (_: unknown, t: string) => cb(t)
+    ipcRenderer.on('link:error', h)
+    return () => void ipcRenderer.off('link:error', h)
+  },
 }
 
 export type Api = typeof api

@@ -143,6 +143,8 @@ app.whenReady().then(async () => {
   if (!cli && !argv.includes('--mcp')) {
     // Zweiter Klick aufs Symbol holt das offene Fenster nach vorn statt einer zweiten Instanz (CLI/MCP dürfen parallel laufen)
     if (!app.requestSingleInstanceLock()) return app.quit()
+    // Links der Website (deckwerk://teilen?d=…, gemeinsam.ts) öffnen die App; unter Linux trägt der Desktop-Eintrag das Schema ein
+    if (app.isPackaged) app.setAsDefaultProtocolClient('deckwerk')
     const win = createWindow()
     setupSpellcheck(win)
     guardMedia(win) // Bildschirm/Mikrofon nur während einer angeforderten Aufnahme (record.ts)

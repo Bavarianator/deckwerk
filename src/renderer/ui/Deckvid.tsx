@@ -73,6 +73,7 @@ interface Props {
   onSelect: (i: number) => void
   onHome: () => void
   onExport: (format: 'mp4' | 'clips' | 'mp3' | 'm4a') => void
+  onRes: (res: Deck['videoRes']) => void // Auflösung im Video-Export; undefined = 1080p
   exporting: boolean // Video- oder Ton-Export läuft
   kind: 'video' | 'podcast' // podcast: deck.podcast statt Clip-Folien
   onPodcast: (fn: (ep: Episode) => Episode, tag?: string) => void // auf den aktuellen Stand von deck.podcast
@@ -192,6 +193,18 @@ export function Deckvid(p: Props) {
                   <button role="menuitem" onClick={() => { setMenu(false); p.onExport('clips') }}>Shorts einzeln (MP4)</button>
                   <button role="menuitem" onClick={() => { setMenu(false); p.onExport('mp4') }}>Ganzes Video (MP4)</button>
                   <button role="menuitem" onClick={() => { setMenu(false); p.onExport('mp3') }}>Als Podcast (MP3)</button>
+                  <hr />
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '2px 10px' }}
+                    title={deck?.videoRes === '4k' || deck?.videoRes === '8k' ? 'Rechnet deutlich länger, das Handy rechnet nicht mit' : 'Nie größer als das Quellvideo'}>
+                    Auflösung
+                    <select value={deck?.videoRes ?? '1080p'} onChange={(e) => p.onRes(e.target.value === '1080p' ? undefined : (e.target.value as Deck['videoRes']))}>
+                      <option value="720p">720p</option>
+                      <option value="1080p">1080p (Standard)</option>
+                      <option value="1440p">1440p</option>
+                      <option value="4k">4K</option>
+                      <option value="8k">8K</option>
+                    </select>
+                  </label>
                 </>}
               </div>
             )}

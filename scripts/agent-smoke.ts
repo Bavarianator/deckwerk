@@ -136,7 +136,7 @@ assert.equal(deck!.slides.length, 0, 'Batch mit Fehler ändert nichts')
 await fails(run('add_slides', { slides: [{ layout: 'cover', content: { title: 'Okay', kicker: 'Q3' } }] }), /Unbekannte Felder: kicker \(erlaubt: [^)]*eyebrow/)
 await fails(run('add_slides', { slides: [{ layout: 'agenda', content: { title: 'Agenda', items: [{ title: 'a', body: 'x' }, { title: 'b', body: 'y' }, { title: 'c' }] } }] }), /items\.\[\]\.body \(erlaubt: title, desc\)/)
 const r = await run('add_slides', { slides: [{ layout: 'cover', content: { title: 'Ein Titel' } }, { layout: 'bullets', content: { title: 'Drei Gründe sprechen für den Start', items: [{ text: 'a' }, { text: 'b' }] } }] })
-assert.match(r.text, /Folie 1 \(s[0-9a-f]{4}, cover\): OK · Autofit head 0\/body 1/)
+assert.match(r.text, /Folie 1 \(s-[0-9a-z]+, cover\): OK · Autofit head 0\/body 1/)
 const [c, b] = deck!.slides
 assert.notEqual(c.id, b.id)
 await run('add_slides', { slides: [{ layout: 'cover', content: { title: 'Umsatz +8% seit "Q1"' }, notes: 'ca. 5 Mio. €' }] })
@@ -351,7 +351,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   const added = await go('add_slides', { slides: [{ layout: 'clip', content: { video: file, hook: 'Der Kern in 5 Sekunden', parts: [{ start: 61.2, end: 66.8 }] } }] })
   assert.equal(vd!.slides[0].content.video, assetUrl(file))
   // Clip-Prüfung in der Antwort: Länge statt Autofit, Meldung aus lintClip
-  assert.match(added.text, /^Folie 1 \(s[0-9a-f]{4}, clip\): OK · Länge 5,6 s · 1 Ausschnitt · Transkript ok · Folienwechsel none; im MP4 blenden die Schnitte über/)
+  assert.match(added.text, /^Folie 1 \(s-[0-9a-z]+, clip\): OK · Länge 5,6 s · 1 Ausschnitt · Transkript ok · Folienwechsel none; im MP4 blenden die Schnitte über/)
   assert.match(added.text, /\n  - \[warn\] clip-laenge: Länge 5,6 s – für einen Short 20–90 s; verlängern/)
   // Hintergrundmusik: absoluter Pfad wird asset://, nur Audiodateien, null entfernt
   const mp3 = join(dir, 'music', 'ruhig.mp3')
@@ -447,7 +447,7 @@ assert.match((await run('export_deck', { format: 'clips' })).text, /deck\.clips/
   assert.equal(a1.voice, 'Erst bauen wir „das Projekt“. [klick] Dann läuft es.', 'Feinsatz im Sprechertext')
   assert.equal(a1.content.code, '$ npm run "build"\nfertig', 'Quelltext ohne Feinsatz')
   assert.equal(a1.duration, 9); assert.deepEqual(a1.camera, [{ step: 1, box: [0.1, 0.2, 0.5, 0.5] }])
-  assert.match(add.text, /Folie 1 \(s[0-9a-f]{4}, code\): OK [^\n]*\n {2}Szene 1: ~9 s · Stimme ~2,8 s · 2 Takte\n/) // Tempo 1,3
+  assert.match(add.text, /Folie 1 \(s-[0-9a-z]+, code\): OK [^\n]*\n {2}Szene 1: ~9 s · Stimme ~2,8 s · 2 Takte\n/) // Tempo 1,3
   assert.match(add.text, /Folie 2 [^\n]*\n {2}Szene 2: ~[\d,]+ s · ohne Stimme · 3 Takte\n {2}- \[warn\] film-ohne-stimme: Hinweis: 1 Szene ohne Sprechtext \(Folie 2\)/)
   await fails(go('add_slides', { slides: [{ layout: 'statement', content: { text: 'Kurz' }, camera: [{ step: 0, box: [0.8, 0, 0.5, 0.5] }] }] }), /x \+ w und y \+ h höchstens 1/)
   const long = await go('update_slide', { id: a2.id, voice: `${'Wort '.repeat(45).trim()}.`, duration: 3, camera: [{ step: 0, box: [0, 0, 0.2, 0.2] }, { step: 5 }] })

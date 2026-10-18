@@ -1,9 +1,9 @@
 // Chat-Replay als ASS (libass brennt es ein wie die Untertitel): Nachrichten aus der Quellzeit auf die Clip-Achse, gedrosselt, als Spalte der letzten Zeilen.
 // Rein funktional, ohne Node/Electron; export-video.ts hängt style und events in seine ASS-Datei, check-chat-overlay.ts prüft.
-import { partLen, speedOf, type Part } from '../shared/video'
+import { partLen, speedOf, type ClipContent, type Part } from '../shared/video'
 
 export interface ChatMsg { t: number; n?: string; c?: string; x?: string }
-export interface ChatOpts { pos?: 'links' | 'rechts'; zeilen?: number; namen?: boolean }
+export type ChatOpts = NonNullable<ClipContent['chat']>
 
 const STAND = 10, FAD = 150, GAP = 0.5, SAME = 5, MAXLEN = 60 // Standzeit s, Einblendung ms, Drossel s, Fenster für Wiederholungen s, Zeichen
 
@@ -21,7 +21,8 @@ function assColor(hex: string) {
 }
 
 /** Style-Zeile (ASS „Style: Chat,…“) und Dialogue-Zeilen für den Chat eines Clips; leer, wenn keine Nachricht ins Clip-Fenster fällt. */
-export function chatAss(msgs: ChatMsg[], parts: Part[], o: ChatOpts & { size: { w: number; h: number }; font: string }): { style: string; events: string[] } {
+/** win: nur dieser Ausschnitt der Clip-Achse [ab, bis], Zeiten ab dessen Anfang (eine Export-Gruppe); so steht der Chat auch an Gruppengrenzen voll da. */
+export function chatAss(msgs: ChatMsg[], parts: Part[], o: ChatOpts & { size: { w: number; h: number }; font: string; win?: [number, number] }): { style: string; events: string[] } {
   const { w, h } = o.size, m = Math.min(w, h), wide = w >= h, zeilen = Math.min(8, Math.max(3, Math.round(o.zeilen ?? 6)))
   const size = Math.round(m * (wide ? 0.03 : 0.035)), line = Math.max(1, Math.round(m * 0.002)), lh = size * 1.3, right = o.pos === 'rechts'
   const style = `Style: Chat,${o.font},${size},&H00FFFFFF,&H00FFFFFF,&H40000000,&H80000000,0,0,0,0,100,100,0,0,1,${line},${line},${right ? 3 : 1},0,0,0,1`
@@ -59,7 +60,8 @@ export function chatAss(msgs: ChatMsg[], parts: Part[], o: ChatOpts & { size: { 
       const a = shown[i + k]?.t ?? Infinity, b = Math.min(end, shown[i + k + 1]?.t ?? Infinity), last = b === end
       if (a >= end) break
       const fad = `\\fad(${k ? 0 : FAD},${last && expires ? FAD : 0})`
-      events.push(`Dialogue: 0,${at(a)},${at(b)},Chat,,0,0,0,,{\\q2\\pos(${x},${Math.round(bottom - k * lh)})${fad}}${name}${esc(text)}`)
+      const [w0, w1] = o.win ?? [0, Infinity], a2 = Math.max(a, w0), b2 = Math.min(b, w1)
+      if (b2 > a2) events.push(`Dialogue: 0,${at(a2 - w0)},${at(b2 - w0)},Chat,,0,0,0,,{\\q2\\pos(${x},${Math.round(bottom - k * lh)})${fad}}${name}${esc(text)}`)
     }
   })
   return { style, events }

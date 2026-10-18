@@ -59,6 +59,7 @@ assert.ok(route('Lebenslauf und Anschreiben für die Bewerbung').has('layout:cv'
 // Video: reiner Auftrag nur mit Video-Schnitt, clip und Zwischentiteln (auch Reels für Instagram), schlanker Kernprompt;
 // Präsentation mit Video bekommt das Übliche plus Video; Abschnitt und Durchschnitt sind kein Schnitt
 const vroute = (text: string, o: Partial<RouteInput> = {}) => ruleRoute({ text, profile: 'slides', layoutsInDeck: [], hasDeck: false, ...o })
+for (const t of ['Motion-Grafik zu unserem Ablauf', 'Animierte Infografik für LinkedIn', 'Motion Graphics als Reel']) assert.ok(route(t).has('film') && !vroute(t).video, t)
 for (const t of ['Nutze ein Video auf meinem PC und schneide es', 'Mach 3 Reels für Instagram aus meinem Podcast', 'Highlights aus meinem Twitch-Stream'])
   assert.deepEqual([vroute(t).modules, vroute(t).video], [['video', 'layout:clip', 'layout:section', 'layout:statement'], true], t)
 assert.equal(vroute('Untertitel größer', { layoutsInDeck: ['clip', 'section'], hasDeck: true }).video, true, 'Video-Deck')

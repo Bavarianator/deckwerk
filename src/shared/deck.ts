@@ -275,6 +275,7 @@ export interface Deck {
   music?: { src: string; volume?: number; credit?: string } // Hintergrundmusik im Video-Export (mp4): asset://-Pfad, volume 0–1 (Standard 0,25), credit = Nachweis (CC-BY)
   film?: FilmSettings // Feature „Animation“: Szenen mit Zeitachse, Stimme und Kamera statt Standbildern (fehlt = Präsentation bzw. Video-Schnitt wie bisher)
   podcast?: Episode // Podcast-Schnitt (shared/podcast.ts): Spuren, Schnitte, Soundeffekte, Kapitel; Titel und deck.music gelten mit
+  videoRes?: '720p' | '1080p' | '1440p' | '4k' | '8k' // Auflösung im Video-Export (kurze Seite); ohne = 1080p-Standard, nie größer als die Quelle
   slides: Slide[]
 }
 // Folien, die präsentiert und exportiert werden (PDF, PNG, Word, Handout); ausgeblendete fehlen
