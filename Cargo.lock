@@ -1337,6 +1337,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dw-podcast"
+version = "0.1.0"
+dependencies = [
+ "dw-lint",
+ "dw-model",
+ "dw-timeline",
+ "regex",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "dw-pptx"
 version = "0.1.0"
 dependencies = [
@@ -1396,6 +1408,16 @@ version = "0.1.0"
 dependencies = [
  "dw-color",
  "dw-model",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "dw-timeline"
+version = "0.1.0"
+dependencies = [
+ "dw-lint",
+ "regex",
  "serde",
  "serde_json",
 ]
