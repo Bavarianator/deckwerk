@@ -21,12 +21,19 @@ dw-theme = { path = "../dw-theme" }
 dw-lint = { path = "../dw-lint" }
 dw-edit = { path = "../dw-edit" }
 dw-canvas = { path = "../dw-canvas" }
+dw-podcast = { path = "../dw-podcast" }
+dw-video = { path = "../dw-video" }
 # wie dw-app-spike: femtovg auf wgpu 30 (teilt das Device mit vello aus dw-canvas), winit für IME
 slint = { version = "1.18", features = ["renderer-femtovg-wgpu", "unstable-wgpu-30", "unstable-winit-030"] }
 kurbo.workspace = true
 rfd.workspace = true
 serde_json.workspace = true
 anyhow = "1"
+dw-agent = { path = "../dw-agent" }
+dw-cli-agent = { path = "../dw-cli-agent" }
+dw-mcp = { path = "../dw-mcp" }
+dw-tools = { path = "../dw-tools" }
+tokio = { version = "1", features = ["rt"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
 
 [build-dependencies]

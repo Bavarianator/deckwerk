@@ -1,14 +1,18 @@
 //! Deckwerk als native App (Slint): `deckwerk-app [--open <deck.json>] [--shots <ordner>] [--selftest [deck.json]]`
 
+mod animation;
 mod chat;
 mod editor;
 mod export;
 mod form;
 mod names;
+mod settings;
+mod podcast;
 mod stage;
 mod start;
 mod textedit;
 mod ui;
+mod video;
 
 use std::path::{Path, PathBuf};
 

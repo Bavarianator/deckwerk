@@ -1,0 +1,65 @@
+// Video-Oberfläche wie Deckvid.tsx/ClipCutter.tsx: Video öffnen, Clips mit Start/Ende, Vorschau-Standbild, Export mit Fortschritt.
+// ponytail: gstreamer-Wiedergabe später, Vorschau ist ein ffmpeg-Standbild; Effekte/Einblendungen folgen.
+import { ScrollView } from "std-widgets.slint";
+import { Pal, Btn, Input } from "kit.slint";
+
+export struct VClip { start: string, end: string }
+
+export global Video {
+    in-out property <string> file;
+    in-out property <[VClip]> clips;
+    in-out property <image> frame;
+    in-out property <float> progress: -1;
+    in-out property <string> status;
+    callback open();
+    callback add-clip();
+    callback set-clip(int, string, string);
+    callback remove-clip(int);
+    callback preview(string);
+    callback export();
+    callback back();
+}
+
+export component VideoScreen inherits Rectangle {
+    background: Pal.bg;
+    VerticalLayout {
+        padding: 24px;
+        spacing: 14px;
+        HorizontalLayout {
+            spacing: 10px;
+            Btn { text: "← Zurück"; clicked => { Video.back(); } }
+            Btn { text: "Video öffnen"; clicked => { Video.open(); } }
+            Text { text: Video.file == "" ? "Kein Video geöffnet" : Video.file; color: Pal.text; vertical-alignment: center; overflow: elide; }
+        }
+        HorizontalLayout {
+            spacing: 18px;
+            Image { source: Video.frame; width: 480px; height: 270px; image-fit: contain; }
+            VerticalLayout {
+                spacing: 8px;
+                Text { text: "Momente"; color: Pal.text; font-weight: 700; }
+                ScrollView {
+                    VerticalLayout {
+                        spacing: 6px;
+                        for c[i] in Video.clips: HorizontalLayout {
+                            spacing: 6px;
+                            s := Input { text: c.start; placeholder: "Start (s)"; edited => { Video.set-clip(i, s.text, e.text); } }
+                            e := Input { text: c.end; placeholder: "Ende (s)"; edited => { Video.set-clip(i, s.text, e.text); } }
+                            Btn { text: "Ansehen"; clicked => { Video.preview(s.text); } }
+                            Btn { text: "×"; clicked => { Video.remove-clip(i); } }
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    Btn { text: "+ Moment"; enabled: Video.file != ""; clicked => { Video.add-clip(); } }
+                    Btn { text: "Exportieren"; enabled: Video.file != "" && Video.clips.length > 0 && Video.progress < 0; clicked => { Video.export(); } }
+                }
+                if Video.progress >= 0: Rectangle {
+                    height: 6px; border-radius: 3px; background: Pal.border;
+                    Rectangle { x: 0; width: parent.width * clamp(Video.progress, 0, 1); background: Pal.accent; border-radius: 3px; }
+                }
+                Text { text: Video.status; color: Pal.text; wrap: word-wrap; }
+            }
+        }
+    }
+}

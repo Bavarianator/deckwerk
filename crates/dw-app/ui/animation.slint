@@ -1,0 +1,16 @@
+// Animation im „Anpassen“-Panel: Übergang zu dieser Folie, Tempo, Aufbau (wie Electron Inspector).
+import { Select, Field } from "kit.slint";
+
+export component AnimSection inherits VerticalLayout {
+    in property <[string]> transitions;
+    in property <int> transition-index;
+    in property <[string]> speeds;
+    in property <int> speed-index;
+    in property <[string]> builds;
+    in property <int> build-index;
+    callback pick(string, int); // Feld (transition | transitionSpeed | build), Index
+    spacing: 10px;
+    Field { label: "Übergang"; Select { options: root.transitions; current: root.transition-index; label: "Übergang"; changed(i) => { root.pick("transition", i); } } }
+    Field { label: "Tempo"; Select { options: root.speeds; current: root.speed-index; label: "Tempo"; changed(i) => { root.pick("transitionSpeed", i); } } }
+    Field { label: "Aufbau"; Select { options: root.builds; current: root.build-index; label: "Aufbau"; changed(i) => { root.pick("build", i); } } }
+}

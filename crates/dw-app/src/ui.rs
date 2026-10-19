@@ -12,7 +12,7 @@ use dw_model::Deck;
 use dw_store::{Edition, RecentDeck, Store};
 use slint::{ComponentHandle, Image, Model, ModelRc, Rgba8Pixel, SharedPixelBuffer, SharedString, Timer, TimerMode, VecModel};
 
-use crate::chat::{ChatBackend, ChatReply, Offline};
+use crate::chat::{Chat, ChatReply};
 use crate::editor::{self, Editor};
 use crate::form::Row;
 use crate::names::layout_name;
@@ -29,7 +29,6 @@ const STATUS: Duration = Duration::from_secs(4);
 const FRAMES: &[(&str, &str)] = &[("top", "Titel oben"), ("split", "Titel links auf Farbfläche"), ("band", "Titel im Farbband"), ("center", "Zentriert")];
 const TONES: [&str; 3] = ["normal", "accent", "invert"];
 const DECORS: [&str; 7] = ["none", "blobs", "glow", "rings", "grid", "stripe", "dots"];
-const MODELS: [&str; 4] = ["Auto", "Opus", "Sonnet", "Haiku"];
 
 thread_local! {
     static APP: RefCell<Option<App>> = const { RefCell::new(None) };
@@ -109,7 +108,7 @@ pub struct App {
     worker: Worker,
     thumbs: Rc<VecModel<Thumb>>,
     chat: Rc<VecModel<ChatMsg>>,
-    backend: Arc<Mutex<Box<dyn ChatBackend>>>,
+    backend: Arc<Mutex<Chat>>,
     autosave: Timer,
     rerender: Timer,
     status: Option<(String, bool)>,
@@ -135,7 +134,7 @@ pub fn run(store: Store, open: Option<PathBuf>, shots: Option<PathBuf>) -> anyho
     });
     let app = App {
         ui: ui.as_weak(),
-        store,
+        store: store.clone(),
         recent: vec![],
         templates: vec![],
         shown: vec![],
@@ -149,7 +148,7 @@ pub fn run(store: Store, open: Option<PathBuf>, shots: Option<PathBuf>) -> anyho
         worker,
         thumbs: Rc::new(VecModel::default()),
         chat: Rc::new(VecModel::default()),
-        backend: Arc::new(Mutex::new(Box::new(Offline))),
+        backend: Arc::new(Mutex::new(Chat::new(store))),
         autosave: Timer::default(),
         rerender: Timer::default(),
         status: None,
@@ -166,7 +165,8 @@ pub fn run(store: Store, open: Option<PathBuf>, shots: Option<PathBuf>) -> anyho
     };
     ui.set_thumbs(app.thumbs.clone().into());
     ui.set_chat(app.chat.clone().into());
-    ui.set_models(model(MODELS.iter().map(ss).collect()));
+    ui.set_models(model(crate::chat::MODELS.iter().map(|m| ss(m.0)).collect()));
+    ui.set_model_index(crate::chat::load_model());
     ui.set_format_options(model(start::FORMAT_CHOICES.iter().map(|c| ss(c.1)).collect()));
     ui.set_version(ss(env!("CARGO_PKG_VERSION")));
     APP.with(|a| *a.borrow_mut() = Some(app));
@@ -225,6 +225,7 @@ fn wire(ui: &AppWindow) {
     // Start
     ui.on_start_submit(|t| with_app(|a| a.start_submit(t.to_string())));
     ui.on_pick_format(|i| with_app(|a| a.set_choice(i as usize)));
+    crate::video::wire(&ui, { let w = ui.as_weak(); move || w.unwrap().set_screen("start".into()) });
     ui.on_pick_paper(|i| with_app(|a| a.pick_paper(i as usize)));
     ui.on_chip(|i| with_app(|a| {
         if let Some((text, fmt)) = start::EXAMPLES.get(i as usize) {
@@ -263,7 +264,11 @@ fn wire(ui: &AppWindow) {
             a.prev_screen = s;
         }
         ui.set_screen("settings".into());
+        crate::settings::load(&ui, &a.store);
     }));
+    ui.global::<crate::SettingsData>().on_save_cloud(|| with_app(|a| crate::settings::save_cloud(&a.ui(), &a.store)));
+    ui.global::<crate::SettingsData>().on_save_image(|| with_app(|a| crate::settings::save_image(&a.ui(), &a.store)));
+    ui.global::<crate::SettingsData>().on_save_brand(|| with_app(|a| crate::settings::save_brand(&a.ui(), &a.store)));
     ui.on_settings_done(|| with_app(|a| {
         let ui = a.ui();
         ui.set_screen(ss(&a.prev_screen));
@@ -317,6 +322,11 @@ fn wire(ui: &AppWindow) {
     ui.on_pick_tone(|i| with_app(|a| {
         let t = (i > 0).then(|| TONES[i as usize - 1]);
         a.edit(|e| e.set_prop("tone", t), true, false);
+    }));
+    ui.on_pick_anim(|k, i| with_app(|a| {
+        use crate::animation::*;
+        let list = match k.as_str() { "transition" => TRANSITIONS, "build" => BUILDS, _ => SPEEDS };
+        a.edit(|e| e.set_prop(&k, value(list, i)), true, false);
     }));
     ui.on_pick_decor(|i| with_app(|a| {
         let d = (i > 0).then(|| DECORS[i as usize - 1]);
@@ -517,6 +527,9 @@ impl App {
     /// Papier anklicken wählt das Format, nochmal klicken nimmt die Wahl zurück; Video/Animation/Podcast: Pro, kommt bald
     fn pick_paper(&mut self, i: usize) {
         let Some(id) = start::PAPERS.get(i) else { return };
+        if *id == "video" {
+            return self.ui().set_screen("video".into());
+        }
         if let Some((_, name)) = start::PRO_PAPERS.iter().find(|p| p.0 == *id) {
             return self.soon(name);
         }
@@ -535,6 +548,7 @@ impl App {
         if text.trim().is_empty() {
             return ui.set_start_error("Dateien anhängen kommt mit der KI-Anbindung.".into());
         }
+        crate::chat::save_model(ui.get_model_index());
         let deck = editor::new_deck("Neues Deck", start::blank_format(self.choice));
         let backend = self.backend.clone();
         std::thread::spawn(move || {
@@ -592,6 +606,7 @@ impl App {
             Ok(d) => d,
             Err(e) => return self.ui().set_start_error(ss(format!("Öffnen fehlgeschlagen: {e}"))),
         };
+        if crate::podcast::open(&self.ui(), path) { return; }
         let path = self.store.inside(path).unwrap_or_else(|_| path.to_path_buf());
         self.ed = Some(Editor::new(deck, Some(path)));
         self.status = None;
@@ -759,6 +774,16 @@ impl App {
         ui.set_decors(model(decors));
         let decor = slide.extra.get("decor").and_then(|v| v.as_str());
         ui.set_decor_index(decor.and_then(|d| DECORS.iter().position(|x| *x == d)).map_or(0, |i| i as i32 + 1));
+        {
+            use crate::animation::*;
+            let get = |k: &str| slide.extra.get(k).and_then(|v| v.as_str());
+            ui.set_transitions(model(options(TRANSITIONS, "Wie Deck").iter().map(ss).collect()));
+            ui.set_transition_index(index(TRANSITIONS, get("transition")));
+            ui.set_speeds(model(options(SPEEDS, "Normal").iter().map(ss).collect()));
+            ui.set_speed_index(index(SPEEDS, get("transitionSpeed")));
+            ui.set_builds(model(options(BUILDS, "Layout-Standard").iter().map(ss).collect()));
+            ui.set_build_index(index(BUILDS, get("build")));
+        }
         self.rows = e.rows();
         ui.set_form_note(if !ported {
             ss(format!("„{}“ ist in der nativen App noch nicht portiert. Der Inhalt bleibt erhalten.", layout_name(&slide.layout)))
@@ -1284,6 +1309,7 @@ impl App {
             ui.set_bubble("Dateien anhängen kommt mit der KI-Anbindung.".into());
             return;
         }
+        crate::chat::save_model(ui.get_model_index());
         self.chat.push(ChatMsg { me: true, text: ss(&text) });
         let (deck, backend) = (e.deck.clone(), self.backend.clone());
         std::thread::spawn(move || {

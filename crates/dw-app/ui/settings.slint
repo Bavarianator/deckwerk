@@ -1,0 +1,54 @@
+// Einstellungen: Cloud, Bilder, Marke (settings/CloudSection, BilderSection, MarkeSection)
+import { Pal, Btn, Input, Field, Seg } from "kit.slint";
+
+export global SettingsData {
+    in-out property <string> cloud-url;
+    in-out property <string> cloud-user;
+    in-out property <string> cloud-pass;
+    in-out property <int> image-provider; // 0 Mammouth, 1 OpenAI
+    in-out property <string> image-key;
+    in-out property <string> brand-primary;
+    in-out property <string> brand-secondary;
+    in-out property <string> brand-head-font;
+    in-out property <string> brand-body-font;
+    in-out property <string> house-style;
+    in-out property <string> note;
+    callback save-cloud();
+    callback save-image();
+    callback save-brand();
+}
+
+export component SettingsPages inherits VerticalLayout {
+    in property <int> page;
+    spacing: 14px;
+    if page == 1: VerticalLayout {
+        spacing: 14px;
+        Text { text: "WebDAV-Ordner (Nextcloud, ownCloud, Box …). Deckwerk spiegelt ~/Deckwerk ohne Versionen."; color: Pal.muted; wrap: word-wrap; }
+        Field { label: "Adresse"; Input { text <=> SettingsData.cloud-url; placeholder: "https://cloud.example.de/remote.php/dav/files/name/Deckwerk"; } }
+        Field { label: "Benutzer"; Input { text <=> SettingsData.cloud-user; } }
+        // ponytail: Klartext-Feld, Passwort-Maske kommt mit input-type in kit.Input
+        Field { label: "App-Passwort"; Input { text <=> SettingsData.cloud-pass; } }
+        HorizontalLayout { alignment: start; Btn { text: "Speichern"; clicked => { SettingsData.save-cloud(); } } }
+    }
+    if page == 2: VerticalLayout {
+        spacing: 14px;
+        Text { text: "Für KI-Bilder braucht Deckwerk einen eigenen Schlüssel. Er bleibt auf diesem Gerät."; color: Pal.muted; wrap: word-wrap; }
+        Field {
+            label: "Anbieter";
+            HorizontalLayout { alignment: start; Seg { options: ["Mammouth", "OpenAI"]; current: SettingsData.image-provider; changed(i) => { SettingsData.image-provider = i; } } }
+        }
+        Field { label: "API-Schlüssel"; Input { text <=> SettingsData.image-key; placeholder: "sk-…"; } }
+        HorizontalLayout { alignment: start; Btn { text: "Speichern"; clicked => { SettingsData.save-image(); } } }
+    }
+    if page == 3: VerticalLayout {
+        spacing: 14px;
+        Text { text: "Farben und Schriften, die neue Decks automatisch bekommen."; color: Pal.muted; wrap: word-wrap; }
+        Field { label: "Hauptfarbe"; Input { text <=> SettingsData.brand-primary; placeholder: "#1f4fd1"; } }
+        Field { label: "Zweitfarbe"; Input { text <=> SettingsData.brand-secondary; placeholder: "optional"; } }
+        Field { label: "Überschriften-Schrift"; Input { text <=> SettingsData.brand-head-font; placeholder: "optional"; } }
+        Field { label: "Text-Schrift"; Input { text <=> SettingsData.brand-body-font; placeholder: "optional"; } }
+        Field { label: "Hausstil"; Input { text <=> SettingsData.house-style; multiline: true; rows-height: 120px; placeholder: "Regeln, die die KI bei jedem Deck beachtet"; } }
+        HorizontalLayout { alignment: start; Btn { text: "Speichern"; clicked => { SettingsData.save-brand(); } } }
+    }
+    if SettingsData.note != "": Text { text: SettingsData.note; color: Pal.muted; }
+}

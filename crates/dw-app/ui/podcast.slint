@@ -1,0 +1,62 @@
+// Podcast-Bühne wie PodcastStage.tsx: Spuren, Wellenform, Transkript, Schnitte, Export
+import { ScrollView } from "std-widgets.slint";
+import { Pal, Btn } from "kit.slint";
+
+export struct PodCut { start: string, end: string, why: string }
+
+export global Podcast {
+    in property <[string]> tracks;
+    in property <[float]> peaks;
+    in property <[PodCut]> cuts;
+    in property <string> transcript;
+    in property <string> info;
+    in property <float> progress: -1;
+    callback clean();
+    callback export();
+    callback remove-cut(int);
+    callback back();
+}
+
+export component PodcastScreen inherits Rectangle {
+    background: Pal.bg;
+    VerticalLayout {
+        padding: 24px; spacing: 12px;
+        HorizontalLayout {
+            spacing: 8px;
+            Btn { text: "Zurück"; clicked => { Podcast.back(); } }
+            Text { text: Podcast.info; vertical-alignment: center; horizontal-stretch: 1; }
+            Btn { text: "Aufräumen"; clicked => { Podcast.clean(); } }
+            Btn { text: Podcast.progress >= 0 ? "Export " + round(Podcast.progress * 100) + " %" : "Exportieren"; clicked => { Podcast.export(); } }
+        }
+        for t in Podcast.tracks: Text { text: t; }
+        // ponytail: Balken statt Path, reicht bis Zoom/Scrubben gebraucht wird
+        wave := Rectangle {
+            height: 80px;
+            for p[i] in Podcast.peaks: Rectangle {
+                x: parent.width * i / max(1, Podcast.peaks.length);
+                width: max(1px, parent.width / max(1, Podcast.peaks.length));
+                height: max(1px, parent.height * p);
+                y: (parent.height - self.height) / 2;
+                background: Pal.accent;
+            }
+        }
+        HorizontalLayout {
+            spacing: 16px;
+            ScrollView {
+                horizontal-stretch: 2;
+                Text { text: Podcast.transcript; wrap: word-wrap; width: parent.visible-width; }
+            }
+            ScrollView {
+                horizontal-stretch: 1;
+                VerticalLayout {
+                    for c[i] in Podcast.cuts: HorizontalLayout {
+                        spacing: 8px;
+                        Text { text: c.start + "–" + c.end + "  " + c.why; vertical-alignment: center; horizontal-stretch: 1; }
+                        Btn { text: "×"; clicked => { Podcast.remove-cut(i); } }
+                    }
+                }
+            }
+        }
+    }
+}
+// ponytail: Aufnahme braucht cpal

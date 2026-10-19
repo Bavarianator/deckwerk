@@ -3,11 +3,18 @@
 // Logik in Rust (src/ui.rs); hier nur Anzeige und Rückrufe.
 
 import { ScrollView, ListView } from "std-widgets.slint";
+import { PodcastScreen } from "podcast.slint";
+export { Podcast, PodCut } from "podcast.slint";
+import { SettingsPages } from "settings.slint";
+export { SettingsData } from "settings.slint";
 import { Pal, Plain, Pill, Round, IconBtn, Btn, Seg, Select, Input, Field, MenuItem, MenuSep, Material, SheetTop } from "kit.slint";
+import { AnimSection } from "animation.slint";
 import "../../../assets/fonts/Inter-Regular.ttf";
 import "../../../assets/fonts/Inter-Bold.ttf";
 
 export { Pal }
+import { Video, VideoScreen } from "video.slint";
+export { Video }
 
 export struct DeckCard {
     title: string,
@@ -338,6 +345,13 @@ export component AppWindow inherits Window {
     callback pick-frame(int);
     callback pick-tone(int);
     callback pick-decor(int);
+    in property <[string]> transitions;
+    in property <int> transition-index;
+    in property <[string]> speeds;
+    in property <int> speed-index;
+    in property <[string]> builds;
+    in property <int> build-index;
+    callback pick-anim(string, int);
     callback field-edited(int, string);
     callback field-action(int, string);
     callback notes-edited(string);
@@ -1435,6 +1449,7 @@ export component AppWindow inherits Window {
                                     label: "Dekor";
                                     Select { options: root.decors; current: root.decor-index; label: "Dekor"; changed(i) => { root.pick-decor(i); } }
                                 }
+                                AnimSection { transitions: root.transitions; transition-index: root.transition-index; speeds: root.speeds; speed-index: root.speed-index; builds: root.builds; build-index: root.build-index; pick(k, i) => { root.pick-anim(k, i); } }
                             }
                             Rectangle { height: 1px; background: Pal.border; }
                         }
@@ -1619,6 +1634,8 @@ export component AppWindow inherits Window {
         }
 
         // ================= Einstellungen (settings/Settings.tsx, vereinfacht) =================
+        if root.screen == "podcast": PodcastScreen { }
+        if root.screen == "video": VideoScreen {}
         if root.screen == "settings": Rectangle {
             background: Pal.bg;
             SheetTop {
@@ -1699,6 +1716,7 @@ export component AppWindow inherits Window {
                     Text {
                         text: root.settings-page == 0 ? "Deckwerk denkt mit einer KI, die du schon hast oder schnell einrichtest. Ein Zugang reicht."
                             : root.settings-page == 5 ? "Datenordner, Edition und Version."
+                            : root.settings-page >= 1 && root.settings-page <= 3 ? ""
                             : "Dieser Bereich kommt in einem der nächsten Schritte in die native App.";
                         font-size: 14px;
                         color: Pal.muted;
@@ -1787,6 +1805,7 @@ export component AppWindow inherits Window {
                             }
                         }
                     }
+                    if root.settings-page >= 1 && root.settings-page <= 3: SettingsPages { page: root.settings-page; }
                     if root.settings-page == 5: VerticalLayout {
                         spacing: 14px;
                         Field {
